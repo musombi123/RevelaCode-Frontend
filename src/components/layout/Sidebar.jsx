@@ -1,0 +1,9 @@
+<Sidebar
+  sidebarOpen={sidebarOpen}
+  setSidebarOpen={setSidebarOpen}
+  activeView={activeView}
+  setActiveView={setActiveView}
+  theme={theme}
+  setTheme={setTheme}
+  logout={logout}
+/>
