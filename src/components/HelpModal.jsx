@@ -1,6 +1,6 @@
 import React from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/Dialog.jsx";
+import { Button } from "./ui/Button.jsx";
 import { Mail, Bug, BookOpen, Clipboard } from "lucide-react";
 
 const HelpModal = () => {
