@@ -7,6 +7,7 @@ import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
+import StartModal from "./StartModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -20,14 +21,45 @@ export default function MainDashboardV2() {
   const [aiDockOpen, setAIDockOpen] = useState(false);
 
   const { theme, setTheme } = useTheme();
-  const { logout } = useAuth();
+  const {
+    user,
+    isGuest,
+    loading,
+    login,
+    logout,
+    guestMode,
+  } = useAuth();
 
   const activeDashboard =
     DASHBOARDS.find((d) => d.key === activeView) || DASHBOARDS[0];
 
   const ActiveComponent = activeDashboard.component;
 
-  /* AI Dock keyboard shortcut */
+  /* ===============================
+     Auth Gate (VERY IMPORTANT)
+  =============================== */
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loading />
+      </div>
+    );
+  }
+
+  // 👇 THIS GUARANTEES START MODAL FIRST
+  if (!user && !isGuest) {
+    return (
+      <StartModal
+        onLoginSuccess={login}
+        onGuest={guestMode}
+      />
+    );
+  }
+
+  /* ===============================
+     AI Dock Shortcut
+  =============================== */
   useEffect(() => {
     const handler = (e) => {
       if (e.ctrlKey && e.key.toLowerCase() === "k") {
@@ -109,7 +141,7 @@ export default function MainDashboardV2() {
         <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
           <Suspense fallback={<Loading />}>
             <ErrorBoundary>
-              {ActiveComponent && <ActiveComponent />}
+              {ActiveComponent ? <ActiveComponent /> : null}
             </ErrorBoundary>
           </Suspense>
         </section>
@@ -130,10 +162,11 @@ export default function MainDashboardV2() {
               </div>
 
               <Suspense fallback={<Loading />}>
-                {DASHBOARDS.find((d) => d.key === "ai")?.component &&
-                  React.createElement(
-                    DASHBOARDS.find((d) => d.key === "ai").component
-                  )}
+                {DASHBOARDS.find((d) => d.key === "ai")?.component
+                  ? React.createElement(
+                      DASHBOARDS.find((d) => d.key === "ai").component
+                    )
+                  : null}
               </Suspense>
             </motion.div>
           )}
