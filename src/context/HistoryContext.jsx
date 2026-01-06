@@ -1,45 +1,53 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext.jsx";
 
-const HistoryContext = createContext();
-
-export function useHistory() {
-  return useContext(HistoryContext);
-}
+const HistoryContext = createContext(null);
 
 export function HistoryProvider({ children }) {
+  const { user, isGuest } = useAuth();
   const [history, setHistory] = useState([]);
 
-  // 🧠 Load history from localStorage on mount
+  const API = import.meta.env.VITE_API_URL;
+
+  // -------------------------
+  // Load history (auth only)
+  // -------------------------
   useEffect(() => {
-    const stored = localStorage.getItem('decodeHistory');
-    if (stored) {
-      try {
-        setHistory(JSON.parse(stored));
-      } catch (err) {
-        console.warn('Failed to parse decode history:', err);
-      }
+    if (!user || isGuest) {
+      setHistory([]);
+      return;
     }
-  }, []);
 
-  // 💾 Save to localStorage whenever history changes
-  useEffect(() => {
-    localStorage.setItem('decodeHistory', JSON.stringify(history));
-  }, [history]);
+    fetch(`${API}/api/history/${user.id}`)
+      .then((res) => res.json())
+      .then(setHistory)
+      .catch(() => setHistory([]));
+  }, [user, isGuest]);
 
-  // ➕ Add entry to history
-  const addToHistory = (entry) => {
-    setHistory((prev) => [entry, ...prev.slice(0, 9)]); // keep only latest 10
-  };
+  // -------------------------
+  // Add history event
+  // -------------------------
+  const logEvent = async (event, meta = {}) => {
+    if (!user || isGuest) return; // 🔒 guest blocked
 
-  // 🧹 Clear all history (optional, for future use)
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem('decodeHistory');
+    await fetch(`${API}/api/history/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.id,
+        event,
+        meta
+      })
+    });
   };
 
   return (
-    <HistoryContext.Provider value={{ history, addToHistory, clearHistory }}>
+    <HistoryContext.Provider value={{ history, logEvent }}>
       {children}
     </HistoryContext.Provider>
   );
+}
+
+export function useHistory() {
+  return useContext(HistoryContext);
 }
