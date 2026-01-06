@@ -8,26 +8,74 @@ import {
   Bot,
 } from "lucide-react";
 
-/* Lazy-loaded dashboards */
-const ProphecyDashboard = lazy(() => import("./ProphecyDashboard.jsx"));
-const ProphecyEventsDashboard = lazy(() => import("./ProphecyEventsDashboard.jsx"));
-const ReferentialDashboard = lazy(() => import("./ReferentialDashboard.jsx"));
-const UserAccountDashboard = lazy(() => import("./UserAccountDashboard.jsx"));
-const AIAssistantDashboard = lazy(() => import("./AIAssistantDashboard.jsx"));
-const BibleDashboard = lazy(() => import("./BibleDashboard.jsx"));
-const HistoryDashboard = lazy(() => import("./HistoryDashboard.jsx"));
-const PreferencesDashboard = lazy(() => import("./PreferencesDashboard.jsx"));
-const SupportCenter = lazy(() => import("./SupportCenter.jsx"));
+/* ======================================================
+   Safe lazy wrapper
+====================================================== */
 
-/* Static Home component (NOT lazy, NOT animated) */
-const HomeDashboard = () => (
-  <div className="text-center py-12">
-    <h2 className="text-2xl font-semibold">Welcome to RevelaCode</h2>
-    <p className="text-sm text-gray-500 mt-2">
-      Prophetic intelligence • Biblical research • AI insight
-    </p>
-  </div>
-);
+function safeLazy(importFn, name) {
+  const LazyComp = lazy(importFn);
+
+  return function SafeComponent() {
+    return (
+      <React.Suspense fallback={<div className="p-6">Loading {name}...</div>}>
+        <LazyComp />
+      </React.Suspense>
+    );
+  };
+}
+
+/* ======================================================
+   Lazy dashboards (SAFE)
+====================================================== */
+
+const ProphecyDashboard =
+  safeLazy(() => import("./ProphecyDashboard.jsx"), "Prophecy");
+
+const ProphecyEventsDashboard =
+  safeLazy(() => import("./ProphecyEventsDashboard.jsx"), "Events");
+
+const ReferentialDashboard =
+  safeLazy(() => import("./ReferentialDashboard.jsx"), "Referential");
+
+const UserAccountDashboard =
+  safeLazy(() => import("./UserAccountDashboard.jsx"), "Settings");
+
+const AIAssistantDashboard =
+  safeLazy(() => import("./AIAssistantDashboard.jsx"), "RevelaAI");
+
+/* ======================================================
+   Static Home (never lazy)
+====================================================== */
+
+function HomeDashboard() {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold">
+        Welcome, Seeker ✨
+      </h2>
+
+      <p className="text-gray-600 dark:text-gray-300">
+        Prophetic intelligence • Biblical research • AI-assisted insight
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="p-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
+          📖 Bible Exploration
+        </div>
+        <div className="p-4 rounded-xl bg-purple-100 dark:bg-purple-900/40">
+          🔮 Prophecy Decoder
+        </div>
+        <div className="p-4 rounded-xl bg-green-100 dark:bg-green-900/40">
+          🤖 RevelaAI Assistance
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ======================================================
+   DASHBOARD REGISTRY (FINAL)
+====================================================== */
 
 export const DASHBOARDS = [
   {
@@ -37,25 +85,16 @@ export const DASHBOARDS = [
     icon: Home,
     color: "from-indigo-600 to-indigo-500",
     default: true,
-    component: HomeDashboard,
-  },
-
-  {
-    key: "bible",
-    title: "Bible Study",
-    label: "Bible",
-    icon: BookOpen,
-    color: "from-blue-600 to-sky-500",
-    component: BibleDashboard,
+    element: <HomeDashboard />,
   },
 
   {
     key: "prophecy",
     title: "Prophecy Decoder",
     label: "Prophecy",
-    icon: Layers,
+    icon: BookOpen,
     color: "from-purple-600 to-fuchsia-500",
-    component: ProphecyDashboard,
+    element: <ProphecyDashboard />,
   },
 
   {
@@ -64,7 +103,7 @@ export const DASHBOARDS = [
     label: "Events",
     icon: Globe,
     color: "from-amber-600 to-orange-500",
-    component: ProphecyEventsDashboard,
+    element: <ProphecyEventsDashboard />,
   },
 
   {
@@ -73,34 +112,16 @@ export const DASHBOARDS = [
     label: "Referential",
     icon: Layers,
     color: "from-cyan-600 to-sky-500",
-    component: ReferentialDashboard,
+    element: <ReferentialDashboard />,
   },
 
   {
-    key: "history",
-    title: "History",
-    label: "History",
-    icon: BookOpen,
-    color: "from-emerald-600 to-green-500",
-    component: HistoryDashboard,
-  },
-
-  {
-    key: "preferences",
-    title: "Preferences",
-    label: "Preferences",
+    key: "settings",
+    title: "Settings",
+    label: "Settings",
     icon: Settings,
     color: "from-gray-600 to-gray-500",
-    component: PreferencesDashboard,
-  },
-
-  {
-    key: "support",
-    title: "Support Center",
-    label: "Support",
-    icon: Settings,
-    color: "from-slate-600 to-slate-500",
-    component: SupportCenter,
+    element: <UserAccountDashboard />,
   },
 
   {
@@ -109,6 +130,6 @@ export const DASHBOARDS = [
     label: "AI",
     icon: Bot,
     hidden: true,
-    component: AIAssistantDashboard,
+    element: <AIAssistantDashboard />,
   },
 ];

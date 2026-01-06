@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* RevelaCode Brand Gradient */
+.bg-revelacode-gradient {
+  background: linear-gradient(
+    180deg,
+    #0f2027,
+    #203a43,
+    #2c5364
+  );
+}

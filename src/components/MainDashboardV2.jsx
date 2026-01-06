@@ -13,31 +13,34 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 export default function MainDashboardV2() {
-  const defaultDashboard =
+  const { theme, setTheme } = useTheme();
+  const { user, isGuest, loading, login, guestMode, logout } = useAuth();
+
+  const defaultKey =
     DASHBOARDS.find((d) => d.default)?.key || "home";
 
-  const [activeView, setActiveView] = useState(defaultDashboard);
+  const [activeKey, setActiveKey] = useState(defaultKey);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [aiDockOpen, setAIDockOpen] = useState(false);
-
-  const { theme, setTheme } = useTheme();
-  const {
-    user,
-    isGuest,
-    loading,
-    login,
-    logout,
-    guestMode,
-  } = useAuth();
+  const [aiOpen, setAiOpen] = useState(false);
 
   const activeDashboard =
-    DASHBOARDS.find((d) => d.key === activeView) || DASHBOARDS[0];
+    DASHBOARDS.find((d) => d.key === activeKey) || DASHBOARDS[0];
 
-  const ActiveComponent = activeDashboard.component;
+  /* AI shortcut */
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setAiOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  /* ===============================
-     Auth Gate (VERY IMPORTANT)
-  =============================== */
+  /* =============================
+     AUTH GATE — START MODAL FIRST
+  ============================== */
 
   if (loading) {
     return (
@@ -47,7 +50,6 @@ export default function MainDashboardV2() {
     );
   }
 
-  // 👇 THIS GUARANTEES START MODAL FIRST
   if (!user && !isGuest) {
     return (
       <StartModal
@@ -57,79 +59,74 @@ export default function MainDashboardV2() {
     );
   }
 
-  /* ===============================
-     AI Dock Shortcut
-  =============================== */
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setAIDockOpen((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+  /* =============================
+     DASHBOARD RENDER
+  ============================== */
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
 
-      {/* ================= Sidebar ================= */}
+      {/* ========== SIDEBAR ========== */}
       <motion.aside
-        animate={{ width: sidebarOpen ? 220 : 80 }}
-        className="bg-gray-900 text-gray-100 flex flex-col"
+        animate={{ width: sidebarOpen ? 220 : 72 }}
+        className="bg-revelacode-gradient text-gray-100 flex flex-col shadow-2xl"
       >
-        <div className="p-4 flex justify-between items-center">
-          {sidebarOpen && <h1 className="font-bold">RevelaCode</h1>}
-          <button onClick={() => setSidebarOpen((v) => !v)}>
+        {/* Logo */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          {sidebarOpen && (
+            <h1 className="font-bold tracking-wide">
+              RevelaCode
+            </h1>
+          )}
+          <button onClick={() => setSidebarOpen(v => !v)}>
             {sidebarOpen ? "«" : "»"}
           </button>
         </div>
 
-        <nav className="px-2 space-y-1">
-          {DASHBOARDS.filter((d) => !d.hidden).map(
+        {/* Nav */}
+        <nav className="flex-1 p-2 space-y-1">
+          {DASHBOARDS.filter(d => !d.hidden).map(
             ({ key, label, icon: Icon, color }) => (
               <button
                 key={key}
-                onClick={() => setActiveView(key)}
-                className={`flex items-center gap-3 p-3 w-full rounded-lg text-sm transition
+                onClick={() => setActiveKey(key)}
+                title={label}
+                className={`flex items-center gap-3 w-full p-3 rounded-lg text-sm transition-all
                   ${
-                    activeView === key
-                      ? `bg-gradient-to-r ${color}`
-                      : "hover:bg-gray-800"
+                    activeKey === key
+                      ? "bg-white/15 border-l-4 border-purple-400 text-white shadow"
+                      : "hover:bg-white/10 text-gray-200"
                   }`}
               >
                 <Icon size={18} />
-                {sidebarOpen && label}
+                {sidebarOpen && <span>{label}</span>}
               </button>
             )
           )}
         </nav>
 
-        <div className="mt-auto p-4 flex justify-between items-center">
-          <button
-            onClick={() =>
-              setTheme(theme === "dark" ? "light" : "dark")
-            }
-          >
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10 flex justify-between">
+          <button onClick={() =>
+            setTheme(theme === "dark" ? "light" : "dark")
+          }>
             {theme === "dark" ? <Sun /> : <Moon />}
           </button>
 
           {sidebarOpen && (
-            <button
-              onClick={logout}
-              className="text-red-400 hover:text-red-500"
-            >
+            <button onClick={logout} className="text-red-300">
               <LogOut size={18} />
             </button>
           )}
         </div>
       </motion.aside>
 
-      {/* ================= Main Content ================= */}
-      <main className="flex-1 overflow-hidden">
-        <header className="flex justify-between p-4 border-b border-gray-700/40">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+      {/* ========== MAIN ========== */}
+      <main className="flex-1 relative overflow-hidden">
+
+        {/* Header */}
+        <header className="flex justify-between p-4 border-b border-gray-300 dark:border-gray-800">
+          <h2 className="font-semibold">
             {activeDashboard.title}
           </h2>
           <div className="flex gap-3">
@@ -138,48 +135,48 @@ export default function MainDashboardV2() {
           </div>
         </header>
 
+        {/* Body */}
         <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
           <Suspense fallback={<Loading />}>
             <ErrorBoundary>
-              {ActiveComponent ? <ActiveComponent /> : null}
+              {activeDashboard.element}
             </ErrorBoundary>
           </Suspense>
         </section>
 
-        {/* ================= Floating AI Dock ================= */}
+        {/* ========== FULLSCREEN AI ========== */}
         <AnimatePresence>
-          {aiDockOpen && (
+          {aiOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              className="absolute bottom-4 right-4 bg-gray-900 text-white rounded-2xl
-                         shadow-2xl p-4 w-96 h-96 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ width: sidebarOpen ? 220 : 72 }}
+              exit={{ opacity: 0 }}
+              className="bg-revelacode-gradient text-gray-100 flex flex-col shadow-2xl"
             >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">RevelaAI (Beta)</h3>
-                <button onClick={() => setAIDockOpen(false)}>✕</button>
-              </div>
+              <button
+                onClick={() => setAiOpen(false)}
+                className="absolute top-4 right-4 text-white text-xl"
+              >
+                ✕
+              </button>
 
               <Suspense fallback={<Loading />}>
-                {DASHBOARDS.find((d) => d.key === "ai")?.component
-                  ? React.createElement(
-                      DASHBOARDS.find((d) => d.key === "ai").component
-                    )
-                  : null}
+                {DASHBOARDS.find(d => d.key === "ai")?.element}
               </Suspense>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Floating AI Button */}
+        {/* AI Button */}
         <button
-          onClick={() => setAIDockOpen((v) => !v)}
-          className="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg"
+          onClick={() => setAiOpen(true)}
+          className="fixed bottom-6 right-6 bg-gradient-to-r from-green-600 to-lime-500
+                     text-white p-4 rounded-full shadow-xl"
           title="RevelaAI (Ctrl + K)"
         >
           <Bot />
         </button>
+
       </main>
     </div>
   );
