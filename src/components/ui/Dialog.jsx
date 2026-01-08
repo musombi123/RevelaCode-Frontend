@@ -1,7 +1,11 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+<<<<<<< HEAD
 import { cn } from "@/lib/utils.jsx";
+=======
+import { cn } from "@/lib/utils";
+>>>>>>> d225ee703c79822fee71480256ff8a2dcae710ec
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
