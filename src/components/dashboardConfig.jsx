@@ -6,6 +6,9 @@ import {
   Layers,
   Settings,
   Bot,
+  Book,
+  History,
+  HelpCircle,
 } from "lucide-react";
 
 /* ======================================================
@@ -25,8 +28,11 @@ function safeLazy(importFn, name) {
 }
 
 /* ======================================================
-   Lazy dashboards (SAFE)
+   Lazy dashboards
 ====================================================== */
+
+const BibleDashboard =
+  safeLazy(() => import("./BibleDashboard.jsx"), "Bible");
 
 const ProphecyDashboard =
   safeLazy(() => import("./ProphecyDashboard.jsx"), "Prophecy");
@@ -36,6 +42,15 @@ const ProphecyEventsDashboard =
 
 const ReferentialDashboard =
   safeLazy(() => import("./ReferentialDashboard.jsx"), "Referential");
+
+const HistoryDashboard =
+  safeLazy(() => import("./HistoryDashboard.jsx"), "History");
+
+const PreferencesDashboard =
+  safeLazy(() => import("./PreferencesDashboard.jsx"), "Preferences");
+
+const SupportDashboard =
+  safeLazy(() => import("./SupportCenter.jsx"), "Support");
 
 const UserAccountDashboard =
   safeLazy(() => import("./UserAccountDashboard.jsx"), "Settings");
@@ -57,71 +72,90 @@ function HomeDashboard() {
       <p className="text-gray-600 dark:text-gray-300">
         Prophetic intelligence • Biblical research • AI-assisted insight
       </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div className="p-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
-          📖 Bible Exploration
-        </div>
-        <div className="p-4 rounded-xl bg-purple-100 dark:bg-purple-900/40">
-          🔮 Prophecy Decoder
-        </div>
-        <div className="p-4 rounded-xl bg-green-100 dark:bg-green-900/40">
-          🤖 RevelaAI Assistance
-        </div>
-      </div>
     </div>
   );
 }
 
 /* ======================================================
-   DASHBOARD REGISTRY (FINAL)
+   DASHBOARD REGISTRY (COMPLETE)
 ====================================================== */
 
 export const DASHBOARDS = [
   {
     key: "home",
-    title: "Dashboard",
+    title: "Home",
     label: "Home",
     icon: Home,
-    color: "from-indigo-600 to-indigo-500",
     default: true,
     element: <HomeDashboard />,
   },
 
   {
+    key: "bible",
+    title: "Bible",
+    label: "Bible",
+    icon: Book,
+    element: <BibleDashboard />,
+    restricted: false, // ✅ ALWAYS AVAILABLE
+  },
+
+  {
     key: "prophecy",
-    title: "Prophecy Decoder",
+    title: "Prophecy",
     label: "Prophecy",
     icon: BookOpen,
-    color: "from-purple-600 to-fuchsia-500",
     element: <ProphecyDashboard />,
   },
 
   {
     key: "events",
-    title: "Global Events",
+    title: "Events",
     label: "Events",
     icon: Globe,
-    color: "from-amber-600 to-orange-500",
     element: <ProphecyEventsDashboard />,
   },
 
   {
     key: "referential",
-    title: "Referential Tools",
+    title: "Referential",
     label: "Referential",
     icon: Layers,
-    color: "from-cyan-600 to-sky-500",
     element: <ReferentialDashboard />,
   },
 
   {
-    key: "settings",
-    title: "Settings",
-    label: "Settings",
+    key: "history",
+    title: "History",
+    label: "History",
+    icon: History,
+    element: <HistoryDashboard />,
+    restricted: true, // 🔒 guest blocked
+  },
+
+  {
+    key: "preferences",
+    title: "Preferences",
+    label: "Preferences",
     icon: Settings,
-    color: "from-gray-600 to-gray-500",
+    element: <PreferencesDashboard />,
+    restricted: true, // 🔒 guest blocked
+  },
+
+  {
+    key: "support",
+    title: "Support",
+    label: "Support",
+    icon: HelpCircle,
+    element: <SupportDashboard />,
+  },
+
+  {
+    key: "settings",
+    title: "Account",
+    label: "Account",
+    icon: Settings,
     element: <UserAccountDashboard />,
+    restricted: true,
   },
 
   {

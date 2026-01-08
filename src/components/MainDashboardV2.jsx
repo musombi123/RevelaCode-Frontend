@@ -54,7 +54,9 @@ export default function MainDashboardV2() {
           <Menu />
         </button>
 
-        <h1 className="font-semibold">Dashboard</h1>
+        <h1 className="font-semibold">
+          {activeDashboard?.title || "Dashboard"}
+        </h1>
 
         <div className="text-sm font-medium bg-indigo-600 text-white px-3 py-1 rounded-full">
           {user?.username || "Guest"}
@@ -75,25 +77,29 @@ export default function MainDashboardV2() {
             </div>
 
             <nav className="p-2 space-y-1">
-              {DASHBOARDS.filter(d => !d.hidden).map(
-                ({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setActiveKey(key);
-                      setSidebarOpen(false);
-                    }}
-                    className={`flex items-center gap-3 w-full p-3 rounded-lg
-                      ${
-                        activeKey === key
-                          ? "bg-white/20"
-                          : "hover:bg-white/10"
-                      }`}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </button>
-                )
+              {DASHBOARDS.map(
+                ({ key, label, icon: Icon, restricted }) => {
+                  if (restricted && isGuest) return null;
+
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setActiveKey(key);
+                        setSidebarOpen(false);
+                      }}
+                      className={`flex items-center gap-3 w-full p-3 rounded-lg
+                        ${
+                          activeKey === key
+                            ? "bg-white/20"
+                            : "hover:bg-white/10"
+                        }`}
+                    >
+                      <Icon size={18} />
+                      {label}
+                    </button>
+                  );
+                }
               )}
             </nav>
           </motion.aside>
