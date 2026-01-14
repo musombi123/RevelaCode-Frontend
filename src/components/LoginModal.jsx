@@ -5,7 +5,7 @@ import LegalDocs from './LegalDocs';
 export default function StartModal({ onClose }) {
   const [isLogin, setIsLogin] = useState(true);
   const [fullName, setFullName] = useState('');
-  const [contact, setContact] = useState('');
+  const [contact, setContact] = useState(''); // email or phone
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,8 +13,8 @@ export default function StartModal({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
 
-  const { guestMode } = useAuth(); // ✅ NEW
-  const baseUrl = import.meta.env.VITE_API_URL;
+  const { guestMode, login } = useAuth(); // ✅ aligned with auth_gate
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,26 +32,28 @@ export default function StartModal({ onClose }) {
     }
 
     const endpoint = isLogin ? '/api/login' : '/api/register';
-    const payload = {
-      username: contact,
-      password,
-      ...(isLogin ? {} : { full_name: fullName }),
-    };
+
+    // 🔐 payload strictly matches backend schema
+    const payload = isLogin
+      ? { contact, password }
+      : { full_name: fullName, contact, password };
 
     try {
       setLoading(true);
       const res = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (res.ok) {
+
+      if (res.ok && data.success) {
+        login?.(data.user || data); // ✅ persist auth if provided
         setMessage(`✅ ${isLogin ? 'Login' : 'Registration'} successful!`);
-        setTimeout(onClose, 1500);
+        setTimeout(onClose, 800);
       } else {
-        setError(data.message || '❌ Failed to login/register.');
+        setError(data.message || '❌ Authentication failed.');
       }
     } catch (err) {
       console.error('❌ Server error:', err);
@@ -62,14 +64,19 @@ export default function StartModal({ onClose }) {
   };
 
   const handleGuestClick = () => {
-    guestMode();           // ✅ sets guest state and localStorage
-    onClose();             // ✅ close modal
+    guestMode(); // ✅ sets guest flag + localStorage
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 relative">
-        <button onClick={onClose} className="absolute top-2 right-3 text-gray-500 text-xl hover:text-red-500">✖</button>
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-3 text-gray-500 text-xl hover:text-red-500"
+        >
+          ✖
+        </button>
 
         <h2 className="text-xl font-bold mb-4 text-center text-indigo-600 dark:text-indigo-300">
           {isLogin ? '🔐 Login to RevelaCode' : '📝 Create an Account'}
@@ -83,6 +90,7 @@ export default function StartModal({ onClose }) {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full p-2 border rounded"
+              disabled={loading}
             />
           )}
 
@@ -92,6 +100,7 @@ export default function StartModal({ onClose }) {
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             className="w-full p-2 border rounded"
+            disabled={loading}
           />
 
           <input
@@ -100,6 +109,7 @@ export default function StartModal({ onClose }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 border rounded"
+            disabled={loading}
           />
 
           {!isLogin && (
@@ -109,6 +119,7 @@ export default function StartModal({ onClose }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full p-2 border rounded"
+              disabled={loading}
             />
           )}
 
@@ -124,22 +135,14 @@ export default function StartModal({ onClose }) {
           {error && <p className="text-red-600 text-sm">{error}</p>}
         </form>
 
-        {/* Switch login/register */}
         <div className="text-center text-sm mt-3 text-gray-600 dark:text-gray-400">
           {isLogin ? (
-            <>
-              Don't have an account?{' '}
-              <button onClick={() => setIsLogin(false)} className="text-blue-600 underline">Register</button>
-            </>
+            <>Don't have an account?{' '}<button onClick={() => setIsLogin(false)} className="text-blue-600 underline">Register</button></>
           ) : (
-            <>
-              Already have an account?{' '}
-              <button onClick={() => setIsLogin(true)} className="text-blue-600 underline">Login</button>
-            </>
+            <>Already have an account?{' '}<button onClick={() => setIsLogin(true)} className="text-blue-600 underline">Login</button></>
           )}
         </div>
 
-        {/* ✅ GUEST MODE BUTTON */}
         <div className="text-center mt-4">
           <button
             onClick={handleGuestClick}
@@ -149,15 +152,16 @@ export default function StartModal({ onClose }) {
           </button>
         </div>
 
-        {/* Terms */}
         <div className="text-center mt-2 text-xs text-gray-400">
           By continuing, you agree to our{' '}
-          <button onClick={() => setShowLegal(true)} className="underline hover:text-blue-600">
+          <button
+            onClick={() => setShowLegal(true)}
+            className="underline hover:text-blue-600"
+          >
             terms and policy
           </button>
         </div>
 
-        {/* Legal Modal */}
         {showLegal && <LegalDocs onClose={() => setShowLegal(false)} />}
       </div>
     </div>

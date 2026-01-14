@@ -7,35 +7,49 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const [mode, setMode] = useState("login"); // login | register
-  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const submit = async () => {
-    if (!username || !password) {
-      setError("Username and password are required.");
-      return;
+    if (mode === "register") {
+      if (!fullName || !contact || !password || !confirmPassword) {
+        setError("All fields are required.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+    } else {
+      if (!contact || !password) {
+        setError("Contact and password are required.");
+        return;
+      }
     }
 
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${baseUrl}/api/${mode === "login" ? "login" : "register"}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        }
-      );
+      const payload =
+        mode === "login"
+          ? { contact, password }
+          : { full_name: fullName, contact, password, confirm_password: confirmPassword };
+
+      const res = await fetch(`${baseUrl}/api/${mode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // pass user data to parent (which should call auth.login)
-        onLoginSuccess?.(data.user ?? data);
+        onLoginSuccess?.(data);
       } else {
         setError(data.message || "Authentication failed.");
       }
@@ -58,16 +72,24 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
           Prophecy decoding • Bible study • AI insight
         </p>
 
-        {error && (
-          <p className="text-xs text-red-500 text-center">{error}</p>
-        )}
+        {error && <p className="text-xs text-red-500 text-center">{error}</p>}
 
         <div className="space-y-2">
+          {mode === "register" && (
+            <input
+              className="w-full p-2 rounded border dark:bg-gray-900 dark:border-gray-700"
+              placeholder="Full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={loading}
+            />
+          )}
+
           <input
             className="w-full p-2 rounded border dark:bg-gray-900 dark:border-gray-700"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Email or phone"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
             disabled={loading}
           />
 
@@ -79,23 +101,22 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
+
+          {mode === "register" && (
+            <input
+              type="password"
+              className="w-full p-2 rounded border dark:bg-gray-900 dark:border-gray-700"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
+            />
+          )}
         </div>
 
-        <Button
-          onClick={submit}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2"
-        >
-          {mode === "login" ? (
-            <LogIn className="w-4 h-4" />
-          ) : (
-            <UserPlus className="w-4 h-4" />
-          )}
-          {loading
-            ? "Please wait..."
-            : mode === "login"
-            ? "Login"
-            : "Register"}
+        <Button onClick={submit} disabled={loading} className="w-full flex items-center justify-center gap-2">
+          {mode === "login" ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+          {loading ? "Please wait..." : mode === "login" ? "Login" : "Register"}
         </Button>
 
         <div className="flex justify-between text-xs text-gray-500">
@@ -104,23 +125,15 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
             className="hover:underline"
             disabled={loading}
           >
-            {mode === "login"
-              ? "Create an account"
-              : "Already have an account?"}
+            {mode === "login" ? "Create an account" : "Already have an account?"}
           </button>
 
-          <button
-            onClick={onGuest}
-            className="flex items-center gap-1 hover:underline"
-            disabled={loading}
-          >
+          <button onClick={onGuest} className="flex items-center gap-1 hover:underline" disabled={loading}>
             <Eye className="w-4 h-4" /> Continue as guest
           </button>
         </div>
 
-        <p className="text-xs text-center text-gray-400">
-          Guest mode: Bible & events only
-        </p>
+        <p className="text-xs text-center text-gray-400">Guest mode: Bible & events only</p>
       </div>
     </div>
   );
