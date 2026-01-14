@@ -12,10 +12,17 @@ export default function AIAssistantDashboard() {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const convertToNaturalLanguage = (obj) => {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch {
+      return "⚠️ Unable to display response.";
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -34,23 +41,29 @@ export default function AIAssistantDashboard() {
         }
       );
 
-      const data = await res.json();
+      const responseJson = await res.json();
 
-      let replyText = "⚠️ Unexpected response.";
+      let assistantReply = "⚠️ Unexpected response.";
 
-      if (data?.success) {
-        if (data.data?.content) {
-          replyText = data.data.content;
+      if (responseJson?.success) {
+        const modelOutput = responseJson.data;
+
+        // ✅ YOUR REQUESTED LOGIC (FRONTEND-ADAPTED)
+        if (typeof modelOutput === "string") {
+          assistantReply = modelOutput;
+        } else if (modelOutput?.content) {
+          assistantReply = modelOutput.content;
         } else {
-          replyText = JSON.stringify(data.data, null, 2);
+          assistantReply = convertToNaturalLanguage(modelOutput);
         }
       } else {
-        replyText = data?.error?.message || "Error occurred.";
+        assistantReply =
+          responseJson?.error?.message || "Error occurred.";
       }
 
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: replyText },
+        { role: "assistant", text: assistantReply },
       ]);
     } catch (err) {
       setMessages((prev) => [
