@@ -39,41 +39,34 @@ export default function AIAssistantDashboard() {
     try {
       let res;
 
-      // ✅ FILE UPLOAD → FormData
       if (uploadFile) {
         const formData = new FormData();
         formData.append("message", userMessage.text);
         formData.append("file", uploadFile);
 
-        res = await fetch(
-          `${import.meta.env.VITE_REVELAAI_URL}/ai`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-      }
-      // ✅ NORMAL MESSAGE → JSON
-      else {
-        res = await fetch(
-          `${import.meta.env.VITE_REVELAAI_URL}/ai`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message: userMessage.text }),
-          }
-        );
+        res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/ai`, {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/ai`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage.text }),
+        });
       }
 
       const responseJson = await res.json();
       let assistantReply = "⚠️ Unexpected response.";
+      let imageUrl = null;
 
       if (responseJson?.success) {
         const modelOutput = responseJson.data;
 
-        if (typeof modelOutput === "string") {
+        if (modelOutput?.type === "image") {
+          assistantReply = "🎨 Image generation in progress…";
+          imageUrl = modelOutput.poll_url;
+        } else if (typeof modelOutput === "string") {
           assistantReply = modelOutput;
         } else if (modelOutput?.content) {
           assistantReply = modelOutput.content;
@@ -87,11 +80,15 @@ export default function AIAssistantDashboard() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: assistantReply },
+        {
+          role: "assistant",
+          text: assistantReply,
+          imageUrl,
+        },
       ]);
 
       setUploadFile(null);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "🚨 Server unreachable." },
@@ -113,7 +110,7 @@ export default function AIAssistantDashboard() {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`p-3 rounded-xl max-w-[85%] whitespace-pre-wrap
+            className={`p-3 rounded-xl max-w-[85%]
               ${
                 msg.role === "assistant"
                   ? "bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
@@ -125,9 +122,23 @@ export default function AIAssistantDashboard() {
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                   🤖 RevelaAI
                 </div>
-                <div className="bg-white/40 dark:bg-black/20 rounded-lg p-3 leading-relaxed">
+
+                <div className="max-h-64 overflow-y-auto bg-white/40 dark:bg-black/20 rounded-lg p-3 whitespace-pre-wrap">
                   {msg.text}
                 </div>
+
+                {msg.imageUrl && (
+                  <div className="pt-2">
+                    <a
+                      href={msg.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-green-600 underline"
+                    >
+                      View generated image →
+                    </a>
+                  </div>
+                )}
               </div>
             ) : (
               msg.text
@@ -152,7 +163,6 @@ export default function AIAssistantDashboard() {
           onClick={() =>
             setInput("Create a professional copy-paste document for me.")
           }
-          title="Document"
         >
           <FileText className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
@@ -161,23 +171,26 @@ export default function AIAssistantDashboard() {
           onClick={() =>
             setInput("Generate an image or visual design concept.")
           }
-          title="Image / Design"
         >
           <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
       </div>
 
-      {/* Input */}
+      {/* ✅ FIXED INPUT (SCROLLABLE & EDITABLE) */}
       <div className="p-3 flex gap-2 border-t">
-        <input
-          type="text"
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           placeholder="Ask, create, design, analyze…"
-          className="flex-1 rounded-lg border px-3 py-2 text-sm
-                     bg-white text-black
-                     dark:bg-gray-900 dark:text-white"
+          rows={3}
+          className="flex-1 resize-y max-h-40 overflow-y-auto rounded-lg border px-3 py-2 text-sm
+                     bg-white text-black dark:bg-gray-900 dark:text-white"
         />
         <button
           onClick={sendMessage}
