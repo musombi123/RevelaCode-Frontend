@@ -17,11 +17,33 @@ export default function AIAssistantDashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const convertToNaturalLanguage = (obj) => {
+  // 🔁 Poll Replicate until image is ready
+  const pollImage = async (pollUrl, index) => {
     try {
-      return JSON.stringify(obj, null, 2);
+      const res = await fetch(pollUrl);
+      const data = await res.json();
+
+      if (data.status === "succeeded" && data.output?.[0]) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            imageUrl: data.output[0],
+            text: "🎨 Image generated successfully",
+          };
+          return updated;
+        });
+      } else if (data.status === "failed") {
+        throw new Error("Image generation failed");
+      } else {
+        setTimeout(() => pollImage(pollUrl, index), 2000);
+      }
     } catch {
-      return "⚠️ Unable to display response.";
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[index].text = "❌ Failed to generate image.";
+        return updated;
+      });
     }
   };
 
@@ -57,36 +79,32 @@ export default function AIAssistantDashboard() {
       }
 
       const responseJson = await res.json();
-      let assistantReply = "⚠️ Unexpected response.";
-      let imageUrl = null;
+
+      let assistantMessage = {
+        role: "assistant",
+        text: "⚠️ Unexpected response.",
+      };
 
       if (responseJson?.success) {
-        const modelOutput = responseJson.data;
+        const data = responseJson.data;
 
-        if (modelOutput?.type === "image") {
-          assistantReply = "🎨 Image generation in progress…";
-          imageUrl = modelOutput.poll_url;
-        } else if (typeof modelOutput === "string") {
-          assistantReply = modelOutput;
-        } else if (modelOutput?.content) {
-          assistantReply = modelOutput.content;
-        } else {
-          assistantReply = convertToNaturalLanguage(modelOutput);
+        if (data?.type === "image" && data.poll_url) {
+          assistantMessage.text = "🎨 Generating image…";
+          const index = messages.length + 1;
+
+          setMessages((prev) => [...prev, assistantMessage]);
+          pollImage(data.poll_url, index);
+          return;
         }
+
+        assistantMessage.text =
+          data?.content ||
+          (typeof data === "string" ? data : JSON.stringify(data, null, 2));
       } else {
-        assistantReply =
-          responseJson?.error?.message || "Error occurred.";
+        assistantMessage.text = responseJson?.error?.message || "Error occurred.";
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: assistantReply,
-          imageUrl,
-        },
-      ]);
-
+      setMessages((prev) => [...prev, assistantMessage]);
       setUploadFile(null);
     } catch {
       setMessages((prev) => [
@@ -123,21 +141,18 @@ export default function AIAssistantDashboard() {
                   🤖 RevelaAI
                 </div>
 
-                <div className="max-h-64 overflow-y-auto bg-white/40 dark:bg-black/20 rounded-lg p-3 whitespace-pre-wrap">
+                {/* ✅ AI TEXT — NO SCROLL LIMIT */}
+                <div className="bg-white/40 dark:bg-black/20 rounded-lg p-3 whitespace-pre-wrap">
                   {msg.text}
                 </div>
 
+                {/* ✅ IMAGE RENDER */}
                 {msg.imageUrl && (
-                  <div className="pt-2">
-                    <a
-                      href={msg.imageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-green-600 underline"
-                    >
-                      View generated image →
-                    </a>
-                  </div>
+                  <img
+                    src={msg.imageUrl}
+                    alt="Generated"
+                    className="rounded-lg mt-2 max-w-full border"
+                  />
                 )}
               </div>
             ) : (
@@ -159,24 +174,16 @@ export default function AIAssistantDashboard() {
           />
         </label>
 
-        <button
-          onClick={() =>
-            setInput("Create a professional copy-paste document for me.")
-          }
-        >
+        <button onClick={() => setInput("Create a professional document.")}>
           <FileText className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
 
-        <button
-          onClick={() =>
-            setInput("Generate an image or visual design concept.")
-          }
-        >
+        <button onClick={() => setInput("Generate an image or logo.")}>
           <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
       </div>
 
-      {/* ✅ FIXED INPUT (SCROLLABLE & EDITABLE) */}
+      {/* Input */}
       <div className="p-3 flex gap-2 border-t">
         <textarea
           value={input}
@@ -187,10 +194,10 @@ export default function AIAssistantDashboard() {
               sendMessage();
             }
           }}
-          placeholder="Ask, create, design, analyze…"
           rows={3}
-          className="flex-1 resize-y max-h-40 overflow-y-auto rounded-lg border px-3 py-2 text-sm
+          className="flex-1 resize-y rounded-lg border px-3 py-2 text-sm
                      bg-white text-black dark:bg-gray-900 dark:text-white"
+          placeholder="Ask, create, design, analyze…"
         />
         <button
           onClick={sendMessage}
