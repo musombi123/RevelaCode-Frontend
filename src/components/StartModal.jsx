@@ -146,8 +146,10 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
   };
 
   const handleGuestClick = () => {
+    // Trigger guest mode AND close modal
     guestMode?.();
     onGuest?.();
+    setMode(null); // Close modal
   };
 
   /* -------------------- RENDER MODAL -------------------- */
