@@ -29,27 +29,14 @@ export default function ProphecyEventsDashboard() {
       setError("");
 
       try {
-        const res = await fetch(`${baseUrl}/api/events`, {
-          headers: { "Content-Type": "application/json" },
-        });
+        const res = await fetch(`${baseUrl}/api/events`);
 
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
 
-        // 🔒 Normalize ALL known backend shapes
-        const normalized =
-          Array.isArray(data)
-            ? data
-            : Array.isArray(data?.events)
-            ? data.events
-            : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.data?.events)
-            ? data.data.events
-            : [];
+        // backend returns { status, message, events: [] }
+        const normalized = Array.isArray(data?.events) ? data.events : [];
 
         setEvents(normalized);
       } catch (err) {
@@ -60,11 +47,7 @@ export default function ProphecyEventsDashboard() {
     };
 
     if (baseUrl) loadEvents();
-  }, []);
-
-  /* ------------------------------
-     Derived Filters (SAFE)
-  ------------------------------ */
+  }, [baseUrl]);
 
   const locations = useMemo(() => {
     const set = new Set();
@@ -76,8 +59,7 @@ export default function ProphecyEventsDashboard() {
 
   const filtered = useMemo(() => {
     return events.filter((e) => {
-      const categoryMatch =
-        !category || e?.matched_symbols?.includes(category);
+      const categoryMatch = !category || e?.matched_symbols?.includes(category);
 
       const locationMatch =
         !location ||
@@ -99,7 +81,7 @@ export default function ProphecyEventsDashboard() {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-indigo-600">
+      <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-300">
         🌍 Global Prophetic Events
       </h3>
 
@@ -111,7 +93,7 @@ export default function ProphecyEventsDashboard() {
             setCategory(e.target.value);
             setPage(1);
           }}
-          className="border rounded-lg px-3 py-2 text-sm"
+          className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
         >
           <option value="">All Categories</option>
           {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -127,7 +109,7 @@ export default function ProphecyEventsDashboard() {
             setLocation(e.target.value);
             setPage(1);
           }}
-          className="border rounded-lg px-3 py-2 text-sm"
+          className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
         >
           <option value="">All Locations</option>
           {locations.map((loc) => (
@@ -142,8 +124,9 @@ export default function ProphecyEventsDashboard() {
             onClick={() => {
               setCategory("");
               setLocation("");
+              setPage(1);
             }}
-            className="text-xs text-red-600 underline"
+            className="text-xs text-red-600 underline dark:text-red-400"
           >
             Clear filters
           </button>
@@ -153,7 +136,9 @@ export default function ProphecyEventsDashboard() {
       {/* Events */}
       <div className="grid gap-4">
         {paged.length === 0 ? (
-          <p className="text-sm text-gray-500">No events found.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No events found.
+          </p>
         ) : (
           paged.map((e, idx) => (
             <Card key={idx} className="hover:shadow-md transition">
@@ -162,39 +147,45 @@ export default function ProphecyEventsDashboard() {
                   href={e.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-blue-600 hover:underline"
+                  className="font-semibold text-black dark:text-white hover:underline"
                 >
                   {e.headline || "Untitled Event"}
                 </a>
 
                 {e.description && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-black dark:text-white">
                     {e.description}
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-2 text-xs">
                   {e.publishedAt && (
-                    <span>
+                    <span className="text-gray-500 dark:text-gray-400">
                       🗓 {new Date(e.publishedAt).toLocaleDateString()}
                     </span>
                   )}
-                  {e.source && <span>— {e.source}</span>}
+
+                  {e.source && (
+                    <span className="text-gray-500 dark:text-gray-400">
+                      — {e.source}
+                    </span>
+                  )}
 
                   {e.location?.country && (
-                    <span className="px-2 py-0.5 rounded bg-gray-200">
+                    <span className="px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white">
                       📍 {e.location.country}
                     </span>
                   )}
 
-                  {e.matched_symbols?.map((cat) => (
-                    <span
-                      key={cat}
-                      className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700"
-                    >
-                      {CATEGORY_LABELS[cat] || cat}
-                    </span>
-                  ))}
+                  {Array.isArray(e.matched_symbols) &&
+                    e.matched_symbols.map((cat) => (
+                      <span
+                        key={cat}
+                        className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200"
+                      >
+                        {CATEGORY_LABELS[cat] || cat}
+                      </span>
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -211,7 +202,9 @@ export default function ProphecyEventsDashboard() {
           >
             ← Prev
           </button>
+
           <span>Page {page}</span>
+
           <button
             disabled={page * ITEMS_PER_PAGE >= filtered.length}
             onClick={() => setPage((p) => p + 1)}

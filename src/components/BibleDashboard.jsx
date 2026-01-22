@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/Card';
-import { ScrollArea } from '@/components/ui/ScrollArea';
+import React, { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { ScrollArea } from "@/components/ui/ScrollArea";
+import { useAuth } from "@/context/AuthContext";
 
 const oldTestament = [
   "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
@@ -18,6 +19,7 @@ const newTestament = [
 ];
 
 export default function BibleDashboard() {
+  const { user } = useAuth();
   const [bibleData, setBibleData] = useState({});
   const [bookKeys, setBookKeys] = useState([]);
   const [selectedBookKey, setSelectedBookKey] = useState('');
@@ -28,15 +30,16 @@ export default function BibleDashboard() {
   const [highlightedVerseIndex, setHighlightedVerseIndex] = useState(null);
   const [searchError, setSearchError] = useState('');
 
+  // Load offline Bible JSON
   useEffect(() => {
     const fetchBibleData = async () => {
       try {
-        const response = await fetch('/data/kjv.json'); 
-        const data = await response.json();
+        const res = await fetch('/data/kjv.json');
+        const data = await res.json();
         setBibleData(data);
         setBookKeys(Object.keys(data));
-      } catch (error) {
-        console.error('📦 Failed to load Bible data:', error);
+      } catch (err) {
+        console.error('📦 Failed to load Bible data:', err);
       }
     };
     fetchBibleData();
@@ -84,6 +87,21 @@ export default function BibleDashboard() {
     }, 100);
   };
 
+  const askAI = () => {
+    if (!searchInput.trim()) return;
+    // Send the searchInput to RevelaAI endpoint
+    fetch(`${import.meta.env.VITE_REVELAAI_URL}/ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: searchInput }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        alert(`🤖 RevelaAI says:\n${data.data?.content || JSON.stringify(data)}`);
+      })
+      .catch((err) => console.error('❌ AI request failed:', err));
+  };
+
   const handleBookClick = (key) => {
     setSelectedBookKey(key);
     setSelectedChapterIndex(null);
@@ -100,20 +118,14 @@ export default function BibleDashboard() {
   };
 
   const handleBack = () => {
-    if (viewLevel === 'verses') {
-      setViewLevel('chapters');
-    } else if (viewLevel === 'chapters') {
-      setViewLevel('books');
-      setSelectedBookKey('');
-    }
+    if (viewLevel === 'verses') setViewLevel('chapters');
+    else if (viewLevel === 'chapters') setViewLevel('books');
   };
 
   const selectedBook = bibleData[selectedBookKey];
-
   const oldBooks = bookKeys
     .filter((key) => oldTestament.includes(bibleData[key]?.book))
     .sort((a, b) => oldTestament.indexOf(bibleData[a].book) - oldTestament.indexOf(bibleData[b].book));
-
   const newBooks = bookKeys
     .filter((key) => newTestament.includes(bibleData[key]?.book))
     .sort((a, b) => newTestament.indexOf(bibleData[a].book) - newTestament.indexOf(bibleData[b].book));
@@ -137,10 +149,19 @@ export default function BibleDashboard() {
         >
           Search
         </button>
+        <button
+          onClick={askAI}
+          disabled={!searchInput.trim()}
+          className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        >
+          Ask RevelaAI
+        </button>
       </div>
 
       {searchError && <p className="text-sm text-red-500">{searchError}</p>}
-      {viewLevel !== 'books' && <button onClick={handleBack} className="text-blue-500 underline text-sm">← Back</button>}
+      {viewLevel !== 'books' && (
+        <button onClick={handleBack} className="text-blue-500 underline text-sm">← Back</button>
+      )}
 
       {/* Books */}
       {viewLevel === 'books' && (

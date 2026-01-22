@@ -1,4 +1,3 @@
-// src/components/UserAccountDashboard.jsx
 import React, { useState, Suspense } from "react";
 import {
   User,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import Loading from "./common/Loading";
 
-// Dashboards
+// Lazy-loaded dashboards
 const PreferencesDashboard = React.lazy(() => import("./PreferencesDashboard"));
 const HistoryDashboard = React.lazy(() => import("./HistoryDashboard"));
 const AIAssistantDashboard = React.lazy(() => import("./AIAssistantDashboard"));
@@ -25,7 +24,7 @@ const SupportCenter = React.lazy(() => import("./SupportCenter"));
 const HelpModal = React.lazy(() => import("./HelpModal"));
 const LegalDocs = React.lazy(() => import("./LegalDocs"));
 
-// Profile placeholder
+// Profile panel
 function ProfileView({ user }) {
   if (!user) {
     return (
@@ -69,6 +68,7 @@ export default function UserAccountDashboard({ user, onLogout }) {
     { key: "terms", label: "Terms of Service", icon: FileText },
   ];
 
+  // Render content based on active view
   const renderContent = () => {
     switch (activeView) {
       case "profile":
@@ -133,7 +133,7 @@ export default function UserAccountDashboard({ user, onLogout }) {
           ))}
         </nav>
 
-        {/* Logout */}
+        {/* Logout button */}
         {onLogout && (
           <button
             onClick={onLogout}

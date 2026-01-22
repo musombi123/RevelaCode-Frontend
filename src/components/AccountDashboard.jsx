@@ -1,37 +1,48 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import {
-  Mail, Facebook, Instagram, MessageCircle, Bot,
-  Twitter, Linkedin
-} from 'lucide-react';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Mail, Facebook, Instagram, MessageCircle, Bot, Twitter, Linkedin } from "lucide-react";
 
-const baseUrl = import.meta.env.VITE_API_URL;
+const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const integrations = [
-  { name: 'Google', icon: Mail, oauth: true, connected: false },
-  { name: 'Facebook', icon: Facebook, oauth: true, connected: false },
-  { name: 'Instagram', icon: Instagram, oauth: false, connected: false },
-  { name: 'TikTok', icon: MessageCircle, oauth: false, connected: false },
-  { name: 'LinkedIn', icon: Linkedin, oauth: true, connected: false },
-  { name: 'Twitter', icon: Twitter, oauth: true, connected: false },
-  { name: 'WhatsApp', icon: MessageCircle, oauth: false, connected: false },
-  { name: 'ChatGPT', icon: Bot, oauth: false, connected: true }
+  { name: "Google", icon: Mail, oauth: false, connected: false },
+  { name: "Facebook", icon: Facebook, oauth: false, connected: false },
+  { name: "Instagram", icon: Instagram, oauth: false, connected: false },
+  { name: "TikTok", icon: MessageCircle, oauth: false, connected: false },
+  { name: "LinkedIn", icon: Linkedin, oauth: false, connected: false },
+  { name: "Twitter", icon: Twitter, oauth: false, connected: false },
+  { name: "WhatsApp", icon: MessageCircle, oauth: false, connected: false },
+  { name: "ChatGPT", icon: Bot, oauth: false, connected: true }
 ];
 
 export default function AccountDashboard() {
-  const handleConnect = (platform) => {
-    const oauthRoutes = {
-      Google: `${baseUrl}/auth/google`,
-      Facebook: `${baseUrl}/auth/facebook`,
-      Twitter: `${baseUrl}/auth/twitter`,
-      LinkedIn: `${baseUrl}/auth/linkedin`
-    };
+  const handleConnect = async (platform) => {
+    try {
+      // Only handle OAuth for platforms that have backend routes
+      if (platform.oauth) {
+        alert(`🔐 OAuth login not yet implemented for ${platform.name}`);
+        return;
+      }
 
-    if (platform.oauth && oauthRoutes[platform.name]) {
-      window.location.href = oauthRoutes[platform.name];
-    } else {
-      alert(`🔐 OAuth login not available for ${platform.name}`);
+      // For non-OAuth platforms, example: guest account check
+      if (platform.name === "ChatGPT") {
+        alert("Already connected to ChatGPT");
+        return;
+      }
+
+      // Example: call backend guest route
+      const response = await fetch(`${baseUrl}/api/guest`);
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`✅ Guest account access granted: ${data.message}`);
+      } else {
+        alert(`❌ Could not connect: ${data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Error connecting to ${platform.name}: ${err.message}`);
     }
   };
 
@@ -61,11 +72,11 @@ export default function AccountDashboard() {
                 </div>
                 <Button
                   size="sm"
-                  variant={platform.connected ? 'secondary' : 'default'}
+                  variant={platform.connected ? "secondary" : "default"}
                   disabled={platform.connected}
                   onClick={() => handleConnect(platform)}
                 >
-                  {platform.connected ? '✓ Connected' : 'Connect'}
+                  {platform.connected ? "✓ Connected" : "Connect"}
                 </Button>
               </div>
             );

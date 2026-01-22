@@ -1,211 +1,237 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { Send, Bot, Upload, Image as ImageIcon, FileText } from "lucide-react";
+import React, { useState, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bot, Menu, ArrowLeft, Bell, Sun, Moon } from "lucide-react";
 
-export default function AIAssistantDashboard() {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "👋 Hi! I’m RevelaAI. Ask me anything biblical, creative, or technical.",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [uploadFile, setUploadFile] = useState(null);
-  const messagesEndRef = useRef(null);
+import { DASHBOARDS } from "./dashboardConfig.jsx";
+import Loading from "./common/Loading.jsx";
+import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
+import StartModal from "./StartModal.jsx";
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+import { useTheme } from "@/components/hooks/useTheme.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
 
-  // 🔁 Poll Replicate until image is ready
-  const pollImage = async (pollUrl, index) => {
-    try {
-      const res = await fetch(pollUrl);
-      const data = await res.json();
+export default function MainDashboardV2() {
+  const { user, isGuest, loading, login, guestMode } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // Theme toggle
 
-      if (data.status === "succeeded" && data.output?.[0]) {
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[index] = {
-            ...updated[index],
-            imageUrl: data.output[0],
-            text: "🎨 Image generated successfully",
-          };
-          return updated;
-        });
-      } else if (data.status === "failed") {
-        throw new Error("Image generation failed");
-      } else {
-        setTimeout(() => pollImage(pollUrl, index), 2000);
-      }
-    } catch {
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[index].text = "❌ Failed to generate image.";
-        return updated;
-      });
-    }
-  };
+  const defaultKey = DASHBOARDS.find((d) => d.default)?.key || "home";
+  const [activeKey, setActiveKey] = useState(defaultKey);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(!user && !isGuest);
 
-  const sendMessage = async () => {
-    if (!input.trim() && !uploadFile) return;
+  const activeDashboard =
+    DASHBOARDS.find((d) => d.key === activeKey) || DASHBOARDS[0];
 
-    const userMessage = {
-      role: "user",
-      text: input || "📎 Uploaded a file for analysis",
-    };
+  const isDark = theme === "dark";
+  const textClass = isDark ? "text-white" : "text-black";
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-
-    try {
-      let res;
-
-      if (uploadFile) {
-        const formData = new FormData();
-        formData.append("message", userMessage.text);
-        formData.append("file", uploadFile);
-
-        res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/ai`, {
-          method: "POST",
-          body: formData,
-        });
-      } else {
-        res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/ai`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userMessage.text }),
-        });
-      }
-
-      const responseJson = await res.json();
-
-      let assistantMessage = {
-        role: "assistant",
-        text: "⚠️ Unexpected response.",
-      };
-
-      if (responseJson?.success) {
-        const data = responseJson.data;
-
-        if (data?.type === "image" && data.poll_url) {
-          assistantMessage.text = "🎨 Generating image…";
-          const index = messages.length + 1;
-
-          setMessages((prev) => [...prev, assistantMessage]);
-          pollImage(data.poll_url, index);
-          return;
-        }
-
-        assistantMessage.text =
-          data?.content ||
-          (typeof data === "string" ? data : JSON.stringify(data, null, 2));
-      } else {
-        assistantMessage.text = responseJson?.error?.message || "Error occurred.";
-      }
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setUploadFile(null);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: "🚨 Server unreachable." },
-      ]);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 border-b">
-        <Bot className="w-5 h-5 text-green-500" />
-        <h3 className="font-semibold text-black dark:text-white">
-          RevelaAI Assistant
-        </h3>
-      </CardHeader>
+    <div
+      className={`min-h-screen relative overflow-hidden ${
+        isDark ? "bg-gray-950" : "bg-gray-100"
+      } ${textClass}`}
+    >
+      {/* ================= HEADER ================= */}
+      <header
+        className={`flex items-center justify-between p-4 border-b ${
+          isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+        }`}
+      >
+        <button onClick={() => setSidebarOpen(true)}>
+          <Menu className={textClass} />
+        </button>
 
-      {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto space-y-4 text-sm">
-        {messages.map((msg, idx) => (
+        <h1 className={`font-semibold ${textClass}`}>
+          {activeDashboard?.title || "Dashboard"}
+        </h1>
+
+        <div className="flex items-center gap-3">
+          {/* Notification */}
+          <button className="relative">
+            <Bell className={textClass} size={18} />
+            <span className="absolute top-0 right-0 inline-flex w-2 h-2 rounded-full bg-red-500" />
+          </button>
+
+          {/* Theme toggle */}
+          <button onClick={toggleTheme}>
+            {isDark ? <Sun className={textClass} size={18} /> : <Moon className={textClass} size={18} />}
+          </button>
+
+          {/* User Avatar */}
           <div
-            key={idx}
-            className={`p-3 rounded-xl max-w-[85%]
-              ${
-                msg.role === "assistant"
-                  ? "bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
-                  : "bg-green-600 text-white ml-auto"
-              }`}
+            className={`text-sm font-medium px-3 py-1 rounded-full ${
+              isDark ? "bg-indigo-700 text-white" : "bg-indigo-600 text-white"
+            }`}
           >
-            {msg.role === "assistant" ? (
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  🤖 RevelaAI
-                </div>
-
-                {/* ✅ AI TEXT — NO SCROLL LIMIT */}
-                <div className="bg-white/40 dark:bg-black/20 rounded-lg p-3 whitespace-pre-wrap">
-                  {msg.text}
-                </div>
-
-                {/* ✅ IMAGE RENDER */}
-                {msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="Generated"
-                    className="rounded-lg mt-2 max-w-full border"
-                  />
-                )}
-              </div>
-            ) : (
-              msg.text
-            )}
+            {user?.username || "Guest"}
           </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </CardContent>
+        </div>
+      </header>
 
-      {/* Action Bar */}
-      <div className="px-3 py-2 flex items-center gap-2 border-t bg-gray-50 dark:bg-gray-900">
-        <label className="cursor-pointer">
-          <Upload className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          <input
-            type="file"
-            hidden
-            onChange={(e) => setUploadFile(e.target.files[0])}
-          />
-        </label>
+      {/* ================= SIDEBAR ================= */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.aside
+            initial={{ x: -260 }}
+            animate={{ x: 0 }}
+            exit={{ x: -260 }}
+            className={`fixed inset-y-0 left-0 w-64 z-50 shadow-2xl ${
+              isDark ? "bg-gray-900 text-white" : "bg-white text-black"
+            }`}
+          >
+            <div className="p-4 font-bold text-lg border-b border-white/10">
+              RevelaCode
+            </div>
+            <nav className="p-2 space-y-1">
+              {DASHBOARDS.map(({ key, label, icon: Icon, restricted }) => {
+                if (restricted && isGuest) return null;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setActiveKey(key);
+                      setSidebarOpen(false);
+                    }}
+                    className={`flex items-center gap-3 w-full p-3 rounded-lg transition
+                      ${
+                        activeKey === key
+                          ? "bg-indigo-600 text-white"
+                          : isDark
+                          ? "hover:bg-gray-700"
+                          : "hover:bg-gray-200"
+                      }`}
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </button>
+                );
+              })}
+            </nav>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
-        <button onClick={() => setInput("Create a professional document.")}>
-          <FileText className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-        </button>
+      {/* ================= MAIN CONTENT ================= */}
+      <main className="p-6">
+        <Suspense fallback={<Loading />}>
+          <ErrorBoundary>
+            {DASHBOARDS.map(({ key, element, restricted }) => {
+              if (restricted && isGuest) return null;
+              return key === activeKey ? <div key={key}>{element}</div> : null;
+            })}
 
-        <button onClick={() => setInput("Generate an image or logo.")}>
-          <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-        </button>
-      </div>
+            {activeKey === "home" && (
+              <div className="space-y-6">
+                <h2 className={`text-2xl font-semibold ${textClass}`}>
+                  👋 Welcome, {user?.username || "Guest"}!
+                </h2>
+                <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                  Explore daily prophecy, AI insights, and RevelaCode features.
+                </p>
 
-      {/* Input */}
-      <div className="p-3 flex gap-2 border-t">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
+                <div className="p-4 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <h3 className={`font-medium mb-2 ${textClass}`}>🌟 Daily Greeting</h3>
+                  <p className={`text-sm ${textClass}`}>
+                    {[
+                      "Stay blessed today!",
+                      "Seek wisdom in every moment.",
+                      "Prophecies guide your steps.",
+                      "Explore the divine insights.",
+                    ][Math.floor(Math.random() * 4)]}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <h3 className={`font-medium mb-2 ${textClass}`}>🤖 AI-Assisted Insights</h3>
+                  <Suspense fallback={<p className={textClass}>Loading...</p>}>
+                    <iframe
+                      src={`${import.meta.env.VITE_REVELAAI_URL}/daily`}
+                      className="w-full h-48 border rounded"
+                      title="RevelaAI Daily Insights"
+                    />
+                  </Suspense>
+                </div>
+
+                <div className="p-4 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <h3 className={`font-medium mb-2 ${textClass}`}>🌍 Prophecy Events</h3>
+                  <p className={`text-sm ${textClass}`}>
+                    View latest events decoded and categorized by RevelaAI.
+                  </p>
+                  <Suspense fallback={<p className={textClass}>Loading events...</p>}>
+                    {DASHBOARDS.find((d) => d.key === "events")?.element}
+                  </Suspense>
+                </div>
+              </div>
+            )}
+          </ErrorBoundary>
+        </Suspense>
+      </main>
+
+      {/* ================= AI FLOAT BUTTON ================= */}
+      <AnimatePresence>
+        {aiOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-gradient-to-r from-green-600 to-lime-500 z-50 text-white"
+          >
+            <AIAssistantOverlay onClose={() => setAiOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button
+        onClick={() => setAiOpen(true)}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-green-600 to-lime-500 text-white p-4 rounded-full shadow-xl"
+        title="RevelaAI"
+      >
+        <Bot />
+      </button>
+
+      {/* ================= START MODAL ================= */}
+      {showStartModal && (
+        <StartModal
+          onLoginSuccess={(user) => {
+            login(user);
+            setShowStartModal(false);
           }}
-          rows={3}
-          className="flex-1 resize-y rounded-lg border px-3 py-2 text-sm
-                     bg-white text-black dark:bg-gray-900 dark:text-white"
-          placeholder="Ask, create, design, analyze…"
+          onGuest={() => setShowStartModal(false)}
         />
+      )}
+    </div>
+  );
+}
+
+/* -------------------- AI OVERLAY COMPONENT -------------------- */
+function AIAssistantOverlay({ onClose }) {
+  const [aiKey, setAiKey] = useState(0); // force remount to clear history if needed
+
+  return (
+    <div className="h-full flex flex-col">
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-white/10 flex-shrink-0">
         <button
-          onClick={sendMessage}
-          className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
+          onClick={onClose}
+          className="flex items-center gap-2 opacity-80 hover:opacity-100"
         >
-          <Send className="w-4 h-4" />
+          <ArrowLeft size={18} /> Back
         </button>
-      </div>
-    </Card>
+        <h2 className="font-semibold truncate">RevelaAI</h2>
+      </header>
+      <Suspense fallback={<Loading />}>
+        <ErrorBoundary key={aiKey}>
+          {DASHBOARDS.find((d) => d.key === "ai")?.element}
+        </ErrorBoundary>
+      </Suspense>
+    </div>
   );
 }
