@@ -6,31 +6,16 @@ export default function LegalDocs({ onClose }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Use environment variable or fallback
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // --- Fetch document from backend ---
   const fetchDoc = async (type) => {
     setLoading(true);
     try {
       const res = await fetch(`${baseUrl}/api/legal/${type}`);
-      if (!res.ok) {
-        throw new Error(`Failed to load ${type}: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Failed to load ${type}: ${res.status}`);
       const data = await res.json();
-
-      // Use content from backend or fallback
-      if (typeof data.content === "string") {
-        setContent(data.content);
-      } else {
-        setContent(
-          type === "privacy"
-            ? "<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>"
-            : "<h3>Terms of Service</h3><p>Use this app responsibly. Lorem ipsum dolor sit amet...</p>"
-        );
-      }
-    } catch (err) {
-      console.warn(err);
+      setContent(typeof data.content === "string" ? data.content : "");
+    } catch {
       setContent(
         type === "privacy"
           ? "<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>"
@@ -41,25 +26,24 @@ export default function LegalDocs({ onClose }) {
     }
   };
 
-  // Fetch content whenever activeTab changes
   useEffect(() => {
     fetchDoc(activeTab);
   }, [activeTab]);
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl p-6 relative">
+    <div className="fixed inset-0 z-50 bg-black/70 flex flex-col items-center justify-center p-2">
+      <div className="relative w-full h-full max-w-full max-h-full bg-white dark:bg-gray-900 rounded-none shadow-xl p-6 overflow-hidden flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-2 right-3 text-gray-500 text-xl hover:text-red-500"
+          className="absolute top-3 right-3 text-gray-500 text-2xl hover:text-red-500"
           aria-label="Close Legal Docs"
         >
           ✖
         </button>
 
         {/* Header */}
-        <h2 className="text-xl font-bold mb-4 text-center text-indigo-600 dark:text-indigo-300">
+        <h2 className="text-2xl font-bold mb-4 text-center text-indigo-600 dark:text-indigo-300">
           📜 Legal Documents
         </h2>
 
@@ -80,7 +64,7 @@ export default function LegalDocs({ onClose }) {
         </div>
 
         {/* Content */}
-        <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert">
+        <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert">
           {loading ? (
             <p>🔄 Loading...</p>
           ) : (
