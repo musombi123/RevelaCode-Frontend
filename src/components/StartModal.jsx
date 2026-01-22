@@ -65,7 +65,7 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
         onLoginSuccess?.(userData);
       } else {
         setStep("verify");
-        setMessage("📩 Verification code sent to your contact.");
+        setMessage(`📩 Verification code sent to ${contact}. ${data.debug_code ? "(Debug: " + data.debug_code + ")" : ""}`);
       }
     } catch (err) {
       setError(err.message || "❌ Server error.");
@@ -82,7 +82,6 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
 
     try {
       setLoading(true);
-      // Corrected verify endpoint
       const res = await fetch(`${baseUrl}/api/verify-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +93,7 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
         throw new Error(data.message || "Verification failed");
       }
 
-      // After verify, auto-login
+      // Auto-login after verification
       const loginRes = await fetch(`${baseUrl}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -120,6 +119,32 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
     }
   };
 
+  const handleResendCode = async () => {
+    if (!contact) return setError("⚠ Contact is missing.");
+
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("");
+
+      const res = await fetch(`${baseUrl}/api/send-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed to resend code.");
+
+      setMessage(`🔄 Verification code resent! ${data.debug_code ? "(Debug: " + data.debug_code + ")" : ""}`);
+    } catch (err) {
+      setError(err.message || "❌ Could not resend code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGuestClick = () => {
     guestMode?.();
     onGuest?.();
@@ -130,7 +155,7 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div className="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl">
 
-        {/* Close */}
+        {/* Close button only if in form/verify mode */}
         {mode && (
           <button
             onClick={() => setMode(null)}
@@ -147,7 +172,7 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
               Welcome! 👋
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
-              Please login, register, or continue as a guest to proceed.
+              Login, register, or continue as a guest.
             </p>
 
             <button
@@ -256,6 +281,14 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
                 Verify & Continue
               </button>
             </form>
+
+            <button
+              onClick={handleResendCode}
+              className="mt-2 w-full py-1 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              disabled={loading}
+            >
+              🔄 Resend Code
+            </button>
           </>
         )}
 
