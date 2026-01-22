@@ -5,10 +5,9 @@ import LegalDocs from "./LegalDocs.jsx";
 
 export default function StartModal({ onLoginSuccess, onGuest }) {
   const { guestMode, login } = useAuth();
-
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  const [mode, setMode] = useState(null); // null | "login" | "register" | "guest"
+  const [mode, setMode] = useState(null); // null | "login" | "register"
   const [step, setStep] = useState("form"); // form | verify
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +41,7 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
       const payload =
         mode === "login"
           ? { contact, password }
-          : { full_name: fullName, contact, password };
+          : { full_name: fullName, contact, password, confirm_password: confirmPassword };
 
       const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
@@ -57,8 +56,13 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
       }
 
       if (mode === "login") {
-        login(data.user || data);
-        onLoginSuccess?.(data.user || data);
+        const userData = {
+          contact: data.contact,
+          fullName: data.full_name,
+          role: data.role,
+        };
+        login(userData);
+        onLoginSuccess?.(userData);
       } else {
         setStep("verify");
         setMessage("📩 Verification code sent to your contact.");
@@ -74,26 +78,41 @@ export default function StartModal({ onLoginSuccess, onGuest }) {
     e.preventDefault();
     setError("");
 
-    if (!verificationCode) {
-      return setError("⚠ Enter verification code.");
-    }
+    if (!verificationCode) return setError("⚠ Enter verification code.");
 
     try {
       setLoading(true);
-      const res = await fetch(`${baseUrl}/api/verify`, {
+      // Corrected verify endpoint
+      const res = await fetch(`${baseUrl}/api/verify-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contact, code: verificationCode }),
       });
 
       const data = await res.json();
-
-      if (!res.ok || !data.success) {
+      if (!res.ok || data.message?.includes("❌")) {
         throw new Error(data.message || "Verification failed");
       }
 
-      login(data.user);
-      onLoginSuccess?.(data.user);
+      // After verify, auto-login
+      const loginRes = await fetch(`${baseUrl}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact, password }),
+      });
+      const loginData = await loginRes.json();
+
+      if (!loginRes.ok || !loginData.success) {
+        throw new Error(loginData.message || "Login after verification failed");
+      }
+
+      const userData = {
+        contact: loginData.contact,
+        fullName: loginData.full_name,
+        role: loginData.role,
+      };
+      login(userData);
+      onLoginSuccess?.(userData);
     } catch (err) {
       setError(err.message || "❌ Verification error.");
     } finally {

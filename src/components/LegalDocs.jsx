@@ -5,6 +5,8 @@ export default function LegalDocs({ onClose }) {
   const [activeTab, setActiveTab] = useState("privacy"); // "privacy" | "terms"
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Use environment variable or fallback
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // --- Fetch document from backend ---
@@ -13,14 +15,22 @@ export default function LegalDocs({ onClose }) {
     try {
       const res = await fetch(`${baseUrl}/api/legal/${type}`);
       if (!res.ok) {
-        // Fallback content if backend route doesn't exist
         throw new Error(`Failed to load ${type}: ${res.status}`);
       }
       const data = await res.json();
-      setContent(data.content || `No content available for ${type}.`);
+
+      // Use content from backend or fallback
+      if (typeof data.content === "string") {
+        setContent(data.content);
+      } else {
+        setContent(
+          type === "privacy"
+            ? "<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>"
+            : "<h3>Terms of Service</h3><p>Use this app responsibly. Lorem ipsum dolor sit amet...</p>"
+        );
+      }
     } catch (err) {
       console.warn(err);
-      // Graceful fallback content
       setContent(
         type === "privacy"
           ? "<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>"
@@ -31,7 +41,7 @@ export default function LegalDocs({ onClose }) {
     }
   };
 
-  // Fetch content whenever the active tab changes
+  // Fetch content whenever activeTab changes
   useEffect(() => {
     fetchDoc(activeTab);
   }, [activeTab]);
@@ -43,6 +53,7 @@ export default function LegalDocs({ onClose }) {
         <button
           onClick={onClose}
           className="absolute top-2 right-3 text-gray-500 text-xl hover:text-red-500"
+          aria-label="Close Legal Docs"
         >
           ✖
         </button>

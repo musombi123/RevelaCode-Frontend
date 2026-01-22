@@ -1,218 +1,257 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/Card";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  Send,
+  ArrowLeft,
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  Copy,
+  Download,
+  Edit3,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { useHistory } from "@/context/HistoryContext.jsx";
 
-const baseUrl = import.meta.env.VITE_API_URL;
+export default function AIAssistantDashboard() {
+  const navigate = useNavigate();
 
-const CATEGORY_LABELS = {
-  wars_conflicts: "Wars & Conflicts",
-  natural_disasters: "Natural Disasters",
-  economic: "Economic Signs",
-  crime: "Crime & Lawlessness",
-  politics: "Political Upheaval",
-  health: "Health Crises",
-  social_morality: "Moral Decay",
-  false_peace: "False Peace",
-  surveillance: "Surveillance",
-};
+  /* -------- SAFE CONTEXT -------- */
+  const auth = useAuth?.();
+  const historyCtx = useHistory?.();
 
-const ITEMS_PER_PAGE = 8;
-
-export default function ProphecyEventsDashboard() {
-  const [events, setEvents] = useState([]);
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
-  const [page, setPage] = useState(1);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      setError("");
-
-      try {
-        const res = await fetch(`${baseUrl}/api/events`);
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-
-        // backend returns { status, message, events: [] }
-        const normalized = Array.isArray(data?.events) ? data.events : [];
-
-        setEvents(normalized);
-      } catch (err) {
-        console.error("❌ Failed to load prophecy events:", err);
-        setError("Failed to load prophecy events");
-        setEvents([]);
-      }
-    };
-
-    if (baseUrl) loadEvents();
-  }, [baseUrl]);
-
-  const locations = useMemo(() => {
-    const set = new Set();
-    events.forEach((e) => {
-      if (e?.location?.country) set.add(e.location.country);
-    });
-    return ["Global", ...Array.from(set)];
-  }, [events]);
-
-  const filtered = useMemo(() => {
-    return events.filter((e) => {
-      const categoryMatch = !category || e?.matched_symbols?.includes(category);
-
-      const locationMatch =
-        !location ||
-        location === "Global" ||
-        e?.location?.country === location;
-
-      return categoryMatch && locationMatch;
-    });
-  }, [events, category, location]);
-
-  const paged = filtered.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
+  const historySafe = useMemo(
+    () => (Array.isArray(historyCtx?.history) ? historyCtx.history : []),
+    [historyCtx?.history]
   );
 
-  if (error) {
-    return <p className="text-red-500">{error}</p>;
-  }
+  const addToHistory =
+    typeof historyCtx?.addToHistory === "function"
+      ? historyCtx.addToHistory
+      : () => {};
 
+  /* -------- STATE -------- */
+  const [messages, setMessages] = useState(() =>
+    historySafe.length
+      ? historySafe
+      : [{ role: "assistant", text: "👋 Hi! I’m RevelaAI. Ask me anything." }]
+  );
+
+  const [input, setInput] = useState("");
+  const [uploadFile, setUploadFile] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  const textareaRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  /* -------- ENV -------- */
+  const baseUrl =
+    import.meta.env.VITE_REVELAAI_URL || "http://localhost:5000";
+
+  /* -------- AUTO SCROLL -------- */
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  /* -------- AUTO EXPAND TEXTAREA -------- */
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  /* -------- SEND / RE-SEND -------- */
+  const sendMessage = useCallback(async () => {
+    if (sending) return;
+    if (!input.trim() && !uploadFile) return;
+
+    setSending(true);
+
+    let newMessages = [...messages];
+
+    /* If editing, remove edited message + following assistant reply */
+    if (editingIndex !== null) {
+      newMessages = newMessages.slice(0, editingIndex);
+    }
+
+    const userMessage = {
+      role: "user",
+      text: input || `📎 Uploaded: ${uploadFile?.name}`,
+      fileName: uploadFile?.name || null,
+    };
+
+    newMessages.push(userMessage);
+    setMessages(newMessages);
+    addToHistory(userMessage);
+
+    setInput("");
+    setUploadFile(null);
+    setEditingIndex(null);
+
+    try {
+      const res = await fetch(`${baseUrl}/ai`, {
+        method: "POST",
+        headers: uploadFile ? undefined : { "Content-Type": "application/json" },
+        body: uploadFile
+          ? (() => {
+              const fd = new FormData();
+              fd.append("message", userMessage.text);
+              fd.append("file", uploadFile);
+              return fd;
+            })()
+          : JSON.stringify({ message: userMessage.text }),
+      });
+
+      const json = await res.json();
+
+      const assistantMessage = {
+        role: "assistant",
+        text: json?.data?.content || "",
+        file: json?.data?.file || null, // { name, url }
+      };
+
+      setMessages((p) => [...p, assistantMessage]);
+      addToHistory(assistantMessage);
+    } catch {
+      const err = { role: "assistant", text: "🚨 Server unreachable." };
+      setMessages((p) => [...p, err]);
+      addToHistory(err);
+    } finally {
+      setSending(false);
+    }
+  }, [sending, input, uploadFile, messages, editingIndex]);
+
+  /* -------- HELPERS -------- */
+  const copyText = (text) => navigator.clipboard.writeText(text);
+
+  const startEdit = (index) => {
+    setInput(messages[index].text);
+    setEditingIndex(index);
+  };
+
+  /* -------- RENDER -------- */
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-300">
-        🌍 Global Prophetic Events
-      </h3>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setPage(1);
-          }}
-          className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
+    <div className="flex flex-col h-full w-full bg-background text-foreground">
+      {/* Header */}
+      <div className="flex items-center gap-2 p-3 border-b">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100"
         >
-          <option value="">All Categories</option>
-          {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={location}
-          onChange={(e) => {
-            setLocation(e.target.value);
-            setPage(1);
-          }}
-          className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
-        >
-          <option value="">All Locations</option>
-          {locations.map((loc) => (
-            <option key={loc} value={loc}>
-              {loc}
-            </option>
-          ))}
-        </select>
-
-        {(category || location) && (
-          <button
-            onClick={() => {
-              setCategory("");
-              setLocation("");
-              setPage(1);
-            }}
-            className="text-xs text-red-600 underline dark:text-red-400"
-          >
-            Clear filters
-          </button>
-        )}
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
       </div>
 
-      {/* Events */}
-      <div className="grid gap-4">
-        {paged.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No events found.
-          </p>
-        ) : (
-          paged.map((e, idx) => (
-            <Card key={idx} className="hover:shadow-md transition">
-              <CardContent className="space-y-2 p-4">
-                <a
-                  href={e.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-black dark:text-white hover:underline"
-                >
-                  {e.headline || "Untitled Event"}
-                </a>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`relative max-w-[85%] p-3 rounded-xl whitespace-pre-wrap ${
+              msg.role === "assistant"
+                ? "bg-muted text-foreground"
+                : "bg-primary text-primary-foreground ml-auto"
+            }`}
+          >
+            {msg.text}
 
-                {e.description && (
-                  <p className="text-sm text-black dark:text-white">
-                    {e.description}
-                  </p>
+            {/* Assistant actions */}
+            {msg.role === "assistant" && (
+              <div className="absolute top-2 right-2 flex gap-2">
+                {msg.text && !msg.file && (
+                  <button
+                    onClick={() => copyText(msg.text)}
+                    className="opacity-40 hover:opacity-80"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                 )}
+                {msg.file && (
+                  <a
+                    href={msg.file.url}
+                    download={msg.file.name}
+                    className="opacity-40 hover:opacity-80"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            )}
 
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {e.publishedAt && (
-                    <span className="text-gray-500 dark:text-gray-400">
-                      🗓 {new Date(e.publishedAt).toLocaleDateString()}
-                    </span>
-                  )}
-
-                  {e.source && (
-                    <span className="text-gray-500 dark:text-gray-400">
-                      — {e.source}
-                    </span>
-                  )}
-
-                  {e.location?.country && (
-                    <span className="px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white">
-                      📍 {e.location.country}
-                    </span>
-                  )}
-
-                  {Array.isArray(e.matched_symbols) &&
-                    e.matched_symbols.map((cat) => (
-                      <span
-                        key={cat}
-                        className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200"
-                      >
-                        {CATEGORY_LABELS[cat] || cat}
-                      </span>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+            {/* User edit */}
+            {msg.role === "user" && (
+              <button
+                onClick={() => startEdit(i)}
+                className="absolute top-2 right-2 opacity-40 hover:opacity-80"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Pagination */}
-      {filtered.length > ITEMS_PER_PAGE && (
-        <div className="flex justify-center gap-4 text-sm">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            ← Prev
+      {/* Input */}
+      <div className="border-t p-3 space-y-2">
+        <div className="flex gap-3 items-center">
+          <label className="cursor-pointer">
+            <Upload className="w-5 h-5" />
+            <input
+              hidden
+              type="file"
+              onChange={(e) => setUploadFile(e.target.files[0])}
+            />
+          </label>
+
+          <button onClick={() => setInput("Create a professional document.")}>
+            <FileText className="w-5 h-5" />
           </button>
 
-          <span>Page {page}</span>
+          <button onClick={() => setInput("Generate an image or logo.")}>
+            <ImageIcon className="w-5 h-5" />
+          </button>
+
+          {editingIndex !== null && (
+            <span className="text-xs opacity-60">Editing message</span>
+          )}
+        </div>
+
+        <div className="flex gap-2 items-end">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            className="flex-1 resize-none rounded-lg border px-3 py-2 bg-muted text-sm overflow-hidden"
+            placeholder="Ask RevelaAI anything…"
+            rows={1}
+          />
 
           <button
-            disabled={page * ITEMS_PER_PAGE >= filtered.length}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={sending}
+            onClick={sendMessage}
+            className="bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground p-3 rounded-lg"
           >
-            Next →
+            <Send className="w-4 h-4" />
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,19 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Menu, ArrowLeft } from "lucide-react";
+import {
+  Bot,
+  Moon,
+  Sun,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+} from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
+import AvatarMenu from "./accounts/AvatarMenu.jsx";
+import Notifications from "./accounts/Notifications.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 
@@ -11,144 +21,182 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 export default function MainDashboardV2() {
-  const { user, isGuest, loading, login, guestMode } = useAuth();
-  const { theme, setTheme } = useTheme();
-
-  const defaultKey =
+  /* ---------------- Core State ---------------- */
+  const defaultDashboard =
     DASHBOARDS.find((d) => d.default)?.key || "home";
 
-  const [activeKey, setActiveKey] = useState(defaultKey);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
+  const [activeView, setActiveView] = useState(defaultDashboard);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [aiDockOpen, setAIDockOpen] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(true);
+
+  const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   const activeDashboard =
-    DASHBOARDS.find((d) => d.key === activeKey) || DASHBOARDS[0];
+    DASHBOARDS.find((d) => d.key === activeView) || DASHBOARDS[0];
 
-  /* ================= AUTH GATE ================= */
+  const ActiveComponent = activeDashboard.component;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loading />
-      </div>
-    );
-  }
+  /* ---------------- Start Modal Gate ---------------- */
+  useEffect(() => {
+    const completed = localStorage.getItem("start_modal_completed");
+    if (completed) setShowStartModal(false);
+  }, []);
 
-  if (!user && !isGuest) {
-    return (
-      <StartModal
-        onLoginSuccess={login}
-        onGuest={guestMode}
-      />
-    );
-  }
+  const handleStartComplete = () => {
+    localStorage.setItem("start_modal_completed", "true");
+    setShowStartModal(false);
+  };
 
-  /* ================= DASHBOARD ================= */
+  /* ---------------- AI Dock Shortcut ---------------- */
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setAIDockOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
+  /* ================================================= */
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 relative overflow-hidden">
+    <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
 
-      {/* ================= HEADER ================= */}
-      <header className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-900">
-        <button onClick={() => setSidebarOpen(true)}>
-          <Menu />
-        </button>
+      {/* ================= START MODAL (BLOCKING) ================= */}
+      <AnimatePresence>
+        {showStartModal && (
+          <StartModal onComplete={handleStartComplete} />
+        )}
+      </AnimatePresence>
 
-        <h1 className="font-semibold">
-          {activeDashboard?.title || "Dashboard"}
-        </h1>
-
-        <div className="text-sm font-medium bg-indigo-600 text-white px-3 py-1 rounded-full">
-          {user?.username || "Guest"}
-        </div>
-      </header>
-
-      {/* ================= SIDEBAR DRAWER ================= */}
+      {/* ================= SIDEBAR ================= */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            initial={{ x: -260 }}
+            initial={{ x: -220 }}
             animate={{ x: 0 }}
-            exit={{ x: -260 }}
-            className="fixed inset-y-0 left-0 w-64 bg-revelacode-gradient text-white z-50 shadow-2xl"
+            exit={{ x: -220 }}
+            transition={{ type: "spring", stiffness: 260, damping: 25 }}
+            className="w-[220px] bg-gray-900 text-gray-100 flex flex-col z-30"
           >
-            <div className="p-4 font-bold text-lg border-b border-white/10">
-              RevelaCode
+            <div className="p-4 flex justify-between items-center">
+              <h1 className="font-bold text-lg">RevelaCode</h1>
+              <button onClick={() => setSidebarOpen(false)}>
+                <X />
+              </button>
             </div>
 
-            <nav className="p-2 space-y-1">
-              {DASHBOARDS.map(
-                ({ key, label, icon: Icon, restricted }) => {
-                  if (restricted && isGuest) return null;
-
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setActiveKey(key);
-                        setSidebarOpen(false);
-                      }}
-                      className={`flex items-center gap-3 w-full p-3 rounded-lg
-                        ${
-                          activeKey === key
-                            ? "bg-white/20"
-                            : "hover:bg-white/10"
-                        }`}
-                    >
-                      <Icon size={18} />
-                      {label}
-                    </button>
-                  );
-                }
+            <nav className="px-2 space-y-1">
+              {DASHBOARDS.filter((d) => !d.hidden).map(
+                ({ key, label, icon: Icon, color }) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveView(key)}
+                    className={`flex items-center gap-3 p-3 w-full rounded-lg text-sm transition
+                      ${
+                        activeView === key
+                          ? `bg-gradient-to-r ${color}`
+                          : "hover:bg-gray-800"
+                      }`}
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </button>
+                )
               )}
             </nav>
+
+            <div className="mt-auto p-4 flex justify-between items-center">
+              <button
+                onClick={() =>
+                  setTheme(theme === "dark" ? "light" : "dark")
+                }
+              >
+                {theme === "dark" ? <Sun /> : <Moon />}
+              </button>
+
+              <button
+                onClick={logout}
+                className="text-red-400 hover:text-red-500"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <main className="p-6">
-        <Suspense fallback={<Loading />}>
-          <ErrorBoundary>
-            {activeDashboard.element}
-          </ErrorBoundary>
-        </Suspense>
-      </main>
+      {/* ================= MAIN ================= */}
+      <main className="flex-1 relative overflow-hidden">
 
-      {/* ================= FULLSCREEN AI ================= */}
-      <AnimatePresence>
-        {aiOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-revelacode-gradient z-50 text-white"
-          >
-            <button
-              onClick={() => setAiOpen(false)}
-              className="absolute top-4 left-4 flex items-center gap-2"
+        {/* ===== Header ===== */}
+        <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
+
+          <div className="flex items-center gap-3">
+            {!sidebarOpen && (
+              <button onClick={() => setSidebarOpen(true)}>
+                <Menu />
+              </button>
+            )}
+
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+              {activeView === "home"
+                ? `Welcome back, ${user?.username || "User"} 👋`
+                : activeDashboard.title}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Notifications />
+            <AvatarMenu />
+          </div>
+        </header>
+
+        {/* ===== Content ===== */}
+        <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
+          <Suspense fallback={<Loading />}>
+            <ErrorBoundary>
+              {ActiveComponent && <ActiveComponent />}
+            </ErrorBoundary>
+          </Suspense>
+        </section>
+
+        {/* ================= AI DOCK ================= */}
+        <AnimatePresence>
+          {aiDockOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              className="absolute bottom-4 right-4 bg-gray-900 text-white rounded-2xl shadow-2xl p-4 w-96 h-96 z-50"
             >
-              <ArrowLeft /> Back
-            </button>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold">RevelaAI (Beta)</h3>
+                <button onClick={() => setAIDockOpen(false)}>✕</button>
+              </div>
 
-            <div className="h-full pt-16">
               <Suspense fallback={<Loading />}>
-                {DASHBOARDS.find(d => d.key === "ai")?.element}
+                {DASHBOARDS.find((d) => d.key === "ai")?.component &&
+                  React.createElement(
+                    DASHBOARDS.find((d) => d.key === "ai").component
+                  )}
               </Suspense>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* ================= AI FLOAT BUTTON ================= */}
-      <button
-        onClick={() => setAiOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-green-600 to-lime-500
-                   text-white p-4 rounded-full shadow-xl"
-        title="RevelaAI"
-      >
-        <Bot />
-      </button>
+        {/* ===== Floating AI Button ===== */}
+        <button
+          onClick={() => setAIDockOpen((v) => !v)}
+          className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-40"
+          title="RevelaAI (Ctrl + K)"
+        >
+          <Bot />
+        </button>
+      </main>
     </div>
   );
 }

@@ -1,44 +1,77 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Mail, Facebook, Instagram, MessageCircle, Bot, Twitter, Linkedin } from "lucide-react";
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const integrations = [
-  { name: "Google", icon: Mail, oauth: false, connected: false },
-  { name: "Facebook", icon: Facebook, oauth: false, connected: false },
-  { name: "Instagram", icon: Instagram, oauth: false, connected: false },
-  { name: "TikTok", icon: MessageCircle, oauth: false, connected: false },
-  { name: "LinkedIn", icon: Linkedin, oauth: false, connected: false },
-  { name: "Twitter", icon: Twitter, oauth: false, connected: false },
-  { name: "WhatsApp", icon: MessageCircle, oauth: false, connected: false },
-  { name: "ChatGPT", icon: Bot, oauth: false, connected: true }
+const initialIntegrations = [
+  { name: "Google", icon: Mail, oauth: true },
+  { name: "Facebook", icon: Facebook, oauth: true },
+  { name: "Instagram", icon: Instagram, oauth: true },
+  { name: "TikTok", icon: MessageCircle, oauth: true },
+  { name: "LinkedIn", icon: Linkedin, oauth: true },
+  { name: "Twitter", icon: Twitter, oauth: true },
+  { name: "WhatsApp", icon: MessageCircle, oauth: true },
+  { name: "ChatGPT", icon: Bot, oauth: false },
 ];
 
 export default function AccountDashboard() {
+  const [integrations, setIntegrations] = useState(
+    initialIntegrations.map((i) => ({ ...i, connected: false }))
+  );
+  const [loading, setLoading] = useState(false);
+
+  // --- Fetch connected accounts from backend ---
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/user/connections`);
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setIntegrations((prev) =>
+            prev.map((i) => ({
+              ...i,
+              connected: data.connectedAccounts?.includes(i.name) || i.name === "ChatGPT",
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Failed to fetch connected accounts:", err);
+      }
+    };
+    fetchConnections();
+  }, []);
+
   const handleConnect = async (platform) => {
     try {
-      // Only handle OAuth for platforms that have backend routes
+      if (platform.connected) {
+        alert(`✅ Already connected to ${platform.name}`);
+        return;
+      }
+
       if (platform.oauth) {
-        alert(`🔐 OAuth login not yet implemented for ${platform.name}`);
+        // Redirect user to OAuth route
+        window.location.href = `${baseUrl}/api/oauth/${platform.name.toLowerCase()}`;
         return;
       }
 
-      // For non-OAuth platforms, example: guest account check
-      if (platform.name === "ChatGPT") {
-        alert("Already connected to ChatGPT");
-        return;
-      }
+      // For non-OAuth (like ChatGPT), simple connect API call
+      const res = await fetch(`${baseUrl}/api/connect/${platform.name.toLowerCase()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
 
-      // Example: call backend guest route
-      const response = await fetch(`${baseUrl}/api/guest`);
-      const data = await response.json();
-
-      if (data.success) {
-        alert(`✅ Guest account access granted: ${data.message}`);
+      if (res.ok && data.success) {
+        alert(`✅ Connected to ${platform.name}`);
+        setIntegrations((prev) =>
+          prev.map((i) =>
+            i.name === platform.name ? { ...i, connected: true } : i
+          )
+        );
       } else {
-        alert(`❌ Could not connect: ${data.message}`);
+        alert(`❌ Could not connect to ${platform.name}: ${data.message}`);
       }
     } catch (err) {
       console.error(err);
@@ -73,7 +106,7 @@ export default function AccountDashboard() {
                 <Button
                   size="sm"
                   variant={platform.connected ? "secondary" : "default"}
-                  disabled={platform.connected}
+                  disabled={platform.connected || loading}
                   onClick={() => handleConnect(platform)}
                 >
                   {platform.connected ? "✓ Connected" : "Connect"}
