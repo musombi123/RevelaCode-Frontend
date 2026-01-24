@@ -1,14 +1,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Bot,
-  Moon,
-  Sun,
-  LogOut,
-  Menu,
-  X,
-  Bell,
-} from "lucide-react";
+import { Bot, Moon, Sun, LogOut, Menu, X } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
@@ -22,23 +14,20 @@ import { useAuth } from "@/context/AuthContext.jsx";
 
 export default function MainDashboardV2() {
   /* ---------------- Core State ---------------- */
-  const defaultDashboard =
-    DASHBOARDS.find((d) => d.default)?.key || "home";
-
+  const defaultDashboard = DASHBOARDS.find((d) => d.default)?.key || "home";
   const [activeView, setActiveView] = useState(defaultDashboard);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // start hidden
   const [aiDockOpen, setAIDockOpen] = useState(false);
   const [showStartModal, setShowStartModal] = useState(true);
+  const [guestTrials, setGuestTrials] = useState(0);
 
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
 
-  const activeDashboard =
-    DASHBOARDS.find((d) => d.key === activeView) || DASHBOARDS[0];
-
+  const activeDashboard = DASHBOARDS.find((d) => d.key === activeView) || DASHBOARDS[0];
   const ActiveComponent = activeDashboard.component;
 
-  /* ---------------- Start Modal Gate ---------------- */
+  /* ---------------- Start Modal ---------------- */
   useEffect(() => {
     const completed = localStorage.getItem("start_modal_completed");
     if (completed) setShowStartModal(false);
@@ -47,6 +36,18 @@ export default function MainDashboardV2() {
   const handleStartComplete = () => {
     localStorage.setItem("start_modal_completed", "true");
     setShowStartModal(false);
+  };
+
+  /* ---------------- Guest Trial Check ---------------- */
+  useEffect(() => {
+    if (user?.role === "guest" && guestTrials >= 5) {
+      alert("⚠ Your trial has ended. Please create an account to continue accessing features.");
+      setShowStartModal(true); // force login/register modal
+    }
+  }, [guestTrials, user]);
+
+  const handleGuestFeatureUse = () => {
+    if (user?.role === "guest") setGuestTrials((t) => t + 1);
   };
 
   /* ---------------- AI Dock Shortcut ---------------- */
@@ -65,14 +66,16 @@ export default function MainDashboardV2() {
   return (
     <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
 
-      {/* ================= START MODAL (BLOCKING) ================= */}
+      {/* ===== Start Modal (Blocking) ===== */}
       <AnimatePresence>
         {showStartModal && (
-          <StartModal onComplete={handleStartComplete} />
+          <StartModal
+            onComplete={handleStartComplete}
+          />
         )}
       </AnimatePresence>
 
-      {/* ================= SIDEBAR ================= */}
+      {/* ===== Sidebar ===== */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
@@ -84,9 +87,7 @@ export default function MainDashboardV2() {
           >
             <div className="p-4 flex justify-between items-center">
               <h1 className="font-bold text-lg">RevelaCode</h1>
-              <button onClick={() => setSidebarOpen(false)}>
-                <X />
-              </button>
+              <button onClick={() => setSidebarOpen(false)}><X /></button>
             </div>
 
             <nav className="px-2 space-y-1">
@@ -94,13 +95,9 @@ export default function MainDashboardV2() {
                 ({ key, label, icon: Icon, color }) => (
                   <button
                     key={key}
-                    onClick={() => setActiveView(key)}
+                    onClick={() => { setActiveView(key); handleGuestFeatureUse(); }}
                     className={`flex items-center gap-3 p-3 w-full rounded-lg text-sm transition
-                      ${
-                        activeView === key
-                          ? `bg-gradient-to-r ${color}`
-                          : "hover:bg-gray-800"
-                      }`}
+                      ${activeView === key ? `bg-gradient-to-r ${color}` : "hover:bg-gray-800"}`}
                   >
                     <Icon size={18} />
                     {label}
@@ -110,18 +107,11 @@ export default function MainDashboardV2() {
             </nav>
 
             <div className="mt-auto p-4 flex justify-between items-center">
-              <button
-                onClick={() =>
-                  setTheme(theme === "dark" ? "light" : "dark")
-                }
-              >
+              <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun /> : <Moon />}
               </button>
 
-              <button
-                onClick={logout}
-                className="text-red-400 hover:text-red-500"
-              >
+              <button onClick={logout} className="text-red-400 hover:text-red-500">
                 <LogOut size={18} />
               </button>
             </div>
@@ -129,29 +119,27 @@ export default function MainDashboardV2() {
         )}
       </AnimatePresence>
 
-      {/* ================= MAIN ================= */}
+      {/* ===== Main Area ===== */}
       <main className="flex-1 relative overflow-hidden">
 
         {/* ===== Header ===== */}
         <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
-
           <div className="flex items-center gap-3">
             {!sidebarOpen && (
               <button onClick={() => setSidebarOpen(true)}>
                 <Menu />
               </button>
             )}
-
             <h2 className="font-semibold text-gray-900 dark:text-gray-100">
               {activeView === "home"
-                ? `Welcome back, ${user?.username || "User"} 👋`
+                ? `Welcome back, ${user?.username || user?.fullName || "User"} 👋`
                 : activeDashboard.title}
             </h2>
           </div>
 
           <div className="flex items-center gap-4">
             <Notifications />
-            <AvatarMenu />
+            <AvatarMenu user={user} />
           </div>
         </header>
 
@@ -159,12 +147,12 @@ export default function MainDashboardV2() {
         <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
           <Suspense fallback={<Loading />}>
             <ErrorBoundary>
-              {ActiveComponent && <ActiveComponent />}
+              {ActiveComponent && <ActiveComponent onGuestUse={handleGuestFeatureUse} />}
             </ErrorBoundary>
           </Suspense>
         </section>
 
-        {/* ================= AI DOCK ================= */}
+        {/* ===== AI Dock ===== */}
         <AnimatePresence>
           {aiDockOpen && (
             <motion.div
@@ -180,9 +168,7 @@ export default function MainDashboardV2() {
 
               <Suspense fallback={<Loading />}>
                 {DASHBOARDS.find((d) => d.key === "ai")?.component &&
-                  React.createElement(
-                    DASHBOARDS.find((d) => d.key === "ai").component
-                  )}
+                  React.createElement(DASHBOARDS.find((d) => d.key === "ai").component)}
               </Suspense>
             </motion.div>
           )}
