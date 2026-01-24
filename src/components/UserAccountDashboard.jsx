@@ -4,7 +4,6 @@ import {
   Settings,
   Bell,
   History,
-  Bot,
   HelpCircle,
   LifeBuoy,
   BookOpen,
@@ -16,13 +15,14 @@ import Loading from "./common/Loading";
 
 // Lazy-loaded dashboards
 const PreferencesDashboard = React.lazy(() => import("./PreferencesDashboard"));
-const HistoryDashboard = React.lazy(() => import("./HistoryDashboard"));
-const AIAssistantDashboard = React.lazy(() => import("./AIAssistantDashboard"));
 const AccountDashboard = React.lazy(() => import("./AccountDashboard"));
 const ReferentialDashboard = React.lazy(() => import("./ReferentialDashboard"));
 const SupportCenter = React.lazy(() => import("./SupportCenter"));
-const HelpModal = React.lazy(() => import("./HelpModal"));
-const LegalDocs = React.lazy(() => import("./LegalDocs"));
+const HelpModal = React.lazy(() => import("./HelpModal.jsx"));
+const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
+
+// History context
+import { useHistory } from "@/context/HistoryContext.jsx";
 
 // Profile panel
 function ProfileView({ user }) {
@@ -60,7 +60,6 @@ export default function UserAccountDashboard({ user, onLogout }) {
     { key: "accounts", label: "Accounts", icon: Link2 },
     { key: "notifications", label: "Notifications", icon: Bell },
     { key: "history", label: "History", icon: History },
-    { key: "ai", label: "RevelaAI", icon: Bot },
     { key: "support", label: "Support Center", icon: LifeBuoy },
     { key: "help", label: "Help & Docs", icon: HelpCircle },
     { key: "referential", label: "Referential", icon: BookOpen },
@@ -86,10 +85,35 @@ export default function UserAccountDashboard({ user, onLogout }) {
             </p>
           </div>
         );
-      case "history":
-        return <HistoryDashboard />;
-      case "ai":
-        return <AIAssistantDashboard />;
+      case "history": {
+        const { history, clearHistory } = useHistory();
+        return (
+          <div className="p-6 space-y-4">
+            <h2 className="text-xl font-bold">📜 History</h2>
+            {history.length === 0 && (
+              <p className="text-gray-500 dark:text-gray-400">No history yet.</p>
+            )}
+            <ul className="space-y-2">
+              {history.map((entry) => (
+                <li key={entry.id} className="p-2 rounded bg-gray-100 dark:bg-gray-800">
+                  <p><strong>Type:</strong> {entry.type}</p>
+                  <p><strong>Input:</strong> {entry.input}</p>
+                  <p><strong>Output:</strong> {entry.output}</p>
+                  <p className="text-xs text-gray-500">{new Date(entry.timestamp).toLocaleString()}</p>
+                </li>
+              ))}
+            </ul>
+            {history.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="mt-4 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded"
+              >
+                Clear History
+              </button>
+            )}
+          </div>
+        );
+      }
       case "support":
         return <SupportCenter />;
       case "help":

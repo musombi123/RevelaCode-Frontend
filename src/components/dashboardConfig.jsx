@@ -43,9 +43,6 @@ const ProphecyEventsDashboard =
 const ReferentialDashboard =
   safeLazy(() => import("./ReferentialDashboard.jsx"), "Referential");
 
-const HistoryDashboard =
-  safeLazy(() => import("./HistoryDashboard.jsx"), "History");
-
 const PreferencesDashboard =
   safeLazy(() => import("./PreferencesDashboard.jsx"), "Preferences");
 
@@ -121,15 +118,6 @@ export const DASHBOARDS = [
     label: "Referential",
     icon: Layers,
     element: <ReferentialDashboard />,
-  },
-
-  {
-    key: "history",
-    title: "History",
-    label: "History",
-    icon: History,
-    element: <HistoryDashboard />,
-    restricted: true, // 🔒 guest blocked
   },
 
   {
