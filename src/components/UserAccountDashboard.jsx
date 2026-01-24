@@ -24,32 +24,8 @@ const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 // History context
 import { useHistory } from "@/context/HistoryContext.jsx";
 
-// Profile panel
-function ProfileView({ user }) {
-  if (!user) {
-    return (
-      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-        ⚠️ No user data loaded.
-      </div>
-    );
-  }
-  return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-300">
-        👤 Profile
-      </h2>
-      <p className="text-gray-700 dark:text-gray-200">
-        <strong>Name:</strong> {user.full_name}
-      </p>
-      <p className="text-gray-700 dark:text-gray-200">
-        <strong>Contact:</strong> {user.contact || "N/A"}
-      </p>
-      <p className="text-gray-700 dark:text-gray-200">
-        <strong>Role:</strong> {user.role || "Normal"}
-      </p>
-    </div>
-  );
-}
+// Profile card
+import UserProfile from "./accounts/UserProfile";
 
 export default function UserAccountDashboard({ user, onLogout }) {
   const [activeView, setActiveView] = useState("profile");
@@ -71,7 +47,7 @@ export default function UserAccountDashboard({ user, onLogout }) {
   const renderContent = () => {
     switch (activeView) {
       case "profile":
-        return <ProfileView user={user} />;
+        return <UserProfile user={user} />;
       case "settings":
         return <PreferencesDashboard />;
       case "accounts":

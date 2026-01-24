@@ -1,53 +1,180 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "./AuthContext.jsx";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext.jsx";
 
-const HistoryContext = createContext(null);
+/* ===============================
+   Context
+================================ */
+const HistoryContext = createContext(undefined);
 
+/* ===============================
+   Provider
+================================ */
 export function HistoryProvider({ children }) {
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
+
   const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
-  const API = import.meta.env.VITE_API_URL;
+  const backendURL = import.meta.env.VITE_REVELACODE_URL || import.meta.env.VITE_BACKEND_URL;
 
-  // -------------------------
-  // Load history (auth only)
-  // -------------------------
+  const isGuest = user?.role === "guest";
+
+  /* ===============================
+     Load from localStorage (fast boot)
+  ================================ */
   useEffect(() => {
-    if (!user || isGuest) {
-      setHistory([]);
+    try {
+      const saved = localStorage.getItem("userHistory");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setHistory(parsed);
+      }
+    } catch (err) {
+      console.error("❌ Failed to load history from localStorage:", err);
+    }
+  }, []);
+
+  /* ===============================
+     Persist to localStorage
+  ================================ */
+  useEffect(() => {
+    try {
+      localStorage.setItem("userHistory", JSON.stringify(history));
+    } catch (err) {
+      console.error("❌ Failed to save history to localStorage:", err);
+    }
+  }, [history]);
+
+  /* ===============================
+     Fetch history from backend (on login)
+  ================================ */
+  const fetchHistoryFromBackend = useCallback(async () => {
+    if (!backendURL) {
+      console.warn("⚠️ No backend URL found. Set VITE_REVELACODE_URL or VITE_BACKEND_URL.");
       return;
     }
 
-    fetch(`${API}/api/history/${user.id}`)
-      .then((res) => res.json())
-      .then(setHistory)
-      .catch(() => setHistory([]));
-  }, [user, isGuest]);
+    // Guests: optional behavior
+    if (!user || isGuest) return;
 
-  // -------------------------
-  // Add history event
-  // -------------------------
-  const logEvent = async (event, meta = {}) => {
-    if (!user || isGuest) return; // 🔒 guest blocked
+    setLoadingHistory(true);
+    setHistoryError(null);
 
-    await fetch(`${API}/api/history/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: user.id,
-        event,
-        meta
-      })
-    });
-  };
+    try {
+      const res = await fetch(`${backendURL}/history`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          // If you have auth tokens later, add Authorization here
+        },
+      });
 
-  return (
-    <HistoryContext.Provider value={{ history, logEvent }}>
-      {children}
-    </HistoryContext.Provider>
+      const data = await res.json();
+
+      // Support different backend response shapes safely
+      const list = data?.data || data?.history || data;
+
+      if (Array.isArray(list)) {
+        setHistory(list);
+      } else {
+        console.warn("⚠️ Backend history response not an array:", data);
+      }
+    } catch (err) {
+      console.error("❌ Failed to fetch history from backend:", err);
+      setHistoryError("Failed to fetch history.");
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [backendURL, user, isGuest]);
+
+  useEffect(() => {
+    fetchHistoryFromBackend();
+  }, [fetchHistoryFromBackend]);
+
+  /* ===============================
+     Add to history (local + backend)
+  ================================ */
+  const addToHistory = useCallback(
+    async (entry) => {
+      if (!entry) return;
+
+      const newEntry = {
+        id: entry.id ?? Date.now(),
+        timestamp: entry.timestamp ?? new Date().toISOString(),
+        type: entry.type ?? "generic", // ai / decode / prophecy
+        input: entry.input ?? "",
+        output: entry.output ?? "",
+        fileName: entry.fileName ?? null,
+        extra: entry.extra ?? null,
+      };
+
+      // Always update UI instantly
+      setHistory((prev) => [newEntry, ...prev]);
+
+      // Guests can stay local only
+      if (!backendURL || !user || isGuest) return;
+
+      // Push to backend
+      try {
+        await fetch(`${backendURL}/history`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newEntry),
+        });
+      } catch (err) {
+        console.error("❌ Failed to POST history to backend:", err);
+      }
+    },
+    [backendURL, user, isGuest]
   );
+
+  /* ===============================
+     Clear history (local + backend)
+  ================================ */
+  const clearHistory = useCallback(async () => {
+    setHistory([]);
+
+    try {
+      localStorage.removeItem("userHistory");
+    } catch {}
+
+    if (!backendURL || !user || isGuest) return;
+
+    try {
+      await fetch(`${backendURL}/history`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("❌ Failed to DELETE history on backend:", err);
+    }
+  }, [backendURL, user, isGuest]);
+
+  const value = useMemo(
+    () => ({
+      history,
+      loadingHistory,
+      historyError,
+      addToHistory,
+      clearHistory,
+      refetchHistory: fetchHistoryFromBackend,
+    }),
+    [history, loadingHistory, historyError, addToHistory, clearHistory, fetchHistoryFromBackend]
+  );
+
+  return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
 }
 
+/* ===============================
+   Hook
+================================ */
 export function useHistory() {
-  return useContext(HistoryContext);
+  const context = useContext(HistoryContext);
+  if (context === undefined) {
+    throw new Error("useHistory must be used within a HistoryProvider");
+  }
+  return context;
 }

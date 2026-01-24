@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Mic,
   Upload,
   Copy,
   Share2,
@@ -50,7 +49,11 @@ export default function AIAssistantDashboard() {
     if (!text.trim()) return;
 
     const userMessage = { role: "user", text };
-    setMessages((m) => [...m, userMessage, { role: "assistant", text: "⏳ Thinking..." }]);
+    setMessages((m) => [
+      ...m,
+      userMessage,
+      { role: "assistant", text: "⏳ Thinking..." },
+    ]);
     setInputText("");
 
     try {
@@ -75,7 +78,10 @@ export default function AIAssistantDashboard() {
     } catch {
       setMessages((m) => {
         const copy = [...m];
-        copy[copy.length - 1] = { role: "assistant", text: "⚠️ Network error." };
+        copy[copy.length - 1] = {
+          role: "assistant",
+          text: "⚠️ Network error.",
+        };
         return copy;
       });
     }
@@ -129,7 +135,7 @@ export default function AIAssistantDashboard() {
 
   /* ---------------- HANDLE VOICE INPUT ---------------- */
   const handleVoiceResult = (heardText) => {
-    if (heardText) setInputText(heardText); // Auto-fill input field with spoken text
+    if (heardText) setInputText(heardText);
   };
 
   /* ---------------- UI ---------------- */
@@ -140,7 +146,9 @@ export default function AIAssistantDashboard() {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`group max-w-3xl ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}
+            className={`group max-w-3xl ${
+              msg.role === "user" ? "ml-auto" : "mr-auto"
+            }`}
           >
             <div
               className={`relative rounded-xl p-4 ${
@@ -177,9 +185,6 @@ export default function AIAssistantDashboard() {
                     <button onClick={() => shareText(msg.text)}>
                       <Share2 size={14} />
                     </button>
-                    <button onClick={() => speak(msg.text)}>
-                      <Mic size={14} />
-                    </button>
                   </>
                 )}
               </div>
@@ -189,8 +194,8 @@ export default function AIAssistantDashboard() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* INPUT BAR */}
-      <div className="border-t bg-white dark:bg-gray-900 p-4">
+      {/* INPUT AREA (NO BAR, JUST INPUT) */}
+      <div className="px-4 pb-4">
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           {/* UPLOAD */}
           <label className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 rounded">
@@ -208,7 +213,7 @@ export default function AIAssistantDashboard() {
             className="flex-1 resize-none rounded-xl border px-4 py-3 max-h-40 overflow-y-auto dark:bg-gray-800 dark:border-gray-700"
           />
 
-          {/* VOICE BUTTON (uses RevelaAIVoiceChat under the hood) */}
+          {/* SINGLE MICROPHONE → VOICE CHAT */}
           <RevelaAIVoiceChat onVoiceResult={handleVoiceResult} />
 
           {/* SEND BUTTON */}
@@ -218,15 +223,6 @@ export default function AIAssistantDashboard() {
             title="Send message"
           >
             <Send size={20} />
-          </button>
-
-          {/* SPEAK BUTTON */}
-          <button
-            onClick={() => speak(inputText)}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
-            title="Speak message"
-          >
-            <Mic size={20} />
           </button>
         </div>
       </div>
