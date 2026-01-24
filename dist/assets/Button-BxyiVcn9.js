@@ -1,1 +1,0 @@
-import{j as n}from"./index-N_5HTTJ0.js";function s({children:t,className:e="",...o}){return n.jsx("button",{className:`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition ${e}`,...o,children:t})}export{s as B};
