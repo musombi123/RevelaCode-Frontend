@@ -15,11 +15,13 @@ export default function LegalDocs({ onClose }) {
       if (!res.ok) throw new Error(`Failed to load ${type}: ${res.status}`);
       const data = await res.json();
       setContent(typeof data.content === "string" ? data.content : "");
-    } catch {
+    } catch (err) {
+      console.warn(err);
+      // Fallback content if backend fails
       setContent(
         type === "privacy"
-          ? "<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>"
-          : "<h3>Terms of Service</h3><p>Use this app responsibly. Lorem ipsum dolor sit amet...</p>"
+          ? `<h3>Privacy Policy</h3><p>Your privacy is important. Lorem ipsum dolor sit amet...</p>`
+          : `<h3>Terms of Service</h3><p>Use this app responsibly. Lorem ipsum dolor sit amet...</p>`
       );
     } finally {
       setLoading(false);
@@ -32,7 +34,7 @@ export default function LegalDocs({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex flex-col items-center justify-center p-2">
-      <div className="relative w-full h-full max-w-full max-h-full bg-white dark:bg-gray-900 rounded-none shadow-xl p-6 overflow-hidden flex flex-col">
+      <div className="relative w-full h-full max-w-3xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 overflow-hidden flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -66,7 +68,7 @@ export default function LegalDocs({ onClose }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert">
           {loading ? (
-            <p>🔄 Loading...</p>
+            <p className="text-center text-gray-500">🔄 Loading...</p>
           ) : (
             <div
               dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, "<br/>") }}
