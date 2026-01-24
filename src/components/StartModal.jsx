@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import GuestOverlay from "./GuestOverlay.jsx";
@@ -25,13 +25,40 @@ export default function StartModal({ onLoginSuccess }) {
   const [message, setMessage] = useState("");
   const [showLegal, setShowLegal] = useState(false);
 
+  const codeInputRef = useRef(null);
+
+  // Auto-focus verification input when step changes to verify
+  useEffect(() => {
+    if (step === "verify") {
+      setTimeout(() => codeInputRef.current?.focus(), 200);
+    }
+  }, [step]);
+
+  const resetAll = () => {
+    setMode(null);
+    setStep("form");
+    setLoading(false);
+
+    setFullName("");
+    setContact("");
+    setPassword("");
+    setConfirmPassword("");
+    setVerificationCode("");
+    setAdminKey("");
+
+    setError("");
+    setMessage("");
+  };
+
   const handleGuestLogin = () => {
     guestMode?.();
+
     const guestUser = {
       contact: "guest",
       fullName: "Guest User",
       role: "guest",
     };
+
     login(guestUser);
     onLoginSuccess?.(guestUser);
     window.location.href = "/";
@@ -42,20 +69,20 @@ export default function StartModal({ onLoginSuccess }) {
     setError("");
     setMessage("");
 
-    // allow guest even if they didn’t type anything
+    // Guest shortcut (login form empty)
     if (!contact && !password && mode === "login") {
       return handleGuestLogin();
     }
 
     if (!contact || !password || (mode === "register" && !fullName)) {
-      return setError("⚠ All fields are required.");
+      return setError("⚠ Please fill in all required fields.");
     }
 
     if (mode === "register" && password !== confirmPassword) {
       return setError("❌ Passwords do not match.");
     }
 
-    // Admin API Key Login
+    // Admin API Key login (optional)
     if (adminKey && adminKey === adminApiKey) {
       const adminUser = { contact: "admin", fullName: "Administrator", role: "admin" };
       login(adminUser);
@@ -87,6 +114,7 @@ export default function StartModal({ onLoginSuccess }) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Authentication failed");
 
+      // LOGIN SUCCESS
       if (mode === "login") {
         const userData = {
           contact: data.contact,
@@ -100,23 +128,24 @@ export default function StartModal({ onLoginSuccess }) {
         if (data.role === "admin") window.location.href = "/admin/dashboard";
         else if (data.role === "support") window.location.href = "/support/dashboard";
         else window.location.href = "/";
-      } else {
-        // ✅ request verification code from correct backend route
-        const codeRes = await fetch(`${baseUrl}/api/request-code`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contact }),
-        });
-
-        const codeData = await codeRes.json();
-
-        if (!codeRes.ok || !codeData.success) {
-          throw new Error(codeData.message || "Failed to send verification code");
-        }
-
-        setStep("verify");
-        setMessage(`📩 Verification code sent to ${contact}.`);
+        return;
       }
+
+      // REGISTER SUCCESS -> SEND CODE -> SHOW VERIFY INPUT
+      const codeRes = await fetch(`${baseUrl}/api/request-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact }),
+      });
+
+      const codeData = await codeRes.json();
+
+      if (!codeRes.ok || !codeData.success) {
+        throw new Error(codeData.message || "Failed to send verification code");
+      }
+
+      setStep("verify");
+      setMessage(`📩 Verification code sent to: ${contact} — Enter it below to activate your account.`);
     } catch (err) {
       setError(err.message || "❌ Server error.");
     } finally {
@@ -129,12 +158,11 @@ export default function StartModal({ onLoginSuccess }) {
     setError("");
     setMessage("");
 
-    if (!verificationCode) return setError("⚠ Enter verification code.");
+    if (!verificationCode) return setError("⚠ Please enter the verification code.");
 
     try {
       setLoading(true);
 
-      // ✅ verify using correct backend route
       const res = await fetch(`${baseUrl}/api/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,9 +172,9 @@ export default function StartModal({ onLoginSuccess }) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Verification failed");
 
-      setMessage("✅ Account verified! Logging you in...");
+      setMessage("✅ Verified successfully! Logging you in now...");
 
-      // Auto-login after verification
+      // Auto login after verification
       const loginRes = await fetch(`${baseUrl}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,8 +182,9 @@ export default function StartModal({ onLoginSuccess }) {
       });
 
       const loginData = await loginRes.json();
-      if (!loginRes.ok || !loginData.success)
+      if (!loginRes.ok || !loginData.success) {
         throw new Error(loginData.message || "Login after verification failed");
+      }
 
       const userData = {
         contact: loginData.contact,
@@ -191,10 +220,9 @@ export default function StartModal({ onLoginSuccess }) {
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) throw new Error(data.message || "Failed to resend code.");
 
-      setMessage("🔄 Verification code resent!");
+      setMessage(`🔄 New code sent to: ${contact}. Check your inbox/spam.`);
     } catch (err) {
       setError(err.message || "❌ Could not resend code.");
     } finally {
@@ -205,20 +233,12 @@ export default function StartModal({ onLoginSuccess }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div className="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl space-y-4">
-        {mode && (
-          <button
-            onClick={() => {
-              setMode(null);
-              setStep("form");
-              setError("");
-              setMessage("");
-            }}
-            className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
-          >
-            <X />
-          </button>
-        )}
+        {/* Close */}
+        <button onClick={resetAll} className="absolute top-3 right-3 text-gray-400 hover:text-red-500">
+          <X />
+        </button>
 
+        {/* Guest Overlay */}
         {!mode && (
           <div className="space-y-3">
             <GuestOverlay onLogin={() => setMode("login")} />
@@ -232,6 +252,7 @@ export default function StartModal({ onLoginSuccess }) {
           </div>
         )}
 
+        {/* FORM */}
         {mode && step === "form" && (
           <>
             <h2 className="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">
@@ -318,18 +339,24 @@ export default function StartModal({ onLoginSuccess }) {
           </>
         )}
 
+        {/* VERIFY */}
         {mode && step === "verify" && (
           <>
-            <h2 className="text-xl font-bold text-center mb-4 text-blue-600 dark:text-blue-400">
-              🔐 Verify Account
+            <h2 className="text-xl font-bold text-center mb-1 text-blue-600 dark:text-blue-400">
+              🔐 Enter Verification Code
             </h2>
 
-            <form onSubmit={handleVerify} className="space-y-3">
+            <p className="text-sm text-center text-gray-500 dark:text-gray-300">
+              We sent a 6-digit code to: <span className="font-semibold">{contact}</span>
+            </p>
+
+            <form onSubmit={handleVerify} className="space-y-3 mt-3">
               <input
-                placeholder="Verification Code"
+                ref={codeInputRef}
+                placeholder="Enter 6-digit code (e.g. 123456)"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
-                className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                className="w-full p-3 rounded border text-center tracking-widest text-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
 
               <button
@@ -337,23 +364,40 @@ export default function StartModal({ onLoginSuccess }) {
                 disabled={loading}
                 className="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Verify & Continue
+                {loading ? "Verifying..." : "Verify & Continue"}
               </button>
             </form>
 
-            <button
-              onClick={resendCode}
-              className="mt-2 w-full py-1 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              disabled={loading}
-            >
-              🔄 Resend Code
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={resendCode}
+                className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                disabled={loading}
+              >
+                🔄 Resend Code
+              </button>
+
+              <button
+                onClick={() => {
+                  setStep("form");
+                  setVerificationCode("");
+                  setMessage("");
+                  setError("");
+                }}
+                className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                disabled={loading}
+              >
+                ⬅ Back
+              </button>
+            </div>
           </>
         )}
 
+        {/* FEEDBACK */}
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
 
+        {/* LEGAL */}
         <div className="text-xs text-center text-gray-400 mt-3">
           By continuing, you agree to our{" "}
           <button onClick={() => setShowLegal(true)} className="underline">
