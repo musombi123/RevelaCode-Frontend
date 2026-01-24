@@ -62,6 +62,16 @@ export default function StartModal({ onLoginSuccess }) {
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || "Failed to send verification code");
+
+    // Auto-fill debug code in dev if available
+    if (data.debug_code) {
+      setVerificationCode(data.debug_code);
+      setMessage(`📩 Debug code applied for ${email}.`);
+    } else {
+      setVerificationCode("");
+      setMessage(`📩 Verification code sent to ${email}.`);
+    }
+
     return data;
   };
 
@@ -138,8 +148,7 @@ export default function StartModal({ onLoginSuccess }) {
       // Register -> request verification code
       await requestVerificationCode(contact);
       setStep("verify");
-      setVerificationCode("");
-      setMessage(`📩 Code sent to ${contact}. Enter below.`);
+      hasAutoSubmittedRef.current = false;
     } catch (err) {
       setError(err.message || "❌ Server error.");
     } finally {
@@ -190,8 +199,7 @@ export default function StartModal({ onLoginSuccess }) {
     try {
       setLoading(true); setError(""); setMessage("");
       await requestVerificationCode(contact);
-      setMessage(`🔄 New code sent to ${contact}.`);
-      setVerificationCode(""); hasAutoSubmittedRef.current=false;
+      hasAutoSubmittedRef.current=false;
       setTimeout(() => codeInputRef.current?.focus(), 200);
     } catch (err) { setError(err.message || "❌ Could not resend code"); } finally { setLoading(false); }
   };
