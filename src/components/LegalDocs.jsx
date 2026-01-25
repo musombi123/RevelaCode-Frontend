@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
 export default function LegalDocs({
-  activeTab: activeTabProp = "privacy", // supports dashboard usage
-  onBack, // for dashboard Back button
-  onClose, // optional if used as modal
+  activeTab: activeTabProp = "privacy", // default tab if used in dashboard
+  onBack, // optional dashboard back button
+  onClose, // optional close button for modal
 }) {
   const [activeTab, setActiveTab] = useState(activeTabProp); // "privacy" | "terms"
   const [content, setContent] = useState("");
@@ -19,14 +19,11 @@ export default function LegalDocs({
     setErrorMsg("");
     try {
       const res = await fetch(`${baseUrl}/api/legal/${type}`);
-
-      if (!res.ok) {
-        throw new Error(`Failed to load ${type}: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Failed to load ${type}: ${res.status}`);
 
       const data = await res.json();
 
-      // ✅ supports both {content: "..."} and {html: "..."} formats
+      // supports both {content: "..."} and {html: "..."}
       const raw =
         typeof data?.content === "string"
           ? data.content
@@ -34,16 +31,14 @@ export default function LegalDocs({
           ? data.html
           : "";
 
-      if (!raw) {
-        throw new Error("Backend returned empty legal document.");
-      }
+      if (!raw) throw new Error("Backend returned empty legal document.");
 
       setContent(raw);
     } catch (err) {
       console.warn(err);
       setErrorMsg("Backend unavailable. Showing fallback legal content.");
 
-      // Fallback content if backend fails
+      // Fallback content
       setContent(
         type === "privacy"
           ? `<h3>Privacy Policy</h3><p>Your privacy is important. This document could not be loaded from the server.</p>`
@@ -54,25 +49,20 @@ export default function LegalDocs({
     }
   };
 
-  // ✅ if dashboard changes prop tab, update internal tab too
+  // sync with dashboard prop
   useEffect(() => {
     setActiveTab(activeTabProp);
   }, [activeTabProp]);
 
+  // fetch whenever tab changes
   useEffect(() => {
     fetchDoc(activeTab);
   }, [activeTab]);
 
   const renderHTML = () => {
-    // If backend returns plain text, we still display it nicely
     const safe =
       typeof content === "string" ? content.replace(/\n/g, "<br/>") : "";
-
-    return (
-      <div
-        dangerouslySetInnerHTML={{ __html: safe }}
-      />
-    );
+    return <div dangerouslySetInnerHTML={{ __html: safe }} />;
   };
 
   return (
@@ -80,7 +70,6 @@ export default function LegalDocs({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          {/* Back button (required by your dashboard rules) */}
           {onBack && (
             <button
               onClick={onBack}
@@ -96,7 +85,6 @@ export default function LegalDocs({
           </h2>
         </div>
 
-        {/* Close button (optional - only if used as modal) */}
         {onClose && (
           <button
             onClick={onClose}
@@ -134,7 +122,7 @@ export default function LegalDocs({
         </Button>
       </div>
 
-      {/* Error note */}
+      {/* Error Note */}
       {errorMsg && (
         <div className="mb-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 text-sm">
           ⚠ {errorMsg}

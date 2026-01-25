@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Loader2, RefreshCw, Filter, MapPin, Tags } from "lucide-react";
+import { Loader2, RefreshCw, MapPin, Tags } from "lucide-react";
 
-const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const CATEGORY_LABELS = {
   wars_conflicts: "Wars & Conflicts",
@@ -14,6 +14,8 @@ const CATEGORY_LABELS = {
   social_morality: "Moral Decay",
   false_peace: "False Peace",
   surveillance: "Surveillance",
+  general: "General",
+  technology_and_image_of_the_beast: "Technology & Image of the Beast",
 };
 
 const ITEMS_PER_PAGE = 8;
@@ -23,39 +25,33 @@ export default function ProphecyEventsDashboard() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [page, setPage] = useState(1);
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
+  // -----------------------------
+  // Fetch events from backend
+  // -----------------------------
   const loadEvents = async () => {
     setError("");
     setLoading(true);
-
     try {
-      const res = await fetch(`${baseUrl}/api/events`, {
+      const res = await fetch(`${API_URL}/api/events`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
 
-      // 🔒 Normalize ALL known backend shapes
-      const normalized =
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data?.events)
-          ? data.events
-          : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.data?.events)
-          ? data.data.events
-          : [];
+      // Normalize backend response
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.events)
+        ? data.events
+        : [];
 
-      // Optional: sort newest first if timestamps exist
+      // Sort by publishedAt or date descending
       const sorted = [...normalized].sort((a, b) => {
         const aTime = new Date(a?.publishedAt || a?.date || 0).getTime();
         const bTime = new Date(b?.publishedAt || b?.date || 0).getTime();
@@ -64,8 +60,8 @@ export default function ProphecyEventsDashboard() {
 
       setEvents(sorted);
     } catch (err) {
-      console.error("❌ Failed to load prophecy events:", err);
-      setError("We couldn’t load prophecy events right now. Please try again.");
+      console.error("❌ Failed to load events:", err);
+      setError("Failed to fetch prophecy events. Please try again.");
       setEvents([]);
     } finally {
       setLoading(false);
@@ -76,10 +72,9 @@ export default function ProphecyEventsDashboard() {
     loadEvents();
   }, []);
 
-  /* ------------------------------
-     Derived Filters (SAFE)
-  ------------------------------ */
-
+  // -----------------------------
+  // Derived lists
+  // -----------------------------
   const locations = useMemo(() => {
     const set = new Set();
     events.forEach((e) => {
@@ -90,24 +85,22 @@ export default function ProphecyEventsDashboard() {
 
   const filtered = useMemo(() => {
     return events.filter((e) => {
-      const categoryMatch = !category || e?.matched_symbols?.includes(category);
-
-      const locationMatch =
-        !location ||
-        location === "Global" ||
-        e?.location?.country === location;
-
-      return categoryMatch && locationMatch;
+      const catMatch = !category || e?.matched_symbols?.includes(category);
+      const locMatch =
+        !location || location === "Global" || e?.location?.country === location;
+      return catMatch && locMatch;
     });
   }, [events, category, location]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paged = filtered.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-
+  // -----------------------------
+  // JSX
+  // -----------------------------
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -117,7 +110,7 @@ export default function ProphecyEventsDashboard() {
             🌍 Global Prophetic Events
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Real-world headlines mapped to prophetic categories — filtered, clean, and readable.
+            Real-world headlines mapped to prophetic symbols and categories.
           </p>
         </div>
 
@@ -133,10 +126,8 @@ export default function ProphecyEventsDashboard() {
       {/* Filters */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3 text-gray-800 dark:text-gray-200 font-semibold">
-          <Filter className="w-4 h-4" />
           Filters
         </div>
-
         <div className="flex flex-wrap gap-3 items-center">
           <select
             value={category}
@@ -198,7 +189,7 @@ export default function ProphecyEventsDashboard() {
         <div className="flex items-center justify-center gap-2 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Loading global events from backend...
+            Loading global events...
           </p>
         </div>
       )}
@@ -243,7 +234,6 @@ export default function ProphecyEventsDashboard() {
                     >
                       {e.headline || "Untitled Event"}
                     </a>
-
                     {e.publishedAt && (
                       <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {new Date(e.publishedAt).toLocaleDateString()}
@@ -265,14 +255,12 @@ export default function ProphecyEventsDashboard() {
                         📰 {e.source}
                       </span>
                     )}
-
                     {e.location?.country && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <MapPin className="w-3 h-3" />
                         {e.location.country}
                       </span>
                     )}
-
                     {Array.isArray(e.matched_symbols) &&
                       e.matched_symbols.map((cat) => (
                         <span
