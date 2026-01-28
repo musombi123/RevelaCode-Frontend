@@ -6,6 +6,7 @@ import {
   Download,
   Edit3,
   Send,
+  Mic,
 } from "lucide-react";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 
@@ -19,6 +20,7 @@ export default function AIAssistantDashboard() {
 
   const [inputText, setInputText] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
+  const [voiceActive, setVoiceActive] = useState(false);
   const textareaRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -74,7 +76,8 @@ export default function AIAssistantDashboard() {
         return copy;
       });
 
-      speak(data?.data?.content);
+      // Only speak if voice chat is active
+      if (voiceActive) speak(data?.data?.content);
     } catch {
       setMessages((m) => {
         const copy = [...m];
@@ -100,12 +103,12 @@ export default function AIAssistantDashboard() {
   /* ---------------- UTILITIES ---------------- */
   const copyText = (text) => navigator.clipboard.writeText(text);
 
-  const downloadText = (text) => {
-    const blob = new Blob([text], { type: "text/plain" });
+  const downloadPDF = (text) => {
+    const blob = new Blob([text], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "RevelaAI.txt";
+    a.download = "RevelaAI.pdf";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -135,7 +138,12 @@ export default function AIAssistantDashboard() {
 
   /* ---------------- HANDLE VOICE INPUT ---------------- */
   const handleVoiceResult = (heardText) => {
-    if (heardText) setInputText(heardText);
+    if (heardText) sendTextMessage(heardText);
+    setVoiceActive(false); // stop waveform when done
+  };
+
+  const startVoiceChat = () => {
+    setVoiceActive(true);
   };
 
   /* ---------------- UI ---------------- */
@@ -179,7 +187,7 @@ export default function AIAssistantDashboard() {
                     <button onClick={() => copyText(msg.text)}>
                       <Copy size={14} />
                     </button>
-                    <button onClick={() => downloadText(msg.text)}>
+                    <button onClick={() => downloadPDF(msg.text)}>
                       <Download size={14} />
                     </button>
                     <button onClick={() => shareText(msg.text)}>
@@ -194,7 +202,7 @@ export default function AIAssistantDashboard() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* INPUT AREA (NO BAR, JUST INPUT) */}
+      {/* INPUT AREA */}
       <div className="px-4 pb-4">
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           {/* UPLOAD */}
@@ -213,8 +221,23 @@ export default function AIAssistantDashboard() {
             className="flex-1 resize-none rounded-xl border px-4 py-3 max-h-40 overflow-y-auto dark:bg-gray-800 dark:border-gray-700"
           />
 
-          {/* SINGLE MICROPHONE → VOICE CHAT */}
-          <RevelaAIVoiceChat onVoiceResult={handleVoiceResult} />
+          {/* MICROPHONE → ONLY STARTS WHEN CLICKED */}
+          <button
+            onClick={startVoiceChat}
+            className={`p-3 rounded-full ${
+              voiceActive ? "bg-green-600" : "bg-gray-300 dark:bg-gray-700"
+            }`}
+          >
+            <Mic size={20} />
+          </button>
+
+          {/* VOICE CHAT OVERLAY */}
+          {voiceActive && (
+            <RevelaAIVoiceChat
+              onVoiceResult={handleVoiceResult}
+              showWaveform={true}
+            />
+          )}
 
           {/* SEND BUTTON */}
           <button

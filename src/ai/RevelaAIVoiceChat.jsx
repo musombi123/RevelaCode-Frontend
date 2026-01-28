@@ -9,6 +9,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
 
+  /* ---------------- START RECORDING ---------------- */
   const startRecording = async () => {
     try {
       setState("listening");
@@ -27,7 +28,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
 
       mediaRecorderRef.current.onstop = sendAudio;
 
-      // Safety auto-stop (mobile friendly)
+      // Safety auto-stop after 6s (mobile-friendly)
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") {
           stopRecording();
@@ -39,34 +40,35 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
     }
   };
 
+  /* ---------------- STOP RECORDING ---------------- */
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    setState("processing");
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      setState("processing");
+    }
   };
 
+  /* ---------------- SEND AUDIO TO SERVER ---------------- */
   const sendAudio = async () => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("audio", blob, "voice.webm");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_REVELAAI_URL}/voice`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/voice`, {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await res.json();
 
-      /* 🎙️ AUTO-SEND TEXT */
+      // Auto-send recognized text
       if (data?.heard) {
         onVoiceResult(data.heard);
       }
 
-      /* 🧠 STREAM-LIKE RESPONSE AUDIO */
+      // Play AI response audio
       if (data?.audio_file) {
         setState("responding");
 
@@ -85,6 +87,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
     }
   };
 
+  /* ---------------- BUTTON CLICK ---------------- */
   const handleClick = () => {
     if (state === "idle") startRecording();
     else if (state === "listening") stopRecording();
