@@ -37,7 +37,6 @@ export default function ProphecyEventsDashboard() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      // Backend returns { events: [...] } or [] fallback
       const normalized = Array.isArray(data?.events) ? data.events : Array.isArray(data) ? data : [];
       const sorted = normalized.sort((a, b) => new Date(b?.publishedAt || 0) - new Date(a?.publishedAt || 0));
       setEvents(sorted);
@@ -175,7 +174,13 @@ export default function ProphecyEventsDashboard() {
 
                   {/* Image */}
                   {e.urlToImage && (
-                    <img src={e.urlToImage} alt={e.headline} className="w-full rounded-lg object-cover max-h-64" />
+                    <div className="w-full h-64 overflow-hidden rounded-lg">
+                      <img
+                        src={e.urlToImage}
+                        alt={e.headline}
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      />
+                    </div>
                   )}
 
                   {/* Description */}
@@ -237,7 +242,7 @@ export default function ProphecyEventsDashboard() {
             onClick={() => setPage((p) => p + 1)}
             className={`px-4 py-2 rounded-lg border transition font-semibold ${page >= totalPages ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-800" : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
           >
-            Next →
+            Next → 
           </button>
         </div>
       )}
