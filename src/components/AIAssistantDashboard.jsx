@@ -39,7 +39,7 @@ export default function AIAssistantDashboard() {
 
   /* ---------------- TEXT TO SPEECH ---------------- */
   const speak = (text) => {
-    if (!text) return;
+    if (!text || !voiceActive) return;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -76,8 +76,7 @@ export default function AIAssistantDashboard() {
         return copy;
       });
 
-      // Only speak if voice chat is active
-      if (voiceActive) speak(data?.data?.content);
+      speak(data?.data?.content);
     } catch {
       setMessages((m) => {
         const copy = [...m];
@@ -138,8 +137,11 @@ export default function AIAssistantDashboard() {
 
   /* ---------------- HANDLE VOICE INPUT ---------------- */
   const handleVoiceResult = (heardText) => {
-    if (heardText) sendTextMessage(heardText);
-    setVoiceActive(false); // stop waveform when done
+    if (heardText) {
+      // Auto-send voice transcription
+      sendTextMessage(heardText);
+    }
+    setVoiceActive(false); // Stop waveform when done
   };
 
   const startVoiceChat = () => {
@@ -221,7 +223,7 @@ export default function AIAssistantDashboard() {
             className="flex-1 resize-none rounded-xl border px-4 py-3 max-h-40 overflow-y-auto dark:bg-gray-800 dark:border-gray-700"
           />
 
-          {/* MICROPHONE → ONLY STARTS WHEN CLICKED */}
+          {/* MICROPHONE */}
           <button
             onClick={startVoiceChat}
             className={`p-3 rounded-full ${
