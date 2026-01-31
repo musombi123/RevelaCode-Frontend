@@ -12,8 +12,13 @@ export default function UserProfile({ user }) {
     );
   }
 
-  const initials = user.full_name
-    ? user.full_name
+  // Normalize field names (StartModal uses fullName, API might use full_name)
+  const fullName = user.fullName || user.full_name || "Guest";
+  const contact = user.contact || "";
+  const role = user.role || "normal";
+
+  const initials = fullName
+    ? fullName
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -30,31 +35,27 @@ export default function UserProfile({ user }) {
 
         <div>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-            {user.full_name || "Guest"}
+            {fullName}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Role: {user.role || "normal"}
+            Role: {role}
           </p>
         </div>
       </CardHeader>
 
       {/* Content */}
       <CardContent className="p-4 space-y-3 text-sm">
-        {user.contact && (
+        {contact && (
           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            {user.contact.includes("@") ? (
-              <Mail className="w-4 h-4" />
-            ) : (
-              <Phone className="w-4 h-4" />
-            )}
-            <span>{user.contact}</span>
+            {contact.includes("@") ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+            <span>{contact}</span>
           </div>
         )}
 
-        {user.role && (
+        {role && (
           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
             <Shield className="w-4 h-4" />
-            <span>{user.role}</span>
+            <span>{role}</span>
           </div>
         )}
       </CardContent>

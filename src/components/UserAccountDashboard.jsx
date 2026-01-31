@@ -31,40 +31,43 @@ import UserProfile from "./accounts/UserProfile";
 
 /**
  * 🔐 User Dashboard:
- * - Fetches real user data from backend
+ * - Fully reactive to StartModal login
+ * - Merges StartModal user with backend data
  * - Supports guest and logged-in flows
- * - Maintains history, settings, and account info
  */
 export default function UserAccountDashboard({ user, onLogout, onLogin }) {
   const [activeView, setActiveView] = useState("profile");
   const [viewStack, setViewStack] = useState([]);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(user || null); // Immediately show StartModal user
   const [loadingUserData, setLoadingUserData] = useState(false);
 
   const isGuest = !user || user?.role === "guest";
-
   const API_BASE = import.meta.env.VITE_API_URL;
 
-  // Fetch user data from backend
+  // Fetch full backend data if not guest
   useEffect(() => {
     if (!isGuest && user?.contact) {
       setLoadingUserData(true);
       fetch(`${API_BASE}/api/user/${user.contact}`)
         .then((res) => res.json())
-        .then((data) => setUserData(data))
+        .then((data) => {
+          // Merge backend data with existing StartModal user info
+          setUserData((prev) => ({ ...prev, ...data }));
+        })
         .catch(console.error)
         .finally(() => setLoadingUserData(false));
     }
   }, [user, isGuest, API_BASE]);
 
-  // Start view based on guest or logged-in
+  // Set initial view
   useEffect(() => {
     setActiveView(isGuest ? "login" : "profile");
   }, [isGuest]);
 
-  // Track navigation for back button
+  // Navigation stack for back button
   useEffect(() => {
     setViewStack((prev) => {
+      if (!activeView) return prev;
       if (prev.length === 0) return [activeView];
       if (prev[prev.length - 1] === activeView) return prev;
       return [...prev, activeView];
@@ -99,6 +102,12 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
   const guestMenuItems = useMemo(() => [{ key: "login", label: "Login", icon: LogIn }], []);
   const menuItems = isGuest ? guestMenuItems : fullMenuItems;
   const showBackButton = ["privacy", "terms"].includes(activeView);
+
+  const handleStartModalLogin = (newUser) => {
+    setUserData(newUser); // instantly update dashboard
+    onLogin?.(newUser);
+    setActiveView("profile");
+  };
 
   const renderContent = () => {
     if (isGuest && activeView !== "login") {
@@ -135,7 +144,7 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
               </p>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => onLogin?.()}
+                  onClick={() => handleStartModalLogin({ contact: "guest@example.com", fullName: "Guest User", role: "guest" })}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow transition"
                 >
                   <LogIn className="w-4 h-4" />
@@ -161,7 +170,7 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
         );
 
       case "profile":
-        return <UserProfile user={{ ...user, settings: userData?.settings }} />;
+        return <UserProfile user={userData} />;
 
       case "settings":
         return <PreferencesDashboard userData={userData} />;
@@ -237,8 +246,8 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
         {/* Mini user label */}
         <div className="mb-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isGuest ? "Guest" : user?.full_name || "User"}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Role: {isGuest ? "guest" : user?.role || "normal"}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userData?.fullName || userData?.full_name || "Guest"}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Role: {userData?.role || "guest"}</p>
         </div>
 
         <nav className="space-y-1">
@@ -267,7 +276,9 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-4">{<Suspense fallback={<Loading />}>{renderContent()}</Suspense>}</main>
+      <main className="flex-1 overflow-y-auto p-4">
+        <Suspense fallback={<Loading />}>{renderContent()}</Suspense>
+      </main>
     </div>
   );
 }
