@@ -2,61 +2,63 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
+/* ==============================
+   LOCAL LEGAL CONTENT (NO API)
+   ============================== */
+
+const PRIVACY_DOC = `
+<h3>Privacy Policy</h3>
+<p>Your privacy matters. We collect only what is necessary to run the application effectively.</p>
+
+<h4>Data Collection</h4>
+<p>We may collect basic usage data such as interaction patterns and preferences.</p>
+
+<h4>Data Usage</h4>
+<p>Your information is used strictly to improve your experience within this platform.</p>
+
+<h4>Security</h4>
+<p>We implement reasonable safeguards to protect your data from unauthorized access.</p>
+`;
+
+const TERMS_DOC = `
+<h3>Terms of Service</h3>
+<p>By using this application, you agree to use it responsibly and ethically.</p>
+
+<h4>Acceptable Use</h4>
+<p>No malicious activity, exploitation, or abuse of the platform is permitted.</p>
+
+<h4>Liability</h4>
+<p>We are not responsible for third-party content accessed through external links.</p>
+
+<h4>Modifications</h4>
+<p>These terms may be updated from time to time without prior notice.</p>
+`;
+
 export default function LegalDocs({
-  activeTab: activeTabProp = "privacy", // default tab if used in dashboard
-  onBack, // optional dashboard back button
-  onClose, // optional close button for modal
+  activeTab: activeTabProp = "privacy",
+  onBack,
+  onClose,
 }) {
-  const [activeTab, setActiveTab] = useState(activeTabProp); // "privacy" | "terms"
+  const [activeTab, setActiveTab] = useState(activeTabProp);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-  const fetchDoc = async (type) => {
+  const loadLocalDoc = (type) => {
     setLoading(true);
-    setErrorMsg("");
-    try {
-      const res = await fetch(`${baseUrl}/api/legal/${type}`);
-      if (!res.ok) throw new Error(`Failed to load ${type}: ${res.status}`);
 
-      const data = await res.json();
-
-      // supports both {content: "..."} and {html: "..."}
-      const raw =
-        typeof data?.content === "string"
-          ? data.content
-          : typeof data?.html === "string"
-          ? data.html
-          : "";
-
-      if (!raw) throw new Error("Backend returned empty legal document.");
-
-      setContent(raw);
-    } catch (err) {
-      console.warn(err);
-      setErrorMsg("Backend unavailable. Showing fallback legal content.");
-
-      // Fallback content
-      setContent(
-        type === "privacy"
-          ? `<h3>Privacy Policy</h3><p>Your privacy is important. This document could not be loaded from the server.</p>`
-          : `<h3>Terms of Service</h3><p>Use this app responsibly. This document could not be loaded from the server.</p>`
-      );
-    } finally {
+    // Simulate a tiny async delay so the UX still feels "professional"
+    setTimeout(() => {
+      setContent(type === "privacy" ? PRIVACY_DOC : TERMS_DOC);
       setLoading(false);
-    }
+    }, 200);
   };
 
-  // sync with dashboard prop
   useEffect(() => {
     setActiveTab(activeTabProp);
   }, [activeTabProp]);
 
-  // fetch whenever tab changes
   useEffect(() => {
-    fetchDoc(activeTab);
+    loadLocalDoc(activeTab);
   }, [activeTab]);
 
   const renderHTML = () => {
@@ -114,20 +116,13 @@ export default function LegalDocs({
 
         <Button
           variant="outline"
-          onClick={() => fetchDoc(activeTab)}
+          onClick={() => loadLocalDoc(activeTab)}
           className="ml-auto"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
       </div>
-
-      {/* Error Note */}
-      {errorMsg && (
-        <div className="mb-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300 text-sm">
-          ⚠ {errorMsg}
-        </div>
-      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert bg-white dark:bg-gray-900">
