@@ -11,8 +11,8 @@ export default function UserProfile({ user }) {
     );
   }
 
-  // Normalize field names (StartModal uses fullName, API might use full_name)
-  const fullName = user.full_name || user.fullName || "Guest";
+  // ✅ Align exactly with StartModal + backend response
+  const fullName = user.full_name || "Guest";   // <-- THIS is the source of truth
   const contact = user.contact || "";
   const role = user.role || "normal";
 
@@ -26,7 +26,6 @@ export default function UserProfile({ user }) {
 
   return (
     <Card className="shadow-md rounded-lg m-4 bg-white dark:bg-gray-900">
-      {/* Header */}
       <CardHeader className="flex items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
         <div className="w-14 h-14 flex items-center justify-center rounded-full bg-indigo-600 text-white text-lg font-bold">
           {initials || <User className="w-6 h-6" />}
@@ -42,21 +41,22 @@ export default function UserProfile({ user }) {
         </div>
       </CardHeader>
 
-      {/* Content */}
       <CardContent className="p-4 space-y-3 text-sm">
         {contact && (
           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            {contact.includes("@") ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+            {contact.includes("@") ? (
+              <Mail className="w-4 h-4" />
+            ) : (
+              <Phone className="w-4 h-4" />
+            )}
             <span>{contact}</span>
           </div>
         )}
 
-        {role && (
-          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-            <Shield className="w-4 h-4" />
-            <span>{role}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+          <Shield className="w-4 h-4" />
+          <span>{role}</span>
+        </div>
       </CardContent>
     </Card>
   );
