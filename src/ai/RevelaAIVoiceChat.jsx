@@ -2,12 +2,12 @@ import React, { useState, useRef } from "react";
 import { Mic } from "lucide-react";
 
 export default function RevelaAIVoiceChat({ onVoiceResult }) {
-  const [state, setState] = useState("idle"); 
-  // idle | listening | processing | responding
-
+  const [state, setState] = useState("idle"); // idle | listening | processing | responding
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+  const audioQueueRef = useRef([]); // Queue for multiple audio responses
+  const isPlayingRef = useRef(false);
 
   /* ---------------- START RECORDING ---------------- */
   const startRecording = async () => {
@@ -15,10 +15,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
       setState("listening");
       chunksRef.current = [];
 
-      streamRef.current = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(streamRef.current);
       mediaRecorderRef.current.start();
 
@@ -28,11 +25,9 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
 
       mediaRecorderRef.current.onstop = sendAudio;
 
-      // Safety auto-stop after 6s (mobile-friendly)
+      // Auto-stop after 6s
       setTimeout(() => {
-        if (mediaRecorderRef.current?.state === "recording") {
-          stopRecording();
-        }
+        if (mediaRecorderRef.current?.state === "recording") stopRecording();
       }, 6000);
     } catch (err) {
       console.error("Mic error:", err);
@@ -49,6 +44,26 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
     }
   };
 
+  /* ---------------- PLAY QUEUED AUDIO ---------------- */
+  const playNextAudio = () => {
+    if (audioQueueRef.current.length === 0) {
+      isPlayingRef.current = false;
+      setState("idle");
+      return;
+    }
+
+    const nextUrl = audioQueueRef.current.shift();
+    isPlayingRef.current = true;
+    setState("responding");
+
+    const audio = new Audio(nextUrl);
+    audio.onended = () => playNextAudio();
+    audio.play().catch((err) => {
+      console.error("Audio play failed:", err);
+      playNextAudio();
+    });
+  };
+
   /* ---------------- SEND AUDIO TO SERVER ---------------- */
   const sendAudio = async () => {
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
@@ -60,30 +75,28 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
         method: "POST",
         body: formData,
       });
-
       const data = await res.json();
+      console.log("Voice response:", data);
 
-      // Auto-send recognized text
-      if (data?.heard) {
-        onVoiceResult(data.heard);
-      }
+      // Send recognized text back
+      if (data?.heard) onVoiceResult(data.heard);
 
-      // Play AI response audio
-      if (data?.audio_file) {
-        setState("responding");
+      // Queue audio for playback
+      if (data?.audio_url) {
+        const audioUrl =
+          data.audio_url.startsWith("/") ? data.audio_url : `/${data.audio_url}`;
+        const fullUrl = `${import.meta.env.VITE_REVELAAI_URL}${audioUrl}`;
 
-        const audio = new Audio(
-          `${import.meta.env.VITE_REVELAAI_URL}${data.audio_file}`
-        );
+        audioQueueRef.current.push(fullUrl);
 
-        audio.onended = () => setState("idle");
-        audio.play();
+        // If nothing is playing, start playback immediately
+        if (!isPlayingRef.current) playNextAudio();
       } else {
-        setState("idle");
+        if (!isPlayingRef.current) setState("idle");
       }
     } catch (err) {
       console.error("Voice request failed:", err);
-      setState("idle");
+      if (!isPlayingRef.current) setState("idle");
     }
   };
 
@@ -105,8 +118,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult }) {
             : state === "responding"
             ? "bg-green-600"
             : "bg-blue-600 hover:bg-blue-700"
-        }
-        text-white`}
+        } text-white`}
       title={
         state === "listening"
           ? "Tap to stop"
