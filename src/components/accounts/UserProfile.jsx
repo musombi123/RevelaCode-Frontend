@@ -1,4 +1,3 @@
-// src/components/accounts/UserProfile.jsx
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { User, Mail, Phone, Shield } from "lucide-react";
@@ -13,7 +12,7 @@ export default function UserProfile({ user }) {
   }
 
   // Normalize field names (StartModal uses fullName, API might use full_name)
-  const fullName = user.fullName || user.full_name || "Guest";
+  const fullName = user.full_name || user.fullName || "Guest";
   const contact = user.contact || "";
   const role = user.role || "normal";
 

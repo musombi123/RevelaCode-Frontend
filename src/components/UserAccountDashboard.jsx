@@ -10,7 +10,6 @@ import {
   FileText,
   Shield,
   Link2,
-  ArrowLeft,
   LogIn,
 } from "lucide-react";
 import Loading from "./common/Loading";
@@ -38,7 +37,7 @@ import UserProfile from "./accounts/UserProfile";
 export default function UserAccountDashboard({ user, onLogout, onLogin }) {
   const [activeView, setActiveView] = useState("profile");
   const [viewStack, setViewStack] = useState([]);
-  const [userData, setUserData] = useState(user || null); // Immediately show StartModal user
+  const [userData, setUserData] = useState(user || null); // show StartModal user immediately
   const [loadingUserData, setLoadingUserData] = useState(false);
 
   const isGuest = !user || user?.role === "guest";
@@ -51,7 +50,7 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
       fetch(`${API_BASE}/api/user/${user.contact}`)
         .then((res) => res.json())
         .then((data) => {
-          // Merge backend data with existing StartModal user info
+          // Merge backend data with StartModal info
           setUserData((prev) => ({ ...prev, ...data }));
         })
         .catch(console.error)
@@ -64,7 +63,7 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
     setActiveView(isGuest ? "login" : "profile");
   }, [isGuest]);
 
-  // Navigation stack for back button
+  // Navigation stack
   useEffect(() => {
     setViewStack((prev) => {
       if (!activeView) return prev;
@@ -101,8 +100,8 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
 
   const guestMenuItems = useMemo(() => [{ key: "login", label: "Login", icon: LogIn }], []);
   const menuItems = isGuest ? guestMenuItems : fullMenuItems;
-  const showBackButton = ["privacy", "terms"].includes(activeView);
 
+  // Called when user logs in via StartModal
   const handleStartModalLogin = (newUser) => {
     setUserData(newUser); // instantly update dashboard
     onLogin?.(newUser);
@@ -144,7 +143,9 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
               </p>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => handleStartModalLogin({ contact: "guest@example.com", fullName: "Guest User", role: "guest" })}
+                  onClick={() =>
+                    handleStartModalLogin({ contact: "guest@example.com", full_name: "Guest User", role: "guest" })
+                  }
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow transition"
                 >
                   <LogIn className="w-4 h-4" />
@@ -246,7 +247,9 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
         {/* Mini user label */}
         <div className="mb-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userData?.fullName || userData?.full_name || "Guest"}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {userData?.full_name || userData?.fullName || "Guest"}
+          </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Role: {userData?.role || "guest"}</p>
         </div>
 
@@ -256,7 +259,9 @@ export default function UserAccountDashboard({ user, onLogout, onLogin }) {
               key={key}
               onClick={() => setActiveView(key)}
               className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition ${
-                activeView === key ? "bg-indigo-600 text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                activeView === key
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <Icon className="w-4 h-4" />
