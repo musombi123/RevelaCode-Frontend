@@ -1,48 +1,47 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Upload,
-  Copy,
-  Share2,
-  Download,
-  Edit3,
-  Send,
-  Mic,
-} from "lucide-react";
+import { Upload, Copy, Share2, Download, Edit3, Send, Mic } from "lucide-react";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 
 export default function AIAssistantDashboard() {
   const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "👋 Hi! I’m RevelaAI. Ask me anything or upload a file to get insights.",
-    },
+    { role: "assistant", text: "👋 Hi! I’m RevelaAI. Ask me anything or upload a file to get insights." },
   ]);
-
   const [inputText, setInputText] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
   const [voiceActive, setVoiceActive] = useState(false);
   const textareaRef = useRef(null);
   const chatEndRef = useRef(null);
 
+  // TTS queue
+  const speechQueueRef = useRef([]);
+  const isSpeakingRef = useRef(false);
+
   /* ---------------- AUTO SCROLL ---------------- */
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   /* ---------------- AUTO RESIZE TEXTAREA ---------------- */
   useEffect(() => {
     if (!textareaRef.current) return;
     textareaRef.current.style.height = "auto";
-    textareaRef.current.style.height =
-      Math.min(textareaRef.current.scrollHeight, 160) + "px";
+    textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
   }, [inputText]);
 
-  /* ---------------- TEXT TO SPEECH ---------------- */
-  const speak = (text) => {
-    if (!text || !voiceActive) return;
-    const utterance = new SpeechSynthesisUtterance(text);
+  /* ---------------- QUEUED SPEECH ---------------- */
+  const speakQueued = (text) => {
+    if (!text) return;
+    speechQueueRef.current.push(text);
+
+    if (isSpeakingRef.current) return;
+
+    const next = speechQueueRef.current.shift();
+    isSpeakingRef.current = true;
+    const utterance = new SpeechSynthesisUtterance(next);
     utterance.rate = 1;
     utterance.pitch = 1;
+    utterance.onend = () => {
+      isSpeakingRef.current = false;
+      if (speechQueueRef.current.length > 0) speakQueued("");
+    };
     speechSynthesis.speak(utterance);
   };
 
@@ -51,11 +50,7 @@ export default function AIAssistantDashboard() {
     if (!text.trim()) return;
 
     const userMessage = { role: "user", text };
-    setMessages((m) => [
-      ...m,
-      userMessage,
-      { role: "assistant", text: "⏳ Thinking..." },
-    ]);
+    setMessages((m) => [...m, userMessage, { role: "assistant", text: "⏳ Thinking..." }]);
     setInputText("");
 
     try {
@@ -64,26 +59,20 @@ export default function AIAssistantDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
-
       const data = await res.json();
 
+      const assistantText = data?.data?.content || "⚠️ Something went wrong.";
       setMessages((m) => {
         const copy = [...m];
-        copy[copy.length - 1] = {
-          role: "assistant",
-          text: data?.data?.content || "⚠️ Something went wrong.",
-        };
+        copy[copy.length - 1] = { role: "assistant", text: assistantText };
         return copy;
       });
 
-      speak(data?.data?.content);
+      speakQueued(assistantText); // queue AI voice
     } catch {
       setMessages((m) => {
         const copy = [...m];
-        copy[copy.length - 1] = {
-          role: "assistant",
-          text: "⚠️ Network error.",
-        };
+        copy[copy.length - 1] = { role: "assistant", text: "⚠️ Network error." };
         return copy;
       });
     }
@@ -101,7 +90,6 @@ export default function AIAssistantDashboard() {
 
   /* ---------------- UTILITIES ---------------- */
   const copyText = (text) => navigator.clipboard.writeText(text);
-
   const downloadPDF = (text) => {
     const blob = new Blob([text], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
@@ -111,23 +99,18 @@ export default function AIAssistantDashboard() {
     a.click();
     URL.revokeObjectURL(url);
   };
+  const shareText = (text) => { if (navigator.share) navigator.share({ text }); else alert("Sharing not supported."); };
 
-  const shareText = (text) => {
-    if (navigator.share) navigator.share({ text });
-    else alert("Sharing not supported.");
-  };
-
+  /* ---------------- FILE UPLOAD ---------------- */
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = () =>
-      sendTextMessage(`Please analyze this document:\n${reader.result}`);
+    reader.onload = () => sendTextMessage(`Please analyze this document:\n${reader.result}`);
     reader.readAsText(file);
   };
 
-  /* ---------------- HANDLE ENTER KEY ---------------- */
+  /* ---------------- HANDLE ENTER ---------------- */
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -135,18 +118,12 @@ export default function AIAssistantDashboard() {
     }
   };
 
-  /* ---------------- HANDLE VOICE INPUT ---------------- */
+  /* ---------------- VOICE INPUT ---------------- */
   const handleVoiceResult = (heardText) => {
-    if (heardText) {
-      // Auto-send voice transcription
-      sendTextMessage(heardText);
-    }
-    setVoiceActive(false); // Stop waveform when done
+    if (heardText) sendTextMessage(heardText);
+    setVoiceActive(false);
   };
-
-  const startVoiceChat = () => {
-    setVoiceActive(true);
-  };
+  const startVoiceChat = () => setVoiceActive(true);
 
   /* ---------------- UI ---------------- */
   return (
@@ -154,47 +131,22 @@ export default function AIAssistantDashboard() {
       {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`group max-w-3xl ${
-              msg.role === "user" ? "ml-auto" : "mr-auto"
-            }`}
-          >
-            <div
-              className={`relative rounded-xl p-4 ${
-                msg.role === "user"
-                  ? "bg-green-100 dark:bg-green-900"
-                  : "bg-white dark:bg-gray-800 shadow"
-              }`}
-            >
+          <div key={idx} className={`group max-w-3xl ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}>
+            <div className={`relative rounded-xl p-4 ${msg.role === "user" ? "bg-green-100 dark:bg-green-900" : "bg-white dark:bg-gray-800 shadow"}`}>
               {editingIndex === idx ? (
-                <textarea
-                  defaultValue={msg.text}
-                  className="w-full resize-none bg-transparent outline-none"
-                  onBlur={(e) => saveEdit(idx, e.target.value)}
-                />
+                <textarea defaultValue={msg.text} className="w-full resize-none bg-transparent outline-none" onBlur={(e) => saveEdit(idx, e.target.value)} />
               ) : (
                 <p className="whitespace-pre-wrap">{msg.text}</p>
               )}
 
               {/* ACTIONS */}
               <div className="absolute -top-3 right-2 opacity-0 group-hover:opacity-100 flex gap-2 bg-white dark:bg-gray-900 rounded-lg p-1 shadow">
-                {msg.role === "user" && (
-                  <button onClick={() => setEditingIndex(idx)}>
-                    <Edit3 size={14} />
-                  </button>
-                )}
+                {msg.role === "user" && <button onClick={() => setEditingIndex(idx)}><Edit3 size={14} /></button>}
                 {msg.role === "assistant" && (
                   <>
-                    <button onClick={() => copyText(msg.text)}>
-                      <Copy size={14} />
-                    </button>
-                    <button onClick={() => downloadPDF(msg.text)}>
-                      <Download size={14} />
-                    </button>
-                    <button onClick={() => shareText(msg.text)}>
-                      <Share2 size={14} />
-                    </button>
+                    <button onClick={() => copyText(msg.text)}><Copy size={14} /></button>
+                    <button onClick={() => downloadPDF(msg.text)}><Download size={14} /></button>
+                    <button onClick={() => shareText(msg.text)}><Share2 size={14} /></button>
                   </>
                 )}
               </div>
@@ -226,20 +178,13 @@ export default function AIAssistantDashboard() {
           {/* MICROPHONE */}
           <button
             onClick={startVoiceChat}
-            className={`p-3 rounded-full ${
-              voiceActive ? "bg-green-600" : "bg-gray-300 dark:bg-gray-700"
-            }`}
+            className={`p-3 rounded-full ${voiceActive ? "bg-green-600" : "bg-gray-300 dark:bg-gray-700"}`}
           >
             <Mic size={20} />
           </button>
 
           {/* VOICE CHAT OVERLAY */}
-          {voiceActive && (
-            <RevelaAIVoiceChat
-              onVoiceResult={handleVoiceResult}
-              showWaveform={true}
-            />
-          )}
+          {voiceActive && <RevelaAIVoiceChat onVoiceResult={handleVoiceResult} showWaveform={true} />}
 
           {/* SEND BUTTON */}
           <button
