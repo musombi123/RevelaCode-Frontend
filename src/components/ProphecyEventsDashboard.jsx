@@ -25,10 +25,12 @@ export default function ProphecyEventsDashboard() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState({}); // 👈 NEW: track expanded items
 
-  // -----------------------------
-  // Fetch events
-  // -----------------------------
+  const toggleExpand = (idx) => {
+    setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   const loadEvents = async () => {
     setError("");
     setLoading(true);
@@ -61,9 +63,6 @@ export default function ProphecyEventsDashboard() {
     loadEvents();
   }, []);
 
-  // -----------------------------
-  // Derived lists
-  // -----------------------------
   const locations = useMemo(() => {
     const set = new Set();
     events.forEach((e) => {
@@ -90,9 +89,6 @@ export default function ProphecyEventsDashboard() {
     page * ITEMS_PER_PAGE
   );
 
-  // -----------------------------
-  // JSX
-  // -----------------------------
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -154,7 +150,6 @@ export default function ProphecyEventsDashboard() {
         </div>
       </div>
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center gap-2 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
@@ -164,7 +159,6 @@ export default function ProphecyEventsDashboard() {
         </div>
       )}
 
-      {/* Error */}
       {!loading && error && (
         <div className="p-5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 shadow-sm">
           <p className="font-semibold">⚠ {error}</p>
@@ -178,7 +172,6 @@ export default function ProphecyEventsDashboard() {
         </div>
       )}
 
-      {/* Events */}
       {!loading && !error && (
         <div className="grid gap-4">
           {paged.length === 0 ? (
@@ -188,96 +181,112 @@ export default function ProphecyEventsDashboard() {
               </p>
             </div>
           ) : (
-            paged.map((e, idx) => (
-              <Card
-                key={e.url || idx}
-                className="hover:shadow-md transition border border-gray-200/70 dark:border-gray-800/70 rounded-xl h-auto"
-              >
-                <CardContent className="space-y-3 p-5">
-                  {/* Title */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3 items-start">
-                    <a
-                      href={e.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline break-words whitespace-normal"
-                    >
-                      {e.headline || "Untitled Event"}
-                    </a>
+            paged.map((e, idx) => {
+              const isExpanded = expanded[idx];
 
-                    {e.publishedAt && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {new Date(e.publishedAt).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
+              return (
+                <Card
+                  key={e.url || idx}
+                  className="hover:shadow-md transition border border-gray-200/70 dark:border-gray-800/70 rounded-xl h-auto"
+                >
+                  <CardContent className="space-y-3 p-5">
+                    {/* Title */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-3 items-start">
+                      <a
+                        href={e.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline break-words whitespace-normal"
+                      >
+                        {e.headline || "Untitled Event"}
+                      </a>
 
-                  {/* Image */}
-                  {e.urlToImage && (
-                    <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
-                      <img
-                        src={e.urlToImage}
-                        alt={e.headline}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                      />
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {e.description && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words whitespace-pre-line">
-                      {e.description}
-                    </p>
-                  )}
-
-                  {/* Matched Verses */}
-                  {e.matched_verses?.length > 0 && (
-                    <div className="flex flex-wrap gap-2 text-xs text-green-700 dark:text-green-300 mt-2">
-                      {e.matched_verses.map((v, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-800 break-words"
-                        >
-                          📖 {v}
+                      {e.publishedAt && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {new Date(e.publishedAt).toLocaleDateString()}
                         </span>
-                      ))}
+                      )}
                     </div>
-                  )}
 
-                  {/* Categories & Meta */}
-                  <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2 max-w-full">
-                    {e.source && (
-                      <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
-                        📰 {e.source}
-                      </span>
+                    {/* Image */}
+                    {e.urlToImage && (
+                      <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
+                        <img
+                          src={e.urlToImage}
+                          alt={e.headline}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                      </div>
                     )}
 
-                    {Array.isArray(e.matched_symbols) &&
-                      e.matched_symbols.map((cat) => (
-                        <span
-                          key={cat}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-900/40 break-words"
+                    {/* DESCRIPTION WITH READ MORE */}
+                    {e.description && (
+                      <div>
+                        <p
+                          className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words ${
+                            isExpanded ? "whitespace-pre-line" : "line-clamp-4"
+                          }`}
                         >
-                          <Tags className="w-3 h-3" />
-                          {CATEGORY_LABELS[cat] || cat}
-                        </span>
-                      ))}
+                          {e.description}
+                        </p>
 
-                    {e.location?.country && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
-                        <MapPin className="w-3 h-3" />
-                        {e.location.country}
-                      </span>
+                        <button
+                          onClick={() => toggleExpand(idx)}
+                          className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+                        >
+                          {isExpanded ? "Show less" : "Read more"}
+                        </button>
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+
+                    {/* Matched Verses */}
+                    {e.matched_verses?.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-xs text-green-700 dark:text-green-300 mt-2">
+                        {e.matched_verses.map((v, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-800 break-words"
+                          >
+                            📖 {v}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Categories & Meta */}
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2 max-w-full">
+                      {e.source && (
+                        <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
+                          📰 {e.source}
+                        </span>
+                      )}
+
+                      {Array.isArray(e.matched_symbols) &&
+                        e.matched_symbols.map((cat) => (
+                          <span
+                            key={cat}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-900/40 break-words"
+                          >
+                            <Tags className="w-3 h-3" />
+                            {CATEGORY_LABELS[cat] || cat}
+                          </span>
+                        ))}
+
+                      {e.location?.country && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
+                          <MapPin className="w-3 h-3" />
+                          {e.location.country}
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       )}
 
-      {/* Pagination */}
       {!loading && !error && filtered.length > ITEMS_PER_PAGE && (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
           <button
