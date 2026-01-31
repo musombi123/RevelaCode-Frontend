@@ -30,32 +30,40 @@ import { useHistory } from "@/context/HistoryContext.jsx";
 import UserProfile from "./accounts/UserProfile";
 
 /**
- * 🔐 Access rules:
- * - Guest: ONLY sees Login
- * - Logged in: sees everything
- *
- * User must come from StartModal.
- * StartModal should pass `user` into this dashboard via props.
+ * 🔐 User Dashboard:
+ * - Fetches real user data from backend
+ * - Supports guest and logged-in flows
+ * - Maintains history, settings, and account info
  */
-export default function UserAccountDashboard({
-  user,
-  onLogout,
-  onLogin, // optional (if you want a login button to open StartModal again)
-}) {
+export default function UserAccountDashboard({ user, onLogout, onLogin }) {
   const [activeView, setActiveView] = useState("profile");
-  const [viewStack, setViewStack] = useState([]); // for Back navigation
+  const [viewStack, setViewStack] = useState([]);
+  const [userData, setUserData] = useState(null);
+  const [loadingUserData, setLoadingUserData] = useState(false);
 
   const isGuest = !user || user?.role === "guest";
 
-  // ✅ Always start on login if guest
+  const API_BASE = import.meta.env.VITE_API_URL;
+
+  // Fetch user data from backend
   useEffect(() => {
-    if (isGuest) setActiveView("login");
-    else setActiveView("profile");
+    if (!isGuest && user?.contact) {
+      setLoadingUserData(true);
+      fetch(`${API_BASE}/api/user/${user.contact}`)
+        .then((res) => res.json())
+        .then((data) => setUserData(data))
+        .catch(console.error)
+        .finally(() => setLoadingUserData(false));
+    }
+  }, [user, isGuest, API_BASE]);
+
+  // Start view based on guest or logged-in
+  useEffect(() => {
+    setActiveView(isGuest ? "login" : "profile");
   }, [isGuest]);
 
-  // ✅ Track view history (for Back button behavior)
+  // Track navigation for back button
   useEffect(() => {
-    // don't push duplicates
     setViewStack((prev) => {
       if (prev.length === 0) return [activeView];
       if (prev[prev.length - 1] === activeView) return prev;
@@ -67,13 +75,11 @@ export default function UserAccountDashboard({
     setViewStack((prev) => {
       if (prev.length <= 1) return prev;
       const updated = prev.slice(0, -1);
-      const last = updated[updated.length - 1];
-      setActiveView(last);
+      setActiveView(updated[updated.length - 1]);
       return updated;
     });
   };
 
-  // ✅ MENU items (full)
   const fullMenuItems = useMemo(
     () => [
       { key: "profile", label: "Profile", icon: User },
@@ -90,33 +96,20 @@ export default function UserAccountDashboard({
     []
   );
 
-  // ✅ Guest menu (only login)
-  const guestMenuItems = useMemo(
-    () => [{ key: "login", label: "Login", icon: LogIn }],
-    []
-  );
-
+  const guestMenuItems = useMemo(() => [{ key: "login", label: "Login", icon: LogIn }], []);
   const menuItems = isGuest ? guestMenuItems : fullMenuItems;
+  const showBackButton = ["privacy", "terms"].includes(activeView);
 
-  // 🔥 Back button must appear in Privacy + Terms
-  const showBackButton = activeView === "privacy" || activeView === "terms";
-
-  // Render content based on active view
   const renderContent = () => {
-    // 🚫 Guest gating: force login screen
     if (isGuest && activeView !== "login") {
       return (
         <div className="p-6 text-gray-700 dark:text-gray-300">
           <h2 className="text-xl font-bold">🔒 Login Required</h2>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            You’re currently browsing as a guest. Login to unlock your profile,
-            settings, history, and accounts.
+            You’re browsing as a guest. Login to unlock profile, settings, history, and accounts.
           </p>
-
           <button
-            onClick={() => {
-              setActiveView("login");
-            }}
+            onClick={() => setActiveView("login")}
             className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow transition"
           >
             <LogIn className="w-4 h-4" />
@@ -126,25 +119,20 @@ export default function UserAccountDashboard({
       );
     }
 
+    if (loadingUserData) return <Loading />;
+
     switch (activeView) {
       case "login":
         return (
           <div className="p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              🔑 Login
-            </h2>
-
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">🔑 Login</h2>
             <p className="text-gray-500 dark:text-gray-400">
-              Login to access your profile, settings, history, and linked
-              accounts.
+              Login to access your profile, settings, history, and linked accounts.
             </p>
-
             <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/40 p-4">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                ⚡ This screen expects your <strong>StartModal</strong> to handle
-                authentication and then pass user data into this dashboard.
+                ⚡ StartModal handles authentication and passes user data here.
               </p>
-
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => onLogin?.()}
@@ -153,21 +141,19 @@ export default function UserAccountDashboard({
                   <LogIn className="w-4 h-4" />
                   Open StartModal
                 </button>
-
                 <button
                   onClick={() => setActiveView("privacy")}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <Shield className="w-4 h-4" />
-                  View Privacy Policy
+                  Privacy Policy
                 </button>
-
                 <button
                   onClick={() => setActiveView("terms")}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <FileText className="w-4 h-4" />
-                  View Terms
+                  Terms
                 </button>
               </div>
             </div>
@@ -175,42 +161,32 @@ export default function UserAccountDashboard({
         );
 
       case "profile":
-        return <UserProfile user={user} />;
+        return <UserProfile user={{ ...user, settings: userData?.settings }} />;
 
       case "settings":
-        return <PreferencesDashboard />;
+        return <PreferencesDashboard userData={userData} />;
 
       case "accounts":
-        return <AccountDashboard />;
+        return <AccountDashboard userData={userData} />;
 
       case "notifications":
         return (
           <div className="p-6">
             <h2 className="text-xl font-bold">🔔 Notifications</h2>
-            <p className="text-gray-500 dark:text-gray-400">
-              Your notifications will appear here.
-            </p>
+            <p className="text-gray-500 dark:text-gray-400">Your notifications will appear here.</p>
           </div>
         );
 
       case "history": {
-        const { history, clearHistory } = useHistory();
+        const historyList = userData?.history || [];
+        const { clearHistory } = useHistory();
         return (
           <div className="p-6 space-y-4">
             <h2 className="text-xl font-bold">📜 History</h2>
-
-            {history.length === 0 && (
-              <p className="text-gray-500 dark:text-gray-400">
-                No history yet.
-              </p>
-            )}
-
+            {historyList.length === 0 && <p className="text-gray-500 dark:text-gray-400">No history yet.</p>}
             <ul className="space-y-2">
-              {history.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800"
-                >
+              {historyList.map((entry, idx) => (
+                <li key={idx} className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
                   <p>
                     <strong>Type:</strong> {entry.type}
                   </p>
@@ -220,14 +196,11 @@ export default function UserAccountDashboard({
                   <p>
                     <strong>Output:</strong> {entry.output}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
-
-            {history.length > 0 && (
+            {historyList.length > 0 && (
               <button
                 onClick={clearHistory}
                 className="mt-4 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold shadow"
@@ -241,25 +214,17 @@ export default function UserAccountDashboard({
 
       case "support":
         return <SupportCenter />;
-
       case "help":
         return <HelpModal />;
-
       case "referential":
         return <ReferentialDashboard />;
-
       case "privacy":
         return <LegalDocs activeTab="privacy" />;
-
       case "terms":
         return <LegalDocs activeTab="terms" />;
 
       default:
-        return (
-          <div className="p-6 text-gray-500 dark:text-gray-400">
-            ⚠️ Select a menu item to continue.
-          </div>
-        );
+        return <div className="p-6 text-gray-500 dark:text-gray-400">⚠️ Select a menu item to continue.</div>;
     }
   };
 
@@ -267,19 +232,13 @@ export default function UserAccountDashboard({
     <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mb-4">
-          RevelaCode
-        </h2>
+        <h2 className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mb-4">RevelaCode</h2>
 
         {/* Mini user label */}
         <div className="mb-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {isGuest ? "Guest" : user?.full_name || "User"}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Role: {isGuest ? "guest" : user?.role || "normal"}
-          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isGuest ? "Guest" : user?.full_name || "User"}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Role: {isGuest ? "guest" : user?.role || "normal"}</p>
         </div>
 
         <nav className="space-y-1">
@@ -288,9 +247,7 @@ export default function UserAccountDashboard({
               key={key}
               onClick={() => setActiveView(key)}
               className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition ${
-                activeView === key
-                  ? "bg-indigo-600 text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                activeView === key ? "bg-indigo-600 text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -299,7 +256,6 @@ export default function UserAccountDashboard({
           ))}
         </nav>
 
-        {/* Logout button (only when logged in) */}
         {!isGuest && onLogout && (
           <button
             onClick={onLogout}
@@ -311,22 +267,7 @@ export default function UserAccountDashboard({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-4">
-        {/* Back button for Legal Docs */}
-        {showBackButton && (
-          <div className="mb-3">
-            <button
-              onClick={goBack}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
-        )}
-
-        <Suspense fallback={<Loading />}>{renderContent()}</Suspense>
-      </main>
+      <main className="flex-1 overflow-y-auto p-4">{<Suspense fallback={<Loading />}>{renderContent()}</Suspense>}</main>
     </div>
   );
 }
