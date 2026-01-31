@@ -1,13 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
-
 const STORAGE_KEY = "revela_auth";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [hasStarted, setHasStarted] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   /* ------------------ LOAD SESSION ------------------ */
   useEffect(() => {
@@ -22,11 +21,9 @@ export function AuthProvider({ children }) {
 
   /* ------------------ LOGIN ------------------ */
   const login = (userData) => {
-    // Make sure keys match backend / StartModal
     const normalizedUser = {
-      id: userData.id ?? userData.contact ?? null,
-      contact: userData.contact ?? null,
-      fullName: userData.fullName ?? userData.username ?? "User",
+      contact: userData.contact ?? userData.id ?? "guest",
+      fullName: userData.fullName ?? userData.username ?? "Guest User",
       role: userData.role ?? "normal",
     };
 
@@ -40,10 +37,9 @@ export function AuthProvider({ children }) {
     );
   };
 
-  /* ------------------ GUEST ------------------ */
-  const continueAsGuest = () => {
+  /* ------------------ GUEST MODE ------------------ */
+  const guestMode = () => {
     const guestUser = {
-      id: "guest",
       contact: "guest",
       fullName: "Guest User",
       role: "guest",
@@ -74,7 +70,7 @@ export function AuthProvider({ children }) {
         isGuest,
         hasStarted,
         login,
-        continueAsGuest,
+        guestMode,
         logout,
       }}
     >
