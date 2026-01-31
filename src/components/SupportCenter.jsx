@@ -1,26 +1,37 @@
-"use client"; // if using Next.js app router
+"use client";
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Mail, Bug, BookOpen, Clipboard } from "lucide-react";
+import { Mail, Bug, AlertTriangle, CheckCircle, Clock, Clipboard } from "lucide-react";
 
-const SupportCenter = () => {
+const SupportDashboard = ({ user }) => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // BLOCK NON-SUPPORT USERS
+  if (!user || user.role !== "support") {
+    return (
+      <div className="p-6 text-red-600 font-medium">
+        🚫 Access Denied — Support members only.
+      </div>
+    );
+  }
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText("support@revelacode.com");
   };
 
-  // Fetch support tickets from backend
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await fetch("https://revelacode-backend.onrender.com/support/tickets", {
-          headers: {
-            "X-API-KEY": "RevelaCodeSupport#2026!" // support key
+        const res = await fetch(
+          "https://revelacode-backend.onrender.com/support/tickets",
+          {
+            headers: {
+              "X-API-KEY": "RevelaCodeSupport#2026!"
+            }
           }
-        });
+        );
         const data = await res.json();
         setTickets(data.tickets || []);
       } catch (err) {
@@ -32,58 +43,100 @@ const SupportCenter = () => {
     fetchTickets();
   }, []);
 
+  // Split tickets into lanes (Kanban style)
+  const openTickets = tickets.filter(t => t.status === "open");
+  const inProgress = tickets.filter(t => t.status === "in_progress");
+  const resolved = tickets.filter(t => t.status === "resolved");
+
   return (
-    <Card className="max-w-lg mx-auto my-8 rounded-2xl shadow-sm">
-      <CardContent className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">RevelaCode Support Center</h2>
-        <p className="text-gray-500 text-sm">
-          Need help? Contact us or explore our resources below.
-        </p>
+    <div className="max-w-6xl mx-auto my-8 space-y-6">
+      {/* HEADER */}
+      <Card>
+        <CardHeader>
+          <h1 className="text-2xl font-bold">🔧 RevelaCode Support Command Center</h1>
+          <p className="text-sm text-gray-500">
+            Logged in as: <strong>{user.full_name}</strong> • Role: <strong>SUPPORT</strong>
+          </p>
+        </CardHeader>
+      </Card>
 
-        <div className="flex items-center justify-between p-2 rounded-md border">
-          <div className="flex items-center gap-2">
-            <Mail className="w-4 h-4" aria-hidden="true" />
-            <span className="text-sm">support@revelacode.com</span>
-          </div>
-          <Button size="icon" variant="ghost" onClick={handleCopyEmail} title="Copy email">
-            <Clipboard className="w-4 h-4" aria-hidden="true" />
-          </Button>
-        </div>
+      {/* QUICK ACTIONS */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-2">
+            <Bug className="w-5 h-5 text-red-500" />
+            <div>
+              <p className="text-sm font-semibold">Open Tickets</p>
+              <p className="text-xl font-bold">{openTickets.length}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="grid grid-cols-2 gap-3">
-          <a href="/bug-report" className="flex items-center gap-2 text-blue-600 hover:underline">
-            <Bug className="w-4 h-4" aria-hidden="true" />
-            <span className="text-sm">Report a bug</span>
-          </a>
-          <a href="/docs" className="flex items-center gap-2 text-blue-600 hover:underline">
-            <BookOpen className="w-4 h-4" aria-hidden="true" />
-            <span className="text-sm">Docs & FAQ</span>
-          </a>
-        </div>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-yellow-500" />
+            <div>
+              <p className="text-sm font-semibold">In Progress</p>
+              <p className="text-xl font-bold">{inProgress.length}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="mt-4">
-          <h3 className="text-sm font-medium mb-2">Recent Tickets</h3>
-          {loading ? (
-            <p className="text-gray-400 text-xs">Loading tickets...</p>
-          ) : tickets.length === 0 ? (
-            <p className="text-gray-400 text-xs">No tickets yet.</p>
-          ) : (
-            <ul className="text-xs space-y-1">
-              {tickets.map((ticket) => (
-                <li key={ticket._id} className="border p-1 rounded">
-                  <strong>{ticket.title || "Untitled Ticket"}</strong> - {ticket.status}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <div>
+              <p className="text-sm font-semibold">Resolved</p>
+              <p className="text-xl font-bold">{resolved.length}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="text-xs text-gray-400 mt-2">
-          RevelaCode v1.0.0 &bull; Updated July 2025
-        </div>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-blue-500" />
+            <div>
+              <p className="text-sm font-semibold">Support Email</p>
+              <Button variant="ghost" onClick={handleCopyEmail}>
+                Copy Email <Clipboard className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KANBAN TICKET BOARD */}
+      <div className="grid grid-cols-3 gap-4">
+        <TicketColumn title="🟥 Open" tickets={openTickets} loading={loading} />
+        <TicketColumn title="🟨 In Progress" tickets={inProgress} loading={loading} />
+        <TicketColumn title="🟩 Resolved" tickets={resolved} loading={loading} />
+      </div>
+    </div>
+  );
+};
+
+const TicketColumn = ({ title, tickets, loading }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <h3 className="font-semibold">{title}</h3>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading ? (
+          <p className="text-xs text-gray-400">Loading...</p>
+        ) : tickets.length === 0 ? (
+          <p className="text-xs text-gray-400">No tickets here.</p>
+        ) : (
+          tickets.map(ticket => (
+            <div key={ticket._id} className="border p-2 rounded-md text-xs">
+              <p className="font-semibold">{ticket.title || "Untitled"}</p>
+              <p className="text-gray-500">Priority: {ticket.priority || "normal"}</p>
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>
   );
 };
 
-export default SupportCenter;
+export default SupportDashboard;

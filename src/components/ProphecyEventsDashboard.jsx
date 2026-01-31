@@ -37,8 +37,17 @@ export default function ProphecyEventsDashboard() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      const normalized = Array.isArray(data?.events) ? data.events : Array.isArray(data) ? data : [];
-      const sorted = normalized.sort((a, b) => new Date(b?.publishedAt || 0) - new Date(a?.publishedAt || 0));
+      const normalized = Array.isArray(data?.events)
+        ? data.events
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      const sorted = normalized.sort(
+        (a, b) =>
+          new Date(b?.publishedAt || 0) - new Date(a?.publishedAt || 0)
+      );
+
       setEvents(sorted);
     } catch (err) {
       console.error("Failed to load events:", err);
@@ -64,11 +73,22 @@ export default function ProphecyEventsDashboard() {
   }, [events]);
 
   const filtered = useMemo(() => {
-    return events.filter((e) => !location || location === "Global" || e.location?.country === location);
+    return events.filter(
+      (e) =>
+        !location ||
+        location === "Global" ||
+        e.location?.country === location
+    );
   }, [events, location]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paged = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  );
+  const paged = filtered.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
   // -----------------------------
   // JSX
@@ -85,6 +105,7 @@ export default function ProphecyEventsDashboard() {
             Real-world headlines mapped to prophetic symbols and categories.
           </p>
         </div>
+
         <button
           onClick={loadEvents}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow transition"
@@ -106,9 +127,12 @@ export default function ProphecyEventsDashboard() {
         >
           <option value="">All Locations</option>
           {locations.map((loc) => (
-            <option key={loc} value={loc}>{loc}</option>
+            <option key={loc} value={loc}>
+              {loc}
+            </option>
           ))}
         </select>
+
         {location && (
           <button
             onClick={() => {
@@ -120,8 +144,13 @@ export default function ProphecyEventsDashboard() {
             Clear filter
           </button>
         )}
+
         <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
-          Showing <span className="font-semibold text-gray-800 dark:text-gray-200">{filtered.length}</span> result(s)
+          Showing{" "}
+          <span className="font-semibold text-gray-800 dark:text-gray-200">
+            {filtered.length}
+          </span>{" "}
+          result(s)
         </div>
       </div>
 
@@ -129,7 +158,9 @@ export default function ProphecyEventsDashboard() {
       {loading && (
         <div className="flex items-center justify-center gap-2 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">Loading global events...</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Loading global events...
+          </p>
         </div>
       )}
 
@@ -158,13 +189,22 @@ export default function ProphecyEventsDashboard() {
             </div>
           ) : (
             paged.map((e, idx) => (
-              <Card key={e.url || idx} className="hover:shadow-md transition border border-gray-200/70 dark:border-gray-800/70 rounded-xl">
+              <Card
+                key={e.url || idx}
+                className="hover:shadow-md transition border border-gray-200/70 dark:border-gray-800/70 rounded-xl h-auto"
+              >
                 <CardContent className="space-y-3 p-5">
                   {/* Title */}
                   <div className="flex flex-col sm:flex-row sm:justify-between gap-3 items-start">
-                    <a href={e.url} target="_blank" rel="noopener noreferrer" className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline">
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline break-words whitespace-normal"
+                    >
                       {e.headline || "Untitled Event"}
                     </a>
+
                     {e.publishedAt && (
                       <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {new Date(e.publishedAt).toLocaleDateString()}
@@ -174,7 +214,7 @@ export default function ProphecyEventsDashboard() {
 
                   {/* Image */}
                   {e.urlToImage && (
-                    <div className="w-full h-64 overflow-hidden rounded-lg">
+                    <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
                       <img
                         src={e.urlToImage}
                         alt={e.headline}
@@ -185,14 +225,19 @@ export default function ProphecyEventsDashboard() {
 
                   {/* Description */}
                   {e.description && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{e.description}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words whitespace-pre-line">
+                      {e.description}
+                    </p>
                   )}
 
                   {/* Matched Verses */}
                   {e.matched_verses?.length > 0 && (
                     <div className="flex flex-wrap gap-2 text-xs text-green-700 dark:text-green-300 mt-2">
                       {e.matched_verses.map((v, i) => (
-                        <span key={i} className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-800">
+                        <span
+                          key={i}
+                          className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-800 break-words"
+                        >
                           📖 {v}
                         </span>
                       ))}
@@ -200,20 +245,28 @@ export default function ProphecyEventsDashboard() {
                   )}
 
                   {/* Categories & Meta */}
-                  <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2 max-w-full">
                     {e.source && (
-                      <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                      <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
                         📰 {e.source}
                       </span>
                     )}
-                    {Array.isArray(e.matched_symbols) && e.matched_symbols.map((cat) => (
-                      <span key={cat} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-900/40">
-                        <Tags className="w-3 h-3" /> {CATEGORY_LABELS[cat] || cat}
-                      </span>
-                    ))}
+
+                    {Array.isArray(e.matched_symbols) &&
+                      e.matched_symbols.map((cat) => (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-900/40 break-words"
+                        >
+                          <Tags className="w-3 h-3" />
+                          {CATEGORY_LABELS[cat] || cat}
+                        </span>
+                      ))}
+
                     {e.location?.country && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <MapPin className="w-3 h-3" /> {e.location.country}
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
+                        <MapPin className="w-3 h-3" />
+                        {e.location.country}
                       </span>
                     )}
                   </div>
@@ -230,19 +283,29 @@ export default function ProphecyEventsDashboard() {
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className={`px-4 py-2 rounded-lg border transition font-semibold ${page === 1 ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-800" : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+            className={`px-4 py-2 rounded-lg border transition font-semibold ${
+              page === 1
+                ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-800"
+                : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
           >
             ← Prev
           </button>
+
           <span className="text-gray-700 dark:text-gray-300 font-semibold">
             Page {page} of {totalPages}
           </span>
+
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className={`px-4 py-2 rounded-lg border transition font-semibold ${page >= totalPages ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-800" : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+            className={`px-4 py-2 rounded-lg border transition font-semibold ${
+              page >= totalPages
+                ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-800"
+                : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
           >
-            Next → 
+            Next →
           </button>
         </div>
       )}
