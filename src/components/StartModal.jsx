@@ -248,6 +248,7 @@ export default function StartModal({ onLoginSuccess }) {
     hasAutoSubmittedRef.current = false;
   };
 
+  // ------------------ UI ------------------
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
       <div className="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl space-y-4">
@@ -255,6 +256,7 @@ export default function StartModal({ onLoginSuccess }) {
           <X />
         </button>
 
+        {/* PICK MODE */}
         {!mode && (
           <div className="space-y-3">
             <GuestOverlay onLogin={() => setMode("login")} />
@@ -281,8 +283,123 @@ export default function StartModal({ onLoginSuccess }) {
           </div>
         )}
 
-        {/* FORM & VERIFY steps remain the same */}
-        {/* ...keep your existing JSX for input fields, verification, resend code, legal docs */}
+        {/* FORM STEP */}
+        {mode && step === "form" && (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {mode === "register" && (
+              <input
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            )}
+
+            <input
+              placeholder="Email"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
+
+            {mode !== "forgot" && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={mode === "forgot" ? resetNewPassword : password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            )}
+
+            {mode === "register" && (
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              />
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {loading
+                ? "Processing..."
+                : mode === "login"
+                ? "Login"
+                : mode === "register"
+                ? "Register"
+                : "Send Reset Code"}
+            </button>
+
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
+          </form>
+        )}
+
+        {/* VERIFY STEP */}
+        {mode && step === "verify" && (
+          <div className="space-y-3">
+            <p className="text-center text-gray-500 dark:text-gray-300">
+              Enter the 6-digit code sent to <span className="font-semibold">{contact}</span>
+            </p>
+            {mode === "forgot" && (
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={resetNewPassword}
+                  onChange={(e) => setResetNewPassword(e.target.value)}
+                  className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={resetConfirmPassword}
+                  onChange={(e) => setResetConfirmPassword(e.target.value)}
+                  className="w-full p-2 rounded border dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+              </div>
+            )}
+            <input
+              ref={codeInputRef}
+              inputMode="numeric"
+              placeholder="6-digit code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="w-full p-3 rounded border text-center tracking-widest text-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={resendCode}
+                className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                disabled={loading || resendCooldownRef.current}
+              >
+                🔄 Resend
+              </button>
+              <button
+                onClick={backFromVerify}
+                className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                disabled={loading}
+              >
+                ⬅ Back
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="text-xs text-center text-gray-400 mt-3">
+          By continuing, you agree to our{" "}
+          <button onClick={() => setShowLegal(true)} className="underline">
+            terms & policy
+          </button>
+        </div>
+
+        {showLegal && <LegalDocs onClose={() => setShowLegal(false)} />}
       </div>
     </div>
   );
