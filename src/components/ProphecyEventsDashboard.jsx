@@ -22,10 +22,11 @@ const CATEGORY_LABELS = {
 export default function ProphecyEventsDashboard() {
   const [events, setEvents] = useState([]);
   const [location, setLocation] = useState("");
+  const [category, setCategory] = useState(""); // NEW: Category state
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [expanded, setExpanded] = useState({}); // 👈 NEW: track expanded items
+  const [expanded, setExpanded] = useState({});
 
   const toggleExpand = (idx) => {
     setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
@@ -38,18 +39,15 @@ export default function ProphecyEventsDashboard() {
       const res = await fetch(`${API_URL}/api/events`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
       const normalized = Array.isArray(data?.events)
         ? data.events
         : Array.isArray(data)
         ? data
         : [];
-
       const sorted = normalized.sort(
         (a, b) =>
           new Date(b?.publishedAt || 0) - new Date(a?.publishedAt || 0)
       );
-
       setEvents(sorted);
     } catch (err) {
       console.error("Failed to load events:", err);
@@ -63,6 +61,7 @@ export default function ProphecyEventsDashboard() {
     loadEvents();
   }, []);
 
+  // Build location options dynamically
   const locations = useMemo(() => {
     const set = new Set();
     events.forEach((e) => {
@@ -71,19 +70,19 @@ export default function ProphecyEventsDashboard() {
     return ["Global", ...Array.from(set)];
   }, [events]);
 
+  // Filter events by location + category
   const filtered = useMemo(() => {
-    return events.filter(
-      (e) =>
-        !location ||
-        location === "Global" ||
-        e.location?.country === location
-    );
-  }, [events, location]);
+    return events.filter((e) => {
+      const locationMatch =
+        !location || location === "Global" || e.location?.country === location;
+      const categoryMatch =
+        !category ||
+        (Array.isArray(e.matched_symbols) && e.matched_symbols.includes(category));
+      return locationMatch && categoryMatch;
+    });
+  }, [events, location, category]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paged = filtered.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
@@ -101,7 +100,6 @@ export default function ProphecyEventsDashboard() {
             Real-world headlines mapped to prophetic symbols and categories.
           </p>
         </div>
-
         <button
           onClick={loadEvents}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow transition"
@@ -111,8 +109,9 @@ export default function ProphecyEventsDashboard() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Filter Bar: Location + Category */}
       <div className="flex flex-wrap gap-3 items-center rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+        {/* Location */}
         <select
           value={location}
           onChange={(e) => {
@@ -128,7 +127,6 @@ export default function ProphecyEventsDashboard() {
             </option>
           ))}
         </select>
-
         {location && (
           <button
             onClick={() => {
@@ -137,10 +135,39 @@ export default function ProphecyEventsDashboard() {
             }}
             className="text-xs font-semibold text-red-600 hover:text-red-700 underline"
           >
-            Clear filter
+            Clear location
           </button>
         )}
 
+        {/* Category */}
+        <select
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1);
+          }}
+          className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+        >
+          <option value="">All Categories</option>
+          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {category && (
+          <button
+            onClick={() => {
+              setCategory("");
+              setPage(1);
+            }}
+            className="text-xs font-semibold text-red-600 hover:text-red-700 underline"
+          >
+            Clear category
+          </button>
+        )}
+
+        {/* Result count */}
         <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
           Showing{" "}
           <span className="font-semibold text-gray-800 dark:text-gray-200">
@@ -150,6 +177,7 @@ export default function ProphecyEventsDashboard() {
         </div>
       </div>
 
+      {/* Loading / Error / Event Cards */}
       {loading && (
         <div className="flex items-center justify-center gap-2 p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
           <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
@@ -177,13 +205,12 @@ export default function ProphecyEventsDashboard() {
           {paged.length === 0 ? (
             <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                No events found for the selected filter.
+                No events found for the selected filters.
               </p>
             </div>
           ) : (
             paged.map((e, idx) => {
               const isExpanded = expanded[idx];
-
               return (
                 <Card
                   key={e.url || idx}
@@ -200,7 +227,6 @@ export default function ProphecyEventsDashboard() {
                       >
                         {e.headline || "Untitled Event"}
                       </a>
-
                       {e.publishedAt && (
                         <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                           {new Date(e.publishedAt).toLocaleDateString()}
@@ -219,7 +245,7 @@ export default function ProphecyEventsDashboard() {
                       </div>
                     )}
 
-                    {/* DESCRIPTION WITH READ MORE */}
+                    {/* Description */}
                     {e.description && (
                       <div>
                         <p
@@ -229,7 +255,6 @@ export default function ProphecyEventsDashboard() {
                         >
                           {e.description}
                         </p>
-
                         <button
                           onClick={() => toggleExpand(idx)}
                           className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
@@ -260,7 +285,6 @@ export default function ProphecyEventsDashboard() {
                           📰 {e.source}
                         </span>
                       )}
-
                       {Array.isArray(e.matched_symbols) &&
                         e.matched_symbols.map((cat) => (
                           <span
@@ -271,7 +295,6 @@ export default function ProphecyEventsDashboard() {
                             {CATEGORY_LABELS[cat] || cat}
                           </span>
                         ))}
-
                       {e.location?.country && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
                           <MapPin className="w-3 h-3" />
@@ -287,6 +310,7 @@ export default function ProphecyEventsDashboard() {
         </div>
       )}
 
+      {/* Pagination */}
       {!loading && !error && filtered.length > ITEMS_PER_PAGE && (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
           <button
@@ -300,11 +324,9 @@ export default function ProphecyEventsDashboard() {
           >
             ← Prev
           </button>
-
           <span className="text-gray-700 dark:text-gray-300 font-semibold">
             Page {page} of {totalPages}
           </span>
-
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
