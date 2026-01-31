@@ -22,10 +22,12 @@ export function AuthProvider({ children }) {
 
   /* ------------------ LOGIN ------------------ */
   const login = (userData) => {
+    // Make sure keys match backend / StartModal
     const normalizedUser = {
-      id: userData.id ?? null,
-      username: userData.username ?? userData.email ?? "User",
-      role: userData.role ?? "user",
+      id: userData.id ?? userData.contact ?? null,
+      contact: userData.contact ?? null,
+      fullName: userData.fullName ?? userData.username ?? "User",
+      role: userData.role ?? "normal",
     };
 
     setUser(normalizedUser);
@@ -42,9 +44,9 @@ export function AuthProvider({ children }) {
   const continueAsGuest = () => {
     const guestUser = {
       id: "guest",
-      username: "Guest",
+      contact: "guest",
+      fullName: "Guest User",
       role: "guest",
-      isGuest: true,
     };
 
     setUser(guestUser);
