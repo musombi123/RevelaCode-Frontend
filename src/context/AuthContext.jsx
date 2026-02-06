@@ -12,21 +12,28 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      setUser(parsed.user);
-      setIsGuest(parsed.isGuest);
-      setHasStarted(true);
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed.user);
+        setIsGuest(parsed.isGuest);
+        setHasStarted(true);
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
   }, []);
 
+  /* ------------------ NORMALIZE USER ------------------ */
+  const normalizeUser = (u) => ({
+    fullName: u?.full_name || u?.fullName || "Guest User",
+    contact: u?.contact || u?.id || "guest",
+    role: u?.role || "guest",
+    history: u?.history || [],
+  });
+
   /* ------------------ LOGIN ------------------ */
   const login = (userData) => {
-    const normalizedUser = {
-      contact: userData.contact ?? userData.id ?? "guest",
-      fullName: userData.fullName ?? userData.username ?? "Guest User",
-      role: userData.role ?? "normal",
-    };
-
+    const normalizedUser = normalizeUser(userData);
     setUser(normalizedUser);
     setIsGuest(false);
     setHasStarted(true);
@@ -40,9 +47,10 @@ export function AuthProvider({ children }) {
   /* ------------------ GUEST MODE ------------------ */
   const guestMode = () => {
     const guestUser = {
-      contact: "guest",
       fullName: "Guest User",
+      contact: "guest",
       role: "guest",
+      history: [],
     };
 
     setUser(guestUser);
@@ -79,4 +87,5 @@ export function AuthProvider({ children }) {
   );
 }
 
+/* ------------------ USE AUTH HOOK ------------------ */
 export const useAuth = () => useContext(AuthContext);

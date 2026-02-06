@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 // Lazy dashboards
 const PreferencesDashboard = React.lazy(() => import("./PreferencesDashboard"));
@@ -23,24 +24,18 @@ const SupportCenter = React.lazy(() => import("./SupportCenter"));
 const HelpModal = React.lazy(() => import("./HelpModal.jsx"));
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
-export default function UserAccountDashboard({ user: initialUser, onLogout, onLogin }) {
-  // --- Normalize user function ---
-  const normalizeUser = (u) => ({
-    fullName: u?.full_name || u?.fullName || "Guest",
-    contact: u?.contact || "",
-    role: u?.role || "guest",
-    history: u?.history || [],
-  });
-
-  const [userData, setUserData] = useState(normalizeUser(initialUser));
-  const [activeView, setActiveView] = useState(userData.role === "guest" ? "login" : "profile");
+export default function UserAccountDashboard({ onLogout }) {
+  const { user: authUser, login } = useAuth();
+  const [userData, setUserData] = useState(authUser);
+  const [activeView, setActiveView] = useState("profile");
   const [viewStack, setViewStack] = useState([]);
   const [loadingUserData, setLoadingUserData] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const API_BASE = import.meta.env.VITE_API_URL;
 
-  // Dynamically compute guest status
-  const isGuest = useMemo(() => userData.role === "guest", [userData]);
+  const isGuest = useMemo(() => !authUser || authUser.role === "guest", [authUser]);
 
   // Fetch full backend data if not guest
   useEffect(() => {
@@ -48,7 +43,7 @@ export default function UserAccountDashboard({ user: initialUser, onLogout, onLo
       setLoadingUserData(true);
       fetch(`${API_BASE}/api/user/${userData.contact}`)
         .then((res) => res.json())
-        .then((data) => setUserData((prev) => normalizeUser({ ...prev, ...data })))
+        .then((data) => setUserData((prev) => ({ ...prev, ...data })))
         .catch(console.error)
         .finally(() => setLoadingUserData(false));
     }
@@ -72,86 +67,76 @@ export default function UserAccountDashboard({ user: initialUser, onLogout, onLo
     });
   };
 
-  // Menu
-  const fullMenuItems = useMemo(
-    () => [
-      { key: "profile", label: "Profile", icon: User },
-      { key: "settings", label: "Settings", icon: Settings },
-      { key: "accounts", label: "Accounts", icon: Link2 },
-      { key: "notifications", label: "Notifications", icon: Bell },
-      { key: "history", label: "History", icon: History },
-      { key: "support", label: "Support Center", icon: LifeBuoy },
-      { key: "help", label: "Help & Docs", icon: HelpCircle },
-      { key: "referential", label: "Referential", icon: BookOpen },
-      { key: "privacy", label: "Privacy Policy", icon: Shield },
-      { key: "terms", label: "Terms of Service", icon: FileText },
-    ],
-    []
-  );
-
-  const guestMenuItems = useMemo(() => [{ key: "login", label: "Login", icon: LogIn }], []);
-  const menuItems = isGuest ? guestMenuItems : fullMenuItems;
-
-  // Called when user logs in via StartModal
-  // Called when user logs in via StartModal
-const handleStartModalLogin = (newUser) => {
-  if (!newUser) return;
-
-  const normalized = {
-    fullName: newUser.full_name || newUser.fullName || "Guest",
-    contact: newUser.contact || "",
-    role: newUser.role || "verified",
-    history: newUser.history || [],
+  // ------------------- API Helpers -------------------
+  const apiPost = async (path, payload) => {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || "Request failed");
+    return data;
   };
 
-  setUserData(normalized); // Populate the new user
-  onLogin?.(normalized);    // Trigger parent callback if provided
-  setActiveView("profile"); // Show profile immediately
-  };
-
-
-  // --- Render content dynamically ---
-  const renderContent = () => {
-    if (isGuest && activeView !== "login") {
-      return (
-        <div className="p-6 text-gray-700 dark:text-gray-300">
-          <h2 className="text-xl font-bold">🔒 Login Required</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            You’re browsing as a guest. Login to unlock profile, settings, history, and accounts.
-          </p>
-          <button
-            onClick={() => setActiveView("login")}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow transition"
-          >
-            <LogIn className="w-4 h-4" />
-            Go to Login
-          </button>
-        </div>
-      );
+  // ------------------- Delete Account -------------------
+  const requestDeleteAccount = async () => {
+    try {
+      setError(""); setMessage("");
+      const res = await apiPost("/api/request-delete", { contact: userData.contact });
+      setMessage(`Code sent: ${res.debug_code}`);
+      setActiveView("delete");
+    } catch (err) {
+      setError(err.message);
     }
+  };
+
+  const confirmDeleteAccount = async (code) => {
+    try {
+      await apiPost("/api/confirm-delete", { contact: userData.contact, code });
+      onLogout?.();
+      window.location.href = "/";
+    } catch (err) { setError(err.message); }
+  };
+
+  // ------------------- Reset Password -------------------
+  const requestResetPassword = async () => {
+    try {
+      setError(""); setMessage("");
+      const res = await apiPost("/api/request-reset", { contact: userData.contact });
+      setMessage(`Reset code sent: ${res.debug_code}`);
+      setActiveView("reset");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const confirmResetPassword = async (code, newPassword, confirmPassword) => {
+    try {
+      await apiPost("/api/reset-password", {
+        contact: userData.contact,
+        code,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      setMessage("Password reset successful!");
+    } catch (err) { setError(err.message); }
+  };
+
+  // ------------------- Render content -------------------
+  const renderContent = () => {
+    if (isGuest) return (
+      <div className="p-6 text-gray-700 dark:text-gray-300">
+        <h2 className="text-xl font-bold">🔒 Login Required</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+          You must log in to access your dashboard.
+        </p>
+      </div>
+    );
 
     if (loadingUserData) return <Loading />;
 
     switch (activeView) {
-      case "login":
-        return (
-          <div className="p-6 space-y-4">
-            <h2 className="text-xl font-bold">🔑 Login</h2>
-            <button
-              onClick={() =>
-                handleStartModalLogin({
-                  contact: "user@example.com",
-                  full_name: "William Musombi",
-                  role: "verified",
-                })
-              }
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow"
-            >
-              <LogIn className="w-4 h-4" />
-              Open StartModal
-            </button>
-          </div>
-        );
       case "profile":
         return <UserProfile user={userData} />;
       case "settings":
@@ -162,7 +147,7 @@ const handleStartModalLogin = (newUser) => {
         return (
           <div className="p-6">
             <h2 className="text-xl font-bold">🔔 Notifications</h2>
-            <p>Your notifications will appear here.</p>
+            <p>No notifications yet.</p>
           </div>
         );
       case "history":
@@ -182,10 +167,61 @@ const handleStartModalLogin = (newUser) => {
         return <LegalDocs activeTab="privacy" />;
       case "terms":
         return <LegalDocs activeTab="terms" />;
+      case "delete":
+        return (
+          <div className="p-6 space-y-3">
+            <h2 className="text-xl font-bold text-red-600">❌ Delete Account</h2>
+            <p>Enter the 6-digit code sent to your email to confirm deletion.</p>
+            <input placeholder="Code" className="w-full p-2 border rounded" id="deleteCode" />
+            <button
+              onClick={() => confirmDeleteAccount(document.getElementById("deleteCode").value)}
+              className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+            >
+              Confirm Delete
+            </button>
+          </div>
+        );
+      case "reset":
+        return (
+          <div className="p-6 space-y-3">
+            <h2 className="text-xl font-bold text-blue-600">🔑 Reset Password</h2>
+            <p>Enter the code and your new password:</p>
+            <input placeholder="Code" className="w-full p-2 border rounded" id="resetCode" />
+            <input placeholder="New Password" type="password" className="w-full p-2 border rounded" id="newPassword" />
+            <input placeholder="Confirm Password" type="password" className="w-full p-2 border rounded" id="confirmPassword" />
+            <button
+              onClick={() =>
+                confirmResetPassword(
+                  document.getElementById("resetCode").value,
+                  document.getElementById("newPassword").value,
+                  document.getElementById("confirmPassword").value
+                )
+              }
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+            >
+              Reset Password
+            </button>
+          </div>
+        );
       default:
         return <div>⚠️ Select a menu item to continue.</div>;
     }
   };
+
+  const menuItems = [
+    { key: "profile", label: "Profile", icon: User },
+    { key: "settings", label: "Settings", icon: Settings },
+    { key: "accounts", label: "Accounts", icon: Link2 },
+    { key: "notifications", label: "Notifications", icon: Bell },
+    { key: "history", label: "History", icon: History },
+    { key: "support", label: "Support Center", icon: LifeBuoy },
+    { key: "help", label: "Help & Docs", icon: HelpCircle },
+    { key: "referential", label: "Referential", icon: BookOpen },
+    { key: "reset", label: "Reset Password", icon: Shield },
+    { key: "delete", label: "Delete Account", icon: FileText },
+    { key: "privacy", label: "Privacy Policy", icon: Shield },
+    { key: "terms", label: "Terms of Service", icon: FileText },
+  ];
 
   return (
     <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
@@ -222,6 +258,9 @@ const handleStartModalLogin = (newUser) => {
             Logout
           </button>
         )}
+
+        {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </aside>
 
       {/* Main */}
