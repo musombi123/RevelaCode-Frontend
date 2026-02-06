@@ -5,21 +5,19 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import GuestOverlay from "./GuestOverlay.jsx";
 import LegalDocs from "./LegalDocs.jsx";
 
-export default function StartModal({ onLoginSuccess }) {
-  const { login } = useAuth();
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+export default function StartModal() {
+  const { login, guestMode } = useAuth();
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   const [mode, setMode] = useState(null); // null | "login" | "register" | "forgot"
   const [step, setStep] = useState("form"); // "form" | "verify"
   const [loading, setLoading] = useState(false);
 
-  // Form fields
   const [fullName, setFullName] = useState("");
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Verification & reset
   const [verificationCode, setVerificationCode] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
   const [resetConfirmPassword, setResetConfirmPassword] = useState("");
@@ -38,7 +36,8 @@ export default function StartModal({ onLoginSuccess }) {
     setLoading(false);
     setFullName(""); setContact(""); setPassword(""); setConfirmPassword("");
     setVerificationCode(""); setResetNewPassword(""); setResetConfirmPassword("");
-    setError(""); setMessage(""); autoSubmittedRef.current = false;
+    setError(""); setMessage("");
+    autoSubmittedRef.current = false;
   };
 
   const goHomeByRole = (role) => {
@@ -62,7 +61,8 @@ export default function StartModal({ onLoginSuccess }) {
 
   // ------------------ Backend API wrappers ------------------
   const loginUser = (contact, password) => apiPost("/api/login", { contact, password });
-  const registerUser = () => apiPost("/api/register", { full_name: fullName, contact, password, confirm_password: confirmPassword });
+  const registerUser = () =>
+    apiPost("/api/register", { full_name: fullName, contact, password, confirm_password: confirmPassword });
   const requestVerificationCode = (contact) => apiPost("/api/request-code", { contact });
   const verifyCode = (contact, code) => apiPost("/api/verify", { contact, code });
   const requestResetCode = (contact) => apiPost("/api/request-reset", { contact });
@@ -76,9 +76,7 @@ export default function StartModal({ onLoginSuccess }) {
     await verifyCode(contact, code);
     setMessage("✅ Verified! Logging you in...");
     const data = await loginUser(contact, password);
-    const userData = { contact: data.contact, fullName: data.full_name, role: data.role };
-    login(userData);
-    onLoginSuccess?.(userData);
+    login({ contact: data.contact, fullName: data.full_name, role: data.role });
     goHomeByRole(data.role);
   };
 
@@ -88,9 +86,7 @@ export default function StartModal({ onLoginSuccess }) {
     await resetPasswordAPI(contact, code, resetNewPassword, resetConfirmPassword);
     setMessage("✅ Password reset successful. Logging you in...");
     const data = await loginUser(contact, resetNewPassword);
-    const userData = { contact: data.contact, fullName: data.full_name, role: data.role };
-    login(userData);
-    onLoginSuccess?.(userData);
+    login({ contact: data.contact, fullName: data.full_name, role: data.role });
     goHomeByRole(data.role);
   };
 
@@ -99,10 +95,8 @@ export default function StartModal({ onLoginSuccess }) {
     try {
       setLoading(true);
       const data = await guestLoginAPI();
-      const guestUser = { contact: data.contact, fullName: data.full_name, role: data.role || "guest" };
-      login(guestUser);
-      onLoginSuccess?.(guestUser);
-      goHomeByRole(guestUser.role);
+      login({ contact: data.contact, fullName: data.full_name, role: data.role || "guest" });
+      goHomeByRole(data.role || "guest");
     } catch (err) {
       setError(err.message || "❌ Guest login failed");
     } finally {
@@ -130,7 +124,6 @@ export default function StartModal({ onLoginSuccess }) {
       if (mode === "login") {
         const data = await loginUser(contact, password);
         login({ contact: data.contact, fullName: data.full_name, role: data.role });
-        onLoginSuccess?.({ contact: data.contact, fullName: data.full_name, role: data.role });
         goHomeByRole(data.role);
       }
       else if (mode === "register") {
@@ -169,7 +162,7 @@ export default function StartModal({ onLoginSuccess }) {
     } finally { setLoading(false); }
   };
 
-  // Auto-submit code
+  // Auto-submit code when filled
   useEffect(() => {
     if (step !== "verify" || loading) return;
     const clean = (verificationCode || "").replace(/\D/g, "").slice(0, 6);
@@ -217,8 +210,30 @@ export default function StartModal({ onLoginSuccess }) {
           </div>
         )}
 
-        {/* FORM and VERIFY UI stays same as your original code */}
-        {/* ...all UI code unchanged... */}
+        {mode && (
+          <form onSubmit={step === "form" ? handleSubmit : handleVerify} className="space-y-3">
+            {step === "form" && (
+              <>
+                {mode === "register" && <input type="text" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full p-2 border rounded" />}
+                <input type="text" placeholder="Email / Contact" value={contact} onChange={e => setContact(e.target.value)} className="w-full p-2 border rounded" />
+                {(mode === "login" || mode === "register") && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" />}
+                {mode === "register" && <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full p-2 border rounded" />}
+                <button type="submit" disabled={loading} className="w-full py-2 rounded bg-blue-600 text-white hover:bg-blue-700">{loading ? "⏳ Loading..." : (mode === "login" ? "Login" : "Register")}</button>
+              </>
+            )}
+
+            {step === "verify" && (
+              <>
+                <input ref={codeInputRef} type="text" placeholder="Enter 6-digit code" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} className="w-full p-2 border rounded" />
+                <div className="flex justify-between gap-2">
+                  <button type="button" onClick={backFromVerify} className="w-full py-2 rounded border">⬅ Back</button>
+                  <button type="button" onClick={resendCode} className="w-full py-2 rounded border">🔄 Resend</button>
+                  <button type="submit" disabled={loading} className="w-full py-2 rounded bg-green-600 text-white hover:bg-green-700">{loading ? "⏳ Verifying..." : "Verify"}</button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
 
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
