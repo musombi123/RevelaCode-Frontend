@@ -1,7 +1,9 @@
+// frontend/components/AccountDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Mail, Facebook, Instagram, MessageCircle, Bot, Twitter, Linkedin } from "lucide-react";
+import { useAuth } from "@/context/AuthContext.jsx"; // <--- get logged-in user
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -17,6 +19,7 @@ const initialIntegrations = [
 ];
 
 export default function AccountDashboard() {
+  const { user } = useAuth(); // get logged-in user
   const [integrations, setIntegrations] = useState(
     initialIntegrations.map((i) => ({ ...i, connected: false }))
   );
@@ -25,8 +28,9 @@ export default function AccountDashboard() {
   // --- Fetch connected accounts from backend ---
   useEffect(() => {
     const fetchConnections = async () => {
+      if (!user?.contact) return;
       try {
-        const res = await fetch(`${baseUrl}/api/user/connections`);
+        const res = await fetch(`${baseUrl}/api/user/connections?contact=${user.contact}`);
         const data = await res.json();
         if (res.ok && data.success) {
           setIntegrations((prev) =>
@@ -41,7 +45,7 @@ export default function AccountDashboard() {
       }
     };
     fetchConnections();
-  }, []);
+  }, [user]);
 
   const handleConnect = async (platform) => {
     try {
@@ -60,6 +64,7 @@ export default function AccountDashboard() {
       const res = await fetch(`${baseUrl}/api/connect/${platform.name.toLowerCase()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact: user.contact }),
       });
       const data = await res.json();
 
@@ -82,15 +87,29 @@ export default function AccountDashboard() {
   return (
     <Card className="shadow-md rounded-2xl overflow-hidden">
       <CardContent className="p-6 space-y-6">
+        {/* --- User Info --- */}
+        {user && (
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-semibold text-indigo-600 dark:text-indigo-300">
+              👤 Welcome, {user.fullName || "User"}!
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Contact: {user.contact} | Role: {user.role}
+            </p>
+          </div>
+        )}
+
+        {/* --- Connected Accounts Header --- */}
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-semibold text-indigo-600 dark:text-indigo-300">
+          <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-300">
             🔗 Connected Accounts
-          </h2>
+          </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage your linked platforms for a personalized experience.
           </p>
         </div>
 
+        {/* --- Integrations Grid --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {integrations.map((platform) => {
             const Icon = platform.icon;

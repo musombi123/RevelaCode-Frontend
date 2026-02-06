@@ -1,56 +1,30 @@
+// frontend/components/LegalDocs.jsx
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
-/* ==============================
-   LOCAL LEGAL CONTENT (NO API)
-   ============================== */
+export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack, onClose }) {
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const PRIVACY_DOC = `
-<h3>Privacy Policy</h3>
-<p>Your privacy matters. We collect only what is necessary to run the application effectively.</p>
-
-<h4>Data Collection</h4>
-<p>We may collect basic usage data such as interaction patterns and preferences.</p>
-
-<h4>Data Usage</h4>
-<p>Your information is used strictly to improve your experience within this platform.</p>
-
-<h4>Security</h4>
-<p>We implement reasonable safeguards to protect your data from unauthorized access.</p>
-`;
-
-const TERMS_DOC = `
-<h3>Terms of Service</h3>
-<p>By using this application, you agree to use it responsibly and ethically.</p>
-
-<h4>Acceptable Use</h4>
-<p>No malicious activity, exploitation, or abuse of the platform is permitted.</p>
-
-<h4>Liability</h4>
-<p>We are not responsible for third-party content accessed through external links.</p>
-
-<h4>Modifications</h4>
-<p>These terms may be updated from time to time without prior notice.</p>
-`;
-
-export default function LegalDocs({
-  activeTab: activeTabProp = "privacy",
-  onBack,
-  onClose,
-}) {
   const [activeTab, setActiveTab] = useState(activeTabProp);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const loadLocalDoc = (type) => {
+  const loadDocFromBackend = async (type) => {
     setLoading(true);
-
-    // Simulate a tiny async delay so the UX still feels "professional"
-    setTimeout(() => {
-      setContent(type === "privacy" ? PRIVACY_DOC : TERMS_DOC);
+    setError("");
+    try {
+      const res = await fetch(`${baseUrl}/api/legal/${type}`);
+      if (!res.ok) throw new Error("Failed to load document");
+      const data = await res.json();
+      setContent(data?.content || `<p>No ${type} document found.</p>`);
+    } catch (err) {
+      setError(err.message || "❌ Could not load document");
+      setContent("");
+    } finally {
       setLoading(false);
-    }, 200);
+    }
   };
 
   useEffect(() => {
@@ -58,13 +32,11 @@ export default function LegalDocs({
   }, [activeTabProp]);
 
   useEffect(() => {
-    loadLocalDoc(activeTab);
+    loadDocFromBackend(activeTab);
   }, [activeTab]);
 
   const renderHTML = () => {
-    const safe =
-      typeof content === "string" ? content.replace(/\n/g, "<br/>") : "";
-    return <div dangerouslySetInnerHTML={{ __html: safe }} />;
+    return <div dangerouslySetInnerHTML={{ __html: content || "" }} />;
   };
 
   return (
@@ -81,7 +53,6 @@ export default function LegalDocs({
               Back
             </button>
           )}
-
           <h2 className="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-300">
             📜 Legal Documents
           </h2>
@@ -116,7 +87,7 @@ export default function LegalDocs({
 
         <Button
           variant="outline"
-          onClick={() => loadLocalDoc(activeTab)}
+          onClick={() => loadDocFromBackend(activeTab)}
           className="ml-auto"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -128,6 +99,8 @@ export default function LegalDocs({
       <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert bg-white dark:bg-gray-900">
         {loading ? (
           <p className="text-center text-gray-500">🔄 Loading...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
         ) : (
           renderHTML()
         )}

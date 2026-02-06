@@ -32,22 +32,13 @@ export default function StartModal({ onLoginSuccess }) {
   const autoSubmittedRef = useRef(false);
   const resendCooldownRef = useRef(false);
 
-  // Reset all state
   const resetAll = () => {
     setMode(null);
     setStep("form");
     setLoading(false);
-
-    setFullName("");
-    setContact("");
-    setPassword("");
-    setConfirmPassword("");
-    setVerificationCode("");
-    setResetNewPassword("");
-    setResetConfirmPassword("");
-    setError("");
-    setMessage("");
-    autoSubmittedRef.current = false;
+    setFullName(""); setContact(""); setPassword(""); setConfirmPassword("");
+    setVerificationCode(""); setResetNewPassword(""); setResetConfirmPassword("");
+    setError(""); setMessage(""); autoSubmittedRef.current = false;
   };
 
   const goHomeByRole = (role) => {
@@ -63,9 +54,7 @@ export default function StartModal({ onLoginSuccess }) {
       login(guestUser);
       onLoginSuccess?.(guestUser);
       goHomeByRole("guest");
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   useEffect(() => {
@@ -81,23 +70,17 @@ export default function StartModal({ onLoginSuccess }) {
     });
 
     let data = {};
-    try {
-      data = await res.json();
-    } catch {
-      data = {};
-    }
-
+    try { data = await res.json(); } catch {}
     if (!res.ok || !data.success) throw new Error(data.message || "Request failed");
     return data;
   };
 
-  const requestVerificationCode = async (email) => apiPost("/api/request-code", { contact: email });
-  const verifyCode = async (email, code) => apiPost("/api/verify", { contact: email, code });
-  const loginUser = async (email, pass) => apiPost("/api/login", { contact: email, password: pass });
-  const registerUser = async () =>
-    apiPost("/api/register", { full_name: fullName, contact, password, confirm_password: confirmPassword });
-  const resetPassword = async (email, code, newPassword, confirmPassword) =>
-    apiPost("/api/reset-password", { contact: email, code, new_password: newPassword, confirm_password: confirmPassword });
+  const requestVerificationCode = async (contact) => apiPost("/api/request-code", { contact });
+  const verifyCode = async (contact, code) => apiPost("/api/verify", { contact, code });
+  const loginUser = async (contact, password) => apiPost("/api/login", { contact, password });
+  const registerUser = async () => apiPost("/api/register", { full_name: fullName, contact, password, confirm_password: confirmPassword });
+  const resetPassword = async (contact, code, newPassword, confirmPassword) =>
+    apiPost("/api/reset-password", { contact, code, new_password: newPassword, confirm_password: confirmPassword });
 
   // ------------------ FLOWS ------------------
   const handleVerifyAndLogin = async (code) => {
@@ -125,8 +108,7 @@ export default function StartModal({ onLoginSuccess }) {
   // ------------------ SUBMIT ------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    setError(""); setMessage("");
 
     if (!mode) return;
     if (!contact) return setError("⚠ Please enter your email.");
@@ -140,26 +122,20 @@ export default function StartModal({ onLoginSuccess }) {
 
     try {
       setLoading(true);
-
       if (mode === "login") {
         const data = await loginUser(contact, password);
-        const userData = { contact: data.contact, fullName: data.full_name, role: data.role };
-        login(userData);
-        onLoginSuccess?.(userData);
+        login({ contact: data.contact, fullName: data.full_name, role: data.role });
+        onLoginSuccess?.({ contact: data.contact, fullName: data.full_name, role: data.role });
         goHomeByRole(data.role);
-        return;
       }
-
-      if (mode === "register") {
+      else if (mode === "register") {
         await registerUser();
         const codeRes = await requestVerificationCode(contact);
         if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
         setMessage(`📩 Code sent to ${contact}${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
         setStep("verify");
-        return;
       }
-
-      if (mode === "forgot") {
+      else if (mode === "forgot") {
         const codeRes = await requestVerificationCode(contact);
         if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
         setMessage(`📩 Reset code sent${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
@@ -174,8 +150,7 @@ export default function StartModal({ onLoginSuccess }) {
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    setError(""); setMessage("");
     const cleanCode = (verificationCode || "").replace(/\D/g, "").slice(0, 6);
     if (!cleanCode || cleanCode.length !== 6) return setError("⚠ Enter 6-digit code.");
 
@@ -186,9 +161,7 @@ export default function StartModal({ onLoginSuccess }) {
     } catch (err) {
       setError(err.message || "❌ Verification failed");
       autoSubmittedRef.current = false;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   // Auto-submit code
@@ -206,8 +179,7 @@ export default function StartModal({ onLoginSuccess }) {
     if (resendCooldownRef.current) return setError("⚠ Wait before resending");
 
     try {
-      setLoading(true);
-      setError(""); setMessage("");
+      setLoading(true); setError(""); setMessage("");
       resendCooldownRef.current = true;
       setTimeout(() => (resendCooldownRef.current = false), 5000);
 
@@ -216,17 +188,11 @@ export default function StartModal({ onLoginSuccess }) {
       setMessage(`🔄 New code sent${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
     } catch (err) {
       setError(err.message || "❌ Could not resend code");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const backFromVerify = () => {
-    setStep("form");
-    setVerificationCode("");
-    setError("");
-    setMessage("");
-    autoSubmittedRef.current = false;
+    setStep("form"); setVerificationCode(""); setError(""); setMessage(""); autoSubmittedRef.current = false;
   };
 
   // ------------------ UI ------------------
@@ -246,7 +212,6 @@ export default function StartModal({ onLoginSuccess }) {
           </div>
         )}
 
-        {/* Form Step */}
         {mode && step === "form" && (
           <>
             <h2 className="text-xl font-bold text-center mb-2 text-blue-600 dark:text-blue-400">
@@ -266,7 +231,6 @@ export default function StartModal({ onLoginSuccess }) {
               {mode === "login" && <button type="button" onClick={handleGuestLogin} className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800">😎 Login as Guest</button>}
             </form>
 
-            {/* Switch Links */}
             <div className="text-center text-sm mt-4 space-y-2">
               {mode === "login" && <>
                 <div>No account? <button onClick={() => setMode("register")} className="underline text-blue-600">Register</button></div>
@@ -278,7 +242,6 @@ export default function StartModal({ onLoginSuccess }) {
           </>
         )}
 
-        {/* Verify Step */}
         {mode && step === "verify" && (
           <>
             <h2 className="text-xl font-bold text-center mb-1 text-blue-600 dark:text-blue-400">🔐 Enter Verification Code</h2>

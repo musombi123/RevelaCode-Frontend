@@ -93,12 +93,22 @@ export default function UserAccountDashboard({ user: initialUser, onLogout, onLo
   const menuItems = isGuest ? guestMenuItems : fullMenuItems;
 
   // Called when user logs in via StartModal
-  const handleStartModalLogin = (newUser) => {
-    const normalized = normalizeUser(newUser);
-    setUserData(normalized);
-    onLogin?.(normalized);
-    setActiveView("profile");
+  // Called when user logs in via StartModal
+const handleStartModalLogin = (newUser) => {
+  if (!newUser) return;
+
+  const normalized = {
+    fullName: newUser.full_name || newUser.fullName || "Guest",
+    contact: newUser.contact || "",
+    role: newUser.role || "verified",
+    history: newUser.history || [],
   };
+
+  setUserData(normalized); // Populate the new user
+  onLogin?.(normalized);    // Trigger parent callback if provided
+  setActiveView("profile"); // Show profile immediately
+  };
+
 
   // --- Render content dynamically ---
   const renderContent = () => {
