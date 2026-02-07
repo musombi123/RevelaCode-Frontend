@@ -67,22 +67,23 @@ export function HistoryProvider({ children }) {
         },
       });
 
-      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-
       const data = await res.json();
 
-      // always ensure array
+      // Always make sure it's an array
       const list = Array.isArray(data?.history)
         ? data.history
         : Array.isArray(data?.data)
         ? data.data
         : [];
 
+      if (!Array.isArray(list)) {
+        console.warn("⚠️ Backend history response is not an array:", data);
+      }
+
       setHistory(list);
     } catch (err) {
       console.error("❌ Failed to fetch history from backend:", err);
       setHistoryError("Failed to fetch history.");
-      setHistory([]); // fallback to empty array
     } finally {
       setLoadingHistory(false);
     }
@@ -112,17 +113,27 @@ export function HistoryProvider({ children }) {
       // Update UI immediately
       setHistory((prev) => [newEntry, ...prev]);
 
+      // Guests stay local only
       if (!backendURL || !user || isGuest) return;
 
       try {
-        await fetch(`${backendURL}/history`, {
+        const res = await fetch(`${backendURL}/history`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": user.contact,
           },
-          body: JSON.stringify({ entry: newEntry }),
+          body: JSON.stringify(newEntry),
         });
+
+        const data = await res.json();
+
+        // Ensure backend returns an array
+        if (Array.isArray(data?.history)) {
+          setHistory(data.history);
+        } else {
+          console.warn("⚠️ POST history response not an array:", data);
+        }
       } catch (err) {
         console.error("❌ Failed to POST history to backend:", err);
       }
@@ -142,13 +153,18 @@ export function HistoryProvider({ children }) {
     if (!backendURL || !user || isGuest) return;
 
     try {
-      await fetch(`${backendURL}/history`, {
+      const res = await fetch(`${backendURL}/history`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           "Authorization": user.contact,
         },
       });
+
+      const data = await res.json();
+      if (!Array.isArray(data?.history)) {
+        console.warn("⚠️ DELETE history response not an array:", data);
+      }
     } catch (err) {
       console.error("❌ Failed to DELETE history on backend:", err);
     }
