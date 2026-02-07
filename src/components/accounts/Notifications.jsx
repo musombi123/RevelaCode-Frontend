@@ -1,5 +1,5 @@
 // src/components/accounts/Notifications.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/Popover";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -9,18 +9,18 @@ export default function Notifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch notifications from backend
-  const fetchNotifications = async () => {
+  const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      // Use relative path for dev proxy or full backend URL in production
-      const res = await fetch("/api/notifications");
+      const res = await fetch(`${baseUrl}/api/notifications`);
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
 
-      // Support backend response: { notifications: [...], total: N }
       setNotifications(data.notifications || []);
     } catch (err) {
       console.error("❌ Failed to load notifications:", err);
@@ -28,17 +28,16 @@ export default function Notifications() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  }, [baseUrl]);
 
   // Mark all as read
   const markAllRead = async () => {
     try {
-      const res = await fetch("/api/notifications/read-all", { method: "PUT" });
+      const res = await fetch(`${baseUrl}/api/notifications/read-all`, {
+        method: "PUT",
+      });
       if (!res.ok) throw new Error("Failed to mark all as read");
+
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error("❌ Failed to mark all as read:", err);
@@ -47,6 +46,11 @@ export default function Notifications() {
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // ✅ Trigger fetch on mount
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   return (
     <Popover>

@@ -1,8 +1,12 @@
+// frontend/components/UserProfile.jsx
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { User, Mail, Phone, Shield } from "lucide-react";
+import { useAuth } from "@/context/AuthContext.jsx";
 
-export default function UserProfile({ user }) {
+export default function UserProfile() {
+  const { user } = useAuth(); // ✅ grab logged-in user from context
+
   if (!user) {
     return (
       <div className="p-6 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
@@ -11,11 +15,12 @@ export default function UserProfile({ user }) {
     );
   }
 
-  // ✅ Align exactly with StartModal + backend response
-  const fullName = user.full_name || "Guest";   // <-- THIS is the source of truth
+  // Use the exact keys stored in AuthContext
+  const fullName = user.fullName || "Guest";
   const contact = user.contact || "";
   const role = user.role || "normal";
 
+  // Generate initials
   const initials = fullName
     ? fullName
         .split(" ")
