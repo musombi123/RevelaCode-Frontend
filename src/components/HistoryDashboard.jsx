@@ -71,13 +71,18 @@ export function HistoryProvider({ children }) {
 
       const data = await res.json();
 
-      const list = data?.history || data?.data || data;
+      // always ensure array
+      const list = Array.isArray(data?.history)
+        ? data.history
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
 
-      if (Array.isArray(list)) setHistory(list);
-      else console.warn("⚠️ Backend history response not an array:", data);
+      setHistory(list);
     } catch (err) {
       console.error("❌ Failed to fetch history from backend:", err);
       setHistoryError("Failed to fetch history.");
+      setHistory([]); // fallback to empty array
     } finally {
       setLoadingHistory(false);
     }
@@ -107,7 +112,6 @@ export function HistoryProvider({ children }) {
       // Update UI immediately
       setHistory((prev) => [newEntry, ...prev]);
 
-      // Guests stay local only
       if (!backendURL || !user || isGuest) return;
 
       try {
@@ -117,7 +121,7 @@ export function HistoryProvider({ children }) {
             "Content-Type": "application/json",
             "Authorization": user.contact,
           },
-          body: JSON.stringify(newEntry),
+          body: JSON.stringify({ entry: newEntry }),
         });
       } catch (err) {
         console.error("❌ Failed to POST history to backend:", err);
