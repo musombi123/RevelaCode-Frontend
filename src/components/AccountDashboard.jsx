@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { Mail, Facebook, Instagram, MessageCircle, Bot, Twitter, Linkedin } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx"; // <--- get logged-in user
 
-const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const baseUrl = import.meta.env.VITE_REVELACODE_URL 
+                || import.meta.env.VITE_BACKEND_URL 
+                || import.meta.env.VITE_API_URL;
 
 const initialIntegrations = [
   { name: "Google", icon: Mail, oauth: true },

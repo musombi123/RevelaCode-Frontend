@@ -6,7 +6,9 @@ import LegalDocs from "./LegalDocs.jsx";
 
 export default function StartModal() {
   const { login, guestMode } = useAuth();
-  const baseUrl = import.meta.env.VITE_API_URL;
+  const baseUrl = import.meta.env.VITE_REVELACODE_URL 
+                || import.meta.env.VITE_BACKEND_URL 
+                || import.meta.env.VITE_API_URL;
 
   const [mode, setMode] = useState(null); // null | "login" | "register" | "forgot"
   const [step, setStep] = useState("form"); // "form" | "verify"
