@@ -1,11 +1,32 @@
 import React, { useState, useRef } from "react";
 import { Mic } from "lucide-react";
 
-export default function RevelaAIVoiceChat({ onVoiceResult, showWaveform }) {
+export default function RevelaAIVoiceChat({ onVoiceResult }) {
   const [state, setState] = useState("idle"); // idle | listening | processing | responding
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+
+  // Convert WebM Blob to 16kHz mono WAV
+  const convertToWav = async (blob) => {
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioCtx = new AudioContext({ sampleRate: 16000 });
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // Mono channel
+    const channelData = audioBuffer.getChannelData(0);
+    const buffer = new ArrayBuffer(channelData.length * 2);
+    const view = new DataView(buffer);
+
+    let offset = 0;
+    for (let i = 0; i < channelData.length; i++) {
+      let s = Math.max(-1, Math.min(1, channelData[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      offset += 2;
+    }
+
+    return new Blob([view], { type: "audio/wav" });
+  };
 
   const startRecording = async () => {
     try {
@@ -21,6 +42,7 @@ export default function RevelaAIVoiceChat({ onVoiceResult, showWaveform }) {
 
       mediaRecorderRef.current.onstop = sendAudio;
 
+      // Stop recording automatically after 6s
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") stopRecording();
       }, 6000);
@@ -39,11 +61,13 @@ export default function RevelaAIVoiceChat({ onVoiceResult, showWaveform }) {
   };
 
   const sendAudio = async () => {
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-    const formData = new FormData();
-    formData.append("audio", blob, "voice.webm");
-
     try {
+      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const wavBlob = await convertToWav(blob);
+
+      const formData = new FormData();
+      formData.append("audio", wavBlob, "voice.wav");
+
       const res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/voice`, {
         method: "POST",
         body: formData,
@@ -52,7 +76,6 @@ export default function RevelaAIVoiceChat({ onVoiceResult, showWaveform }) {
 
       if (data?.heard) onVoiceResult(data.heard);
 
-      // AI voice playback
       if (data?.audio_url) {
         setState("responding");
         const audioUrl =

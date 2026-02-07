@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, Copy, Share2, Download, Edit3, Send, Mic } from "lucide-react";
-import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 
 export default function AIAssistantDashboard() {
   const [messages, setMessages] = useState([
@@ -118,12 +117,105 @@ export default function AIAssistantDashboard() {
     }
   };
 
-  /* ---------------- VOICE INPUT ---------------- */
+  /* ---------------- VOICE CHAT ---------------- */
   const handleVoiceResult = (heardText) => {
     if (heardText) sendTextMessage(heardText);
-    setVoiceActive(false);
+    setVoiceActive(false); // close overlay after result
   };
   const startVoiceChat = () => setVoiceActive(true);
+
+  /* ---------------- REVELA VOICE CHAT COMPONENT ---------------- */
+  const RevelaAIVoiceChat = ({ onVoiceResult }) => {
+    const mediaRecorderRef = useRef(null);
+    const chunksRef = useRef([]);
+    const streamRef = useRef(null);
+
+    /* Convert WebM -> 16kHz WAV */
+    const convertToWav = async (blob) => {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      const channelData = audioBuffer.getChannelData(0);
+      const buffer = new ArrayBuffer(channelData.length * 2);
+      const view = new DataView(buffer);
+      let offset = 0;
+      for (let i = 0; i < channelData.length; i++) {
+        let s = Math.max(-1, Math.min(1, channelData[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        offset += 2;
+      }
+      return new Blob([view], { type: "audio/wav" });
+    };
+
+    const sendAudio = async () => {
+      try {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const wavBlob = await convertToWav(blob);
+
+        const formData = new FormData();
+        formData.append("audio", wavBlob, "voice.wav");
+
+        const res = await fetch(`${import.meta.env.VITE_REVELAAI_URL}/voice`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (data?.heard) onVoiceResult(data.heard);
+
+        if (data?.audio_url) {
+          const audioUrl = data.audio_url.startsWith("/") ? data.audio_url : `/${data.audio_url}`;
+          const audio = new Audio(`${import.meta.env.VITE_REVELAAI_URL}${audioUrl}`);
+          audio.play().catch(console.error);
+        }
+      } catch (err) {
+        console.error("Voice request failed:", err);
+      }
+    };
+
+    const startRecording = async () => {
+      try {
+        chunksRef.current = [];
+        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+        mediaRecorderRef.current.start();
+
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
+        mediaRecorderRef.current.onstop = sendAudio;
+
+        setTimeout(() => {
+          if (mediaRecorderRef.current?.state === "recording") stopRecording();
+        }, 6000);
+      } catch (err) {
+        console.error("Mic error:", err);
+        onVoiceResult(""); // stop overlay
+      }
+    };
+
+    const stopRecording = () => {
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop();
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+      }
+    };
+
+    useEffect(() => { startRecording(); }, []);
+
+    return (
+      <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg flex flex-col items-center gap-4">
+          <p>🎤 Listening...</p>
+          <button
+            onClick={stopRecording}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Stop
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   /* ---------------- UI ---------------- */
   return (
@@ -138,8 +230,6 @@ export default function AIAssistantDashboard() {
               ) : (
                 <p className="whitespace-pre-wrap">{msg.text}</p>
               )}
-
-              {/* ACTIONS */}
               <div className="absolute -top-3 right-2 opacity-0 group-hover:opacity-100 flex gap-2 bg-white dark:bg-gray-900 rounded-lg p-1 shadow">
                 {msg.role === "user" && <button onClick={() => setEditingIndex(idx)}><Edit3 size={14} /></button>}
                 {msg.role === "assistant" && (
@@ -178,13 +268,14 @@ export default function AIAssistantDashboard() {
           {/* MICROPHONE */}
           <button
             onClick={startVoiceChat}
+            disabled={voiceActive}
             className={`p-3 rounded-full ${voiceActive ? "bg-green-600" : "bg-gray-300 dark:bg-gray-700"}`}
           >
             <Mic size={20} />
           </button>
 
           {/* VOICE CHAT OVERLAY */}
-          {voiceActive && <RevelaAIVoiceChat onVoiceResult={handleVoiceResult} showWaveform={true} />}
+          {voiceActive && <RevelaAIVoiceChat onVoiceResult={handleVoiceResult} />}
 
           {/* SEND BUTTON */}
           <button
