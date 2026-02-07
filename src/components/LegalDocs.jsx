@@ -1,33 +1,50 @@
-// frontend/components/LegalDocs.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
+// ====== JSX-FRIENDLY VERSION (NO MARKDOWN LIBRARIES) ======
 export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack, onClose }) {
-  const baseUrl = import.meta.env.VITE_REVELACODE_URL 
-                || import.meta.env.VITE_BACKEND_URL 
-                || import.meta.env.VITE_API_URL;
+  const baseUrl =
+    import.meta.env.VITE_REVELACODE_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL;
 
   const [activeTab, setActiveTab] = useState(activeTabProp);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDocFromBackend = async (type) => {
+  const loadDocFromBackend = useCallback(async (type) => {
+    if (!baseUrl) {
+      setError("Missing API base URL. Check your environment variables.");
+      return;
+    }
+
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch(`${baseUrl}/api/legal/${type}`);
-      if (!res.ok) throw new Error("Failed to load document");
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to load document");
+      }
+
       const data = await res.json();
-      setContent(data?.content || `<p>No ${type} document found.</p>`);
+
+      // Convert raw text (with new lines) into browser-friendly HTML
+      const safeHtml = (data?.content || `No ${type} document available.`)
+        .replace(/\n/g, "<br />");
+
+      setContent(safeHtml);
     } catch (err) {
-      setError(err.message || "❌ Could not load document");
+      setError(err.message || "Could not load document.");
       setContent("");
     } finally {
       setLoading(false);
     }
-  };
+  }, [baseUrl]);
 
   useEffect(() => {
     setActiveTab(activeTabProp);
@@ -35,11 +52,11 @@ export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack
 
   useEffect(() => {
     loadDocFromBackend(activeTab);
-  }, [activeTab]);
+  }, [activeTab, loadDocFromBackend]);
 
-  const renderHTML = () => {
-    return <div dangerouslySetInnerHTML={{ __html: content || "" }} />;
-  };
+  const renderHTML = () => (
+    <div dangerouslySetInnerHTML={{ __html: content || "" }} />
+  );
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -91,6 +108,7 @@ export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack
           variant="outline"
           onClick={() => loadDocFromBackend(activeTab)}
           className="ml-auto"
+          disabled={loading}
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -98,11 +116,11 @@ export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 prose prose-sm dark:prose-invert bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto p-4 border rounded-lg dark:border-gray-700 bg-white dark:bg-gray-900">
         {loading ? (
-          <p className="text-center text-gray-500">🔄 Loading...</p>
+          <p className="text-center text-gray-500">🔄 Loading…</p>
         ) : error ? (
-          <p className="text-center text-red-500">{error}</p>
+          <p className="text-center text-red-500 font-medium">{error}</p>
         ) : (
           renderHTML()
         )}

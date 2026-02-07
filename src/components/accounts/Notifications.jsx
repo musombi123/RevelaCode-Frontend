@@ -9,15 +9,19 @@ export default function Notifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch notifications
+  // Fetch notifications from backend
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       setError("");
-      const res = await fetch("/api/notifications"); // <-- use relative path for Vite proxy
+
+      // Use relative path for dev proxy or full backend URL in production
+      const res = await fetch("/api/notifications");
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
-      setNotifications(data);
+
+      // Support backend response: { notifications: [...], total: N }
+      setNotifications(data.notifications || []);
     } catch (err) {
       console.error("❌ Failed to load notifications:", err);
       setError("Failed to load notifications");
@@ -30,6 +34,7 @@ export default function Notifications() {
     fetchNotifications();
   }, []);
 
+  // Mark all as read
   const markAllRead = async () => {
     try {
       const res = await fetch("/api/notifications/read-all", { method: "PUT" });
@@ -73,7 +78,13 @@ export default function Notifications() {
           <p className="text-sm text-gray-500">⏳ Loading...</p>
         ) : error ? (
           <div className="text-sm text-red-500">
-            {error} <button onClick={fetchNotifications} className="underline ml-1">Retry</button>
+            {error}{" "}
+            <button
+              onClick={fetchNotifications}
+              className="underline ml-1"
+            >
+              Retry
+            </button>
           </div>
         ) : notifications.length === 0 ? (
           <p className="text-sm text-gray-500">No notifications</p>

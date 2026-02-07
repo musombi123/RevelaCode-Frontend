@@ -1,18 +1,26 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/Dialog.jsx";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "./ui/Dialog.jsx";
 import { Button } from "./ui/Button.jsx";
 import { Mail, Bug, Clipboard, Check } from "lucide-react";
 
-const HelpModal = () => {
+export default function HelpModal() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTicket, setNewTicket] = useState({ title: "", description: "" });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Use relative path for dev proxy, fallback to full backend in production
   const API_KEY = "RevelaCodeSupport#2026!";
-  const BACKEND = "https://revelacode-backend.onrender.com";
+  const BACKEND = import.meta.env.VITE_API_URL || "https://revelacode-backend.onrender.com";
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText("support@revelacode.com");
@@ -24,14 +32,17 @@ const HelpModal = () => {
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BACKEND}/support/tickets`, {
+      setMessage("");
+      const res = await fetch("/support/tickets", {
         headers: { "X-API-KEY": API_KEY },
       });
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       setTickets(data.tickets || []);
     } catch (err) {
-      console.error("Failed to fetch tickets:", err);
+      console.error("❌ Failed to fetch tickets:", err);
       setMessage("Error loading tickets");
+      setTickets([]);
     } finally {
       setLoading(false);
     }
@@ -49,7 +60,7 @@ const HelpModal = () => {
     }
     setSubmitting(true);
     try {
-      const res = await fetch(`${BACKEND}/support/tickets`, {
+      const res = await fetch("/support/tickets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,13 +68,10 @@ const HelpModal = () => {
         },
         body: JSON.stringify(newTicket),
       });
-      if (res.ok) {
-        setMessage("Ticket submitted successfully!");
-        setNewTicket({ title: "", description: "" });
-        fetchTickets();
-      } else {
-        setMessage("Failed to submit ticket.");
-      }
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      setMessage("Ticket submitted successfully!");
+      setNewTicket({ title: "", description: "" });
+      fetchTickets();
     } catch (err) {
       console.error(err);
       setMessage("Error submitting ticket.");
@@ -73,10 +81,10 @@ const HelpModal = () => {
     }
   };
 
-  // Resolve a ticket
+  // Resolve ticket
   const resolveTicket = async (id) => {
     try {
-      const res = await fetch(`${BACKEND}/support/resolve-ticket`, {
+      const res = await fetch("/support/resolve-ticket", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,12 +92,9 @@ const HelpModal = () => {
         },
         body: JSON.stringify({ ticket_id: id, resolution: "Resolved via modal" }),
       });
-      if (res.ok) {
-        setMessage("Ticket resolved!");
-        fetchTickets();
-      } else {
-        setMessage("Failed to resolve ticket.");
-      }
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      setMessage("Ticket resolved!");
+      fetchTickets();
     } catch (err) {
       console.error(err);
       setMessage("Error resolving ticket.");
@@ -101,7 +106,10 @@ const HelpModal = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2 rounded-2xl shadow-sm hover:shadow-md">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 rounded-2xl shadow-sm hover:shadow-md"
+        >
           <Mail className="w-4 h-4" aria-hidden="true" />
           Contact Support
         </Button>
@@ -111,7 +119,7 @@ const HelpModal = () => {
         <DialogHeader>
           <DialogTitle>Help & Support</DialogTitle>
           <DialogDescription>
-            We’re here to help. View tickets, submit a bug, or resolve issues.
+            View tickets, submit bugs, or resolve issues.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,11 +131,11 @@ const HelpModal = () => {
               <span className="text-sm">support@revelacode.com</span>
             </div>
             <Button size="icon" variant="ghost" onClick={handleCopyEmail} title="Copy email">
-              <Clipboard className="w-4 h-4" aria-hidden="true" />
+              <Clipboard className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Submit new ticket */}
+          {/* Submit Ticket */}
           <div className="border p-3 rounded-md space-y-2">
             <h3 className="text-sm font-medium">Submit a Bug / Issue</h3>
             <input
@@ -158,7 +166,10 @@ const HelpModal = () => {
             ) : (
               <ul className="text-xs space-y-1">
                 {tickets.map((ticket) => (
-                  <li key={ticket._id} className="border p-1 rounded flex justify-between items-center">
+                  <li
+                    key={ticket._id}
+                    className="border p-1 rounded flex justify-between items-center"
+                  >
                     <div>
                       <strong>{ticket.title || "Untitled"}</strong> - {ticket.status}
                     </div>
@@ -185,6 +196,4 @@ const HelpModal = () => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default HelpModal;
+}
