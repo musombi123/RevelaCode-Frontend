@@ -16,9 +16,10 @@ export function HistoryProvider({ children }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState(null);
 
-  const baseUrl = import.meta.env.VITE_REVELACODE_URL 
-                || import.meta.env.VITE_BACKEND_URL 
-                || import.meta.env.VITE_API_URL;
+  const backendURL =
+    import.meta.env.VITE_REVELACODE_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL;
 
   const isGuest = user?.role === "guest";
 
@@ -52,13 +53,7 @@ export function HistoryProvider({ children }) {
      Fetch history from backend (on login)
   ================================ */
   const fetchHistoryFromBackend = useCallback(async () => {
-    if (!backendURL) {
-      console.warn("⚠️ No backend URL found. Set VITE_REVELACODE_URL or VITE_BACKEND_URL.");
-      return;
-    }
-
-    // Guests: optional behavior
-    if (!user || isGuest) return;
+    if (!backendURL || !user || isGuest) return;
 
     setLoadingHistory(true);
     setHistoryError(null);
@@ -68,20 +63,18 @@ export function HistoryProvider({ children }) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          // If you have auth tokens later, add Authorization here
+          "Authorization": user.contact,
         },
       });
 
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+
       const data = await res.json();
 
-      // Support different backend response shapes safely
-      const list = data?.data || data?.history || data;
+      const list = data?.history || data?.data || data;
 
-      if (Array.isArray(list)) {
-        setHistory(list);
-      } else {
-        console.warn("⚠️ Backend history response not an array:", data);
-      }
+      if (Array.isArray(list)) setHistory(list);
+      else console.warn("⚠️ Backend history response not an array:", data);
     } catch (err) {
       console.error("❌ Failed to fetch history from backend:", err);
       setHistoryError("Failed to fetch history.");
@@ -104,25 +97,25 @@ export function HistoryProvider({ children }) {
       const newEntry = {
         id: entry.id ?? Date.now(),
         timestamp: entry.timestamp ?? new Date().toISOString(),
-        type: entry.type ?? "generic", // ai / decode / prophecy
+        type: entry.type ?? "generic",
         input: entry.input ?? "",
         output: entry.output ?? "",
         fileName: entry.fileName ?? null,
         extra: entry.extra ?? null,
       };
 
-      // Always update UI instantly
+      // Update UI immediately
       setHistory((prev) => [newEntry, ...prev]);
 
-      // Guests can stay local only
+      // Guests stay local only
       if (!backendURL || !user || isGuest) return;
 
-      // Push to backend
       try {
         await fetch(`${backendURL}/history`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Authorization": user.contact,
           },
           body: JSON.stringify(newEntry),
         });
@@ -138,7 +131,6 @@ export function HistoryProvider({ children }) {
   ================================ */
   const clearHistory = useCallback(async () => {
     setHistory([]);
-
     try {
       localStorage.removeItem("userHistory");
     } catch {}
@@ -148,7 +140,10 @@ export function HistoryProvider({ children }) {
     try {
       await fetch(`${backendURL}/history`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": user.contact,
+        },
       });
     } catch (err) {
       console.error("❌ Failed to DELETE history on backend:", err);
