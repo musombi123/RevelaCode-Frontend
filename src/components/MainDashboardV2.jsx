@@ -13,7 +13,7 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 /* =========================================================
-   Guest Disturb Modal (Full-screen blocker every 30 minutes)
+   Guest Disturb Modal
 ========================================================= */
 function GuestDisturbModal({ open, onClose, onCreateAccount }) {
   return (
@@ -87,7 +87,7 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
 }
 
 /* =========================================================
-   Fullscreen AI Assistant Dashboard (Overlay)
+   Fullscreen AI Assistant Dashboard
 ========================================================= */
 function FullscreenAIAssistant({ open, onClose, aiElement }) {
   return (
@@ -99,7 +99,6 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Top Bar */}
           <div className="h-14 flex items-center justify-between px-4 border-b border-gray-300/40 dark:border-gray-700/40">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -122,7 +121,6 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
             </button>
           </div>
 
-          {/* Content */}
           <div className="h-[calc(100vh-56px)] overflow-hidden">
             <div className="h-full p-4 overflow-y-auto">
               <Suspense fallback={<Loading />}>
@@ -135,15 +133,7 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
                         AI Dashboard Not Found
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                        Make sure you have a dashboard with key{" "}
-                        <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
-                          ai
-                        </code>{" "}
-                        inside{" "}
-                        <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
-                          DASHBOARDS
-                        </code>
-                        .
+                        Make sure you have a dashboard with key <code>ai</code> inside <code>DASHBOARDS</code>.
                       </p>
                     </div>
                   )}
@@ -158,19 +148,13 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
 }
 
 export default function MainDashboardV2() {
-  /* ---------------- Core State ---------------- */
-  const defaultDashboard = "home"; // always start on home
+  const defaultDashboard = "home";
   const [activeView, setActiveView] = useState(defaultDashboard);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // AI: fullscreen instead of small dock
   const [aiFullscreenOpen, setAIFullscreenOpen] = useState(false);
-
   const [showStartModal, setShowStartModal] = useState(false);
   const [guestTrials, setGuestTrials] = useState(0);
   const [dailyGreeting, setDailyGreeting] = useState("");
-
-  // Guest disturb every 30 minutes
   const [guestDisturbOpen, setGuestDisturbOpen] = useState(false);
 
   const { theme, setTheme } = useTheme();
@@ -182,8 +166,6 @@ export default function MainDashboardV2() {
   useEffect(() => {
     if (!user) setShowStartModal(true);
   }, [user]);
-
-  const handleStartComplete = () => setShowStartModal(false);
 
   /* ---------------- Guest Trial ---------------- */
   useEffect(() => {
@@ -198,7 +180,7 @@ export default function MainDashboardV2() {
     if (isGuest) setGuestTrials((t) => t + 1);
   };
 
-  /* ---------------- Daily Greetings (Randomized weekly) ---------------- */
+  /* ---------------- Greetings ---------------- */
   const greetings = [
     "Rise and shine! 🌞",
     "Keep pushing forward 💪",
@@ -216,36 +198,28 @@ export default function MainDashboardV2() {
     setDailyGreeting(greetings[todayIndex]);
   }, []);
 
-  /* =========================================================
-     Guest Disturb Logic (every 30 minutes)
-     - Only runs if user is guest
-     - Pops a blocking fullscreen modal
-     - ALSO triggers StartModal to force login
-  ========================================================= */
+  /* ---------------- Guest Disturb ---------------- */
   useEffect(() => {
     if (!isGuest) {
       setGuestDisturbOpen(false);
       return;
     }
 
-    const intervalMs = 30 * 60 * 1000;
-
     const interval = setInterval(() => {
       setGuestDisturbOpen(true);
       setShowStartModal(true);
-    }, intervalMs);
+    }, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [isGuest]);
 
   const handleGuestDisturbClose = () => setGuestDisturbOpen(false);
-
   const handleCreateAccount = useCallback(() => {
     setGuestDisturbOpen(false);
     setShowStartModal(true);
   }, []);
 
-  /* ---------------- AI Shortcut (Ctrl + K) ---------------- */
+  /* ---------------- AI Shortcut ---------------- */
   useEffect(() => {
     const handler = (e) => {
       if (e.ctrlKey && e.key.toLowerCase() === "k") {
@@ -261,7 +235,7 @@ export default function MainDashboardV2() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  /* ---------------- Home Page Preview Components ---------------- */
+  /* ---------------- Home Preview ---------------- */
   const HomePreview = () => {
     const displayName = user?.fullName?.trim();
     const welcomeName = displayName ? displayName : "GUEST";
@@ -282,9 +256,6 @@ export default function MainDashboardV2() {
       <div className="space-y-6">
         {/* HERO */}
         <div className="rounded-2xl p-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-black/10 blur-2xl" />
-
           <div className="flex flex-col gap-3 relative z-10">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -292,11 +263,6 @@ export default function MainDashboardV2() {
               </h2>
               {userBadge}
             </div>
-
-            <p className="text-white/90 text-sm sm:text-base max-w-2xl">
-              RevelaCode is your AI-powered Bible decoding workspace — prophecy insights, scripture referencing,
-              and smart tools built for speed and clarity.
-            </p>
 
             <div className="flex flex-wrap gap-3 mt-2">
               <button
@@ -333,32 +299,19 @@ export default function MainDashboardV2() {
               {dailyGreeting}
             </p>
           </div>
-
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {isGuest
-              ? "Guest mode: your session may not save permanently."
-              : `Logged in as: ${user?.contact || "N/A"}`}
-          </div>
         </div>
 
-        {/* USER DETAILS CARD */}
+        {/* QUICK LAUNCH (ALIGNED WITH DASHBOARDS) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Quick Launch 🚀
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Jump into your tools instantly.
-            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
               {DASHBOARDS
-                .filter((d) => !d.hidden && d.key !== "home")
-                .filter((d) => {
-                  // Guest cannot access accounts dashboard
-                  if (isGuest && d.key === "accounts") return false;
-                  return true;
-                })
+                .filter(d => !d.hidden && d.key !== "home")
+                .filter(d => !(isGuest && d.restricted))
                 .map((d) => (
                   <button
                     key={d.key}
@@ -371,9 +324,6 @@ export default function MainDashboardV2() {
                         {d.title || d.label}
                       </h4>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      Open {d.label} tools and explore features.
-                    </p>
                     <div className="mt-3 text-xs font-semibold text-indigo-600 dark:text-indigo-300 opacity-80 group-hover:opacity-100">
                       Launch →
                     </div>
@@ -381,92 +331,24 @@ export default function MainDashboardV2() {
                 ))}
             </div>
           </div>
-
-          <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              Your Session 👤
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Account info and access level.
-            </p>
-
-            <div className="mt-4 space-y-3">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Name</p>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.fullName || "Guest"}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Contact</p>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.contact || "N/A"}
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Role</p>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.role || "normal"}
-                </p>
-              </div>
-
-              {isGuest && (
-                <div className="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200/60 dark:border-yellow-900/40">
-                  <p className="text-sm text-gray-800 dark:text-gray-200">
-                    ⚠ Guest accounts can use almost everything, but{" "}
-                    <span className="font-semibold">Accounts Dashboard</span> is locked.
-                  </p>
-                  <button
-                    onClick={() => setShowStartModal(true)}
-                    className="mt-3 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition"
-                  >
-                    Login to Unlock Accounts 🔓
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* UPCOMING FEATURES */}
-        <div className="mt-2 p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm">
-          <h4 className="font-bold text-gray-900 dark:text-gray-100">
-            Upcoming Features 🔥
-          </h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm text-gray-700 dark:text-gray-200">
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-              Enhanced AI decoding for prophecies
-            </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-              Weekly Bible study challenges
-            </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-              Customizable dashboard widgets
-            </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-              Linked account integrations (TikTok, WhatsApp, etc.)
-            </li>
-          </ul>
         </div>
       </div>
     );
   };
 
+  // CLEAN, SAFE RESOLUTION
   const activeComponent =
     activeView === "home"
       ? <HomePreview />
       : DASHBOARDS.find((d) => d.key === activeView)?.element || <HomePreview />;
 
-  const aiDashboardElement = DASHBOARDS.find((d) => d.key === "ai")?.element;
+  const aiDashboardElement =
+    DASHBOARDS.find((d) => d.key === "ai" && !(isGuest && d.restricted))?.element;
 
-  /* ================================================= */
   return (
     <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
-
       <AnimatePresence>
-        {showStartModal && <StartModal onComplete={handleStartComplete} />}
+        {showStartModal && <StartModal />}
       </AnimatePresence>
 
       <GuestDisturbModal
@@ -497,12 +379,8 @@ export default function MainDashboardV2() {
 
             <nav className="px-2 space-y-1">
               {DASHBOARDS
-                .filter((d) => !d.hidden)
-                .filter((d) => {
-                  // Guest cannot access accounts dashboard
-                  if (isGuest && d.key === "accounts") return false;
-                  return true;
-                })
+                .filter(d => !d.hidden)
+                .filter(d => !(isGuest && d.restricted))
                 .map(({ key, label, icon: Icon, color }) => (
                   <button
                     key={key}
@@ -511,7 +389,9 @@ export default function MainDashboardV2() {
                       handleGuestFeatureUse();
                     }}
                     className={`flex items-center gap-3 p-3 w-full rounded-lg text-sm transition
-                      ${activeView === key ? `bg-gradient-to-r ${color}` : "hover:bg-gray-800"}`}
+                      ${activeView === key
+                        ? `bg-gradient-to-r ${color || "from-indigo-600 to-purple-600"}`
+                        : "hover:bg-gray-800"}`}
                   >
                     <Icon size={18} />
                     {label}
@@ -533,7 +413,6 @@ export default function MainDashboardV2() {
       </AnimatePresence>
 
       <main className="flex-1 relative overflow-hidden">
-
         <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
           <div className="flex items-center gap-3">
             {!sidebarOpen && (
@@ -545,7 +424,7 @@ export default function MainDashboardV2() {
               <h2 className="font-semibold text-gray-900 dark:text-gray-100">
                 {activeView === "home"
                   ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
-                  : DASHBOARDS.find((d) => d.key === activeView)?.title}
+                  : DASHBOARDS.find((d) => d.key === activeView)?.title || "Dashboard"}
               </h2>
               {activeView === "home" && (
                 <p className="text-gray-600 dark:text-gray-400">{dailyGreeting}</p>
@@ -556,12 +435,10 @@ export default function MainDashboardV2() {
           <div className="flex items-center gap-4">
             <Notifications />
 
-            {/* Guest cannot upload avatar - force login */}
             {isGuest ? (
               <button
                 onClick={() => setShowStartModal(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
-                title="Login to manage profile"
               >
                 Login 🔐
               </button>
@@ -585,7 +462,6 @@ export default function MainDashboardV2() {
         <button
           onClick={() => setAIFullscreenOpen(true)}
           className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-40"
-          title="AI Assistant Dashboard (Ctrl + K)"
         >
           <Bot />
         </button>
