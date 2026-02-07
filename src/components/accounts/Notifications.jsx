@@ -7,30 +7,37 @@ import { Badge } from "@/components/ui/Badge";
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const baseUrl = import.meta.env.VITE_API_URL;
+  const [error, setError] = useState("");
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const res = await fetch("/api/notifications"); // <-- use relative path for Vite proxy
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err) {
+      console.error("❌ Failed to load notifications:", err);
+      setError("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${baseUrl}/api/notifications`);
-        const data = await res.json();
-        if (res.ok) setNotifications(data);
-      } catch (err) {
-        console.error("❌ Failed to load notifications:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchNotifications();
-  }, [baseUrl]);
+  }, []);
 
   const markAllRead = async () => {
     try {
-      await fetch(`${baseUrl}/api/notifications/read-all`, { method: "PUT" });
+      const res = await fetch("/api/notifications/read-all", { method: "PUT" });
+      if (!res.ok) throw new Error("Failed to mark all as read");
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error("❌ Failed to mark all as read:", err);
+      setError("Failed to mark all as read");
     }
   };
 
@@ -64,6 +71,10 @@ export default function Notifications() {
 
         {loading ? (
           <p className="text-sm text-gray-500">⏳ Loading...</p>
+        ) : error ? (
+          <div className="text-sm text-red-500">
+            {error} <button onClick={fetchNotifications} className="underline ml-1">Retry</button>
+          </div>
         ) : notifications.length === 0 ? (
           <p className="text-sm text-gray-500">No notifications</p>
         ) : (

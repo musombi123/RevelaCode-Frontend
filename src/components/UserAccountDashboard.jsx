@@ -1,4 +1,4 @@
-import React, { useState, Suspense, useEffect, useMemo } from "react";
+import React, { useState, useEffect, Suspense, useMemo } from "react";
 import {
   User,
   Settings,
@@ -10,8 +10,8 @@ import {
   FileText,
   Shield,
   Link2,
-  LogIn,
 } from "lucide-react";
+
 import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -24,187 +24,183 @@ const SupportCenter = React.lazy(() => import("./SupportCenter"));
 const HelpModal = React.lazy(() => import("./HelpModal.jsx"));
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 export default function UserAccountDashboard({ onLogout }) {
-  const { user: authUser, login } = useAuth();
-  const [userData, setUserData] = useState(authUser);
+  const { user: authUser } = useAuth();
+
+  const isGuest = useMemo(
+    () => !authUser || authUser.role === "guest",
+    [authUser]
+  );
+
   const [activeView, setActiveView] = useState("profile");
-  const [viewStack, setViewStack] = useState([]);
-  const [loadingUserData, setLoadingUserData] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  const [loadingUser, setLoadingUser] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const API_BASE = import.meta.env.VITE_API_URL;
-
-  const isGuest = useMemo(() => !authUser || authUser.role === "guest", [authUser]);
-
-  // Fetch full backend data if not guest
+  /* ===================== LOAD USER ===================== */
   useEffect(() => {
-    if (!isGuest && userData.contact) {
-      setLoadingUserData(true);
-      fetch(`${API_BASE}/api/user/${userData.contact}`)
-        .then((res) => res.json())
-        .then((data) => setUserData((prev) => ({ ...prev, ...data })))
-        .catch(console.error)
-        .finally(() => setLoadingUserData(false));
-    }
-  }, [userData.contact, isGuest, API_BASE]);
+    if (isGuest || !authUser?.contact) return;
 
-  // Navigation stack
+    setLoadingUser(true);
+    setError("");
+
+    fetch(
+      `${API_BASE}/api/user/${encodeURIComponent(authUser.contact)}`
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load user");
+        return res.json();
+      })
+      .then(setUserData)
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load user profile");
+      })
+      .finally(() => setLoadingUser(false));
+  }, [authUser?.contact, isGuest]);
+
+  /* ===================== LOAD HISTORY ===================== */
   useEffect(() => {
-    setViewStack((prev) => {
-      if (!activeView) return prev;
-      if (prev[prev.length - 1] === activeView) return prev;
-      return [...prev, activeView];
-    });
-  }, [activeView]);
+    if (activeView !== "history" || !userData?.contact) return;
 
-  const goBack = () => {
-    setViewStack((prev) => {
-      if (prev.length <= 1) return prev;
-      const updated = prev.slice(0, -1);
-      setActiveView(updated[updated.length - 1]);
-      return updated;
-    });
-  };
+    setLoadingHistory(true);
 
-  // ------------------- API Helpers -------------------
+    fetch(
+      `${API_BASE}/api/user/history?contact=${encodeURIComponent(
+        userData.contact
+      )}`
+    )
+      .then((res) => res.json())
+      .then((data) => setHistory(Array.isArray(data) ? data : []))
+      .catch(console.error)
+      .finally(() => setLoadingHistory(false));
+  }, [activeView, userData?.contact]);
+
+  /* ===================== API POST ===================== */
   const apiPost = async (path, payload) => {
     const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload || {}),
+      body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.success) throw new Error(data.message || "Request failed");
+    if (!res.ok) throw new Error(data.message || "Request failed");
     return data;
   };
 
-  // ------------------- Delete Account -------------------
-  const requestDeleteAccount = async () => {
-    try {
-      setError(""); setMessage("");
-      const res = await apiPost("/api/request-delete", { contact: userData.contact });
-      setMessage(`Code sent: ${res.debug_code}`);
-      setActiveView("delete");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
+  /* ===================== DELETE ACCOUNT ===================== */
   const confirmDeleteAccount = async (code) => {
     try {
-      await apiPost("/api/confirm-delete", { contact: userData.contact, code });
+      await apiPost("/api/confirm-delete", {
+        contact: userData.contact,
+        code,
+      });
       onLogout?.();
       window.location.href = "/";
-    } catch (err) { setError(err.message); }
-  };
-
-  // ------------------- Reset Password -------------------
-  const requestResetPassword = async () => {
-    try {
-      setError(""); setMessage("");
-      const res = await apiPost("/api/request-reset", { contact: userData.contact });
-      setMessage(`Reset code sent: ${res.debug_code}`);
-      setActiveView("reset");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const confirmResetPassword = async (code, newPassword, confirmPassword) => {
+  /* ===================== RESET PASSWORD ===================== */
+  const confirmResetPassword = async (payload) => {
     try {
       await apiPost("/api/reset-password", {
         contact: userData.contact,
-        code,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
+        ...payload,
       });
-      setMessage("Password reset successful!");
-    } catch (err) { setError(err.message); }
+      setMessage("Password reset successful");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  // ------------------- Render content -------------------
+  /* ===================== CONTENT ===================== */
   const renderContent = () => {
-    if (isGuest) return (
-      <div className="p-6 text-gray-700 dark:text-gray-300">
-        <h2 className="text-xl font-bold">🔒 Login Required</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          You must log in to access your dashboard.
-        </p>
-      </div>
-    );
+    if (isGuest) {
+      return (
+        <div className="p-6">
+          <h2 className="text-xl font-bold">🔒 Login Required</h2>
+          <p className="text-gray-500 mt-1">
+            Please log in to access your account dashboard.
+          </p>
+        </div>
+      );
+    }
 
-    if (loadingUserData) return <Loading />;
+    if (loadingUser || !userData) return <Loading />;
 
     switch (activeView) {
       case "profile":
         return <UserProfile user={userData} />;
+
       case "settings":
         return <PreferencesDashboard userData={userData} />;
+
       case "accounts":
         return <AccountDashboard userData={userData} />;
+
       case "notifications":
         return (
           <div className="p-6">
             <h2 className="text-xl font-bold">🔔 Notifications</h2>
-            <p>No notifications yet.</p>
+            <p className="text-gray-500">No notifications yet.</p>
           </div>
         );
+
       case "history":
         return (
           <div className="p-6">
-            <h2 className="text-xl font-bold">📜 History</h2>
-            <p>No history yet.</p>
+            <h2 className="text-xl font-bold mb-4">📜 History</h2>
+
+            {loadingHistory && <Loading />}
+
+            {!loadingHistory && history.length === 0 && (
+              <p className="text-gray-500">No history recorded.</p>
+            )}
+
+            <ul className="space-y-2">
+              {history.map((h, i) => (
+                <li
+                  key={i}
+                  className="p-3 border rounded-md bg-gray-50 dark:bg-gray-800"
+                >
+                  <p className="text-sm">{h.action || "Activity"}</p>
+                  <p className="text-xs text-gray-500">
+                    {h.timestamp
+                      ? new Date(h.timestamp).toLocaleString()
+                      : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </div>
         );
+
       case "support":
         return <SupportCenter />;
+
       case "help":
         return <HelpModal />;
+
       case "referential":
         return <ReferentialDashboard />;
+
       case "privacy":
         return <LegalDocs activeTab="privacy" />;
+
       case "terms":
         return <LegalDocs activeTab="terms" />;
-      case "delete":
-        return (
-          <div className="p-6 space-y-3">
-            <h2 className="text-xl font-bold text-red-600">❌ Delete Account</h2>
-            <p>Enter the 6-digit code sent to your email to confirm deletion.</p>
-            <input placeholder="Code" className="w-full p-2 border rounded" id="deleteCode" />
-            <button
-              onClick={() => confirmDeleteAccount(document.getElementById("deleteCode").value)}
-              className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded"
-            >
-              Confirm Delete
-            </button>
-          </div>
-        );
-      case "reset":
-        return (
-          <div className="p-6 space-y-3">
-            <h2 className="text-xl font-bold text-blue-600">🔑 Reset Password</h2>
-            <p>Enter the code and your new password:</p>
-            <input placeholder="Code" className="w-full p-2 border rounded" id="resetCode" />
-            <input placeholder="New Password" type="password" className="w-full p-2 border rounded" id="newPassword" />
-            <input placeholder="Confirm Password" type="password" className="w-full p-2 border rounded" id="confirmPassword" />
-            <button
-              onClick={() =>
-                confirmResetPassword(
-                  document.getElementById("resetCode").value,
-                  document.getElementById("newPassword").value,
-                  document.getElementById("confirmPassword").value
-                )
-              }
-              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-            >
-              Reset Password
-            </button>
-          </div>
-        );
+
       default:
-        return <div>⚠️ Select a menu item to continue.</div>;
+        return <div className="p-6">Select a menu item</div>;
     }
   };
 
@@ -217,22 +213,31 @@ export default function UserAccountDashboard({ onLogout }) {
     { key: "support", label: "Support Center", icon: LifeBuoy },
     { key: "help", label: "Help & Docs", icon: HelpCircle },
     { key: "referential", label: "Referential", icon: BookOpen },
-    { key: "reset", label: "Reset Password", icon: Shield },
-    { key: "delete", label: "Delete Account", icon: FileText },
     { key: "privacy", label: "Privacy Policy", icon: Shield },
     { key: "terms", label: "Terms of Service", icon: FileText },
   ];
 
+  /* ===================== LAYOUT ===================== */
   return (
-    <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mb-4">RevelaCode</h2>
-        <div className="mb-4 p-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{userData.fullName}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Role: {userData.role}</p>
-        </div>
+    <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+      <aside className="w-64 border-r bg-gray-50 dark:bg-gray-800 p-4 overflow-y-auto">
+        <h2 className="text-lg font-bold text-indigo-600 mb-4">
+          RevelaCode
+        </h2>
+
+        {userData && (
+          <div className="mb-4 p-3 rounded-lg border bg-white dark:bg-gray-900">
+            <p className="text-xs text-gray-500">Signed in as</p>
+            <p className="text-sm font-semibold">{userData.contact}</p>
+            <p className="text-xs text-gray-500">
+              Joined{" "}
+              {userData.created_at
+                ? new Date(userData.created_at).toLocaleDateString()
+                : ""}
+            </p>
+          </div>
+        )}
+
         <nav className="space-y-1">
           {menuItems.map(({ key, label, icon: Icon }) => (
             <button
@@ -241,7 +246,7 @@ export default function UserAccountDashboard({ onLogout }) {
               className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition ${
                 activeView === key
                   ? "bg-indigo-600 text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  : "hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -253,17 +258,16 @@ export default function UserAccountDashboard({ onLogout }) {
         {!isGuest && onLogout && (
           <button
             onClick={onLogout}
-            className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md text-sm font-semibold shadow"
+            className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md text-sm font-semibold"
           >
             Logout
           </button>
         )}
 
-        {message && <p className="text-green-500 text-sm mt-2">{message}</p>}
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+        {message && <p className="text-green-500 mt-2 text-sm">{message}</p>}
+        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
       </aside>
 
-      {/* Main */}
       <main className="flex-1 overflow-y-auto p-4">
         <Suspense fallback={<Loading />}>{renderContent()}</Suspense>
       </main>

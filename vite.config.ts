@@ -7,7 +7,16 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: "https://revelacode-backend.onrender.com",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
