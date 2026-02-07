@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
-import GuestOverlay from "./GuestOverlay.jsx";
 import LegalDocs from "./LegalDocs.jsx";
 
 export default function StartModal() {
@@ -12,23 +11,20 @@ export default function StartModal() {
   const [mode, setMode] = useState(null); // null | "login" | "register" | "forgot"
   const [step, setStep] = useState("form"); // "form" | "verify"
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [showLegal, setShowLegal] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [verificationCode, setVerificationCode] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
   const [resetConfirmPassword, setResetConfirmPassword] = useState("");
 
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [showLegal, setShowLegal] = useState(false);
-
   const codeInputRef = useRef(null);
   const autoSubmittedRef = useRef(false);
-  const resendCooldownRef = useRef(false);
 
   const resetAll = () => {
     setMode(null);
@@ -59,7 +55,6 @@ export default function StartModal() {
     return data;
   };
 
-  // ------------------ Backend API wrappers ------------------
   const loginUser = (contact, password) => apiPost("/api/login", { contact, password });
   const registerUser = () =>
     apiPost("/api/register", { full_name: fullName, contact, password, confirm_password: confirmPassword });
@@ -69,7 +64,6 @@ export default function StartModal() {
   const verifyResetCode = (contact, code) => apiPost("/api/verify-reset", { contact, code });
   const resetPasswordAPI = (contact, code, newPass, confirmPass) =>
     apiPost("/api/reset-password", { contact, code, new_password: newPass, confirm_password: confirmPass });
-  const guestLoginAPI = () => apiPost("/api/guest", {});
 
   // ------------------ FLOWS ------------------
   const handleVerifyAndLogin = async (code) => {
@@ -90,18 +84,9 @@ export default function StartModal() {
     goHomeByRole(data.role);
   };
 
-  // ------------------ GUEST LOGIN ------------------
-  const handleGuestLogin = async () => {
-    try {
-      setLoading(true);
-      const data = await guestLoginAPI();
-      login({ contact: data.contact, fullName: data.full_name, role: data.role || "guest" });
-      goHomeByRole(data.role || "guest");
-    } catch (err) {
-      setError(err.message || "❌ Guest login failed");
-    } finally {
-      setLoading(false);
-    }
+  const handleGuestLogin = () => {
+    guestMode();
+    goHomeByRole("guest");
   };
 
   // ------------------ SUBMIT ------------------
@@ -110,13 +95,18 @@ export default function StartModal() {
     setError(""); setMessage("");
 
     if (!mode) return;
-    if (!contact) return setError("⚠ Please enter your email.");
-    if (mode !== "forgot" && !password) return setError("⚠ Please enter your password.");
+    if (!contact) return setError("⚠ Please enter your email/contact.");
+    if ((mode === "login" || mode === "register") && !password) return setError("⚠ Please enter your password.");
     if (mode === "register") {
       if (!fullName) return setError("⚠ Enter your full name.");
       if (!password || !confirmPassword) return setError("⚠ Enter password & confirm.");
       if (password !== confirmPassword) return setError("❌ Passwords do not match.");
       if (password.length < 6) return setError("⚠ Password too short.");
+    }
+    if (mode === "forgot") {
+      if (step === "form" && (!contact)) return setError("⚠ Enter your email/contact to reset password.");
+      if (step === "verify" && (!resetNewPassword || !resetConfirmPassword)) return setError("⚠ Enter new password & confirm.");
+      if (step === "verify" && resetNewPassword !== resetConfirmPassword) return setError("❌ Passwords do not match.");
     }
 
     try {
@@ -125,19 +115,21 @@ export default function StartModal() {
         const data = await loginUser(contact, password);
         login({ contact: data.contact, fullName: data.full_name, role: data.role });
         goHomeByRole(data.role);
-      }
-      else if (mode === "register") {
+      } else if (mode === "register") {
         await registerUser();
         const codeRes = await requestVerificationCode(contact);
         if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
-        setMessage(`📩 Code sent to ${contact}${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
+        setMessage(`📩 Verification code sent to ${contact}${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
         setStep("verify");
-      }
-      else if (mode === "forgot") {
-        const codeRes = await requestResetCode(contact);
-        if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
-        setMessage(`📩 Reset code sent${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
-        setStep("verify");
+      } else if (mode === "forgot") {
+        if (step === "form") {
+          const codeRes = await requestResetCode(contact);
+          if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
+          setMessage(`📩 Reset code sent to ${contact}${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
+          setStep("verify");
+        } else if (step === "verify") {
+          await handleVerifyAndReset(verificationCode);
+        }
       }
     } catch (err) {
       setError(err.message || "❌ Server error");
@@ -172,23 +164,6 @@ export default function StartModal() {
     }
   }, [verificationCode, step, loading, mode, resetNewPassword, resetConfirmPassword]);
 
-  const resendCode = async () => {
-    if (!contact) return setError("⚠ Contact missing");
-    if (resendCooldownRef.current) return setError("⚠ Wait before resending");
-
-    try {
-      setLoading(true); setError(""); setMessage("");
-      resendCooldownRef.current = true;
-      setTimeout(() => (resendCooldownRef.current = false), 5000);
-
-      const codeRes = mode === "forgot" ? await requestResetCode(contact) : await requestVerificationCode(contact);
-      if (codeRes.debug_code) setVerificationCode(codeRes.debug_code);
-      setMessage(`🔄 New code sent${codeRes.debug_code ? ` (DEV CODE: ${codeRes.debug_code})` : ""}`);
-    } catch (err) {
-      setError(err.message || "❌ Could not resend code");
-    } finally { setLoading(false); }
-  };
-
   const backFromVerify = () => {
     setStep("form"); setVerificationCode(""); setError(""); setMessage(""); autoSubmittedRef.current = false;
   };
@@ -201,11 +176,11 @@ export default function StartModal() {
 
         {!mode && (
           <div className="space-y-3">
-            <GuestOverlay onLogin={() => setMode("login")} />
             <button onClick={handleGuestLogin} className="w-full py-2 rounded border border-gray-400 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800">🚀 Continue as Guest</button>
             <div className="flex gap-2">
-              <button onClick={() => { setMode("login"); setStep("form"); setError(""); setMessage(""); }} className="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">🔐 Login</button>
-              <button onClick={() => { setMode("register"); setStep("form"); setError(""); setMessage(""); }} className="w-full py-2 rounded border border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800">📝 Register</button>
+              <button onClick={() => setMode("login")} className="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">🔐 Login</button>
+              <button onClick={() => setMode("register")} className="w-full py-2 rounded border border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800">📝 Register</button>
+              <button onClick={() => setMode("forgot")} className="w-full py-2 rounded border border-gray-600 hover:bg-gray-50">🔑 Forgot Password</button>
             </div>
           </div>
         )}
@@ -218,7 +193,15 @@ export default function StartModal() {
                 <input type="text" placeholder="Email / Contact" value={contact} onChange={e => setContact(e.target.value)} className="w-full p-2 border rounded" />
                 {(mode === "login" || mode === "register") && <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" />}
                 {mode === "register" && <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full p-2 border rounded" />}
-                <button type="submit" disabled={loading} className="w-full py-2 rounded bg-blue-600 text-white hover:bg-blue-700">{loading ? "⏳ Loading..." : (mode === "login" ? "Login" : "Register")}</button>
+                {mode === "forgot" && step === "verify" && (
+                  <>
+                    <input type="password" placeholder="New Password" value={resetNewPassword} onChange={e => setResetNewPassword(e.target.value)} className="w-full p-2 border rounded" />
+                    <input type="password" placeholder="Confirm Password" value={resetConfirmPassword} onChange={e => setResetConfirmPassword(e.target.value)} className="w-full p-2 border rounded" />
+                  </>
+                )}
+                <button type="submit" disabled={loading} className="w-full py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+                  {loading ? "⏳ Loading..." : (mode === "login" ? "Login" : mode === "register" ? "Register" : "Reset")}
+                </button>
               </>
             )}
 
@@ -227,7 +210,6 @@ export default function StartModal() {
                 <input ref={codeInputRef} type="text" placeholder="Enter 6-digit code" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} className="w-full p-2 border rounded" />
                 <div className="flex justify-between gap-2">
                   <button type="button" onClick={backFromVerify} className="w-full py-2 rounded border">⬅ Back</button>
-                  <button type="button" onClick={resendCode} className="w-full py-2 rounded border">🔄 Resend</button>
                   <button type="submit" disabled={loading} className="w-full py-2 rounded bg-green-600 text-white hover:bg-green-700">{loading ? "⏳ Verifying..." : "Verify"}</button>
                 </div>
               </>

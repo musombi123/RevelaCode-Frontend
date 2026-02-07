@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
 export default function LegalDocs({ activeTab: activeTabProp = "privacy", onBack, onClose }) {
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   const [activeTab, setActiveTab] = useState(activeTabProp);
   const [content, setContent] = useState("");

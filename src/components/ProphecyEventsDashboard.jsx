@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Loader2, RefreshCw, MapPin, Tags } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL;
 const ITEMS_PER_PAGE = 8;
 
 const CATEGORY_LABELS = {
