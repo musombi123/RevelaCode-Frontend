@@ -59,7 +59,7 @@ export function HistoryProvider({ children }) {
     setHistoryError(null);
 
     try {
-      const res = await fetch(`${backendURL}/history`, {
+      const res = await fetch(`${backendURL}/api/user/history`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
