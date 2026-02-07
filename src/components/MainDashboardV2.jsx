@@ -12,9 +12,7 @@ import StartModal from "./StartModal.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-/* =========================================================
-   Guest Disturb Modal
-========================================================= */
+/* ================= Guest Disturb Modal ================= */
 function GuestDisturbModal({ open, onClose, onCreateAccount }) {
   return (
     <AnimatePresence>
@@ -41,7 +39,6 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
                   You’ve been running in guest mode for a while. Some things might not save properly.
                 </p>
               </div>
-
               <button
                 onClick={onClose}
                 className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -66,7 +63,6 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
                 >
                   Create Account 🚀
                 </button>
-
                 <button
                   onClick={onClose}
                   className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold transition"
@@ -86,9 +82,7 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
   );
 }
 
-/* =========================================================
-   Fullscreen AI Assistant Dashboard
-========================================================= */
+/* ================= Fullscreen AI Dashboard ================= */
 function FullscreenAIAssistant({ open, onClose, aiElement }) {
   return (
     <AnimatePresence>
@@ -103,15 +97,12 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Bot size={18} className="text-green-600" />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                  RevelaAI
-                </h3>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100">RevelaAI</h3>
               </div>
               <span className="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-800/50">
                 FULLSCREEN MODE
               </span>
             </div>
-
             <button
               onClick={onClose}
               className="p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 transition"
@@ -147,27 +138,36 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
   );
 }
 
+/* ================= Main Dashboard ================= */
 export default function MainDashboardV2() {
   const defaultDashboard = "home";
+  const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
+  const isGuest = user?.role === "guest";
+
+  // Persistent states
   const [activeView, setActiveView] = useState(defaultDashboard);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiFullscreenOpen, setAIFullscreenOpen] = useState(false);
-  const [showStartModal, setShowStartModal] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(() => {
+    const saved = localStorage.getItem("showStartModal");
+    return saved === null ? true : saved === "true";
+  });
+  const [guestDisturbOpen, setGuestDisturbOpen] = useState(false);
   const [guestTrials, setGuestTrials] = useState(0);
   const [dailyGreeting, setDailyGreeting] = useState("");
-  const [guestDisturbOpen, setGuestDisturbOpen] = useState(false);
 
-  const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
-
-  const isGuest = user?.role === "guest";
-
-  /* ---------------- Start Modal ---------------- */
+  // Persist StartModal across reloads
   useEffect(() => {
-    if (!user) setShowStartModal(true);
+    localStorage.setItem("showStartModal", showStartModal.toString());
+  }, [showStartModal]);
+
+  // Hide modal when user logs in
+  useEffect(() => {
+    if (user) setShowStartModal(false);
   }, [user]);
 
-  /* ---------------- Guest Trial ---------------- */
+  // Guest trial limit
   useEffect(() => {
     if (isGuest && guestTrials >= 5) {
       alert(
@@ -180,7 +180,7 @@ export default function MainDashboardV2() {
     if (isGuest) setGuestTrials((t) => t + 1);
   };
 
-  /* ---------------- Greetings ---------------- */
+  // Daily greeting logic
   const greetings = [
     "Rise and shine! 🌞",
     "Keep pushing forward 💪",
@@ -188,9 +188,8 @@ export default function MainDashboardV2() {
     "Stay focused, stay awesome! ✨",
     "New challenges, new wins! 🏆",
     "Believe in yourself! 🌟",
-    "Make today count! 🔥"
+    "Make today count! 🔥",
   ];
-
   useEffect(() => {
     const lastIndex = parseInt(localStorage.getItem("greetingIndex") || "0", 10);
     const todayIndex = (lastIndex + 1) % greetings.length;
@@ -198,18 +197,13 @@ export default function MainDashboardV2() {
     setDailyGreeting(greetings[todayIndex]);
   }, []);
 
-  /* ---------------- Guest Disturb ---------------- */
+  // Guest disturb every 30 min
   useEffect(() => {
-    if (!isGuest) {
-      setGuestDisturbOpen(false);
-      return;
-    }
-
+    if (!isGuest) return;
     const interval = setInterval(() => {
       setGuestDisturbOpen(true);
       setShowStartModal(true);
     }, 30 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, [isGuest]);
 
@@ -219,7 +213,7 @@ export default function MainDashboardV2() {
     setShowStartModal(true);
   }, []);
 
-  /* ---------------- AI Shortcut ---------------- */
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
       if (e.ctrlKey && e.key.toLowerCase() === "k") {
@@ -235,20 +229,18 @@ export default function MainDashboardV2() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  /* ---------------- Home Preview ---------------- */
+  // Home preview component
   const HomePreview = () => {
     const displayName = user?.fullName?.trim();
-    const welcomeName = displayName ? displayName : "GUEST";
+    const welcomeName = displayName || "GUEST";
 
     const userBadge = isGuest ? (
       <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200/60 dark:border-yellow-800/50">
-        <Crown size={14} />
-        Guest Session
+        <Crown size={14} /> Guest Session
       </span>
     ) : (
       <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-800/50">
-        <ShieldCheck size={14} />
-        Verified Account
+        <ShieldCheck size={14} /> Verified Account
       </span>
     );
 
@@ -295,24 +287,18 @@ export default function MainDashboardV2() {
         <div className="rounded-2xl p-4 bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Sparkles className="text-indigo-600 dark:text-indigo-300" size={18} />
-            <p className="text-gray-700 dark:text-gray-200 font-medium">
-              {dailyGreeting}
-            </p>
+            <p className="text-gray-700 dark:text-gray-200 font-medium">{dailyGreeting}</p>
           </div>
         </div>
 
-        {/* QUICK LAUNCH (ALIGNED WITH DASHBOARDS) */}
+        {/* QUICK LAUNCH */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              Quick Launch 🚀
-            </h3>
-
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Quick Launch 🚀</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-              {DASHBOARDS
-                .filter(d => !d.hidden && d.key !== "home")
+              {DASHBOARDS.filter(d => !d.hidden && d.key !== "home")
                 .filter(d => !(isGuest && d.restricted))
-                .map((d) => (
+                .map(d => (
                   <button
                     key={d.key}
                     className="group text-left p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition"
@@ -320,9 +306,7 @@ export default function MainDashboardV2() {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <d.icon size={18} className="text-indigo-600 dark:text-indigo-300" />
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                        {d.title || d.label}
-                      </h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">{d.title || d.label}</h4>
                     </div>
                     <div className="mt-3 text-xs font-semibold text-indigo-600 dark:text-indigo-300 opacity-80 group-hover:opacity-100">
                       Launch →
@@ -336,19 +320,16 @@ export default function MainDashboardV2() {
     );
   };
 
-  // CLEAN, SAFE RESOLUTION
-  const activeComponent =
-    activeView === "home"
-      ? <HomePreview />
-      : DASHBOARDS.find((d) => d.key === activeView)?.element || <HomePreview />;
+  const activeComponent = activeView === "home"
+    ? <HomePreview />
+    : DASHBOARDS.find(d => d.key === activeView)?.element || <HomePreview />;
 
-  const aiDashboardElement =
-    DASHBOARDS.find((d) => d.key === "ai" && !(isGuest && d.restricted))?.element;
+  const aiDashboardElement = DASHBOARDS.find(d => d.key === "ai" && !(isGuest && d.restricted))?.element;
 
   return (
     <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
       <AnimatePresence>
-        {showStartModal && <StartModal />}
+        {showStartModal && <StartModal onClose={() => setShowStartModal(false)} />}
       </AnimatePresence>
 
       <GuestDisturbModal
@@ -363,6 +344,7 @@ export default function MainDashboardV2() {
         aiElement={aiDashboardElement}
       />
 
+      {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
@@ -378,8 +360,7 @@ export default function MainDashboardV2() {
             </div>
 
             <nav className="px-2 space-y-1">
-              {DASHBOARDS
-                .filter(d => !d.hidden)
+              {DASHBOARDS.filter(d => !d.hidden)
                 .filter(d => !(isGuest && d.restricted))
                 .map(({ key, label, icon: Icon, color }) => (
                   <button
@@ -403,7 +384,6 @@ export default function MainDashboardV2() {
               <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun /> : <Moon />}
               </button>
-
               <button onClick={logout} className="text-red-400 hover:text-red-500">
                 <LogOut size={18} />
               </button>
@@ -412,29 +392,23 @@ export default function MainDashboardV2() {
         )}
       </AnimatePresence>
 
+      {/* Main */}
       <main className="flex-1 relative overflow-hidden">
         <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
           <div className="flex items-center gap-3">
-            {!sidebarOpen && (
-              <button onClick={() => setSidebarOpen(true)}>
-                <Menu />
-              </button>
-            )}
+            {!sidebarOpen && <button onClick={() => setSidebarOpen(true)}><Menu /></button>}
             <div className="flex flex-col">
               <h2 className="font-semibold text-gray-900 dark:text-gray-100">
                 {activeView === "home"
-                  ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
-                  : DASHBOARDS.find((d) => d.key === activeView)?.title || "Dashboard"}
+                  ? `WELCOME, ${user?.fullName?.trim() || "GUEST"} 👋`
+                  : DASHBOARDS.find(d => d.key === activeView)?.title || "Dashboard"}
               </h2>
-              {activeView === "home" && (
-                <p className="text-gray-600 dark:text-gray-400">{dailyGreeting}</p>
-              )}
+              {activeView === "home" && <p className="text-gray-600 dark:text-gray-400">{dailyGreeting}</p>}
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <Notifications />
-
             {isGuest ? (
               <button
                 onClick={() => setShowStartModal(true)}
