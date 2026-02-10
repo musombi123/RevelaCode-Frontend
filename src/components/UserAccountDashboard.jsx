@@ -5,7 +5,6 @@ import {
   Bell,
   History,
   HelpCircle,
-  LifeBuoy,
   BookOpen,
   FileText,
   Shield,
@@ -20,7 +19,6 @@ import { useAuth } from "@/context/AuthContext.jsx";
 const PreferencesDashboard = React.lazy(() => import("./PreferencesDashboard"));
 const AccountDashboard = React.lazy(() => import("./AccountDashboard"));
 const ReferentialDashboard = React.lazy(() => import("./ReferentialDashboard"));
-const SupportCenter = React.lazy(() => import("./SupportCenter"));
 const HelpModal = React.lazy(() => import("./HelpModal.jsx"));
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
@@ -28,19 +26,13 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function UserAccountDashboard({ onLogout }) {
   const { user: authUser } = useAuth();
-
-  const isGuest = useMemo(
-    () => !authUser || authUser.role === "guest",
-    [authUser]
-  );
+  const isGuest = useMemo(() => !authUser || authUser.role === "guest", [authUser]);
 
   const [activeView, setActiveView] = useState("profile");
   const [userData, setUserData] = useState(null);
   const [history, setHistory] = useState([]);
-
   const [loadingUser, setLoadingUser] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
-
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -51,9 +43,7 @@ export default function UserAccountDashboard({ onLogout }) {
     setLoadingUser(true);
     setError("");
 
-    fetch(
-      `${API_BASE}/api/user/${encodeURIComponent(authUser.contact)}`
-    )
+    fetch(`${API_BASE}/api/user/${encodeURIComponent(authUser.contact)}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load user");
         return res.json();
@@ -71,12 +61,7 @@ export default function UserAccountDashboard({ onLogout }) {
     if (activeView !== "history" || !userData?.contact) return;
 
     setLoadingHistory(true);
-
-    fetch(
-      `${API_BASE}/api/user/history?contact=${encodeURIComponent(
-        userData.contact
-      )}`
-    )
+    fetch(`${API_BASE}/api/user/history?contact=${encodeURIComponent(userData.contact)}`)
       .then((res) => res.json())
       .then((data) => setHistory(Array.isArray(data) ? data : []))
       .catch(console.error)
@@ -98,10 +83,7 @@ export default function UserAccountDashboard({ onLogout }) {
   /* ===================== DELETE ACCOUNT ===================== */
   const confirmDeleteAccount = async (code) => {
     try {
-      await apiPost("/api/confirm-delete", {
-        contact: userData.contact,
-        code,
-      });
+      await apiPost("/api/confirm-delete", { contact: userData.contact, code });
       onLogout?.();
       window.location.href = "/";
     } catch (err) {
@@ -112,10 +94,7 @@ export default function UserAccountDashboard({ onLogout }) {
   /* ===================== RESET PASSWORD ===================== */
   const confirmResetPassword = async (payload) => {
     try {
-      await apiPost("/api/reset-password", {
-        contact: userData.contact,
-        ...payload,
-      });
+      await apiPost("/api/reset-password", { contact: userData.contact, ...payload });
       setMessage("Password reset successful");
     } catch (err) {
       setError(err.message);
@@ -159,13 +138,10 @@ export default function UserAccountDashboard({ onLogout }) {
         return (
           <div className="p-6">
             <h2 className="text-xl font-bold mb-4">📜 History</h2>
-
             {loadingHistory && <Loading />}
-
             {!loadingHistory && history.length === 0 && (
               <p className="text-gray-500">No history recorded.</p>
             )}
-
             <ul className="space-y-2">
               {history.map((h, i) => (
                 <li
@@ -174,18 +150,13 @@ export default function UserAccountDashboard({ onLogout }) {
                 >
                   <p className="text-sm">{h.action || "Activity"}</p>
                   <p className="text-xs text-gray-500">
-                    {h.timestamp
-                      ? new Date(h.timestamp).toLocaleString()
-                      : ""}
+                    {h.timestamp ? new Date(h.timestamp).toLocaleString() : ""}
                   </p>
                 </li>
               ))}
             </ul>
           </div>
         );
-
-      case "support":
-        return <SupportCenter />;
 
       case "help":
         return <HelpModal />;
@@ -210,20 +181,18 @@ export default function UserAccountDashboard({ onLogout }) {
     { key: "accounts", label: "Accounts", icon: Link2 },
     { key: "notifications", label: "Notifications", icon: Bell },
     { key: "history", label: "History", icon: History },
-    { key: "support", label: "Support Center", icon: LifeBuoy },
     { key: "help", label: "Help & Docs", icon: HelpCircle },
     { key: "referential", label: "Referential", icon: BookOpen },
     { key: "privacy", label: "Privacy Policy", icon: Shield },
     { key: "terms", label: "Terms of Service", icon: FileText },
+    { key: "delete", label: "Delete Account", icon: User }, // Delete Account button
   ];
 
   /* ===================== LAYOUT ===================== */
   return (
     <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
       <aside className="w-64 border-r bg-gray-50 dark:bg-gray-800 p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold text-indigo-600 mb-4">
-          RevelaCode
-        </h2>
+        <h2 className="text-lg font-bold text-indigo-600 mb-4">RevelaCode</h2>
 
         {userData && (
           <div className="mb-4 p-3 rounded-lg border bg-white dark:bg-gray-900">
@@ -242,7 +211,11 @@ export default function UserAccountDashboard({ onLogout }) {
           {menuItems.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
-              onClick={() => setActiveView(key)}
+              onClick={() =>
+                key === "delete"
+                  ? confirmDeleteAccount(prompt("Type 'DELETE' to confirm"))
+                  : setActiveView(key)
+              }
               className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition ${
                 activeView === key
                   ? "bg-indigo-600 text-white"

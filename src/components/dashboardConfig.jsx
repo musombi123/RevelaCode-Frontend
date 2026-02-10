@@ -61,10 +61,6 @@ const PreferencesDashboard = safeLazy(
   () => import("./PreferencesDashboard.jsx"),
   "Preferences"
 );
-const SupportDashboard = safeLazy(
-  () => import("./SupportCenter.jsx"),
-  "Support"
-);
 const UserAccountDashboard = safeLazy(
   () => import("./UserAccountDashboard.jsx"),
   "Account"
@@ -264,14 +260,6 @@ export const DASHBOARDS = [
     icon: Settings,
     element: <PreferencesDashboard />,
     restricted: true, // guest blocked
-  },
-
-  {
-    key: "support",
-    title: "Support",
-    label: "Support",
-    icon: HelpCircle,
-    element: <SupportDashboard />,
   },
 
   {
