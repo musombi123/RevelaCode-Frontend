@@ -1,56 +1,17 @@
-// src/components/accounts/Notifications.jsx
-import React, { useEffect, useState, useCallback } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/Popover";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { useNotifications } from "@/components/hooks/useNotifications.jsx";
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const baseUrl = import.meta.env.VITE_BACKEND_URL;
-
-  // Fetch notifications
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const res = await fetch(`${baseUrl}/api/notifications`);
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-      const data = await res.json();
-
-      setNotifications(data.notifications || []);
-    } catch (err) {
-      console.error("❌ Failed to load notifications:", err);
-      setError("Failed to load notifications");
-    } finally {
-      setLoading(false);
-    }
-  }, [baseUrl]);
-
-  // Mark all as read
-  const markAllRead = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/api/notifications/read-all`, {
-        method: "PUT",
-      });
-      if (!res.ok) throw new Error("Failed to mark all as read");
-
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    } catch (err) {
-      console.error("❌ Failed to mark all as read:", err);
-      setError("Failed to mark all as read");
-    }
-  };
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // ✅ Trigger fetch on mount
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  const {
+    notifications,
+    loading,
+    error,
+    fetchNotifications,
+    markAllRead,
+    unreadCount,
+  } = useNotifications(12000); // refresh every 12s
 
   return (
     <Popover>
@@ -68,7 +29,7 @@ export default function Notifications() {
       <PopoverContent className="w-72 max-h-72 overflow-y-auto">
         <div className="flex justify-between items-center mb-2">
           <h4 className="font-semibold">🔔 Notifications</h4>
-          {notifications.length > 0 && unreadCount > 0 && (
+          {unreadCount > 0 && (
             <button
               onClick={markAllRead}
               className="text-xs text-blue-600 hover:underline"
@@ -79,14 +40,11 @@ export default function Notifications() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-500">⏳ Loading...</p>
+          <p className="text-sm text-gray-500">⏳ Syncing...</p>
         ) : error ? (
           <div className="text-sm text-red-500">
-            {error}{" "}
-            <button
-              onClick={fetchNotifications}
-              className="underline ml-1"
-            >
+            {error}
+            <button onClick={fetchNotifications} className="underline ml-1">
               Retry
             </button>
           </div>
@@ -100,7 +58,7 @@ export default function Notifications() {
                 className={`text-sm p-2 rounded ${
                   n.read
                     ? "text-gray-500 dark:text-gray-400"
-                    : "bg-gray-100 dark:bg-gray-800 font-medium text-black dark:text-white"
+                    : "bg-gray-100 dark:bg-gray-800 font-medium"
                 }`}
               >
                 {n.text}

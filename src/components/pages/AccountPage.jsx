@@ -10,18 +10,16 @@ import { useAuth } from "@/context/AuthContext";
 const baseUrl = import.meta.env.VITE_API_URL;
 
 export default function AccountPage() {
-  const { user: authUser } = useAuth(); // 🔑 SOURCE OF TRUTH
+  const { user: authUser, updateUser } = useAuth(); // 🔥 single source of truth
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const isGuest = authUser?.role === "guest";
+
   /* ------------------ LOAD USER PROFILE ------------------ */
   useEffect(() => {
-    if (!authUser?.contact) return;
-
-    // safety guard
-    if (authUser.contact.includes("<")) {
-      console.error("Invalid contact value:", authUser.contact);
+    if (!authUser?.contact || isGuest) {
       setLoading(false);
       return;
     }
@@ -34,7 +32,13 @@ export default function AccountPage() {
         const data = await res.json();
 
         if (res.ok) {
-          setUser(data);
+          // Normalize to match AuthContext + StartModal
+          setUser({
+            contact: data.contact,
+            fullName: data.full_name || data.fullName,
+            avatar: data.avatar || data.avatarUrl || null,
+            role: data.role || authUser.role,
+          });
         } else {
           console.error("❌ Failed to load profile:", data);
         }
@@ -59,7 +63,9 @@ export default function AccountPage() {
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(user),
+          body: JSON.stringify({
+            full_name: user.fullName, // backend expects snake_case
+          }),
         }
       );
 
@@ -67,7 +73,16 @@ export default function AccountPage() {
 
       if (res.ok) {
         alert("✅ Profile updated successfully");
-        setUser(data);
+
+        const normalized = {
+          contact: data.contact,
+          fullName: data.full_name || data.fullName,
+          avatar: data.avatar || data.avatarUrl || null,
+          role: data.role || user.role,
+        };
+
+        setUser(normalized);
+        updateUser?.(normalized); // 🔥 keep AuthContext in sync
       } else {
         alert(`❌ ${data.message || "Update failed"}`);
       }
@@ -87,6 +102,14 @@ export default function AccountPage() {
     );
   }
 
+  if (isGuest) {
+    return (
+      <div className="text-center p-6 text-yellow-600 dark:text-yellow-400">
+        ⚠ Guest accounts cannot access the Account page. Please log in.
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="text-center text-gray-500">
@@ -95,19 +118,24 @@ export default function AccountPage() {
     );
   }
 
+  const initials =
+    user.fullName
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U";
+
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6">
       <Card>
         <CardHeader className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={user.avatarUrl || ""} />
-            <AvatarFallback>
-              {user.contact?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
+            <AvatarImage src={user.avatar || ""} />
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div>
             <h2 className="text-xl font-bold">
-              {user.full_name || "User"}
+              {user.fullName || "User"}
             </h2>
             <p className="text-sm text-gray-500">{user.contact}</p>
           </div>
@@ -126,9 +154,9 @@ export default function AccountPage() {
           <Card>
             <CardContent className="space-y-3 pt-4">
               <Input
-                value={user.full_name || ""}
+                value={user.fullName || ""}
                 onChange={(e) =>
-                  setUser({ ...user, full_name: e.target.value })
+                  setUser({ ...user, fullName: e.target.value })
                 }
                 placeholder="Full Name"
               />

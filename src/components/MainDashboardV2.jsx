@@ -553,10 +553,7 @@ export default function MainDashboardV2() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Notifications />
-
-            {/* Guest cannot upload avatar - force login */}
+          <div className="flex items-center gap-3">
             {isGuest ? (
               <button
                 onClick={() => setShowStartModal(true)}
@@ -566,7 +563,10 @@ export default function MainDashboardV2() {
                 Login 🔐
               </button>
             ) : (
-              <AvatarMenu user={user} />
+              <div className="flex items-center gap-2">
+                <Notifications />
+                <AvatarMenu user={user} />
+              </div>
             )}
           </div>
         </header>

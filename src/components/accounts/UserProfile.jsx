@@ -5,7 +5,7 @@ import { User, Mail, Phone, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 export default function UserProfile() {
-  const { user } = useAuth(); // ✅ grab logged-in user from context
+  const { user } = useAuth(); // 🔐 single source of truth
 
   if (!user) {
     return (
@@ -15,19 +15,25 @@ export default function UserProfile() {
     );
   }
 
-  // Use the exact keys stored in AuthContext
-  const fullName = user.fullName || "Guest";
+  // ✅ Match StartModal payload: { contact, fullName, role }
+  const isGuest = user.role === "guest";
+
+  const fullName = isGuest
+    ? "Guest"
+    : user.fullName?.trim() || "User";
+
   const contact = user.contact || "";
   const role = user.role || "normal";
 
-  // Generate initials
-  const initials = fullName
-    ? fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : null;
+  // Generate initials (but don't break for guests)
+  const initials =
+    fullName && fullName !== "Guest"
+      ? fullName
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+      : null;
 
   return (
     <Card className="shadow-md rounded-lg m-4 bg-white dark:bg-gray-900">
@@ -41,13 +47,13 @@ export default function UserProfile() {
             {fullName}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Role: {role}
+            {isGuest ? "Guest Session" : `Role: ${role}`}
           </p>
         </div>
       </CardHeader>
 
       <CardContent className="p-4 space-y-3 text-sm">
-        {contact && (
+        {contact && !isGuest && (
           <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
             {contact.includes("@") ? (
               <Mail className="w-4 h-4" />
@@ -60,7 +66,7 @@ export default function UserProfile() {
 
         <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
           <Shield className="w-4 h-4" />
-          <span>{role}</span>
+          <span>{isGuest ? "Guest Access" : role}</span>
         </div>
       </CardContent>
     </Card>
