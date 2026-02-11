@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import AdminDashboard from "@/components/admin/AdminDashboard";
+import { useAuth } from "@/context/AuthContext.jsx";
+import AdminDashboard from "@/components/admin/AdminDashboard.jsx";
 import { useRouter } from "next/navigation";
 
 export default function AdminDashboardPage() {

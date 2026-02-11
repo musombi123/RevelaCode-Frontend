@@ -6,27 +6,24 @@ import Layout from "./components/Layout.jsx";
 import MainDashboardV2 from "./components/MainDashboardV2.jsx";
 import StartModal from "./components/StartModal.jsx";
 
+import Pages from "./app/pages.jsx";
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
-// Handles SPA logic (show start modal or redirect to /pages)
-function AppContent() {
-  const { hasStarted, login, continueAsGuest } = useAuth();
+// Optional: SPA logic only for /pages, not /
+function PagesWrapper() {
+  const { hasStarted, login, continueAsGuest, loading } = useAuth();
+
+  if (loading) return <div className="p-6">Loading...</div>;
 
   if (!hasStarted) {
-    return (
-      <StartModal onLoginSuccess={login} onGuest={continueAsGuest} />
-    );
+    return <StartModal onLoginSuccess={login} onGuest={continueAsGuest} />;
   }
 
-  return <Navigate to="/pages" replace />;
-}
-
-function PagesWrapper() {
   return (
     <Layout>
-      <MainDashboardV2 />
+      <Pages />
     </Layout>
   );
 }
@@ -38,8 +35,19 @@ export default function App() {
         <HistoryProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<AppContent />} />
+              {/* Keep root / exactly as before */}
+              <Route
+                path="/"
+                element={
+                  <Layout>
+                    <MainDashboardV2 />
+                  </Layout>
+                }
+              />
+
+              {/* /pages SPA route */}
               <Route path="/pages" element={<PagesWrapper />} />
+
               {/* Catch-all redirect to home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

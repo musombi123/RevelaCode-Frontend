@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card.jsx";
+import { Input } from "@/components/ui/Input.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { X } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 export default function SupportLogin() {
   const { login } = useAuth();
