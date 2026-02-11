@@ -1,6 +1,5 @@
-// App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
 import MainDashboardV2 from "./components/MainDashboardV2.jsx";
@@ -11,9 +10,16 @@ import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
-// Optional: SPA logic only for /pages, not /
-function PagesWrapper() {
+// SPA wrapper: shows StartModal if not started, else redirects to target page
+function SPAWrapper({ children, target }) {
   const { hasStarted, login, continueAsGuest, loading } = useAuth();
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (hasStarted) {
+      navigate(target, { replace: true });
+    }
+  }, [hasStarted, navigate, target]);
 
   if (loading) return <div className="p-6">Loading...</div>;
 
@@ -21,11 +27,7 @@ function PagesWrapper() {
     return <StartModal onLoginSuccess={login} onGuest={continueAsGuest} />;
   }
 
-  return (
-    <Layout>
-      <Pages />
-    </Layout>
-  );
+  return children;
 }
 
 export default function App() {
@@ -35,20 +37,31 @@ export default function App() {
         <HistoryProvider>
           <BrowserRouter>
             <Routes>
-              {/* Keep root / exactly as before */}
+              {/* Root / shows MainDashboardV2 after StartModal */}
               <Route
                 path="/"
                 element={
-                  <Layout>
-                    <MainDashboardV2 />
-                  </Layout>
+                  <SPAWrapper target="/">
+                    <Layout>
+                      <MainDashboardV2 />
+                    </Layout>
+                  </SPAWrapper>
                 }
               />
 
-              {/* /pages SPA route */}
-              <Route path="/pages" element={<PagesWrapper />} />
+              {/* /pages shows Pages after StartModal */}
+              <Route
+                path="/pages"
+                element={
+                  <SPAWrapper target="/pages">
+                    <Layout>
+                      <Pages />
+                    </Layout>
+                  </SPAWrapper>
+                }
+              />
 
-              {/* Catch-all redirect to home */}
+              {/* Catch-all redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
