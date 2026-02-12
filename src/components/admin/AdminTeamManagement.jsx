@@ -1,56 +1,56 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 
-export default function AdminTeamManagement() {
-  const [team, setTeam] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function RoleManager() {
+  const { user } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch support team from backend
   useEffect(() => {
-    async function fetchTeam() {
+    async function fetchUsers() {
       setLoading(true);
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/support-team`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch team");
-        setTeam(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`);
+      const data = await res.json();
+      setUsers(data);
+      setLoading(false);
     }
-    fetchTeam();
+    fetchUsers();
   }, []);
 
-  if (loading) return <p>Loading support team… ⏳</p>;
-  if (error) return <p className="text-red-500">Error: {error}</p>;
+  const assignRole = async (username, role) => {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/assign-role`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, role }),
+    });
+
+    setUsers(prev =>
+      prev.map(u => u.username === username ? { ...u, role } : u)
+    );
+  };
+
+  if (loading) return <p>Loading users…</p>;
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Support Team Members</h2>
+    <div className="p-6 space-y-4">
+      <h2 className="text-xl font-bold">👑 Role Control Center</h2>
 
-      {team.length === 0 && <p>No support members found.</p>}
+      {users.map(u => (
+        <div key={u.username} className="flex justify-between items-center border p-3 rounded">
+          <span>{u.username} — <b>{u.role || "pending"}</b></span>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {team.map((member) => (
-          <div
-            key={member.id}
-            className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
-          >
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{member.fullName}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Username: {member.username}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Role: {member.role}</p>
-            <button
-              className="mt-2 w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
-              onClick={() => alert(`Assigning task to ${member.fullName}`)}
-            >
-              Assign Task
-            </button>
+          <div className="flex gap-2">
+            <Button onClick={() => assignRole(u.username, "support")}>
+              Make Support
+            </Button>
+            <Button onClick={() => assignRole(u.username, "admin")}>
+              Make Admin
+            </Button>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

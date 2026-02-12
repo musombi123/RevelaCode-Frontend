@@ -3,14 +3,16 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card.jsx";
 import { Input } from "@/components/ui/Input.jsx";
 import { Button } from "@/components/ui/Button.jsx";
-import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
 
 export default function SupportLogin() {
   const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [supportKey, setSupportKey] = useState(""); // special support key
+  const [supportKey, setSupportKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,17 +20,12 @@ export default function SupportLogin() {
     e.preventDefault();
     setError("");
 
-    if (!username || !password) {
-      return setError("⚠ Enter username and password.");
-    }
-
-    if (!supportKey) {
-      return setError("⚠ Support key required.");
-    }
+    if (!username || !password) return setError("⚠ Enter username and password.");
+    if (!supportKey) return setError("⚠ Support key required.");
 
     setLoading(true);
+
     try {
-      // Call backend endpoint for support login
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/support/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,16 +33,13 @@ export default function SupportLogin() {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Login failed");
 
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      // ✅ Login into auth context
+      // ✅ Update auth context
       login({ username: data.username, fullName: data.username, role: "support" });
 
-      // Redirect to support dashboard
-      window.location.href = "/support/dashboard";
+      // ✅ SPA redirect
+      navigate("/pages");
     } catch (err) {
       setError(err.message);
     } finally {
