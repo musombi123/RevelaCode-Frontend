@@ -24,7 +24,6 @@ export default defineConfig({
         secure: true
       }
     },
-    // Important for SPA routing
     historyApiFallback: true
   },
   build: {

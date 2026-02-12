@@ -11,13 +11,12 @@ export default function PagesLoader() {
 
   if (loading) return <div className="p-6">Booting secure session…</div>;
 
-  // NO USER → ASK WHO YOU ARE
+  // NO USER → SHOW ONLY ADMIN LOGIN FIRST
   if (!user) {
     return (
       <div className="p-6 space-y-4">
-        <h2 className="text-lg font-bold">Choose Login</h2>
+        <h2 className="text-lg font-bold">Admin Access Required</h2>
         <AdminLogin />
-        <SupportLogin />
       </div>
     );
   }
