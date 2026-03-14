@@ -1,99 +1,145 @@
-# **RevelaCode / RevelaAI — README**
+RevelaCode Frontend
 
-## 🚀 **RevelaCode | Where Faith Meets Intelligence**
+The RevelaCode Frontend is the user interface layer of the RevelaCode ecosystem.
+It serves as the bridge between users and the intelligent systems powering the platform, enabling seamless interaction with AI-driven insights, scripture analysis, and multi-domain knowledge tools.
 
-RevelaCode is a next-generation, AI-powered platform designed to bridge ancient scripture with modern technology. Built for the digital generation, it transforms biblical verses, symbols, and prophecies into structured, interactive, and meaningful insights through intelligent computation.
+RevelaCode was created to explore how faith, knowledge, and artificial intelligence can coexist in a modern technological environment. The frontend provides the experience layer where users engage with those ideas through intuitive design and responsive interfaces.
 
-RevelaAI — the intelligent assistant within the ecosystem — serves as a personal companion for curiosity, learning, and growth, engaging users in human-like dialogue across science, philosophy, technology, and spirituality.
+About RevelaCode
 
----
+RevelaCode is an AI-powered platform designed to decode, explore, and connect knowledge across disciplines.
 
-## 🎯 **Vision**
+What started as a simple scripture-analysis tool has grown into a broader vision: an ecosystem where artificial intelligence helps people interact with theology, education, programming, agriculture, and other domains in meaningful ways.
 
-To make wisdom accessible, interactive, and future-proof by fusing AI, faith, and culture into one seamless digital experience.
+At the center of the system is the MVI-AI Engine, an intelligent model architecture that powers RevelaCode’s analytical capabilities through the RevelaAI backend.
 
----
+The frontend acts as the interactive gateway to these services.
 
-## 🧠 **What This Platform Does**
+Platform Architecture
 
-* Decodes scripture using structured logic and AI-assisted reasoning
-* Provides conversational AI through **RevelaAI**
-* Delivers intuitive, professional UI/UX for seamless exploration
-* Supports continuous learning and knowledge expansion
-* Maintains secure and private user interactions
+The RevelaCode ecosystem is composed of multiple layers working together.
 
----
+Frontend
+Handles user interaction, UI rendering, and communication with backend services.
 
-## 🛠 **Tech Stack**
+RevelaCode Backend
+Manages authentication, routing, data requests, and system logic.
 
-**Frontend**
+RevelaAI Backend
+Processes AI-related requests and communicates with the AI engine.
 
-* HTML, CSS, JavaScript
-* Responsive UI with modern layout principles
+MVI-AI Engine
+The core intelligence layer responsible for generating insights and analysis.
 
-**Backend**
+Frontend Features
 
-* Node.js
-* RESTful APIs
-* Regex-based text processing
-* Caching for performance optimization
+The frontend interface is designed around modular components that can expand as the platform evolves.
 
-**Deployment**
+Current modules include:
 
-* Cloud-hosted frontend
-* GitHub for version control and collaboration
+• Bible Explorer – Navigate scripture with AI-assisted explanations
+• Prophecy Analysis – Analyze symbolic passages and interpretations
+• News Insights – Connect current events with contextual knowledge
+• Education Hub – Learning tools powered by AI insights
+• Programming Assistant – Technical support for developers
+• Agriculture Insights – Knowledge tools for farming and sustainability
+• Expert Hub – Cross-disciplinary AI assistance
+• Developer Marketplace – Access to AI model APIs and integration tools
 
----
+The goal of the frontend is to keep the interface clean, modular, and scalable so new domains can be added without restructuring the platform.
 
-## 🔗 **Live Links**
+Technology Stack
 
-* 🌐 **RevelaAI / RevelaCode Frontend:** [https://revelacode-frontend.onrender.com/](https://revelacode-frontend.onrender.com/)
-* 🧑‍💻 **Backend Repository:** [https://github.com/musombi123/RevelaCode-Backend](https://github.com/musombi123/RevelaCode-Backend)
+The frontend is built using modern web technologies designed for performance and scalability.
 
----
+Core technologies include:
 
-## 📂 **Project Structure (High-Level)**
+React – Component-based UI framework
+TailwindCSS – Utility-first styling system
+JavaScript / TypeScript – Application logic
+REST APIs – Communication with backend services
 
-```
-/frontend
-  ├── index.html
-  ├── stylesheet.css
-  ├── assets/
-  └── scripts/
+The system is designed to remain flexible so additional frameworks or tools can be integrated as the platform grows.
 
-/backend
-  ├── server.js
-  ├── routes/
-  ├── controllers/
-  └── utils/
-```
+Project Structure
 
----
+This structure keeps user interface logic separated from services and API integration.
 
-## 🏗 **Key Features**
+Installation
 
-### 🔹 RevelaAI Capabilities
+Clone the repository:
 
-* Conversational intelligence
-* Cross-disciplinary knowledge
-* Personalized learning guidance
-* Secure and private interaction
-* Continuously updated knowledge base
+Navigate into the project:
 
-### 🔹 RevelaCode Capabilities
+Install dependencies:
 
-* Scripture analysis engine
-* Prophecy decoding dashboard
-* User profile & settings panel
-* AI-powered interpretation tools
+Run the development server:
 
----
+The application will be available locally at:
 
-## 👨‍💻 **Creator**
+Environment Configuration
 
-**Musombi William**
-Founder & Lead Engineer — RevelaCode
-Full-Stack Developer | Tech-Faith Innovator
+Create a .env file in the root directory.
 
-📧 [musombiwilliam769@gmail.com](mailto:musombiwilliam769@gmail.com)
-🔗
+Example configuration:
+
+These variables allow the frontend to communicate with backend services.
+
+Development Philosophy
+
+RevelaCode is built with a few guiding principles:
+
+• Keep the interface simple and intuitive
+• Build modular components that scale easily
+• Maintain clear separation between frontend and AI systems
+• Encourage collaboration between developers, researchers, and thinkers
+
+Technology should support ideas — not complicate them.
+
+Contributing
+
+Contributions are welcome from developers, researchers, designers, and writers.
+
+To contribute:
+
+Fork the repository
+
+Create a new branch for your feature
+
+Make your changes
+
+Commit with clear messages
+
+Open a Pull Request
+
+Please ensure that new features remain consistent with the overall architecture and coding style.
+
+Contributors
+
+RevelaCode is the result of collaboration between individuals passionate about technology, knowledge, and meaningful innovation.
+
+Musombi William
+
+Founder & Lead Architect
+
+Creator of the RevelaCode ecosystem and designer of the MVI-AI Engine.
+Musombi leads the overall vision of the platform, including AI system architecture, backend development, and long-term strategy.
+
+Mellan
+
+Documentation & Project Support
+
+Mellan contributes to the organization and documentation of the RevelaCode project.
+Her work focuses on ensuring the platform remains understandable and accessible for contributors and developers.
+
+License
+
+This project is licensed under the MIT License.
+
+Final Note
+
+RevelaCode is still evolving.
+
+Like any meaningful project, it is being shaped step by step through experimentation, research, and collaboration.
+
+The goal is not just to build software, but to explore how technology can help people understand knowledge more deeply.
