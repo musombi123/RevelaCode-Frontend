@@ -262,7 +262,7 @@ Musombi leads the overall vision of the platform, including:
 * Backend development
 * Long-term strategy
 
-### Mellan
+### Mellan Makenji
 
 **Documentation & Project Support**
 

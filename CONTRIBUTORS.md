@@ -9,7 +9,7 @@ Founder & Lead Architect
 Creator of the RevelaCode ecosystem and designer of the MVI-AI Engine.  
 Musombi leads the overall vision of the platform, including AI system architecture, backend development, and long-term strategy.
 
-## Mellan
+## Mellan Makenji
 
 Documentation & Project Support
 
