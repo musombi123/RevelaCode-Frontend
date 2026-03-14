@@ -13,9 +13,7 @@ This applies to all spaces related to RevelaCode, including repositories, issues
 Members of the RevelaCode community are expected to contribute in a way that supports a healthy and productive environment.
 
 ### Participants should:
-
-Communicate respectfully and constructively
- 
+ * Communicate respectfully and constructively
  * Be open to feedback and different perspectives
  * Focus on improving the project rather than criticizing individuals
  * Assume good intentions when engaging in technical discussions
@@ -33,8 +31,7 @@ The following behaviors are **not** tolerated within the RevelaCode community:
  * Deliberate disruption of discussions or project development
  * Spamming, trolling, or posting irrelevant or harmful content
  * Sharing private information about others without permission
-
-Any behavior that intentionally damages the integrity or reputation of the project
+ * Any behavior that intentionally damages the integrity or reputation of the project
 
 Disagreements are natural in collaborative environments, but they must always remain respectful and focused on ideas rather than individuals.
 
@@ -43,14 +40,11 @@ Disagreements are natural in collaborative environments, but they must always re
 Project maintainers are responsible for enforcing this Code of Conduct.
 
 If a participant violates these guidelines, maintainers may take appropriate actions including:
-
-Issuing a warning
-
-Removing inappropriate comments or contributions
-
-Temporarily restricting participation
-
-Permanently banning the individual from the project
+ 
+ * Issuing a warning
+ * Removing inappropriate comments or contributions
+ * Temporarily restricting participation
+ * Permanently banning the individual from the project
 
 These decisions are made to protect the health and stability of the community and the project.
 
@@ -71,6 +65,6 @@ Everyone involved in the project, including maintainers, is expected to uphold t
 
 ## Final Note
 
-RevelaCode is a project built on the belief that knowledge, technology, and thoughtful collaboration can create meaningful progress.
+RevelaCode is a project built on the belief that **knowledge**, **technology**, and **thoughtful** collaboration can create meaningful progress.
 
 By participating in this project, you agree to contribute in a way that supports that vision.

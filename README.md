@@ -1,13 +1,18 @@
 # RevelaCode Frontend
 
 <p align="center">
-  <img src="/logo.png" alt="RevelaCode Logo" width="160"/>
+  <img src="assets/logo.png" width="180">
 </p>
+
+<h1 align="center">RevelaCode Frontend</h1>
 
 <p align="center">
-The user interface layer of the RevelaCode ecosystem.
+The user interface layer of the RevelaCode ecosystem
 </p>
 
+![License](https://img.shields.io/badge/license-MIT-blue)
+![React](https://img.shields.io/badge/react-frontend-blue)
+![Status](https://img.shields.io/badge/status-active-success)
 ---
 
 ## Overview
