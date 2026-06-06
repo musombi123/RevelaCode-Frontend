@@ -40,11 +40,12 @@ export default function AdminLogin() {
 
       // Save admin session
       login({
-        fullName: "Administrator",
-        role: "admin",
+        fullName: data.full_name,
+        contact: data.contact,
+        role: data.role,
       });
 
-      navigate("/pages");
+      navigate(data.redirect);
     } catch (err) {
       setError(err.message);
     } finally {
