@@ -239,7 +239,7 @@ export default function AIAssistantDashboard() {
      UI
   ========================================================= */
   return (
-    <div className="h-full flex bg-revela-dark text-white overflow-hidden">
+    <div className="h-screen flex bg-revela-dark text-white overflow-hidden">
 
       {/* SIDEBAR (NOW WORKING) */}
       <Sidebar
@@ -291,23 +291,35 @@ export default function AIAssistantDashboard() {
           <div
             className="
               flex-1
+              h-full
               flex
-              flex-col
               items-center
               justify-center
               px-4
             "
           >
-            <WelcomeScreen />
+          <div
+            className="
+              w-full
+              max-w-3xl
+              flex
+              flex-col
+              items-center
+              justify-center
+              -translate-y-12
+            "
+          >
+          <WelcomeScreen />
 
-            <div className="w-full max-w-3xl mt-8">
+            <div className="w-full mt-10">
               <InputBar
                 centered
                 onSend={sendTextMessage}
                 onMic={() => setVoiceActive(true)}
               />
             </div>
-           </div>
+          </div>
+        </div>
         ) : (
           <>
             <ChatWindow messages={messages} />
