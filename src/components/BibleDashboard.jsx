@@ -140,7 +140,7 @@ export default function BibleDashboard() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1 p-2 border rounded dark:bg-gray-800 dark:text-white"
+          className="flex-1 p-2 border rounded dark:bg-black-800 dark:text-white"
         />
         <button
           onClick={handleSearch}

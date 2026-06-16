@@ -7,20 +7,25 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-
+  const [hydrated, setHydrated] = useState(false); // 🔥 ADD THIS
+  const isReady = hasStarted && hydrated;
+  
   /* ------------------ LOAD SESSION ------------------ */
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
         setUser(parsed.user);
         setIsGuest(parsed.isGuest);
-        setHasStarted(true);
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+
+    setHasStarted(true);
+    setHydrated(true); // 🔥 mark AUTH SYSTEM READY
   }, []);
 
   /* ------------------ NORMALIZE USER ------------------ */
@@ -34,6 +39,7 @@ export function AuthProvider({ children }) {
   /* ------------------ LOGIN ------------------ */
   const login = (userData) => {
     const normalizedUser = normalizeUser(userData);
+
     setUser(normalizedUser);
     setIsGuest(false);
     setHasStarted(true);
@@ -77,6 +83,7 @@ export function AuthProvider({ children }) {
         user,
         isGuest,
         hasStarted,
+        isReady,
         login,
         guestMode,
         logout,

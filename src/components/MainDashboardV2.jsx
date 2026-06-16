@@ -20,7 +20,13 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="
+            fixed inset-0
+            z-[9998]
+            bg-gray-100
+            dark:bg-gray-950
+            flex flex-col
+          "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -87,6 +93,229 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
 }
 
 /* =========================================================
+   REVELACODE OFFICIAL ANNOUNCEMENT MODAL
+========================================================= */
+
+function OfficialAnnouncementModal({ open, onClose }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            initial={{ scale: 0.92, y: 30, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 10, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+            className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl"
+          >
+
+            {/* HEADER */}
+            <div className="sticky top-0 z-20 bg-white/90 dark:bg-gray-950/90 backdrop-blur border-b border-gray-200 dark:border-gray-800 p-6 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    R
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
+                      REVELACODE OFFICIAL STATEMENT
+                    </h2>
+
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Important platform development announcement
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* CONTENT */}
+            <div className="p-6 space-y-6 text-gray-700 dark:text-gray-300">
+
+              {/* ALERT */}
+              <div className="rounded-2xl border border-yellow-300/40 dark:border-yellow-800/40 bg-yellow-50 dark:bg-yellow-950/20 p-5">
+                <h3 className="font-bold text-lg text-yellow-800 dark:text-yellow-300 mb-2">
+                  ⚠ Temporary Delay Notice
+                </h3>
+
+                <p className="leading-relaxed">
+                  Sorry for the inconvenience. We are working effortlessly
+                  behind the scenes to ensure everything coming soon will be
+                  stable, intelligent, secure, and super perfect for every user.
+                </p>
+              </div>
+
+              {/* BODY */}
+              <div className="space-y-5 leading-relaxed">
+
+                <p>
+                  To everyone who has been waiting, supporting, and believing
+                  in the vision of RevelaCode — thank you.
+                </p>
+
+                <p>
+                  The RevelaCode project was originally scheduled for release
+                  this May. However, due to unavoidable circumstances involving
+                  system development, infrastructure improvements, integration
+                  challenges, and long-term platform planning, we have made
+                  the difficult decision to postpone the official launch.
+                </p>
+
+                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                  This decision was not made lightly.
+                </p>
+
+                <p>
+                  As development continued, it became clear that releasing
+                  the platform before it fully met our standards would
+                  compromise the quality, stability, and long-term vision
+                  of the ecosystem we are building.
+                </p>
+
+                <div className="rounded-2xl p-5 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg">
+                  <h3 className="text-xl font-bold mb-3">
+                    RevelaCode Has Evolved
+                  </h3>
+
+                  <p className="text-white/90">
+                    RevelaCode is no longer just a simple project.
+                    It has evolved into a much larger AI-powered ecosystem
+                    integrating theology, education, programming,
+                    agriculture, intelligent technologies, and advanced
+                    knowledge systems through the MVI-AI Engine and
+                    RevelaAI infrastructure.
+                  </p>
+                </div>
+
+                {/* CURRENT FOCUS */}
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4">
+                    Our Team Is Currently Focused On:
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {[
+                      "Strengthening the AI systems",
+                      "Improving frontend and backend integration",
+                      "Refining documentation and infrastructure",
+                      "Enhancing security and scalability",
+                      "Preparing a more stable user experience",
+                      "Optimizing RevelaAI performance",
+                    ].map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                          <p className="font-medium">{item}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                  </div>
+                </div>
+
+                {/* FINAL MESSAGE */}
+                <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/20 p-5">
+                  <p className="leading-relaxed">
+                    We understand the anticipation surrounding this launch,
+                    and we sincerely appreciate the patience, encouragement,
+                    and continued support from everyone following the journey.
+                  </p>
+
+                  <p className="mt-4 font-semibold text-indigo-700 dark:text-indigo-300">
+                    This delay is not a step backward.
+                  </p>
+
+                  <p className="mt-2">
+                    It is a strategic step toward building something stronger,
+                    smarter, and more impactful for the future.
+                  </p>
+                </div>
+
+                {/* CONTACTS */}
+                <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4">
+                    CONTACT INFORMATION
+                  </h3>
+
+                  <div className="space-y-3 text-sm">
+
+                    <div>
+                      <span className="font-semibold">Official Email:</span>{" "}
+                      revelacodepro@gmail.com
+                    </div>
+
+                    <div>
+                      <span className="font-semibold">Personal Contact:</span>{" "}
+                      musombiwilliam769@mail.com
+                    </div>
+
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <p className="font-bold text-gray-900 dark:text-gray-100">
+                      — REVELACODE OFFICIALS
+                    </p>
+
+                    <div className="mt-4 space-y-2">
+                      <div>
+                        <p className="font-semibold">
+                          Musombi William
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Lead Architect
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold">
+                          Makenji Mellan
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Documentation Leader & Support Team Admin
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* BUTTON */}
+              <div className="pt-2">
+                <button
+                  onClick={onClose}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold shadow-xl transition"
+                >
+                  Continue to RevelaCode 🚀
+                </button>
+              </div>
+
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* =========================================================
    Fullscreen AI Assistant Dashboard (Overlay)
 ========================================================= */
 function FullscreenAIAssistant({ open, onClose, aiElement }) {
@@ -123,33 +352,31 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
           </div>
 
           {/* Content */}
-          <div className="h-[calc(100vh-56px)] overflow-hidden">
-            <div className="h-full p-4 overflow-y-auto">
-              <Suspense fallback={<Loading />}>
-                <ErrorBoundary>
-                  {aiElement ? (
-                    React.cloneElement(aiElement)
-                  ) : (
-                    <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow">
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                        AI Dashboard Not Found
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                        Make sure you have a dashboard with key{" "}
-                        <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
-                          ai
-                        </code>{" "}
+          <div className="flex-1 overflow-hidden">
+            <Suspense fallback={<Loading />}>
+              <ErrorBoundary>
+                {aiElement ? (
+                  React.cloneElement(aiElement)
+                ) : (
+                  <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                      AI Dashboard Not Found
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                      Make sure you have a dashboard with key{" "}
+                      <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
+                        ai
+                      </code>{" "}
                         inside{" "}
-                        <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
-                          DASHBOARDS
-                        </code>
+                      <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
+                        DASHBOARDS
+                      </code>
                         .
-                      </p>
-                    </div>
-                  )}
-                </ErrorBoundary>
-              </Suspense>
-            </div>
+                    </p>
+                  </div>
+                )}
+              </ErrorBoundary>
+            </Suspense>
           </div>
         </motion.div>
       )}
@@ -172,6 +399,7 @@ export default function MainDashboardV2() {
 
   // Guest disturb every 30 minutes
   const [guestDisturbOpen, setGuestDisturbOpen] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -182,6 +410,21 @@ export default function MainDashboardV2() {
   useEffect(() => {
     if (!user) setShowStartModal(true);
   }, [user]);
+
+  useEffect(() => {
+  const alreadySeen = localStorage.getItem("revelacodeAnnouncementSeen");
+
+  if (!alreadySeen)  {
+    setTimeout(() => {
+      setShowAnnouncement(true);
+    }, 1500);
+  }
+  }, []);
+
+  const handleCloseAnnouncement = () => {
+    localStorage.setItem("revelacodeAnnouncementSeen", "true");
+    setShowAnnouncement(false);
+  };
 
   const handleStartComplete = () => setShowStartModal(false);
 
@@ -461,10 +704,16 @@ export default function MainDashboardV2() {
 
   const aiDashboardElement = DASHBOARDS.find((d) => d.key === "ai")?.element;
 
-  /* ================================================= */
-  return (
-    <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+/* ================================================= */
+return (
+  <>
+    <OfficialAnnouncementModal
+      open={showAnnouncement}
+      onClose={handleCloseAnnouncement}
+    />
 
+    <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+    
       <AnimatePresence>
         {showStartModal && <StartModal onComplete={handleStartComplete} />}
       </AnimatePresence>
@@ -532,7 +781,7 @@ export default function MainDashboardV2() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 flex flex-col relative overflow-hidden">
 
         <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
           <div className="flex items-center gap-3">
@@ -571,7 +820,7 @@ export default function MainDashboardV2() {
           </div>
         </header>
 
-        <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
+        <section className="flex-1 p-6 overflow-y-auto">
           <Suspense fallback={<Loading />}>
             <ErrorBoundary>
               {activeComponent &&
@@ -591,6 +840,6 @@ export default function MainDashboardV2() {
         </button>
       </main>
     </div>
-  );
+  </>
+);
 }
-
