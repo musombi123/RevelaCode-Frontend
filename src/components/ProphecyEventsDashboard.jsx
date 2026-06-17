@@ -254,20 +254,26 @@ export default function ProphecyEventsDashboard() {
                         </span>
                       )}
                     </div>
-                    {e.media_type === "video" && (
+                    {/* Video */}
+                    {e.type === "video" && (
                       <VideoPlayer url={e.url} />
                     )}
                     {/* Image */}
-                    {e.urlToImage && (
-                      <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
-                        <img
-                          src={e.urlToImage}
-                          alt={e.headline}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                      </div>
-                    )}
-
+                    {e.urlToImage &&
+                      e.urlToImage !== "null" &&
+                      e.urlToImage.trim() !== "" && (
+                        <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
+                          <img
+                            src={e.urlToImage}
+                            alt={e.headline}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            onError={(ev) => {
+                              console.log("Image failed:", e.urlToImage);
+                              ev.target.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
                     {/* Description */}
                     {e.description && (
                       <div>
