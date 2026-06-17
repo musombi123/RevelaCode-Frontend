@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const oldTestament = [
   "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
@@ -20,6 +21,8 @@ const newTestament = [
 
 export default function BibleDashboard() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [bibleData, setBibleData] = useState({});
   const [bookKeys, setBookKeys] = useState([]);
   const [selectedBookKey, setSelectedBookKey] = useState('');
@@ -44,48 +47,86 @@ export default function BibleDashboard() {
     };
     fetchBibleData();
   }, []);
+  const openVerseReference = (reference) => {
+    if (!reference || !bibleData || !bookKeys.length)
+      return false;
 
-  const handleSearch = () => {
-    const trimmed = searchInput.trim();
-    const match = trimmed.match(/^([1-3]?\s?[A-Za-z ]+)\s*([0-9]+):([0-9]+)$/);
-    if (!match) {
-      setSearchError('⚠ Format: John 3:16 or 1 Corinthians 13:4');
-      return;
-    }
+    const match = reference.match(
+      /^(.+?)\s+(\d+):(\d+)$/
+    );
 
-    setSearchError('');
+    if (!match)
+      return false;
+
     const [, bookNameRaw, chapterNum, verseNum] = match;
-    const normalizedBook = bookNameRaw.trim().replace(/\s+/g, ' ').toLowerCase();
+
+    const normalizedBook = bookNameRaw
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
 
     const bookKey = bookKeys.find(
       (key) =>
-        bibleData[key]?.book.toLowerCase().replace(/\s+/g, ' ') === normalizedBook
+        bibleData[key]?.book
+          .toLowerCase()
+          .replace(/\s+/g, " ") === normalizedBook
     );
 
-    if (!bookKey) {
-      setSearchError('❌ Book not found.');
-      return;
-    }
+    if (!bookKey)
+      return false;
 
     const chapterIndex = parseInt(chapterNum, 10) - 1;
     const verseIndex = parseInt(verseNum, 10) - 1;
-    const versesArray = bibleData[bookKey]?.chapters?.[chapterIndex]?.verses || [];
 
-    if (!versesArray.length || verseIndex >= versesArray.length) {
-      setSearchError('❌ Chapter or verse not found.');
-      return;
-    }
+    const versesArray =
+      bibleData[bookKey]?.chapters?.[chapterIndex]?.verses || [];
+
+    if (!versesArray.length)
+      return false;
 
     setSelectedBookKey(bookKey);
     setSelectedChapterIndex(chapterIndex);
     setVerses(versesArray);
-    setViewLevel('verses');
+    setViewLevel("verses");
     setHighlightedVerseIndex(verseIndex);
 
     setTimeout(() => {
-      document.getElementById(`verse-${verseIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+      document
+        .getElementById(`verse-${verseIndex}`)
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+    }, 300);
+
+    return true;
   };
+
+  const handleSearch = () => {
+    if (!searchInput.trim()) return;
+
+    setSearchError("");
+
+    const success = openVerseReference(searchInput.trim());
+
+    if (!success) {
+      setSearchError(
+        "❌ Verse not found. Example: John 3:16"
+      );
+    }
+  };
+  
+  useEffect(() => {
+    if (!bookKeys.length) return;
+
+    const params = new URLSearchParams(location.search);
+
+    const verse = params.get("verse");
+
+    if (verse) {
+      openVerseReference(decodeURIComponent(verse));
+    }
+  }, [location.search, bookKeys]);
 
   const askAI = () => {
     if (!searchInput.trim()) return;

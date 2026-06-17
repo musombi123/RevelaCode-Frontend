@@ -32,6 +32,27 @@ export default function ProphecyEventsDashboard() {
     setExpanded((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
+  const VideoPlayer = ({ url }) => {
+    if (!url) return null;
+
+    return (
+      <iframe
+        src={url.replace("watch?v=", "embed/")}
+        className="w-full h-[300px] rounded-lg"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+      />
+    );
+  };
+
+  const openVerse = (verse) => {
+    window.dispatchEvent(
+      new CustomEvent("open-bible", {
+        detail: verse,
+      })
+    );
+  };
+
   const loadEvents = async () => {
     setError("");
     setLoading(true);
@@ -233,7 +254,9 @@ export default function ProphecyEventsDashboard() {
                         </span>
                       )}
                     </div>
-
+                    {e.media_type === "video" && (
+                      <VideoPlayer url={e.url} />
+                    )}
                     {/* Image */}
                     {e.urlToImage && (
                       <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
@@ -268,12 +291,21 @@ export default function ProphecyEventsDashboard() {
                     {e.matched_verses?.length > 0 && (
                       <div className="flex flex-wrap gap-2 text-xs text-green-700 dark:text-green-300 mt-2">
                         {e.matched_verses.map((v, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-1 rounded-full bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-800 break-words"
+                          <button
+                            onClick={() => openVerse(v)}
+                              className="
+                                px-2 py-1
+                                rounded-full
+                                bg-green-50
+                                dark:bg-green-900/40
+                                border
+                                border-green-200
+                                dark:border-green-800
+                                hover:bg-green-100
+                              "
                           >
                             📖 {v}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     )}
