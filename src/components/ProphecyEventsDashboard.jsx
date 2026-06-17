@@ -255,8 +255,21 @@ export default function ProphecyEventsDashboard() {
                       )}
                     </div>
                     {/* Video */}
-                    {e.type === "video" && (
-                      <VideoPlayer url={e.url} />
+                    {e.media_type === "video" && (
+                      <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                        <p className="text-sm mb-2">
+                          🎥 Video available from source
+                          </p>
+
+                        <a
+                          href={e.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          Watch Video
+                        </a>
+                      </div>
                     )}
                     {/* Image */}
                     {e.urlToImage &&
@@ -267,10 +280,8 @@ export default function ProphecyEventsDashboard() {
                             src={e.urlToImage}
                             alt={e.headline}
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                            onError={(ev) => {
-                              console.log("Image failed:", e.urlToImage);
-                              ev.target.style.display = "none";
-                            }}
+                            onLoad={() => console.log("Loaded:", e.urlToImage)}
+                            onError={() => console.log("Failed:", e.urlToImage)}
                           />
                         </div>
                       )}
