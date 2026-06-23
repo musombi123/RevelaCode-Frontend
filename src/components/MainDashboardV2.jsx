@@ -783,40 +783,58 @@ return (
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
 
-        <header className="flex justify-between items-center p-4 border-b border-gray-300/40 dark:border-gray-700/40">
-          <div className="flex items-center gap-3">
-            {!sidebarOpen && (
-              <button onClick={() => setSidebarOpen(true)}>
-                <Menu />
-              </button>
-            )}
-            <div className="flex flex-col">
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
-                {activeView === "home"
-                  ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
-                  : DASHBOARDS.find((d) => d.key === activeView)?.title}
-              </h2>
-              {activeView === "home" && (
-                <p className="text-gray-600 dark:text-gray-400">{dailyGreeting}</p>
-              )}
-            </div>
-          </div>
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/60 dark:bg-gray-950/60 border-b border-white/20 dark:border-gray-800/60 shadow-sm">
+          <div className="flex justify-between items-center px-4 py-3">
 
-          <div className="flex items-center gap-3">
-            {isGuest ? (
-              <button
-                onClick={() => setShowStartModal(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
-                title="Login to manage profile"
-              >
-                Login 🔐
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Notifications />
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-3">
+              {!sidebarOpen && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 rounded-xl hover:bg-gray-200/60 dark:hover:bg-gray-800/60 transition"
+                >
+                  <Menu />
+                </button>
+              )}
+
+              <div className="flex flex-col leading-tight">
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                  {activeView === "home"
+                    ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
+                    : DASHBOARDS.find((d) => d.key === activeView)?.title}
+                </h2>
+
+                {activeView === "home" && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {dailyGreeting}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT SIDE (THIS IS THE FIX 🔥) */}
+            <div className="flex items-center gap-3">
+
+              {/* Notifications */}
+              <Notifications />
+
+              {/* Avatar cluster */}
+              <div className="flex items-center gap-2 px-2 py-1 rounded-xl bg-white/40 dark:bg-gray-800/40 backdrop-blur border border-white/20 dark:border-gray-700/40">
                 <AvatarMenu user={user} />
               </div>
-            )}
+
+              {/* Guest CTA */}
+              {isGuest && (
+                <button
+                  onClick={() => setShowStartModal(true)}
+                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
+                >
+                  Login 🔐
+                </button>
+              )}
+
+            </div>
+
           </div>
         </header>
 

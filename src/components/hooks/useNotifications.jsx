@@ -1,71 +1,64 @@
-import { useState, useEffect, useCallback } from "react";
+// src/hooks/useNotifications.jsx
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+import { useState, useEffect } from "react";
 
-export function useNotifications(pollMs = 15000) {
+export function useNotifications() {
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const fetchNotifications = useCallback(async () => {
+  const baseUrl =
+    import.meta.env.VITE_REVELACODE_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  async function fetchNotifications() {
     try {
       setLoading(true);
-      setError("");
 
-      const res = await fetch(`${BASE_URL}/api/notifications`, {
-        headers: { "Accept": "application/json" },
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(
+        `${baseUrl}/api/notifications`
+      );
 
       const data = await res.json();
 
-      // Normalization = resilience
-      const normalized =
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data?.notifications)
-          ? data.notifications
-          : [];
+      console.log(data); // debug
 
-      setNotifications(normalized);
+      setNotifications(
+        data.notifications || []
+      );
+
     } catch (err) {
-      console.error("❌ Notifications fetch failed:", err);
-      setError("Failed to load notifications");
+      console.error(
+        "Notification fetch failed:",
+        err
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }
 
-  const markAllRead = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/notifications/read-all`, {
-        method: "PUT",
-      });
-      if (!res.ok) throw new Error("Bad response");
+  const unreadCount =
+    notifications.filter(
+      n => !n.read
+    ).length;
 
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
-    } catch (err) {
-      console.error("❌ Mark read failed:", err);
-      setError("Failed to mark as read");
-    }
+  const markAllRead = () => {
+    setNotifications(prev =>
+      prev.map(n => ({
+        ...n,
+        read: true
+      }))
+    );
   };
-
-  // Auto-refresh like a boss
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, pollMs);
-    return () => clearInterval(interval);
-  }, [fetchNotifications, pollMs]);
 
   return {
     notifications,
+    unreadCount,
     loading,
-    error,
-    fetchNotifications,
-    markAllRead,
-    unreadCount: notifications.filter((n) => !n.read).length,
+    markAllRead
   };
 }
