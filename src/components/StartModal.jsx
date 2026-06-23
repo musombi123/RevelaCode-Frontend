@@ -167,15 +167,23 @@ export default function StartModal() {
 
       if (mode === "register") {
         await registerUser();
-        await requestVerificationCode();
-        setMessage(`📩 Verification code sent to ${contact}`);
+
+        const data = await requestVerificationCode();
+
+        setMessage(
+          `🛠 DEV MODE: Verification code = ${data.debug_code}`
+        );
+
         setStep("verify");
       }
 
       if (mode === "forgot") {
         if (step === "form") {
-          await requestResetCode();
-          setMessage(`📩 Reset code sent to ${contact}`);
+          const data = await requestResetCode();
+
+          setMessage(
+            `🛠 DEV MODE: Reset code = ${data.debug_code}`
+          );
           setStep("verify");
         } else {
           await handleVerifyAndReset(verificationCode);
@@ -289,8 +297,13 @@ export default function StartModal() {
                 <input
                   ref={codeInputRef}
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="6-digit code"
+                  onChange={(e) =>
+                    setVerificationCode(
+                      e.target.value.replace(/\D/g, "").slice(0, 6)
+                    )
+                  }
+                  placeholder="Enter debug code"
+                  maxLength={6}
                   className="w-full p-2 border rounded"
                 />
                 <div className="flex gap-2">
