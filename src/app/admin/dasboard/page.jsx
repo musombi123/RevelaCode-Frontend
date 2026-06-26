@@ -1,20 +1,32 @@
 "use client";
+
 import React, { useEffect } from "react";
-import { useAuth } from "@/context/AuthContext.jsx";
-import AdminDashboard from "@/components/admin/AdminDashboard.jsx";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/context/AuthContext";
+import AdminDashboard from "@/components/admin/AdminDashboard";
+
 export default function AdminDashboardPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user || user.role !== "admin") {
-      router.push("/admin/login"); // protect the dashboard
+    if (!loading && (!user || user.role !== "admin")) {
+      router.replace("/admin/login");
     }
-  }, [user, router]);
+  }, [loading, user, router]);
 
-  if (!user || user.role !== "admin") return null; // or a spinner
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
 
   return <AdminDashboard />;
 }

@@ -13,12 +13,12 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
 // SPAWrapper: show StartModal if not started
 function SPAWrapper({ children }) {
-  const { hasStarted, login, continueAsGuest, loading } = useAuth();
+  const { hasStarted, login, guestMode, loading } = useAuth();
 
   if (loading) return <div className="p-6">Booting secure session…</div>;
 
   if (!hasStarted) {
-    return <StartModal onLoginSuccess={login} onGuest={continueAsGuest} />;
+    return <StartModal onLoginSuccess={login} onGuest={guestMode} />;
   }
 
   // Session started → render wrapped content
@@ -57,7 +57,7 @@ export default function App() {
               />
 
               {/* Catch-all → redirect to home */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/pages" replace />} />
             </Routes>
           </BrowserRouter>
         </HistoryProvider>

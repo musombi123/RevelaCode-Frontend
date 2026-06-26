@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [hasStarted, setHasStarted] = useState(false);
   const [hydrated, setHydrated] = useState(false); // 🔥 ADD THIS
   const isReady = hasStarted && hydrated;
+  const [loading, setLoading] = useState(true);
   
   /* ------------------ LOAD SESSION ------------------ */
   useEffect(() => {
@@ -23,6 +24,8 @@ export function AuthProvider({ children }) {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+
+    setLoading(false);
 
     setHasStarted(true);
     setHydrated(true); // 🔥 mark AUTH SYSTEM READY
@@ -81,6 +84,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        loading,
         isGuest,
         hasStarted,
         isReady,

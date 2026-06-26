@@ -42,18 +42,25 @@ export default function InputBar({
         >
           <input
             className="
-              flex-1
               bg-transparent
-              outline-none
               text-white
               placeholder-gray-400
-              py-2
+              min-h-[44px]
+              max-h-[200px]
+              w-full
+              resize-none
+              overflow-hidden
             "
             placeholder="Ask RevelaAI anything..."
+            rows={1}
             value={text}
-            onChange={(e) =>
-              setText(e.target.value)
-            }
+            onChange={(e) => {
+              setText(e.target.value);
+
+              e.target.style.height = "auto";
+              e.target.style.height =
+              `${e.target.scrollHeight}px`;
+            }}
             onKeyDown={(e) =>
               e.key === "Enter" && submit()
             }

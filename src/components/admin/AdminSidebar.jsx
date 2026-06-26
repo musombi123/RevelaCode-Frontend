@@ -5,6 +5,7 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
   const tabs = [
     { key: "team", label: "Support Team" },
     { key: "settings", label: "Settings" },
+    { key: "study", label: "Study Management" },
   ];
 
   return (

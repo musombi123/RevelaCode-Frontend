@@ -286,82 +286,64 @@ export default function AIAssistantDashboard() {
         "
       >
 
-        {/* CHAT / WELCOME */}
-        {!hasConversation ? (
-          <div
-            className="
-              flex-1
-              h-full
-              flex
-              items-center
-              justify-center
-              px-4
-            "
-          >
-          <div
-            className="
-              w-full
-              max-w-3xl
-              flex
-              flex-col
-              items-center
-              justify-center
-              -translate-y-12
-            "
-          >
-          <WelcomeScreen />
+        <div className="flex-1 flex flex-col min-h-0">
 
-            <div className="w-full mt-10">
+          {/* Scrollable chat area */}
+          <div className="flex-1 overflow-y-auto">
+
+            {!hasConversation ? (
+              <div
+                className="
+                  h-full
+                  flex
+                  items-center
+                  justify-center
+                  px-4
+                "
+              >
+                <div
+                  className="
+                    w-full
+                    max-w-3xl
+                    flex
+                    flex-col
+                    items-center
+                    justify-center
+                    -translate-y-12
+                  "
+                >
+                  <WelcomeScreen />
+                </div>
+              </div>
+            ) : (
+              <ChatWindow messages={messages} />
+            )}
+
+          </div>
+
+          {/* Fixed input area */}
+          <div
+            className="
+              sticky
+              bottom-0
+              z-20
+              bg-revela-dark
+              border-t
+              border-white/10
+              px-4
+              py-4
+            "
+          >
+            <div className="max-w-4xl mx-auto">
               <InputBar
-                centered
+                centered={!hasConversation}
                 onSend={sendTextMessage}
                 onMic={() => setVoiceActive(true)}
               />
             </div>
           </div>
+
         </div>
-        ) : (
-          <>
-            <ChatWindow messages={messages} />
-
-            <InputBar
-              onSend={sendTextMessage}
-              onMic={() => setVoiceActive(true)}
-            />
-          </>
-        )}
-
-        {/* VOICE MODAL (FIXED POSITION) */}
-        {voiceActive && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-
-            <div className="relative bg-revela-card text-white rounded-3xl border border-white/10 p-8 shadow-xl w-[95%] max-w-md">
-
-              {/* CLOSE */}
-              <button
-                className="absolute top-3 right-3 text-gray-300 hover:text-white text-xl"
-                onClick={() => setVoiceActive(false)}
-              >
-                ×
-              </button>
-
-              {/* HEADER */}
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-semibold">
-                  🎤 Voice Chat
-                </h2>
-                <p className="text-gray-400 text-sm mt-1">
-                  Speak naturally to RevelaAI
-                </p>
-              </div>
-
-              {/* VOICE ENGINE */}
-              <RevelaAIVoiceChat
-                onVoiceResult={handleVoiceResult}
-              />
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
