@@ -1,32 +1,21 @@
-"use client";
-
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
 export default function AdminDashboardPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) {
-      router.replace("/admin/login");
+      navigate("/");
     }
-  }, [loading, user, router]);
+  }, [loading, user, navigate]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
-  }
+  if (loading) return <div>Loading...</div>;
 
-  if (!user || user.role !== "admin") {
-    return null;
-  }
+  if (!user || user.role !== "admin") return null;
 
   return <AdminDashboard />;
 }

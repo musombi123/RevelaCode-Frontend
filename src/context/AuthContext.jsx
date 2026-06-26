@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
     fullName: u?.full_name || u?.fullName || "Guest User",
     contact: u?.contact || u?.id || "guest",
     role: u?.role || "guest",
+    apiKey: u?.apiKey || "",
     history: u?.history || [],
   });
 

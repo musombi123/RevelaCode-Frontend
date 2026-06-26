@@ -24,13 +24,14 @@ export default function AdminLogin() {
 
     setLoading(true);
 
-    // Save admin session locally
     login({
       fullName: "Administrator",
       contact: "admin",
       role: "admin",
       apiKey,
     });
+
+    console.log("Stored auth:", localStorage.getItem("revela_auth"));
 
     navigate("/pages");
   };
