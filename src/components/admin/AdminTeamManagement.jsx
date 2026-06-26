@@ -1,56 +1,118 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { Button } from "@/components/ui/Button.jsx";
 
-export default function RoleManager() {
+export default function AdminTeamManagement() {
   const { user } = useAuth();
+
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchUsers() {
-      setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`);
-      const data = await res.json();
-      setUsers(data);
-      setLoading(false);
-    }
-    fetchUsers();
+    loadUsers();
   }, []);
 
-  const assignRole = async (username, role) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/assign-role`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, role }),
-    });
+  async function loadUsers() {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/admin/list-users`,
+        {
+          headers: {
+            "X-API-KEY": user.apiKey,
+          },
+        }
+      );
 
-    setUsers(prev =>
-      prev.map(u => u.username === username ? { ...u, role } : u)
-    );
-  };
+      const data = await res.json();
 
-  if (loading) return <p>Loading users…</p>;
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to load users");
+      }
+
+      setUsers(data.users || []);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createSupport() {
+    const full_name = prompt("Full name");
+    if (!full_name) return;
+
+    const contact = prompt("Contact");
+    if (!contact) return;
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/admin/manage-users`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-API-KEY": user.apiKey,
+          },
+          body: JSON.stringify({
+            full_name,
+            contact,
+            role: "support",
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+
+      alert(data.message);
+
+      loadUsers();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  if (loading) {
+    return <p>Loading users...</p>;
+  }
 
   return (
-    <div className="p-6 space-y-4">
-      <h2 className="text-xl font-bold">👑 Role Control Center</h2>
+    <div className="space-y-6">
 
-      {users.map(u => (
-        <div key={u.username} className="flex justify-between items-center border p-3 rounded">
-          <span>{u.username} — <b>{u.role || "pending"}</b></span>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">
+          Team Management
+        </h2>
 
-          <div className="flex gap-2">
-            <Button onClick={() => assignRole(u.username, "support")}>
-              Make Support
-            </Button>
-            <Button onClick={() => assignRole(u.username, "admin")}>
-              Make Admin
-            </Button>
+        <Button onClick={createSupport}>
+          + Create Support User
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {users.map((u) => (
+          <div
+            key={u.contact}
+            className="border rounded-lg p-4 flex justify-between items-center"
+          >
+            <div>
+              <p className="font-semibold">{u.full_name}</p>
+              <p className="text-sm text-gray-500">{u.contact}</p>
+            </div>
+
+            <span className="px-3 py-1 rounded bg-blue-100">
+              {u.role}
+            </span>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
     </div>
   );
 }
