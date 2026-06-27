@@ -110,7 +110,7 @@ export default function StartModal() {
   const handleVerifyAndLogin = async (code) => {
     await verifyCode(code);
     const data = await loginUser(contact, password);
-    login({ contact: data.contact, fullName: data.full_name, role: data.role });
+    login({ contact: data.contact, fullName: data.full_name, role: data.role, apiKey: data.api_key });
     goHomeByRole(data.role);
   };
 
@@ -161,7 +161,7 @@ export default function StartModal() {
 
       if (mode === "login") {
         const data = await loginUser(contact, password);
-        login({ contact: data.contact, fullName: data.full_name, role: data.role });
+        login({ contact: data.contact, fullName: data.full_name, role: data.role , apiKey: data.api_key});
         goHomeByRole(data.role);
       }
 
