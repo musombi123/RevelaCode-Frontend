@@ -10,7 +10,7 @@ import SupportHeader from "./SupportHeader.jsx";
 import SupportStats from "./SupportStats.jsx";
 import SupportTickets from "./SupportTickets.jsx";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = import.meta.env.VITE_API_URL;
 
 export default function SupportDashboard() {
   const { user, logout } = useAuth();

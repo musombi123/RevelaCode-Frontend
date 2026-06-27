@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { X, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button.jsx";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = import.meta.env.VITE_API_URL;
 
 export default function SupportResolveModal({
   open,

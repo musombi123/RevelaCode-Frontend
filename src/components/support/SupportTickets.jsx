@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/Input.jsx";
 import SupportTicketDetails from "./SupportTicketDetails.jsx";
 import SupportResolveModal from "./SupportResolveModal.jsx";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = import.meta.env.VITE_API_URL;
 
 export default function SupportTickets() {
   const [tickets, setTickets] = useState([]);
