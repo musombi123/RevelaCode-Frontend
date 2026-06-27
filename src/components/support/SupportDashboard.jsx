@@ -23,7 +23,9 @@ export default function SupportDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user || user.role !== "support") {
+    if (!user) return;
+
+    if (user.role !== "support") {
       window.location.href = "/support/login";
       return;
     }
@@ -32,18 +34,24 @@ export default function SupportDashboard() {
   }, [user]);
 
   async function loadDashboard() {
+    if (!user?.apiKey) {
+      setError("Missing support API key.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
-      const { user } = useAuth();
-
       const res = await fetch(`${API}/api/support/dashboard`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           "X-API-KEY": user.apiKey,
         },
       });
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -53,7 +61,7 @@ export default function SupportDashboard() {
       setStats(data.stats || {});
     } catch (err) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || "Failed to load dashboard.");
     } finally {
       setLoading(false);
     }
@@ -93,8 +101,6 @@ export default function SupportDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
-
-      {/* Sidebar */}
       {sidebarOpen && (
         <SupportSidebar
           activeView={activeView}
@@ -102,9 +108,7 @@ export default function SupportDashboard() {
         />
       )}
 
-      {/* Main */}
       <div className="flex-1 flex flex-col">
-
         <SupportHeader
           user={user}
           sidebarOpen={sidebarOpen}
@@ -113,15 +117,11 @@ export default function SupportDashboard() {
         />
 
         <main className="p-6">
-
           <Suspense fallback={<Loading />}>
             {renderView()}
           </Suspense>
-
         </main>
-
       </div>
-
     </div>
   );
 }

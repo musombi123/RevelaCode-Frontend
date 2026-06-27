@@ -11,6 +11,7 @@ import {
 
 import { Button } from "@/components/ui/Button.jsx";
 import { Input } from "@/components/ui/Input.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 import SupportTicketDetails from "./SupportTicketDetails.jsx";
 import SupportResolveModal from "./SupportResolveModal.jsx";
@@ -18,6 +19,7 @@ import SupportResolveModal from "./SupportResolveModal.jsx";
 const API = import.meta.env.VITE_API_URL;
 
 export default function SupportTickets() {
+  const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [filteredTickets, setFilteredTickets] = useState([]);
 
@@ -44,8 +46,10 @@ export default function SupportTickets() {
       setError("");
 
       const res = await fetch(`${API}/api/support/tickets`, {
+        method: "GET",
         headers: {
-          "X-API-KEY": user.apiKey,
+          "Content-Type": "application/json",
+          "X-API-KEY": user?.apiKey || "",
         },
       });
 

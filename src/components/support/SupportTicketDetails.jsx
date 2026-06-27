@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -22,6 +23,8 @@ export default function SupportTicketDetails({
   onClose,
   onResolve,
 }) {
+  const { user } = useAuth();
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,12 +44,13 @@ export default function SupportTicketDetails({
         `${API}/api/support/ticket/${ticketId}`,
         {
           headers: {
-            "X-API-KEY": user.apiKey,
+            "Content-Type": "application/json",
+            "X-API-KEY": user?.apiKey || "",
           },
         }
       );
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         throw new Error(data.message || "Failed to load ticket.");
@@ -54,7 +58,7 @@ export default function SupportTicketDetails({
 
       setTicket(data.ticket);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unable to load ticket.");
     } finally {
       setLoading(false);
     }
@@ -63,14 +67,10 @@ export default function SupportTicketDetails({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex justify-end">
-
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 h-full overflow-y-auto shadow-2xl">
-
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-5 flex justify-between items-center">
-
+    <div className="fixed inset-0 z-40 flex justify-end bg-black/40 backdrop-blur-sm">
+      <div className="h-full w-full max-w-2xl overflow-y-auto bg-white shadow-2xl dark:bg-gray-900">
+        <div className="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
           <div>
-
             <h2 className="text-2xl font-bold">
               Ticket Details
             </h2>
@@ -78,7 +78,6 @@ export default function SupportTicketDetails({
             <p className="text-sm text-gray-500">
               View support request
             </p>
-
           </div>
 
           <button
@@ -87,48 +86,36 @@ export default function SupportTicketDetails({
           >
             <X />
           </button>
-
         </div>
 
         {loading && (
-
           <div className="flex justify-center py-20">
-
             <Loader2
               className="animate-spin"
               size={36}
             />
-
           </div>
-
         )}
 
         {error && (
-
           <div className="p-6 text-red-500">
             {error}
           </div>
-
         )}
 
         {!loading && ticket && (
-
-          <div className="p-6 space-y-8">
-
+          <div className="space-y-8 p-6">
             <section>
-
               <h3 className="text-2xl font-bold">
                 {ticket.subject}
               </h3>
 
-              <p className="mt-3 text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+              <p className="mt-3 whitespace-pre-wrap text-gray-600 dark:text-gray-300">
                 {ticket.description}
               </p>
-
             </section>
 
-            <section className="grid md:grid-cols-2 gap-5">
-
+            <section className="grid gap-5 md:grid-cols-2">
               <Info
                 icon={User}
                 label="User"
@@ -162,51 +149,34 @@ export default function SupportTicketDetails({
               <Info
                 icon={CheckCircle2}
                 label="Resolved"
-                value={
-                  ticket.resolved_at || "Not resolved"
-                }
+                value={ticket.resolved_at || "Not resolved"}
               />
-
             </section>
 
             {ticket.resolution && (
-
               <section>
-
-                <h4 className="font-semibold mb-2">
+                <h4 className="mb-2 font-semibold">
                   Resolution
                 </h4>
 
-                <div className="rounded-xl border border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-800 p-4">
-
+                <div className="rounded-xl border border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
                   {ticket.resolution}
-
                 </div>
-
               </section>
-
             )}
 
             {ticket.status !== "resolved" && (
-
               <div className="flex justify-end">
-
                 <Button
-                  onClick={() => onResolve(ticket)}
+                  onClick={() => onResolve?.(ticket)}
                 >
                   Resolve Ticket
                 </Button>
-
               </div>
-
             )}
-
           </div>
-
         )}
-
       </div>
-
     </div>
   );
 }
@@ -217,22 +187,15 @@ function Info({
   value,
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-
+    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
       <div className="flex items-center gap-2 text-sm text-gray-500">
-
         <Icon size={16} />
-
         {label}
-
       </div>
 
-      <div className="mt-2 font-semibold break-words">
-
+      <div className="mt-2 break-words font-semibold">
         {value || "-"}
-
       </div>
-
     </div>
   );
 }
