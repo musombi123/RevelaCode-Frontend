@@ -27,8 +27,8 @@ export default function AdminOverview() {
       };
 
       const [dashRes, statsRes] = await Promise.all([
-        fetch(`${API}/admin/dashboard`, { headers }),
-        fetch(`${API}/admin/study/stats`, { headers })
+        fetch(`${API}/api/admin/dashboard`, { headers }),
+        fetch(`${API}/api/admin/study/stats`, { headers })
       ]);
 
       const dash = await dashRes.json();

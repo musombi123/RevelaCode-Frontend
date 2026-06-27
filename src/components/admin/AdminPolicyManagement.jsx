@@ -18,7 +18,7 @@ export default function AdminPolicyManagement() {
 
     const res = await fetch(
 
-      `${API}/admin/update-policy`,
+      `${API}/api/admin/update-policy`,
 
       {
 

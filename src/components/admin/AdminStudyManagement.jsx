@@ -46,7 +46,7 @@ export default function AdminStudyManagement() {
     };
 
     try {
-      const response = await fetch(`${API}/study/upload`, {
+      const response = await fetch(`${API}/api/admin/study/upload`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -32,7 +32,7 @@ export default function AdminTeamManagement() {
     try {
 
       const res = await fetch(
-        `${API}/admin/list-users`,
+        `${API}/api/admin/list-users`,
         {
           headers: {
             "X-API-KEY": user.apiKey,
@@ -69,7 +69,7 @@ export default function AdminTeamManagement() {
     try {
 
       const res = await fetch(
-        `${API}/admin/manage-users`,
+        `${API}/api/admin/manage-users`,
         {
           method: "POST",
           headers: {

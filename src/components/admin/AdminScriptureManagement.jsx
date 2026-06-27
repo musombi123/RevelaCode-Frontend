@@ -18,7 +18,7 @@ export default function AdminScriptureManagement() {
 
     const res = await fetch(
 
-      `${API}/admin/update-scripture`,
+      `${API}/api/admin/update-scripture`,
 
       {
 
