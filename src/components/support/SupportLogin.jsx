@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card.jsx";
 import { Input } from "@/components/ui/Input.jsx";
@@ -10,76 +11,115 @@ export default function SupportLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
+  const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
-  const [supportKey, setSupportKey] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const API = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!username || !password) return setError("⚠ Enter username and password.");
-    if (!supportKey) return setError("⚠ Support key required.");
+    if (!contact.trim() || !password.trim()) {
+      setError("⚠ Contact and password are required.");
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/support/login`, {
+      const res = await fetch(`${API}/api/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, support_key: supportKey }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contact,
+          password,
+        }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed");
 
-      // ✅ Update auth context
-      login({ username: data.username, fullName: data.username, role: "support" });
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed.");
+      }
 
-      // ✅ SPA redirect
-      navigate("/pages");
+      if (data.role !== "support") {
+        throw new Error("This account is not a support account.");
+      }
+
+      login({
+        full_name: data.full_name,
+        contact: data.contact,
+        role: data.role,
+        api_key: data.api_key,
+      });
+
+      navigate(data.redirect || "/support/dashboard");
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || "Unable to login.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-6 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <Card className="w-full max-w-md">
+
         <CardHeader>
-          <h2 className="text-xl font-bold">🔧 Support Login</h2>
+          <h2 className="text-2xl font-bold">
+            🔧 Support Login
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-2">
+            Login using your support account.
+          </p>
         </CardHeader>
 
-        <CardContent className="space-y-3">
-          <form onSubmit={handleSubmit} className="space-y-3">
+        <CardContent>
+
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
+
             <Input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
+              placeholder="Contact"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
             />
+
             <Input
               type="password"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
             />
-            <Input
-              type="password"
-              value={supportKey}
-              onChange={(e) => setSupportKey(e.target.value)}
-              placeholder="Support Key"
-            />
-            <Button type="submit" disabled={loading}>
-              {loading ? "⏳ Logging in..." : "Login"}
+
+            {error && (
+              <div className="rounded-md bg-red-100 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? "Logging in..." : "Login"}
             </Button>
+
           </form>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
         </CardContent>
+
       </Card>
     </div>
   );
