@@ -1,6 +1,12 @@
 "use client";
 import React from "react";
-import { Ticket, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Ticket,
+  History,
+  BarChart3,
+  Settings,
+} from "lucide-react";
 
 export default function SupportSidebar({ activeView, setActiveView }) {
   const views = [
