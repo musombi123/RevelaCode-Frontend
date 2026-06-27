@@ -8,96 +8,123 @@ import { useAuth } from "@/context/AuthContext.jsx";
 const API = import.meta.env.VITE_API_URL;
 
 export default function AdminScriptureManagement() {
-
   const { user } = useAuth();
 
   const [scriptureId, setScriptureId] = useState("");
   const [content, setContent] = useState("");
 
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
   async function updateScripture() {
+    if (!scriptureId.trim()) {
+      setMessage("Please enter a Scripture ID.");
+      return;
+    }
 
-    const res = await fetch(
+    if (!content.trim()) {
+      setMessage("Please enter scripture content.");
+      return;
+    }
 
-      `${API}/api/admin/update-scripture`,
+    setLoading(true);
+    setMessage("");
 
-      {
+    try {
+      const response = await fetch(
+        `${API}/api/admin/update-scripture`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
 
-        method: "POST",
+            // Uses the stored API key after admin login
+            "X-API-KEY": user?.apiKey || "",
+          },
+          body: JSON.stringify({
+            id: scriptureId,
+            content,
+          }),
+        }
+      );
 
-        headers: {
+      const data = await response.json();
 
-          "Content-Type":"application/json",
-
-          "X-API-KEY":user.apiKey
-
-        },
-
-        body:JSON.stringify({
-
-          id:scriptureId,
-
-          content
-
-        })
-
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update scripture.");
       }
 
-    );
+      setMessage(data.message || "Scripture updated successfully.");
 
-    const data = await res.json();
-
-    alert(data.message);
-
+      // Optional: clear form after successful save
+      setScriptureId("");
+      setContent("");
+    } catch (err) {
+      console.error(err);
+      setMessage(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
+    <Card className="shadow-lg">
+      <CardContent className="p-6 space-y-5">
 
-    <Card>
+        <div>
+          <h2 className="text-2xl font-bold">
+            Scripture Management
+          </h2>
 
-      <CardContent className="p-6 space-y-4">
+          <p className="text-gray-500 text-sm">
+            Update any scripture stored in the RevelaCode database.
+          </p>
+        </div>
 
-        <h2 className="text-2xl font-bold">
+        {message && (
+          <div className="rounded-lg border bg-gray-50 p-3 text-sm">
+            {message}
+          </div>
+        )}
 
-          Scripture Management
+        <div className="space-y-2">
+          <label className="font-medium">
+            Scripture ID
+          </label>
 
-        </h2>
+          <input
+            className="w-full rounded-lg border p-3"
+            placeholder="e.g. JOHN_3_16"
+            value={scriptureId}
+            onChange={(e) => setScriptureId(e.target.value)}
+          />
+        </div>
 
-        <input
+        <div className="space-y-2">
+          <label className="font-medium">
+            Scripture Content
+          </label>
 
-          className="w-full border rounded p-3"
+          <textarea
+            rows={12}
+            className="w-full rounded-lg border p-3"
+            placeholder="Enter the updated scripture..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
 
-          placeholder="Scripture ID"
-
-          value={scriptureId}
-
-          onChange={(e)=>setScriptureId(e.target.value)}
-
-        />
-
-        <textarea
-
-          rows={12}
-
-          className="w-full border rounded p-3"
-
-          placeholder="Updated Scripture"
-
-          value={content}
-
-          onChange={(e)=>setContent(e.target.value)}
-
-        />
-
-        <Button onClick={updateScripture}>
-
-          Update Scripture
-
+        <Button
+          onClick={updateScripture}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading
+            ? "Updating Scripture..."
+            : "Update Scripture"}
         </Button>
 
       </CardContent>
-
     </Card>
-
   );
-
 }

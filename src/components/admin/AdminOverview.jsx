@@ -2,54 +2,75 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { useAuth } from "@/context/AuthContext.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
+// Built-in Admin Key
+const ADMIN_API_KEY = "bbit070j2003@RC#2026!";
+
 export default function AdminOverview() {
 
-  const { user } = useAuth();
+  const [dashboard, setDashboard] = useState({
+    message: "",
+  });
 
-  const [dashboard, setDashboard] = useState({});
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState({
+    total_materials: 0,
+    faith_materials: 0,
+    education_materials: 0,
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    load();
+    loadDashboard();
   }, []);
 
-  async function load() {
+  async function loadDashboard() {
+
+    setLoading(true);
 
     try {
 
       const headers = {
-        "X-API-KEY": user.apiKey
+        "X-API-KEY": ADMIN_API_KEY,
       };
 
-      const [dashRes, statsRes] = await Promise.all([
+      const [dashboardRes, statsRes] = await Promise.all([
         fetch(`${API}/api/admin/dashboard`, { headers }),
-        fetch(`${API}/api/admin/study/stats`, { headers })
+        fetch(`${API}/api/admin/study/stats`, { headers }),
       ]);
 
-      const dash = await dashRes.json();
-      const study = await statsRes.json();
+      const dashboardData = await dashboardRes.json();
+      const statsData = await statsRes.json();
 
-      setDashboard(dash);
-      setStats(study);
+      if (dashboardRes.ok) {
+        setDashboard(dashboardData);
+      }
+
+      if (statsRes.ok) {
+        setStats(statsData);
+      }
 
     } catch (err) {
 
-      console.log(err);
+      console.error("Dashboard error:", err);
+
+    } finally {
+
+      setLoading(false);
 
     }
-
-    setLoading(false);
 
   }
 
   if (loading) {
 
-    return <p>Loading dashboard...</p>;
+    return (
+      <div className="p-6">
+        Loading dashboard...
+      </div>
+    );
 
   }
 
@@ -58,75 +79,57 @@ export default function AdminOverview() {
     <div className="space-y-6">
 
       <h2 className="text-2xl font-bold">
-
         Dashboard Overview
-
       </h2>
 
-      <div className="grid md:grid-cols-4 gap-5">
+      <div className="grid gap-5 md:grid-cols-4">
 
         <Card>
-
           <CardContent className="p-6">
-
-            <h3>Total Materials</h3>
-
-            <p className="text-3xl font-bold">
-
-              {stats.total_materials || 0}
-
+            <p className="text-gray-500">
+              Total Materials
             </p>
 
+            <h2 className="text-4xl font-bold mt-2">
+              {stats.total_materials}
+            </h2>
           </CardContent>
-
         </Card>
 
         <Card>
-
           <CardContent className="p-6">
-
-            <h3>Faith Lessons</h3>
-
-            <p className="text-3xl font-bold">
-
-              {stats.faith_materials || 0}
-
+            <p className="text-gray-500">
+              Faith Materials
             </p>
 
+            <h2 className="text-4xl font-bold mt-2">
+              {stats.faith_materials}
+            </h2>
           </CardContent>
-
         </Card>
 
         <Card>
-
           <CardContent className="p-6">
-
-            <h3>Education Lessons</h3>
-
-            <p className="text-3xl font-bold">
-
-              {stats.education_materials || 0}
-
+            <p className="text-gray-500">
+              Education Materials
             </p>
 
+            <h2 className="text-4xl font-bold mt-2">
+              {stats.education_materials}
+            </h2>
           </CardContent>
-
         </Card>
 
         <Card>
-
           <CardContent className="p-6">
+            <p className="text-gray-500">
+              System Status
+            </p>
 
-            <h3>Status</h3>
-
-            <p className="text-green-600 font-semibold">
-
+            <h2 className="text-2xl font-bold text-green-600 mt-2">
               Online
-
-            </p>
-
+            </h2>
           </CardContent>
-
         </Card>
 
       </div>
@@ -135,16 +138,12 @@ export default function AdminOverview() {
 
         <CardContent className="p-6">
 
-          <h3 className="font-bold mb-3">
-
+          <h3 className="text-lg font-bold mb-3">
             Admin Message
-
           </h3>
 
           <p>
-
-            {dashboard.message}
-
+            {dashboard.message || "Welcome to RevelaCode Admin Panel."}
           </p>
 
         </CardContent>
