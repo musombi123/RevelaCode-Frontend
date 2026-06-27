@@ -1,43 +1,120 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
+
+import React, { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import Loading from "@/components/common/Loading.jsx";
+
 import SupportSidebar from "./SupportSidebar.jsx";
 import SupportHeader from "./SupportHeader.jsx";
+
+import SupportStats from "./SupportStats.jsx";
 import SupportTickets from "./SupportTickets.jsx";
 
-const dummyTickets = [
-  { id: 1, title: "User cannot login", status: "Open", user: "John Doe" },
-  { id: 2, title: "Bug in prophecy decoder", status: "In Progress", user: "Mary J" },
-  { id: 3, title: "Feature request: Dark mode", status: "Resolved", user: "Alice K" },
-];
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function SupportDashboard() {
   const { user, logout } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeView, setActiveView] = useState("tickets");
-  const [tickets, setTickets] = useState([]);
+  const [activeView, setActiveView] = useState("dashboard");
+
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user || user.role !== "support") window.location.href = "/support/login";
-    setTickets(dummyTickets);
+    if (!user || user.role !== "support") {
+      window.location.href = "/support/login";
+      return;
+    }
+
+    loadDashboard();
   }, [user]);
 
-  const activeComponent = () => {
-    if (activeView === "tickets") return <SupportTickets tickets={tickets} />;
-    if (activeView === "settings") return <div className="p-4">Settings panel coming soon!</div>;
-    return <div>Select a view from sidebar</div>;
-  };
+  async function loadDashboard() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch(`${API}/api/support/dashboard`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to load dashboard");
+      }
+
+      setStats(data.stats || {});
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderView() {
+    switch (activeView) {
+      case "dashboard":
+        return <SupportStats stats={stats} />;
+
+      case "tickets":
+        return <SupportTickets />;
+
+      case "settings":
+        return (
+          <div className="p-6 text-gray-500">
+            Settings panel coming soon...
+          </div>
+        );
+
+      default:
+        return <SupportStats stats={stats} />;
+    }
+  }
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
-      {sidebarOpen && <SupportSidebar activeView={activeView} setActiveView={setActiveView} />}
-      <main className="flex-1 flex flex-col">
-        <SupportHeader user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} logout={logout} />
-        <section className="p-6 h-[calc(100vh-64px)] overflow-y-auto">
-          <Suspense fallback={<Loading />}>{activeComponent()}</Suspense>
-        </section>
-      </main>
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
+
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <SupportSidebar
+          activeView={activeView}
+          setActiveView={setActiveView}
+        />
+      )}
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col">
+
+        <SupportHeader
+          user={user}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          logout={logout}
+        />
+
+        <main className="p-6">
+
+          <Suspense fallback={<Loading />}>
+            {renderView()}
+          </Suspense>
+
+        </main>
+
+      </div>
+
     </div>
   );
 }

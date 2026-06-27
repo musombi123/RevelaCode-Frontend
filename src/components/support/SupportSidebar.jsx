@@ -4,8 +4,11 @@ import { Ticket, Settings } from "lucide-react";
 
 export default function SupportSidebar({ activeView, setActiveView }) {
   const views = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "tickets", label: "Tickets", icon: Ticket },
-    { key: "settings", label: "Settings", icon: Settings },
+    { key: "history", label: "History", icon: History },
+    { key: "analytics", label: "Analytics", icon: BarChart3 },
+    { key: "settings", label: "Settings", icon: Settings }
   ];
 
   return (
