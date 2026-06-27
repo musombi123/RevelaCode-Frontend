@@ -43,7 +43,11 @@ export default function SupportTickets() {
 
       setError("");
 
-      const res = await fetch(`${API}/api/support/tickets`);
+      const res = await fetch(`${API}/api/support/tickets`, {
+        headers: {
+          "X-API-KEY": user.apiKey,
+        },
+      });
 
       const data = await res.json();
 

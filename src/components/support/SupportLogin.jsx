@@ -37,6 +37,7 @@ export default function SupportLogin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-API-KEY": SUPPORT_API_KEY,
         },
         body: JSON.stringify({
           contact,

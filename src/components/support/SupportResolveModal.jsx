@@ -30,6 +30,7 @@ export default function SupportResolveModal({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-API-KEY": user.apiKey,
         },
         body: JSON.stringify({
           ticket_id: ticket.id,

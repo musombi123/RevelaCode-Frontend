@@ -36,7 +36,14 @@ export default function SupportDashboard() {
       setLoading(true);
       setError("");
 
-      const res = await fetch(`${API}/api/support/dashboard`);
+      const { user } = useAuth();
+
+      const res = await fetch(`${API}/api/support/dashboard`, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-KEY": user.apiKey,
+        },
+      });
       const data = await res.json();
 
       if (!res.ok) {
