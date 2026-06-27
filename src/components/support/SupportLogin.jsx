@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/Button.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 
+const SUPPORT_API_KEY = "RevelaCodeSupport";
+
 export default function SupportLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const API = import.meta.env.VITE_API_URL;
 
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
@@ -17,14 +21,12 @@ export default function SupportLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const API = import.meta.env.VITE_API_URL;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     if (!contact.trim() || !password.trim()) {
-      setError("⚠ Contact and password are required.");
+      setError("Contact and password are required.");
       return;
     }
 
@@ -52,14 +54,16 @@ export default function SupportLogin() {
         throw new Error("This account is not a support account.");
       }
 
+      // Store support session exactly like AdminLogin
       login({
-        full_name: data.full_name,
+        fullName: data.full_name,
         contact: data.contact,
-        role: data.role,
-        api_key: data.api_key,
+        role: "support",
+        apiKey: SUPPORT_API_KEY,
       });
 
-      navigate(data.redirect || "/support/dashboard");
+      navigate("/pages", { replace: true });
+
     } catch (err) {
       console.error(err);
       setError(err.message || "Unable to login.");
@@ -77,7 +81,7 @@ export default function SupportLogin() {
             🔧 Support Login
           </h2>
 
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="mt-2 text-sm text-gray-500">
             Login using your support account.
           </p>
         </CardHeader>
