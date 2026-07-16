@@ -1,7 +1,7 @@
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/Popover.jsx";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/Badge.jsx";
-import { useNotifications } from "../hooks/useNotifications.jsx";
+import { useNotifications } from "@/components/hooks/useNotifications.jsx";
 
 export default function Notifications() {
   const {
