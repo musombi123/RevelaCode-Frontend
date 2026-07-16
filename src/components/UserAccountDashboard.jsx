@@ -21,6 +21,7 @@ const AccountDashboard = React.lazy(() => import("./AccountDashboard"));
 const ReferentialDashboard = React.lazy(() => import("./ReferentialDashboard"));
 const HelpModal = React.lazy(() => import("./HelpModal.jsx"));
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
+const Notifications = React.lazy(() => import("./Notifications.jsx"));
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -105,7 +106,7 @@ export default function UserAccountDashboard({ onLogout }) {
   const renderContent = () => {
     if (isGuest) {
       return (
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h2 className="text-xl font-bold">🔒 Login Required</h2>
           <p className="text-gray-500 mt-1">
             Please log in to access your account dashboard.
@@ -128,15 +129,14 @@ export default function UserAccountDashboard({ onLogout }) {
 
       case "notifications":
         return (
-          <div className="p-6">
-            <h2 className="text-xl font-bold">🔔 Notifications</h2>
-            <p className="text-gray-500">No notifications yet.</p>
+          <div className="p-4 sm:p-6">
+            <Notifications />
           </div>
         );
 
       case "history":
         return (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xl font-bold mb-4">📜 History</h2>
             {loadingHistory && <Loading />}
             {!loadingHistory && history.length === 0 && (
@@ -146,7 +146,7 @@ export default function UserAccountDashboard({ onLogout }) {
               {history.map((h, i) => (
                 <li
                   key={i}
-                  className="p-3 border rounded-md bg-gray-50 dark:bg-gray-800"
+                  className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800 break-words"
                 >
                   <p className="text-sm">{h.action || "Activity"}</p>
                   <p className="text-xs text-gray-500">
@@ -171,7 +171,7 @@ export default function UserAccountDashboard({ onLogout }) {
         return <LegalDocs activeTab="terms" />;
 
       default:
-        return <div className="p-6">Select a menu item</div>;
+        return <div className="p-4 sm:p-6">Select a menu item</div>;
     }
   };
 
@@ -190,12 +190,12 @@ export default function UserAccountDashboard({ onLogout }) {
 
   /* ===================== LAYOUT ===================== */
   return (
-    <div className="flex h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
-      <aside className="w-64 border-r bg-gray-50 dark:bg-gray-800 p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold text-indigo-600 mb-4">RevelaCode</h2>
+    <div className="flex flex-col lg:flex-row h-full min-h-[75vh] bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+      <aside className="flex-shrink-0 lg:w-full lg:w-64 border-b lg:border-b-0 lg:border-r bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 overflow-x-auto lg:overflow-y-auto">
+        <h2 className="text-base sm:text-lg font-bold text-indigo-600 mb-3 lg:mb-4">RevelaCode</h2>
 
         {userData && (
-          <div className="mb-4 p-3 rounded-lg border bg-white dark:bg-gray-900">
+          <div className="hidden lg:block mb-4 p-3 rounded-lg border bg-white dark:bg-gray-900">
             <p className="text-xs text-gray-500">Signed in as</p>
             <p className="text-sm font-semibold">{userData.contact}</p>
             <p className="text-xs text-gray-500">
@@ -207,7 +207,7 @@ export default function UserAccountDashboard({ onLogout }) {
           </div>
         )}
 
-        <nav className="space-y-1">
+        <nav className="flex lg:block gap-2 lg:gap-1 overflow-x-auto lg:overflow-visible whitespace-nowrap">
           {menuItems.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -216,7 +216,7 @@ export default function UserAccountDashboard({ onLogout }) {
                   ? confirmDeleteAccount(prompt("Type 'DELETE' to confirm"))
                   : setActiveView(key)
               }
-              className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition ${
+              className={`flex items-center justify-center lg:justify-start gap-2 min-w-max lg:w-full px-3 py-2 rounded-lg text-sm transition ${
                 activeView === key
                   ? "bg-indigo-600 text-white"
                   : "hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -231,17 +231,17 @@ export default function UserAccountDashboard({ onLogout }) {
         {!isGuest && onLogout && (
           <button
             onClick={onLogout}
-            className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md text-sm font-semibold"
+            className="hidden lg:block mt-6 flex-shrink-0 lg:w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-semibold"
           >
             Logout
           </button>
         )}
 
-        {message && <p className="text-green-500 mt-2 text-sm">{message}</p>}
-        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+        {message && <p className="text-green-500 mt-3 text-xs sm:text-sm break-words">{message}</p>}
+        {error && <p className="text-red-500 mt-3 text-xs sm:text-sm break-words">{error}</p>}
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-4">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
         <Suspense fallback={<Loading />}>{renderContent()}</Suspense>
       </main>
     </div>

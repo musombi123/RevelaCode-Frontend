@@ -329,7 +329,7 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
           exit={{ opacity: 0 }}
         >
           {/* Top Bar */}
-          <div className="h-14 flex items-center justify-between px-4 border-b border-gray-300/40 dark:border-gray-700/40">
+          <div className="h-14 px-2 sm:px-4 flex items-center justify-between px-4 border-b border-gray-300/40 dark:border-gray-700/40">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Bot size={18} className="text-green-600" />
@@ -352,7 +352,7 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden h-[calc(100vh-56px)]">
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {aiElement ? (
@@ -524,13 +524,13 @@ export default function MainDashboardV2() {
     return (
       <div className="space-y-6">
         {/* HERO */}
-        <div className="rounded-2xl p-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg relative overflow-hidden">
+        <div className="rounded-2xl p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-black/10 blur-2xl" />
 
           <div className="flex flex-col gap-3 relative z-10">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight">
                 Welcome, {welcomeName} ✨
               </h2>
               {userBadge}
@@ -541,7 +541,7 @@ export default function MainDashboardV2() {
               and smart tools built for speed and clarity.
             </p>
 
-            <div className="flex flex-wrap gap-3 mt-2">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <button
                 onClick={() => setAIFullscreenOpen(true)}
                 className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold transition"
@@ -594,7 +594,7 @@ export default function MainDashboardV2() {
               Jump into your tools instantly.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 h-full gap-4 mt-4">
               {DASHBOARDS
                 .filter((d) => !d.hidden && d.key !== "home")
                 .filter((d) => {
@@ -605,7 +605,7 @@ export default function MainDashboardV2() {
                 .map((d) => (
                   <button
                     key={d.key}
-                    className="group text-left p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition"
+                    className="group h-full text-left p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition"
                     onClick={() => setActiveView(d.key)}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -625,7 +625,7 @@ export default function MainDashboardV2() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
+          <div className="rounded-2xl lg:sticky lg:top-24 bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Your Session 👤
             </h3>
@@ -674,7 +674,7 @@ export default function MainDashboardV2() {
         </div>
 
         {/* UPCOMING FEATURES */}
-        <div className="mt-2 p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm">
+        <div className="mt-2 p-4 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm">
           <h4 className="font-bold text-gray-900 dark:text-gray-100">
             Upcoming Features 🔥
           </h4>
@@ -712,7 +712,7 @@ return (
       onClose={handleCloseAnnouncement}
     />
 
-    <div className="relative flex min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+    <div className="relative flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950 transition-colors">
     
       <AnimatePresence>
         {showStartModal && <StartModal onComplete={handleStartComplete} />}
@@ -733,12 +733,25 @@ return (
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            initial={{ x: -220 }}
+            initial={{ x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: -220 }}
+            exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 260, damping: 25 }}
-            className="w-[220px] bg-gray-900 text-gray-100 flex flex-col z-30"
+            className="
+            fixed lg:relative
+            inset-y-0 left-0
+            w-72 max-w-[85vw]
+            bg-gray-900
+            text-gray-100
+            flex flex-col
+            z-50
+            shadow-2xl
+            "
           >
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
             <div className="p-4 flex justify-between items-center">
               <h1 className="font-bold text-lg">RevelaCode</h1>
               <button onClick={() => setSidebarOpen(false)}><X /></button>
@@ -784,10 +797,10 @@ return (
       <main className="flex-1 flex flex-col relative overflow-hidden">
 
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/60 dark:bg-gray-950/60 border-b border-white/20 dark:border-gray-800/60 shadow-sm">
-          <div className="flex justify-between items-center px-4 py-3">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 px-3 sm:px-4 lg:px-6 py-3">
 
             {/* LEFT SIDE */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {!sidebarOpen && (
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -798,14 +811,14 @@ return (
               )}
 
               <div className="flex flex-col leading-tight">
-                <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="font-semibold text-sm sm:text-base lg:text-lg truncate text-gray-900 dark:text-gray-100">
                   {activeView === "home"
                     ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
                     : DASHBOARDS.find((d) => d.key === activeView)?.title}
                 </h2>
 
                 {activeView === "home" && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="hidden sm:block text-xs text-gray-500 dark:text-gray-400 truncate">
                     {dailyGreeting}
                   </p>
                 )}
@@ -813,7 +826,7 @@ return (
             </div>
 
             {/* RIGHT SIDE (THIS IS THE FIX 🔥) */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
 
               {/* Notifications */}
               <Notifications />
@@ -827,7 +840,7 @@ return (
               {isGuest && (
                 <button
                   onClick={() => setShowStartModal(true)}
-                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
+                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
                 >
                   Login 🔐
                 </button>
@@ -838,7 +851,7 @@ return (
           </div>
         </header>
 
-        <section className="flex-1 p-6 overflow-y-auto">
+        <section className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
           <Suspense fallback={<Loading />}>
             <ErrorBoundary>
               {activeComponent &&
@@ -851,7 +864,7 @@ return (
 
         <button
           onClick={() => setAIFullscreenOpen(true)}
-          className="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-40"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-40"
           title="AI Assistant Dashboard (Ctrl + K)"
         >
           <Bot />
