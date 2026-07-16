@@ -1,27 +1,52 @@
-// src/components/ui/Popover.jsx
-import React, { useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
-export function Popover({ children, trigger }) {
+const PopoverContext = createContext();
+
+export function Popover({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative inline-block">
-      <div onClick={() => setOpen(!open)}>
-        {trigger}
+    <PopoverContext.Provider value={{ open, setOpen }}>
+      <div className="relative inline-block">
+        {children}
       </div>
-      {open && (
-        <div className="absolute z-10 mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2">
-          {children}
-        </div>
-      )}
-    </div>
+    </PopoverContext.Provider>
   );
 }
 
-export const PopoverTrigger = ({ children, onClick }) => (
-  <div onClick={onClick}>{children}</div>
-);
+export function PopoverTrigger({ children, asChild = false }) {
+  const { open, setOpen } = useContext(PopoverContext);
 
-export const PopoverContent = ({ children }) => (
-  <div>{children}</div>
-);
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      onClick: () => setOpen(!open),
+    });
+  }
+
+  return (
+    <button onClick={() => setOpen(!open)}>
+      {children}
+    </button>
+  );
+}
+
+export function PopoverContent({
+  children,
+  className = "",
+  align = "start",
+}) {
+  const { open } = useContext(PopoverContext);
+
+  if (!open) return null;
+
+  const alignment =
+    align === "end" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0";
+
+  return (
+    <div
+      className={`absolute mt-2 ${alignment} z-50 rounded-xl border bg-white dark:bg-gray-800 shadow-xl ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
