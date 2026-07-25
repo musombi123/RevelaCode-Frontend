@@ -105,28 +105,23 @@ export default function AIAssistantDashboard() {
   /* =========================================================
      AI CALL
   ========================================================= */
-  const callRevelaAI = async (message, signal) => {
+  const callRevelaAI = async (message,context, signal) => {
     const res = await fetch(
-      "https://musombi-mvi-ai-engine.hf.space/ask",
+      `${import.meta.env.VITE_REVELAAI_URL}/ai`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-          body: JSON.stringify({
-          text: message,
-          temperature: 0.7,
-          max_tokens: 512,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          message,
+          context,
+         }),
         signal,
       }
     );
 
-    if (!res.ok) {
-      throw new Error("AI request failed");
-    }
+    if (!res.ok) throw new Error("AI request failed");
 
-    return await res.json();
+    return res.json();
   };
 
   /* =========================================================
@@ -186,12 +181,13 @@ export default function AIAssistantDashboard() {
     try {
       const data = await callRevelaAI(
         enrichPrompt(text),
+        context,
         controller.signal
       );
 
       const assistantText =
-        data?.response ||
-        "⚠️ No response from Revela AI.";
+        data?.data?.content ||
+        "⚠️ No response from RevelaAI.";
 
       setMessages((prev) => {
         const updated = prev.map((msg) =>
