@@ -110,7 +110,17 @@ export default function ProphecyEventsDashboard() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="
+      w-full
+      max-w-7xl
+      mx-auto
+      px-3
+      sm:px-4
+      md:px-6
+      lg:px-8
+      xl:px-10
+      space-y-6
+    ">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -189,7 +199,7 @@ export default function ProphecyEventsDashboard() {
         )}
 
         {/* Result count */}
-        <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+        <div className="w-full md:w-auto md:ml-auto text-center md:text-right"
           Showing{" "}
           <span className="font-semibold text-gray-800 dark:text-gray-200">
             {filtered.length}
@@ -222,7 +232,7 @@ export default function ProphecyEventsDashboard() {
       )}
 
       {!loading && !error && (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {paged.length === 0 ? (
             <div className="p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -239,12 +249,12 @@ export default function ProphecyEventsDashboard() {
                 >
                   <CardContent className="space-y-3 p-5">
                     {/* Title */}
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-3 items-start">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 items-start">
                       <a
                         href={e.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline break-words whitespace-normal"
+                        className="font-bold text-base sm:text-lg text-blue-600 dark:text-blue-400 hover:underline break-words overflow-hidden text-ellipsis whitespace-normal"
                       >
                         {e.headline || "Untitled Event"}
                       </a>
@@ -285,12 +295,10 @@ export default function ProphecyEventsDashboard() {
                             alt={e.headline}
                             className="
                               w-full
-                              h-48
-                              sm:h-56
-                              md:h-72
-                              lg:h-80
+                              aspect-video
                               object-cover
-                              "
+                              rounded-xl
+                            "
                            />
                         </div>
                       )}
@@ -299,7 +307,7 @@ export default function ProphecyEventsDashboard() {
                       <div>
                         <p
                           className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words ${
-                            isExpanded ? "whitespace-pre-line" : "line-clamp-4"
+                            isExpanded ? "whitespace-pre-line" :"line-clamp-3 sm:line-clamp-4"
                           }`}
                         >
                           {e.description}
@@ -337,7 +345,14 @@ export default function ProphecyEventsDashboard() {
                     )}
 
                     {/* Categories & Meta */}
-                    <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2 max-w-full">
+                    <div className="
+                      flex
+                      flex-col
+                      md:flex-row
+                      gap-3
+                      items-stretch
+                      md:items-center
+                    ">
                       {e.source && (
                         <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 break-words">
                           📰 {e.source}
@@ -370,7 +385,7 @@ export default function ProphecyEventsDashboard() {
 
       {/* Pagination */}
       {!loading && !error && filtered.length > ITEMS_PER_PAGE && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
