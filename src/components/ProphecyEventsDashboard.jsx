@@ -256,7 +256,11 @@ export default function ProphecyEventsDashboard() {
                     </div>
                     {/* Video */}
                     {e.media_type === "video" && (
-                      <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                      <div className="
+                        w-full
+                        aspect-video
+                        rounded-lg
+                        ">
                         <p className="text-sm mb-2">
                           🎥 Video available from source
                           </p>
@@ -275,14 +279,19 @@ export default function ProphecyEventsDashboard() {
                     {e.urlToImage &&
                       e.urlToImage !== "null" &&
                       e.urlToImage.trim() !== "" && (
-                        <div className="w-full min-h-[16rem] max-h-[32rem] rounded-lg overflow-hidden">
+                        <div className="w-full overflow-hidden rounded-xl">
                           <img
                             src={e.urlToImage}
                             alt={e.headline}
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                            onLoad={() => console.log("Loaded:", e.urlToImage)}
-                            onError={() => console.log("Failed:", e.urlToImage)}
-                          />
+                            className="
+                              w-full
+                              h-48
+                              sm:h-56
+                              md:h-72
+                              lg:h-80
+                              object-cover
+                              "
+                           />
                         </div>
                       )}
                     {/* Description */}
