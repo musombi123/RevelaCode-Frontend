@@ -36,17 +36,49 @@ export default function BibleDashboard() {
 
   // Load offline Bible JSON
   useEffect(() => {
+    let cancelled = false;
+
     const fetchBibleData = async () => {
       try {
-        const res = await fetch('/data/kjv.json');
-        const data = await res.json();
-        setBibleData(data);
-        setBookKeys(Object.keys(data));
-      } catch (err) {
-        console.error('📦 Failed to load Bible data:', err);
+        const response = await fetch("/data/kjv.json", {
+          cache: "force-cache",
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Bible dataset failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+
+        if (!data || typeof data !== "object") {
+          throw new Error("Invalid Bible dataset.");
+        }
+
+        if (!cancelled) {
+          setBibleData(data);
+          setBookKeys(Object.keys(data));
+        }
+      } catch (error) {
+        console.error("📖 Bible loading error:", error);
+
+        if (!cancelled) {
+          setSearchError(
+            "Unable to load the Bible dataset. Please refresh the page."
+          );
+        }
       }
     };
+
     fetchBibleData();
+
+       return () => {
+         cancelled = true;
+       };
+  }, []);
+  
+  Data();
   }, []);
   const openVerseReference = (reference) => {
     if (!reference || !bibleData || !bookKeys.length) {
@@ -229,9 +261,9 @@ export default function BibleDashboard() {
     .sort((a, b) => newTestament.indexOf(bibleData[a].book) - newTestament.indexOf(bibleData[b].book));
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="w-full max-w-full min-w-0 p-3 sm:p-4 space-y-4">
       {/* Search Bar */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
           placeholder="🔍 e.g. John 3:16 or Genesis 1:1"
@@ -246,15 +278,40 @@ export default function BibleDashboard() {
           className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Search
+        <button onClick={handleSearch}
+          disabled={!searchInput.trim()}
+          className="
+            w-full sm:w-auto
+            bg-blue-600
+            hover:bg-blue-700
+            text-white
+            px-4
+            py-2
+            rounded
+            disabled:opacity-50
+            transition
+          "
+        >
+          Search
         </button>
+
         <button
           onClick={askAI}
           disabled={!searchInput.trim()}
-          className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Ask RevelaAI
-        </button>
-      </div>
+          className="
+            w-full sm:w-auto
+            bg-green-600
+            hover:bg-green-700
+            text-white
+            px-4
+            py-2
+            rounded
+            disabled:opacity-50
+            transition
+         "
+       >
+         Ask RevelaAI
+       </button>
 
       {searchError && <p className="text-sm text-red-500">{searchError}</p>}
       {viewLevel !== 'books' && (
