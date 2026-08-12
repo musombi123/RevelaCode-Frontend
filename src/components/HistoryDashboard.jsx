@@ -139,7 +139,25 @@ export function HistoryProvider({ children }) {
       }
     },
     [backendURL, user, isGuest]
-  );
+  );\
+   
+  const addBibleHistory = useCallback(
+   async ({ book, chapter = null, verse = null }) => {
+      if (!book) return;
+
+      await addToHistory({
+         type: "bible",
+         input: `${book}${chapter ? ` ${chapter}` : ""}${verse ? `:${verse}` : ""}`,
+         output: "",
+         extra: {
+            book,
+            chapter,
+            verse,
+         },
+      });
+    },
+      [addToHistory]
+ );
 
   /* ===============================
      Clear history (local + backend)
@@ -177,9 +195,10 @@ export function HistoryProvider({ children }) {
       historyError,
       addToHistory,
       clearHistory,
+      addBibleHistory,
       refetchHistory: fetchHistoryFromBackend,
     }),
-    [history, loadingHistory, historyError, addToHistory, clearHistory, fetchHistoryFromBackend]
+    [history, loadingHistory, historyError, addToHistory, addBibleHistory, clearHistory, fetchHistoryFromBackend]
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
