@@ -119,9 +119,32 @@ export default function BibleDashboard() {
 
     return true;
   };
+  
+  useEffect(() => {
+    if (highlightedVerseIndex === null) {
+      return;
+    }
 
-    return true;
-  };
+    if (viewLevel !== "verses") {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const verseElement =
+        verseRefs.current[highlightedVerseIndex];
+
+      if (verseElement) {
+        verseElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    });
+  }, [
+    verses,
+    highlightedVerseIndex,
+    viewLevel,
+  ]);
 
   const handleSearch = () => {
     if (!searchInput.trim()) return;
@@ -138,16 +161,29 @@ export default function BibleDashboard() {
   };
   
   useEffect(() => {
-    if (!bookKeys.length) return;
+    if (!bookKeys.length || !Object.keys(bibleData).length) {
+      return;
+    }
 
     const params = new URLSearchParams(location.search);
-
     const verse = params.get("verse");
 
-    if (verse) {
-      openVerseReference(decodeURIComponent(verse));
+    if (!verse) {
+      return;
     }
-  }, [location.search, bookKeys]);
+
+    const success = openVerseReference(verse);
+
+    if (!success) {
+      setSearchError(
+        `❌ Verse not found: ${verse}`
+      );
+    }
+  }, [
+    location.search,
+    bookKeys,
+    bibleData,
+  ]);
 
   const askAI = () => {
     if (!searchInput.trim()) return;
@@ -281,11 +317,41 @@ export default function BibleDashboard() {
           <CardContent className="max-h-[60vh] overflow-y-auto space-y-2">
             <h4 className="font-semibold mb-2">{selectedBook.book} {selectedBook.chapters[selectedChapterIndex].chapter}</h4>
             {verses.map((v, idx) => (
-              <div key={idx} id={`verse-${idx}`}
-                className={`p-1 rounded text-sm ${
-                  highlightedVerseIndex === idx ? 'bg-yellow-200 dark:bg-yellow-600' : ''
-                }`}>
-                <strong>{v.verse}</strong>. {v.text}
+              <div
+                key={idx}
+                id={`verse-${idx}`}
+                ref={(element) => {
+                  verseRefs.current[idx] = element;
+                }}
+                className={`
+                  p-3
+                  rounded-lg
+                  text-sm
+                  leading-relaxed
+                  transition-all
+                  duration-700
+                  ${
+                    highlightedVerseIndex === idx
+                      ? `
+                        bg-yellow-200
+                        dark:bg-yellow-600
+                        ring-2
+                        ring-yellow-400
+                        shadow-lg
+                        scale-[1.01]
+                        `
+                      : `
+                        hover:bg-gray-100
+                        dark:hover:bg-gray-800
+                        `
+                  }
+                `}
+              >
+                <strong className="mr-1">
+                  {v.verse}.
+                </strong>
+
+                {v.text}
               </div>
             ))}
           </CardContent>
