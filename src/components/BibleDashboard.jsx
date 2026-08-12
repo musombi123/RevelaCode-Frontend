@@ -30,7 +30,7 @@ export default function BibleDashboard() {
   const [verses, setVerses] = useState([]);
   const [viewLevel, setViewLevel] = useState('books');
   const [searchInput, setSearchInput] = useState('');
-  const [highlightedVerseIndex, setHighlightedVerseIndex] = useState(null);
+  const [highlightedVerseRange, setHighlightedVerseRange] = useState(null);
   const [searchError, setSearchError] = useState('');
   const verseRefs = useRef({});
 
@@ -227,18 +227,28 @@ export default function BibleDashboard() {
     setViewLevel("verses");
 
     /*
-      Highlight first verse in the requested range.
-    */
+       Highlight the entire requested range.
 
-    setHighlightedVerseIndex(verseStartIndex);
+        John 3:16
+         → start = 15
+       → end = 15
 
-    setSearchError("");
+        John 1:1-3
+        → start = 0
+       → end = 2
+     */
 
-    return true;
-  };
+     setHighlightedVerseRange({
+       start: verseStartIndex,
+       end: verseEndIndex,
+     });
+
+     setSearchError("");
+
+     return true;
   
   useEffect(() => {
-    if (highlightedVerseIndex === null) {
+    if (!highlightedVerseRange) {
       return;
     }
 
@@ -248,7 +258,7 @@ export default function BibleDashboard() {
 
     requestAnimationFrame(() => {
       const verseElement =
-        verseRefs.current[highlightedVerseIndex];
+        verseRefs.current[highlightedVerseRange.start];
 
       if (verseElement) {
         verseElement.scrollIntoView({
@@ -258,9 +268,9 @@ export default function BibleDashboard() {
       }
     });
   }, [
-    verses,
-    highlightedVerseIndex,
+    highlightedVerseRange,
     viewLevel,
+    verses,
   ]);
 
   const handleSearch = () => {
@@ -494,9 +504,11 @@ export default function BibleDashboard() {
                   leading-relaxed
                   transition-all
                   duration-700
-                  ${
-                    highlightedVerseIndex === idx
-                      ? `
+                   ${
+                     highlightedVerseRange &&
+                     idx >= highlightedVerseRange.start &&
+                     idx <= highlightedVerseRange.end
+                     ? `
                         bg-yellow-200
                         dark:bg-yellow-600
                         ring-2
