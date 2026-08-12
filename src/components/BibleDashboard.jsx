@@ -78,50 +78,116 @@ export default function BibleDashboard() {
        };
   }, []);
   
-  Data();
-  }, []);
+  const normalizeBookName = (name) => {
+    const aliases = {
+      jonh: "john",
+      jhn: "john",
+      gen: "genesis",
+      exod: "exodus",
+      lev: "leviticus",
+      num: "numbers",
+      deut: "deuteronomy",
+      ps: "psalms",
+      psa: "psalms",
+      prov: "proverbs",
+      matt: "matthew",
+      mk: "mark",
+      lk: "luke",
+      jn: "john",
+      acts: "acts",
+      rom: "romans",
+      rev: "revelation",
+    };
+
+    const normalized = name
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+
+    return aliases[normalized] || normalized;
+  };
+
   const openVerseReference = (reference) => {
     if (!reference || !bibleData || !bookKeys.length) {
       return false;
     }
 
-    const cleanedReference = decodeURIComponent(reference)
+    let cleanedReference = decodeURIComponent(reference)
       .trim()
       .replace(/\s+/g, " ");
 
-    const match = cleanedReference.match(
-      /^(.+?)\s+(\d+):(\d+)$/
+    /*
+      Accept formats like:
+
+      John 3:16
+      John 3:16-18
+      John 1:1-1
+      John 3vs5
+      John 3 vs 5
+      John 3 verse 5
+      John 3 5
+      Jonh 3vs5
+    */
+
+    cleanedReference = cleanedReference
+      .replace(/\bverses?\b/gi, ":")
+      .replace(/\bvs\.?\b/gi, ":")
+      .replace(/\s*:\s*/g, ":")
+      .replace(/\s*-\s*/g, "-");
+
+    /*
+      Match:
+
+      Book name
+      Chapter
+      Verse
+      Optional verse range
+    */
+
+    let match = cleanedReference.match(
+      /^(.+?)\s+(\d+)(?::|\s+)(\d+)(?:-(\d+))?$/i
     );
+
+    /*
+      Also support things like:
+
+      John3:16
+      1John3:16
+    */
+
+    if (!match) {
+      match = cleanedReference.match(
+        /^(.+?)(\d+):(\d+)(?:-(\d+))?$/i
+      );
+    }
 
     if (!match) {
       return false;
     }
 
-    const [, bookNameRaw, chapterNum, verseNum] = match;
+    const [, bookNameRaw, chapterNum, verseStart, verseEnd] = match;
 
-    const normalizedBook = bookNameRaw
-      .trim()
-      .replace(/\s+/g, " ")
-      .toLowerCase();
+    const normalizedBook = normalizeBookName(bookNameRaw);
 
     const bookKey = bookKeys.find((key) => {
       const bookName = bibleData[key]?.book;
 
-      return (
-        bookName &&
-        bookName
-          .trim()
-          .replace(/\s+/g, " ")
-          .toLowerCase() === normalizedBook
-      );
+      if (!bookName) return false;
+
+      return normalizeBookName(bookName) === normalizedBook;
     });
 
     if (!bookKey) {
-       return false;
+      return false;
     }
 
     const chapterIndex = Number(chapterNum) - 1;
-    const verseIndex = Number(verseNum) - 1;
+
+    const verseStartIndex = Number(verseStart) - 1;
+
+    const verseEndIndex = verseEnd
+      ? Number(verseEnd) - 1
+      : verseStartIndex;
 
     const chapters = bibleData[bookKey]?.chapters || [];
 
@@ -137,16 +203,35 @@ export default function BibleDashboard() {
       return false;
     }
 
-    if (verseIndex < 0 || verseIndex >= versesArray.length) {
+    if (
+      verseStartIndex < 0 ||
+      verseStartIndex >= versesArray.length
+    ) {
       return false;
     }
 
-    // Open the exact book/chapter/verse
+    if (
+      verseEndIndex < verseStartIndex ||
+      verseEndIndex >= versesArray.length
+    ) {
+      return false;
+    }
+
+    /*
+      Open exact book + chapter.
+    */
+
     setSelectedBookKey(bookKey);
     setSelectedChapterIndex(chapterIndex);
     setVerses([...versesArray]);
     setViewLevel("verses");
-    setHighlightedVerseIndex(verseIndex);
+
+    /*
+      Highlight first verse in the requested range.
+    */
+
+    setHighlightedVerseIndex(verseStartIndex);
+
     setSearchError("");
 
     return true;
@@ -208,7 +293,7 @@ export default function BibleDashboard() {
 
     if (!success) {
       setSearchError(
-        `❌ Verse not found: ${verse}`
+        "❌ Reference not found. Try formats like John 3:16, John 1:1-3, John 3vs5, or Jonh 3vs5."
       );
     }
   }, [
@@ -266,56 +351,78 @@ export default function BibleDashboard() {
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
-          placeholder="🔍 e.g. John 3:16 or Genesis 1:1"
+          placeholder="🔍 e.g. John 3:16, John 1:1-3, John 3vs5"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="flex-1 p-2 border rounded dark:bg-black-800 dark:text-white"
-        />
-        <button
-          onClick={handleSearch}
-          disabled={!searchInput.trim()}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Search
-        <button onClick={handleSearch}
-          disabled={!searchInput.trim()}
-          className="
-            w-full sm:w-auto
-            bg-blue-600
-            hover:bg-blue-700
-            text-white
-            px-4
-            py-2
-            rounded
-            disabled:opacity-50
-            transition
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setSearchError("");
+          }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                 handleSearch();
+              }
+            }}
+            className="
+              flex-1
+              min-w-0
+              p-2.5
+              border
+              border-gray-300
+              dark:border-gray-700
+              rounded-lg
+              bg-white
+              dark:bg-gray-900
+              text-gray-900
+              dark:text-white
+              outline-none
+              focus:ring-2
+              focus:ring-blue-500
+            "
+         />
+
+         <button
+           onClick={handleSearch}
+           disabled={!searchInput.trim()}
+           className="
+             w-full
+             sm:w-auto
+             bg-blue-600
+             hover:bg-blue-700
+             text-white
+             px-4
+             py-2
+             rounded-lg
+             disabled:opacity-50
+             transition
+           "
+         >
+           Search
+         </button>
+
+         <button
+           onClick={askAI}
+           disabled={!searchInput.trim()}
+           className="
+             w-full
+             sm:w-auto
+             bg-green-600
+             hover:bg-green-700
+             text-white
+             px-4
+             py-2
+             rounded-lg
+             disabled:opacity-50
+             transition
           "
         >
-          Search
+          Ask RevelaAI
         </button>
+      </div>
 
-        <button
-          onClick={askAI}
-          disabled={!searchInput.trim()}
-          className="
-            w-full sm:w-auto
-            bg-green-600
-            hover:bg-green-700
-            text-white
-            px-4
-            py-2
-            rounded
-            disabled:opacity-50
-            transition
-         "
-       >
-         Ask RevelaAI
-       </button>
-
-      {searchError && <p className="text-sm text-red-500">{searchError}</p>}
-      {viewLevel !== 'books' && (
-        <button onClick={handleBack} className="text-blue-500 underline text-sm">← Back</button>
+      {searchError && (
+        <p className="text-sm text-red-500">
+            {searchError}
+        </p>
       )}
 
       {/* Books */}
