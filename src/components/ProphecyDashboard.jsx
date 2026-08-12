@@ -31,7 +31,7 @@ const PROPHECY_DECODE_ENDPOINT = `${API_URL}/api/prophecy/decode`;
 
 export default function ProphecyDashboard() {
   const { user, isGuest } = useAuth();
-  const { addToHistory } = useHistory();
+  const { addProphecyHistory } = useHistory();
 
   const [searchInput, setSearchInput] = useState("");
   const [decodedData, setDecodedData] = useState([]);
@@ -272,17 +272,11 @@ export default function ProphecyDashboard() {
       const now = new Date().toLocaleString();
       setTimestamp(now);
 
-      if (!isGuest && addToHistory) {
-        await addToHistory({
-          id: Date.now(),
+      if (!isGuest && addProphecyHistory) {
+        await addProphecyHistory({
+          query,
+          results: finalDecoded,
           timestamp: now,
-          type: "prophecy",
-          input: query,
-          output: JSON.stringify(
-            finalDecoded,
-            null,
-            2
-          ),
         });
       }
 
