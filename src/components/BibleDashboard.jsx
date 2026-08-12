@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useAuth } from "@/context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -246,6 +245,7 @@ export default function BibleDashboard() {
      setSearchError("");
 
      return true;
+  };
   
   useEffect(() => {
     if (!highlightedVerseRange) {
@@ -332,14 +332,14 @@ export default function BibleDashboard() {
     setSelectedChapterIndex(null);
     setVerses([]);
     setViewLevel('chapters');
-    setHighlightedVerseIndex(null);
+    setHighlightedVerseRange(null);
   };
 
   const handleChapterClick = (index) => {
     setSelectedChapterIndex(index);
     setVerses(bibleData[selectedBookKey].chapters[index].verses);
     setViewLevel('verses');
-    setHighlightedVerseIndex(null);
+    setHighlightedVerseRange(null);
   };
 
   const handleBack = () => {
@@ -435,60 +435,242 @@ export default function BibleDashboard() {
         </p>
       )}
 
-      {/* Books */}
-      {viewLevel === 'books' && (
-        <ScrollArea className="h-[70vh] space-y-4">
-          <h2 className="font-bold">📖 Bible Books</h2>
-          <div>
-            <h3 className="text-sm font-bold">📜 Old Testament</h3>
-            <ul className="space-y-1">
-              {oldBooks.map((key) => (
-                <li key={key} onClick={() => handleBookClick(key)}
-                  className={`cursor-pointer p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-800 ${
-                    selectedBookKey === key ? 'bg-blue-200 dark:bg-blue-700 font-semibold' : ''
-                  }`}>
-                  {bibleData[key]?.book}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-bold mt-4">✝️ New Testament</h3>
-            <ul className="space-y-1">
-              {newBooks.map((key) => (
-                <li key={key} onClick={() => handleBookClick(key)}
-                  className={`cursor-pointer p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-800 ${
-                    selectedBookKey === key ? 'bg-blue-200 dark:bg-blue-700 font-semibold' : ''
-                  }`}>
-                  {bibleData[key]?.book}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ScrollArea>
-      )}
+      {/* Bible Home / Books */}
+      {viewLevel === "books" && (
+        <div className="space-y-8">
 
-      {/* Chapters */}
-      {viewLevel === 'chapters' && selectedBook && (
-        <div>
-          <h3 className="text-lg font-bold mb-2">📘 {selectedBook.book}</h3>
-          <div className="flex flex-wrap gap-2">
-            {selectedBook.chapters.map((chapter, idx) => (
-              <button key={idx} onClick={() => handleChapterClick(idx)}
-                className={`px-3 py-1 rounded ${
-                  selectedChapterIndex === idx ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'
-                }`}>
-                {chapter.chapter}
+        {/* Bible Home Header */}
+        <div className="
+          rounded-2xl
+          border
+          border-gray-200
+          dark:border-gray-800
+          bg-white
+          dark:bg-gray-900
+          p-5
+          sm:p-6
+        ">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            📖 Bible
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Choose a book to begin reading Scripture.
+          </p>
+        </div>
+
+        {/* Old Testament */}
+        <section>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              📜 Old Testament
+            </h3>
+
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {oldBooks.length} books
+            </p>
+          </div>
+
+          <div className="
+            grid
+            grid-cols-1
+            min-[420px]:grid-cols-2
+            md:grid-cols-3
+            lg:grid-cols-4
+            xl:grid-cols-5
+            gap-3
+          ">
+            {oldBooks.map((key, index) => (
+              <button
+                key={key}
+                onClick={() => handleBookClick(key)}
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-200
+                  dark:border-gray-800
+                  bg-white
+                  dark:bg-gray-900
+                  p-4
+                  text-left
+                  transition
+                  hover:border-blue-500
+                  hover:bg-blue-50
+                  dark:hover:bg-blue-950
+                  active:scale-[0.98]
+                "
+              >
+                <div className="flex items-center gap-3">
+                <span className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-blue-100
+                  dark:bg-blue-900
+                  text-sm
+                  font-bold
+                  text-blue-700
+                  dark:text-blue-300
+                ">
+                  {index + 1}
+                 </span>
+
+                 <div className="min-w-0">
+                   <div className="font-semibold text-gray-900 dark:text-white truncate">
+                     {bibleData[key]?.book}
+                   </div>
+
+                   <div className="text-xs text-gray-500 dark:text-gray-400">
+                     {bibleData[key]?.chapters?.length || 0} chapters
+                   </div>
+                 </div>
+                </div>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        </section>
 
+        {/* New Testament */}
+        <section>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              ✝️ New Testament
+            </h3>
+
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {newBooks.length} books
+            </p>
+          </div>
+
+          <div className="
+            grid
+            grid-cols-1
+            min-[420px]:grid-cols-2
+            md:grid-cols-3
+            lg:grid-cols-4
+            xl:grid-cols-5
+            gap-3
+          ">
+            {newBooks.map((key, index) => (
+            <button
+              key={key}
+              onClick={() => handleBookClick(key)}
+              className="
+                w-full
+                rounded-xl
+                border
+                border-gray-200
+                dark:border-gray-800
+                bg-white
+                dark:bg-gray-900
+                p-4
+                text-left
+                transition
+                hover:border-blue-500
+                hover:bg-blue-50
+                dark:hover:bg-blue-950
+                active:scale-[0.98]
+              "
+            >
+              <div className="flex items-center gap-3">
+                <span className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-green-100
+                  dark:bg-green-900
+                  text-sm
+                  font-bold
+                  text-green-700
+                  dark:text-green-300
+                ">
+                  {index + 1}
+                </span>
+
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 dark:text-white truncate">
+                    {bibleData[key]?.book}
+                  </div>
+
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {bibleData[key]?.chapters?.length || 0} chapters
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+       </section>
+
+      </div>
+     )}
+
+      {/* Chapters */}
+      {viewLevel === "chapters" && selectedBook && (
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+
+            <div className="mb-6">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                📘 {selectedBook.book}
+              </h3>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select a chapter
+              </p>
+            </div>
+
+            <div className="
+              grid
+              grid-cols-5
+              min-[420px]:grid-cols-6
+              sm:grid-cols-8
+              md:grid-cols-10
+              lg:grid-cols-12
+              gap-2
+            ">
+              {selectedBook.chapters.map((chapter, idx) => (
+                 <button 
+                   key={idx}
+                   onClick={() => handleChapterClick(idx)}
+                   className="
+                     aspect-square
+                     rounded-lg
+                     border
+                     border-gray-200
+                     dark:border-gray-700
+                     bg-gray-100
+                     dark:bg-gray-800
+                     font-semibold
+                     text-gray-800
+                     dark:text-white
+                     hover:bg-blue-600
+                     hover:text-white
+                    transition
+                  "
+                >
+                  {chapter.chapter}
+                </button>
+              ))}
+            </div>
+
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Verses */}
       {viewLevel === 'verses' && selectedBook && (
         <Card>
-          <CardContent className="max-h-[60vh] overflow-y-auto space-y-2">
+          <CardContent className="p-0">
             <h4 className="font-semibold mb-2">{selectedBook.book} {selectedBook.chapters[selectedChapterIndex].chapter}</h4>
             {verses.map((v, idx) => (
               <div
@@ -498,12 +680,13 @@ export default function BibleDashboard() {
                   verseRefs.current[idx] = element;
                 }}
                 className={`
-                  p-3
-                  rounded-lg
+                  px-4
+                  py-4
+                  sm:px-6
+                  sm:py-5
                   text-sm
-                  leading-relaxed
-                  transition-all
-                  duration-700
+                  sm:text-base
+                  leading-7
                    ${
                      highlightedVerseRange &&
                      idx >= highlightedVerseRange.start &&
