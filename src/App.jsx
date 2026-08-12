@@ -1,27 +1,36 @@
-// App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
 import MainDashboardV2 from "./components/MainDashboardV2.jsx";
 import Pages from "./app/pages.jsx";
+import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
-// SPAWrapper: show StartModal if not started
 function SPAWrapper({ children }) {
   const { hasStarted, login, guestMode, loading } = useAuth();
 
-  if (loading) return <div className="p-6">Booting secure session…</div>;
-
-  if (!hasStarted) {
-    return <StartModal onLoginSuccess={login} onGuest={guestMode} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        Booting secure session…
+      </div>
+    );
   }
 
-  // Session started → render wrapped content
+  if (!hasStarted) {
+    return (
+      <StartModal
+        onLoginSuccess={login}
+        onGuest={guestMode}
+      />
+    );
+  }
+
   return children;
 }
 
@@ -32,7 +41,8 @@ export default function App() {
         <HistoryProvider>
           <BrowserRouter>
             <Routes>
-              {/* Root route → MainDashboardV2 */}
+
+              {/* HOME */}
               <Route
                 path="/"
                 element={
@@ -44,7 +54,7 @@ export default function App() {
                 }
               />
 
-              {/* /pages → PagesLoader */}
+              {/* PAGES */}
               <Route
                 path="/pages"
                 element={
@@ -56,8 +66,24 @@ export default function App() {
                 }
               />
 
-              {/* Catch-all → redirect to home */}
-              <Route path="*" element={<Navigate to="/pages" replace />} />
+              {/* BIBLE */}
+              <Route
+                path="/bible"
+                element={
+                  <SPAWrapper>
+                    <Layout>
+                      <BibleDashboard />
+                    </Layout>
+                  </SPAWrapper>
+                }
+              />
+
+              {/* FALLBACK */}
+              <Route
+                path="*"
+                element={<Navigate to="/pages" replace />}
+              />
+
             </Routes>
           </BrowserRouter>
         </HistoryProvider>
