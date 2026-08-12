@@ -202,9 +202,7 @@ function GuestDisturbModal({
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 This reminder appears every{" "}
-                <span className="font-semibold">
-                  30 minutes
-                </span>{" "}
+                <span className="font-semibold">30 minutes</span>{" "}
                 while in guest mode.
               </p>
             </div>
@@ -279,7 +277,7 @@ function OfficialAnnouncementModal({
               dark:bg-gray-950
             "
           >
-            {/* Header */}
+            {/* HEADER */}
 
             <div
               className="
@@ -354,7 +352,7 @@ function OfficialAnnouncementModal({
               </div>
             </div>
 
-            {/* Content */}
+            {/* CONTENT */}
 
             <div className="overflow-y-auto overscroll-contain p-4 text-gray-700 dark:text-gray-300 sm:p-6">
               <div className="space-y-6">
@@ -626,8 +624,6 @@ function FullscreenAIAssistant({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Top bar */}
-
           <div
             className="
               flex
@@ -695,8 +691,6 @@ function FullscreenAIAssistant({
               <X size={20} />
             </button>
           </div>
-
-          {/* Content */}
 
           <div className="min-h-0 flex-1 overflow-hidden">
             <Suspense fallback={<Loading />}>
@@ -776,7 +770,7 @@ export default function MainDashboardV2() {
     user?.role === "guest";
 
   /* =========================================================
-     Sidebar body lock
+     Sidebar scroll lock
   ========================================================= */
 
   useEffect(() => {
@@ -785,13 +779,26 @@ export default function MainDashboardV2() {
       return;
     }
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = "";
     };
   }, [sidebarOpen]);
+
+  /* =========================================================
+     Generic guest feature counter
+  ========================================================= */
+
+  const handleGuestFeatureUse = useCallback(() => {
+    if (!isGuest) {
+      return;
+    }
+
+    setGuestTrials(
+      (current) => current + 1
+    );
+  }, [isGuest]);
 
   /* =========================================================
      Navigation
@@ -801,18 +808,13 @@ export default function MainDashboardV2() {
     (view) => {
       setActiveView(view);
       setSidebarOpen(false);
-
-      if (isGuest) {
-        setGuestTrials(
-          (current) => current + 1
-        );
-      }
+      handleGuestFeatureUse();
     },
-    [isGuest]
+    [handleGuestFeatureUse]
   );
 
   /* =========================================================
-     Start Modal
+     Start modal
   ========================================================= */
 
   useEffect(() => {
@@ -858,16 +860,16 @@ export default function MainDashboardV2() {
     }, []);
 
   /* =========================================================
-     Guest trial
+     Guest trial warning
   ========================================================= */
 
   useEffect(() => {
     if (
       isGuest &&
-      guestTrials >= 5
+      guestTrials === 5
     ) {
       alert(
-        "⚠ Your trial has ended. All features remain accessible, but consider creating an account."
+        "⚠ Your trial has reached 5 feature uses. All features remain accessible, but consider creating an account."
       );
     }
   }, [guestTrials, isGuest]);
@@ -909,7 +911,7 @@ export default function MainDashboardV2() {
   }, []);
 
   /* =========================================================
-     Guest disturb
+     Guest disturbance
   ========================================================= */
 
   useEffect(() => {
@@ -965,8 +967,7 @@ export default function MainDashboardV2() {
     const handler = (event) => {
       if (
         event.ctrlKey &&
-        event.key.toLowerCase() ===
-          "k"
+        event.key.toLowerCase() === "k"
       ) {
         event.preventDefault();
 
@@ -977,9 +978,7 @@ export default function MainDashboardV2() {
         return;
       }
 
-      if (
-        event.key === "Escape"
-      ) {
+      if (event.key === "Escape") {
         setAIFullscreenOpen(false);
         setSidebarOpen(false);
       }
@@ -990,11 +989,12 @@ export default function MainDashboardV2() {
       handler
     );
 
-    return () =>
+    return () => {
       window.removeEventListener(
         "keydown",
         handler
       );
+    };
   }, []);
 
   /* =========================================================
@@ -1056,10 +1056,28 @@ export default function MainDashboardV2() {
       </span>
     );
 
+    const quickLaunchDashboards =
+      DASHBOARDS.filter(
+        (d) =>
+          !d.hidden &&
+          d.key !== "home"
+      ).filter((d) => {
+        if (
+          isGuest &&
+          d.key === "accounts"
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
     return (
       <div className="space-y-6">
 
-        {/* HERO */}
+        {/* =====================================================
+            HERO
+        ===================================================== */}
 
         <div
           className="
@@ -1077,8 +1095,9 @@ export default function MainDashboardV2() {
             lg:p-8
           "
         >
-          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-black/10 blur-2xl" />
+          <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+
+          <div className="pointer-events-none absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-black/10 blur-2xl" />
 
           <div className="relative z-10 flex flex-col gap-3">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1089,7 +1108,7 @@ export default function MainDashboardV2() {
               {userBadge}
             </div>
 
-            <p className="max-w-2xl text-sm text-white/90 sm:text-base">
+            <p className="max-w-2xl text-sm leading-7 text-white/90 sm:text-base">
               RevelaCode is your AI-powered
               Bible decoding workspace —
               prophecy insights, scripture
@@ -1101,7 +1120,9 @@ export default function MainDashboardV2() {
               <button
                 type="button"
                 onClick={() =>
-                  setAIFullscreenOpen(true)
+                  setAIFullscreenOpen(
+                    true
+                  )
                 }
                 className="
                   rounded-xl
@@ -1109,11 +1130,12 @@ export default function MainDashboardV2() {
                   border-white/20
                   bg-white/15
                   px-4
-                  py-2
+                  py-2.5
                   font-semibold
                   text-white
                   transition
                   hover:bg-white/25
+                  active:scale-[0.99]
                 "
               >
                 Open RevelaAI 🤖
@@ -1129,12 +1151,13 @@ export default function MainDashboardV2() {
                     rounded-xl
                     bg-white
                     px-4
-                    py-2
+                    py-2.5
                     font-semibold
                     text-indigo-700
                     shadow
                     transition
                     hover:bg-gray-100
+                    active:scale-[0.99]
                   "
                 >
                   Login / Register 🔐
@@ -1143,7 +1166,7 @@ export default function MainDashboardV2() {
                 <button
                   type="button"
                   onClick={() =>
-                    setActiveView(
+                    handleNavigate(
                       "settings"
                     )
                   }
@@ -1151,12 +1174,13 @@ export default function MainDashboardV2() {
                     rounded-xl
                     bg-white
                     px-4
-                    py-2
+                    py-2.5
                     font-semibold
                     text-indigo-700
                     shadow
                     transition
                     hover:bg-gray-100
+                    active:scale-[0.99]
                   "
                 >
                   Personalize Settings ⚙️
@@ -1166,7 +1190,9 @@ export default function MainDashboardV2() {
           </div>
         </div>
 
-        {/* GREETING */}
+        {/* =====================================================
+            GREETING
+        ===================================================== */}
 
         <div
           className="
@@ -1205,99 +1231,241 @@ export default function MainDashboardV2() {
           </div>
         </div>
 
-        {/* USER DETAILS */}
+        {/* =====================================================
+            MAIN WORKSPACE
+        ===================================================== */}
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+          {/* QUICK LAUNCH */}
+
           <div
             className="
               rounded-2xl
               border
-              border-gray-200/60
+              border-gray-200/70
               bg-white
-              p-5
+              p-4
               shadow-sm
               dark:border-gray-800
               dark:bg-gray-900
+              sm:p-5
               lg:col-span-2
             "
           >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              Quick Launch 🚀
-            </h3>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  Quick Launch
+                </h3>
 
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Jump into your tools instantly.
-            </p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Access your RevelaCode workspace instantly.
+                </p>
+              </div>
 
-            <div className="mt-4 grid h-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {DASHBOARDS
-                .filter(
-                  (d) =>
-                    !d.hidden &&
-                    d.key !==
-                      "home"
-                )
-                .filter((d) => {
-                  if (
-                    isGuest &&
-                    d.key ===
-                      "accounts"
-                  ) {
-                    return false;
-                  }
+              <span
+                className="
+                  hidden
+                  rounded-full
+                  border
+                  border-gray-200
+                  bg-gray-50
+                  px-3
+                  py-1
+                  text-[11px]
+                  font-semibold
+                  text-gray-500
+                  dark:border-gray-700
+                  dark:bg-gray-800
+                  dark:text-gray-400
+                  sm:inline-flex
+                "
+              >
+                {quickLaunchDashboards.length} tools
+              </span>
+            </div>
 
-                  return true;
-                })
-                .map((d) => (
-                  <button
-                    key={d.key}
-                    type="button"
-                    className="
-                      group
-                      h-full
-                      rounded-2xl
-                      border
-                      border-gray-200/60
-                      bg-gray-50
-                      p-4
-                      text-left
-                      transition
-                      hover:-translate-y-0.5
-                      hover:shadow-md
-                      dark:border-gray-700/60
-                      dark:bg-gray-800/60
-                    "
-                    onClick={() =>
-                      handleNavigate(
-                        d.key
-                      )
-                    }
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <d.icon
-                        size={18}
-                        className="text-indigo-600 dark:text-indigo-300"
+            <div
+              className="
+                mt-5
+                grid
+                grid-cols-1
+                gap-3
+                sm:grid-cols-2
+                xl:grid-cols-3
+              "
+            >
+              {quickLaunchDashboards.map(
+                (d) => {
+                  const Icon = d.icon;
+
+                  const isActive =
+                    activeView ===
+                    d.key;
+
+                  return (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() =>
+                        handleNavigate(
+                          d.key
+                        )
+                      }
+                      className="
+                        group
+                        relative
+                        flex
+                        min-h-[152px]
+                        flex-col
+                        justify-between
+                        overflow-hidden
+                        rounded-2xl
+                        border
+                        border-gray-200
+                        bg-gray-50
+                        p-4
+                        text-left
+                        transition-all
+                        duration-200
+                        hover:-translate-y-1
+                        hover:border-gray-300
+                        hover:bg-white
+                        hover:shadow-lg
+                        active:scale-[0.99]
+                        dark:border-gray-800
+                        dark:bg-gray-800/50
+                        dark:hover:border-gray-700
+                        dark:hover:bg-gray-800
+                      "
+                    >
+                      {/* Glow */}
+
+                      <div
+                        className="
+                          pointer-events-none
+                          absolute
+                          -right-8
+                          -top-8
+                          h-24
+                          w-24
+                          rounded-full
+                          bg-indigo-500/5
+                          blur-2xl
+                          transition
+                          group-hover:bg-indigo-500/10
+                        "
                       />
 
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                        {d.title ||
-                          d.label}
-                      </h4>
-                    </div>
+                      {/* TOP */}
 
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      Open{" "}
-                      {d.label}{" "}
-                      tools and explore features.
-                    </p>
+                      <div className="relative z-10 flex items-start justify-between gap-3">
+                        <div
+                          className={`
+                            flex
+                            h-11
+                            w-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            transition-all
+                            duration-200
+                            ${
+                              isActive
+                                ? `bg-gradient-to-br ${
+                                    d.color ||
+                                    "from-indigo-500 to-purple-500"
+                                  } text-white shadow-lg`
+                                : "bg-white text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300"
+                            }
+                          `}
+                        >
+                          <Icon size={20} />
+                        </div>
 
-                    <div className="mt-3 text-xs font-semibold text-indigo-600 opacity-80 transition group-hover:opacity-100 dark:text-indigo-300">
-                      Launch →
-                    </div>
-                  </button>
-                ))}
+                        <span
+                          className="
+                            rounded-full
+                            bg-white
+                            px-2
+                            py-1
+                            text-[10px]
+                            font-bold
+                            text-gray-400
+                            opacity-0
+                            shadow-sm
+                            transition
+                            group-hover:opacity-100
+                            dark:bg-gray-900
+                          "
+                        >
+                          Open
+                        </span>
+                      </div>
+
+                      {/* BOTTOM */}
+
+                      <div className="relative z-10 mt-5">
+                        <h4
+                          className="
+                            truncate
+                            text-sm
+                            font-bold
+                            text-gray-900
+                            dark:text-gray-100
+                          "
+                        >
+                          {d.title ||
+                            d.label}
+                        </h4>
+
+                        <p
+                          className="
+                            mt-1
+                            line-clamp-2
+                            text-xs
+                            leading-5
+                            text-gray-500
+                            dark:text-gray-400
+                          "
+                        >
+                          Explore{" "}
+                          {d.label?.toLowerCase() ||
+                            "this workspace"}{" "}
+                          and access its tools.
+                        </p>
+
+                        <div
+                          className="
+                            mt-3
+                            flex
+                            items-center
+                            gap-1
+                            text-xs
+                            font-bold
+                            text-indigo-600
+                            transition
+                            group-hover:gap-2
+                            dark:text-indigo-400
+                          "
+                        >
+                          Launch
+
+                          <span className="transition-transform group-hover:translate-x-0.5">
+                            →
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                }
+              )}
             </div>
           </div>
+
+          {/* SESSION CARD */}
 
           <div
             className="
@@ -1318,7 +1486,7 @@ export default function MainDashboardV2() {
             </h3>
 
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Account info and access level.
+              Account information and access level.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -1327,7 +1495,7 @@ export default function MainDashboardV2() {
                   Name
                 </p>
 
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
                   {user?.fullName ||
                     "Guest"}
                 </p>
@@ -1338,7 +1506,7 @@ export default function MainDashboardV2() {
                   Contact
                 </p>
 
-                <p className="break-all font-semibold text-gray-900 dark:text-gray-100">
+                <p className="mt-1 break-all font-semibold text-gray-900 dark:text-gray-100">
                   {user?.contact ||
                     "N/A"}
                 </p>
@@ -1349,7 +1517,7 @@ export default function MainDashboardV2() {
                   Role
                 </p>
 
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
                   {user?.role ||
                     "normal"}
                 </p>
@@ -1367,7 +1535,7 @@ export default function MainDashboardV2() {
                     dark:bg-yellow-950/40
                   "
                 >
-                  <p className="text-sm text-gray-800 dark:text-gray-200">
+                  <p className="text-sm leading-6 text-gray-800 dark:text-gray-200">
                     ⚠ Guest accounts can use
                     almost everything, but{" "}
                     <span className="font-semibold">
@@ -1379,18 +1547,21 @@ export default function MainDashboardV2() {
                   <button
                     type="button"
                     onClick={() =>
-                      setShowStartModal(true)
+                      setShowStartModal(
+                        true
+                      )
                     }
                     className="
                       mt-3
                       w-full
                       rounded-xl
                       bg-indigo-600
-                      py-2
+                      py-2.5
                       font-semibold
                       text-white
                       transition
                       hover:bg-indigo-700
+                      active:scale-[0.99]
                     "
                   >
                     Login to Unlock Accounts 🔓
@@ -1401,7 +1572,9 @@ export default function MainDashboardV2() {
           </div>
         </div>
 
-        {/* UPCOMING FEATURES */}
+        {/* =====================================================
+            UPCOMING FEATURES
+        ===================================================== */}
 
         <div
           className="
@@ -1448,10 +1621,12 @@ export default function MainDashboardV2() {
 
   const activeDashboard =
     DASHBOARDS.find(
-      (d) => d.key === activeView
+      (d) =>
+        d.key === activeView
     ) ||
     DASHBOARDS.find(
-      (d) => d.key === "home"
+      (d) =>
+        d.key === "home"
     );
 
   const activeComponent =
@@ -1459,7 +1634,8 @@ export default function MainDashboardV2() {
 
   const aiDashboardElement =
     DASHBOARDS.find(
-      (d) => d.key === "ai"
+      (d) =>
+        d.key === "ai"
     )?.element;
 
   /* =========================================================
@@ -1498,7 +1674,9 @@ export default function MainDashboardV2() {
       <FullscreenAIAssistant
         open={aiFullscreenOpen}
         onClose={() =>
-          setAIFullscreenOpen(false)
+          setAIFullscreenOpen(
+            false
+          )
         }
         aiElement={
           aiDashboardElement
@@ -1517,14 +1695,14 @@ export default function MainDashboardV2() {
           dark:bg-gray-950
         "
       >
-        {/* ===================================================
-            MOBILE DRAWER + OVERLAY
-        =================================================== */}
+        {/* =====================================================
+            MOBILE SIDEBAR + OVERLAY
+        ===================================================== */}
 
         <AnimatePresence>
           {sidebarOpen && (
             <>
-              {/* Mobile overlay — NO BLUR */}
+              {/* Overlay — intentionally NO backdrop-blur */}
 
               <motion.button
                 type="button"
@@ -1554,7 +1732,7 @@ export default function MainDashboardV2() {
                 }
               />
 
-              {/* Sidebar */}
+              {/* Drawer */}
 
               <motion.aside
                 initial={{
@@ -1593,7 +1771,7 @@ export default function MainDashboardV2() {
                   lg:z-30
                 "
               >
-                {/* Sidebar header */}
+                {/* Drawer header */}
 
                 <div
                   className="
@@ -1645,7 +1823,9 @@ export default function MainDashboardV2() {
                   <button
                     type="button"
                     onClick={() =>
-                      setSidebarOpen(false)
+                      setSidebarOpen(
+                        false
+                      )
                     }
                     className="
                       rounded-xl
@@ -1891,16 +2071,12 @@ export default function MainDashboardV2() {
                       {theme ===
                       "dark" ? (
                         <>
-                          <Sun
-                            size={15}
-                          />
+                          <Sun size={15} />
                           Light
                         </>
                       ) : (
                         <>
-                          <Moon
-                            size={15}
-                          />
+                          <Moon size={15} />
                           Dark
                         </>
                       )}
@@ -1929,9 +2105,7 @@ export default function MainDashboardV2() {
                         dark:hover:bg-red-950/30
                       "
                     >
-                      <LogOut
-                        size={15}
-                      />
+                      <LogOut size={15} />
                       Logout
                     </button>
                   </div>
@@ -1941,9 +2115,9 @@ export default function MainDashboardV2() {
           )}
         </AnimatePresence>
 
-        {/* ===================================================
-            MAIN
-        =================================================== */}
+        {/* =====================================================
+            MAIN CONTENT
+        ===================================================== */}
 
         <main
           className="
@@ -1982,7 +2156,7 @@ export default function MainDashboardV2() {
                 lg:px-6
               "
             >
-              {/* Left */}
+              {/* LEFT */}
 
               <div className="flex min-w-0 items-center gap-2">
                 <button
@@ -2005,6 +2179,7 @@ export default function MainDashboardV2() {
                     shadow-sm
                     transition
                     hover:bg-gray-100
+                    active:scale-95
                     dark:border-gray-800
                     dark:bg-gray-900
                     dark:text-gray-200
@@ -2042,7 +2217,7 @@ export default function MainDashboardV2() {
                 </div>
               </div>
 
-              {/* Right */}
+              {/* RIGHT */}
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <Notifications />
@@ -2063,9 +2238,7 @@ export default function MainDashboardV2() {
                     dark:bg-gray-900
                   "
                 >
-                  <AvatarMenu
-                    user={user}
-                  />
+                  <AvatarMenu user={user} />
                 </div>
 
                 {isGuest && (
@@ -2097,7 +2270,7 @@ export default function MainDashboardV2() {
             </div>
           </header>
 
-          {/* Content */}
+          {/* Dashboard content */}
 
           <section
             className="
@@ -2115,14 +2288,9 @@ export default function MainDashboardV2() {
               lg:py-6
             "
           >
-            <Suspense
-              fallback={
-                <Loading />
-              }
-            >
+            <Suspense fallback={<Loading />}>
               <ErrorBoundary>
-                {activeView ===
-                "home" ? (
+                {activeView === "home" ? (
                   <HomePreview />
                 ) : activeComponent ? (
                   React.cloneElement(
@@ -2131,7 +2299,7 @@ export default function MainDashboardV2() {
                       onGuestUse:
                         handleGuestFeatureUse,
                       onNavigate:
-                        setActiveView,
+                        handleNavigate,
                     }
                   )
                 ) : (
@@ -2161,7 +2329,7 @@ export default function MainDashboardV2() {
             </Suspense>
           </section>
 
-          {/* AI Floating Action Button */}
+          {/* AI FAB */}
 
           <button
             type="button"
