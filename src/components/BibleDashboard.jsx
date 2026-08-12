@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useAuth } from "@/context/AuthContext";
@@ -32,6 +32,7 @@ export default function BibleDashboard() {
   const [searchInput, setSearchInput] = useState('');
   const [highlightedVerseIndex, setHighlightedVerseIndex] = useState(null);
   const [searchError, setSearchError] = useState('');
+  const verseRefs = useRef({});
 
   // Load offline Bible JSON
   useEffect(() => {
@@ -48,15 +49,21 @@ export default function BibleDashboard() {
     fetchBibleData();
   }, []);
   const openVerseReference = (reference) => {
-    if (!reference || !bibleData || !bookKeys.length)
+    if (!reference || !bibleData || !bookKeys.length) {
       return false;
+    }
 
-    const match = reference.match(
+    const cleanedReference = decodeURIComponent(reference)
+      .trim()
+      .replace(/\s+/g, " ");
+
+    const match = cleanedReference.match(
       /^(.+?)\s+(\d+):(\d+)$/
     );
 
-    if (!match)
+    if (!match) {
       return false;
+    }
 
     const [, bookNameRaw, chapterNum, verseNum] = match;
 
@@ -65,39 +72,53 @@ export default function BibleDashboard() {
       .replace(/\s+/g, " ")
       .toLowerCase();
 
-    const bookKey = bookKeys.find(
-      (key) =>
-        bibleData[key]?.book
-          .toLowerCase()
-          .replace(/\s+/g, " ") === normalizedBook
-    );
+    const bookKey = bookKeys.find((key) => {
+      const bookName = bibleData[key]?.book;
 
-    if (!bookKey)
+      return (
+        bookName &&
+        bookName
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase() === normalizedBook
+      );
+    });
+
+    if (!bookKey) {
+       return false;
+    }
+
+    const chapterIndex = Number(chapterNum) - 1;
+    const verseIndex = Number(verseNum) - 1;
+
+    const chapters = bibleData[bookKey]?.chapters || [];
+
+    const chapter = chapters[chapterIndex];
+
+    if (!chapter) {
       return false;
+    }
 
-    const chapterIndex = parseInt(chapterNum, 10) - 1;
-    const verseIndex = parseInt(verseNum, 10) - 1;
+    const versesArray = chapter.verses || [];
 
-    const versesArray =
-      bibleData[bookKey]?.chapters?.[chapterIndex]?.verses || [];
-
-    if (!versesArray.length)
+    if (!versesArray.length) {
       return false;
+    }
 
+    if (verseIndex < 0 || verseIndex >= versesArray.length) {
+      return false;
+    }
+
+    // Open the exact book/chapter/verse
     setSelectedBookKey(bookKey);
     setSelectedChapterIndex(chapterIndex);
-    setVerses(versesArray);
+    setVerses([...versesArray]);
     setViewLevel("verses");
     setHighlightedVerseIndex(verseIndex);
+    setSearchError("");
 
-    setTimeout(() => {
-      document
-        .getElementById(`verse-${verseIndex}`)
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-    }, 300);
+    return true;
+  };
 
     return true;
   };
