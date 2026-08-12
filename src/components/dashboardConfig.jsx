@@ -74,7 +74,7 @@ const AIAssistantDashboard = safeLazy(
    STATIC HOME (never lazy, never risky)
 ====================================================== */
 
-function HomeDashboard() {
+function HomeDashboard({ onNavigate }) {
   const historyCount = Number(
     localStorage.getItem("revelacode_history_count") || 0
   );
@@ -161,23 +161,79 @@ function HomeDashboard() {
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="rounded-2xl border p-5">
-        <h3 className="text-lg font-bold mb-3">Quick Actions ⚡</h3>
+      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+        <h3 className="text-lg font-bold mb-3 text-gray-900 dark:text-gray-100">
+          Quick Actions ⚡
+        </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {quickActions.map((a) => (
             <button
               key={a.key}
-              className="text-left rounded-2xl border p-4 hover:shadow-md transition"
+              type="button"
+              onClick={() => onNavigate?.(a.key)}
+              className="
+                group
+                w-full
+                text-left
+                rounded-2xl
+                border
+                border-gray-200/60
+                dark:border-gray-700/60
+                bg-white
+                dark:bg-gray-800/60
+                p-4
+                hover:shadow-md
+                hover:-translate-y-0.5
+                active:scale-[0.98]
+                transition-all
+                duration-200
+                cursor-pointer
+              "
             >
-              <div className="flex items-center gap-2">
-                <a.icon className="w-5 h-5 text-indigo-600" />
-                <span className="font-semibold">{a.title}</span>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <a.icon className="w-5 h-5 shrink-0 text-indigo-600 dark:text-indigo-300" />
+
+                  <span className="font-semibold truncate text-gray-900 dark:text-gray-100">
+                    {a.title}
+                  </span>
+                </div>
+
+                <span className="
+                  shrink-0
+                  text-[10px]
+                  font-bold
+                  px-2
+                  py-1
+                  rounded-full
+                  bg-indigo-100
+                  dark:bg-indigo-900/40
+                  text-indigo-700
+                  dark:text-indigo-300
+                ">
+                  {a.badge}
+                </span>
               </div>
-              <p className="text-sm mt-2">{a.desc}</p>
-            </button>
-          ))}
-        </div>
+
+              <p className="text-sm mt-2 text-gray-600 dark:text-gray-300">
+                {a.desc}
+              </p>
+
+             <div className="
+               mt-3
+               text-xs
+               font-semibold
+               text-indigo-600
+               dark:text-indigo-300
+               group-hover:translate-x-1
+               transition-transform
+            ">
+               Open →
+             </div>
+           </button>
+         ))}
+       </div>
       </div>
 
       {/* CONTINUE WHERE YOU LEFT OFF */}
