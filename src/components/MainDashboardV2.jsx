@@ -715,10 +715,11 @@ export default function MainDashboardV2() {
     );
   };
 
-  const activeComponent =
-    activeView === "home"
-      ? <HomePreview />
-      : DASHBOARDS.find((d) => d.key === activeView)?.element || <HomePreview />;
+  const activeDashboard =
+    DASHBOARDS.find((d) => d.key === activeView) ||
+    DASHBOARDS.find((d) => d.key === "home");
+
+  const activeComponent = activeDashboard?.element;
 
   const aiDashboardElement = DASHBOARDS.find((d) => d.key === "ai")?.element;
 
@@ -874,7 +875,8 @@ return (
             <ErrorBoundary>
               {activeComponent &&
                 React.cloneElement(activeComponent, {
-                  onGuestUse: handleGuestFeatureUse
+                  onGuestUse: handleGuestFeatureUse,
+                  onNavigate: setActiveView,
                 })}
             </ErrorBoundary>
           </Suspense>
