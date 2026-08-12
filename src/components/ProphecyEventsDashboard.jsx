@@ -199,7 +199,7 @@ export default function ProphecyEventsDashboard() {
         )}
 
         {/* Result count */}
-        <div className="w-full md:w-auto md:ml-auto text-center md:text-right"
+        <div className="w-full md:w-auto md:ml-auto text-center md:text-right">
           Showing{" "}
           <span className="font-semibold text-gray-800 dark:text-gray-200">
             {filtered.length}
