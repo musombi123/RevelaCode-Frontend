@@ -2161,9 +2161,7 @@ export default function MainDashboardV2() {
               <div className="flex min-w-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    setSidebarOpen(true)
-                  }
+                  onClick={() => setSidebarOpen((open) => !open)}
                   className="
                     flex
                     h-10
@@ -2177,18 +2175,20 @@ export default function MainDashboardV2() {
                     bg-white
                     text-gray-700
                     shadow-sm
-                    transition
+                    transition-all
+                    duration-200
                     hover:bg-gray-100
+                    hover:shadow-md
                     active:scale-95
                     dark:border-gray-800
                     dark:bg-gray-900
                     dark:text-gray-200
                     dark:hover:bg-gray-800
-                    lg:hidden
                   "
-                  aria-label="Open navigation"
+                    aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
+                    title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
                 >
-                  <Menu size={20} />
+                  {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
 
                 <div className="min-w-0">
