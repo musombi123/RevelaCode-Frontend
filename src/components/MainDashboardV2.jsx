@@ -1,13 +1,26 @@
+// src/components/MainDashboardV2.jsx
+
 import React, {
   useState,
   useEffect,
   Suspense,
-  useCallback
+  useCallback,
 } from "react";
 
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Moon, Sun, LogOut, Menu, X, Crown, ShieldCheck, Sparkles } from "lucide-react";
+
+import {
+  Bot,
+  Moon,
+  Sun,
+  LogOut,
+  Menu,
+  X,
+  Crown,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
@@ -20,76 +33,179 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 /* =========================================================
-   Guest Disturb Modal (Full-screen blocker every 30 minutes)
+   Guest Disturb Modal
 ========================================================= */
-function GuestDisturbModal({ open, onClose, onCreateAccount }) {
+
+function GuestDisturbModal({
+  open,
+  onClose,
+  onCreateAccount,
+}) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
           className="
-            fixed inset-0
+            fixed
+            inset-0
             z-[9998]
+            flex
+            items-center
+            justify-center
             bg-gray-100
+            p-4
             dark:bg-gray-950
-            flex flex-col
           "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            initial={{ scale: 0.92, y: 18, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: 10, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 220, damping: 20 }}
-            className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden"
+            initial={{
+              scale: 0.94,
+              y: 18,
+              opacity: 0,
+            }}
+            animate={{
+              scale: 1,
+              y: 0,
+              opacity: 1,
+            }}
+            exit={{
+              scale: 0.96,
+              y: 10,
+              opacity: 0,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 240,
+              damping: 22,
+            }}
+            className="
+              w-full
+              max-w-lg
+              overflow-hidden
+              rounded-2xl
+              border
+              border-gray-200
+              bg-white
+              shadow-2xl
+              dark:border-gray-800
+              dark:bg-gray-900
+            "
           >
-            <div className="p-5 border-b border-gray-200/60 dark:border-gray-800 flex items-start justify-between gap-3">
-              <div>
+            <div
+              className="
+                flex
+                items-start
+                justify-between
+                gap-3
+                border-b
+                border-gray-200
+                p-5
+                dark:border-gray-800
+              "
+            >
+              <div className="min-w-0">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   Guest Mode Checkpoint ⚠️
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                  You’ve been running in guest mode for a while. Some things might not save properly.
+
+                <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                  You have been running in guest mode for a while.
+                  Some activity may not be saved permanently.
                 </p>
               </div>
 
               <button
+                type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                className="
+                  shrink-0
+                  rounded-xl
+                  p-2
+                  text-gray-500
+                  transition
+                  hover:bg-gray-100
+                  dark:text-gray-400
+                  dark:hover:bg-gray-800
+                "
                 title="Close"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div className="rounded-xl bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200/60 dark:border-yellow-900/40 p-4">
-                <p className="text-sm text-gray-800 dark:text-gray-200">
-                  ⚡ <span className="font-semibold">Quick heads up:</span> Guest sessions are great for testing,
-                  but you’ll miss out on saved history, linked accounts, and personalized settings.
+            <div className="space-y-4 p-5">
+              <div
+                className="
+                  rounded-xl
+                  border
+                  border-yellow-200
+                  bg-yellow-50
+                  p-4
+                  dark:border-yellow-900/50
+                  dark:bg-yellow-950/40
+                "
+              >
+                <p className="text-sm leading-6 text-gray-800 dark:text-gray-200">
+                  ⚡{" "}
+                  <span className="font-semibold">
+                    Quick heads up:
+                  </span>{" "}
+                  Guest sessions are useful for exploring,
+                  but accounts unlock saved history,
+                  linked services, and personalization.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
+                  type="button"
                   onClick={onCreateAccount}
-                  className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
+                  className="
+                    w-full
+                    rounded-xl
+                    bg-green-600
+                    py-3
+                    font-semibold
+                    text-white
+                    shadow
+                    transition
+                    hover:bg-green-700
+                    active:scale-[0.99]
+                  "
                 >
                   Create Account 🚀
                 </button>
 
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold transition"
+                  className="
+                    w-full
+                    rounded-xl
+                    bg-gray-100
+                    py-3
+                    font-semibold
+                    text-gray-900
+                    transition
+                    hover:bg-gray-200
+                    dark:bg-gray-800
+                    dark:text-gray-100
+                    dark:hover:bg-gray-700
+                  "
                 >
                   Continue as Guest
                 </button>
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                This reminder pops up every <span className="font-semibold">30 minutes</span> in guest mode.
+                This reminder appears every{" "}
+                <span className="font-semibold">
+                  30 minutes
+                </span>{" "}
+                while in guest mode.
               </p>
             </div>
           </motion.div>
@@ -100,220 +216,382 @@ function GuestDisturbModal({ open, onClose, onCreateAccount }) {
 }
 
 /* =========================================================
-   REVELACODE OFFICIAL ANNOUNCEMENT MODAL
+   Official Announcement Modal
 ========================================================= */
 
-function OfficialAnnouncementModal({ open, onClose }) {
+function OfficialAnnouncementModal({
+  open,
+  onClose,
+}) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          className="
+            fixed
+            inset-0
+            z-[10000]
+            flex
+            items-center
+            justify-center
+            bg-black/80
+            p-3
+            sm:p-4
+          "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            initial={{ scale: 0.92, y: 30, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.95, y: 10, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 220, damping: 20 }}
-            className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl"
+            initial={{
+              scale: 0.94,
+              y: 24,
+              opacity: 0,
+            }}
+            animate={{
+              scale: 1,
+              y: 0,
+              opacity: 1,
+            }}
+            exit={{
+              scale: 0.97,
+              y: 10,
+              opacity: 0,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 220,
+              damping: 22,
+            }}
+            className="
+              flex
+              max-h-[94vh]
+              w-full
+              max-w-4xl
+              flex-col
+              overflow-hidden
+              rounded-3xl
+              border
+              border-gray-200
+              bg-white
+              shadow-2xl
+              dark:border-gray-800
+              dark:bg-gray-950
+            "
           >
+            {/* Header */}
 
-            {/* HEADER */}
-            <div className="sticky top-0 z-20 bg-white/90 dark:bg-gray-950/90 backdrop-blur border-b border-gray-200 dark:border-gray-800 p-6 flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+            <div
+              className="
+                sticky
+                top-0
+                z-20
+                shrink-0
+                border-b
+                border-gray-200
+                bg-white
+                p-4
+                dark:border-gray-800
+                dark:bg-gray-950
+                sm:p-6
+              "
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className="
+                      flex
+                      h-11
+                      w-11
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-2xl
+                      bg-gradient-to-br
+                      from-indigo-600
+                      via-purple-600
+                      to-pink-600
+                      text-xl
+                      font-bold
+                      text-white
+                      shadow-lg
+                      sm:h-12
+                      sm:w-12
+                    "
+                  >
                     R
                   </div>
 
-                  <div>
-                    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-extrabold text-gray-900 dark:text-gray-100 sm:text-2xl">
                       REVELACODE OFFICIAL STATEMENT
                     </h2>
 
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
                       Important platform development announcement
                     </p>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={onClose}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                <X size={20} />
-              </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="
+                    shrink-0
+                    rounded-xl
+                    p-2
+                    text-gray-500
+                    transition
+                    hover:bg-gray-100
+                    hover:text-gray-900
+                    dark:text-gray-400
+                    dark:hover:bg-gray-800
+                    dark:hover:text-white
+                  "
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            {/* CONTENT */}
-            <div className="p-6 space-y-6 text-gray-700 dark:text-gray-300">
+            {/* Content */}
 
-              {/* ALERT */}
-              <div className="rounded-2xl border border-yellow-300/40 dark:border-yellow-800/40 bg-yellow-50 dark:bg-yellow-950/20 p-5">
-                <h3 className="font-bold text-lg text-yellow-800 dark:text-yellow-300 mb-2">
-                  ⚠ Temporary Delay Notice
-                </h3>
-
-                <p className="leading-relaxed">
-                  Sorry for the inconvenience. We are working effortlessly
-                  behind the scenes to ensure everything coming soon will be
-                  stable, intelligent, secure, and super perfect for every user.
-                </p>
-              </div>
-
-              {/* BODY */}
-              <div className="space-y-5 leading-relaxed">
-
-                <p>
-                  To everyone who has been waiting, supporting, and believing
-                  in the vision of RevelaCode — thank you.
-                </p>
-
-                <p>
-                  The RevelaCode project was originally scheduled for release
-                  this May. However, due to unavoidable circumstances involving
-                  system development, infrastructure improvements, integration
-                  challenges, and long-term platform planning, we have made
-                  the difficult decision to postpone the official launch.
-                </p>
-
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  This decision was not made lightly.
-                </p>
-
-                <p>
-                  As development continued, it became clear that releasing
-                  the platform before it fully met our standards would
-                  compromise the quality, stability, and long-term vision
-                  of the ecosystem we are building.
-                </p>
-
-                <div className="rounded-2xl p-5 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg">
-                  <h3 className="text-xl font-bold mb-3">
-                    RevelaCode Has Evolved
+            <div className="overflow-y-auto overscroll-contain p-4 text-gray-700 dark:text-gray-300 sm:p-6">
+              <div className="space-y-6">
+                <div
+                  className="
+                    rounded-2xl
+                    border
+                    border-yellow-300/40
+                    bg-yellow-50
+                    p-5
+                    dark:border-yellow-800/40
+                    dark:bg-yellow-950/20
+                  "
+                >
+                  <h3 className="mb-2 text-lg font-bold text-yellow-800 dark:text-yellow-300">
+                    ⚠ Temporary Delay Notice
                   </h3>
 
-                  <p className="text-white/90">
-                    RevelaCode is no longer just a simple project.
-                    It has evolved into a much larger AI-powered ecosystem
-                    integrating theology, education, programming,
-                    agriculture, intelligent technologies, and advanced
-                    knowledge systems through the MVI-AI Engine and
-                    RevelaAI infrastructure.
-                  </p>
-                </div>
-
-                {/* CURRENT FOCUS */}
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4">
-                    Our Team Is Currently Focused On:
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                    {[
-                      "Strengthening the AI systems",
-                      "Improving frontend and backend integration",
-                      "Refining documentation and infrastructure",
-                      "Enhancing security and scalability",
-                      "Preparing a more stable user experience",
-                      "Optimizing RevelaAI performance",
-                    ].map((item, index) => (
-                      <div
-                        key={index}
-                        className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full bg-green-500" />
-                          <p className="font-medium">{item}</p>
-                        </div>
-                      </div>
-                    ))}
-
-                  </div>
-                </div>
-
-                {/* FINAL MESSAGE */}
-                <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/20 p-5">
                   <p className="leading-relaxed">
-                    We understand the anticipation surrounding this launch,
-                    and we sincerely appreciate the patience, encouragement,
-                    and continued support from everyone following the journey.
-                  </p>
-
-                  <p className="mt-4 font-semibold text-indigo-700 dark:text-indigo-300">
-                    This delay is not a step backward.
-                  </p>
-
-                  <p className="mt-2">
-                    It is a strategic step toward building something stronger,
-                    smarter, and more impactful for the future.
+                    Sorry for the inconvenience. We are
+                    working behind the scenes to ensure
+                    everything coming soon is stable,
+                    intelligent, secure, and ready for
+                    every user.
                   </p>
                 </div>
 
-                {/* CONTACTS */}
-                <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4">
-                    CONTACT INFORMATION
-                  </h3>
+                <div className="space-y-5 leading-relaxed">
+                  <p>
+                    To everyone who has been waiting,
+                    supporting, and believing in the vision
+                    of RevelaCode — thank you.
+                  </p>
 
-                  <div className="space-y-3 text-sm">
+                  <p>
+                    The RevelaCode project was originally
+                    scheduled for release this May.
+                    However, due to unavoidable circumstances
+                    involving system development,
+                    infrastructure improvements,
+                    integration challenges, and long-term
+                    platform planning, we made the
+                    difficult decision to postpone the
+                    official launch.
+                  </p>
 
-                    <div>
-                      <span className="font-semibold">Official Email:</span>{" "}
-                      revelacodepro@gmail.com
-                    </div>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">
+                    This decision was not made lightly.
+                  </p>
 
-                    <div>
-                      <span className="font-semibold">Personal Contact:</span>{" "}
-                      musombiwilliam769@mail.com
-                    </div>
+                  <p>
+                    As development continued, it became
+                    clear that releasing the platform before
+                    it met our standards would compromise
+                    quality, stability, and the long-term
+                    vision of the ecosystem we are building.
+                  </p>
 
+                  <div
+                    className="
+                      rounded-2xl
+                      bg-gradient-to-br
+                      from-indigo-600
+                      via-purple-600
+                      to-pink-600
+                      p-5
+                      text-white
+                      shadow-lg
+                    "
+                  >
+                    <h3 className="mb-3 text-xl font-bold">
+                      RevelaCode Has Evolved
+                    </h3>
+
+                    <p className="text-white/90">
+                      RevelaCode is no longer just a simple
+                      project. It has evolved into a broader
+                      AI-powered ecosystem integrating
+                      theology, education, programming,
+                      agriculture, intelligent technologies,
+                      and advanced knowledge systems through
+                      the MVI-AI Engine and RevelaAI
+                      infrastructure.
+                    </p>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-                    <p className="font-bold text-gray-900 dark:text-gray-100">
-                      — REVELACODE OFFICIALS
+                  <div>
+                    <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+                      Our Team Is Currently Focused On:
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {[
+                        "Strengthening the AI systems",
+                        "Improving frontend and backend integration",
+                        "Refining documentation and infrastructure",
+                        "Enhancing security and scalability",
+                        "Preparing a more stable user experience",
+                        "Optimizing RevelaAI performance",
+                      ].map((item) => (
+                        <div
+                          key={item}
+                          className="
+                            rounded-2xl
+                            border
+                            border-gray-200
+                            bg-gray-50
+                            p-4
+                            dark:border-gray-800
+                            dark:bg-gray-900
+                          "
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-3 w-3 rounded-full bg-green-500" />
+
+                            <p className="font-medium">
+                              {item}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-indigo-200
+                      bg-indigo-50
+                      p-5
+                      dark:border-indigo-900/40
+                      dark:bg-indigo-950/20
+                    "
+                  >
+                    <p className="leading-relaxed">
+                      We understand the anticipation
+                      surrounding this launch and sincerely
+                      appreciate the patience, encouragement,
+                      and continued support from everyone
+                      following the journey.
                     </p>
 
-                    <div className="mt-4 space-y-2">
+                    <p className="mt-4 font-semibold text-indigo-700 dark:text-indigo-300">
+                      This delay is not a step backward.
+                    </p>
+
+                    <p className="mt-2">
+                      It is a strategic step toward building
+                      something stronger, smarter, and more
+                      impactful for the future.
+                    </p>
+                  </div>
+
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-gray-200
+                      bg-gray-50
+                      p-5
+                      dark:border-gray-800
+                      dark:bg-gray-900
+                    "
+                  >
+                    <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+                      CONTACT INFORMATION
+                    </h3>
+
+                    <div className="space-y-3 text-sm">
                       <div>
-                        <p className="font-semibold">
-                          Musombi William
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Lead Architect
-                        </p>
+                        <span className="font-semibold">
+                          Official Email:
+                        </span>{" "}
+                        revelacodepro@gmail.com
                       </div>
 
                       <div>
-                        <p className="font-semibold">
-                          Makenji Mellan
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Documentation Leader & Support Team Admin
-                        </p>
+                        <span className="font-semibold">
+                          Personal Contact:
+                        </span>{" "}
+                        musombiwilliam769@mail.com
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
+                      <p className="font-bold text-gray-900 dark:text-gray-100">
+                        — REVELACODE OFFICIALS
+                      </p>
+
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <p className="font-semibold">
+                            Musombi William
+                          </p>
+
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Lead Architect
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold">
+                            Makenji Mellan
+                          </p>
+
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Documentation Leader & Support Team Admin
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-              </div>
-
-              {/* BUTTON */}
-              <div className="pt-2">
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold shadow-xl transition"
+                  className="
+                    w-full
+                    rounded-2xl
+                    bg-gradient-to-r
+                    from-indigo-600
+                    via-purple-600
+                    to-pink-600
+                    py-4
+                    font-bold
+                    text-white
+                    shadow-xl
+                    transition
+                    hover:opacity-90
+                    active:scale-[0.99]
+                  "
                 >
                   Continue to RevelaCode 🚀
                 </button>
               </div>
-
             </div>
           </motion.div>
         </motion.div>
@@ -323,62 +601,125 @@ function OfficialAnnouncementModal({ open, onClose }) {
 }
 
 /* =========================================================
-   Fullscreen AI Assistant Dashboard (Overlay)
+   Fullscreen AI Assistant
 ========================================================= */
-function FullscreenAIAssistant({ open, onClose, aiElement }) {
+
+function FullscreenAIAssistant({
+  open,
+  onClose,
+  aiElement,
+}) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[9998] bg-gray-100 dark:bg-gray-950"
+          className="
+            fixed
+            inset-0
+            z-[9998]
+            flex
+            flex-col
+            bg-gray-100
+            dark:bg-gray-950
+          "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Top Bar */}
-          <div className="h-14 px-2 sm:px-4 flex items-center justify-between px-4 border-b border-gray-300/40 dark:border-gray-700/40">
-            <div className="flex items-center gap-3">
+          {/* Top bar */}
+
+          <div
+            className="
+              flex
+              h-14
+              shrink-0
+              items-center
+              justify-between
+              border-b
+              border-gray-200
+              bg-white
+              px-3
+              dark:border-gray-800
+              dark:bg-gray-950
+              sm:px-4
+            "
+          >
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
-                <Bot size={18} className="text-green-600" />
+                <Bot
+                  size={18}
+                  className="text-green-600"
+                />
+
                 <h3 className="font-bold text-gray-900 dark:text-gray-100">
                   RevelaAI
                 </h3>
               </div>
-              <span className="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-800/50">
+
+              <span
+                className="
+                  hidden
+                  rounded-full
+                  border
+                  border-green-200
+                  bg-green-100
+                  px-2
+                  py-1
+                  text-[10px]
+                  font-semibold
+                  text-green-700
+                  dark:border-green-800/50
+                  dark:bg-green-900/30
+                  dark:text-green-300
+                  sm:inline-flex
+                "
+              >
                 FULLSCREEN MODE
               </span>
             </div>
 
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 transition"
+              className="
+                rounded-xl
+                p-2
+                text-gray-500
+                transition
+                hover:bg-gray-200
+                dark:text-gray-400
+                dark:hover:bg-gray-800
+              "
               title="Close AI"
             >
-              <X />
+              <X size={20} />
             </button>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden h-[calc(100vh-56px)]">
+
+          <div className="min-h-0 flex-1 overflow-hidden">
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {aiElement ? (
                   React.cloneElement(aiElement)
                 ) : (
-                  <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow">
+                  <div className="m-4 rounded-2xl border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-900">
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                       AI Dashboard Not Found
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                      Make sure you have a dashboard with key{" "}
-                      <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
+
+                    <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                      Make sure you have a dashboard
+                      with key{" "}
+                      <code className="rounded bg-gray-200 px-1 py-0.5 dark:bg-gray-800">
                         ai
                       </code>{" "}
-                        inside{" "}
-                      <code className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800">
+                      inside{" "}
+                      <code className="rounded bg-gray-200 px-1 py-0.5 dark:bg-gray-800">
                         DASHBOARDS
                       </code>
-                        .
+                      .
                     </p>
                   </div>
                 )}
@@ -391,65 +732,150 @@ function FullscreenAIAssistant({ open, onClose, aiElement }) {
   );
 }
 
+/* =========================================================
+   Main Dashboard
+========================================================= */
+
 export default function MainDashboardV2() {
-  /* ---------------- Core State ---------------- */
-  const defaultDashboard = "home"; // always start on home
-  const [activeView, setActiveView] = useState(defaultDashboard);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const defaultDashboard = "home";
 
-  // AI: fullscreen instead of small dock
-  const [aiFullscreenOpen, setAIFullscreenOpen] = useState(false);
+  const [activeView, setActiveView] =
+    useState(defaultDashboard);
 
-  const [showStartModal, setShowStartModal] = useState(false);
-  const [guestTrials, setGuestTrials] = useState(0);
-  const [dailyGreeting, setDailyGreeting] = useState("");
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
 
-  // Guest disturb every 30 minutes
-  const [guestDisturbOpen, setGuestDisturbOpen] = useState(false);
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [searchParams] =
+    useSearchParams();
 
-  const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const [aiFullscreenOpen, setAIFullscreenOpen] =
+    useState(false);
 
-  const isGuest = user?.role === "guest";
+  const [showStartModal, setShowStartModal] =
+    useState(false);
 
-  /* ---------------- Start Modal ---------------- */
+  const [guestTrials, setGuestTrials] =
+    useState(0);
+
+  const [dailyGreeting, setDailyGreeting] =
+    useState("");
+
+  const [guestDisturbOpen, setGuestDisturbOpen] =
+    useState(false);
+
+  const [showAnnouncement, setShowAnnouncement] =
+    useState(false);
+
+  const { theme, setTheme } =
+    useTheme();
+
+  const { user, logout } =
+    useAuth();
+
+  const isGuest =
+    user?.role === "guest";
+
+  /* =========================================================
+     Sidebar body lock
+  ========================================================= */
+
   useEffect(() => {
-    if (!user) setShowStartModal(true);
+    if (!sidebarOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
+
+  /* =========================================================
+     Navigation
+  ========================================================= */
+
+  const handleNavigate = useCallback(
+    (view) => {
+      setActiveView(view);
+      setSidebarOpen(false);
+
+      if (isGuest) {
+        setGuestTrials(
+          (current) => current + 1
+        );
+      }
+    },
+    [isGuest]
+  );
+
+  /* =========================================================
+     Start Modal
+  ========================================================= */
+
+  useEffect(() => {
+    if (!user) {
+      setShowStartModal(true);
+    }
   }, [user]);
 
-  useEffect(() => {
-  const alreadySeen = localStorage.getItem("revelacodeAnnouncementSeen");
+  /* =========================================================
+     Announcement
+  ========================================================= */
 
-  if (!alreadySeen)  {
-    setTimeout(() => {
+  useEffect(() => {
+    const alreadySeen =
+      localStorage.getItem(
+        "revelacodeAnnouncementSeen"
+      );
+
+    if (alreadySeen) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
       setShowAnnouncement(true);
     }, 1500);
-  }
+
+    return () => clearTimeout(timeout);
   }, []);
 
-  const handleCloseAnnouncement = () => {
-    localStorage.setItem("revelacodeAnnouncementSeen", "true");
-    setShowAnnouncement(false);
-  };
+  const handleCloseAnnouncement =
+    useCallback(() => {
+      localStorage.setItem(
+        "revelacodeAnnouncementSeen",
+        "true"
+      );
 
-  const handleStartComplete = () => setShowStartModal(false);
+      setShowAnnouncement(false);
+    }, []);
 
-  /* ---------------- Guest Trial ---------------- */
+  const handleStartComplete =
+    useCallback(() => {
+      setShowStartModal(false);
+    }, []);
+
+  /* =========================================================
+     Guest trial
+  ========================================================= */
+
   useEffect(() => {
-    if (isGuest && guestTrials >= 5) {
+    if (
+      isGuest &&
+      guestTrials >= 5
+    ) {
       alert(
         "⚠ Your trial has ended. All features remain accessible, but consider creating an account."
       );
     }
   }, [guestTrials, isGuest]);
 
-  const handleGuestFeatureUse = () => {
-    if (isGuest) setGuestTrials((t) => t + 1);
-  };
+  /* =========================================================
+     Daily greeting
+  ========================================================= */
 
-  /* ---------------- Daily Greetings (Randomized weekly) ---------------- */
   const greetings = [
     "Rise and shine! 🌞",
     "Keep pushing forward 💪",
@@ -457,83 +883,174 @@ export default function MainDashboardV2() {
     "Stay focused, stay awesome! ✨",
     "New challenges, new wins! 🏆",
     "Believe in yourself! 🌟",
-    "Make today count! 🔥"
+    "Make today count! 🔥",
   ];
 
   useEffect(() => {
-    const lastIndex = parseInt(localStorage.getItem("greetingIndex") || "0", 10);
-    const todayIndex = (lastIndex + 1) % greetings.length;
-    localStorage.setItem("greetingIndex", todayIndex.toString());
-    setDailyGreeting(greetings[todayIndex]);
+    const lastIndex = parseInt(
+      localStorage.getItem(
+        "greetingIndex"
+      ) || "0",
+      10
+    );
+
+    const todayIndex =
+      (lastIndex + 1) %
+      greetings.length;
+
+    localStorage.setItem(
+      "greetingIndex",
+      String(todayIndex)
+    );
+
+    setDailyGreeting(
+      greetings[todayIndex]
+    );
   }, []);
 
   /* =========================================================
-     Guest Disturb Logic (every 30 minutes)
-     - Only runs if user is guest
-     - Pops a blocking fullscreen modal
-     - ALSO triggers StartModal to force login
+     Guest disturb
   ========================================================= */
+
   useEffect(() => {
     if (!isGuest) {
       setGuestDisturbOpen(false);
       return;
     }
 
-    const intervalMs = 30 * 60 * 1000;
+    const intervalMs =
+      30 * 60 * 1000;
 
-    const interval = setInterval(() => {
-      setGuestDisturbOpen(true);
-      setShowStartModal(true);
-    }, intervalMs);
+    const interval =
+      setInterval(() => {
+        setGuestDisturbOpen(true);
+        setShowStartModal(true);
+      }, intervalMs);
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
   }, [isGuest]);
 
-  const handleGuestDisturbClose = () => setGuestDisturbOpen(false);
+  const handleGuestDisturbClose =
+    useCallback(() => {
+      setGuestDisturbOpen(false);
+    }, []);
 
-  const handleCreateAccount = useCallback(() => {
-    setGuestDisturbOpen(false);
-    setShowStartModal(true);
-  }, []);
-   
- useEffect(() => {
-    const verse = searchParams.get("verse");
+  const handleCreateAccount =
+    useCallback(() => {
+      setGuestDisturbOpen(false);
+      setShowStartModal(true);
+    }, []);
 
-    if (!verse) return;
+  /* =========================================================
+     Verse URL handling
+  ========================================================= */
 
-   // Automatically open Bible dashboard
-   setActiveView("bible");
- }, [searchParams]);
-
-
-  /* ---------------- AI Shortcut (Ctrl + K) ---------------- */
   useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setAIFullscreenOpen((v) => !v);
+    const verse =
+      searchParams.get("verse");
+
+    if (!verse) {
+      return;
+    }
+
+    setActiveView("bible");
+  }, [searchParams]);
+
+  /* =========================================================
+     Keyboard shortcuts
+  ========================================================= */
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (
+        event.ctrlKey &&
+        event.key.toLowerCase() ===
+          "k"
+      ) {
+        event.preventDefault();
+
+        setAIFullscreenOpen(
+          (current) => !current
+        );
+
+        return;
       }
-      if (e.key === "Escape") {
+
+      if (
+        event.key === "Escape"
+      ) {
         setAIFullscreenOpen(false);
         setSidebarOpen(false);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+
+    window.addEventListener(
+      "keydown",
+      handler
+    );
+
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        handler
+      );
   }, []);
 
-  /* ---------------- Home Page Preview Components ---------------- */
+  /* =========================================================
+     Home Preview
+  ========================================================= */
+
   const HomePreview = () => {
-    const displayName = user?.fullName?.trim();
-    const welcomeName = displayName ? displayName : "GUEST";
+    const displayName =
+      user?.fullName?.trim();
+
+    const welcomeName =
+      displayName || "GUEST";
 
     const userBadge = isGuest ? (
-      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200/60 dark:border-yellow-800/50">
+      <span
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-full
+          border
+          border-yellow-200/60
+          bg-yellow-100
+          px-3
+          py-1
+          text-xs
+          font-semibold
+          text-yellow-700
+          dark:border-yellow-800/50
+          dark:bg-yellow-900/40
+          dark:text-yellow-300
+        "
+      >
         <Crown size={14} />
         Guest Session
       </span>
     ) : (
-      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-800/50">
+      <span
+        className="
+          inline-flex
+          items-center
+          gap-2
+          rounded-full
+          border
+          border-green-200/60
+          bg-green-100
+          px-3
+          py-1
+          text-xs
+          font-semibold
+          text-green-700
+          dark:border-green-800/50
+          dark:bg-green-900/30
+          dark:text-green-300
+        "
+      >
         <ShieldCheck size={14} />
         Verified Account
       </span>
@@ -541,43 +1058,106 @@ export default function MainDashboardV2() {
 
     return (
       <div className="space-y-6">
-        {/* HERO */}
-        <div className="rounded-2xl p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-black/10 blur-2xl" />
 
-          <div className="flex flex-col gap-3 relative z-10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight">
+        {/* HERO */}
+
+        <div
+          className="
+            relative
+            overflow-hidden
+            rounded-2xl
+            bg-gradient-to-br
+            from-indigo-600
+            via-purple-600
+            to-pink-600
+            p-4
+            text-white
+            shadow-lg
+            sm:p-6
+            lg:p-8
+          "
+        >
+          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-black/10 blur-2xl" />
+
+          <div className="relative z-10 flex flex-col gap-3">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-5xl">
                 Welcome, {welcomeName} ✨
               </h2>
+
               {userBadge}
             </div>
 
-            <p className="text-white/90 text-sm sm:text-base max-w-2xl">
-              RevelaCode is your AI-powered Bible decoding workspace — prophecy insights, scripture referencing,
-              and smart tools built for speed and clarity.
+            <p className="max-w-2xl text-sm text-white/90 sm:text-base">
+              RevelaCode is your AI-powered
+              Bible decoding workspace —
+              prophecy insights, scripture
+              referencing, and intelligent
+              tools built for speed and clarity.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <button
-                onClick={() => setAIFullscreenOpen(true)}
-                className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold transition"
+                type="button"
+                onClick={() =>
+                  setAIFullscreenOpen(true)
+                }
+                className="
+                  rounded-xl
+                  border
+                  border-white/20
+                  bg-white/15
+                  px-4
+                  py-2
+                  font-semibold
+                  text-white
+                  transition
+                  hover:bg-white/25
+                "
               >
                 Open RevelaAI 🤖
               </button>
 
               {isGuest ? (
                 <button
-                  onClick={() => setShowStartModal(true)}
-                  className="px-4 py-2 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-gray-100 transition shadow"
+                  type="button"
+                  onClick={() =>
+                    setShowStartModal(true)
+                  }
+                  className="
+                    rounded-xl
+                    bg-white
+                    px-4
+                    py-2
+                    font-semibold
+                    text-indigo-700
+                    shadow
+                    transition
+                    hover:bg-gray-100
+                  "
                 >
                   Login / Register 🔐
                 </button>
               ) : (
                 <button
-                  onClick={() => setActiveView("settings")}
-                  className="px-4 py-2 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-gray-100 transition shadow"
+                  type="button"
+                  onClick={() =>
+                    setActiveView(
+                      "settings"
+                    )
+                  }
+                  className="
+                    rounded-xl
+                    bg-white
+                    px-4
+                    py-2
+                    font-semibold
+                    text-indigo-700
+                    shadow
+                    transition
+                    hover:bg-gray-100
+                  "
                 >
                   Personalize Settings ⚙️
                 </button>
@@ -587,10 +1167,31 @@ export default function MainDashboardV2() {
         </div>
 
         {/* GREETING */}
-        <div className="rounded-2xl p-4 bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3 flex-wrap">
+
+        <div
+          className="
+            flex
+            flex-wrap
+            items-center
+            justify-between
+            gap-3
+            rounded-2xl
+            border
+            border-gray-200/60
+            bg-white
+            p-4
+            shadow-sm
+            dark:border-gray-800
+            dark:bg-gray-900
+          "
+        >
           <div className="flex items-center gap-2">
-            <Sparkles className="text-indigo-600 dark:text-indigo-300" size={18} />
-            <p className="text-gray-700 dark:text-gray-200 font-medium">
+            <Sparkles
+              className="text-indigo-600 dark:text-indigo-300"
+              size={18}
+            />
+
+            <p className="font-medium text-gray-700 dark:text-gray-200">
               {dailyGreeting}
             </p>
           </div>
@@ -598,44 +1199,99 @@ export default function MainDashboardV2() {
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {isGuest
               ? "Guest mode: your session may not save permanently."
-              : `Logged in as: ${user?.contact || "N/A"}`}
+              : `Logged in as: ${
+                  user?.contact || "N/A"
+                }`}
           </div>
         </div>
 
-        {/* USER DETAILS CARD */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
+        {/* USER DETAILS */}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div
+            className="
+              rounded-2xl
+              border
+              border-gray-200/60
+              bg-white
+              p-5
+              shadow-sm
+              dark:border-gray-800
+              dark:bg-gray-900
+              lg:col-span-2
+            "
+          >
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Quick Launch 🚀
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               Jump into your tools instantly.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 h-full gap-4 mt-4">
+            <div className="mt-4 grid h-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {DASHBOARDS
-                .filter((d) => !d.hidden && d.key !== "home")
+                .filter(
+                  (d) =>
+                    !d.hidden &&
+                    d.key !==
+                      "home"
+                )
                 .filter((d) => {
-                  // Guest cannot access accounts dashboard
-                  if (isGuest && d.key === "accounts") return false;
+                  if (
+                    isGuest &&
+                    d.key ===
+                      "accounts"
+                  ) {
+                    return false;
+                  }
+
                   return true;
                 })
                 .map((d) => (
                   <button
                     key={d.key}
-                    className="group h-full text-left p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 hover:shadow-md hover:-translate-y-0.5 transition"
-                    onClick={() => setActiveView(d.key)}
+                    type="button"
+                    className="
+                      group
+                      h-full
+                      rounded-2xl
+                      border
+                      border-gray-200/60
+                      bg-gray-50
+                      p-4
+                      text-left
+                      transition
+                      hover:-translate-y-0.5
+                      hover:shadow-md
+                      dark:border-gray-700/60
+                      dark:bg-gray-800/60
+                    "
+                    onClick={() =>
+                      handleNavigate(
+                        d.key
+                      )
+                    }
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <d.icon size={18} className="text-indigo-600 dark:text-indigo-300" />
+                    <div className="mb-2 flex items-center gap-2">
+                      <d.icon
+                        size={18}
+                        className="text-indigo-600 dark:text-indigo-300"
+                      />
+
                       <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                        {d.title || d.label}
+                        {d.title ||
+                          d.label}
                       </h4>
                     </div>
+
                     <p className="text-xs text-gray-600 dark:text-gray-300">
-                      Open {d.label} tools and explore features.
+                      Open{" "}
+                      {d.label}{" "}
+                      tools and explore features.
                     </p>
-                    <div className="mt-3 text-xs font-semibold text-indigo-600 dark:text-indigo-300 opacity-80 group-hover:opacity-100">
+
+                    <div className="mt-3 text-xs font-semibold text-indigo-600 opacity-80 transition group-hover:opacity-100 dark:text-indigo-300">
                       Launch →
                     </div>
                   </button>
@@ -643,45 +1299,99 @@ export default function MainDashboardV2() {
             </div>
           </div>
 
-          <div className="rounded-2xl lg:sticky lg:top-24 bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm p-5">
+          <div
+            className="
+              rounded-2xl
+              border
+              border-gray-200/60
+              bg-white
+              p-5
+              shadow-sm
+              dark:border-gray-800
+              dark:bg-gray-900
+              lg:sticky
+              lg:top-24
+            "
+          >
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               Your Session 👤
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               Account info and access level.
             </p>
 
             <div className="mt-4 space-y-3">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Name</p>
+              <div className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Name
+                </p>
+
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.fullName || "Guest"}
+                  {user?.fullName ||
+                    "Guest"}
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Contact</p>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.contact || "N/A"}
+              <div className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Contact
+                </p>
+
+                <p className="break-all font-semibold text-gray-900 dark:text-gray-100">
+                  {user?.contact ||
+                    "N/A"}
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Role</p>
+              <div className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Role
+                </p>
+
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {user?.role || "normal"}
+                  {user?.role ||
+                    "normal"}
                 </p>
               </div>
 
               {isGuest && (
-                <div className="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200/60 dark:border-yellow-900/40">
+                <div
+                  className="
+                    rounded-xl
+                    border
+                    border-yellow-200/60
+                    bg-yellow-50
+                    p-3
+                    dark:border-yellow-900/40
+                    dark:bg-yellow-950/40
+                  "
+                >
                   <p className="text-sm text-gray-800 dark:text-gray-200">
-                    ⚠ Guest accounts can use almost everything, but{" "}
-                    <span className="font-semibold">Accounts Dashboard</span> is locked.
+                    ⚠ Guest accounts can use
+                    almost everything, but{" "}
+                    <span className="font-semibold">
+                      Accounts Dashboard
+                    </span>{" "}
+                    is locked.
                   </p>
+
                   <button
-                    onClick={() => setShowStartModal(true)}
-                    className="mt-3 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition"
+                    type="button"
+                    onClick={() =>
+                      setShowStartModal(true)
+                    }
+                    className="
+                      mt-3
+                      w-full
+                      rounded-xl
+                      bg-indigo-600
+                      py-2
+                      font-semibold
+                      text-white
+                      transition
+                      hover:bg-indigo-700
+                    "
                   >
                     Login to Unlock Accounts 🔓
                   </button>
@@ -692,22 +1402,39 @@ export default function MainDashboardV2() {
         </div>
 
         {/* UPCOMING FEATURES */}
-        <div className="mt-2 p-4 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 shadow-sm">
+
+        <div
+          className="
+            rounded-2xl
+            border
+            border-gray-200/60
+            bg-white
+            p-4
+            shadow-sm
+            dark:border-gray-800
+            dark:bg-gray-900
+            sm:p-5
+          "
+        >
           <h4 className="font-bold text-gray-900 dark:text-gray-100">
             Upcoming Features 🔥
           </h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm text-gray-700 dark:text-gray-200">
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
+
+          <ul className="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-200 sm:grid-cols-2">
+            <li className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
               Enhanced AI decoding for prophecies
             </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
+
+            <li className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
               Weekly Bible study challenges
             </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
+
+            <li className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
               Customizable dashboard widgets
             </li>
-            <li className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60">
-              Linked account integrations (TikTok, WhatsApp, etc.)
+
+            <li className="rounded-xl border border-gray-200/60 bg-gray-50 p-3 dark:border-gray-700/60 dark:bg-gray-800/60">
+              Linked account integrations
             </li>
           </ul>
         </div>
@@ -715,181 +1442,764 @@ export default function MainDashboardV2() {
     );
   };
 
+  /* =========================================================
+     Active dashboard
+  ========================================================= */
+
   const activeDashboard =
-    DASHBOARDS.find((d) => d.key === activeView) ||
-    DASHBOARDS.find((d) => d.key === "home");
+    DASHBOARDS.find(
+      (d) => d.key === activeView
+    ) ||
+    DASHBOARDS.find(
+      (d) => d.key === "home"
+    );
 
-  const activeComponent = activeDashboard?.element;
+  const activeComponent =
+    activeDashboard?.element;
 
-  const aiDashboardElement = DASHBOARDS.find((d) => d.key === "ai")?.element;
+  const aiDashboardElement =
+    DASHBOARDS.find(
+      (d) => d.key === "ai"
+    )?.element;
 
-/* ================================================= */
-return (
-  <>
-    <OfficialAnnouncementModal
-      open={showAnnouncement}
-      onClose={handleCloseAnnouncement}
-    />
+  /* =========================================================
+     Render
+  ========================================================= */
 
-    <div className="relative flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950 transition-colors">
-    
+  return (
+    <>
+      <OfficialAnnouncementModal
+        open={showAnnouncement}
+        onClose={
+          handleCloseAnnouncement
+        }
+      />
+
       <AnimatePresence>
-        {showStartModal && <StartModal onComplete={handleStartComplete} />}
+        {showStartModal && (
+          <StartModal
+            onComplete={
+              handleStartComplete
+            }
+          />
+        )}
       </AnimatePresence>
 
       <GuestDisturbModal
         open={guestDisturbOpen}
-        onClose={handleGuestDisturbClose}
-        onCreateAccount={handleCreateAccount}
+        onClose={
+          handleGuestDisturbClose
+        }
+        onCreateAccount={
+          handleCreateAccount
+        }
       />
 
       <FullscreenAIAssistant
         open={aiFullscreenOpen}
-        onClose={() => setAIFullscreenOpen(false)}
-        aiElement={aiDashboardElement}
+        onClose={() =>
+          setAIFullscreenOpen(false)
+        }
+        aiElement={
+          aiDashboardElement
+        }
       />
 
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.aside
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 260, damping: 25 }}
+      <div
+        className="
+          relative
+          flex
+          h-screen
+          min-w-0
+          overflow-hidden
+          bg-gray-100
+          transition-colors
+          dark:bg-gray-950
+        "
+      >
+        {/* ===================================================
+            MOBILE DRAWER + OVERLAY
+        =================================================== */}
+
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              {/* Mobile overlay — NO BLUR */}
+
+              <motion.button
+                type="button"
+                aria-label="Close navigation"
+                className="
+                  fixed
+                  inset-0
+                  z-[60]
+                  cursor-default
+                  bg-black/40
+                  lg:hidden
+                "
+                initial={{
+                  opacity: 0,
+                }}
+                animate={{
+                  opacity: 1,
+                }}
+                exit={{
+                  opacity: 0,
+                }}
+                transition={{
+                  duration: 0.2,
+                }}
+                onClick={() =>
+                  setSidebarOpen(false)
+                }
+              />
+
+              {/* Sidebar */}
+
+              <motion.aside
+                initial={{
+                  x: "-100%",
+                }}
+                animate={{
+                  x: 0,
+                }}
+                exit={{
+                  x: "-100%",
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 320,
+                  damping: 30,
+                  mass: 0.8,
+                }}
+                className="
+                  fixed
+                  inset-y-0
+                  left-0
+                  z-[70]
+                  flex
+                  w-[min(18rem,88vw)]
+                  flex-col
+                  overflow-hidden
+                  border-r
+                  border-gray-200
+                  bg-white
+                  text-gray-900
+                  shadow-2xl
+                  dark:border-gray-800
+                  dark:bg-gray-950
+                  dark:text-white
+                  lg:relative
+                  lg:z-30
+                "
+              >
+                {/* Sidebar header */}
+
+                <div
+                  className="
+                    flex
+                    h-16
+                    shrink-0
+                    items-center
+                    justify-between
+                    border-b
+                    border-gray-200
+                    px-4
+                    dark:border-gray-800
+                  "
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        bg-gradient-to-br
+                        from-indigo-600
+                        via-purple-600
+                        to-pink-600
+                        text-sm
+                        font-black
+                        text-white
+                        shadow-lg
+                      "
+                    >
+                      R
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">
+                        RevelaCode
+                      </p>
+
+                      <p className="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                        Intelligent Scripture Workspace
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSidebarOpen(false)
+                    }
+                    className="
+                      rounded-xl
+                      p-2
+                      text-gray-500
+                      transition
+                      hover:bg-gray-100
+                      hover:text-gray-900
+                      dark:text-gray-400
+                      dark:hover:bg-gray-800
+                      dark:hover:text-white
+                      lg:hidden
+                    "
+                    aria-label="Close sidebar"
+                  >
+                    <X size={19} />
+                  </button>
+                </div>
+
+                {/* Navigation */}
+
+                <nav
+                  className="
+                    flex-1
+                    overflow-y-auto
+                    overscroll-contain
+                    px-3
+                    py-4
+                  "
+                >
+                  <div className="mb-3 px-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">
+                      Workspace
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    {DASHBOARDS
+                      .filter(
+                        (d) =>
+                          !d.hidden
+                      )
+                      .filter((d) => {
+                        if (
+                          isGuest &&
+                          d.key ===
+                            "accounts"
+                        ) {
+                          return false;
+                        }
+
+                        return true;
+                      })
+                      .map(
+                        ({
+                          key,
+                          label,
+                          icon: Icon,
+                          color,
+                        }) => {
+                          const active =
+                            activeView ===
+                            key;
+
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() =>
+                                handleNavigate(
+                                  key
+                                )
+                              }
+                              className={`
+                                group
+                                relative
+                                flex
+                                w-full
+                                items-center
+                                gap-3
+                                rounded-xl
+                                px-3
+                                py-3
+                                text-left
+                                text-sm
+                                font-medium
+                                transition-all
+                                duration-200
+                                ${
+                                  active
+                                    ? "bg-gray-100 text-gray-950 shadow-sm dark:bg-gray-900 dark:text-white"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900/70 dark:hover:text-white"
+                                }
+                              `}
+                            >
+                              {active && (
+                                <span
+                                  className={`
+                                    absolute
+                                    left-0
+                                    top-1/2
+                                    h-7
+                                    w-1
+                                    -translate-y-1/2
+                                    rounded-r-full
+                                    bg-gradient-to-b
+                                    ${
+                                      color ||
+                                      "from-indigo-500 to-purple-500"
+                                    }
+                                  `}
+                                />
+                              )}
+
+                              <span
+                                className={`
+                                  flex
+                                  h-9
+                                  w-9
+                                  shrink-0
+                                  items-center
+                                  justify-center
+                                  rounded-lg
+                                  transition
+                                  ${
+                                    active
+                                      ? `bg-gradient-to-br ${
+                                          color ||
+                                          "from-indigo-500 to-purple-500"
+                                        } text-white shadow-md`
+                                      : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:group-hover:bg-gray-800"
+                                  }
+                                `}
+                              >
+                                <Icon size={17} />
+                              </span>
+
+                              <span className="min-w-0 flex-1 truncate">
+                                {label}
+                              </span>
+
+                              {active && (
+                                <span className="text-xs text-gray-400">
+                                  ●
+                                </span>
+                              )}
+                            </button>
+                          );
+                        }
+                      )}
+                  </div>
+                </nav>
+
+                {/* Footer */}
+
+                <div
+                  className="
+                    shrink-0
+                    border-t
+                    border-gray-200
+                    p-3
+                    dark:border-gray-800
+                  "
+                >
+                  <div className="mb-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-gradient-to-br
+                          from-gray-700
+                          to-gray-900
+                          text-xs
+                          font-bold
+                          text-white
+                          dark:from-gray-200
+                          dark:to-white
+                          dark:text-gray-900
+                        "
+                      >
+                        {(
+                          user?.fullName ||
+                          user?.contact ||
+                          "G"
+                        )
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
+                          {user?.fullName ||
+                            "Guest"}
+                        </p>
+
+                        <p className="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                          {isGuest
+                            ? "Guest Session"
+                            : user?.role ||
+                              "Account"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTheme(
+                          theme ===
+                            "dark"
+                            ? "light"
+                            : "dark"
+                        )
+                      }
+                      className="
+                        flex
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        border
+                        border-gray-200
+                        px-3
+                        py-2.5
+                        text-xs
+                        font-semibold
+                        text-gray-700
+                        transition
+                        hover:bg-gray-100
+                        dark:border-gray-800
+                        dark:text-gray-300
+                        dark:hover:bg-gray-900
+                      "
+                    >
+                      {theme ===
+                      "dark" ? (
+                        <>
+                          <Sun
+                            size={15}
+                          />
+                          Light
+                        </>
+                      ) : (
+                        <>
+                          <Moon
+                            size={15}
+                          />
+                          Dark
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="
+                        flex
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        border
+                        border-red-200
+                        px-3
+                        py-2.5
+                        text-xs
+                        font-semibold
+                        text-red-600
+                        transition
+                        hover:bg-red-50
+                        dark:border-red-900/50
+                        dark:text-red-400
+                        dark:hover:bg-red-950/30
+                      "
+                    >
+                      <LogOut
+                        size={15}
+                      />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* ===================================================
+            MAIN
+        =================================================== */}
+
+        <main
+          className="
+            relative
+            flex
+            min-w-0
+            flex-1
+            flex-col
+            overflow-hidden
+          "
+        >
+          {/* Header */}
+
+          <header
             className="
-            fixed lg:relative
-            inset-y-0 left-0
-            w-72 max-w-[85vw]
-            bg-gray-900
-            text-gray-100
-            flex flex-col
-            z-50
-            shadow-2xl
+              sticky
+              top-0
+              z-40
+              shrink-0
+              border-b
+              border-gray-200
+              bg-white
+              dark:border-gray-800
+              dark:bg-gray-950
             "
           >
             <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="p-4 flex justify-between items-center">
-              <h1 className="font-bold text-lg">RevelaCode</h1>
-              <button onClick={() => setSidebarOpen(false)}><X /></button>
-            </div>
+              className="
+                flex
+                min-h-16
+                items-center
+                justify-between
+                gap-3
+                px-3
+                sm:px-4
+                lg:px-6
+              "
+            >
+              {/* Left */}
 
-            <nav className="px-2 space-y-1">
-              {DASHBOARDS
-                .filter((d) => !d.hidden)
-                .filter((d) => {
-                  // Guest cannot access accounts dashboard
-                  if (isGuest && d.key === "accounts") return false;
-                  return true;
-                })
-                .map(({ key, label, icon: Icon, color }) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setActiveView(key);
-                      handleGuestFeatureUse();
-                    }}
-                    className={`flex items-center gap-3 p-3 w-full rounded-lg text-sm transition
-                      ${activeView === key ? `bg-gradient-to-r ${color}` : "hover:bg-gray-800"}`}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </button>
-                ))}
-            </nav>
-
-            <div className="mt-auto p-4 flex justify-between items-center">
-              <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                {theme === "dark" ? <Sun /> : <Moon />}
-              </button>
-
-              <button onClick={logout} className="text-red-400 hover:text-red-500">
-                <LogOut size={18} />
-              </button>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      <main className="flex-1 flex flex-col relative overflow-hidden">
-
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/60 dark:bg-gray-950/60 border-b border-white/20 dark:border-gray-800/60 shadow-sm">
-          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-3 px-3 sm:px-4 lg:px-6 py-3">
-
-            {/* LEFT SIDE */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {!sidebarOpen && (
+              <div className="flex min-w-0 items-center gap-2">
                 <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="p-2 rounded-xl hover:bg-gray-200/60 dark:hover:bg-gray-800/60 transition"
+                  type="button"
+                  onClick={() =>
+                    setSidebarOpen(true)
+                  }
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-gray-200
+                    bg-white
+                    text-gray-700
+                    shadow-sm
+                    transition
+                    hover:bg-gray-100
+                    dark:border-gray-800
+                    dark:bg-gray-900
+                    dark:text-gray-200
+                    dark:hover:bg-gray-800
+                    lg:hidden
+                  "
+                  aria-label="Open navigation"
                 >
-                  <Menu />
+                  <Menu size={20} />
                 </button>
-              )}
 
-              <div className="flex flex-col leading-tight">
-                <h2 className="font-semibold text-sm sm:text-base lg:text-lg truncate text-gray-900 dark:text-gray-100">
-                  {activeView === "home"
-                    ? `WELCOME, ${user?.fullName?.trim() ? user.fullName : "GUEST"} 👋`
-                    : DASHBOARDS.find((d) => d.key === activeView)?.title}
-                </h2>
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-bold text-gray-900 dark:text-white sm:text-base lg:text-lg">
+                    {activeView ===
+                    "home"
+                      ? `WELCOME, ${
+                          user?.fullName?.trim()
+                            ? user.fullName
+                            : "GUEST"
+                        } 👋`
+                      : DASHBOARDS.find(
+                          (d) =>
+                            d.key ===
+                            activeView
+                        )?.title ||
+                        "RevelaCode"}
+                  </h2>
 
-                {activeView === "home" && (
-                  <p className="hidden sm:block text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {dailyGreeting}
-                  </p>
+                  {activeView ===
+                    "home" && (
+                    <p className="hidden truncate text-xs text-gray-500 dark:text-gray-400 sm:block">
+                      {dailyGreeting}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right */}
+
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <Notifications />
+
+                <div
+                  className="
+                    flex
+                    h-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-gray-200
+                    bg-white
+                    px-1
+                    shadow-sm
+                    dark:border-gray-800
+                    dark:bg-gray-900
+                  "
+                >
+                  <AvatarMenu
+                    user={user}
+                  />
+                </div>
+
+                {isGuest && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowStartModal(
+                        true
+                      )
+                    }
+                    className="
+                      hidden
+                      rounded-xl
+                      bg-indigo-600
+                      px-3
+                      py-2
+                      text-xs
+                      font-bold
+                      text-white
+                      transition
+                      hover:bg-indigo-700
+                      sm:inline-flex
+                    "
+                  >
+                    Login
+                  </button>
                 )}
               </div>
             </div>
+          </header>
 
-            {/* RIGHT SIDE (THIS IS THE FIX 🔥) */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Content */}
 
-              {/* Notifications */}
-              <Notifications />
+          <section
+            className="
+              min-w-0
+              flex-1
+              overflow-y-auto
+              overscroll-contain
+              bg-gray-100
+              px-3
+              py-3
+              dark:bg-gray-950
+              sm:px-4
+              sm:py-4
+              lg:px-6
+              lg:py-6
+            "
+          >
+            <Suspense
+              fallback={
+                <Loading />
+              }
+            >
+              <ErrorBoundary>
+                {activeView ===
+                "home" ? (
+                  <HomePreview />
+                ) : activeComponent ? (
+                  React.cloneElement(
+                    activeComponent,
+                    {
+                      onGuestUse:
+                        handleGuestFeatureUse,
+                      onNavigate:
+                        setActiveView,
+                    }
+                  )
+                ) : (
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-gray-200
+                      bg-white
+                      p-6
+                      shadow-sm
+                      dark:border-gray-800
+                      dark:bg-gray-900
+                    "
+                  >
+                    <h3 className="font-bold text-gray-900 dark:text-white">
+                      Dashboard unavailable
+                    </h3>
 
-              {/* Avatar cluster */}
-              <div className="flex items-center gap-2 px-2 py-1 rounded-xl bg-white/40 dark:bg-gray-800/40 backdrop-blur border border-white/20 dark:border-gray-700/40">
-                <AvatarMenu user={user} />
-              </div>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                      The selected dashboard
+                      could not be loaded.
+                    </p>
+                  </div>
+                )}
+              </ErrorBoundary>
+            </Suspense>
+          </section>
 
-              {/* Guest CTA */}
-              {isGuest && (
-                <button
-                  onClick={() => setShowStartModal(true)}
-                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition"
-                >
-                  Login 🔐
-                </button>
-              )}
+          {/* AI Floating Action Button */}
 
-            </div>
-
-          </div>
-        </header>
-
-        <section className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
-          <Suspense fallback={<Loading />}>
-            <ErrorBoundary>
-              {activeComponent &&
-                React.cloneElement(activeComponent, {
-                  onGuestUse: handleGuestFeatureUse,
-                  onNavigate: setActiveView,
-                })}
-            </ErrorBoundary>
-          </Suspense>
-        </section>
-
-        <button
-          onClick={() => setAIFullscreenOpen(true)}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg z-40"
-          title="AI Assistant Dashboard (Ctrl + K)"
-        >
-          <Bot />
-        </button>
-      </main>
-    </div>
-  </>
-);}
+          <button
+            type="button"
+            onClick={() =>
+              setAIFullscreenOpen(
+                true
+              )
+            }
+            className="
+              fixed
+              bottom-4
+              right-4
+              z-40
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              rounded-2xl
+              bg-gradient-to-br
+              from-green-600
+              to-emerald-700
+              text-white
+              shadow-xl
+              shadow-green-900/20
+              transition
+              hover:-translate-y-1
+              hover:shadow-2xl
+              active:scale-95
+              sm:bottom-6
+              sm:right-6
+            "
+            title="RevelaAI Assistant (Ctrl + K)"
+          >
+            <Bot size={22} />
+          </button>
+        </main>
+      </div>
+    </>
+  );
+}
