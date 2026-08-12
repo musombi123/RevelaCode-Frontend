@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Loader2, RefreshCw, MapPin, Tags } from "lucide-react";
 
@@ -20,6 +21,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ProphecyEventsDashboard() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState(""); // NEW: Category state
@@ -46,10 +48,10 @@ export default function ProphecyEventsDashboard() {
   };
 
   const openVerse = (verse) => {
-    window.dispatchEvent(
-      new CustomEvent("open-bible", {
-        detail: verse,
-      })
+    if (!verse) return;
+
+    navigate(
+      `/bible?verse=${encodeURIComponent(verse)}`
     );
   };
 
