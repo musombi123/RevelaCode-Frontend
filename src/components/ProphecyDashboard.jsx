@@ -156,20 +156,13 @@ export default function ProphecyDashboard() {
   };
 
   return (
-    <div className={`flex flex-col min-h-screen p-6 ${isDark ? "bg-gray-950" : "bg-gray-100"}`}>
-      {/* Greeting & AI Insight */}
-      <div className="space-y-2 mb-6">
-        <h1 className={`text-3xl font-bold ${isDark ? "text-white" : "text-black"}`}>
-          🌟 Welcome, {user?.full_name || "Guest"}!
-        </h1>
-
-        <Card className={`${isDark ? "bg-gray-800 text-white" : "bg-white text-black"} rounded-2xl shadow-md`}>
-          <CardContent>
-            <h2 className="font-semibold text-lg">🤖 Daily AI Insight</h2>
-            <p className="text-sm mt-1">{aiInsight}</p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className={` 
+      w-full min-w-0
+      px-3 sm:px-5 lg:px-8
+      py-4 sm:py-6
+      ${isDark ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900"}
+    `}
+   >
 
       {/* Decode Input */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
