@@ -1,4 +1,11 @@
-import React, { useState, useEffect, Suspense, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  Suspense,
+  useCallback
+} from "react";
+
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Moon, Sun, LogOut, Menu, X, Crown, ShieldCheck, Sparkles } from "lucide-react";
 
@@ -389,6 +396,7 @@ export default function MainDashboardV2() {
   const defaultDashboard = "home"; // always start on home
   const [activeView, setActiveView] = useState(defaultDashboard);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchParams] = useSearchParams();
 
   // AI: fullscreen instead of small dock
   const [aiFullscreenOpen, setAIFullscreenOpen] = useState(false);
@@ -487,6 +495,16 @@ export default function MainDashboardV2() {
     setGuestDisturbOpen(false);
     setShowStartModal(true);
   }, []);
+   
+ useEffect(() => {
+    const verse = searchParams.get("verse");
+
+    if (!verse) return;
+
+   // Automatically open Bible dashboard
+   setActiveView("bible");
+ }, [searchParams]);
+
 
   /* ---------------- AI Shortcut (Ctrl + K) ---------------- */
   useEffect(() => {
