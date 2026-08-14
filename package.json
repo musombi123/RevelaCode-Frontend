@@ -11,6 +11,9 @@
     "node": "20.x"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.3",
@@ -23,6 +26,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24",

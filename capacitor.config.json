@@ -1,0 +1,8 @@
+{
+  "appId": "com.revelacode.app",
+  "appName": "RevelaCode",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
