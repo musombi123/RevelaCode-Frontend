@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RevelaCode</string>
+    <string name="title_activity_main">RevelaCode</string>
+    <string name="package_name">com.revelacode.app</string>
+    <string name="custom_url_scheme">com.revelacode.app</string>
+</resources>
