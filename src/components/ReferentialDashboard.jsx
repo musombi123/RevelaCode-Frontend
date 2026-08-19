@@ -1,91 +1,130 @@
-"use client";
+// src/components/StudyDashboard.jsx
 
-import React,{useState} from "react";
+import React, {
+  useCallback,
+  useState,
+} from "react";
 
-import StudyLayout
-from "@/components/study/StudyLayout";
+import StudyLayout from "@/components/study/StudyLayout";
+import StudyFeed from "@/components/study/StudyFeed";
+import StudyReader from "@/components/study/StudyReader";
 
-import StudyFeed
-from "@/components/study/StudyFeed";
+/* =========================================================
+   MATERIAL ID NORMALIZER
+========================================================= */
 
-import StudyReader
-from "@/components/study/StudyReader";
+const resolveMaterialId = (material) => {
+  if (!material) {
+    return null;
+  }
 
-export default function StudyDashboard(){
+  return (
+    material.id ??
+    material._id ??
+    material.material_id ??
+    material.materialId ??
+    null
+  );
+};
 
-const[
-selectedMaterial,
-setSelectedMaterial
-]=useState(null);
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
+export default function StudyDashboard() {
+  const [
+    selectedMaterial,
+    setSelectedMaterial,
+  ] = useState(null);
 
-/* DEBUG */
+  /* =======================================================
+     OPEN MATERIAL
+  ======================================================= */
 
-console.log(
-"Selected Material:",
-selectedMaterial
-);
+  const handleOpenMaterial =
+    useCallback((material) => {
+      if (!material) {
+        return;
+      }
 
+      const materialId =
+        resolveMaterialId(material);
 
-/* OPEN READER */
+      if (!materialId) {
+        console.error(
+          "❌ Study material has no usable ID:",
+          material
+        );
 
-if(
-selectedMaterial?.id
-){
+        return;
+      }
 
-return(
+      setSelectedMaterial({
+        ...material,
+        id: materialId,
+      });
+    }, []);
 
-<StudyReader
+  /* =======================================================
+     CLOSE READER
+  ======================================================= */
 
-materialId={
-selectedMaterial.id
-}
+  const handleBack =
+    useCallback(() => {
+      setSelectedMaterial(null);
+    }, []);
 
-onBack={()=>{
+  /* =======================================================
+     READER MODE
+  ======================================================= */
 
-setSelectedMaterial(
-null
-);
+  if (selectedMaterial?.id) {
+    return (
+      <div
+        className="
+          flex
+          h-full
+          min-h-0
+          min-w-0
+          flex-col
+          overflow-hidden
+        "
+      >
+        <StudyReader
+          materialId={
+            selectedMaterial.id
+          }
+          material={
+            selectedMaterial
+          }
+          onBack={handleBack}
+        />
+      </div>
+    );
+  }
 
-}}
+  /* =======================================================
+     FEED MODE
+  ======================================================= */
 
-/>
-
-)
-
-}
-
-
-return(
-
-<StudyLayout>
-
-<StudyFeed
-
-onOpen={(material)=>{
-
-console.log(
-"Card clicked:",
-material
-);
-
-setSelectedMaterial({
-
-...material,
-
-id:
-material.id||
-material._id||
-material.material_id
-
-});
-
-}}
-
-/>
-
-</StudyLayout>
-
-)
-
+  return (
+    <div
+      className="
+        flex
+        h-full
+        min-h-0
+        min-w-0
+        flex-col
+        overflow-hidden
+      "
+    >
+      <StudyLayout>
+        <StudyFeed
+          onOpen={
+            handleOpenMaterial
+          }
+        />
+      </StudyLayout>
+    </div>
+  );
 }
