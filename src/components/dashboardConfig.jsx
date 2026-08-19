@@ -98,6 +98,11 @@ const AIAssistantDashboard = safeLazy(
   "RevelaAI"
 );
 
+const FaithDashboard = safeLazy(
+  () => import("./FaithDashboard.jsx"),
+  "Faith"
+);
+
 /* ======================================================
    COMING SOON DASHBOARD
 ====================================================== */
@@ -812,12 +817,7 @@ export const DASHBOARDS = [
     title: "Faith",
     label: "Faith",
     icon: BookOpen,
-    element: <ComingSoonDashboard
-      title="Faith & Scripture"
-      subtitle="Your Bible, prophecy, SDA lessons, study tools, and intelligent Scripture workspace."
-      icon={BookOpen}
-      gradient="from-indigo-600 via-purple-600 to-violet-700"
-    />,
+    element: <FaithDashboard />,
   },
 
   {
