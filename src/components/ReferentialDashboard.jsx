@@ -1,4 +1,4 @@
-// src/components/StudyDashboard.jsx
+// src/components/study/StudyDashboard.jsx
 
 import React, {
   useCallback,
@@ -9,44 +9,38 @@ import StudyLayout from "@/components/study/StudyLayout";
 import StudyFeed from "@/components/study/StudyFeed";
 import StudyReader from "@/components/study/StudyReader";
 
-/* =========================================================
-   MATERIAL ID NORMALIZER
-========================================================= */
-
 const resolveMaterialId = (material) => {
   if (!material) {
     return null;
   }
 
-  return (
+  const raw =
     material.id ??
     material._id ??
     material.material_id ??
     material.materialId ??
-    null
-  );
+    null;
+
+  return raw == null ? null : String(raw);
 };
 
-/* =========================================================
-   DASHBOARD
-========================================================= */
-
-export default function StudyDashboard() {
+export default function StudyDashboard({
+  user,
+}) {
   const [
     selectedMaterial,
     setSelectedMaterial,
   ] = useState(null);
 
-  /* =======================================================
-     OPEN MATERIAL
-  ======================================================= */
+  const userId =
+    user?.id ??
+    user?._id ??
+    user?.user_id ??
+    user?.contact ??
+    "guest";
 
-  const handleOpenMaterial =
-    useCallback((material) => {
-      if (!material) {
-        return;
-      }
-
+  const handleOpen = useCallback(
+    (material) => {
       const materialId =
         resolveMaterialId(material);
 
@@ -55,7 +49,6 @@ export default function StudyDashboard() {
           "❌ Study material has no usable ID:",
           material
         );
-
         return;
       }
 
@@ -63,30 +56,21 @@ export default function StudyDashboard() {
         ...material,
         id: materialId,
       });
-    }, []);
+    },
+    []
+  );
 
-  /* =======================================================
-     CLOSE READER
-  ======================================================= */
-
-  const handleBack =
-    useCallback(() => {
-      setSelectedMaterial(null);
-    }, []);
-
-  /* =======================================================
-     READER MODE
-  ======================================================= */
+  const handleBack = useCallback(() => {
+    setSelectedMaterial(null);
+  }, []);
 
   if (selectedMaterial?.id) {
     return (
       <div
         className="
-          flex
           h-full
           min-h-0
           min-w-0
-          flex-col
           overflow-hidden
         "
       >
@@ -94,7 +78,8 @@ export default function StudyDashboard() {
           materialId={
             selectedMaterial.id
           }
-          material={
+          userId={userId}
+          initialMaterial={
             selectedMaterial
           }
           onBack={handleBack}
@@ -103,26 +88,19 @@ export default function StudyDashboard() {
     );
   }
 
-  /* =======================================================
-     FEED MODE
-  ======================================================= */
-
   return (
     <div
       className="
-        flex
         h-full
         min-h-0
         min-w-0
-        flex-col
-        overflow-hidden
+        overflow-y-auto
       "
     >
       <StudyLayout>
         <StudyFeed
-          onOpen={
-            handleOpenMaterial
-          }
+          userId={userId}
+          onOpen={handleOpen}
         />
       </StudyLayout>
     </div>
