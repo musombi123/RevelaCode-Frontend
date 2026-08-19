@@ -1,15 +1,25 @@
-// components/study/StudyLayout.jsx
-
-"use client";
+// src/components/study/StudyLayout.jsx
 
 import React from "react";
 
-export default function StudyLayout({ children }) {
+export default function StudyLayout({
+  children,
+}) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        {children}
-      </div>
+    <div
+      className="
+        mx-auto
+        w-full
+        max-w-7xl
+        px-3
+        py-4
+        sm:px-5
+        sm:py-6
+        lg:px-8
+        lg:py-8
+      "
+    >
+      {children}
     </div>
   );
 }
