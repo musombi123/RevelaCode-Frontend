@@ -1,263 +1,139 @@
 // src/components/ProphecyDashboard.jsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
+
 import { useAuth } from "@/context/AuthContext";
 import { useHistory } from "@/context/HistoryContext";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+
 import {
   AlertTriangle,
+  ArrowRight,
   BookOpen,
   Brain,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Clock3,
   Copy,
   ExternalLink,
+  FileText,
+  History,
+  Info,
   Landmark,
+  Layers3,
   Lightbulb,
   Link2,
   Loader2,
   Search,
   ShieldCheck,
   Sparkles,
+  Target,
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
-const REVELAAI_URL = import.meta.env.VITE_REVELAAI_URL;
+const REVELAAI_URL =
+  import.meta.env.VITE_REVELAAI_URL;
 
 const PROPHECY_DECODE_ENDPOINT =
   `${API_URL}/api/prophecy/decode`;
 
-export default function ProphecyDashboard() {
-  const { isGuest } = useAuth();
-  const { addProphecyHistory } = useHistory();
+/* =========================================================
+   HELPERS
+========================================================= */
 
-  const [searchInput, setSearchInput] = useState("");
-  const [decodedData, setDecodedData] = useState([]);
-  const [timestamp, setTimestamp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [guestDecodeCount, setGuestDecodeCount] = useState(0);
-  const [copied, setCopied] = useState(false);
-  const [aiInsight, setAiInsight] = useState("");
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 
-  const [expandedSections, setExpandedSections] = useState({
-    context: true,
-    history: false,
-    interpretations: true,
-    sda: true,
-    evidence: false,
-    curiosity: true,
-    related: false,
-    sources: false,
-  });
+const cleanUrl = (url) => {
+  if (!url || typeof url !== "string") {
+    return "";
+  }
 
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
+  const markdownMatch = url.match(
+    /^\[.*?\]\((https?:\/\/[^)]+)\)$/
   );
 
-  /* =========================================================
-     THEME
-  ========================================================= */
+  if (markdownMatch) {
+    return markdownMatch[1];
+  }
 
-  useEffect(() => {
-    const root = document.documentElement;
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
+    return url;
+  }
 
-    const updateTheme = () => {
-      setIsDark(root.classList.contains("dark"));
-    };
+  return "";
+};
 
-    updateTheme();
-
-    const observer = new MutationObserver(updateTheme);
-
-    observer.observe(root, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  /* =========================================================
-     GUEST DECODE COUNT
-  ========================================================= */
-
-  useEffect(() => {
-    try {
-      const savedCount =
-        localStorage.getItem("guestDecodeCount");
-
-      if (savedCount) {
-        setGuestDecodeCount(Number(savedCount));
-      }
-    } catch (err) {
-      console.error(
-        "❌ Failed to load guest decode count:",
-        err
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "guestDecodeCount",
-        String(guestDecodeCount)
-      );
-    } catch (err) {
-      console.error(
-        "❌ Failed to save guest decode count:",
-        err
-      );
-    }
-  }, [guestDecodeCount]);
-
-  /* =========================================================
-     DAILY AI INSIGHT
-  ========================================================= */
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchAIInsight = async () => {
-      try {
-        if (!REVELAAI_URL) {
-          if (!cancelled) {
-            setAiInsight(
-              "Daily AI insight is currently unavailable."
-            );
-          }
-          return;
-        }
-
-        const res = await fetch(
-          `${REVELAAI_URL}/daily-insights`
-        );
-
-        if (!res.ok) {
-          throw new Error(
-            `AI insight request failed: ${res.status}`
-          );
-        }
-
-        const data = await res.json();
-
-        if (!cancelled) {
-          setAiInsight(
-            data?.insight ||
-              "Explore a prophecy to discover its context, interpretations, and connections."
-          );
-        }
-      } catch (err) {
-        console.error(
-          "❌ Failed to fetch AI insight:",
-          err
-        );
-
-        if (!cancelled) {
-          setAiInsight(
-            "Explore a prophecy to discover its context, interpretations, and connections."
-          );
-        }
-      }
-    };
-
-    fetchAIInsight();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  /* =========================================================
-     HELPERS
-  ========================================================= */
-
-  const toggleSection = (section) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
-  const normalizeText = (value) =>
-    String(value || "")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
-
-  const cleanUrl = (url) => {
-    if (!url || typeof url !== "string") {
-      return "";
-    }
-
-    const markdownMatch = url.match(
-      /^\[.*?\]\((https?:\/\/[^)]+)\)$/
+const titleCase = (value) =>
+  String(value || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) =>
+      char.toUpperCase()
     );
 
-    if (markdownMatch) {
-      return markdownMatch[1];
-    }
+const safeArray = (value) =>
+  Array.isArray(value) ? value : [];
 
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
+const safeObject = (value) =>
+  value &&
+  typeof value === "object" &&
+  !Array.isArray(value)
+    ? value
+    : {};
 
-    return "";
-  };
+/* =========================================================
+   SAFE DATA NORMALIZATION
+========================================================= */
 
-  /* =========================================================
-     NORMALIZE ARRAY
-  ========================================================= */
+const normalizeDecodedArray = (items) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
 
-  const normalizeDecodedArray = (items) => {
-    if (!Array.isArray(items)) {
+  return items.flatMap((entry) => {
+    if (
+      !entry ||
+      typeof entry !== "object"
+    ) {
       return [];
     }
 
-    return items.flatMap((entry) => {
-      if (!entry || typeof entry !== "object") {
-        return [];
-      }
+    /* Already normalized */
 
-      /*
-       * Already normalized:
-       *
-       * {
-       *   symbol: "666",
-       *   data: {...}
-       * }
-       */
+    if (
+      entry.symbol &&
+      entry.data &&
+      typeof entry.data === "object" &&
+      !Array.isArray(entry.data)
+    ) {
+      return [
+        {
+          symbol: entry.symbol,
+          data: entry.data,
+        },
+      ];
+    }
 
-      if (
-        entry.symbol &&
-        entry.data &&
-        typeof entry.data === "object" &&
-        !Array.isArray(entry.data)
-      ) {
-        return [
-          {
-            symbol: entry.symbol,
-            data: entry.data,
-          },
-        ];
-      }
+    /* { "666": {...} } */
 
-      /*
-       * Backend returned:
-       *
-       * {
-       *   "666": {...}
-       * }
-       */
+    const nestedEntries =
+      Object.entries(entry);
 
-      const nestedEntries = Object.entries(entry);
-
-      const validSymbols = nestedEntries.filter(
-        ([key, value]) =>
+    const symbolEntries =
+      nestedEntries.filter(
+        ([, value]) =>
           value &&
           typeof value === "object" &&
           !Array.isArray(value) &&
@@ -270,121 +146,63 @@ export default function ProphecyDashboard() {
           )
       );
 
-      if (validSymbols.length > 0) {
-        return validSymbols.map(
-          ([symbol, data]) => ({
-            symbol,
-            data,
-          })
-        );
-      }
-
-      /*
-       * Backend returned one prophecy directly:
-       *
-       * {
-       *   symbol: "666",
-       *   title: "...",
-       *   ...
-       * }
-       */
-
-      if (
-        entry.symbol ||
-        entry.title ||
-        entry.summary ||
-        entry.primary_reference ||
-        entry.primaryReference
-      ) {
-        return [
-          {
-            symbol:
-              entry.symbol ||
-              entry.title ||
-              "Prophecy",
-            data: entry,
-          },
-        ];
-      }
-
-      return [];
-    });
-  };
-
-  /* =========================================================
-     NORMALIZE BACKEND RESPONSE
-  ========================================================= */
-
-  const normalizeDecoded = (result, query = "") => {
-    if (!result) {
-      return [];
+    if (symbolEntries.length > 0) {
+      return symbolEntries.map(
+        ([symbol, data]) => ({
+          symbol,
+          data,
+        })
+      );
     }
 
-    const normalizedQuery =
-      normalizeText(query);
-
-    /*
-     * 1. COMPLETE KNOWLEDGE DATASET
-     *
-     * {
-     *   schema_version: "2.0",
-     *   symbols: {
-     *      "666": {...},
-     *      "beast": {...}
-     *   }
-     * }
-     *
-     * IMPORTANT:
-     * Only return matching symbol(s) instead of
-     * dumping the whole dataset into the UI.
-     */
+    /* Direct prophecy */
 
     if (
-      result.symbols &&
-      typeof result.symbols === "object" &&
-      !Array.isArray(result.symbols)
+      entry.symbol ||
+      entry.title ||
+      entry.summary ||
+      entry.primary_reference ||
+      entry.primaryReference
     ) {
-      const entries = Object.entries(
-        result.symbols
-      );
+      return [
+        {
+          symbol:
+            entry.symbol ||
+            entry.title ||
+            "Prophecy",
+          data: entry,
+        },
+      ];
+    }
 
-      if (!normalizedQuery) {
-        return entries.map(
-          ([symbol, data]) => ({
-            symbol,
-            data: data || {},
-          })
-        );
-      }
+    return [];
+  });
+};
 
-      const matching = entries.filter(
-        ([symbol, data]) => {
-          const normalizedSymbol =
-            normalizeText(symbol);
+const normalizeDecoded = (
+  result,
+  query = ""
+) => {
+  if (!result) {
+    return [];
+  }
 
-          const normalizedDataSymbol =
-            normalizeText(data?.symbol);
+  const normalizedQuery =
+    normalizeText(query);
 
-          const normalizedTitle =
-            normalizeText(data?.title);
+  /* Full dataset */
 
-          const normalizedReference =
-            normalizeText(
-              data?.primary_reference
-            );
+  if (
+    result.symbols &&
+    typeof result.symbols === "object" &&
+    !Array.isArray(result.symbols)
+  ) {
+    const entries = Object.entries(
+      result.symbols
+    );
 
-          return (
-            normalizedSymbol === normalizedQuery ||
-            normalizedDataSymbol === normalizedQuery ||
-            normalizedTitle === normalizedQuery ||
-            normalizedSymbol.includes(normalizedQuery) ||
-            normalizedTitle.includes(normalizedQuery) ||
-            normalizedReference.includes(normalizedQuery)
-          );
-        }
-      );
-
-      return matching.map(
+    if (!normalizedQuery) {
+      return entries.map(
         ([symbol, data]) => ({
           symbol,
           data: data || {},
@@ -392,364 +210,826 @@ export default function ProphecyDashboard() {
       );
     }
 
-    /*
-     * 2. {
-     *      decoded: [...]
-     *    }
-     */
+    const matching = entries.filter(
+      ([symbol, data]) => {
+        const normalizedSymbol =
+          normalizeText(symbol);
 
-    if (Array.isArray(result.decoded)) {
-      return normalizeDecodedArray(
-        result.decoded
-      );
-    }
+        const normalizedDataSymbol =
+          normalizeText(data?.symbol);
 
-    /*
-     * 3. {
-     *      data: {
-     *        decoded: [...]
-     *      }
-     *    }
-     */
+        const normalizedTitle =
+          normalizeText(data?.title);
 
-    if (
-      Array.isArray(result?.data?.decoded)
-    ) {
-      return normalizeDecodedArray(
-        result.data.decoded
-      );
-    }
+        const normalizedReference =
+          normalizeText(
+            data?.primary_reference
+          );
 
-    /*
-     * 4. {
-     *      data: [...]
-     *    }
-     */
+        const normalizedSummary =
+          normalizeText(
+            data?.summary
+          );
 
-    if (Array.isArray(result?.data)) {
-      return normalizeDecodedArray(
-        result.data
-      );
-    }
-
-    /*
-     * 5. Direct prophecy object
-     *
-     * {
-     *   symbol: "666",
-     *   title: "...",
-     *   summary: "...",
-     * }
-     */
-
-    if (
-      typeof result === "object" &&
-      !Array.isArray(result) &&
-      (
-        result.symbol ||
-        result.title ||
-        result.summary ||
-        result.primary_reference ||
-        result.primaryReference
-      )
-    ) {
-      return [
-        {
-          symbol:
-            result.symbol ||
-            result.title ||
-            "Prophecy",
-          data: result,
-        },
-      ];
-    }
-
-    /*
-     * 6. {
-     *      "666": {...}
-     *    }
-     */
-
-    if (
-      typeof result === "object" &&
-      !Array.isArray(result)
-    ) {
-      const entries = Object.entries(result);
-
-      const symbolEntries =
-        entries.filter(
-          ([key, value]) =>
-            value &&
-            typeof value === "object" &&
-            !Array.isArray(value) &&
-            (
-              value.symbol ||
-              value.title ||
-              value.summary ||
-              value.primary_reference ||
-              value.primaryReference
-            )
-        );
-
-      if (symbolEntries.length > 0) {
-        return symbolEntries.map(
-          ([symbol, data]) => ({
-            symbol,
-            data,
-          })
+        return (
+          normalizedSymbol === normalizedQuery ||
+          normalizedDataSymbol === normalizedQuery ||
+          normalizedTitle === normalizedQuery ||
+          normalizedSymbol.includes(normalizedQuery) ||
+          normalizedTitle.includes(normalizedQuery) ||
+          normalizedReference.includes(normalizedQuery) ||
+          normalizedSummary.includes(normalizedQuery)
         );
       }
-    }
+    );
 
-    /*
-     * 7. Direct array response
-     */
+    return matching.map(
+      ([symbol, data]) => ({
+        symbol,
+        data: data || {},
+      })
+    );
+  }
 
-    if (Array.isArray(result)) {
-      return normalizeDecodedArray(
-        result
-      );
-    }
+  /* decoded */
 
-    return [];
-  };
+  if (Array.isArray(result.decoded)) {
+    return normalizeDecodedArray(
+      result.decoded
+    );
+  }
 
-  /* =========================================================
-     VALIDATE NORMALIZED RESPONSE
-  ========================================================= */
+  /* data.decoded */
 
-  const validateDecodedResults = (results) => {
-    if (!Array.isArray(results)) {
-      return [];
-    }
+  if (
+    Array.isArray(
+      result?.data?.decoded
+    )
+  ) {
+    return normalizeDecodedArray(
+      result.data.decoded
+    );
+  }
 
-    return results.filter((entry) => {
-      if (
-        !entry ||
-        typeof entry !== "object"
-      ) {
-        return false;
-      }
+  /* data array */
 
-      if (entry.message) {
-        return true;
-      }
+  if (Array.isArray(result?.data)) {
+    return normalizeDecodedArray(
+      result.data
+    );
+  }
 
-      if (
-        !entry.symbol ||
-        !entry.data ||
-        typeof entry.data !== "object" ||
-        Array.isArray(entry.data)
-      ) {
-        return false;
-      }
+  /* direct object */
 
-      return true;
-    });
-  };
+  if (
+    typeof result === "object" &&
+    !Array.isArray(result) &&
+    (
+      result.symbol ||
+      result.title ||
+      result.summary ||
+      result.primary_reference ||
+      result.primaryReference
+    )
+  ) {
+    return [
+      {
+        symbol:
+          result.symbol ||
+          result.title ||
+          "Prophecy",
+        data: result,
+      },
+    ];
+  }
 
-  /* =========================================================
-     RELATED / CURIOSITY DECODE
-  ========================================================= */
+  /* keyed symbol object */
 
-  const triggerDecode = (value) => {
-    const cleaned = String(value || "").trim();
+  if (
+    typeof result === "object" &&
+    !Array.isArray(result)
+  ) {
+    const entries =
+      Object.entries(result);
 
-    if (!cleaned) {
-      return;
-    }
-
-    setSearchInput(cleaned);
-
-    setTimeout(() => {
-      handleDecode(cleaned);
-    }, 0);
-  };
-
-  /* =========================================================
-     DECODE
-  ========================================================= */
-
-  const handleDecode = async (
-    overrideValue = null
-  ) => {
-    const query = String(
-      overrideValue ?? searchInput ?? ""
-    ).trim();
-
-    if (!query) {
-      return;
-    }
-
-    if (
-      isGuest &&
-      guestDecodeCount >= 5
-    ) {
-      alert(
-        "⚠ Guest limit reached: 5 decodes per day."
-      );
-      return;
-    }
-
-    setLoading(true);
-    setDecodedData([]);
-    setTimestamp("");
-    setCopied(false);
-
-    try {
-      if (!API_URL) {
-        throw new Error(
-          "VITE_API_URL is not configured."
-        );
-      }
-
-      const res = await fetch(
-        PROPHECY_DECODE_ENDPOINT,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            verse: query,
-          }),
-        }
+    const valid =
+      entries.filter(
+        ([, value]) =>
+          value &&
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          (
+            value.symbol ||
+            value.title ||
+            value.summary ||
+            value.primary_reference ||
+            value.primaryReference
+          )
       );
 
-      const data = await res
-        .json()
-        .catch(() => ({}));
-
-      console.log(
-        "🔍 Prophecy backend response:",
-        data
-      );
-
-      if (!res.ok) {
-        setDecodedData([
-          {
-            message:
-              data?.message ||
-              `❌ Decode failed (HTTP ${res.status})`,
-          },
-        ]);
-        return;
-      }
-
-      /*
-       * Normalize according to the real
-       * backend response shape.
-       */
-
-      const normalized =
-        normalizeDecoded(
+    if (valid.length > 0) {
+      return valid.map(
+        ([symbol, data]) => ({
+          symbol,
           data,
-          query
-        );
+        })
+      );
+    }
+  }
 
-      console.log(
-        "🔍 Normalized prophecy response:",
-        normalized
+  if (Array.isArray(result)) {
+    return normalizeDecodedArray(
+      result
+    );
+  }
+
+  return [];
+};
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+const getStatusConfig = (status) => {
+  const normalized =
+    String(status || "unknown")
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+  const configs = {
+    debated: {
+      label: "Debated",
+      icon: AlertTriangle,
+      className:
+        "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+    },
+
+    future: {
+      label: "Future",
+      icon: Clock3,
+      className:
+        "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    },
+
+    ongoing: {
+      label: "Ongoing",
+      icon: Clock3,
+      className:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
+    },
+
+    fulfilled: {
+      label: "Fulfilled",
+      icon: CheckCircle2,
+      className:
+        "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
+    },
+
+    interpretive_association: {
+      label: "Interpretive",
+      icon: Brain,
+      className:
+        "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+    },
+
+    historical_and_interpretive: {
+      label: "Historical + Interpretive",
+      icon: Brain,
+      className:
+        "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
+    },
+
+    textually_defined: {
+      label: "Textually Defined",
+      icon: CheckCircle2,
+      className:
+        "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
+    },
+
+    theological: {
+      label: "Theological",
+      icon: Brain,
+      className:
+        "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
+    },
+
+    interpreted: {
+      label: "Interpreted",
+      icon: Brain,
+      className:
+        "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
+    },
+  };
+
+  return (
+    configs[normalized] || {
+      label:
+        titleCase(normalized) ||
+        "Unknown",
+      icon: Info,
+      className:
+        "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    }
+  );
+};
+
+/* =========================================================
+   SMALL COMPONENTS
+========================================================= */
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+}) {
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2">
+        <div
+          className="
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+            rounded-xl
+            bg-gray-100
+            text-gray-600
+            dark:bg-gray-800
+            dark:text-gray-300
+          "
+        >
+          <Icon size={17} />
+        </div>
+
+        <h3
+          className="
+            text-sm
+            font-black
+            text-gray-900
+            dark:text-white
+          "
+        >
+          {title}
+        </h3>
+      </div>
+
+      {description && (
+        <p
+          className="
+            mt-2
+            text-xs
+            leading-5
+            text-gray-500
+            dark:text-gray-400
+          "
+        >
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Pill({
+  children,
+  className = "",
+}) {
+  return (
+    <span
+      className={`
+        inline-flex
+        items-center
+        rounded-full
+        px-2.5
+        py-1.5
+        text-[11px]
+        font-bold
+        ${className}
+      `}
+    >
+      {children}
+    </span>
+  );
+}
+
+function InfoCard({
+  label,
+  value,
+  icon: Icon,
+}) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <div
+      className="
+        rounded-xl
+        border
+        border-gray-200
+        bg-gray-50
+        p-3
+        dark:border-gray-800
+        dark:bg-gray-900
+      "
+    >
+      <div className="flex items-center gap-2">
+        {Icon && (
+          <Icon
+            size={14}
+            className="text-gray-400"
+          />
+        )}
+
+        <p
+          className="
+            text-[10px]
+            font-bold
+            uppercase
+            tracking-wider
+            text-gray-400
+          "
+        >
+          {label}
+        </p>
+      </div>
+
+      <p
+        className="
+          mt-1
+          text-sm
+          font-semibold
+          leading-6
+          text-gray-900
+          dark:text-white
+        "
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  icon: Icon,
+  children,
+  open,
+  onToggle,
+}) {
+  return (
+    <section
+      className="
+        overflow-hidden
+        rounded-2xl
+        border
+        border-gray-200
+        bg-white
+        dark:border-gray-800
+        dark:bg-gray-950
+      "
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="
+          flex
+          w-full
+          items-center
+          justify-between
+          gap-3
+          px-4
+          py-4
+          text-left
+          transition
+          hover:bg-gray-50
+          dark:hover:bg-gray-900
+          sm:px-5
+        "
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-gray-100
+              text-gray-600
+              dark:bg-gray-800
+              dark:text-gray-300
+            "
+          >
+            <Icon size={17} />
+          </span>
+
+          <span
+            className="
+              truncate
+              text-sm
+              font-black
+              text-gray-900
+              dark:text-white
+            "
+          >
+            {title}
+          </span>
+        </span>
+
+        {open ? (
+          <ChevronUp
+            size={17}
+            className="shrink-0 text-gray-400"
+          />
+        ) : (
+          <ChevronDown
+            size={17}
+            className="shrink-0 text-gray-400"
+          />
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="
+            border-t
+            border-gray-100
+            px-4
+            py-5
+            dark:border-gray-800
+            sm:px-5
+          "
+        >
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* =========================================================
+   MAIN DASHBOARD
+========================================================= */
+
+export default function ProphecyDashboard() {
+  const { isGuest } = useAuth();
+  const { addProphecyHistory } = useHistory();
+
+  const [searchInput, setSearchInput] =
+    useState("");
+
+  const [decodedData, setDecodedData] =
+    useState([]);
+
+  const [timestamp, setTimestamp] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [guestDecodeCount, setGuestDecodeCount] =
+    useState(0);
+
+  const [copiedKey, setCopiedKey] =
+    useState("");
+
+  const [aiInsight, setAiInsight] =
+    useState("");
+
+  const [isDark, setIsDark] =
+    useState(() =>
+      document.documentElement.classList.contains(
+        "dark"
+      )
+    );
+
+  const [openSections, setOpenSections] =
+    useState({});
+
+  /* =======================================================
+     THEME
+  ======================================================= */
+
+  useEffect(() => {
+    const root =
+      document.documentElement;
+
+    const updateTheme = () => {
+      setIsDark(
+        root.classList.contains("dark")
+      );
+    };
+
+    updateTheme();
+
+    const observer =
+      new MutationObserver(
+        updateTheme
       );
 
-      /*
-       * Verify the normalized structure.
-       */
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-      const validated =
-        validateDecodedResults(
-          normalized
+    return () =>
+      observer.disconnect();
+  }, []);
+
+  /* =======================================================
+     GUEST COUNT
+  ======================================================= */
+
+  useEffect(() => {
+    try {
+      const stored =
+        Number(
+          localStorage.getItem(
+            "guestDecodeCount"
+          ) || 0
         );
 
-      console.log(
-        "✅ Validated prophecy response:",
-        validated
+      if (Number.isFinite(stored)) {
+        setGuestDecodeCount(stored);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load guest decode count:",
+        error
       );
+    }
+  }, []);
 
-      /*
-       * Backend responded successfully,
-       * but nothing matched the query.
-       */
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "guestDecodeCount",
+        String(guestDecodeCount)
+      );
+    } catch (error) {
+      console.error(
+        "Failed to save guest decode count:",
+        error
+      );
+    }
+  }, [guestDecodeCount]);
 
-      if (!validated.length) {
-        setDecodedData([
-          {
-            message:
-              `🔎 No verified prophecy record matched "${query}".`,
-          },
-        ]);
+  /* =======================================================
+     AI INSIGHT
+  ======================================================= */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInsight = async () => {
+      try {
+        if (!REVELAAI_URL) {
+          setAiInsight(
+            "Explore a prophecy to examine its biblical context, interpretations, evidence, and related symbols."
+          );
+          return;
+        }
+
+        const response =
+          await fetch(
+            `${REVELAAI_URL}/daily-insights`
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            `AI request failed: ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        if (!cancelled) {
+          setAiInsight(
+            data?.insight ||
+              "Explore a prophecy to examine its biblical context, interpretations, evidence, and related symbols."
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Failed to fetch AI insight:",
+          error
+        );
+
+        if (!cancelled) {
+          setAiInsight(
+            "Explore a prophecy to examine its biblical context, interpretations, evidence, and related symbols."
+          );
+        }
+      }
+    };
+
+    loadInsight();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /* =======================================================
+     SECTION MANAGEMENT
+  ======================================================= */
+
+  const toggleSection = useCallback(
+    (key) => {
+      setOpenSections((current) => ({
+        ...current,
+        [key]: !current[key],
+      }));
+    },
+    []
+  );
+
+  const shouldOpen = useCallback(
+    (key, fallback = false) =>
+      openSections[key] ??
+      fallback,
+    [openSections]
+  );
+
+  /* =======================================================
+     DECODE
+  ======================================================= */
+
+  const handleDecode = useCallback(
+    async (override = null) => {
+      const query = String(
+        override ?? searchInput ?? ""
+      ).trim();
+
+      if (!query) {
         return;
       }
 
-      /*
-       * Guest users get a maximum of five
-       * returned records.
-       */
+      if (
+        isGuest &&
+        guestDecodeCount >= 5
+      ) {
+        window.alert(
+          "Guest limit reached: 5 prophecy decodes per day."
+        );
+        return;
+      }
 
-      const finalDecoded =
-        isGuest
+      setLoading(true);
+      setDecodedData([]);
+      setTimestamp("");
+      setCopiedKey("");
+      setOpenSections({});
+
+      try {
+        if (!API_URL) {
+          throw new Error(
+            "VITE_API_URL is not configured."
+          );
+        }
+
+        const response =
+          await fetch(
+            PROPHECY_DECODE_ENDPOINT,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                verse: query,
+              }),
+            }
+          );
+
+        const data =
+          await response
+            .json()
+            .catch(() => ({}));
+
+        if (!response.ok) {
+          setDecodedData([
+            {
+              message:
+                data?.message ||
+                `Decode failed (HTTP ${response.status}).`,
+            },
+          ]);
+          return;
+        }
+
+        const normalized =
+          normalizeDecoded(
+            data,
+            query
+          );
+
+        const validated =
+          normalized.filter(
+            (entry) =>
+              entry &&
+              typeof entry === "object" &&
+              entry.symbol &&
+              entry.data &&
+              typeof entry.data === "object"
+          );
+
+        if (!validated.length) {
+          setDecodedData([
+            {
+              message:
+                `No verified prophecy record matched "${query}".`,
+            },
+          ]);
+          return;
+        }
+
+        const results = isGuest
           ? validated.slice(0, 5)
           : validated;
 
-      setDecodedData(
-        finalDecoded
-      );
+        setDecodedData(results);
 
-      const now =
-        new Date().toLocaleString();
+        const now =
+          new Date().toLocaleString();
 
-      setTimestamp(now);
+        setTimestamp(now);
 
-      /*
-       * Save the exact verified result
-       * into history.
-       */
+        if (
+          !isGuest &&
+          addProphecyHistory
+        ) {
+          await addProphecyHistory({
+            query,
+            results,
+            timestamp: now,
+          });
+        }
 
-      if (
-        !isGuest &&
-        addProphecyHistory
-      ) {
-        await addProphecyHistory({
-          query,
-          results: finalDecoded,
-          timestamp: now,
+        if (isGuest) {
+          setGuestDecodeCount(
+            (current) => current + 1
+          );
+        }
+
+        requestAnimationFrame(() => {
+          document
+            .getElementById(
+              "prophecy-results"
+            )
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
         });
+      } catch (error) {
+        console.error(
+          "Prophecy decode failed:",
+          error
+        );
+
+        setDecodedData([
+          {
+            message:
+              error?.message ||
+              "Server error. Please try again later.",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      searchInput,
+      isGuest,
+      guestDecodeCount,
+      addProphecyHistory,
+    ]
+  );
+
+  const triggerDecode = useCallback(
+    (value) => {
+      const cleaned =
+        String(value || "").trim();
+
+      if (!cleaned) {
+        return;
       }
 
-      if (isGuest) {
-        setGuestDecodeCount(
-          (prev) => prev + 1
-        );
-      }
+      setSearchInput(cleaned);
 
       requestAnimationFrame(() => {
-        document
-          .getElementById(
-            "prophecy-results"
-          )
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
+        handleDecode(cleaned);
       });
-    } catch (err) {
-      console.error(
-        "❌ Decode error:",
-        err
-      );
-
-      setDecodedData([
-        {
-          message:
-            err?.message ||
-            "❌ Server error. Please try again later.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [handleDecode]
+  );
 
   const handleSearchKeyDown = (
     event
@@ -763,1332 +1043,1918 @@ export default function ProphecyDashboard() {
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      COPY
-  ========================================================= */
+  ======================================================= */
 
   const handleCopy = async (
-    specificData = null
+    key,
+    value
   ) => {
-    const payload =
-      specificData || decodedData;
-
-    if (!payload?.length) {
+    if (!value) {
       return;
     }
 
     try {
       await navigator.clipboard.writeText(
-        JSON.stringify(
-          payload,
-          null,
-          2
-        )
+        typeof value === "string"
+          ? value
+          : JSON.stringify(
+              value,
+              null,
+              2
+            )
       );
 
-      setCopied(true);
+      setCopiedKey(key);
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch (err) {
+      window.setTimeout(() => {
+        setCopiedKey("");
+      }, 1800);
+    } catch (error) {
       console.error(
-        "❌ Clipboard copy failed:",
-        err
+        "Copy failed:",
+        error
       );
     }
   };
 
-  /* =========================================================
-     STATUS UI
-  ========================================================= */
+  /* =======================================================
+     QUICK SEARCHES
+  ======================================================= */
 
-  const getStatusConfig = (
-    status
-  ) => {
-    const normalized = String(
-      status || "unknown"
-    )
-      .toLowerCase()
-      .replace(/\s+/g, "_");
-
-    const configs = {
-      debated: {
-        label: "Debated",
-        icon: AlertTriangle,
-        className:
-          "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-      },
-
-      future: {
-        label: "Future",
-        icon: Clock3,
-        className:
-          "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
-      },
-
-      ongoing: {
-        label: "Ongoing",
-        icon: Clock3,
-        className:
-          "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
-      },
-
-      fulfilled: {
-        label: "Fulfilled",
-        icon: CheckCircle2,
-        className:
-          "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
-      },
-
-      interpretive_association: {
-        label: "Interpretive",
-        icon: AlertTriangle,
-        className:
-          "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-      },
-
-      historical_and_interpretive: {
-        label: "Historical + Interpretive",
-        icon: Brain,
-        className:
-          "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
-      },
-
-      textually_defined: {
-        label: "Textually Defined",
-        icon: CheckCircle2,
-        className:
-          "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
-      },
-
-      theological: {
-        label: "Theological",
-        icon: Brain,
-        className:
-          "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
-      },
-
-      interpreted: {
-        label: "Interpreted",
-        icon: Brain,
-        className:
-          "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
-      },
-    };
-
-    return (
-      configs[normalized] || {
-        label:
-          normalized.replaceAll(
-            "_",
-            " "
-          ) || "Unknown",
-        icon: Brain,
-        className:
-          "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-      }
+  const quickSearches =
+    useMemo(
+      () => [
+        {
+          label: "666",
+          description:
+            "Number of the beast",
+        },
+        {
+          label: "beast",
+          description:
+            "Beast from the sea",
+        },
+        {
+          label: "dragon",
+          description:
+            "Dragon in Revelation",
+        },
+        {
+          label: "false prophet",
+          description:
+            "Second beast / false prophet",
+        },
+        {
+          label: "mark of the beast",
+          description:
+            "Worship, allegiance and commerce",
+        },
+      ],
+      []
     );
-  };
 
-  /* =========================================================
-     SECTION COMPONENT
-  ========================================================= */
+  /* =======================================================
+     EMPTY STATE
+  ======================================================= */
 
-  const ExplorerSection = ({
-    id,
-    title,
-    icon: Icon,
-    children,
-    defaultOpen = false,
-  }) => {
-    const isOpen =
-      expandedSections[id] ??
-      defaultOpen;
+  const renderEmptyState = () => (
+    <div
+      className="
+        px-4
+        py-14
+        text-center
+        sm:px-8
+        sm:py-20
+      "
+    >
+      <div
+        className="
+          mx-auto
+          flex
+          h-20
+          w-20
+          items-center
+          justify-center
+          rounded-3xl
+          bg-gradient-to-br
+          from-purple-100
+          to-indigo-100
+          text-purple-600
+          dark:from-purple-950
+          dark:to-indigo-950
+          dark:text-purple-300
+        "
+      >
+        <Sparkles size={32} />
+      </div>
 
-    return (
-      <div className="border-t border-gray-200 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={() =>
-            toggleSection(id)
-          }
-          className="
-            flex
-            w-full
-            items-center
-            justify-between
-            gap-3
-            px-4
-            py-4
-            text-left
-            transition
-            hover:bg-gray-50
-            dark:hover:bg-gray-900/60
-            sm:px-5
-          "
-        >
-          <span className="flex min-w-0 items-center gap-3">
-            <span
+      <h2
+        className="
+          mt-6
+          text-2xl
+          font-black
+          tracking-tight
+          text-gray-900
+          dark:text-white
+        "
+      >
+        Prophecy Explorer
+      </h2>
+
+      <p
+        className="
+          mx-auto
+          mt-3
+          max-w-2xl
+          text-sm
+          leading-7
+          text-gray-500
+          dark:text-gray-400
+        "
+      >
+        Explore prophetic symbols and passages
+        through Scripture, historical context,
+        interpretive traditions, evidence,
+        SDA perspective, related symbols,
+        textual variants, and source material.
+      </p>
+
+      <div
+        className="
+          mx-auto
+          mt-7
+          grid
+          max-w-3xl
+          grid-cols-1
+          gap-3
+          sm:grid-cols-2
+          lg:grid-cols-3
+        "
+      >
+        {quickSearches.map(
+          (item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() =>
+                triggerDecode(
+                  item.label
+                )
+              }
               className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-lg
-                bg-gray-100
-                dark:bg-gray-800
+                rounded-2xl
+                border
+                border-gray-200
+                bg-gray-50
+                p-4
+                text-left
+                transition
+                hover:-translate-y-0.5
+                hover:border-purple-300
+                hover:bg-purple-50
+                hover:shadow-sm
+                dark:border-gray-800
+                dark:bg-gray-900
+                dark:hover:border-purple-800
+                dark:hover:bg-purple-950/30
               "
             >
-              <Icon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-            </span>
-
-            <span className="truncate font-semibold text-gray-900 dark:text-white">
-              {title}
-            </span>
-          </span>
-
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4 shrink-0 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-4 w-4 shrink-0 text-gray-400" />
-          )}
-        </button>
-
-        {isOpen && (
-          <div className="px-4 pb-5 sm:px-5">
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  /* =========================================================
-     DECODED RESULT RENDERER
-  ========================================================= */
-
-  const renderDecoded = () => {
-    if (!decodedData.length) {
-      return (
-        <div className="px-4 py-14 text-center sm:px-6">
-          <div
-            className="
-              mx-auto
-              mb-5
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              bg-purple-100
-              dark:bg-purple-950/60
-            "
-          >
-            <Sparkles className="h-7 w-7 text-purple-600 dark:text-purple-400" />
-          </div>
-
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Explore a prophecy
-          </h3>
-
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-gray-500 dark:text-gray-400">
-            Enter a prophetic symbol, verse,
-            or biblical phrase to explore
-            its meaning, context, historical
-            background, interpretations,
-            related prophecies, and sources.
-          </p>
-
-          <div className="mx-auto mt-6 grid max-w-2xl gap-2 sm:grid-cols-3">
-            {[
-              "666",
-              "Daniel 7",
-              "Mark of the beast",
-            ].map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() =>
-                  triggerDecode(
-                    suggestion
-                  )
-                }
+              <p
                 className="
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-white
-                  px-4
-                  py-3
                   text-sm
-                  font-medium
-                  text-gray-700
-                  transition
-                  hover:border-purple-300
-                  hover:bg-purple-50
-                  dark:border-gray-800
-                  dark:bg-gray-900
-                  dark:text-gray-300
-                  dark:hover:border-purple-800
-                  dark:hover:bg-purple-950/30
+                  font-bold
+                  text-gray-900
+                  dark:text-white
                 "
               >
-                {suggestion}
-              </button>
-            ))}
-          </div>
+                {item.label}
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  leading-5
+                  text-gray-500
+                  dark:text-gray-400
+                "
+              >
+                {item.description}
+              </p>
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+
+  /* =======================================================
+     RESULT RENDERER
+  ======================================================= */
+
+  const renderResult = (
+    entry,
+    index
+  ) => {
+    if (entry?.message) {
+      return (
+        <div
+          key={`message-${index}`}
+          className="
+            rounded-2xl
+            border
+            border-red-200
+            bg-red-50
+            p-5
+            text-sm
+            leading-7
+            text-red-700
+            dark:border-red-900/60
+            dark:bg-red-950/30
+            dark:text-red-300
+          "
+        >
+          {entry.message}
         </div>
       );
     }
 
-    return decodedData.map(
-      (entry, idx) => {
-        if (entry?.message) {
-          return (
-            <div
-              key={idx}
-              className="
-                m-4
-                rounded-xl
-                border
-                border-red-200
-                bg-red-50
-                p-4
-                text-sm
-                leading-6
-                text-red-700
-                dark:border-red-900
-                dark:bg-red-950/40
-                dark:text-red-300
-              "
-            >
-              {entry.message}
-            </div>
-          );
-        }
+    const symbolKey =
+      entry.symbol ||
+      "unknown";
 
-        /*
-         * IMPORTANT:
-         *
-         * normalizeDecoded() already converts
-         * everything to:
-         *
-         * {
-         *   symbol: "666",
-         *   data: {...}
-         * }
-         */
+    const data =
+      safeObject(entry.data);
 
-        const symbolKey =
-          entry.symbol ||
-          "Unknown Prophecy";
+    const title =
+      data.title ||
+      data.symbol ||
+      symbolKey;
 
-        const data =
-          entry.data || {};
+    const summary =
+      data.summary ||
+      data.meaning ||
+      "";
 
-        const title =
-          data.title ||
-          data.symbol ||
-          symbolKey;
+    const category =
+      data.category ||
+      "Prophetic Study";
 
-        const summary =
-          data.summary ||
-          data.meaning ||
-          data.notes ||
-          "";
+    const statusInfo =
+      getStatusConfig(
+        data.status
+      );
 
-        const primaryReference =
-          data.primary_reference ||
-          data.reference ||
-          "";
+    const StatusIcon =
+      statusInfo.icon;
 
-        const statusInfo =
-          getStatusConfig(
-            data.status
-          );
+    const primaryReference =
+      data.primary_reference ||
+      data.primaryReference ||
+      "";
 
-        const StatusIcon =
-          statusInfo.icon;
+    const crossReferences =
+      safeArray(
+        data.cross_references
+      );
 
-        const crossReferences =
-          Array.isArray(
-            data.cross_references
-          )
-            ? data.cross_references
-            : [];
+    const textualContext =
+      safeObject(
+        data.textual_context
+      );
 
-        const historicalContext =
-          data.historical_context;
+    const historicalContext =
+      safeObject(
+        data.historical_context
+      );
 
-        const textualContext =
-          data.textual_context;
+    const interpretations =
+      safeArray(
+        data.interpretations
+      );
 
-        const interpretations =
-          Array.isArray(
-            data.interpretations
-          )
-            ? data.interpretations
-            : [];
+    const sdaPerspective =
+      safeObject(
+        data.sda_perspective
+      );
 
-        const sdaPerspective =
-          data.sda_perspective;
+    const textualVariants =
+      safeArray(
+        data.textual_variants
+      );
 
-        const evidence =
-          data.evidence_vs_interpretation ||
-          {};
+    const curiosity =
+      safeArray(
+        data.curiosity
+      );
 
-        const curiosity =
-          Array.isArray(
-            data.curiosity
-          )
-            ? data.curiosity
-            : [];
+    const relatedSymbols =
+      safeArray(
+        data.related_symbols
+      );
 
-        const related =
-          Array.isArray(
-            data.related_symbols
-          )
-            ? data.related_symbols
-            : [];
+    const sources =
+      safeArray(data.sources);
 
-        const sources =
-          Array.isArray(
-            data.sources
-          )
-            ? data.sources
-            : [];
+    const evidence =
+      safeObject(
+        data.evidence_vs_interpretation
+      );
 
-        return (
-          <article
-            key={`${symbolKey}-${idx}`}
+    const confidence =
+      safeObject(
+        data.confidence
+      );
+
+    const chapterFlow =
+      safeArray(
+        textualContext.chapter_flow
+      );
+
+    const evidenceGroups = [
+      {
+        key: "facts",
+        title: "Biblical Facts",
+        description:
+          "What the text itself states or directly presents.",
+        items: safeArray(
+          evidence.textual_facts
+        ),
+        className:
+          "border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/20",
+      },
+      {
+        key: "historical",
+        title: "Historical Evidence",
+        description:
+          "Historical information relevant to the reading.",
+        items: safeArray(
+          evidence.historical_evidence
+        ),
+        className:
+          "border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-950/20",
+      },
+      {
+        key: "interpretive",
+        title: "Interpretive Claims",
+        description:
+          "Conclusions developed through interpretation.",
+        items: safeArray(
+          evidence.interpretive_claims
+        ),
+        className:
+          "border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20",
+      },
+      {
+        key: "speculation",
+        title: "Speculation",
+        description:
+          "Claims requiring stronger evidence or future confirmation.",
+        items: safeArray(
+          evidence.speculation
+        ),
+        className:
+          "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20",
+      },
+    ];
+
+    return (
+      <article
+        key={`${symbolKey}-${index}`}
+        className="
+          overflow-hidden
+          rounded-3xl
+          border
+          border-gray-200
+          bg-white
+          shadow-sm
+          dark:border-gray-800
+          dark:bg-gray-950
+        "
+      >
+        {/* =================================================
+            RESULT HERO
+        ================================================= */}
+
+        <div
+          className="
+            relative
+            overflow-hidden
+            border-b
+            border-gray-200
+            bg-gradient-to-br
+            from-indigo-50
+            via-white
+            to-purple-50
+            p-5
+            dark:border-gray-800
+            dark:from-indigo-950/30
+            dark:via-gray-950
+            dark:to-purple-950/30
+            sm:p-7
+          "
+        >
+          <div
             className="
-              overflow-hidden
-              rounded-2xl
-              border
-              border-gray-200
-              bg-white
-              shadow-sm
-              dark:border-gray-800
-              dark:bg-gray-950
+              pointer-events-none
+              absolute
+              -right-20
+              -top-20
+              h-56
+              w-56
+              rounded-full
+              bg-purple-500/10
+              blur-3xl
+            "
+          />
+
+          <div
+            className="
+              relative
+              z-10
+              grid
+              gap-6
+              xl:grid-cols-[minmax(0,1fr)_280px]
             "
           >
-            {/* ============================================
-                HERO
-            ============================================ */}
+            <div>
+              <div
+                className="
+                  flex
+                  flex-wrap
+                  items-center
+                  gap-2
+                "
+              >
+                <Pill
+                  className="
+                    bg-purple-100
+                    text-purple-700
+                    dark:bg-purple-950
+                    dark:text-purple-300
+                  "
+                >
+                  <Sparkles
+                    size={13}
+                    className="mr-1.5"
+                  />
+                  {category}
+                </Pill>
 
-            <div
-              className="
-                border-b
-                border-gray-200
-                bg-gradient-to-br
-                from-purple-50
-                via-white
-                to-blue-50
-                p-5
-                dark:border-gray-800
-                dark:from-purple-950/40
-                dark:via-gray-950
-                dark:to-blue-950/30
-                sm:p-7
-              "
-            >
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
+                <Pill
+                  className={
+                    statusInfo.className
+                  }
+                >
+                  <StatusIcon
+                    size={13}
+                    className="mr-1.5"
+                  />
+                  {statusInfo.label}
+                </Pill>
+
+                <Pill
+                  className="
+                    bg-white
+                    text-gray-500
+                    shadow-sm
+                    ring-1
+                    ring-gray-200
+                    dark:bg-gray-900
+                    dark:text-gray-400
+                    dark:ring-gray-800
+                  "
+                >
+                  {symbolKey}
+                </Pill>
+              </div>
+
+              <h2
+                className="
+                  mt-5
+                  text-3xl
+                  font-black
+                  tracking-tight
+                  text-gray-950
+                  dark:text-white
+                  sm:text-4xl
+                "
+              >
+                {title}
+              </h2>
+
+              {primaryReference && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(
+                      `${symbolKey}-reference`,
+                      primaryReference
+                    )
+                  }
+                  className="
+                    mt-3
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-xl
+                    border
+                    border-blue-200
+                    bg-blue-50
+                    px-3
+                    py-2
+                    text-sm
+                    font-bold
+                    text-blue-700
+                    transition
+                    hover:bg-blue-100
+                    dark:border-blue-900/60
+                    dark:bg-blue-950/30
+                    dark:text-blue-300
+                  "
+                >
+                  <BookOpen size={15} />
+
+                  {primaryReference}
+
+                  <Copy
+                    size={13}
+                    className="ml-1 opacity-60"
+                  />
+
+                  {copiedKey ===
+                    `${symbolKey}-reference` && (
+                    <span className="ml-1 text-[10px] text-green-600 dark:text-green-400">
+                      Copied
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {summary && (
+                <p
+                  className="
+                    mt-5
+                    max-w-4xl
+                    text-sm
+                    leading-7
+                    text-gray-600
+                    dark:text-gray-300
+                    sm:text-base
+                  "
+                >
+                  {summary}
+                </p>
+              )}
+
+              {data.key_question && (
+                <div
+                  className="
+                    mt-5
+                    rounded-2xl
+                    border
+                    border-purple-200
+                    bg-purple-50/80
+                    p-4
+                    dark:border-purple-900/50
+                    dark:bg-purple-950/20
+                  "
+                >
+                  <div
                     className="
-                      inline-flex
+                      flex
                       items-center
-                      gap-1.5
-                      rounded-full
-                      bg-purple-100
-                      px-3
-                      py-1.5
+                      gap-2
                       text-xs
-                      font-bold
+                      font-black
+                      uppercase
+                      tracking-wider
                       text-purple-700
-                      dark:bg-purple-950
                       dark:text-purple-300
                     "
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Target size={14} />
+                    Key Question
+                  </div>
 
-                    {data.category ||
-                      "Prophetic Symbol"}
-                  </span>
+                  <p
+                    className="
+                      mt-2
+                      text-sm
+                      font-semibold
+                      leading-7
+                      text-purple-950
+                      dark:text-purple-100
+                    "
+                  >
+                    {data.key_question}
+                  </p>
+                </div>
+              )}
+            </div>
 
-                  <span
-                    className={`
+            {/* Intelligence Panel */}
+
+            <aside
+              className="
+                h-fit
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white/80
+                p-4
+                shadow-sm
+                backdrop-blur-sm
+                dark:border-gray-800
+                dark:bg-gray-900/80
+              "
+            >
+              <div className="flex items-center gap-2">
+                <Layers3
+                  size={16}
+                  className="text-indigo-500"
+                />
+
+                <h3
+                  className="
+                    text-xs
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-gray-700
+                    dark:text-gray-300
+                  "
+                >
+                  Intelligence Profile
+                </h3>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {Object.entries(
+                  confidence
+                ).map(
+                  ([key, value]) => (
+                    <div
+                      key={key}
+                      className="
+                        rounded-xl
+                        bg-gray-50
+                        p-3
+                        dark:bg-gray-800
+                      "
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        {titleCase(key)}
+                      </p>
+
+                      <p className="mt-1 text-xs font-bold text-gray-800 dark:text-gray-200">
+                        {String(value)}
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        {/* =================================================
+            SCRIPTURE CONNECTIONS
+        ================================================= */}
+
+        {crossReferences.length > 0 && (
+          <div
+            className="
+              border-b
+              border-gray-200
+              px-5
+              py-5
+              dark:border-gray-800
+              sm:px-7
+            "
+          >
+            <SectionHeader
+              icon={Link2}
+              title="Scripture Connections"
+              description="Related passages available directly from the knowledge base."
+            />
+
+            <div className="flex flex-wrap gap-2">
+              {crossReferences.map(
+                (reference) => (
+                  <button
+                    key={reference}
+                    type="button"
+                    onClick={() =>
+                      triggerDecode(
+                        reference
+                      )
+                    }
+                    className="
                       inline-flex
                       items-center
                       gap-1.5
-                      rounded-full
-                      px-3
-                      py-1.5
-                      text-xs
-                      font-bold
-                      ${statusInfo.className}
-                    `}
-                  >
-                    <StatusIcon className="h-3.5 w-3.5" />
-
-                    {statusInfo.label}
-                  </span>
-                </div>
-
-                <div>
-                  <h3
-                    className="
-                      text-2xl
-                      font-bold
-                      tracking-tight
-                      text-gray-950
-                      dark:text-white
-                      sm:text-3xl
-                    "
-                  >
-                    {title}
-                  </h3>
-
-                  {primaryReference && (
-                    <div
-                      className="
-                        mt-2
-                        flex
-                        items-center
-                        gap-2
-                        text-sm
-                        font-semibold
-                        text-blue-600
-                        dark:text-blue-400
-                      "
-                    >
-                      <BookOpen className="h-4 w-4" />
-
-                      {primaryReference}
-                    </div>
-                  )}
-                </div>
-
-                {summary && (
-                  <p
-                    className="
-                      max-w-4xl
-                      text-sm
-                      leading-7
-                      text-gray-600
-                      dark:text-gray-300
-                      sm:text-base
-                    "
-                  >
-                    {summary}
-                  </p>
-                )}
-
-                {data.key_question && (
-                  <div
-                    className="
                       rounded-xl
                       border
-                      border-purple-200
-                      bg-white/80
-                      p-4
-                      dark:border-purple-900
-                      dark:bg-gray-900/70
+                      border-gray-200
+                      bg-gray-50
+                      px-3
+                      py-2
+                      text-xs
+                      font-bold
+                      text-gray-700
+                      transition
+                      hover:border-blue-300
+                      hover:bg-blue-50
+                      dark:border-gray-800
+                      dark:bg-gray-900
+                      dark:text-gray-300
+                      dark:hover:border-blue-800
+                      dark:hover:bg-blue-950/30
                     "
                   >
-                    <div className="flex items-center gap-2">
-                      <Search className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <BookOpen size={13} />
+                    {reference}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
 
-                      <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                        Key Question
-                      </span>
-                    </div>
+        {/* =================================================
+            CONTENT GRID
+        ================================================= */}
 
-                    <p className="mt-2 text-sm font-medium leading-7 text-gray-800 dark:text-gray-200">
-                      {data.key_question}
-                    </p>
-                  </div>
-                )}
+        <div className="space-y-4 p-4 sm:p-5 lg:p-6">
 
-                {data.confidence &&
-                  typeof data.confidence ===
-                    "object" && (
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(
-                        data.confidence
-                      ).map(
-                        ([key, value]) => (
+          {/* Biblical Context */}
+
+          {(chapterFlow.length > 0 ||
+            data.notes) && (
+            <CollapsibleSection
+              title="Biblical Context"
+              icon={BookOpen}
+              open={shouldOpen(
+                `${symbolKey}-context`,
+                true
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-context`
+                )
+              }
+            >
+              <div className="grid gap-4 lg:grid-cols-2">
+                {chapterFlow.length >
+                  0 && (
+                  <div>
+                    <h4
+                      className="
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-wider
+                        text-gray-400
+                      "
+                    >
+                      Passage Flow
+                    </h4>
+
+                    <div className="mt-3 space-y-2">
+                      {chapterFlow.map(
+                        (
+                          item,
+                          flowIndex
+                        ) => (
                           <div
-                            key={key}
+                            key={
+                              flowIndex
+                            }
                             className="
-                              rounded-lg
-                              border
-                              border-gray-200
-                              bg-white/70
-                              px-3
-                              py-2
-                              dark:border-gray-800
-                              dark:bg-gray-900/60
+                              flex
+                              gap-3
+                              rounded-xl
+                              bg-gray-50
+                              p-3
+                              dark:bg-gray-900
                             "
                           >
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                              {key.replaceAll(
-                                "_",
-                                " "
-                              )}
-                            </p>
+                            <span
+                              className="
+                                flex
+                                h-7
+                                w-7
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-full
+                                bg-indigo-100
+                                text-xs
+                                font-black
+                                text-indigo-700
+                                dark:bg-indigo-950
+                                dark:text-indigo-300
+                              "
+                            >
+                              {flowIndex + 1}
+                            </span>
 
-                            <p className="mt-0.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                              {String(value)}
+                            <p
+                              className="
+                                text-sm
+                                leading-6
+                                text-gray-700
+                                dark:text-gray-300
+                              "
+                            >
+                              {item}
                             </p>
                           </div>
                         )
                       )}
                     </div>
-                  )}
-              </div>
-            </div>
+                  </div>
+                )}
 
-            {/* ============================================
-                BIBLICAL CONNECTIONS
-            ============================================ */}
-
-            {crossReferences.length >
-              0 && (
-              <div className="px-4 py-4 sm:px-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-blue-500" />
-
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Biblical Connections
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {crossReferences.map(
-                    (ref) => (
-                      <button
-                        key={ref}
-                        type="button"
-                        onClick={() =>
-                          triggerDecode(
-                            ref
-                          )
-                        }
-                        className="
-                          rounded-lg
-                          border
-                          border-gray-200
-                          bg-gray-50
-                          px-3
-                          py-2
-                          text-xs
-                          font-semibold
-                          text-gray-700
-                          transition
-                          hover:border-blue-300
-                          hover:bg-blue-50
-                          dark:border-gray-700
-                          dark:bg-gray-900
-                          dark:text-gray-300
-                          dark:hover:border-blue-800
-                          dark:hover:bg-blue-950/30
-                        "
-                      >
-                        {ref}
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ============================================
-                BIBLICAL CONTEXT
-            ============================================ */}
-
-            {(textualContext ||
-              primaryReference) && (
-              <ExplorerSection
-                id="context"
-                icon={BookOpen}
-                title="Biblical Context"
-                defaultOpen
-              >
-                <div className="space-y-5">
-                  {textualContext?.chapter_flow?.length >
-                    0 && (
-                    <div>
-                      <h4 className="mb-3 text-sm font-bold text-gray-900 dark:text-white">
-                        Passage Flow
-                      </h4>
-
-                      <div className="space-y-2">
-                        {textualContext.chapter_flow.map(
-                          (item, i) => (
-                            <div
-                              key={i}
-                              className="
-                                flex
-                                gap-3
-                                rounded-xl
-                                bg-gray-50
-                                p-3
-                                dark:bg-gray-900
-                              "
-                            >
-                              <span
-                                className="
-                                  flex
-                                  h-6
-                                  w-6
-                                  shrink-0
-                                  items-center
-                                  justify-center
-                                  rounded-full
-                                  bg-blue-100
-                                  text-xs
-                                  font-bold
-                                  text-blue-700
-                                  dark:bg-blue-950
-                                  dark:text-blue-300
-                                "
-                              >
-                                {i + 1}
-                              </span>
-
-                              <p className="text-sm leading-6 text-gray-700 dark:text-gray-300">
-                                {item}
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {data.notes && (
-                    <div>
-                      <h4 className="mb-2 text-sm font-bold text-gray-900 dark:text-white">
-                        Notes
-                      </h4>
-
-                      <p className="text-sm leading-7 text-gray-600 dark:text-gray-300">
-                        {data.notes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ExplorerSection>
-            )}
-
-            {/* ============================================
-                HISTORICAL CONTEXT
-            ============================================ */}
-
-            {historicalContext && (
-              <ExplorerSection
-                id="history"
-                icon={Landmark}
-                title="Historical Context"
-              >
-                <div className="space-y-5">
-                  {historicalContext.period && (
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                        Period
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                        {historicalContext.period}
-                      </p>
-                    </div>
-                  )}
-
-                  {historicalContext.region && (
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                        Region
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                        {historicalContext.region}
-                      </p>
-                    </div>
-                  )}
-
-                  {historicalContext.description && (
-                    <p className="text-sm leading-7 text-gray-600 dark:text-gray-300">
-                      {
-                        historicalContext.description
-                      }
-                    </p>
-                  )}
-
-                  {historicalContext.why_it_matters && (
-                    <div
+                {data.notes && (
+                  <div
+                    className="
+                      rounded-xl
+                      border
+                      border-gray-200
+                      p-4
+                      dark:border-gray-800
+                    "
+                  >
+                    <h4
                       className="
-                        rounded-xl
-                        border
-                        border-amber-200
-                        bg-amber-50
-                        p-4
-                        dark:border-amber-900
-                        dark:bg-amber-950/30
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-wider
+                        text-gray-400
                       "
                     >
-                      <div className="flex items-center gap-2">
-                        <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Study Notes
+                    </h4>
 
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                          Why It Matters
-                        </span>
-                      </div>
+                    <p
+                      className="
+                        mt-3
+                        text-sm
+                        leading-7
+                        text-gray-600
+                        dark:text-gray-300
+                      "
+                    >
+                      {data.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-                      <p className="mt-2 text-sm leading-7 text-amber-900 dark:text-amber-200">
-                        {
-                          historicalContext.why_it_matters
-                        }
-                      </p>
-                    </div>
+          {/* Historical Context */}
+
+          {Object.keys(
+            historicalContext
+          ).length > 0 && (
+            <CollapsibleSection
+              title="Historical Context"
+              icon={Landmark}
+              open={shouldOpen(
+                `${symbolKey}-history`,
+                false
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-history`
+                )
+              }
+            >
+              <div className="grid gap-4 lg:grid-cols-3">
+                <InfoCard
+                  label="Period"
+                  value={
+                    historicalContext.period
+                  }
+                />
+
+                <InfoCard
+                  label="Region"
+                  value={
+                    historicalContext.region
+                  }
+                />
+
+                <div className="lg:col-span-1">
+                  {historicalContext.description && (
+                    <InfoCard
+                      label="Context"
+                      value={
+                        historicalContext.description
+                      }
+                    />
                   )}
                 </div>
-              </ExplorerSection>
-            )}
+              </div>
 
-            {/* ============================================
-                INTERPRETATIONS
-            ============================================ */}
-
-            {interpretations.length >
-              0 && (
-              <ExplorerSection
-                id="interpretations"
-                icon={Brain}
-                title="Interpretations"
-                defaultOpen
-              >
-                <div className="space-y-4">
-                  {interpretations.map(
-                    (item, i) => (
-                      <div
-                        key={i}
-                        className="
-                          rounded-xl
-                          border
-                          border-gray-200
-                          p-4
-                          dark:border-gray-800
-                        "
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h4 className="font-bold text-gray-900 dark:text-white">
-                            {item.name}
-                          </h4>
-
-                          {item.type && (
-                            <span
-                              className="
-                                rounded-full
-                                bg-gray-100
-                                px-2.5
-                                py-1
-                                text-[11px]
-                                font-bold
-                                text-gray-600
-                                dark:bg-gray-800
-                                dark:text-gray-300
-                              "
-                            >
-                              {item.type}
-                            </span>
-                          )}
-                        </div>
-
-                        {item.summary && (
-                          <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            {item.summary}
-                          </p>
-                        )}
-
-                        {item.evidence?.length >
-                          0 && (
-                          <div className="mt-4">
-                            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400">
-                              Supporting Evidence
-                            </p>
-
-                            <ul className="space-y-2">
-                              {item.evidence.map(
-                                (
-                                  point,
-                                  j
-                                ) => (
-                                  <li
-                                    key={j}
-                                    className="text-sm leading-6 text-gray-600 dark:text-gray-300"
-                                  >
-                                    <span className="mr-2 text-green-500">
-                                      •
-                                    </span>
-
-                                    {point}
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        )}
-
-                        {item.challenges?.length >
-                          0 && (
-                          <div className="mt-4">
-                            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                              Challenges
-                            </p>
-
-                            <ul className="space-y-2">
-                              {item.challenges.map(
-                                (
-                                  point,
-                                  j
-                                ) => (
-                                  <li
-                                    key={j}
-                                    className="text-sm leading-6 text-gray-600 dark:text-gray-300"
-                                  >
-                                    <span className="mr-2 text-amber-500">
-                                      •
-                                    </span>
-
-                                    {point}
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )}
-                </div>
-              </ExplorerSection>
-            )}
-
-            {/* ============================================
-                SDA PERSPECTIVE
-            ============================================ */}
-
-            {sdaPerspective?.summary && (
-              <ExplorerSection
-                id="sda"
-                icon={ShieldCheck}
-                title="SDA Perspective"
-              >
-                <div
+              {historicalContext.description && (
+                <p
                   className="
-                    rounded-xl
-                    border
-                    border-green-200
-                    bg-green-50
-                    p-4
-                    dark:border-green-900
-                    dark:bg-green-950/30
+                    mt-4
+                    text-sm
+                    leading-7
+                    text-gray-600
+                    dark:text-gray-300
                   "
                 >
-                  <p className="text-sm leading-7 text-green-900 dark:text-green-200">
+                  {
+                    historicalContext.description
+                  }
+                </p>
+              )}
+
+              {historicalContext.why_it_matters && (
+                <div
+                  className="
+                    mt-4
+                    rounded-2xl
+                    border
+                    border-amber-200
+                    bg-amber-50
+                    p-4
+                    dark:border-amber-900/50
+                    dark:bg-amber-950/20
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-2
+                      text-xs
+                      font-black
+                      uppercase
+                      tracking-wider
+                      text-amber-700
+                      dark:text-amber-300
+                    "
+                  >
+                    <Lightbulb size={14} />
+                    Why It Matters
+                  </div>
+
+                  <p
+                    className="
+                      mt-2
+                      text-sm
+                      leading-7
+                      text-amber-950
+                      dark:text-amber-100
+                    "
+                  >
                     {
-                      sdaPerspective.summary
+                      historicalContext.why_it_matters
                     }
                   </p>
-
-                  {sdaPerspective.source && (
-                    <div className="mt-4 flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-
-                      <span className="text-xs font-bold text-green-700 dark:text-green-400">
-                        {sdaPerspective.source}
-                      </span>
-                    </div>
-                  )}
                 </div>
-              </ExplorerSection>
-            )}
+              )}
+            </CollapsibleSection>
+          )}
 
-            {/* ============================================
-                EVIDENCE VS INTERPRETATION
-            ============================================ */}
+          {/* Interpretations */}
 
-            {(
-              evidence.textual_facts?.length ||
-              evidence.historical_evidence?.length ||
-              evidence.interpretive_claims?.length ||
-              evidence.speculation?.length
-            ) > 0 && (
-              <ExplorerSection
-                id="evidence"
-                icon={Lightbulb}
-                title="Evidence vs Interpretation"
-              >
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[
-                    {
-                      title: "Textual Facts",
-                      items:
-                        evidence.textual_facts,
-                      className:
-                        "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30",
-                    },
-                    {
-                      title:
-                        "Historical Evidence",
-                      items:
-                        evidence.historical_evidence,
-                      className:
-                        "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30",
-                    },
-                    {
-                      title:
-                        "Interpretive Claims",
-                      items:
-                        evidence.interpretive_claims,
-                      className:
-                        "border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/30",
-                    },
-                    {
-                      title: "Speculation",
-                      items:
-                        evidence.speculation,
-                      className:
-                        "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30",
-                    },
-                  ].map(
-                    ({
-                      title,
-                      items,
-                      className,
-                    }) =>
-                      items?.length > 0 ? (
-                        <div
-                          key={title}
-                          className={`rounded-xl border p-4 ${className}`}
-                        >
-                          <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                            {title}
-                          </h4>
-
-                          <ul className="mt-3 space-y-2">
-                            {items.map(
-                              (item, i) => (
-                                <li
-                                  key={i}
-                                  className="text-sm leading-6 text-gray-700 dark:text-gray-300"
-                                >
-                                  • {item}
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      ) : null
-                  )}
-                </div>
-              </ExplorerSection>
-            )}
-
-            {/* ============================================
-                CURIOSITY
-            ============================================ */}
-
-            {curiosity.length > 0 && (
-              <ExplorerSection
-                id="curiosity"
-                icon={Search}
-                title="Curiosity"
-                defaultOpen
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {curiosity.map(
-                    (question, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() =>
-                          triggerDecode(
-                            question
-                          )
-                        }
+          {interpretations.length >
+            0 && (
+            <CollapsibleSection
+              title={`Interpretations (${interpretations.length})`}
+              icon={Brain}
+              open={shouldOpen(
+                `${symbolKey}-interpretations`,
+                true
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-interpretations`
+                )
+              }
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                {interpretations.map(
+                  (
+                    interpretation,
+                    interpretationIndex
+                  ) => (
+                    <article
+                      key={
+                        interpretation.name ||
+                        interpretationIndex
+                      }
+                      className="
+                        rounded-2xl
+                        border
+                        border-gray-200
+                        bg-gray-50
+                        p-4
+                        dark:border-gray-800
+                        dark:bg-gray-900
+                      "
+                    >
+                      <div
                         className="
-                          rounded-xl
-                          border
-                          border-gray-200
-                          bg-gray-50
-                          p-4
-                          text-left
-                          transition
-                          hover:-translate-y-0.5
-                          hover:border-purple-300
-                          hover:bg-purple-50
-                          hover:shadow-sm
-                          dark:border-gray-800
-                          dark:bg-gray-900
-                          dark:hover:border-purple-800
-                          dark:hover:bg-purple-950/30
+                          flex
+                          flex-wrap
+                          items-center
+                          justify-between
+                          gap-2
                         "
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm font-semibold leading-6 text-gray-800 dark:text-gray-200">
-                            {question}
+                        <h4
+                          className="
+                            text-base
+                            font-black
+                            text-gray-900
+                            dark:text-white
+                          "
+                        >
+                          {
+                            interpretation.name
+                          }
+                        </h4>
+
+                        {interpretation.type && (
+                          <Pill
+                            className="
+                              bg-indigo-100
+                              text-indigo-700
+                              dark:bg-indigo-950
+                              dark:text-indigo-300
+                            "
+                          >
+                            {
+                              interpretation.type
+                            }
+                          </Pill>
+                        )}
+                      </div>
+
+                      {interpretation.summary && (
+                        <p
+                          className="
+                            mt-3
+                            text-sm
+                            leading-7
+                            text-gray-600
+                            dark:text-gray-300
+                          "
+                        >
+                          {
+                            interpretation.summary
+                          }
+                        </p>
+                      )}
+
+                      {safeArray(
+                        interpretation.evidence
+                      ).length >
+                        0 && (
+                        <div className="mt-4">
+                          <p
+                            className="
+                              text-[10px]
+                              font-black
+                              uppercase
+                              tracking-wider
+                              text-green-600
+                              dark:text-green-400
+                            "
+                          >
+                            Evidence
                           </p>
 
-                          <Search className="mt-0.5 h-4 w-4 shrink-0 text-purple-500" />
+                          <div className="mt-2 space-y-2">
+                            {interpretation.evidence.map(
+                              (
+                                point,
+                                pointIndex
+                              ) => (
+                                <div
+                                  key={
+                                    pointIndex
+                                  }
+                                  className="
+                                    flex
+                                    gap-2
+                                    text-sm
+                                    leading-6
+                                    text-gray-600
+                                    dark:text-gray-300
+                                  "
+                                >
+                                  <CheckCircle2
+                                    size={15}
+                                    className="
+                                      mt-1
+                                      shrink-0
+                                      text-green-500
+                                    "
+                                  />
+                                  <span>
+                                    {point}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
                         </div>
+                      )}
 
-                        <span className="mt-3 block text-xs font-bold text-purple-600 dark:text-purple-400">
-                          Explore →
-                        </span>
-                      </button>
-                    )
-                  )}
-                </div>
-              </ExplorerSection>
-            )}
+                      {safeArray(
+                        interpretation.challenges
+                      ).length >
+                        0 && (
+                        <div className="mt-4">
+                          <p
+                            className="
+                              text-[10px]
+                              font-black
+                              uppercase
+                              tracking-wider
+                              text-amber-600
+                              dark:text-amber-400
+                            "
+                          >
+                            Challenges
+                          </p>
 
-            {/* ============================================
-                RELATED
-            ============================================ */}
+                          <div className="mt-2 space-y-2">
+                            {interpretation.challenges.map(
+                              (
+                                point,
+                                pointIndex
+                              ) => (
+                                <div
+                                  key={
+                                    pointIndex
+                                  }
+                                  className="
+                                    flex
+                                    gap-2
+                                    text-sm
+                                    leading-6
+                                    text-gray-600
+                                    dark:text-gray-300
+                                  "
+                                >
+                                  <AlertTriangle
+                                    size={15}
+                                    className="
+                                      mt-1
+                                      shrink-0
+                                      text-amber-500
+                                    "
+                                  />
+                                  <span>
+                                    {point}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  )
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-            {related.length > 0 && (
-              <ExplorerSection
-                id="related"
-                icon={Link2}
-                title="Related Prophecies"
+          {/* SDA Perspective */}
+
+          {sdaPerspective.summary && (
+            <CollapsibleSection
+              title="SDA Perspective"
+              icon={ShieldCheck}
+              open={shouldOpen(
+                `${symbolKey}-sda`,
+                true
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-sda`
+                )
+              }
+            >
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-green-200
+                  bg-green-50
+                  p-5
+                  dark:border-green-900/50
+                  dark:bg-green-950/20
+                "
               >
-                <div className="flex flex-wrap gap-2">
-                  {related.map((item) => (
+                <p
+                  className="
+                    text-sm
+                    leading-7
+                    text-green-950
+                    dark:text-green-100
+                  "
+                >
+                  {
+                    sdaPerspective.summary
+                  }
+                </p>
+
+                {sdaPerspective.source && (
+                  <div
+                    className="
+                      mt-4
+                      inline-flex
+                      items-center
+                      gap-2
+                      rounded-full
+                      bg-white/80
+                      px-3
+                      py-2
+                      text-xs
+                      font-bold
+                      text-green-700
+                      dark:bg-gray-900/60
+                      dark:text-green-300
+                    "
+                  >
+                    <ShieldCheck size={14} />
+                    {sdaPerspective.source}
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Evidence vs Interpretation */}
+
+          {evidenceGroups.some(
+            (group) =>
+              group.items.length > 0
+          ) && (
+            <CollapsibleSection
+              title="Evidence vs Interpretation"
+              icon={Lightbulb}
+              open={shouldOpen(
+                `${symbolKey}-evidence`,
+                false
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-evidence`
+                )
+              }
+            >
+              <div className="grid gap-4 lg:grid-cols-2">
+                {evidenceGroups.map(
+                  (group) =>
+                    group.items.length >
+                      0 && (
+                      <article
+                        key={group.key}
+                        className={`
+                          rounded-2xl
+                          border
+                          p-4
+                          ${group.className}
+                        `}
+                      >
+                        <h4
+                          className="
+                            text-sm
+                            font-black
+                            text-gray-900
+                            dark:text-white
+                          "
+                        >
+                          {group.title}
+                        </h4>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            leading-5
+                            text-gray-500
+                            dark:text-gray-400
+                          "
+                        >
+                          {
+                            group.description
+                          }
+                        </p>
+
+                        <div className="mt-4 space-y-2">
+                          {group.items.map(
+                            (
+                              item,
+                              itemIndex
+                            ) => (
+                              <div
+                                key={
+                                  itemIndex
+                                }
+                                className="
+                                  flex
+                                  gap-2
+                                  text-sm
+                                  leading-6
+                                  text-gray-700
+                                  dark:text-gray-300
+                                "
+                              >
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-50" />
+
+                                <span>
+                                  {item}
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </article>
+                    )
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Textual Variants */}
+
+          {textualVariants.length >
+            0 && (
+            <CollapsibleSection
+              title={`Textual Variants (${textualVariants.length})`}
+              icon={FileText}
+              open={shouldOpen(
+                `${symbolKey}-variants`,
+                false
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-variants`
+                )
+              }
+            >
+              <div className="space-y-3">
+                {textualVariants.map(
+                  (
+                    variant,
+                    variantIndex
+                  ) => (
+                    <article
+                      key={
+                        `${variant.variant || "variant"}-${variantIndex}`
+                      }
+                      className="
+                        rounded-2xl
+                        border
+                        border-gray-200
+                        bg-gray-50
+                        p-4
+                        dark:border-gray-800
+                        dark:bg-gray-900
+                      "
+                    >
+                      <div
+                        className="
+                          flex
+                          flex-wrap
+                          items-center
+                          gap-2
+                        "
+                      >
+                        <Pill
+                          className="
+                            bg-indigo-100
+                            text-indigo-700
+                            dark:bg-indigo-950
+                            dark:text-indigo-300
+                          "
+                        >
+                          Variant
+                        </Pill>
+
+                        {variant.variant && (
+                          <span
+                            className="
+                              text-lg
+                              font-black
+                              text-gray-900
+                              dark:text-white
+                            "
+                          >
+                            {variant.variant}
+                          </span>
+                        )}
+                      </div>
+
+                      {variant.description && (
+                        <p
+                          className="
+                            mt-3
+                            text-sm
+                            leading-7
+                            text-gray-600
+                            dark:text-gray-300
+                          "
+                        >
+                          {
+                            variant.description
+                          }
+                        </p>
+                      )}
+
+                      {variant.significance && (
+                        <div
+                          className="
+                            mt-3
+                            rounded-xl
+                            border
+                            border-blue-200
+                            bg-blue-50
+                            p-3
+                            dark:border-blue-900/50
+                            dark:bg-blue-950/20
+                          "
+                        >
+                          <p
+                            className="
+                              text-xs
+                              font-bold
+                              uppercase
+                              tracking-wider
+                              text-blue-700
+                              dark:text-blue-300
+                            "
+                          >
+                            Significance
+                          </p>
+
+                          <p
+                            className="
+                              mt-1
+                              text-sm
+                              leading-6
+                              text-blue-950
+                              dark:text-blue-100
+                            "
+                          >
+                            {
+                              variant.significance
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </article>
+                  )
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Curiosity */}
+
+          {curiosity.length >
+            0 && (
+            <CollapsibleSection
+              title="Explore Next"
+              icon={Search}
+              open={shouldOpen(
+                `${symbolKey}-curiosity`,
+                true
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-curiosity`
+                )
+              }
+            >
+              <div
+                className="
+                  grid
+                  gap-3
+                  md:grid-cols-2
+                "
+              >
+                {curiosity.map(
+                  (
+                    question,
+                    questionIndex
+                  ) => (
                     <button
-                      key={item}
+                      key={
+                        questionIndex
+                      }
                       type="button"
                       onClick={() =>
                         triggerDecode(
-                          item
+                          question
                         )
                       }
                       className="
-                        rounded-lg
+                        group
+                        flex
+                        items-start
+                        gap-3
+                        rounded-2xl
+                        border
+                        border-gray-200
+                        bg-gray-50
+                        p-4
+                        text-left
+                        transition
+                        hover:-translate-y-0.5
+                        hover:border-purple-300
+                        hover:bg-purple-50
+                        hover:shadow-sm
+                        dark:border-gray-800
+                        dark:bg-gray-900
+                        dark:hover:border-purple-800
+                        dark:hover:bg-purple-950/20
+                      "
+                    >
+                      <div
+                        className="
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-xl
+                          bg-purple-100
+                          text-purple-600
+                          dark:bg-purple-950
+                          dark:text-purple-300
+                        "
+                      >
+                        <Search size={16} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="
+                            text-sm
+                            font-bold
+                            leading-6
+                            text-gray-800
+                            dark:text-gray-200
+                          "
+                        >
+                          {question}
+                        </p>
+
+                        <div
+                          className="
+                            mt-2
+                            flex
+                            items-center
+                            gap-1
+                            text-xs
+                            font-bold
+                            text-purple-600
+                            dark:text-purple-400
+                          "
+                        >
+                          Explore
+                          <ChevronRight
+                            size={14}
+                            className="
+                              transition-transform
+                              group-hover:translate-x-0.5
+                            "
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  )
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Related Symbols */}
+
+          {relatedSymbols.length >
+            0 && (
+            <CollapsibleSection
+              title={`Related Symbols (${relatedSymbols.length})`}
+              icon={Link2}
+              open={shouldOpen(
+                `${symbolKey}-related`,
+                true
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-related`
+                )
+              }
+            >
+              <div className="flex flex-wrap gap-2">
+                {relatedSymbols.map(
+                  (related) => (
+                    <button
+                      key={related}
+                      type="button"
+                      onClick={() =>
+                        triggerDecode(
+                          related
+                        )
+                      }
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-xl
                         border
                         border-gray-200
                         bg-gray-50
                         px-3
-                        py-2
+                        py-2.5
                         text-sm
-                        font-semibold
+                        font-bold
                         text-gray-700
                         transition
-                        hover:border-blue-300
-                        hover:bg-blue-50
-                        dark:border-gray-700
+                        hover:border-indigo-300
+                        hover:bg-indigo-50
+                        dark:border-gray-800
                         dark:bg-gray-900
                         dark:text-gray-300
-                        dark:hover:border-blue-800
-                        dark:hover:bg-blue-950/30
+                        dark:hover:border-indigo-800
+                        dark:hover:bg-indigo-950/20
                       "
                     >
-                      {item}
+                      {related}
+                      <ArrowRight
+                        size={13}
+                      />
                     </button>
-                  ))}
-                </div>
-              </ExplorerSection>
-            )}
+                  )
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-            {/* ============================================
-                SOURCES
-            ============================================ */}
+          {/* Sources */}
 
-            {sources.length > 0 && (
-              <ExplorerSection
-                id="sources"
-                icon={BookOpen}
-                title="Sources"
-              >
-                <div className="space-y-3">
-                  {sources.map(
-                    (item, i) => {
-                      const url = cleanUrl(
-                        item?.url
+          {sources.length > 0 && (
+            <CollapsibleSection
+              title={`Sources (${sources.length})`}
+              icon={ExternalLink}
+              open={shouldOpen(
+                `${symbolKey}-sources`,
+                false
+              )}
+              onToggle={() =>
+                toggleSection(
+                  `${symbolKey}-sources`
+                )
+              }
+            >
+              <div className="grid gap-3 lg:grid-cols-2">
+                {sources.map(
+                  (
+                    source,
+                    sourceIndex
+                  ) => {
+                    const url =
+                      cleanUrl(
+                        source?.url
                       );
 
-                      return (
-                        <div
-                          key={`${item?.title || "source"}-${i}`}
-                          className="
-                            rounded-xl
-                            border
-                            border-gray-200
-                            p-4
-                            transition
-                            hover:border-blue-300
-                            hover:bg-blue-50
-                            dark:border-gray-800
-                            dark:hover:border-blue-800
-                            dark:hover:bg-blue-950/20
-                          "
-                        >
-                          {url ? (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group block"
-                            >
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="min-w-0">
-                                  <h4 className="font-semibold text-gray-900 dark:text-white">
-                                    {item.title ||
-                                      "Source"}
-                                  </h4>
+                    return (
+                      <article
+                        key={`${source?.title || "source"}-${sourceIndex}`}
+                        className="
+                          rounded-2xl
+                          border
+                          border-gray-200
+                          bg-gray-50
+                          p-4
+                          dark:border-gray-800
+                          dark:bg-gray-900
+                        "
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-xl
+                              bg-white
+                              text-indigo-600
+                              shadow-sm
+                              dark:bg-gray-950
+                              dark:text-indigo-300
+                            "
+                          >
+                            <ExternalLink
+                              size={16}
+                            />
+                          </div>
 
-                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    {item.publisher ||
-                                      "Unknown publisher"}
-
-                                    {item.type
-                                      ? ` • ${item.type}`
-                                      : ""}
-                                  </p>
-                                </div>
-
-                                <ExternalLink className="h-4 w-4 shrink-0 text-gray-400 transition group-hover:text-blue-500" />
-                              </div>
-                            </a>
-                          ) : (
-                            <div>
-                              <h4 className="font-semibold text-gray-900 dark:text-white">
-                                {item.title ||
+                          <div className="min-w-0 flex-1">
+                            {url ? (
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="
+                                  text-sm
+                                  font-bold
+                                  text-indigo-600
+                                  hover:underline
+                                  dark:text-indigo-400
+                                "
+                              >
+                                {source.title ||
+                                  "Source"}
+                              </a>
+                            ) : (
+                              <h4
+                                className="
+                                  text-sm
+                                  font-bold
+                                  text-gray-900
+                                  dark:text-white
+                                "
+                              >
+                                {source.title ||
                                   "Source"}
                               </h4>
+                            )}
 
-                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                {item.publisher ||
-                                  "Unknown publisher"}
+                            <p
+                              className="
+                                mt-1
+                                text-xs
+                                text-gray-500
+                                dark:text-gray-400
+                              "
+                            >
+                              {source.publisher ||
+                                "Unknown publisher"}
 
-                                {item.type
-                                  ? ` • ${item.type}`
-                                  : ""}
-                              </p>
+                              {source.type
+                                ? ` • ${source.type}`
+                                : ""}
+                            </p>
 
-                              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                                Source URL unavailable.
-                              </p>
-                            </div>
-                          )}
-
-                          {item.supports?.length >
-                            0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {item.supports.map(
-                                (topic) => (
-                                  <span
-                                    key={topic}
-                                    className="
-                                      rounded-full
-                                      bg-gray-100
-                                      px-2
-                                      py-1
-                                      text-[11px]
-                                      font-medium
-                                      text-gray-600
-                                      dark:bg-gray-800
-                                      dark:text-gray-300
-                                    "
-                                  >
-                                    {topic}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          )}
+                            {safeArray(
+                              source.supports
+                            ).length >
+                              0 && (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {source.supports.map(
+                                  (
+                                    support
+                                  ) => (
+                                    <span
+                                      key={
+                                        support
+                                      }
+                                      className="
+                                        rounded-full
+                                        bg-white
+                                        px-2
+                                        py-1
+                                        text-[10px]
+                                        font-semibold
+                                        text-gray-500
+                                        dark:bg-gray-950
+                                        dark:text-gray-400
+                                      "
+                                    >
+                                      {support}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      );
-                    }
-                  )}
-                </div>
-              </ExplorerSection>
-            )}
+                      </article>
+                    );
+                  }
+                )}
+              </div>
+            </CollapsibleSection>
+          )}
 
-            {/* ============================================
-                COPY
-            ============================================ */}
+          {/* Result Actions */}
 
-            <div className="flex justify-end border-t border-gray-200 px-4 py-3 dark:border-gray-800 sm:px-5">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  handleCopy([entry])
-                }
-                className="rounded-xl"
+          <div
+            className="
+              flex
+              flex-col
+              gap-3
+              rounded-2xl
+              border
+              border-gray-200
+              bg-gray-50
+              p-4
+              dark:border-gray-800
+              dark:bg-gray-900
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
+          >
+            <div className="flex items-center gap-2">
+              <History
+                size={16}
+                className="text-gray-400"
+              />
+
+              <p
+                className="
+                  text-xs
+                  text-gray-500
+                  dark:text-gray-400
+                "
               >
-                <Copy className="mr-2 h-4 w-4" />
-
-                {copied
-                  ? "Copied!"
-                  : "Copy Result"}
-              </Button>
+                Verified result saved to your
+                prophecy history when signed in.
+              </p>
             </div>
-          </article>
-        );
-      }
+
+            <button
+              type="button"
+              onClick={() =>
+                handleCopy(
+                  `${symbolKey}-full`,
+                  entry
+                )
+              }
+              className="
+                inline-flex
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                border
+                border-gray-200
+                bg-white
+                px-4
+                py-2.5
+                text-xs
+                font-bold
+                text-gray-700
+                transition
+                hover:bg-gray-100
+                dark:border-gray-700
+                dark:bg-gray-950
+                dark:text-gray-300
+                dark:hover:bg-gray-800
+              "
+            >
+              <Copy size={14} />
+
+              {copiedKey ===
+              `${symbolKey}-full`
+                ? "Copied"
+                : "Copy Result"}
+            </button>
+          </div>
+        </div>
+      </article>
     );
   };
 
-  /* =========================================================
-     QUICK EXAMPLES
-  ========================================================= */
-
-  const quickSearches = useMemo(
-    () => [
-      {
-        label: "666",
-        description:
-          "The number of the beast",
-      },
-      {
-        label: "Mark of the beast",
-        description:
-          "Allegiance, worship and commerce",
-      },
-      {
-        label: "Daniel 7",
-        description:
-          "Four beasts and the little horn",
-      },
-      {
-        label: "Babylon",
-        description:
-          "The great apocalyptic city",
-      },
-    ],
-    []
-  );
-
-  /* =========================================================
+  /* =======================================================
      RENDER
-  ========================================================= */
+  ======================================================= */
 
   return (
     <div
       className={`
-        w-full
         min-w-0
+        w-full
         px-3
         py-4
         sm:px-5
         sm:py-6
-        lg:px-8
+        lg:px-7
         ${
           isDark
             ? "bg-gray-950 text-white"
@@ -2096,308 +2962,611 @@ export default function ProphecyDashboard() {
         }
       `}
     >
-      <div className="mx-auto w-full max-w-7xl space-y-5">
+      <div
+        className="
+          mx-auto
+          w-full
+          max-w-[1500px]
+          space-y-5
+        "
+      >
+        {/* =================================================
+            TOP BAR
+        ================================================= */}
 
-        {/* ===================================================
-            DAILY AI INSIGHT
-        =================================================== */}
-
-        {aiInsight && (
-          <Card
-            className={`
-              overflow-hidden
-              rounded-2xl
-              border
-              shadow-sm
-              ${
-                isDark
-                  ? "border-gray-800 bg-gray-900"
-                  : "border-gray-200 bg-white"
-              }
-            `}
-          >
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <div
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-purple-100
-                    dark:bg-purple-950
-                  "
-                >
-                  <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                    Daily AI Insight
-                  </p>
-
-                  <p className="mt-1 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                    {aiInsight}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ===================================================
-            DECODER COMMAND BAR
-        =================================================== */}
-
-        <section>
+        <section
+          className="
+            overflow-hidden
+            rounded-3xl
+            border
+            border-gray-200
+            bg-white
+            shadow-sm
+            dark:border-gray-800
+            dark:bg-gray-950
+          "
+        >
           <div
-            className={`
-              flex
-              flex-col
-              gap-2
-              rounded-2xl
-              border
-              p-2
-              sm:flex-row
-              ${
-                isDark
-                  ? "border-gray-800 bg-gray-900"
-                  : "border-gray-200 bg-white"
-              }
-            `}
+            className="
+              border-b
+              border-gray-100
+              bg-gradient-to-r
+              from-indigo-50
+              via-white
+              to-purple-50
+              p-4
+              dark:border-gray-800
+              dark:from-indigo-950/20
+              dark:via-gray-950
+              dark:to-purple-950/20
+              sm:p-6
+            "
           >
-            <Input
-              value={searchInput}
-              onChange={(event) =>
-                setSearchInput(
-                  event.target.value
-                )
-              }
-              onKeyDown={
-                handleSearchKeyDown
-              }
-              placeholder="Explore a prophecy, verse, or symbol..."
-              aria-label="Prophecy search"
-              className={`
-                h-12
-                border-0
-                bg-transparent
-                text-base
-                shadow-none
-                focus:ring-0
-                ${
-                  isDark
-                    ? "text-white placeholder:text-gray-500"
-                    : "text-gray-900 placeholder:text-gray-400"
-                }
-              `}
-            />
-
-            <Button
-              onClick={() =>
-                handleDecode()
-              }
-              disabled={
-                loading ||
-                !searchInput.trim() ||
-                (isGuest &&
-                  guestDecodeCount >= 5)
-              }
+            <div
               className="
-                h-12
-                shrink-0
-                rounded-xl
-                px-6
+                flex
+                flex-col
+                gap-4
+                lg:flex-row
+                lg:items-end
+                lg:justify-between
               "
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Decoding...
-                </span>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Explore
-                </>
+              <div>
+                <div
+                  className="
+                    inline-flex
+                    items-center
+                    gap-2
+                    rounded-full
+                    border
+                    border-indigo-200
+                    bg-indigo-50
+                    px-3
+                    py-1.5
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-[0.14em]
+                    text-indigo-700
+                    dark:border-indigo-900/50
+                    dark:bg-indigo-950/30
+                    dark:text-indigo-300
+                  "
+                >
+                  <Sparkles size={13} />
+                  Prophecy Intelligence
+                </div>
+
+                <h1
+                  className="
+                    mt-4
+                    text-2xl
+                    font-black
+                    tracking-tight
+                    text-gray-950
+                    dark:text-white
+                    sm:text-3xl
+                  "
+                >
+                  Explore Scripture, history & interpretation
+                </h1>
+
+                <p
+                  className="
+                    mt-2
+                    max-w-3xl
+                    text-sm
+                    leading-7
+                    text-gray-500
+                    dark:text-gray-400
+                  "
+                >
+                  A structured prophecy workspace
+                  designed to distinguish biblical text,
+                  historical evidence, interpretation,
+                  and speculation.
+                </p>
+              </div>
+
+              {isGuest && (
+                <div
+                  className="
+                    inline-flex
+                    w-fit
+                    items-center
+                    gap-2
+                    rounded-xl
+                    border
+                    border-yellow-200
+                    bg-yellow-50
+                    px-3
+                    py-2
+                    text-xs
+                    font-bold
+                    text-yellow-700
+                    dark:border-yellow-900/50
+                    dark:bg-yellow-950/20
+                    dark:text-yellow-300
+                  "
+                >
+                  <Clock3 size={14} />
+
+                  {Math.max(
+                    0,
+                    5 - guestDecodeCount
+                  )}
+                  /5 guest decodes
+                </div>
               )}
-            </Button>
+            </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {quickSearches.map(
-              (item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() =>
-                    triggerDecode(
-                      item.label
+          {/* Search */}
+
+          <div className="p-4 sm:p-5">
+            <div
+              className="
+                flex
+                flex-col
+                gap-2
+                rounded-2xl
+                border
+                border-gray-200
+                bg-gray-50
+                p-2
+                sm:flex-row
+                dark:border-gray-800
+                dark:bg-gray-900
+              "
+            >
+              <div
+                className="
+                  flex
+                  min-w-0
+                  flex-1
+                  items-center
+                  gap-3
+                  px-3
+                "
+              >
+                <Search
+                  size={20}
+                  className="shrink-0 text-gray-400"
+                />
+
+                <input
+                  value={searchInput}
+                  onChange={(event) =>
+                    setSearchInput(
+                      event.target.value
                     )
                   }
+                  onKeyDown={
+                    handleSearchKeyDown
+                  }
+                  placeholder="Search a symbol, verse, phrase, or prophetic topic..."
+                  aria-label="Prophecy explorer search"
                   className="
-                    rounded-lg
+                    h-12
+                    min-w-0
+                    flex-1
+                    border-0
+                    bg-transparent
+                    text-sm
+                    text-gray-900
+                    outline-none
+                    placeholder:text-gray-400
+                    dark:text-white
+                    dark:placeholder:text-gray-500
+                  "
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleDecode()
+                }
+                disabled={
+                  loading ||
+                  !searchInput.trim() ||
+                  (isGuest &&
+                    guestDecodeCount >= 5)
+                }
+                className="
+                  inline-flex
+                  h-12
+                  shrink-0
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  bg-indigo-600
+                  px-6
+                  text-sm
+                  font-bold
+                  text-white
+                  transition
+                  hover:bg-indigo-700
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {loading ? (
+                  <>
+                    <Loader2
+                      size={17}
+                      className="animate-spin"
+                    />
+                    Exploring...
+                  </>
+                ) : (
+                  <>
+                    <Search size={17} />
+                    Explore
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Searches */}
+
+            <div className="mt-3">
+              <div
+                className="
+                  mb-2
+                  flex
+                  items-center
+                  gap-2
+                "
+              >
+                <span
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-gray-400
+                  "
+                >
+                  Quick Topics
+                </span>
+              </div>
+
+              <div
+                className="
+                  flex
+                  gap-2
+                  overflow-x-auto
+                  pb-1
+                  scrollbar-thin
+                "
+              >
+                {quickSearches.map(
+                  (item) => (
+                    <button
+                      key={
+                        item.label
+                      }
+                      type="button"
+                      onClick={() =>
+                        triggerDecode(
+                          item.label
+                        )
+                      }
+                      className="
+                        shrink-0
+                        rounded-xl
+                        border
+                        border-gray-200
+                        bg-white
+                        px-3
+                        py-2
+                        text-left
+                        transition
+                        hover:border-indigo-300
+                        hover:bg-indigo-50
+                        dark:border-gray-800
+                        dark:bg-gray-950
+                        dark:hover:border-indigo-800
+                        dark:hover:bg-indigo-950/20
+                      "
+                    >
+                      <span
+                        className="
+                          block
+                          text-xs
+                          font-bold
+                          text-gray-800
+                          dark:text-gray-200
+                        "
+                      >
+                        {item.label}
+                      </span>
+
+                      <span
+                        className="
+                          mt-0.5
+                          block
+                          text-[10px]
+                          text-gray-400
+                        "
+                      >
+                        {item.description}
+                      </span>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =================================================
+            AI INSIGHT
+        ================================================= */}
+
+        {aiInsight && (
+          <section
+            className="
+              rounded-2xl
+              border
+              border-purple-200
+              bg-purple-50
+              p-4
+              dark:border-purple-900/50
+              dark:bg-purple-950/20
+              sm:p-5
+            "
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-white
+                  text-purple-600
+                  shadow-sm
+                  dark:bg-gray-900
+                  dark:text-purple-300
+                "
+              >
+                <Sparkles size={18} />
+              </div>
+
+              <div className="min-w-0">
+                <p
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-[0.14em]
+                    text-purple-600
+                    dark:text-purple-400
+                  "
+                >
+                  Daily AI Insight
+                </p>
+
+                <p
+                  className="
+                    mt-1
+                    text-sm
+                    leading-7
+                    text-purple-950
+                    dark:text-purple-100
+                  "
+                >
+                  {aiInsight}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* =================================================
+            RESULTS
+        ================================================= */}
+
+        <section
+          id="prophecy-results"
+          className="scroll-mt-5"
+        >
+          {loading ? (
+            <div
+              className="
+                rounded-3xl
+                border
+                border-gray-200
+                bg-white
+                px-5
+                py-20
+                text-center
+                shadow-sm
+                dark:border-gray-800
+                dark:bg-gray-950
+              "
+            >
+              <div
+                className="
+                  mx-auto
+                  flex
+                  h-16
+                  w-16
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-indigo-100
+                  text-indigo-600
+                  dark:bg-indigo-950
+                  dark:text-indigo-300
+                "
+              >
+                <Loader2
+                  size={28}
+                  className="animate-spin"
+                />
+              </div>
+
+              <h2
+                className="
+                  mt-5
+                  text-lg
+                  font-black
+                  text-gray-900
+                  dark:text-white
+                "
+              >
+                Exploring the prophecy...
+              </h2>
+
+              <p
+                className="
+                  mx-auto
+                  mt-2
+                  max-w-md
+                  text-sm
+                  leading-6
+                  text-gray-500
+                  dark:text-gray-400
+                "
+              >
+                Organizing biblical context,
+                interpretations, evidence,
+                history, related symbols,
+                textual variants, and sources.
+              </p>
+            </div>
+          ) : decodedData.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <div className="space-y-5">
+              <div
+                className="
+                  flex
+                  flex-wrap
+                  items-center
+                  justify-between
+                  gap-3
+                "
+              >
+                <div>
+                  <p
+                    className="
+                      text-xs
+                      font-black
+                      uppercase
+                      tracking-wider
+                      text-gray-400
+                    "
+                  >
+                    Explorer Results
+                  </p>
+
+                  <p
+                    className="
+                      mt-1
+                      text-sm
+                      text-gray-500
+                      dark:text-gray-400
+                    "
+                  >
+                    {decodedData.length}{" "}
+                    {decodedData.length === 1
+                      ? "record"
+                      : "records"}
+                    {timestamp
+                      ? ` • ${timestamp}`
+                      : ""}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDecodedData([])
+                  }
+                  className="
+                    rounded-xl
                     border
                     border-gray-200
                     bg-white
                     px-3
                     py-2
-                    text-left
+                    text-xs
+                    font-bold
+                    text-gray-600
                     transition
-                    hover:border-purple-300
-                    hover:bg-purple-50
+                    hover:bg-gray-100
                     dark:border-gray-800
-                    dark:bg-gray-900
-                    dark:hover:border-purple-800
-                    dark:hover:bg-purple-950/30
+                    dark:bg-gray-950
+                    dark:text-gray-300
+                    dark:hover:bg-gray-900
                   "
                 >
-                  <span className="block text-xs font-bold text-gray-800 dark:text-gray-200">
-                    {item.label}
-                  </span>
-
-                  <span className="mt-0.5 block text-[11px] text-gray-500 dark:text-gray-400">
-                    {item.description}
-                  </span>
+                  Clear Results
                 </button>
-              )
-            )}
-          </div>
+              </div>
+
+              {decodedData.map(
+                (entry, index) =>
+                  renderResult(
+                    entry,
+                    index
+                  )
+              )}
+            </div>
+          )}
         </section>
 
-        {/* ===================================================
-            GUEST INFO
-        =================================================== */}
+        {/* =================================================
+            FOOTER NOTE
+        ================================================= */}
 
-        {isGuest && (
-          <div
+        <div
+          className="
+            flex
+            items-start
+            gap-3
+            rounded-2xl
+            border
+            border-gray-200
+            bg-white
+            p-4
+            dark:border-gray-800
+            dark:bg-gray-950
+          "
+        >
+          <Info
+            size={16}
             className="
-              flex
-              flex-col
-              gap-2
-              rounded-xl
-              border
-              border-yellow-200
-              bg-yellow-50
-              px-4
-              py-3
-              text-sm
-              text-yellow-800
-              dark:border-yellow-900
-              dark:bg-yellow-950/30
-              dark:text-yellow-200
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
+              mt-0.5
+              shrink-0
+              text-gray-400
+            "
+          />
+
+          <p
+            className="
+              text-xs
+              leading-6
+              text-gray-500
+              dark:text-gray-400
             "
           >
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4" />
-
-              <span>
-                Guest mode
-              </span>
-            </div>
-
-            <span className="font-semibold">
-              {Math.max(
-                0,
-                5 - guestDecodeCount
-              )}
-              /5 decodes remaining
-            </span>
-          </div>
-        )}
-
-        {/* ===================================================
-            RESULTS
-        =================================================== */}
-
-        <section id="prophecy-results">
-          <Card
-            className={`
-              overflow-hidden
-              rounded-2xl
-              border
-              shadow-sm
-              ${
-                isDark
-                  ? "border-gray-800 bg-gray-900"
-                  : "border-gray-200 bg-white"
-              }
-            `}
-          >
-            <CardHeader className="border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-500" />
-
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white sm:text-xl">
-                      Prophecy Explorer
-                    </h2>
-                  </div>
-
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {timestamp
-                      ? `Explored ${timestamp}`
-                      : "Decode a prophecy to begin exploring"}
-                  </p>
-                </div>
-
-                {decodedData.length >
-                  0 && (
-                  <div className="text-xs font-medium text-gray-400">
-                    {decodedData.length}{" "}
-                    {decodedData.length ===
-                    1
-                      ? "result"
-                      : "results"}
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="px-4 py-16 text-center sm:px-6">
-                  <div
-                    className="
-                      mx-auto
-                      mb-4
-                      flex
-                      h-14
-                      w-14
-                      items-center
-                      justify-center
-                      rounded-2xl
-                      bg-purple-100
-                      dark:bg-purple-950
-                    "
-                  >
-                    <Loader2 className="h-7 w-7 animate-spin text-purple-600 dark:text-purple-400" />
-                  </div>
-
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    Exploring the prophecy...
-                  </h3>
-
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    Gathering context,
-                    interpretations,
-                    connections, and
-                    sources.
-                  </p>
-                </div>
-              ) : (
-                renderDecoded()
-              )}
-            </CardContent>
-          </Card>
-        </section>
+            Prophecy Explorer distinguishes
+            biblical text, historical evidence,
+            interpretation, and speculation.
+            Interpretive traditions should not be
+            presented as uncontested facts.
+          </p>
+        </div>
       </div>
     </div>
   );
