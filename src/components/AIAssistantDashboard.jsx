@@ -938,7 +938,9 @@ export default function AIAssistantDashboard({
               >
                 {/* Welcome */}
 
-                <WelcomeScreen />
+                <WelcomeScreen
+                  onSuggestion={sendTextMessage}
+                />
 
                 {/* Welcome composer */}
 
