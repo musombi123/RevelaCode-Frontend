@@ -877,13 +877,19 @@ export const DASHBOARDS = [
     restricted: true,
   },
 
-  /* ================= EXISTING REVELACODE ================= */
+  /* ======================================================
+     FAITH HUB INTERNAL DASHBOARDS
+     ------------------------------------------------------
+     These remain registered and usable by FaithDashboard,
+     but are intentionally hidden from the global sidebar.
+     ====================================================== */
 
   {
     key: "bible",
     title: "Bible",
     label: "Bible",
     icon: Book,
+    hidden: true,
     element: <BibleDashboard />,
   },
 
@@ -892,6 +898,7 @@ export const DASHBOARDS = [
     title: "Prophecy",
     label: "Prophecy",
     icon: BookOpen,
+    hidden: true,
     element: <ProphecyDashboard />,
   },
 
@@ -900,6 +907,7 @@ export const DASHBOARDS = [
     title: "Events",
     label: "Events",
     icon: Globe,
+    hidden: true,
     element: <ProphecyEventsDashboard />,
   },
 
@@ -908,16 +916,8 @@ export const DASHBOARDS = [
     title: "Referential",
     label: "Referential",
     icon: Layers,
+    hidden: true,
     element: <ReferentialDashboard />,
-  },
-
-  {
-    key: "preferences",
-    title: "Preferences",
-    label: "Preferences",
-    icon: Settings,
-    element: <PreferencesDashboard />,
-    restricted: true,
   },
 
   {
