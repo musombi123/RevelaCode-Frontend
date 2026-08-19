@@ -1,9 +1,12 @@
-// components/Sidebar.jsx
+// src/components/Sidebar.jsx
 
 import {
   Plus,
   MessageSquare,
   PanelLeftClose,
+  Sparkles,
+  Search,
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -14,67 +17,124 @@ export default function Sidebar({
   chats = [],
   onNewChat,
   onSelectChat,
+  activeChatId = null,
 }) {
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* =====================================================
+          MOBILE OVERLAY
+      ===================================================== */}
+
       {open && (
-        <div
+        <button
+          type="button"
+          aria-label="Close RevelaAI sidebar"
+          onClick={() => setOpen(false)}
           className="
-            md:hidden
             fixed
             inset-0
-            bg-black/50
-            backdrop-blur-sm
             z-40
+            bg-black/50
+            backdrop-blur-[2px]
+            md:hidden
           "
-          onClick={() => setOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* =====================================================
+          SIDEBAR
+          -----------------------------------------------------
+          Desktop:
+          - remains inside the flex layout
+          - always occupies width when open
+          
+          Mobile:
+          - becomes a slide-in drawer
+      ===================================================== */}
+
       <aside
         className={`
-          fixed
-          top-0
-          left-0
-          z-50
-          h-screen
-          w-64
           flex
+          h-full
+          min-h-0
+          w-[280px]
+          shrink-0
           flex-col
-          bg-revela-card
+          overflow-hidden
           border-r
           border-white/10
+          bg-revela-card
           text-white
           shadow-2xl
-          transition-transform
+
+          ${
+            open
+              ? "md:relative md:translate-x-0"
+              : "md:w-0 md:border-r-0"
+          }
+
+          fixed
+          inset-y-0
+          left-0
+          z-50
+          transition-all
           duration-300
-          ${open ? "translate-x-0" : "-translate-x-full"}
+          ease-out
+
+          ${
+            open
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+
+          md:static
+          md:z-auto
         `}
       >
-        {/* Header */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
         <div
           className="
-            h-16
-            px-4
             flex
+            h-16
+            shrink-0
             items-center
             justify-between
             border-b
             border-white/10
+            px-4
           "
         >
-          <div className="flex items-center gap-3">
-            <img
-              src="/favicon.ico"
-              alt="RevelaAI"
-              className="w-6 h-6"
-            />
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-gradient-to-br
+                from-green-500
+                to-emerald-700
+                shadow-lg
+              "
+            >
+              <Sparkles size={17} />
+            </div>
 
-            <span className="font-semibold text-lg">
-              RevelaAI
-            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black">
+                RevelaAI
+              </p>
+
+              <p className="truncate text-[10px] text-gray-400">
+                Intelligent Assistant
+              </p>
+            </div>
           </div>
 
           <Button
@@ -82,31 +142,47 @@ export default function Sidebar({
             size="icon"
             onClick={() => setOpen(false)}
             className="
+              shrink-0
               text-gray-400
-              hover:text-white
               hover:bg-white/10
+              hover:text-white
             "
+            aria-label="Close sidebar"
+            title="Close sidebar"
           >
             <PanelLeftClose size={18} />
           </Button>
         </div>
 
-        {/* New Chat */}
-        <div className="p-3">
+        {/* =================================================
+            NEW CHAT
+        ================================================= */}
+
+        <div className="shrink-0 p-3">
           <Button
+            type="button"
             onClick={() => {
-              onNewChat();
-              setOpen(false);
+              onNewChat?.();
             }}
             className="
+              flex
               w-full
+              items-center
               justify-start
               gap-2
-              bg-revela-secondary
-              hover:bg-revela-secondary/80
-              text-white
-              border-none
               rounded-xl
+              border
+              border-white/10
+              bg-revela-secondary
+              px-3
+              py-3
+              text-sm
+              font-bold
+              text-white
+              shadow-sm
+              transition
+              hover:bg-revela-secondary/80
+              active:scale-[0.99]
             "
           >
             <Plus size={18} />
@@ -114,71 +190,260 @@ export default function Sidebar({
           </Button>
         </div>
 
-        {/* History */}
+        {/* =================================================
+            SEARCH / HISTORY LABEL
+        ================================================= */}
+
+        <div className="shrink-0 px-3 pb-2">
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+              px-2
+              text-[10px]
+              font-black
+              uppercase
+              tracking-[0.14em]
+              text-gray-500
+            "
+          >
+            <MessageCircle size={13} />
+            Conversations
+          </div>
+        </div>
+
+        {/* =================================================
+            HISTORY
+        ================================================= */}
+
         <div
           className="
+            min-h-0
             flex-1
             overflow-y-auto
+            overscroll-contain
             px-2
             pb-4
-            space-y-1
           "
         >
           {chats.length === 0 ? (
             <div
               className="
-                text-gray-500
-                text-sm
-                px-3
-                py-4
+                flex
+                flex-col
+                items-center
+                justify-center
+                px-6
+                py-12
+                text-center
               "
             >
-              No chats yet
-            </div>
-          ) : (
-            chats.map((chat) => (
-              <Button
-                key={chat.id}
-                variant="ghost"
-                onClick={() => {
-                  onSelectChat(chat);
-                  setOpen(false);
-                }}
+              <div
                 className="
-                  w-full
-                  justify-start
-                  gap-3
-                  rounded-xl
-                  text-gray-300
-                  hover:text-white
-                  hover:bg-white/5
-                  transition-colors
+                  flex
+                  h-12
+                  w-12
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-white/5
+                  text-gray-500
                 "
               >
-                <MessageSquare
-                  size={16}
-                  className="shrink-0"
-                />
+                <MessageSquare size={20} />
+              </div>
 
-                <span className="truncate">
-                  {chat.title}
-                </span>
-              </Button>
-            ))
+              <p
+                className="
+                  mt-4
+                  text-sm
+                  font-semibold
+                  text-gray-400
+                "
+              >
+                No conversations yet
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  max-w-[190px]
+                  text-xs
+                  leading-5
+                  text-gray-500
+                "
+              >
+                Start a new conversation and
+                your recent chats will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {chats.map((chat) => {
+                const active =
+                  activeChatId === chat.id;
+
+                return (
+                  <button
+                    key={chat.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectChat?.(chat);
+                      setOpen?.(false);
+                    }}
+                    className={`
+                      group
+                      flex
+                      w-full
+                      min-w-0
+                      items-center
+                      gap-3
+                      rounded-xl
+                      px-3
+                      py-3
+                      text-left
+                      transition
+                      ${
+                        active
+                          ? "bg-white/10 text-white"
+                          : "text-gray-300 hover:bg-white/5 hover:text-white"
+                      }
+                    `}
+                  >
+                    <span
+                      className={`
+                        flex
+                        h-9
+                        w-9
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-lg
+                        ${
+                          active
+                            ? "bg-indigo-500/20 text-indigo-300"
+                            : "bg-white/5 text-gray-500 group-hover:text-gray-300"
+                        }
+                      `}
+                    >
+                      <MessageSquare size={16} />
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`
+                          block
+                          truncate
+                          text-sm
+                          font-semibold
+                          ${
+                            active
+                              ? "text-white"
+                              : "text-gray-300"
+                          }
+                        `}
+                      >
+                        {chat.title ||
+                          "Untitled Chat"}
+                      </span>
+
+                      {chat.messages?.length > 0 && (
+                        <span
+                          className="
+                            mt-0.5
+                            block
+                            truncate
+                            text-[10px]
+                            text-gray-500
+                          "
+                        >
+                          {chat.messages.length}{" "}
+                          {chat.messages.length === 1
+                            ? "message"
+                            : "messages"}
+                        </span>
+                      )}
+                    </span>
+
+                    {active && (
+                      <span
+                        className="
+                          h-2
+                          w-2
+                          shrink-0
+                          rounded-full
+                          bg-emerald-400
+                        "
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
         <div
           className="
-            p-4
+            shrink-0
             border-t
             border-white/10
-            text-xs
-            text-gray-500
+            p-3
           "
         >
-          RevelaAI • Powered by MVI Engine
+          <div
+            className="
+              rounded-xl
+              bg-white/[0.03]
+              px-3
+              py-3
+            "
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className="
+                  flex
+                  h-7
+                  w-7
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-emerald-500/10
+                  text-emerald-400
+                "
+              >
+                <Sparkles size={13} />
+              </div>
+
+              <div className="min-w-0">
+                <p
+                  className="
+                    truncate
+                    text-[11px]
+                    font-bold
+                    text-gray-300
+                  "
+                >
+                  RevelaAI
+                </p>
+
+                <p
+                  className="
+                    truncate
+                    text-[10px]
+                    text-gray-500
+                  "
+                >
+                  Powered by MVI Engine
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     </>
