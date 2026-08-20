@@ -112,7 +112,7 @@ export default function AdminStudyManagement() {
         };
 
         const response = await fetch(
-          `${API}/api/admin/study/upload`,
+          `${API}/api/study/upload`,
           {
             method: "POST",
             headers: {
