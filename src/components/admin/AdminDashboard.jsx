@@ -1,6 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  ShieldCheck,
+  ScrollText,
+  Settings,
+} from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
@@ -11,63 +23,205 @@ import AdminStudyManagement from "./AdminStudyManagement.jsx";
 import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 
-export default function AdminDashboard() {
+/* =========================================================
+   TAB CONFIG
+========================================================= */
 
-  const [activeTab, setActiveTab] = useState("overview");
+const adminTabs = {
+  overview: {
+    label: "Overview",
+    description:
+      "Monitor the platform and review key activity.",
+    icon: LayoutDashboard,
+    component: AdminOverview,
+  },
+
+  team: {
+    label: "Team Management",
+    description:
+      "Manage administrators and platform team members.",
+    icon: Users,
+    component: AdminTeamManagement,
+  },
+
+  study: {
+    label: "Study Management",
+    description:
+      "Manage learning materials and study resources.",
+    icon: BookOpen,
+    component: AdminStudyManagement,
+  },
+
+  policy: {
+    label: "Policy Management",
+    description:
+      "Manage legal and platform policy documents.",
+    icon: ShieldCheck,
+    component: AdminPolicyManagement,
+  },
+
+  scripture: {
+    label: "Scripture Management",
+    description:
+      "Manage scripture resources and related datasets.",
+    icon: ScrollText,
+    component: AdminScriptureManagement,
+  },
+
+  settings: {
+    label: "System Settings",
+    description:
+      "Configure global platform settings.",
+    icon: Settings,
+    component: AdminSettings,
+  },
+};
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] =
+    useState("overview");
+
+  const activePage =
+    adminTabs[activeTab] ||
+    adminTabs.overview;
+
+  const ActiveIcon =
+    activePage.icon;
+
+  const ActiveComponent =
+    activePage.component;
 
   return (
-
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-950">
+    <div
+      className="
+        flex
+        min-h-screen
+        w-full
+        overflow-hidden
+        bg-slate-50
+        text-slate-900
+        dark:bg-slate-950
+        dark:text-slate-100
+      "
+    >
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
 
       <AdminSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* =====================================================
+          MAIN SHELL
+      ===================================================== */}
 
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Header */}
         <AdminHeader />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* ===================================================
+            PAGE
+        =================================================== */}
 
-          {activeTab === "overview" && (
-            <AdminOverview />
-          )}
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+            {/* =================================================
+                PAGE HEADER
+            ================================================= */}
 
-          {activeTab === "team" && (
-            <AdminTeamManagement />
-          )}
+            <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900">
+                  <ActiveIcon
+                    className="h-5 w-5"
+                    strokeWidth={1.8}
+                  />
+                </div>
 
-          {activeTab === "study" && (
-            <AdminStudyManagement />
-          )}
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                      Administration
+                    </span>
 
-          {activeTab === "policy" && (
-            <AdminPolicyManagement />
-          )}
+                    <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  </div>
 
-          {activeTab === "scripture" && (
-            <AdminScriptureManagement />
-          )}
+                  <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                    {activePage.label}
+                  </h1>
 
-          {activeTab === "settings" && (
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-6">
-              <h2 className="text-2xl font-bold mb-4">
-                Settings
-              </h2>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    {activePage.description}
+                  </p>
+                </div>
+              </div>
 
-              <p className="text-gray-500">
-                Global system settings will appear here.
-              </p>
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Admin Console
+              </div>
             </div>
-          )}
 
+            {/* =================================================
+                CONTENT SURFACE
+            ================================================= */}
+
+            <section className="min-w-0">
+              <ActiveComponent />
+            </section>
+          </div>
         </main>
+      </div>
+    </div>
+  );
+}
 
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+function AdminSettings() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="border-b border-slate-200 px-5 py-5 dark:border-slate-800 sm:px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+            <Settings className="h-5 w-5 text-slate-500 dark:text-slate-300" />
+          </div>
+
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Global System Settings
+            </h2>
+
+            <p className="mt-0.5 text-xs text-slate-400">
+              Platform-wide configuration will appear here.
+            </p>
+          </div>
+        </div>
       </div>
 
+      <div className="p-6">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center dark:border-slate-800 dark:bg-slate-950/40">
+          <Settings className="mx-auto mb-3 h-7 w-7 text-slate-300 dark:text-slate-700" />
+
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Global settings workspace
+          </p>
+
+          <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-400">
+            Platform configuration controls can be added here as
+            the administration layer expands.
+          </p>
+        </div>
+      </div>
     </div>
-
   );
-
 }
