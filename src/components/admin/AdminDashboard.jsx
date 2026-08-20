@@ -1,16 +1,16 @@
 "use client";
 
 import React, {
-  useMemo,
   useState,
 } from "react";
 
 import {
+  Menu,
   LayoutDashboard,
   Users,
   BookOpen,
   ShieldCheck,
-  ScrollText,
+  BookMarked,
   Settings,
 } from "lucide-react";
 
@@ -24,28 +24,28 @@ import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 
 /* =========================================================
-   TAB CONFIG
+   ADMIN PAGES
 ========================================================= */
 
-const adminTabs = {
+const adminPages = {
   overview: {
-    label: "Overview",
+    title: "Dashboard Overview",
     description:
-      "Monitor the platform and review key activity.",
+      "Monitor platform activity, resources, and system health.",
     icon: LayoutDashboard,
     component: AdminOverview,
   },
 
   team: {
-    label: "Team Management",
+    title: "User Management",
     description:
-      "Manage administrators and platform team members.",
+      "Manage users and administration access.",
     icon: Users,
     component: AdminTeamManagement,
   },
 
   study: {
-    label: "Study Management",
+    title: "Study Hub",
     description:
       "Manage learning materials and study resources.",
     icon: BookOpen,
@@ -53,41 +53,44 @@ const adminTabs = {
   },
 
   policy: {
-    label: "Policy Management",
+    title: "Policies",
     description:
-      "Manage legal and platform policy documents.",
+      "Manage platform policies and legal documents.",
     icon: ShieldCheck,
     component: AdminPolicyManagement,
   },
 
   scripture: {
-    label: "Scripture Management",
+    title: "Scripture Management",
     description:
-      "Manage scripture resources and related datasets.",
-    icon: ScrollText,
+      "Manage scripture resources and datasets.",
+    icon: BookMarked,
     component: AdminScriptureManagement,
   },
 
   settings: {
-    label: "System Settings",
+    title: "System Settings",
     description:
-      "Configure global platform settings.",
+      "Manage global platform configuration.",
     icon: Settings,
     component: AdminSettings,
   },
 };
 
 /* =========================================================
-   DASHBOARD
+   MAIN DASHBOARD
 ========================================================= */
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] =
     useState("overview");
 
+  const [mobileOpen, setMobileOpen] =
+    useState(false);
+
   const activePage =
-    adminTabs[activeTab] ||
-    adminTabs.overview;
+    adminPages[activeTab] ||
+    adminPages.overview;
 
   const ActiveIcon =
     activePage.icon;
@@ -105,7 +108,7 @@ export default function AdminDashboard() {
         bg-slate-50
         text-slate-900
         dark:bg-slate-950
-        dark:text-slate-100
+        dark:text-white
       "
     >
       {/* =====================================================
@@ -115,10 +118,12 @@ export default function AdminDashboard() {
       <AdminSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
       />
 
       {/* =====================================================
-          MAIN SHELL
+          MAIN APPLICATION
       ===================================================== */}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -126,11 +131,52 @@ export default function AdminDashboard() {
         <AdminHeader />
 
         {/* ===================================================
-            PAGE
+            SCROLLABLE CONTENT
         =================================================== */}
 
         <main className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+
+            {/* =================================================
+                MOBILE MENU BUTTON
+            ================================================= */}
+
+            <div className="mb-5 lg:hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setMobileOpen(true)
+                }
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-3.5
+                  py-2.5
+                  text-sm
+                  font-semibold
+                  text-slate-600
+                  shadow-sm
+                  transition
+                  hover:bg-slate-50
+                  hover:text-slate-900
+                  dark:border-slate-800
+                  dark:bg-slate-900
+                  dark:text-slate-300
+                  dark:hover:bg-slate-800
+                  dark:hover:text-white
+                "
+              >
+                <Menu className="h-4 w-4" />
+
+                Admin Menu
+              </button>
+            </div>
+
             {/* =================================================
                 PAGE HEADER
             ================================================= */}
@@ -154,7 +200,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-                    {activePage.label}
+                    {activePage.title}
                   </h1>
 
                   <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -170,7 +216,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* =================================================
-                CONTENT SURFACE
+                ACTIVE CONTENT
             ================================================= */}
 
             <section className="min-w-0">
@@ -202,23 +248,23 @@ function AdminSettings() {
             </h2>
 
             <p className="mt-0.5 text-xs text-slate-400">
-              Platform-wide configuration will appear here.
+              Configure platform-wide settings and services.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center dark:border-slate-800 dark:bg-slate-950/40">
+      <div className="p-5 sm:p-6">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center dark:border-slate-800 dark:bg-slate-950/40">
           <Settings className="mx-auto mb-3 h-7 w-7 text-slate-300 dark:text-slate-700" />
 
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Global settings workspace
+            Settings workspace
           </p>
 
           <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-400">
-            Platform configuration controls can be added here as
-            the administration layer expands.
+            Global configuration controls can be added here as
+            the administration platform grows.
           </p>
         </div>
       </div>
