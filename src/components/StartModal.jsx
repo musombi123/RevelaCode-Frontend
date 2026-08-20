@@ -4,6 +4,8 @@ import React, {
   useState,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import {
   ArrowRight,
   CheckCircle2,
@@ -139,26 +141,28 @@ export default function StartModal() {
   // ROLE REDIRECTION
   // =======================================================
 
-  const goHomeByRole = (
-    role
-  ) => {
-    if (role === "admin") {
-      window.location.href =
-        "/admin/dashboard";
+  const goHomeByRole = (role) => {
+    switch (role) {
+      case "admin":
+        window.location.replace(
+          "/admin/dashboard"
+        );
+        return;
 
-      return;
+      case "support":
+        window.location.replace(
+          "/support/dashboard"
+        );
+        return;
+
+      case "guest":
+        window.location.replace("/");
+        return;
+
+      default:
+        window.location.replace("/");
     }
-
-    if (role === "support") {
-      window.location.href =
-        "/support/dashboard";
-
-      return;
-    }
-
-    window.location.href = "/";
   };
-
 
   // =======================================================
   // API
@@ -296,52 +300,72 @@ export default function StartModal() {
   // STORE AUTHENTICATION
   // =======================================================
 
-  const completeLogin = (
-    data
-  ) => {
+  const completeLogin = (data = {}) => {
+    const user =
+      data?.user ||
+      data?.data?.user ||
+      {};
+
     const authPayload = {
       contact:
-        data.contact || "",
+        data.contact ||
+        user.contact ||
+        "",
+
       fullName:
-        data.full_name || "",
+        data.full_name ||
+        data.fullName ||
+        user.full_name ||
+        user.fullName ||
+        "",
+
       role:
-        data.role || "user",
+        data.role ||
+        user.role ||
+        "user",
+
       apiKey:
-        data.api_key || "",
+        data.api_key ||
+        user.api_key ||
+        "",
+
       accessToken:
-        data.access_token || "",
+        data.access_token ||
+        data.token ||
+        data.accessToken ||
+        user.access_token ||
+        user.token ||
+        "",
+
       tokenType:
-        data.token_type || "Bearer",
+        data.token_type ||
+        data.tokenType ||
+        "Bearer",
+
       expiresIn:
-        data.expires_in || 0,
+        data.expires_in ||
+        data.expiresIn ||
+        0,
     };
 
-    /*
-     * Give AuthContext the complete authenticated identity.
-     *
-     * IMPORTANT:
-     * AuthContext should persist accessToken.
-     */
+    if (!authPayload.accessToken) {
+      console.warn(
+        "Login succeeded but no access token was returned:",
+        data
+      );
+    }
 
     login(authPayload);
 
-    /*
-     * Fallback persistence.
-     *
-     * Keep this only if AuthContext does not already
-     * manage the token. It is harmless if it does.
-     */
-
-    if (data.access_token) {
+    if (authPayload.accessToken) {
       localStorage.setItem(
         "revelacode_access_token",
-        data.access_token
+        authPayload.accessToken
       );
 
       localStorage.setItem(
         "revelacode_token_type",
-        data.token_type ||
-          "Bearer"
+        authPayload.tokenType
       );
     }
 
@@ -2189,15 +2213,52 @@ export default function StartModal() {
           LEGAL DOCS
       ======================================================= */}
 
-      {showLegal && (
-        <LegalDocs
-          onClose={() =>
-            setShowLegal(
-              false
-            )
-          }
-        />
-      )}
+      {showLegal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="
+              fixed
+              inset-0
+              z-[10000]
+              flex
+              items-center
+              justify-center
+              bg-slate-950/70
+              p-0
+              backdrop-blur-md
+              sm:p-4
+            "
+          >
+            <div
+              className="
+                flex
+                h-full
+                w-full
+                flex-col
+                overflow-hidden
+                bg-slate-50
+                shadow-2xl
+                dark:bg-slate-950
+
+                sm:h-[92vh]
+                sm:max-w-5xl
+                sm:rounded-3xl
+                sm:border
+                sm:border-slate-200
+                sm:dark:border-slate-800
+              "
+            >
+              <LegalDocs
+                activeTab="privacy"
+                onClose={() =>
+                  setShowLegal(false)
+                }
+              />
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
