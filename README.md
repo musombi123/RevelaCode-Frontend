@@ -1,7 +1,7 @@
 # RevelaCode Frontend
 
 <p align="center">
-  <img src="assets/logo.png" width="180">
+  <img src="assets/Logo.png" width="180">
 </p>
 
 <h1 align="center">RevelaCode Frontend</h1>
