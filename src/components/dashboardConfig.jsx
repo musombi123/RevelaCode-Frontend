@@ -295,49 +295,33 @@ function ComingSoonDashboard({
   );
 }
 
-const BiasharaDashboard = () => (
-  <ComingSoonDashboard
-    title="Biashara is Coming Soon"
-    subtitle="A complete business workspace for products, sales, customers, expenses, payments, and business intelligence."
-    icon={ShoppingCart}
-    gradient="from-blue-600 to-cyan-600"
-  />
+/* ======================================================
+   JUMUIYA HUB DASHBOARDS
+====================================================== */
+
+const BiasharaDashboard = safeLazy(
+  () => import("@/Dashboard/BiasharaDashboard.jsx"),
+  "Biashara"
 );
 
-const ShambaDashboard = () => (
-  <ComingSoonDashboard
-    title="Shamba is Coming Soon"
-    subtitle="A smart agricultural workspace for crops, market prices, farm inputs, records, and opportunities."
-    icon={Leaf}
-    gradient="from-orange-500 to-amber-600"
-  />
+const ShambaDashboard = safeLazy(
+  () => import("@/Dashboard/ShambaDashboard.jsx"),
+  "Shamba"
 );
 
-const EducationDashboard = () => (
-  <ComingSoonDashboard
-    title="Education is Coming Soon"
-    subtitle="A connected education workspace for schools, classes, fees, projects, learning materials, and more."
-    icon={GraduationCap}
-    gradient="from-emerald-600 to-green-700"
-  />
+const ElimuDashboard = safeLazy(
+  () => import("@/Dashboard/ElimuDashboard.jsx"),
+  "Elimu"
 );
 
-const CommunityDashboard = () => (
-  <ComingSoonDashboard
-    title="Community is Coming Soon"
-    subtitle="A cross-hub community layer connecting people, conversations, announcements, opportunities, and services."
-    icon={Users}
-    gradient="from-purple-600 to-fuchsia-600"
-  />
+const CommunityDashboard = safeLazy(
+  () => import("@/Dashboard/CommunityDashboard.jsx"),
+  "Community"
 );
 
-const PaymentsDashboard = () => (
-  <ComingSoonDashboard
-    title="Payments is Coming Soon"
-    subtitle="A unified payment and transaction workspace connecting activity across the RevelaCode ecosystem."
-    icon={WalletCards}
-    gradient="from-amber-500 to-orange-600"
-  />
+const PaymentsDashboard = safeLazy(
+  () => import("@/Dashboard/PaymentsDashboard.jsx"),
+  "Payments"
 );
 
 /* ======================================================
@@ -810,7 +794,9 @@ export const DASHBOARDS = [
     element: <HomeDashboard />,
   },
 
-  /* ================= ECOSYSTEM ================= */
+  /* ======================================================
+     REVELACODE / FAITH
+  ====================================================== */
 
   {
     key: "faith",
@@ -820,12 +806,16 @@ export const DASHBOARDS = [
     element: <FaithDashboard />,
   },
 
+  /* ======================================================
+     JUMUIYA
+  ====================================================== */
+
   {
     key: "education",
     title: "Education",
     label: "Education",
     icon: GraduationCap,
-    element: <EducationDashboard />,
+    element: <ElimuDashboard />,
   },
 
   {
@@ -860,6 +850,10 @@ export const DASHBOARDS = [
     element: <PaymentsDashboard />,
   },
 
+  /* ======================================================
+     ACCOUNT
+  ====================================================== */
+
   {
     key: "profile",
     title: "Profile",
@@ -878,11 +872,9 @@ export const DASHBOARDS = [
   },
 
   /* ======================================================
-     FAITH HUB INTERNAL DASHBOARDS
-     ------------------------------------------------------
-     These remain registered and usable by FaithDashboard,
-     but are intentionally hidden from the global sidebar.
-     ====================================================== */
+     FAITH INTERNAL DASHBOARDS
+     Hidden from global sidebar.
+  ====================================================== */
 
   {
     key: "bible",
