@@ -83,6 +83,11 @@ const ReferentialDashboard = safeLazy(
   "Referential"
 );
 
+const ShambaFarmsDashboard = safeLazy(
+  () => import("@/Dashboard/ShambaDashboard.jsx"),
+  "My Farms"
+);
+
 const PreferencesDashboard = safeLazy(
   () => import("./PreferencesDashboard.jsx"),
   "Preferences"
