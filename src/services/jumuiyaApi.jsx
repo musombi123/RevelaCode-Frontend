@@ -8,11 +8,12 @@ import { useAuth } from "@/context/AuthContext.jsx";
 // API BASE URL
 // =========================================================
 
-const BASE_URL =
+const BASE_URL = (
   import.meta.env.VITE_REVELACODE_URL ||
   import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_API_URL ||
-  "";
+  ""
+).replace(/\/+$/, "");
 
 const API_ROOT = `${BASE_URL}/api/jumuiya`;
 
