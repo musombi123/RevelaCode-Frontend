@@ -12,7 +12,7 @@ import {
   Package,
   ShoppingCart,
   Truck,
-  UserRound,
+  User,
   WalletCards,
 } from "lucide-react";
 
@@ -374,7 +374,7 @@ function OrderCard({
           "
         >
 
-          <UserRound
+          <User
             size={13}
             className="
               shrink-0
