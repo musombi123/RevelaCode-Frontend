@@ -1,23 +1,10 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import React, { useEffect, useState } from "react";
 import {
-  Activity,
-  ArrowUpRight,
-  Bot,
-  CloudSun,
-  FileText,
-  Leaf,
+  ArrowLeft,
   MapPin,
-  Package,
-  ShoppingCart,
-  Sprout,
+  Plus,
   Tractor,
-  Users,
-  Wallet,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -26,562 +13,568 @@ import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
 
 // =========================================================
-// HELPERS
+// EMPTY FORM
 // =========================================================
 
-function firstValue(...values) {
-  return values.find(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      value !== "",
-  );
-}
-
-
-function formatMoney(value) {
-  if (
-    value === undefined ||
-    value === null ||
-    value === ""
-  ) {
-    return "—";
-  }
-
-  const number = Number(value);
-
-  if (Number.isNaN(number)) {
-    return String(value);
-  }
-
-  return `KSh ${number.toLocaleString("en-KE")}`;
-}
-
-
-function formatDate(value) {
-  if (!value) {
-    return "Recently";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return date.toLocaleDateString("en-KE", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-
-function getActivityIcon(type) {
-  const value = String(type || "").toLowerCase();
-
-  if (
-    value.includes("harvest") ||
-    value.includes("crop")
-  ) {
-    return Leaf;
-  }
-
-  if (
-    value.includes("order") ||
-    value.includes("market")
-  ) {
-    return ShoppingCart;
-  }
-
-  return Activity;
-}
+const EMPTY_FORM = {
+  name: "",
+  county: "",
+  town: "",
+  location: "",
+  size: "",
+  size_unit: "acres",
+  soil_type: "",
+  irrigation: "",
+  description: "",
+};
 
 
 // =========================================================
-// MARKET LISTING ROW
+// FARM CARD
 // =========================================================
 
-function MarketListingRow({
-  listing,
-}) {
-  const title =
-    firstValue(
-      listing?.title,
-      listing?.name,
-      listing?.product,
-      "Produce",
-    );
-
-  const price =
-    firstValue(
-      listing?.price,
-      0,
-    );
-
-  const unit =
-    firstValue(
-      listing?.unit,
-      listing?.package,
-      "unit",
-    );
-
-  const location =
-    firstValue(
-      listing?.location,
-      "",
-    );
-
+function FarmCard({ farm }) {
   return (
     <div
       className="
-        flex
-        items-center
-        justify-between
-        gap-3
-        py-1.5
-      "
-    >
-      <div className="min-w-0">
-        <div
-          className="
-            truncate
-            text-[12px]
-            font-medium
-            text-white
-          "
-        >
-          {title}
-        </div>
-
-        <div
-          className="
-            mt-0.5
-            truncate
-            text-[9px]
-            text-white/65
-          "
-        >
-          {location || unit}
-        </div>
-      </div>
-
-      <div className="shrink-0 text-right">
-        <div
-          className="
-            text-[12px]
-            font-bold
-            text-white
-          "
-        >
-          {formatMoney(price)}
-        </div>
-
-        <div
-          className="
-            text-[9px]
-            text-white/65
-          "
-        >
-          / {unit}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// =========================================================
-// QUICK ACCESS
-// =========================================================
-
-function QuickAccessItem({
-  icon: Icon,
-  label,
-  onClick,
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="
-        group
-        flex
-        min-w-0
-        flex-col
-        items-center
-        justify-center
-        gap-2
-        rounded-2xl
-        px-2
-        py-3
-        transition
-        hover:bg-amber-50
-        active:scale-[0.97]
-      "
-    >
-      <span
-        className="
-          flex
-          h-11
-          w-11
-          items-center
-          justify-center
-          rounded-xl
-          bg-amber-50
-          text-amber-700
-          transition
-          group-hover:bg-amber-100
-        "
-      >
-        <Icon
-          size={19}
-          strokeWidth={1.8}
-        />
-      </span>
-
-      <span
-        className="
-          max-w-[72px]
-          truncate
-          text-center
-          text-[10px]
-          font-semibold
-          text-slate-700
-        "
-      >
-        {label}
-      </span>
-    </button>
-  );
-}
-
-
-// =========================================================
-// OVERVIEW CARD
-// =========================================================
-
-function OverviewCard({
-  icon: Icon,
-  label,
-  value,
-  tone = "green",
-  onClick,
-}) {
-  const toneClasses = {
-    green: {
-      icon:
-        "bg-emerald-50 text-emerald-600",
-      value:
-        "text-emerald-700",
-    },
-
-    amber: {
-      icon:
-        "bg-amber-50 text-amber-600",
-      value:
-        "text-amber-700",
-    },
-
-    orange: {
-      icon:
-        "bg-orange-50 text-orange-600",
-      value:
-        "text-orange-700",
-    },
-
-    blue: {
-      icon:
-        "bg-sky-50 text-sky-600",
-      value:
-        "text-sky-700",
-    },
-  };
-
-  const current =
-    toneClasses[tone] ||
-    toneClasses.green;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="
-        flex
-        min-w-0
-        items-center
-        gap-3
         rounded-2xl
         border
         border-slate-100
         bg-white
-        px-3
-        py-3.5
-        text-left
-        shadow-[0_2px_10px_rgba(15,23,42,0.03)]
-        transition
-        hover:-translate-y-0.5
-        hover:shadow-[0_6px_18px_rgba(15,23,42,0.06)]
-        active:scale-[0.99]
-      "
-    >
-      <div
-        className={`
-          flex
-          h-9
-          w-9
-          shrink-0
-          items-center
-          justify-center
-          rounded-xl
-          ${current.icon}
-        `}
-      >
-        <Icon size={17} />
-      </div>
-
-      <div className="min-w-0">
-        <div
-          className="
-            truncate
-            text-[10px]
-            font-medium
-            text-slate-500
-          "
-        >
-          {label}
-        </div>
-
-        <div
-          className={`
-            mt-0.5
-            truncate
-            text-sm
-            font-bold
-            ${current.value}
-          `}
-        >
-          {value}
-        </div>
-      </div>
-    </button>
-  );
-}
-
-
-// =========================================================
-// ACTIVITY ITEM
-// =========================================================
-
-function RecentActivityItem({
-  activity,
-}) {
-  const Icon =
-    getActivityIcon(
-      activity?.type ||
-      activity?.category ||
-      activity?.title,
-    );
-
-  const title =
-    firstValue(
-      activity?.title,
-      activity?.name,
-      activity?.description,
-      activity?.message,
-      activity?.activity_type,
-      "Farm activity",
-    );
-
-  const time =
-    firstValue(
-      activity?.created_at,
-      activity?.date,
-      activity?.activity_date,
-      activity?.time,
-    );
-
-  const cost =
-    firstValue(
-      activity?.cost,
-      activity?.amount,
-    );
-
-  return (
-    <div
-      className="
-        flex
-        items-center
-        gap-3
-        border-b
-        border-slate-100
-        py-3.5
-        last:border-b-0
-      "
-    >
-      <div
-        className="
-          flex
-          h-9
-          w-9
-          shrink-0
-          items-center
-          justify-center
-          rounded-xl
-          bg-emerald-50
-          text-emerald-600
-        "
-      >
-        <Icon size={16} />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div
-          className="
-            truncate
-            text-[11px]
-            font-semibold
-            text-slate-700
-          "
-        >
-          {title}
-        </div>
-
-        <div
-          className="
-            mt-0.5
-            text-[9px]
-            text-slate-400
-          "
-        >
-          {formatDate(time)}
-        </div>
-      </div>
-
-      {cost !== undefined &&
-        cost !== null &&
-        cost !== "" && (
-          <div
-            className="
-              shrink-0
-              text-[10px]
-              font-bold
-              text-red-500
-            "
-          >
-            -{formatMoney(cost)}
-          </div>
-        )}
-    </div>
-  );
-}
-
-
-// =========================================================
-// FARM SNAPSHOT ITEM
-// =========================================================
-
-function FarmSnapshotItem({
-  farm,
-}) {
-  const name =
-    firstValue(
-      farm?.name,
-      farm?.farm_name,
-      "Unnamed farm",
-    );
-
-  const location =
-    firstValue(
-      farm?.location,
-      farm?.town,
-      farm?.county,
-    );
-
-  const size =
-    firstValue(
-      farm?.size,
-      farm?.farm_size,
-    );
-
-  const sizeUnit =
-    firstValue(
-      farm?.size_unit,
-      farm?.farm_size_unit,
-      "acres",
-    );
-
-  return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-slate-100
-        bg-slate-50/70
-        p-3
+        p-4
+        shadow-[0_4px_20px_rgba(15,23,42,0.04)]
       "
     >
       <div className="flex items-start gap-3">
         <div
           className="
             flex
-            h-9
-            w-9
+            h-11
+            w-11
             shrink-0
             items-center
             justify-center
-            rounded-xl
+            rounded-2xl
             bg-emerald-50
             text-emerald-600
           "
         >
-          <Tractor size={17} />
+          <Tractor size={21} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div
+          <h3
             className="
               truncate
-              text-[11px]
-              font-bold
-              text-slate-800
+              text-sm
+              font-extrabold
+              text-slate-900
             "
           >
-            {name}
-          </div>
+            {farm?.name || "Unnamed Farm"}
+          </h3>
 
-          {location && (
+          {(farm?.location ||
+            farm?.town ||
+            farm?.county) && (
             <div
               className="
                 mt-1
                 flex
                 items-center
                 gap-1
-                truncate
-                text-[9px]
+                text-[10px]
                 text-slate-400
               "
             >
-              <MapPin size={10} />
-              {location}
+              <MapPin size={11} />
+
+              {farm?.location ||
+                farm?.town ||
+                farm?.county}
             </div>
           )}
 
-          {size !== undefined &&
-            size !== null &&
-            size !== "" && (
+          {farm?.size !== undefined &&
+            farm?.size !== null &&
+            farm?.size !== "" && (
               <div
                 className="
-                  mt-1
-                  text-[9px]
-                  font-medium
-                  text-slate-400
+                  mt-2
+                  text-[10px]
+                  font-semibold
+                  text-slate-500
                 "
               >
-                {size} {sizeUnit}
+                {farm.size}{" "}
+                {farm?.size_unit || "acres"}
               </div>
             )}
         </div>
+      </div>
+
+      {farm?.description && (
+        <p
+          className="
+            mt-3
+            text-[10px]
+            leading-5
+            text-slate-400
+          "
+        >
+          {farm.description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+// =========================================================
+// ADD FARM MODAL
+// =========================================================
+
+function AddFarmModal({
+  form,
+  setForm,
+  saving,
+  error,
+  onClose,
+  onSubmit,
+}) {
+  function update(field, value) {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  }
+
+  return (
+    <div
+      className="
+        fixed
+        inset-0
+        z-[100]
+        flex
+        items-center
+        justify-center
+        bg-slate-950/40
+        p-4
+        backdrop-blur-sm
+      "
+    >
+      <div
+        className="
+          max-h-[90vh]
+          w-full
+          max-w-lg
+          overflow-y-auto
+          rounded-3xl
+          bg-white
+          p-5
+          shadow-2xl
+          sm:p-6
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+          "
+        >
+          <div>
+            <h2
+              className="
+                text-lg
+                font-extrabold
+                text-slate-900
+              "
+            >
+              Add Farm
+            </h2>
+
+            <p
+              className="
+                mt-1
+                text-[11px]
+                text-slate-400
+              "
+            >
+              Add your farm details to Shamba.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="
+              flex
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-xl
+              bg-slate-100
+              text-slate-500
+              transition
+              hover:bg-slate-200
+            "
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        {error && (
+          <div
+            className="
+              mt-4
+              rounded-xl
+              border
+              border-red-100
+              bg-red-50
+              px-3
+              py-2.5
+              text-[11px]
+              text-red-700
+            "
+          >
+            {error}
+          </div>
+        )}
+
+        <form
+          onSubmit={onSubmit}
+          className="mt-5 space-y-4"
+        >
+          <div>
+            <label className="text-[10px] font-bold text-slate-600">
+              Farm name *
+            </label>
+
+            <input
+              value={form.name}
+              onChange={(event) =>
+                update(
+                  "name",
+                  event.target.value,
+                )
+              }
+              required
+              className="
+                mt-1.5
+                w-full
+                rounded-xl
+                border
+                border-slate-200
+                px-3
+                py-2.5
+                text-sm
+                outline-none
+                focus:border-emerald-500
+                focus:ring-2
+                focus:ring-emerald-100
+              "
+              placeholder="e.g. Kongowea Farm"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                County
+              </label>
+
+              <input
+                value={form.county}
+                onChange={(event) =>
+                  update(
+                    "county",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+                placeholder="Mombasa"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                Town
+              </label>
+
+              <input
+                value={form.town}
+                onChange={(event) =>
+                  update(
+                    "town",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+                placeholder="Mombasa"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-600">
+              Location
+            </label>
+
+            <input
+              value={form.location}
+              onChange={(event) =>
+                update(
+                  "location",
+                  event.target.value,
+                )
+              }
+              className="
+                mt-1.5
+                w-full
+                rounded-xl
+                border
+                border-slate-200
+                px-3
+                py-2.5
+                text-sm
+                outline-none
+                focus:border-emerald-500
+                focus:ring-2
+                focus:ring-emerald-100
+              "
+              placeholder="Village / area"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                Farm size
+              </label>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.size}
+                onChange={(event) =>
+                  update(
+                    "size",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+                placeholder="12"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                Unit
+              </label>
+
+              <select
+                value={form.size_unit}
+                onChange={(event) =>
+                  update(
+                    "size_unit",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+              >
+                <option value="acres">
+                  Acres
+                </option>
+                <option value="hectares">
+                  Hectares
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                Soil type
+              </label>
+
+              <input
+                value={form.soil_type}
+                onChange={(event) =>
+                  update(
+                    "soil_type",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+                placeholder="Loamy"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-600">
+                Irrigation
+              </label>
+
+              <input
+                value={form.irrigation}
+                onChange={(event) =>
+                  update(
+                    "irrigation",
+                    event.target.value,
+                  )
+                }
+                className="
+                  mt-1.5
+                  w-full
+                  rounded-xl
+                  border
+                  border-slate-200
+                  px-3
+                  py-2.5
+                  text-sm
+                  outline-none
+                  focus:border-emerald-500
+                  focus:ring-2
+                  focus:ring-emerald-100
+                "
+                placeholder="Rain-fed / Drip"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-600">
+              Description
+            </label>
+
+            <textarea
+              value={form.description}
+              onChange={(event) =>
+                update(
+                  "description",
+                  event.target.value,
+                )
+              }
+              rows={3}
+              className="
+                mt-1.5
+                w-full
+                resize-none
+                rounded-xl
+                border
+                border-slate-200
+                px-3
+                py-2.5
+                text-sm
+                outline-none
+                focus:border-emerald-500
+                focus:ring-2
+                focus:ring-emerald-100
+              "
+              placeholder="Optional farm details"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-emerald-600
+              px-4
+              py-3
+              text-sm
+              font-bold
+              text-white
+              transition
+              hover:bg-emerald-700
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
+          >
+            <Plus size={17} />
+
+            {saving
+              ? "Saving Farm..."
+              : "Add Farm"}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -589,272 +582,109 @@ function FarmSnapshotItem({
 
 
 // =========================================================
-// DASHBOARD
+// MAIN
 // =========================================================
 
-export default function ShambaDashboard({
+export default function ShambaFarmsDashboard({
   onNavigate,
 }) {
   const { user } = useAuth();
 
   const {
-    getShambaDashboard,
     getFarms,
-    getMarketplaceListings,
-    getFarmActivities,
+    createFarm,
   } = useJumuiyaApi();
 
-  const [dashboard, setDashboard] =
-    useState(null);
-
   const [farms, setFarms] =
-    useState([]);
-
-  const [marketListings, setMarketListings] =
-    useState([]);
-
-  const [recentActivities, setRecentActivities] =
     useState([]);
 
   const [loading, setLoading] =
     useState(true);
 
+  const [modalOpen, setModalOpen] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
   const [error, setError] =
     useState("");
 
-  const [activitiesLoading, setActivitiesLoading] =
-    useState(false);
+  const [form, setForm] =
+    useState(EMPTY_FORM);
 
 
   // =======================================================
-  // LOAD CORE DASHBOARD
+  // LOAD FARMS
   // =======================================================
+
+  async function loadFarms() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const result =
+        await getFarms();
+
+      setFarms(
+        Array.isArray(result)
+          ? result
+          : result?.farms || [],
+      );
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Unable to load farms.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
 
   useEffect(() => {
-    let active = true;
+    loadFarms();
+  }, [getFarms]);
 
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-        setError("");
 
-        const [
-          dashboardResult,
-          farmsResult,
-          marketplaceResult,
-        ] = await Promise.all([
-          getShambaDashboard(),
-          getFarms(),
-          getMarketplaceListings({
-            hub: "shamba",
-          }),
-        ]);
+  // =======================================================
+  // CREATE FARM
+  // =======================================================
 
-        if (!active) {
-          return;
-        }
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-        setDashboard(
-          dashboardResult || null,
-        );
+    try {
+      setSaving(true);
+      setError("");
 
-        setFarms(
-          Array.isArray(farmsResult)
-            ? farmsResult
-            : farmsResult?.farms || [],
-        );
+      const payload = {
+        ...form,
 
-        setMarketListings(
-          Array.isArray(marketplaceResult)
-            ? marketplaceResult
-            : marketplaceResult?.listings || [],
-        );
-      } catch (err) {
-        if (!active) {
-          return;
-        }
+        size:
+          form.size === ""
+            ? ""
+            : Number(form.size),
+      };
 
-        setError(
-          err?.message ||
-            "Unable to load Shamba dashboard.",
-        );
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
+      await createFarm(payload);
+
+      setForm(
+        EMPTY_FORM,
+      );
+
+      setModalOpen(false);
+
+      await loadFarms();
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Unable to create farm.",
+      );
+    } finally {
+      setSaving(false);
     }
-
-    loadDashboard();
-
-    return () => {
-      active = false;
-    };
-  }, [
-    getShambaDashboard,
-    getFarms,
-    getMarketplaceListings,
-  ]);
-
-
-  // =======================================================
-  // LOAD RECENT ACTIVITY
-  // =======================================================
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadActivities() {
-      if (!farms.length) {
-        setRecentActivities([]);
-        return;
-      }
-
-      setActivitiesLoading(true);
-
-      try {
-        const results =
-          await Promise.all(
-            farms
-              .slice(0, 5)
-              .map((farm) =>
-                getFarmActivities(
-                  farm.id || farm._id,
-                ).catch(() => []),
-              ),
-          );
-
-        if (!active) {
-          return;
-        }
-
-        const merged =
-          results
-            .flatMap((items) =>
-              Array.isArray(items)
-                ? items
-                : items?.activities || [],
-            )
-            .map((item) => ({
-              ...item,
-            }))
-            .sort((a, b) => {
-              const aTime =
-                new Date(
-                  a?.created_at ||
-                  a?.date ||
-                  a?.activity_date ||
-                  0,
-                ).getTime();
-
-              const bTime =
-                new Date(
-                  b?.created_at ||
-                  b?.date ||
-                  b?.activity_date ||
-                  0,
-                ).getTime();
-
-              return bTime - aTime;
-            })
-            .slice(0, 5);
-
-        setRecentActivities(
-          merged,
-        );
-      } finally {
-        if (active) {
-          setActivitiesLoading(false);
-        }
-      }
-    }
-
-    loadActivities();
-
-    return () => {
-      active = false;
-    };
-  }, [
-    farms,
-    getFarmActivities,
-  ]);
-
-
-  // =======================================================
-  // DATA
-  // =======================================================
-
-  const metrics =
-    dashboard?.metrics ||
-    dashboard?.summary ||
-    {};
-
-  const farmer =
-    dashboard?.farmer ||
-    {};
-
-  const totalFarms =
-    firstValue(
-      metrics.farms,
-      farms.length,
-      0,
-    );
-
-  const activeCrops =
-    firstValue(
-      metrics.active_crops,
-      0,
-    );
-
-  const harvests =
-    firstValue(
-      metrics.harvests,
-      0,
-    );
-
-  const farmActivities =
-    firstValue(
-      metrics.farm_activities,
-      0,
-    );
-
-  const activityCost =
-    firstValue(
-      metrics.total_activity_cost,
-      0,
-    );
-
-  const farmerName =
-    firstValue(
-      farmer?.farmer_name,
-      farmer?.full_name,
-      farmer?.name,
-      user?.full_name,
-      user?.name,
-      "Farmer",
-    );
-
-
-  const displayListings =
-    useMemo(
-      () =>
-        marketListings
-          .filter(
-            (item) =>
-              item?.status === "active" ||
-              !item?.status,
-          )
-          .slice(0, 4),
-      [marketListings],
-    );
-
-
-  const displayFarms =
-    useMemo(
-      () =>
-        farms.slice(0, 3),
-      [farms],
-    );
+  }
 
 
   // =======================================================
@@ -863,8 +693,8 @@ export default function ShambaDashboard({
 
   return (
     <JumuiyaDashboardShell
-      title="Shamba"
-      subtitle="Grow better. Sell smarter. Feed Africa."
+      title="My Farms"
+      subtitle="Manage your farms and growing spaces."
       activeHub="shamba"
       user={user}
       onNavigate={onNavigate}
@@ -873,106 +703,76 @@ export default function ShambaDashboard({
         className="
           mx-auto
           w-full
-          max-w-7xl
+          max-w-6xl
           px-1
           pb-20
         "
       >
+        {/* HEADER */}
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <section
+        <div
           className="
             mb-5
             flex
-            items-start
-            justify-between
-            gap-4
+            flex-col
+            gap-3
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
           "
         >
-          <div
+          <button
+            type="button"
+            onClick={() =>
+              onNavigate?.("shamba")
+            }
             className="
-              flex
-              min-w-0
+              inline-flex
+              w-fit
               items-center
-              gap-3
+              gap-2
+              text-xs
+              font-bold
+              text-slate-500
+              hover:text-emerald-600
             "
           >
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                bg-emerald-50
-                text-emerald-600
-              "
-            >
-              <Leaf
-                size={23}
-                strokeWidth={2}
-              />
-            </div>
+            <ArrowLeft size={15} />
+            Back to Shamba
+          </button>
 
-            <div className="min-w-0">
-              <h1
-                className="
-                  text-xl
-                  font-extrabold
-                  tracking-tight
-                  text-slate-900
-                "
-              >
-                Shamba Hub
-              </h1>
-
-              <p
-                className="
-                  mt-0.5
-                  truncate
-                  text-[10px]
-                  font-medium
-                  text-slate-400
-                "
-              >
-                Grow better. Sell smarter. Feed Africa.
-              </p>
-            </div>
-          </div>
-
-          {farmer?.county && (
-            <div
-              className="
-                hidden
-                items-center
-                gap-1
-                rounded-full
-                bg-slate-50
-                px-2.5
-                py-1.5
-                text-[10px]
-                font-medium
-                text-slate-500
-                sm:flex
-              "
-            >
-              <MapPin size={12} />
-              {farmer.county}
-            </div>
-          )}
-        </section>
+          <button
+            type="button"
+            onClick={() =>
+              setModalOpen(true)
+            }
+            className="
+              inline-flex
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-emerald-600
+              px-4
+              py-2.5
+              text-xs
+              font-bold
+              text-white
+              shadow-sm
+              transition
+              hover:bg-emerald-700
+              active:scale-[0.98]
+            "
+          >
+            <Plus size={16} />
+            Add Farm
+          </button>
+        </div>
 
 
-        {/* =================================================
-            ERROR
-        ================================================= */}
+        {/* ERROR */}
 
-        {!loading && error && (
+        {error && (
           <div
             className="
               mb-5
@@ -986,804 +786,232 @@ export default function ShambaDashboard({
               text-red-700
             "
           >
-            <div className="font-bold">
-              Shamba could not load completely
-            </div>
-
-            <div className="mt-1">
-              {error}
-            </div>
+            {error}
           </div>
         )}
 
 
-        {/* =================================================
-            MARKET
-        ================================================= */}
+        {/* SUMMARY */}
 
         <section
           className="
-            relative
-            mb-6
-            overflow-hidden
-            rounded-2xl
-            bg-gradient-to-br
-            from-orange-500
-            via-orange-500
-            to-amber-500
-            px-5
-            py-5
-            shadow-[0_10px_30px_rgba(249,115,22,0.20)]
+            mb-5
+            grid
+            grid-cols-2
+            gap-2
+            sm:grid-cols-3
           "
         >
-          <svg
-            viewBox="0 0 180 100"
-            className="
-              pointer-events-none
-              absolute
-              right-2
-              top-5
-              h-32
-              w-40
-              opacity-70
-            "
-            fill="none"
-          >
-            <path
-              d="
-                M8 82
-                L35 58
-                L57 72
-                L83 38
-                L104 49
-                L128 25
-                L150 7
-              "
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {[35, 57, 83, 104, 128, 150].map(
-              (cx, index) => {
-                const cy = [
-                  58,
-                  72,
-                  38,
-                  49,
-                  25,
-                  7,
-                ][index];
-
-                return (
-                  <circle
-                    key={cx}
-                    cx={cx}
-                    cy={cy}
-                    r="2.8"
-                    fill="white"
-                  />
-                );
-              },
-            )}
-          </svg>
-
           <div
             className="
-              relative
-              z-10
-              max-w-[68%]
-              sm:max-w-[58%]
-            "
-          >
-            <h2
-              className="
-                text-sm
-                font-bold
-                text-white
-              "
-            >
-              Shamba Market
-              <span className="ml-1 text-white/70">
-                (Live)
-              </span>
-            </h2>
-
-            <div className="mt-3">
-              {loading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3, 4].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="
-                          h-7
-                          animate-pulse
-                          rounded-lg
-                          bg-white/10
-                        "
-                      />
-                    ),
-                  )}
-                </div>
-              ) : displayListings.length > 0 ? (
-                <div>
-                  {displayListings.map(
-                    (listing, index) => (
-                      <MarketListingRow
-                        key={
-                          listing?.id ||
-                          listing?._id ||
-                          index
-                        }
-                        listing={listing}
-                      />
-                    ),
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="
-                    py-3
-                    text-[10px]
-                    text-white/75
-                  "
-                >
-                  No active Shamba listings yet.
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/market",
-                )
-              }
-              className="
-                mt-4
-                inline-flex
-                items-center
-                gap-2
-                rounded-xl
-                bg-white/15
-                px-4
-                py-2.5
-                text-[11px]
-                font-bold
-                text-white
-                backdrop-blur-sm
-                transition
-                hover:bg-white/25
-              "
-            >
-              View Market
-              <ArrowUpRight size={14} />
-            </button>
-          </div>
-        </section>
-
-
-        {/* =================================================
-            QUICK ACCESS
-        ================================================= */}
-
-        <section className="mb-6">
-          <div className="mb-3">
-            <h2
-              className="
-                text-sm
-                font-extrabold
-                text-slate-900
-              "
-            >
-              Quick Access
-            </h2>
-          </div>
-
-          <div
-            className="
-              grid
-              grid-cols-4
-              gap-1
               rounded-2xl
               border
               border-slate-100
               bg-white
-              p-2
+              p-4
               shadow-[0_4px_20px_rgba(15,23,42,0.04)]
-              sm:grid-cols-8
             "
           >
-            <QuickAccessItem
-              icon={Tractor}
-              label="My Farm"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/farms",
-                )
-              }
-            />
+            <div className="text-[10px] font-medium text-slate-400">
+              Total Farms
+            </div>
 
-            <QuickAccessItem
-              icon={Leaf}
-              label="Crops"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/crops",
-                )
-              }
-            />
+            <div className="mt-1 text-xl font-black text-emerald-700">
+              {farms.length}
+            </div>
+          </div>
 
-            <QuickAccessItem
-              icon={ShoppingCart}
-              label="Market"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/market",
-                )
-              }
-            />
+          <div
+            className="
+              rounded-2xl
+              border
+              border-slate-100
+              bg-white
+              p-4
+              shadow-[0_4px_20px_rgba(15,23,42,0.04)]
+            "
+          >
+            <div className="text-[10px] font-medium text-slate-400">
+              Active Farms
+            </div>
 
-            <QuickAccessItem
-              icon={Wallet}
-              label="Sell Produce"
-              onClick={() =>
-                onNavigate?.(
-                  "marketplace",
-                )
-              }
-            />
+            <div className="mt-1 text-xl font-black text-emerald-700">
+              {farms.filter(
+                (farm) =>
+                  farm?.status !==
+                  "deleted",
+              ).length}
+            </div>
+          </div>
 
-            <QuickAccessItem
-              icon={Package}
-              label="Inputs"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/inputs",
-                )
-              }
-            />
+          <div
+            className="
+              col-span-2
+              rounded-2xl
+              border
+              border-slate-100
+              bg-white
+              p-4
+              shadow-[0_4px_20px_rgba(15,23,42,0.04)]
+              sm:col-span-1
+            "
+          >
+            <div className="text-[10px] font-medium text-slate-400">
+              Farmer
+            </div>
 
-            <QuickAccessItem
-              icon={Users}
-              label="Buyers"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/buyers",
-                )
-              }
-            />
-
-            <QuickAccessItem
-              icon={FileText}
-              label="Orders"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/orders",
-                )
-              }
-            />
-
-            <QuickAccessItem
-              icon={CloudSun}
-              label="Weather"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/weather",
-                )
-              }
-            />
+            <div className="mt-1 truncate text-sm font-black text-slate-800">
+              {user?.full_name ||
+                user?.fullName ||
+                user?.name ||
+                "Farmer"}
+            </div>
           </div>
         </section>
 
 
-        {/* =================================================
-            FARM OVERVIEW
-        ================================================= */}
+        {/* FARMS */}
 
-        <section className="mb-6">
-          <div className="mb-3 flex items-center justify-between">
-            <h2
-              className="
-                text-sm
-                font-extrabold
-                text-slate-900
-              "
-            >
-              My Farm Overview
-            </h2>
-          </div>
-
+        {loading ? (
           <div
             className="
               grid
-              grid-cols-2
-              gap-2
-              sm:grid-cols-4
+              grid-cols-1
+              gap-3
+              md:grid-cols-2
             "
           >
-            <OverviewCard
-              icon={Tractor}
-              label="My Farms"
-              value={totalFarms}
-              tone="green"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/farms",
-                )
-              }
-            />
-
-            <OverviewCard
-              icon={Leaf}
-              label="Active Crops"
-              value={activeCrops}
-              tone="green"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/crops",
-                )
-              }
-            />
-
-            <OverviewCard
-              icon={Sprout}
-              label="Harvests"
-              value={harvests}
-              tone="orange"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/harvests",
-                )
-              }
-            />
-
-            <OverviewCard
-              icon={Wallet}
-              label="Farm Activity Cost"
-              value={formatMoney(
-                activityCost,
-              )}
-              tone="amber"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/activities",
-                )
-              }
-            />
-          </div>
-        </section>
-
-
-        {/* =================================================
-            FARM SNAPSHOT
-        ================================================= */}
-
-        <section className="mb-6">
-          <div
-            className="
-              mb-3
-              flex
-              items-center
-              justify-between
-            "
-          >
-            <h2
-              className="
-                text-sm
-                font-extrabold
-                text-slate-900
-              "
-            >
-              My Farms
-            </h2>
-
-            {farms.length > 3 && (
-              <button
-                type="button"
-                onClick={() =>
-                  onNavigate?.(
-                    "shamba/farms",
-                  )
-                }
-                className="
-                  text-[10px]
-                  font-bold
-                  text-emerald-600
-                "
-              >
-                View all
-              </button>
+            {[1, 2, 3, 4].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="
+                    h-32
+                    animate-pulse
+                    rounded-2xl
+                    bg-slate-100
+                  "
+                />
+              ),
             )}
           </div>
-
-          {loading ? (
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-2
-                sm:grid-cols-3
-              "
-            >
-              {[1, 2, 3].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="
-                      h-24
-                      animate-pulse
-                      rounded-2xl
-                      bg-slate-100
-                    "
-                  />
-                ),
-              )}
-            </div>
-          ) : displayFarms.length > 0 ? (
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-2
-                sm:grid-cols-3
-              "
-            >
-              {displayFarms.map(
-                (farm, index) => (
-                  <button
-                    type="button"
-                    key={
-                      farm?.id ||
-                      farm?._id ||
-                      index
-                    }
-                    onClick={() =>
-                      onNavigate?.(
-                        `shamba/farms/${farm?.id || farm?._id}`,
-                      )
-                    }
-                    className="text-left"
-                  >
-                    <FarmSnapshotItem
-                      farm={farm}
-                    />
-                  </button>
-                ),
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/farms",
-                )
-              }
-              className="
-                w-full
-                rounded-2xl
-                border
-                border-dashed
-                border-emerald-200
-                bg-emerald-50/40
-                px-4
-                py-6
-                text-center
-              "
-            >
-              <Tractor
-                size={22}
-                className="mx-auto text-emerald-600"
-              />
-
-              <div
-                className="
-                  mt-2
-                  text-xs
-                  font-bold
-                  text-slate-700
-                "
-              >
-                Add your first farm
-              </div>
-
-              <div
-                className="
-                  mt-1
-                  text-[10px]
-                  text-slate-400
-                "
-              >
-                Start managing your land and crops.
-              </div>
-            </button>
-          )}
-        </section>
-
-
-        {/* =================================================
-            RECENT ACTIVITY
-        ================================================= */}
-
-        <section
-          className="
-            overflow-hidden
-            rounded-2xl
-            border
-            border-slate-100
-            bg-white
-            px-4
-            shadow-[0_4px_20px_rgba(15,23,42,0.04)]
-          "
-        >
+        ) : farms.length > 0 ? (
           <div
             className="
-              flex
-              items-center
-              justify-between
-              pt-4
+              grid
+              grid-cols-1
+              gap-3
+              md:grid-cols-2
             "
           >
-            <h2
-              className="
-                text-sm
-                font-extrabold
-                text-slate-900
-              "
-            >
-              Recent Activity
-            </h2>
-
-            <button
-              type="button"
-              onClick={() =>
-                onNavigate?.(
-                  "shamba/activities",
-                )
-              }
-              className="
-                text-[10px]
-                font-bold
-                text-emerald-600
-                hover:underline
-              "
-            >
-              View all
-            </button>
+            {farms.map(
+              (farm, index) => (
+                <FarmCard
+                  key={
+                    farm?.id ||
+                    farm?._id ||
+                    index
+                  }
+                  farm={farm}
+                />
+              ),
+            )}
           </div>
-
-          {loading || activitiesLoading ? (
-            <div className="space-y-3 py-4">
-              {[1, 2, 3].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="
-                      h-12
-                      animate-pulse
-                      rounded-xl
-                      bg-slate-50
-                    "
-                  />
-                ),
-              )}
-            </div>
-          ) : recentActivities.length > 0 ? (
-            <div className="mt-1">
-              {recentActivities.map(
-                (activity, index) => (
-                  <RecentActivityItem
-                    key={
-                      activity?.id ||
-                      activity?._id ||
-                      index
-                    }
-                    activity={activity}
-                  />
-                ),
-              )}
-            </div>
-          ) : (
+        ) : (
+          <div
+            className="
+              rounded-3xl
+              border
+              border-dashed
+              border-emerald-200
+              bg-emerald-50/40
+              px-5
+              py-12
+              text-center
+            "
+          >
             <div
               className="
+                mx-auto
                 flex
-                flex-col
+                h-14
+                w-14
                 items-center
                 justify-center
-                py-10
-                text-center
-              "
-            >
-              <div
-                className="
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-emerald-50
-                  text-emerald-600
-                "
-              >
-                <Activity size={20} />
-              </div>
-
-              <div
-                className="
-                  mt-3
-                  text-xs
-                  font-bold
-                  text-slate-700
-                "
-              >
-                No recent activity
-              </div>
-
-              <p
-                className="
-                  mt-1
-                  max-w-xs
-                  text-[10px]
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Record your first farm activity
-                or harvest to see your farm timeline here.
-              </p>
-            </div>
-          )}
-        </section>
-
-
-        {/* =================================================
-            FARMER INFO
-        ================================================= */}
-
-        <section
-          className="
-            mt-4
-            flex
-            flex-col
-            gap-3
-            rounded-2xl
-            border
-            border-slate-100
-            bg-white
-            p-4
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-9
-                w-9
-                items-center
-                justify-center
-                rounded-xl
+                rounded-2xl
                 bg-emerald-50
                 text-emerald-600
               "
             >
-              <Sprout size={17} />
+              <Tractor size={25} />
             </div>
 
-            <div>
-              <div
-                className="
-                  text-[10px]
-                  font-medium
-                  text-slate-400
-                "
-              >
-                Farmer
-              </div>
+            <h2
+              className="
+                mt-4
+                text-sm
+                font-extrabold
+                text-slate-800
+              "
+            >
+              No farms yet
+            </h2>
 
-              <div
-                className="
-                  text-xs
-                  font-bold
-                  text-slate-700
-                "
-              >
-                {farmerName}
-              </div>
-            </div>
+            <p
+              className="
+                mx-auto
+                mt-1
+                max-w-sm
+                text-[11px]
+                leading-5
+                text-slate-400
+              "
+            >
+              Add your first farm to start tracking
+              crops, activities and harvests.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                setModalOpen(true)
+              }
+              className="
+                mt-5
+                inline-flex
+                items-center
+                gap-2
+                rounded-xl
+                bg-emerald-600
+                px-4
+                py-2.5
+                text-xs
+                font-bold
+                text-white
+                hover:bg-emerald-700
+              "
+            >
+              <Plus size={16} />
+              Add Farm
+            </button>
           </div>
-
-          <div
-            className="
-              flex
-              items-center
-              gap-4
-              text-[10px]
-              text-slate-400
-            "
-          >
-            <span>
-              {Number(totalFarms)}{" "}
-              {Number(totalFarms) === 1
-                ? "farm"
-                : "farms"}
-            </span>
-
-            {farmer?.county && (
-              <span className="flex items-center gap-1">
-                <MapPin size={11} />
-                {farmer.county}
-              </span>
-            )}
-
-            <span>
-              {farmActivities} activities
-            </span>
-          </div>
-        </section>
+        )}
       </div>
 
-
-      {/* =================================================
-          SHAMBA ASSISTANT
-      ================================================= */}
-
-      <button
-        type="button"
-        aria-label="Open Shamba assistant"
-        onClick={() =>
-          onNavigate?.(
-            "assistant",
-          )
-        }
-        className="
-          fixed
-          bottom-5
-          right-5
-          z-50
-          flex
-          h-14
-          w-14
-          items-center
-          justify-center
-          rounded-2xl
-          bg-emerald-600
-          text-white
-          shadow-[0_12px_30px_rgba(16,185,129,0.35)]
-          transition
-          hover:scale-105
-          hover:bg-emerald-700
-          active:scale-95
-          sm:bottom-7
-          sm:right-7
-        "
-      >
-        <Bot
-          size={24}
-          strokeWidth={1.8}
+      {modalOpen && (
+        <AddFarmModal
+          form={form}
+          setForm={setForm}
+          saving={saving}
+          error={error}
+          onClose={() => {
+            if (!saving) {
+              setModalOpen(false);
+            }
+          }}
+          onSubmit={handleSubmit}
         />
-
-        <span
-          className="
-            absolute
-            right-0
-            top-0
-            h-2.5
-            w-2.5
-            rounded-full
-            border-2
-            border-white
-            bg-emerald-300
-          "
-        />
-      </button>
+      )}
     </JumuiyaDashboardShell>
   );
 }
