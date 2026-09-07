@@ -9,11 +9,8 @@ import React, {
 
 import {
   ArrowLeft,
-  CalendarDays,
   CheckCircle2,
-  Leaf,
   MapPin,
-  Package,
   Plus,
   Scale,
   Tractor,
