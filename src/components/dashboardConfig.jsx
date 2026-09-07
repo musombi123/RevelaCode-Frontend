@@ -305,24 +305,9 @@ const BiasharaDashboard = safeLazy(
   "Biashara"
 );
 
-const ShambaDashboard = safeLazy(
-  () => import("@/Dashboard/ShambaDashboard.jsx"),
+const ShambaHub = safeLazy(
+  () => import("@/Dashboard/ShambaHub.jsx"),
   "Shamba"
-);
-const ShambaCropsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaCropsDashboard.jsx"
-    ),
-  "Crops"
-);
-
-const ShambaFarmsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaFarmsDashboard.jsx"
-    ),
-  "My Farms"
 );
 
 const ElimuDashboard = safeLazy(
@@ -382,25 +367,12 @@ function HomeDashboard({ onNavigate, user }) {
       icon: GraduationCap,
       gradient: "from-emerald-600 to-green-700",
     },
-
     {
-      key: "shamba/farms",
-      title: "My Farms",
-      label: "My Farms",
+      key: "shamba",
+      title: "Shamba",
+      label: "Shamba",
       icon: Leaf,
-      hidden: true,
-      element: (
-        <ShambaFarmsDashboard />
-      ),
-    },
-    
-    {
-      key: "shamba/crops",
-      title: "Crops",
-      label: "Crops",
-      icon: Leaf,
-      hidden: true,
-      element: <ShambaCropsDashboard />,
+      element: <ShambaHub />,
     },
     {
       key: "biashara",
