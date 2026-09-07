@@ -84,11 +84,6 @@ const ReferentialDashboard = safeLazy(
   "Referential"
 );
 
-const ShambaFarmsDashboard = safeLazy(
-  () => import("@/Dashboard/ShambaDashboard.jsx"),
-  "My Farms"
-);
-
 const PreferencesDashboard = safeLazy(
   () => import("./PreferencesDashboard.jsx"),
   "Preferences"
@@ -107,22 +102,6 @@ const AIAssistantDashboard = safeLazy(
 const FaithDashboard = safeLazy(
   () => import("./FaithDashboard.jsx"),
   "Faith"
-);
-
-const ShambaCropsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaCropsDashboard.jsx"
-    ),
-  "Crops"
-);
-
-const ShambaFarmsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaFarmsDashboard.jsx"
-    ),
-  "My Farms"
 );
 
 /* ======================================================
@@ -329,6 +308,21 @@ const BiasharaDashboard = safeLazy(
 const ShambaDashboard = safeLazy(
   () => import("@/Dashboard/ShambaDashboard.jsx"),
   "Shamba"
+);
+const ShambaCropsDashboard = safeLazy(
+  () =>
+    import(
+      "@/Dashboard/ShambaCropsDashboard.jsx"
+    ),
+  "Crops"
+);
+
+const ShambaFarmsDashboard = safeLazy(
+  () =>
+    import(
+      "@/Dashboard/ShambaFarmsDashboard.jsx"
+    ),
+  "My Farms"
 );
 
 const ElimuDashboard = safeLazy(
