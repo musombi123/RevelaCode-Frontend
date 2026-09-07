@@ -21,6 +21,7 @@ import {
   Sparkles,
   ArrowRight,
   Construction,
+  Tractor,
 } from "lucide-react";
 
 /* ======================================================
@@ -106,6 +107,22 @@ const AIAssistantDashboard = safeLazy(
 const FaithDashboard = safeLazy(
   () => import("./FaithDashboard.jsx"),
   "Faith"
+);
+
+const ShambaCropsDashboard = safeLazy(
+  () =>
+    import(
+      "@/Dashboard/ShambaCropsDashboard.jsx"
+    ),
+  "Crops"
+);
+
+const ShambaFarmsDashboard = safeLazy(
+  () =>
+    import(
+      "@/Dashboard/ShambaFarmsDashboard.jsx"
+    ),
+  "My Farms"
 );
 
 /* ======================================================
@@ -388,6 +405,15 @@ function HomeDashboard({ onNavigate, user }) {
       element: (
         <ShambaFarmsDashboard />
       ),
+    },
+    
+    {
+      key: "shamba/crops",
+      title: "Crops",
+      label: "Crops",
+      icon: Leaf,
+      hidden: true,
+      element: <ShambaCropsDashboard />,
     },
     {
       key: "biashara",
