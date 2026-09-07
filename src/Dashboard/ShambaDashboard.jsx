@@ -1,23 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   Activity,
-  ArrowDownRight,
   ArrowUpRight,
   Bot,
-  CalendarDays,
-  ChevronRight,
   CloudSun,
   FileText,
-  Flame,
   Leaf,
   MapPin,
   Package,
   ShoppingCart,
   Sprout,
-  Store,
   Tractor,
-  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
@@ -36,9 +34,10 @@ function firstValue(...values) {
     (value) =>
       value !== undefined &&
       value !== null &&
-      value !== ""
+      value !== "",
   );
 }
+
 
 function formatMoney(value) {
   if (
@@ -58,22 +57,28 @@ function formatMoney(value) {
   return `KSh ${number.toLocaleString("en-KE")}`;
 }
 
+
+function formatDate(value) {
+  if (!value) {
+    return "Recently";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString("en-KE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+
 function getActivityIcon(type) {
   const value = String(type || "").toLowerCase();
-
-  if (
-    value.includes("order") ||
-    value.includes("market")
-  ) {
-    return FileText;
-  }
-
-  if (
-    value.includes("price") ||
-    value.includes("market")
-  ) {
-    return Store;
-  }
 
   if (
     value.includes("harvest") ||
@@ -82,29 +87,50 @@ function getActivityIcon(type) {
     return Leaf;
   }
 
+  if (
+    value.includes("order") ||
+    value.includes("market")
+  ) {
+    return ShoppingCart;
+  }
+
   return Activity;
 }
 
 
 // =========================================================
-// MARKET PRICE ROW
+// MARKET LISTING ROW
 // =========================================================
 
-function MarketPriceRow({
-  name,
-  unit,
-  price,
-  trend,
+function MarketListingRow({
+  listing,
 }) {
-  const positive =
-    trend === "up" ||
-    trend === "increase" ||
-    Number(trend) > 0;
+  const title =
+    firstValue(
+      listing?.title,
+      listing?.name,
+      listing?.product,
+      "Produce",
+    );
 
-  const negative =
-    trend === "down" ||
-    trend === "decrease" ||
-    Number(trend) < 0;
+  const price =
+    firstValue(
+      listing?.price,
+      0,
+    );
+
+  const unit =
+    firstValue(
+      listing?.unit,
+      listing?.package,
+      "unit",
+    );
+
+  const location =
+    firstValue(
+      listing?.location,
+      "",
+    );
 
   return (
     <div
@@ -117,40 +143,48 @@ function MarketPriceRow({
       "
     >
       <div className="min-w-0">
-        <div className="truncate text-[12px] font-medium text-white">
-          {name}
-          {unit && (
-            <span className="ml-1 text-white/70">
-              ({unit})
-            </span>
-          )}
+        <div
+          className="
+            truncate
+            text-[12px]
+            font-medium
+            text-white
+          "
+        >
+          {title}
+        </div>
+
+        <div
+          className="
+            mt-0.5
+            truncate
+            text-[9px]
+            text-white/65
+          "
+        >
+          {location || unit}
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="text-[12px] font-semibold text-white">
+      <div className="shrink-0 text-right">
+        <div
+          className="
+            text-[12px]
+            font-bold
+            text-white
+          "
+        >
           {formatMoney(price)}
-        </span>
+        </div>
 
-        {positive && (
-          <ArrowUpRight
-            size={12}
-            className="text-lime-200"
-          />
-        )}
-
-        {negative && (
-          <ArrowDownRight
-            size={12}
-            className="text-red-200"
-          />
-        )}
-
-        {!positive && !negative && (
-          <span className="text-[10px] text-white/50">
-            •
-          </span>
-        )}
+        <div
+          className="
+            text-[9px]
+            text-white/65
+          "
+        >
+          / {unit}
+        </div>
       </div>
     </div>
   );
@@ -200,7 +234,10 @@ function QuickAccessItem({
           group-hover:bg-amber-100
         "
       >
-        <Icon size={19} strokeWidth={1.8} />
+        <Icon
+          size={19}
+          strokeWidth={1.8}
+        />
       </span>
 
       <span
@@ -229,30 +266,35 @@ function OverviewCard({
   label,
   value,
   tone = "green",
+  onClick,
 }) {
   const toneClasses = {
     green: {
       icon:
         "bg-emerald-50 text-emerald-600",
-      value: "text-emerald-700",
+      value:
+        "text-emerald-700",
     },
 
     amber: {
       icon:
         "bg-amber-50 text-amber-600",
-      value: "text-amber-700",
+      value:
+        "text-amber-700",
     },
 
     orange: {
       icon:
         "bg-orange-50 text-orange-600",
-      value: "text-orange-700",
+      value:
+        "text-orange-700",
     },
 
     blue: {
       icon:
         "bg-sky-50 text-sky-600",
-      value: "text-sky-700",
+      value:
+        "text-sky-700",
     },
   };
 
@@ -261,7 +303,9 @@ function OverviewCard({
     toneClasses.green;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className="
         flex
         min-w-0
@@ -273,7 +317,12 @@ function OverviewCard({
         bg-white
         px-3
         py-3.5
+        text-left
         shadow-[0_2px_10px_rgba(15,23,42,0.03)]
+        transition
+        hover:-translate-y-0.5
+        hover:shadow-[0_6px_18px_rgba(15,23,42,0.06)]
+        active:scale-[0.99]
       "
     >
       <div
@@ -315,7 +364,7 @@ function OverviewCard({
           {value}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -327,38 +376,36 @@ function OverviewCard({
 function RecentActivityItem({
   activity,
 }) {
-  const Icon = getActivityIcon(
-    activity?.type ||
+  const Icon =
+    getActivityIcon(
+      activity?.type ||
       activity?.category ||
-      activity?.title
-  );
+      activity?.title,
+    );
 
   const title =
     firstValue(
       activity?.title,
+      activity?.name,
       activity?.description,
-      activity?.message
-    ) ||
-    "Farm activity recorded";
+      activity?.message,
+      activity?.activity_type,
+      "Farm activity",
+    );
 
   const time =
     firstValue(
-      activity?.time,
       activity?.created_at,
-      activity?.date
-    ) ||
-    "Recently";
-
-  const amount =
-    firstValue(
-      activity?.amount,
-      activity?.value
+      activity?.date,
+      activity?.activity_date,
+      activity?.time,
     );
 
-  const isPositive =
-    activity?.direction === "in" ||
-    activity?.type === "income" ||
-    Number(amount) > 0;
+  const cost =
+    firstValue(
+      activity?.cost,
+      activity?.amount,
+    );
 
   return (
     <div
@@ -381,8 +428,8 @@ function RecentActivityItem({
           items-center
           justify-center
           rounded-xl
-          bg-slate-50
-          text-slate-500
+          bg-emerald-50
+          text-emerald-600
         "
       >
         <Icon size={16} />
@@ -407,31 +454,135 @@ function RecentActivityItem({
             text-slate-400
           "
         >
-          {time}
+          {formatDate(time)}
         </div>
       </div>
 
-      {amount !== undefined &&
-        amount !== null &&
-        amount !== "" && (
+      {cost !== undefined &&
+        cost !== null &&
+        cost !== "" && (
           <div
-            className={`
+            className="
               shrink-0
               text-[10px]
               font-bold
-              ${
-                isPositive
-                  ? "text-emerald-600"
-                  : "text-red-500"
-              }
-            `}
+              text-red-500
+            "
           >
-            {isPositive ? "+" : "-"}{" "}
-            {formatMoney(
-              Math.abs(Number(amount))
-            )}
+            -{formatMoney(cost)}
           </div>
         )}
+    </div>
+  );
+}
+
+
+// =========================================================
+// FARM SNAPSHOT ITEM
+// =========================================================
+
+function FarmSnapshotItem({
+  farm,
+}) {
+  const name =
+    firstValue(
+      farm?.name,
+      farm?.farm_name,
+      "Unnamed farm",
+    );
+
+  const location =
+    firstValue(
+      farm?.location,
+      farm?.town,
+      farm?.county,
+    );
+
+  const size =
+    firstValue(
+      farm?.size,
+      farm?.farm_size,
+    );
+
+  const sizeUnit =
+    firstValue(
+      farm?.size_unit,
+      farm?.farm_size_unit,
+      "acres",
+    );
+
+  return (
+    <div
+      className="
+        rounded-2xl
+        border
+        border-slate-100
+        bg-slate-50/70
+        p-3
+      "
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="
+            flex
+            h-9
+            w-9
+            shrink-0
+            items-center
+            justify-center
+            rounded-xl
+            bg-emerald-50
+            text-emerald-600
+          "
+        >
+          <Tractor size={17} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div
+            className="
+              truncate
+              text-[11px]
+              font-bold
+              text-slate-800
+            "
+          >
+            {name}
+          </div>
+
+          {location && (
+            <div
+              className="
+                mt-1
+                flex
+                items-center
+                gap-1
+                truncate
+                text-[9px]
+                text-slate-400
+              "
+            >
+              <MapPin size={10} />
+              {location}
+            </div>
+          )}
+
+          {size !== undefined &&
+            size !== null &&
+            size !== "" && (
+              <div
+                className="
+                  mt-1
+                  text-[9px]
+                  font-medium
+                  text-slate-400
+                "
+              >
+                {size} {sizeUnit}
+              </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -447,18 +598,22 @@ export default function ShambaDashboard({
   const { user } = useAuth();
 
   const {
-    getFarmer,
-    getFarms,
     getShambaDashboard,
+    getFarms,
+    getMarketplaceListings,
+    getFarmActivities,
   } = useJumuiyaApi();
 
   const [dashboard, setDashboard] =
     useState(null);
 
-  const [farmer, setFarmer] =
-    useState(null);
-
   const [farms, setFarms] =
+    useState([]);
+
+  const [marketListings, setMarketListings] =
+    useState([]);
+
+  const [recentActivities, setRecentActivities] =
     useState([]);
 
   const [loading, setLoading] =
@@ -467,70 +622,166 @@ export default function ShambaDashboard({
   const [error, setError] =
     useState("");
 
+  const [activitiesLoading, setActivitiesLoading] =
+    useState(false);
+
+
   // =======================================================
-  // LOAD DATA
+  // LOAD CORE DASHBOARD
   // =======================================================
 
   useEffect(() => {
     let active = true;
 
-    const load = async () => {
+    async function loadDashboard() {
       try {
         setLoading(true);
         setError("");
 
         const [
           dashboardResult,
-          farmerResult,
           farmsResult,
+          marketplaceResult,
         ] = await Promise.all([
           getShambaDashboard(),
-          getFarmer().catch(() => null),
-          getFarms().catch(() => []),
+          getFarms(),
+          getMarketplaceListings({
+            hub: "shamba",
+          }),
         ]);
 
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         setDashboard(
-          dashboardResult || null
-        );
-
-        setFarmer(
-          farmerResult || null
+          dashboardResult || null,
         );
 
         setFarms(
           Array.isArray(farmsResult)
             ? farmsResult
-            : farmsResult?.farms || []
+            : farmsResult?.farms || [],
+        );
+
+        setMarketListings(
+          Array.isArray(marketplaceResult)
+            ? marketplaceResult
+            : marketplaceResult?.listings || [],
         );
       } catch (err) {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         setError(
           err?.message ||
-            "Unable to load Shamba dashboard."
+            "Unable to load Shamba dashboard.",
         );
       } finally {
         if (active) {
           setLoading(false);
         }
       }
-    };
+    }
 
-    load();
+    loadDashboard();
 
     return () => {
       active = false;
     };
   }, [
     getShambaDashboard,
-    getFarmer,
     getFarms,
+    getMarketplaceListings,
   ]);
 
+
   // =======================================================
-  // NORMALIZED DATA
+  // LOAD RECENT ACTIVITY
+  // =======================================================
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadActivities() {
+      if (!farms.length) {
+        setRecentActivities([]);
+        return;
+      }
+
+      setActivitiesLoading(true);
+
+      try {
+        const results =
+          await Promise.all(
+            farms
+              .slice(0, 5)
+              .map((farm) =>
+                getFarmActivities(
+                  farm.id || farm._id,
+                ).catch(() => []),
+              ),
+          );
+
+        if (!active) {
+          return;
+        }
+
+        const merged =
+          results
+            .flatMap((items) =>
+              Array.isArray(items)
+                ? items
+                : items?.activities || [],
+            )
+            .map((item) => ({
+              ...item,
+            }))
+            .sort((a, b) => {
+              const aTime =
+                new Date(
+                  a?.created_at ||
+                  a?.date ||
+                  a?.activity_date ||
+                  0,
+                ).getTime();
+
+              const bTime =
+                new Date(
+                  b?.created_at ||
+                  b?.date ||
+                  b?.activity_date ||
+                  0,
+                ).getTime();
+
+              return bTime - aTime;
+            })
+            .slice(0, 5);
+
+        setRecentActivities(
+          merged,
+        );
+      } finally {
+        if (active) {
+          setActivitiesLoading(false);
+        }
+      }
+    }
+
+    loadActivities();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    farms,
+    getFarmActivities,
+  ]);
+
+
+  // =======================================================
+  // DATA
   // =======================================================
 
   const metrics =
@@ -538,152 +789,73 @@ export default function ShambaDashboard({
     dashboard?.summary ||
     {};
 
-  const farmerData =
+  const farmer =
     dashboard?.farmer ||
-    farmer ||
     {};
-
-  const dashboardFarms =
-    dashboard?.farms ||
-    farms ||
-    [];
-
-  const marketPrices = useMemo(() => {
-    const source =
-      dashboard?.market_prices ||
-      dashboard?.marketPrices ||
-      dashboard?.prices ||
-      [];
-
-    if (Array.isArray(source)) {
-      return source.slice(0, 4);
-    }
-
-    if (
-      source &&
-      typeof source === "object"
-    ) {
-      return Object.entries(source)
-        .slice(0, 4)
-        .map(([name, data]) => ({
-          name,
-          ...(typeof data === "object"
-            ? data
-            : { price: data }),
-        }));
-    }
-
-    return [];
-  }, [dashboard]);
-
-  const recentActivities = useMemo(() => {
-    const source =
-      dashboard?.recent_activity ||
-      dashboard?.recent_activities ||
-      dashboard?.activities ||
-      [];
-
-    return Array.isArray(source)
-      ? source.slice(0, 5)
-      : [];
-  }, [dashboard]);
-
-  // =======================================================
-  // METRICS
-  // =======================================================
 
   const totalFarms =
     firstValue(
       metrics.farms,
-      metrics.total_farms,
-      dashboardFarms.length,
-      0
+      farms.length,
+      0,
     );
 
   const activeCrops =
     firstValue(
       metrics.active_crops,
-      metrics.crops_active,
-      metrics.crops,
-      0
+      0,
     );
 
-  const activeOrders =
+  const harvests =
     firstValue(
-      metrics.active_orders,
-      metrics.orders,
-      metrics.total_orders,
-      0
+      metrics.harvests,
+      0,
     );
 
-  const pendingDeliveries =
+  const farmActivities =
     firstValue(
-      metrics.pending_deliveries,
-      metrics.deliveries_pending,
-      0
+      metrics.farm_activities,
+      0,
     );
 
-  const totalEarnings =
+  const activityCost =
     firstValue(
-      metrics.total_earnings,
-      metrics.earnings,
-      metrics.revenue,
-      0
+      metrics.total_activity_cost,
+      0,
     );
-
-  const pendingPayments =
-    firstValue(
-      metrics.pending_payments,
-      metrics.payments_pending,
-      0
-    );
-
-  // =======================================================
-  // FALLBACK MARKET PRICES
-  // =======================================================
-
-  const displayMarketPrices =
-    marketPrices.length > 0
-      ? marketPrices
-      : [
-          {
-            name: "Maize",
-            unit: "90kg",
-            price: 2200,
-            trend: "up",
-          },
-          {
-            name: "Beans",
-            unit: "90kg",
-            price: 4600,
-            trend: "up",
-          },
-          {
-            name: "Tomatoes",
-            unit: "20kg",
-            price: 1800,
-            trend: "up",
-          },
-          {
-            name: "Potatoes",
-            unit: "50kg",
-            price: 2300,
-            trend: "up",
-          },
-        ];
-
-  // =======================================================
-  // USER NAME
-  // =======================================================
 
   const farmerName =
     firstValue(
-      farmerData?.full_name,
-      farmerData?.name,
+      farmer?.farmer_name,
+      farmer?.full_name,
+      farmer?.name,
       user?.full_name,
       user?.name,
-      "Farmer"
+      "Farmer",
     );
+
+
+  const displayListings =
+    useMemo(
+      () =>
+        marketListings
+          .filter(
+            (item) =>
+              item?.status === "active" ||
+              !item?.status,
+          )
+          .slice(0, 4),
+      [marketListings],
+    );
+
+
+  const displayFarms =
+    useMemo(
+      () =>
+        farms.slice(0, 3),
+      [farms],
+    );
+
 
   // =======================================================
   // RENDER
@@ -697,10 +869,6 @@ export default function ShambaDashboard({
       user={user}
       onNavigate={onNavigate}
     >
-      {/* ===================================================
-          PAGE
-      =================================================== */}
-
       <div
         className="
           mx-auto
@@ -710,9 +878,10 @@ export default function ShambaDashboard({
           pb-20
         "
       >
-        {/* ===============================================
-            SHAMBA HEADER
-        =============================================== */}
+
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <section
           className="
@@ -776,7 +945,7 @@ export default function ShambaDashboard({
             </div>
           </div>
 
-          {farmerData?.county && (
+          {farmer?.county && (
             <div
               className="
                 hidden
@@ -793,16 +962,15 @@ export default function ShambaDashboard({
               "
             >
               <MapPin size={12} />
-
-              {farmerData.county}
+              {farmer.county}
             </div>
           )}
         </section>
 
 
-        {/* ===============================================
+        {/* =================================================
             ERROR
-        =============================================== */}
+        ================================================= */}
 
         {!loading && error && (
           <div
@@ -829,9 +997,9 @@ export default function ShambaDashboard({
         )}
 
 
-        {/* ===============================================
-            MARKET PRICES
-        =============================================== */}
+        {/* =================================================
+            MARKET
+        ================================================= */}
 
         <section
           className="
@@ -848,8 +1016,6 @@ export default function ShambaDashboard({
             shadow-[0_10px_30px_rgba(249,115,22,0.20)]
           "
         >
-          {/* decorative chart line */}
-
           <svg
             viewBox="0 0 180 100"
             className="
@@ -879,50 +1045,38 @@ export default function ShambaDashboard({
               strokeLinejoin="round"
             />
 
-            <circle
-              cx="35"
-              cy="58"
-              r="2.8"
-              fill="white"
-            />
+            {[35, 57, 83, 104, 128, 150].map(
+              (cx, index) => {
+                const cy = [
+                  58,
+                  72,
+                  38,
+                  49,
+                  25,
+                  7,
+                ][index];
 
-            <circle
-              cx="57"
-              cy="72"
-              r="2.8"
-              fill="white"
-            />
-
-            <circle
-              cx="83"
-              cy="38"
-              r="2.8"
-              fill="white"
-            />
-
-            <circle
-              cx="104"
-              cy="49"
-              r="2.8"
-              fill="white"
-            />
-
-            <circle
-              cx="128"
-              cy="25"
-              r="2.8"
-              fill="white"
-            />
-
-            <circle
-              cx="150"
-              cy="7"
-              r="2.8"
-              fill="white"
-            />
+                return (
+                  <circle
+                    key={cx}
+                    cx={cx}
+                    cy={cy}
+                    r="2.8"
+                    fill="white"
+                  />
+                );
+              },
+            )}
           </svg>
 
-          <div className="relative z-10 max-w-[65%] sm:max-w-[58%]">
+          <div
+            className="
+              relative
+              z-10
+              max-w-[68%]
+              sm:max-w-[58%]
+            "
+          >
             <h2
               className="
                 text-sm
@@ -930,46 +1084,54 @@ export default function ShambaDashboard({
                 text-white
               "
             >
-              Market Prices
+              Shamba Market
               <span className="ml-1 text-white/70">
-                (Today)
+                (Live)
               </span>
             </h2>
 
-            <div className="mt-3 space-y-0.5">
-              {displayMarketPrices.map(
-                (item, index) => (
-                  <MarketPriceRow
-                    key={
-                      item.id ||
-                      item._id ||
-                      `${item.name}-${index}`
-                    }
-                    name={
-                      item.name ||
-                      item.crop ||
-                      item.product ||
-                      "Crop"
-                    }
-                    unit={
-                      item.unit ||
-                      item.package ||
-                      item.quantity
-                    }
-                    price={
-                      firstValue(
-                        item.price,
-                        item.market_price,
-                        item.amount,
-                        0
-                      )
-                    }
-                    trend={
-                      item.trend ||
-                      item.direction
-                    }
-                  />
-                )
+            <div className="mt-3">
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map(
+                    (item) => (
+                      <div
+                        key={item}
+                        className="
+                          h-7
+                          animate-pulse
+                          rounded-lg
+                          bg-white/10
+                        "
+                      />
+                    ),
+                  )}
+                </div>
+              ) : displayListings.length > 0 ? (
+                <div>
+                  {displayListings.map(
+                    (listing, index) => (
+                      <MarketListingRow
+                        key={
+                          listing?.id ||
+                          listing?._id ||
+                          index
+                        }
+                        listing={listing}
+                      />
+                    ),
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="
+                    py-3
+                    text-[10px]
+                    text-white/75
+                  "
+                >
+                  No active Shamba listings yet.
+                </div>
               )}
             </div>
 
@@ -977,7 +1139,7 @@ export default function ShambaDashboard({
               type="button"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/market"
+                  "shamba/market",
                 )
               }
               className="
@@ -998,26 +1160,18 @@ export default function ShambaDashboard({
               "
             >
               View Market
-
               <ArrowUpRight size={14} />
             </button>
           </div>
         </section>
 
 
-        {/* ===============================================
+        {/* =================================================
             QUICK ACCESS
-        =============================================== */}
+        ================================================= */}
 
         <section className="mb-6">
-          <div
-            className="
-              mb-3
-              flex
-              items-center
-              justify-between
-            "
-          >
+          <div className="mb-3">
             <h2
               className="
                 text-sm
@@ -1048,7 +1202,7 @@ export default function ShambaDashboard({
               label="My Farm"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/farms"
+                  "shamba/farms",
                 )
               }
             />
@@ -1058,7 +1212,7 @@ export default function ShambaDashboard({
               label="Crops"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/crops"
+                  "shamba/crops",
                 )
               }
             />
@@ -1068,7 +1222,7 @@ export default function ShambaDashboard({
               label="Market"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/market"
+                  "shamba/market",
                 )
               }
             />
@@ -1078,7 +1232,7 @@ export default function ShambaDashboard({
               label="Sell Produce"
               onClick={() =>
                 onNavigate?.(
-                  "marketplace"
+                  "marketplace",
                 )
               }
             />
@@ -1088,7 +1242,7 @@ export default function ShambaDashboard({
               label="Inputs"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/inputs"
+                  "shamba/inputs",
                 )
               }
             />
@@ -1098,7 +1252,7 @@ export default function ShambaDashboard({
               label="Buyers"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/buyers"
+                  "shamba/buyers",
                 )
               }
             />
@@ -1108,7 +1262,7 @@ export default function ShambaDashboard({
               label="Orders"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/orders"
+                  "shamba/orders",
                 )
               }
             />
@@ -1118,7 +1272,7 @@ export default function ShambaDashboard({
               label="Weather"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/weather"
+                  "shamba/weather",
                 )
               }
             />
@@ -1126,21 +1280,22 @@ export default function ShambaDashboard({
         </section>
 
 
-        {/* ===============================================
+        {/* =================================================
             FARM OVERVIEW
-        =============================================== */}
+        ================================================= */}
 
         <section className="mb-6">
-          <h2
-            className="
-              mb-3
-              text-sm
-              font-extrabold
-              text-slate-900
-            "
-          >
-            My Farm Overview
-          </h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2
+              className="
+                text-sm
+                font-extrabold
+                text-slate-900
+              "
+            >
+              My Farm Overview
+            </h2>
+          </div>
 
           <div
             className="
@@ -1151,41 +1306,208 @@ export default function ShambaDashboard({
             "
           >
             <OverviewCard
+              icon={Tractor}
+              label="My Farms"
+              value={totalFarms}
+              tone="green"
+              onClick={() =>
+                onNavigate?.(
+                  "shamba/farms",
+                )
+              }
+            />
+
+            <OverviewCard
               icon={Leaf}
               label="Active Crops"
               value={activeCrops}
               tone="green"
+              onClick={() =>
+                onNavigate?.(
+                  "shamba/crops",
+                )
+              }
             />
 
             <OverviewCard
-              icon={Package}
-              label="Active Orders"
-              value={activeOrders}
-              tone="green"
+              icon={Sprout}
+              label="Harvests"
+              value={harvests}
+              tone="orange"
+              onClick={() =>
+                onNavigate?.(
+                  "shamba/harvests",
+                )
+              }
             />
 
             <OverviewCard
               icon={Wallet}
-              label="Total Earnings"
+              label="Farm Activity Cost"
               value={formatMoney(
-                totalEarnings
+                activityCost,
               )}
-              tone="green"
-            />
-
-            <OverviewCard
-              icon={Wallet}
-              label="Pending Payments"
-              value={pendingPayments}
               tone="amber"
+              onClick={() =>
+                onNavigate?.(
+                  "shamba/activities",
+                )
+              }
             />
           </div>
         </section>
 
 
-        {/* ===============================================
+        {/* =================================================
+            FARM SNAPSHOT
+        ================================================= */}
+
+        <section className="mb-6">
+          <div
+            className="
+              mb-3
+              flex
+              items-center
+              justify-between
+            "
+          >
+            <h2
+              className="
+                text-sm
+                font-extrabold
+                text-slate-900
+              "
+            >
+              My Farms
+            </h2>
+
+            {farms.length > 3 && (
+              <button
+                type="button"
+                onClick={() =>
+                  onNavigate?.(
+                    "shamba/farms",
+                  )
+                }
+                className="
+                  text-[10px]
+                  font-bold
+                  text-emerald-600
+                "
+              >
+                View all
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-2
+                sm:grid-cols-3
+              "
+            >
+              {[1, 2, 3].map(
+                (item) => (
+                  <div
+                    key={item}
+                    className="
+                      h-24
+                      animate-pulse
+                      rounded-2xl
+                      bg-slate-100
+                    "
+                  />
+                ),
+              )}
+            </div>
+          ) : displayFarms.length > 0 ? (
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-2
+                sm:grid-cols-3
+              "
+            >
+              {displayFarms.map(
+                (farm, index) => (
+                  <button
+                    type="button"
+                    key={
+                      farm?.id ||
+                      farm?._id ||
+                      index
+                    }
+                    onClick={() =>
+                      onNavigate?.(
+                        `shamba/farms/${farm?.id || farm?._id}`,
+                      )
+                    }
+                    className="text-left"
+                  >
+                    <FarmSnapshotItem
+                      farm={farm}
+                    />
+                  </button>
+                ),
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                onNavigate?.(
+                  "shamba/farms",
+                )
+              }
+              className="
+                w-full
+                rounded-2xl
+                border
+                border-dashed
+                border-emerald-200
+                bg-emerald-50/40
+                px-4
+                py-6
+                text-center
+              "
+            >
+              <Tractor
+                size={22}
+                className="mx-auto text-emerald-600"
+              />
+
+              <div
+                className="
+                  mt-2
+                  text-xs
+                  font-bold
+                  text-slate-700
+                "
+              >
+                Add your first farm
+              </div>
+
+              <div
+                className="
+                  mt-1
+                  text-[10px]
+                  text-slate-400
+                "
+              >
+                Start managing your land and crops.
+              </div>
+            </button>
+          )}
+        </section>
+
+
+        {/* =================================================
             RECENT ACTIVITY
-        =============================================== */}
+        ================================================= */}
 
         <section
           className="
@@ -1220,7 +1542,7 @@ export default function ShambaDashboard({
               type="button"
               onClick={() =>
                 onNavigate?.(
-                  "shamba/activities"
+                  "shamba/activities",
                 )
               }
               className="
@@ -1234,7 +1556,7 @@ export default function ShambaDashboard({
             </button>
           </div>
 
-          {loading ? (
+          {loading || activitiesLoading ? (
             <div className="space-y-3 py-4">
               {[1, 2, 3].map(
                 (item) => (
@@ -1247,7 +1569,7 @@ export default function ShambaDashboard({
                       bg-slate-50
                     "
                   />
-                )
+                ),
               )}
             </div>
           ) : recentActivities.length > 0 ? (
@@ -1256,13 +1578,13 @@ export default function ShambaDashboard({
                 (activity, index) => (
                   <RecentActivityItem
                     key={
-                      activity.id ||
-                      activity._id ||
+                      activity?.id ||
+                      activity?._id ||
                       index
                     }
                     activity={activity}
                   />
-                )
+                ),
               )}
             </div>
           ) : (
@@ -1311,17 +1633,17 @@ export default function ShambaDashboard({
                   text-slate-400
                 "
               >
-                Farm activities, orders and
-                market updates will appear here.
+                Record your first farm activity
+                or harvest to see your farm timeline here.
               </p>
             </div>
           )}
         </section>
 
 
-        {/* ===============================================
-            SMALL FARM INFO
-        =============================================== */}
+        {/* =================================================
+            FARMER INFO
+        ================================================= */}
 
         <section
           className="
@@ -1388,26 +1710,29 @@ export default function ShambaDashboard({
             "
           >
             <span>
-              {totalFarms}{" "}
+              {Number(totalFarms)}{" "}
               {Number(totalFarms) === 1
                 ? "farm"
                 : "farms"}
             </span>
 
-            {farmerData?.county && (
+            {farmer?.county && (
               <span className="flex items-center gap-1">
                 <MapPin size={11} />
-
-                {farmerData.county}
+                {farmer.county}
               </span>
             )}
+
+            <span>
+              {farmActivities} activities
+            </span>
           </div>
         </section>
       </div>
 
 
       {/* =================================================
-          FLOATING SHAMBA ASSISTANT
+          SHAMBA ASSISTANT
       ================================================= */}
 
       <button
@@ -1415,7 +1740,7 @@ export default function ShambaDashboard({
         aria-label="Open Shamba assistant"
         onClick={() =>
           onNavigate?.(
-            "assistant"
+            "assistant",
           )
         }
         className="
