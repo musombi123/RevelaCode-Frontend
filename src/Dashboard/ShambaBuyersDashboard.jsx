@@ -16,7 +16,7 @@ import {
   MessageCircle,
   Search,
   ShoppingBasket,
-  UserRound,
+  User,
   X,
 } from "lucide-react";
 
@@ -116,7 +116,7 @@ function BuyerCard({
               text-emerald-600
             "
           >
-            <UserRound size={20} />
+            <User size={20} />
           </div>
 
           <div className="min-w-0 flex-1">
