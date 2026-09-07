@@ -369,9 +369,20 @@ function HomeDashboard({ onNavigate, user }) {
     {
       key: "shamba",
       title: "Shamba",
-      description: "Crops, Market Prices, Inputs & more",
+      label: "Shamba",
       icon: Leaf,
-      gradient: "from-orange-500 to-amber-600",
+      element: <ShambaDashboard />,
+    },
+
+    {
+      key: "shamba/farms",
+      title: "My Farms",
+      label: "My Farms",
+      icon: Leaf,
+      hidden: true,
+      element: (
+        <ShambaFarmsDashboard />
+      ),
     },
     {
       key: "biashara",
