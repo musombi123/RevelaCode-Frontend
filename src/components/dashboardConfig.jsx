@@ -388,13 +388,6 @@ function HomeDashboard({ onNavigate, user }) {
       icon: GraduationCap,
       gradient: "from-emerald-600 to-green-700",
     },
-    {
-      key: "shamba",
-      title: "Shamba",
-      label: "Shamba",
-      icon: Leaf,
-      element: <ShambaDashboard />,
-    },
 
     {
       key: "shamba/farms",
