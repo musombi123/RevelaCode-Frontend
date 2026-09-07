@@ -11,6 +11,7 @@ import {
   Filter,
   FlaskConical,
   Leaf,
+  ShoppingBasket,
   Package,
   Plus,
   Search,
