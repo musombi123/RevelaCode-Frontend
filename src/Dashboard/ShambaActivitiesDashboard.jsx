@@ -19,7 +19,7 @@ import {
   Plus,
   Sprout,
   Tractor,
-  UserRound,
+  User,
   Wheat,
   Wrench,
   X,
@@ -92,7 +92,7 @@ const ACTIVITY_TYPES = [
   {
     value: "labor",
     label: "Labor",
-    icon: UserRound,
+    icon: User,
   },
   {
     value: "other",
