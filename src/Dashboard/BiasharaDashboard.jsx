@@ -6,7 +6,7 @@ import React, {
 
 import {
   AlertCircle,
-  BriefcaseBusiness,
+  Briefcase,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -277,7 +277,7 @@ export default function BiasharaDashboard() {
         <div className="text-center">
 
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-            <BriefcaseBusiness
+            <Briefcase
               size={25}
             />
           </div>
