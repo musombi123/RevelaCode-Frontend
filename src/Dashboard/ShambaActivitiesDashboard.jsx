@@ -410,7 +410,7 @@ function ActivityCard({
                     text-blue-700
                   "
                 >
-                  <UserRound size={10} />
+                  <User size={10} />
                   {activity.labor_count} worker
                   {Number(
                     activity.labor_count,
