@@ -15,6 +15,8 @@ import {
   X,
 } from "lucide-react";
 
+import ReactMarkdown from "react-markdown";
+
 import { Button } from "@/components/ui/Button";
 
 export default function LegalDocs({
@@ -44,8 +46,7 @@ export default function LegalDocs({
           "The rules and conditions governing your use of RevelaCode.",
         icon: FileText,
         accent: "text-blue-600 dark:text-blue-400",
-        iconBg:
-          "bg-blue-50 dark:bg-blue-950/30",
+        iconBg: "bg-blue-50 dark:bg-blue-950/30",
       };
     }
 
@@ -55,8 +56,7 @@ export default function LegalDocs({
         "How RevelaCode collects, uses, protects, and manages your information.",
       icon: Shield,
       accent: "text-emerald-600 dark:text-emerald-400",
-      iconBg:
-        "bg-emerald-50 dark:bg-emerald-950/30",
+      iconBg: "bg-emerald-50 dark:bg-emerald-950/30",
     };
   }, [activeTab]);
 
@@ -81,9 +81,11 @@ export default function LegalDocs({
         const res = await fetch(
           `${baseUrl}/api/legal/${encodeURIComponent(type)}`,
           {
+            method: "GET",
             headers: {
               Accept: "application/json",
             },
+            cache: "no-store",
           }
         );
 
@@ -143,60 +145,152 @@ export default function LegalDocs({
   }, [activeTab, loadDocFromBackend]);
 
   /* =========================================================
-     SAFE DOCUMENT RENDERER
+     MARKDOWN RENDERER
   ========================================================= */
 
   const renderDocumentContent = () => {
     if (!content) return null;
 
-    /*
-      Render backend text safely as React text.
-
-      Blank lines become paragraph breaks.
-      Single newlines are preserved inside paragraphs.
-    */
-
-    const paragraphs = content
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean);
-
     return (
-      <article className="prose prose-slate max-w-none dark:prose-invert">
-        {paragraphs.map((paragraph, index) => {
-          const lines = paragraph
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
+      <article
+        className="
+          max-w-none
+          text-sm
+          leading-7
+          text-slate-600
+          dark:text-slate-300
 
-          const firstLine =
-            lines[0] || "";
+          [&>h1]:mb-5
+          [&>h1]:mt-0
+          [&>h1]:text-2xl
+          [&>h1]:font-black
+          [&>h1]:tracking-tight
+          [&>h1]:text-slate-900
+          dark:[&>h1]:text-white
 
-          const looksLikeHeading =
-            lines.length === 1 &&
-            firstLine.length < 100 &&
-            !/[.!?]$/.test(firstLine);
+          [&>h2]:mb-4
+          [&>h2]:mt-10
+          [&>h2]:text-xl
+          [&>h2]:font-black
+          [&>h2]:tracking-tight
+          [&>h2]:text-slate-900
+          dark:[&>h2]:text-white
 
-          if (looksLikeHeading) {
-            return (
-              <h3
-                key={`heading-${index}`}
-                className="mb-3 mt-8 text-base font-bold text-slate-900 first:mt-0 dark:text-white"
-              >
-                {firstLine}
-              </h3>
-            );
-          }
+          [&>h3]:mb-3
+          [&>h3]:mt-8
+          [&>h3]:text-base
+          [&>h3]:font-bold
+          [&>h3]:text-slate-900
+          dark:[&>h3]:text-white
 
-          return (
-            <p
-              key={`paragraph-${index}`}
-              className="whitespace-pre-line text-sm leading-7 text-slate-600 dark:text-slate-300"
-            >
-              {paragraph}
-            </p>
-          );
-        })}
+          [&>h4]:mb-2
+          [&>h4]:mt-6
+          [&>h4]:text-sm
+          [&>h4]:font-bold
+          [&>h4]:text-slate-900
+          dark:[&>h4]:text-white
+
+          [&>p]:mb-5
+          [&>p]:leading-7
+
+          [&>ul]:mb-5
+          [&>ul]:ml-5
+          [&>ul]:list-disc
+          [&>ul]:space-y-2
+
+          [&>ol]:mb-5
+          [&>ol]:ml-5
+          [&>ol]:list-decimal
+          [&>ol]:space-y-2
+
+          [&_li]:pl-1
+
+          [&>hr]:my-8
+          [&>hr]:border-slate-200
+          dark:[&>hr]:border-slate-800
+
+          [&>blockquote]:my-5
+          [&>blockquote]:border-l-4
+          [&>blockquote]:border-slate-300
+          [&>blockquote]:pl-4
+          [&>blockquote]:italic
+          dark:[&>blockquote]:border-slate-700
+
+          [&_a]:font-semibold
+          [&_a]:text-blue-600
+          [&_a]:underline
+          [&_a]:underline-offset-2
+          hover:[&_a]:text-blue-700
+          dark:[&_a]:text-blue-400
+          dark:hover:[&_a]:text-blue-300
+
+          [&_strong]:font-bold
+          [&_strong]:text-slate-900
+          dark:[&_strong]:text-white
+
+          [&_code]:rounded-md
+          [&_code]:bg-slate-100
+          [&_code]:px-1.5
+          [&_code]:py-0.5
+          [&_code]:text-[0.85em]
+          dark:[&_code]:bg-slate-800
+        "
+      >
+        <ReactMarkdown
+          components={{
+            a: ({ node, ...props }) => (
+              <a
+                {...props}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            ),
+
+            p: ({ node, children, ...props }) => (
+              <p {...props}>{children}</p>
+            ),
+
+            h1: ({ node, children, ...props }) => (
+              <h1 {...props}>{children}</h1>
+            ),
+
+            h2: ({ node, children, ...props }) => (
+              <h2 {...props}>{children}</h2>
+            ),
+
+            h3: ({ node, children, ...props }) => (
+              <h3 {...props}>{children}</h3>
+            ),
+
+            h4: ({ node, children, ...props }) => (
+              <h4 {...props}>{children}</h4>
+            ),
+
+            ul: ({ node, children, ...props }) => (
+              <ul {...props}>{children}</ul>
+            ),
+
+            ol: ({ node, children, ...props }) => (
+              <ol {...props}>{children}</ol>
+            ),
+
+            li: ({ node, children, ...props }) => (
+              <li {...props}>{children}</li>
+            ),
+
+            hr: ({ node, ...props }) => (
+              <hr {...props} />
+            ),
+
+            blockquote: ({ node, children, ...props }) => (
+              <blockquote {...props}>
+                {children}
+              </blockquote>
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
       </article>
     );
   };
@@ -220,7 +314,21 @@ export default function LegalDocs({
               <button
                 type="button"
                 onClick={onBack}
-                className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                className="
+                  mt-1 flex h-9 w-9 flex-shrink-0
+                  items-center justify-center
+                  rounded-xl border
+                  border-slate-200 bg-white
+                  text-slate-500
+                  transition
+                  hover:bg-slate-50
+                  hover:text-slate-900
+                  dark:border-slate-700
+                  dark:bg-slate-900
+                  dark:text-slate-400
+                  dark:hover:bg-slate-800
+                  dark:hover:text-white
+                "
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -265,7 +373,21 @@ export default function LegalDocs({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-red-900/50 dark:hover:bg-red-950/20"
+              className="
+                flex h-9 w-9 flex-shrink-0
+                items-center justify-center
+                rounded-xl border
+                border-slate-200 bg-white
+                text-slate-400
+                transition
+                hover:border-red-200
+                hover:bg-red-50
+                hover:text-red-500
+                dark:border-slate-700
+                dark:bg-slate-900
+                dark:hover:border-red-900/50
+                dark:hover:bg-red-950/20
+              "
               aria-label="Close Legal Documents"
             >
               <X className="h-4 w-4" />
@@ -280,12 +402,14 @@ export default function LegalDocs({
 
       <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="grid grid-cols-2 gap-2 flex-1">
+          <div className="grid flex-1 grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("privacy")}
               className={`
-                flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition
+                flex items-center justify-center gap-2
+                rounded-xl px-4 py-3 text-sm
+                font-semibold transition
                 ${
                   activeTab === "privacy"
                     ? "bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900"
@@ -301,7 +425,9 @@ export default function LegalDocs({
               type="button"
               onClick={() => setActiveTab("terms")}
               className={`
-                flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition
+                flex items-center justify-center gap-2
+                rounded-xl px-4 py-3 text-sm
+                font-semibold transition
                 ${
                   activeTab === "terms"
                     ? "bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900"
