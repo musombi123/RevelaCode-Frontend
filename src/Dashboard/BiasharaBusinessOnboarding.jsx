@@ -174,7 +174,7 @@ export default function BiasharaBusinessOnboarding({
             <div className="max-w-2xl">
 
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-                <BriefcaseBusiness
+                <Briefcase
                   size={25}
                 />
               </div>
