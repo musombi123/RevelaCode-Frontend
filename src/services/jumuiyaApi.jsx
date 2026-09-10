@@ -49,17 +49,29 @@ async function parseResponse(response) {
 
   let payload = null;
 
-  if (contentType.includes("application/json")) {
-    payload = await response.json().catch(() => null);
+  if (
+    contentType.includes(
+      "application/json",
+    )
+  ) {
+    payload =
+      await response
+        .json()
+        .catch(() => null);
   } else {
-    const text = await response.text().catch(() => "");
+    const text =
+      await response
+        .text()
+        .catch(() => "");
+
     payload = text
       ? { message: text }
       : null;
   }
 
   if (!response.ok) {
-    const errorData = payload?.error;
+    const errorData =
+      payload?.error;
 
     throw new JumuiyaAPIError(
       errorData?.message ||
@@ -72,7 +84,9 @@ async function parseResponse(response) {
     );
   }
 
-  if (payload?.success === false) {
+  if (
+    payload?.success === false
+  ) {
     throw new JumuiyaAPIError(
       payload?.error?.message ||
         payload?.message ||
@@ -80,7 +94,8 @@ async function parseResponse(response) {
       response.status,
       payload?.error?.code ||
         "request_failed",
-      payload?.error?.details || null,
+      payload?.error?.details ||
+        null,
     );
   }
 
@@ -143,22 +158,28 @@ function createClient(authFetch) {
       !(body instanceof FormData) &&
       typeof body !== "string"
     ) {
-      requestHeaders["Content-Type"] =
-        "application/json";
+      requestHeaders[
+        "Content-Type"
+      ] = "application/json";
 
-      requestBody = JSON.stringify(body);
+      requestBody =
+        JSON.stringify(body);
     }
 
-    const response = await authFetch(
-      `${API_ROOT}${path}`,
-      {
-        ...rest,
-        headers: requestHeaders,
-        body: requestBody,
-      },
-    );
+    const response =
+      await authFetch(
+        `${API_ROOT}${path}`,
+        {
+          ...rest,
+          headers:
+            requestHeaders,
+          body: requestBody,
+        },
+      );
 
-    return parseResponse(response);
+    return parseResponse(
+      response,
+    );
   };
 
   return {
@@ -179,22 +200,24 @@ export function useJumuiyaApi() {
     isGuest,
   } = useAuth();
 
-  const client = createClient(
-    authFetch,
-  );
+  const client =
+    createClient(
+      authFetch,
+    );
 
-  const request = useCallback(
-    async (
-      path,
-      options = {},
-    ) => {
-      return client.request(
+  const request =
+    useCallback(
+      async (
         path,
-        options,
-      );
-    },
-    [authFetch],
-  );
+        options = {},
+      ) => {
+        return client.request(
+          path,
+          options,
+        );
+      },
+      [authFetch],
+    );
 
 
   // =======================================================
@@ -202,11 +225,17 @@ export function useJumuiyaApi() {
   // =======================================================
 
   const get = useCallback(
-    (path, options = {}) =>
-      request(path, {
-        ...options,
-        method: "GET",
-      }),
+    (
+      path,
+      options = {},
+    ) =>
+      request(
+        path,
+        {
+          ...options,
+          method: "GET",
+        },
+      ),
     [request],
   );
 
@@ -216,11 +245,14 @@ export function useJumuiyaApi() {
       body = {},
       options = {},
     ) =>
-      request(path, {
-        ...options,
-        method: "POST",
-        body,
-      }),
+      request(
+        path,
+        {
+          ...options,
+          method: "POST",
+          body,
+        },
+      ),
     [request],
   );
 
@@ -230,11 +262,14 @@ export function useJumuiyaApi() {
       body = {},
       options = {},
     ) =>
-      request(path, {
-        ...options,
-        method: "PUT",
-        body,
-      }),
+      request(
+        path,
+        {
+          ...options,
+          method: "PUT",
+          body,
+        },
+      ),
     [request],
   );
 
@@ -244,11 +279,14 @@ export function useJumuiyaApi() {
       body = {},
       options = {},
     ) =>
-      request(path, {
-        ...options,
-        method: "PATCH",
-        body,
-      }),
+      request(
+        path,
+        {
+          ...options,
+          method: "PATCH",
+          body,
+        },
+      ),
     [request],
   );
 
@@ -257,10 +295,13 @@ export function useJumuiyaApi() {
       path,
       options = {},
     ) =>
-      request(path, {
-        ...options,
-        method: "DELETE",
-      }),
+      request(
+        path,
+        {
+          ...options,
+          method: "DELETE",
+        },
+      ),
     [request],
   );
 
@@ -269,15 +310,16 @@ export function useJumuiyaApi() {
   // IDENTITY
   // =======================================================
 
-  const getIdentity = useCallback(
-    async () =>
-      extractData(
-        await get(
-          "/identity/me",
+  const getIdentity =
+    useCallback(
+      async () =>
+        extractData(
+          await get(
+            "/identity/me",
+          ),
         ),
-      ),
-    [get],
-  );
+      [get],
+    );
 
   const updateIdentityProfile =
     useCallback(
@@ -347,7 +389,8 @@ export function useJumuiyaApi() {
           );
         }
 
-        const query = params.toString();
+        const query =
+          params.toString();
 
         return extractData(
           await get(
@@ -390,6 +433,10 @@ export function useJumuiyaApi() {
   // BIASHARA
   // =======================================================
 
+  /*
+   * Business account
+   */
+
   const getBiasharaHealth =
     useCallback(
       async () =>
@@ -412,6 +459,9 @@ export function useJumuiyaApi() {
       [get],
     );
 
+  const getBiasharaBusiness =
+    getBusiness;
+
   const saveBusiness =
     useCallback(
       async (data) =>
@@ -424,25 +474,71 @@ export function useJumuiyaApi() {
       [post],
     );
 
+  const createBiasharaBusiness =
+    saveBusiness;
+
+
+  /*
+   * Products
+   */
+
   const getProducts =
     useCallback(
-      async (
+      async ({
         status = "",
-      ) => {
-        const query = status
-          ? `?status=${encodeURIComponent(
-              status,
-            )}`
-          : "";
+        category = "",
+        search = "",
+        limit = 50,
+      } = {}) => {
+        const params =
+          new URLSearchParams();
+
+        if (status) {
+          params.set(
+            "status",
+            status,
+          );
+        }
+
+        if (category) {
+          params.set(
+            "category",
+            category,
+          );
+        }
+
+        if (search) {
+          params.set(
+            "search",
+            search,
+          );
+        }
+
+        if (limit) {
+          params.set(
+            "limit",
+            String(limit),
+          );
+        }
+
+        const query =
+          params.toString();
 
         return extractData(
           await get(
-            `/biashara/products${query}`,
+            `/biashara/products${
+              query
+                ? `?${query}`
+                : ""
+            }`,
           ),
         );
       },
       [get],
     );
+
+  const getBiasharaProducts =
+    getProducts;
 
   const createProduct =
     useCallback(
@@ -455,6 +551,9 @@ export function useJumuiyaApi() {
         ),
       [post],
     );
+
+  const createBiasharaProduct =
+    createProduct;
 
   const updateProduct =
     useCallback(
@@ -471,16 +570,166 @@ export function useJumuiyaApi() {
       [put],
     );
 
-  const getCustomers =
+  const updateBiasharaProduct =
+    updateProduct;
+
+  const deleteProduct =
     useCallback(
-      async () =>
+      async (productId) =>
         extractData(
-          await get(
-            "/biashara/customers",
+          await del(
+            `/biashara/products/${productId}`,
           ),
         ),
+      [del],
+    );
+
+  const deleteBiasharaProduct =
+    deleteProduct;
+
+
+  /*
+   * Inventory
+   */
+
+  const getLowStockProducts =
+    useCallback(
+      async (
+        threshold,
+      ) => {
+        const params =
+          new URLSearchParams();
+
+        if (
+          threshold !== undefined &&
+          threshold !== null
+        ) {
+          params.set(
+            "threshold",
+            String(
+              threshold,
+            ),
+          );
+        }
+
+        const query =
+          params.toString();
+
+        return extractData(
+          await get(
+            `/biashara/inventory/low-stock${
+              query
+                ? `?${query}`
+                : ""
+            }`,
+          ),
+        );
+      },
       [get],
     );
+
+  const getBiasharaLowStock =
+    getLowStockProducts;
+
+  const adjustInventory =
+    useCallback(
+      async (
+        productId,
+        data,
+      ) =>
+        extractData(
+          await post(
+            `/biashara/inventory/${productId}/adjust`,
+            data,
+          ),
+        ),
+      [post],
+    );
+
+  const adjustBiasharaInventory =
+    adjustInventory;
+
+  const getInventoryHistory =
+    useCallback(
+      async ({
+        productId = "",
+        limit = 50,
+      } = {}) => {
+        const params =
+          new URLSearchParams();
+
+        if (productId) {
+          params.set(
+            "product_id",
+            productId,
+          );
+        }
+
+        if (limit) {
+          params.set(
+            "limit",
+            String(limit),
+          );
+        }
+
+        return extractData(
+          await get(
+            `/biashara/inventory/history?${params.toString()}`,
+          ),
+        );
+      },
+      [get],
+    );
+
+  const getBiasharaInventoryHistory =
+    getInventoryHistory;
+
+
+  /*
+   * Customers
+   */
+
+  const getCustomers =
+    useCallback(
+      async ({
+        search = "",
+        limit = 50,
+      } = {}) => {
+        const params =
+          new URLSearchParams();
+
+        if (search) {
+          params.set(
+            "search",
+            search,
+          );
+        }
+
+        if (limit) {
+          params.set(
+            "limit",
+            String(limit),
+          );
+        }
+
+        const query =
+          params.toString();
+
+        return extractData(
+          await get(
+            `/biashara/customers${
+              query
+                ? `?${query}`
+                : ""
+            }`,
+          ),
+        );
+      },
+      [get],
+    );
+
+  const getBiasharaCustomers =
+    getCustomers;
 
   const createCustomer =
     useCallback(
@@ -494,25 +743,55 @@ export function useJumuiyaApi() {
       [post],
     );
 
+  const createBiasharaCustomer =
+    createCustomer;
+
+
+  /*
+   * Orders
+   */
+
   const getOrders =
     useCallback(
-      async (
+      async ({
         status = "",
-      ) => {
-        const query = status
-          ? `?status=${encodeURIComponent(
-              status,
-            )}`
-          : "";
+        limit = 50,
+      } = {}) => {
+        const params =
+          new URLSearchParams();
+
+        if (status) {
+          params.set(
+            "status",
+            status,
+          );
+        }
+
+        if (limit) {
+          params.set(
+            "limit",
+            String(limit),
+          );
+        }
+
+        const query =
+          params.toString();
 
         return extractData(
           await get(
-            `/biashara/orders${query}`,
+            `/biashara/orders${
+              query
+                ? `?${query}`
+                : ""
+            }`,
           ),
         );
       },
       [get],
     );
+
+  const getBiasharaOrders =
+    getOrders;
 
   const createOrder =
     useCallback(
@@ -526,6 +805,95 @@ export function useJumuiyaApi() {
       [post],
     );
 
+  const createBiasharaOrder =
+    createOrder;
+
+  const getOrder =
+    useCallback(
+      async (orderId) =>
+        extractData(
+          await get(
+            `/biashara/orders/${orderId}`,
+          ),
+        ),
+      [get],
+    );
+
+  const getBiasharaOrder =
+    getOrder;
+
+  const updateOrderStatus =
+    useCallback(
+      async (
+        orderId,
+        status,
+      ) =>
+        extractData(
+          await patch(
+            `/biashara/orders/${orderId}/status`,
+            {
+              status,
+            },
+          ),
+        ),
+      [patch],
+    );
+
+  const updateBiasharaOrderStatus =
+    updateOrderStatus;
+
+
+  /*
+   * Sales
+   */
+
+  const recordSale =
+    useCallback(
+      async (data) =>
+        extractData(
+          await post(
+            "/biashara/sales",
+            data,
+          ),
+        ),
+      [post],
+    );
+
+  const recordBiasharaSale =
+    recordSale;
+
+
+  /*
+   * Expenses
+   */
+
+  const getExpenses =
+    useCallback(
+      async ({
+        limit = 50,
+      } = {}) => {
+        const params =
+          new URLSearchParams();
+
+        if (limit) {
+          params.set(
+            "limit",
+            String(limit),
+          );
+        }
+
+        return extractData(
+          await get(
+            `/biashara/expenses?${params.toString()}`,
+          ),
+        );
+      },
+      [get],
+    );
+
+  const getBiasharaExpenses =
+    getExpenses;
+
   const createExpense =
     useCallback(
       async (data) =>
@@ -537,6 +905,14 @@ export function useJumuiyaApi() {
         ),
       [post],
     );
+
+  const createBiasharaExpense =
+    createExpense;
+
+
+  /*
+   * Dashboard
+   */
 
   const getBiasharaDashboard =
     useCallback(
@@ -1077,34 +1453,94 @@ export function useJumuiyaApi() {
     isGuest,
     getAccessToken,
 
+    // -----------------------------------------------------
     // Identity
+    // -----------------------------------------------------
+
     getIdentity,
     updateIdentityProfile,
 
+    // -----------------------------------------------------
     // Wallet
+    // -----------------------------------------------------
+
     getWalletLedger,
     recordWalletTransaction,
 
+    // -----------------------------------------------------
     // Marketplace
+    // -----------------------------------------------------
+
     getMarketplaceListings,
     createMarketplaceListing,
     deleteMarketplaceListing,
 
+    // -----------------------------------------------------
     // Biashara
+    // -----------------------------------------------------
+
     getBiasharaHealth,
+
     getBusiness,
+    getBiasharaBusiness,
+
     saveBusiness,
+    createBiasharaBusiness,
+
     getProducts,
+    getBiasharaProducts,
+
     createProduct,
+    createBiasharaProduct,
+
     updateProduct,
+    updateBiasharaProduct,
+
+    deleteProduct,
+    deleteBiasharaProduct,
+
+    getLowStockProducts,
+    getBiasharaLowStock,
+
+    adjustInventory,
+    adjustBiasharaInventory,
+
+    getInventoryHistory,
+    getBiasharaInventoryHistory,
+
     getCustomers,
+    getBiasharaCustomers,
+
     createCustomer,
+    createBiasharaCustomer,
+
     getOrders,
+    getBiasharaOrders,
+
     createOrder,
+    createBiasharaOrder,
+
+    getOrder,
+    getBiasharaOrder,
+
+    updateOrderStatus,
+    updateBiasharaOrderStatus,
+
+    recordSale,
+    recordBiasharaSale,
+
+    getExpenses,
+    getBiasharaExpenses,
+
     createExpense,
+    createBiasharaExpense,
+
     getBiasharaDashboard,
 
+    // -----------------------------------------------------
     // Shamba
+    // -----------------------------------------------------
+
     getShambaHealth,
     getFarmer,
     saveFarmer,
@@ -1121,7 +1557,10 @@ export function useJumuiyaApi() {
     createHarvest,
     getShambaDashboard,
 
+    // -----------------------------------------------------
     // Elimu
+    // -----------------------------------------------------
+
     getElimuHealth,
     getEducationProfile,
     saveEducationProfile,
@@ -1139,7 +1578,10 @@ export function useJumuiyaApi() {
     createCBCProject,
     getElimuDashboard,
 
+    // -----------------------------------------------------
     // Community
+    // -----------------------------------------------------
+
     getCommunityHealth,
     getCommunityFeed,
     createCommunityPost,
@@ -1153,7 +1595,7 @@ export function useJumuiyaApi() {
 
 
 // =========================================================
-// OPTIONAL: STATIC API CLIENT
+// OPTIONAL STATIC API CLIENT
 // =========================================================
 //
 // Useful outside React components.
@@ -1201,8 +1643,9 @@ export async function jumuiyaRequest(
     !(body instanceof FormData) &&
     typeof body !== "string"
   ) {
-    requestHeaders["Content-Type"] =
-      "application/json";
+    requestHeaders[
+      "Content-Type"
+    ] = "application/json";
 
     requestBody =
       JSON.stringify(body);
@@ -1218,7 +1661,8 @@ export async function jumuiyaRequest(
       `${API_ROOT}${path}`,
       {
         ...rest,
-        headers: requestHeaders,
+        headers:
+          requestHeaders,
         body: requestBody,
       },
     );
