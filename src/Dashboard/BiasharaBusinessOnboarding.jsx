@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   ArrowRight,
-  BriefcaseBusiness,
+  Briefcase,
   CheckCircle2,
   MapPin,
   Phone,
