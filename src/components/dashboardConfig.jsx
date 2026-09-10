@@ -824,7 +824,7 @@ export const DASHBOARDS = [
     title: "Shamba",
     label: "Shamba",
     icon: Leaf,
-    element: <ShambaDashboard />,
+    element: <ShambaHub />,
   },
 
   {
