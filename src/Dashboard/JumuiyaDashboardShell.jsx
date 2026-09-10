@@ -5,7 +5,6 @@ import {
   Bot,
   Boxes,
   ChevronRight,
-  CircleDollarSign,
   ClipboardList,
   Megaphone,
   Package,
@@ -13,7 +12,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   TrendingUp,
-  UserRound,
+  User,
   Users,
   WalletCards,
   X,
@@ -953,7 +952,7 @@ export default function BiasharaDashboard({
                         dark:text-slate-300
                       "
                     >
-                      <UserRound size={18} />
+                      <User size={18} />
                     </div>
 
                     <div className="min-w-0 flex-1">
