@@ -253,7 +253,7 @@ export default function BiasharaBusinessOnboarding({
               <div className="mb-4 flex items-center gap-3">
 
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <BriefcaseBusiness
+                  <Briefcase
                     size={17}
                   />
                 </div>
