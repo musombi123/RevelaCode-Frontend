@@ -13,9 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  ExternalLink,
 } from "lucide-react";
-
-import ReactMarkdown from "react-markdown";
 
 import { Button } from "@/components/ui/Button";
 
@@ -145,152 +144,384 @@ export default function LegalDocs({
   }, [activeTab, loadDocFromBackend]);
 
   /* =========================================================
-     MARKDOWN RENDERER
+     SAFE INLINE MARKDOWN
+  ========================================================= */
+
+  const renderInlineMarkdown = (text, keyPrefix = "") => {
+    if (!text) return null;
+
+    const tokens = [];
+    let remaining = String(text);
+    let index = 0;
+
+    const pushText = (value) => {
+      if (value) {
+        tokens.push(
+          <React.Fragment key={`${keyPrefix}-text-${index++}`}>
+            {value}
+          </React.Fragment>
+        );
+      }
+    };
+
+    while (remaining.length > 0) {
+      /* -----------------------------------------------------
+         BOLD
+      ----------------------------------------------------- */
+
+      const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+
+      /* -----------------------------------------------------
+         LINK
+      ----------------------------------------------------- */
+
+      const linkMatch = remaining.match(
+        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/
+      );
+
+      /* -----------------------------------------------------
+         AUTO URL
+      ----------------------------------------------------- */
+
+      const urlMatch = remaining.match(
+        /https?:\/\/[^\s<]+/
+      );
+
+      const matches = [
+        boldMatch
+          ? {
+              type: "bold",
+              index: boldMatch.index,
+              length: boldMatch[0].length,
+              value: boldMatch[1],
+            }
+          : null,
+
+        linkMatch
+          ? {
+              type: "link",
+              index: linkMatch.index,
+              length: linkMatch[0].length,
+              label: linkMatch[1],
+              url: linkMatch[2],
+            }
+          : null,
+
+        urlMatch
+          ? {
+              type: "url",
+              index: urlMatch.index,
+              length: urlMatch[0].length,
+              url: urlMatch[0],
+            }
+          : null,
+      ]
+        .filter(Boolean)
+        .sort((a, b) => a.index - b.index);
+
+      const next = matches[0];
+
+      if (!next) {
+        pushText(remaining);
+        break;
+      }
+
+      if (next.index > 0) {
+        pushText(
+          remaining.slice(0, next.index)
+        );
+      }
+
+      if (next.type === "bold") {
+        tokens.push(
+          <strong
+            key={`${keyPrefix}-bold-${index++}`}
+            className="font-bold text-slate-900 dark:text-white"
+          >
+            {renderInlineMarkdown(
+              next.value,
+              `${keyPrefix}-bold`
+            )}
+          </strong>
+        );
+      }
+
+      if (next.type === "link") {
+        tokens.push(
+          <a
+            key={`${keyPrefix}-link-${index++}`}
+            href={next.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {next.label}
+            <ExternalLink className="ml-1 inline h-3 w-3" />
+          </a>
+        );
+      }
+
+      if (next.type === "url") {
+        tokens.push(
+          <a
+            key={`${keyPrefix}-url-${index++}`}
+            href={next.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {next.url}
+          </a>
+        );
+      }
+
+      remaining = remaining.slice(
+        next.index + next.length
+      );
+    }
+
+    return tokens;
+  };
+
+  /* =========================================================
+     MARKDOWN DOCUMENT RENDERER
   ========================================================= */
 
   const renderDocumentContent = () => {
     if (!content) return null;
 
-    return (
-      <article
-        className="
-          max-w-none
-          text-sm
-          leading-7
-          text-slate-600
-          dark:text-slate-300
+    const lines = content.replace(/\r\n/g, "\n").split("\n");
 
-          [&>h1]:mb-5
-          [&>h1]:mt-0
-          [&>h1]:text-2xl
-          [&>h1]:font-black
-          [&>h1]:tracking-tight
-          [&>h1]:text-slate-900
-          dark:[&>h1]:text-white
+    const elements = [];
+    let paragraphBuffer = [];
+    let listBuffer = null;
 
-          [&>h2]:mb-4
-          [&>h2]:mt-10
-          [&>h2]:text-xl
-          [&>h2]:font-black
-          [&>h2]:tracking-tight
-          [&>h2]:text-slate-900
-          dark:[&>h2]:text-white
+    const flushParagraph = () => {
+      if (!paragraphBuffer.length) return;
 
-          [&>h3]:mb-3
-          [&>h3]:mt-8
-          [&>h3]:text-base
-          [&>h3]:font-bold
-          [&>h3]:text-slate-900
-          dark:[&>h3]:text-white
+      const text = paragraphBuffer.join(" ").trim();
 
-          [&>h4]:mb-2
-          [&>h4]:mt-6
-          [&>h4]:text-sm
-          [&>h4]:font-bold
-          [&>h4]:text-slate-900
-          dark:[&>h4]:text-white
+      if (text) {
+        elements.push(
+          <p
+            key={`paragraph-${elements.length}`}
+            className="mb-5 text-sm leading-7 text-slate-600 dark:text-slate-300"
+          >
+            {renderInlineMarkdown(
+              text,
+              `paragraph-${elements.length}`
+            )}
+          </p>
+        );
+      }
 
-          [&>p]:mb-5
-          [&>p]:leading-7
+      paragraphBuffer = [];
+    };
 
-          [&>ul]:mb-5
-          [&>ul]:ml-5
-          [&>ul]:list-disc
-          [&>ul]:space-y-2
+    const flushList = () => {
+      if (!listBuffer || !listBuffer.items.length) {
+        listBuffer = null;
+        return;
+      }
 
-          [&>ol]:mb-5
-          [&>ol]:ml-5
-          [&>ol]:list-decimal
-          [&>ol]:space-y-2
+      const isOrdered =
+        listBuffer.type === "ordered";
 
-          [&_li]:pl-1
+      const ListTag = isOrdered ? "ol" : "ul";
 
-          [&>hr]:my-8
-          [&>hr]:border-slate-200
-          dark:[&>hr]:border-slate-800
-
-          [&>blockquote]:my-5
-          [&>blockquote]:border-l-4
-          [&>blockquote]:border-slate-300
-          [&>blockquote]:pl-4
-          [&>blockquote]:italic
-          dark:[&>blockquote]:border-slate-700
-
-          [&_a]:font-semibold
-          [&_a]:text-blue-600
-          [&_a]:underline
-          [&_a]:underline-offset-2
-          hover:[&_a]:text-blue-700
-          dark:[&_a]:text-blue-400
-          dark:hover:[&_a]:text-blue-300
-
-          [&_strong]:font-bold
-          [&_strong]:text-slate-900
-          dark:[&_strong]:text-white
-
-          [&_code]:rounded-md
-          [&_code]:bg-slate-100
-          [&_code]:px-1.5
-          [&_code]:py-0.5
-          [&_code]:text-[0.85em]
-          dark:[&_code]:bg-slate-800
-        "
-      >
-        <ReactMarkdown
-          components={{
-            a: ({ node, ...props }) => (
-              <a
-                {...props}
-                target="_blank"
-                rel="noopener noreferrer"
-              />
-            ),
-
-            p: ({ node, children, ...props }) => (
-              <p {...props}>{children}</p>
-            ),
-
-            h1: ({ node, children, ...props }) => (
-              <h1 {...props}>{children}</h1>
-            ),
-
-            h2: ({ node, children, ...props }) => (
-              <h2 {...props}>{children}</h2>
-            ),
-
-            h3: ({ node, children, ...props }) => (
-              <h3 {...props}>{children}</h3>
-            ),
-
-            h4: ({ node, children, ...props }) => (
-              <h4 {...props}>{children}</h4>
-            ),
-
-            ul: ({ node, children, ...props }) => (
-              <ul {...props}>{children}</ul>
-            ),
-
-            ol: ({ node, children, ...props }) => (
-              <ol {...props}>{children}</ol>
-            ),
-
-            li: ({ node, children, ...props }) => (
-              <li {...props}>{children}</li>
-            ),
-
-            hr: ({ node, ...props }) => (
-              <hr {...props} />
-            ),
-
-            blockquote: ({ node, children, ...props }) => (
-              <blockquote {...props}>
-                {children}
-              </blockquote>
-            ),
-          }}
+      elements.push(
+        <ListTag
+          key={`list-${elements.length}`}
+          className={
+            isOrdered
+              ? "mb-5 ml-5 list-decimal space-y-2 text-sm leading-7 text-slate-600 dark:text-slate-300"
+              : "mb-5 ml-5 list-disc space-y-2 text-sm leading-7 text-slate-600 dark:text-slate-300"
+          }
         >
-          {content}
-        </ReactMarkdown>
+          {listBuffer.items.map((item, itemIndex) => (
+            <li key={`list-item-${itemIndex}`}>
+              {renderInlineMarkdown(
+                item,
+                `list-${elements.length}-${itemIndex}`
+              )}
+            </li>
+          ))}
+        </ListTag>
+      );
+
+      listBuffer = null;
+    };
+
+    const startList = (type) => {
+      flushParagraph();
+
+      if (!listBuffer || listBuffer.type !== type) {
+        flushList();
+
+        listBuffer = {
+          type,
+          items: [],
+        };
+      }
+    };
+
+    lines.forEach((rawLine, lineIndex) => {
+      const line = rawLine.trim();
+
+      /* -----------------------------------------------------
+         EMPTY LINE
+      ----------------------------------------------------- */
+
+      if (!line) {
+        flushParagraph();
+        flushList();
+        return;
+      }
+
+      /* -----------------------------------------------------
+         HORIZONTAL RULE
+      ----------------------------------------------------- */
+
+      if (/^(\*\s*){3,}$/.test(line) || /^(-\s*){3,}$/.test(line)) {
+        flushParagraph();
+        flushList();
+
+        elements.push(
+          <hr
+            key={`hr-${lineIndex}`}
+            className="my-8 border-slate-200 dark:border-slate-800"
+          />
+        );
+
+        return;
+      }
+
+      /* -----------------------------------------------------
+         HEADINGS
+         Handles both:
+         ## Heading
+         ### Heading
+         ### ## Heading
+      ----------------------------------------------------- */
+
+      const headingMatch = line.match(
+        /^(#{1,6})\s*(.+)$/
+      );
+
+      if (headingMatch) {
+        flushParagraph();
+        flushList();
+
+        const rawHeading = headingMatch[2]
+          .replace(/^#{1,6}\s*/, "")
+          .trim();
+
+        const level = Math.min(
+          headingMatch[1].length,
+          4
+        );
+
+        const HeadingTag =
+          level === 1
+            ? "h1"
+            : level === 2
+            ? "h2"
+            : level === 3
+            ? "h3"
+            : "h4";
+
+        const className =
+          level === 1
+            ? "mb-5 mt-0 text-2xl font-black tracking-tight text-slate-900 dark:text-white"
+            : level === 2
+            ? "mb-4 mt-10 text-xl font-black tracking-tight text-slate-900 dark:text-white"
+            : level === 3
+            ? "mb-3 mt-8 text-base font-bold text-slate-900 dark:text-white"
+            : "mb-2 mt-6 text-sm font-bold text-slate-900 dark:text-white";
+
+        elements.push(
+          <HeadingTag
+            key={`heading-${lineIndex}`}
+            className={className}
+          >
+            {renderInlineMarkdown(
+              rawHeading,
+              `heading-${lineIndex}`
+            )}
+          </HeadingTag>
+        );
+
+        return;
+      }
+
+      /* -----------------------------------------------------
+         BULLET LIST
+      ----------------------------------------------------- */
+
+      const bulletMatch = line.match(
+        /^[-*+]\s+(.+)$/
+      );
+
+      if (bulletMatch) {
+        startList("unordered");
+        listBuffer.items.push(
+          bulletMatch[1]
+        );
+        return;
+      }
+
+      /* -----------------------------------------------------
+         NUMBERED LIST
+      ----------------------------------------------------- */
+
+      const orderedMatch = line.match(
+        /^\d+\.\s+(.+)$/
+      );
+
+      if (orderedMatch) {
+        startList("ordered");
+        listBuffer.items.push(
+          orderedMatch[1]
+        );
+        return;
+      }
+
+      /* -----------------------------------------------------
+         BLOCKQUOTE
+      ----------------------------------------------------- */
+
+      if (line.startsWith(">")) {
+        flushParagraph();
+        flushList();
+
+        elements.push(
+          <blockquote
+            key={`quote-${lineIndex}`}
+            className="my-5 border-l-4 border-slate-300 pl-4 text-sm italic leading-7 text-slate-500 dark:border-slate-700 dark:text-slate-400"
+          >
+            {renderInlineMarkdown(
+              line.replace(/^>\s*/, ""),
+              `quote-${lineIndex}`
+            )}
+          </blockquote>
+        );
+
+        return;
+      }
+
+      /* -----------------------------------------------------
+         NORMAL TEXT
+      ----------------------------------------------------- */
+
+      paragraphBuffer.push(line);
+    });
+
+    flushParagraph();
+    flushList();
+
+    return (
+      <article className="max-w-none">
+        {elements}
       </article>
     );
   };
@@ -314,21 +545,7 @@ export default function LegalDocs({
               <button
                 type="button"
                 onClick={onBack}
-                className="
-                  mt-1 flex h-9 w-9 flex-shrink-0
-                  items-center justify-center
-                  rounded-xl border
-                  border-slate-200 bg-white
-                  text-slate-500
-                  transition
-                  hover:bg-slate-50
-                  hover:text-slate-900
-                  dark:border-slate-700
-                  dark:bg-slate-900
-                  dark:text-slate-400
-                  dark:hover:bg-slate-800
-                  dark:hover:text-white
-                "
+                className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -373,21 +590,7 @@ export default function LegalDocs({
             <button
               type="button"
               onClick={onClose}
-              className="
-                flex h-9 w-9 flex-shrink-0
-                items-center justify-center
-                rounded-xl border
-                border-slate-200 bg-white
-                text-slate-400
-                transition
-                hover:border-red-200
-                hover:bg-red-50
-                hover:text-red-500
-                dark:border-slate-700
-                dark:bg-slate-900
-                dark:hover:border-red-900/50
-                dark:hover:bg-red-950/20
-              "
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-red-900/50 dark:hover:bg-red-950/20"
               aria-label="Close Legal Documents"
             >
               <X className="h-4 w-4" />
@@ -408,8 +611,7 @@ export default function LegalDocs({
               onClick={() => setActiveTab("privacy")}
               className={`
                 flex items-center justify-center gap-2
-                rounded-xl px-4 py-3 text-sm
-                font-semibold transition
+                rounded-xl px-4 py-3 text-sm font-semibold transition
                 ${
                   activeTab === "privacy"
                     ? "bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900"
@@ -426,8 +628,7 @@ export default function LegalDocs({
               onClick={() => setActiveTab("terms")}
               className={`
                 flex items-center justify-center gap-2
-                rounded-xl px-4 py-3 text-sm
-                font-semibold transition
+                rounded-xl px-4 py-3 text-sm font-semibold transition
                 ${
                   activeTab === "terms"
                     ? "bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900"
@@ -443,7 +644,9 @@ export default function LegalDocs({
           <Button
             type="button"
             variant="outline"
-            onClick={() => loadDocFromBackend(activeTab)}
+            onClick={() =>
+              loadDocFromBackend(activeTab)
+            }
             disabled={loading}
             className="h-11 rounded-xl"
           >
@@ -453,7 +656,9 @@ export default function LegalDocs({
               }`}
             />
 
-            {loading ? "Refreshing..." : "Refresh"}
+            {loading
+              ? "Refreshing..."
+              : "Refresh"}
           </Button>
         </div>
       </div>
@@ -463,7 +668,6 @@ export default function LegalDocs({
       ===================================================== */}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {/* Card header */}
         <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/30 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -485,7 +689,10 @@ export default function LegalDocs({
           </div>
         </div>
 
-        {/* Document body */}
+        {/* ===================================================
+            DOCUMENT BODY
+        =================================================== */}
+
         <div className="max-h-[65vh] overflow-y-auto px-5 py-6 sm:px-8 sm:py-8">
           {loading ? (
             <div className="flex min-h-[300px] flex-col items-center justify-center">
@@ -517,7 +724,9 @@ export default function LegalDocs({
 
               <button
                 type="button"
-                onClick={() => loadDocFromBackend(activeTab)}
+                onClick={() =>
+                  loadDocFromBackend(activeTab)
+                }
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
               >
                 <RefreshCw className="h-4 w-4" />
