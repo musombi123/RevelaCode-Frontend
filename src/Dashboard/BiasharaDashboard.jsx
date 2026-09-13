@@ -11,7 +11,7 @@ import {
   BarChart3,
   Bell,
   Box,
-  BriefcaseBusiness,
+  Briefcase,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -867,7 +867,7 @@ export default function BiasharaDashboard({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <BriefcaseBusiness size={24} />
+                  <Briefcase size={24} />
                 )}
               </div>
 
