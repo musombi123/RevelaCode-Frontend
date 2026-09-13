@@ -371,7 +371,10 @@ function HomeDashboard({ onNavigate, user }) {
       key: "shamba",
       title: "Shamba",
       label: "Shamba",
+      description:
+        "Farming, crop planning, seasons, markets & agricultural insights",
       icon: Leaf,
+      gradient: "from-orange-500 via-amber-500 to-yellow-500",
       element: <ShambaHub />,
     },
     {
