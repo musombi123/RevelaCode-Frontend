@@ -21,7 +21,7 @@ import {
 
 import { motion, AnimatePresence } from "framer-motion";
 
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/components/hooks/useNotifications.jsx";
 
 // ============================================================
 // HELPERS
