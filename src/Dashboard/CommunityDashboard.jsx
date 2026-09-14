@@ -44,7 +44,7 @@ const HUBS = [
     key: "biashara",
     label: "Biashara",
     description: "Business, jobs and opportunities.",
-    icon: BriefcaseBusiness,
+    icon: Briefcase,
   },
   {
     key: "shamba",
