@@ -16,9 +16,13 @@ import {
   ChevronRight,
   Clock3,
   DollarSign,
+  FileCheck2,
   Package,
   RefreshCw,
+  ShieldCheck,
   ShoppingCart,
+  Sparkles,
+  Store,
   TrendingUp,
   Users,
   WalletCards,
@@ -26,7 +30,7 @@ import {
 
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
-import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
+import BiasharaBusinessOnboarding from "@/Dashboard/biashara/BiasharaBusinessOnboarding.jsx";
 
 /* =========================================================
    HELPERS
@@ -153,12 +157,6 @@ function getOrderReference(order) {
   );
 }
 
-/*
- * A missing business profile is NOT a fatal dashboard error.
- *
- * Different API layers may represent "not found" differently,
- * so we deliberately check several common forms.
- */
 function isBusinessNotFoundError(error) {
   const message = String(
     error?.message ||
@@ -188,15 +186,6 @@ function isBusinessNotFoundError(error) {
   );
 }
 
-/*
- * Some API wrappers return:
- *
- * { business: {...} }
- *
- * while others return the business directly.
- *
- * This helper supports both without breaking either response.
- */
 function extractBusiness(payload) {
   if (!payload) {
     return null;
@@ -226,6 +215,55 @@ function extractBusiness(payload) {
   }
 
   return null;
+}
+
+/* =========================================================
+   BUSINESS PROFILE COMPLETENESS
+========================================================= */
+
+function getProfileCompleteness(business) {
+  if (!business) {
+    return {
+      percentage: 0,
+      completed: 0,
+      total: 8,
+      missing: [],
+    };
+  }
+
+  const fields = [
+    ["Business name", business.name],
+    ["Business category", business.category],
+    ["Business type", business.business_type],
+    ["Phone number", business.phone],
+    ["Email", business.email],
+    ["County", business.county],
+    ["Location", business.location],
+    ["Description", business.description],
+  ];
+
+  const completed = fields.filter(
+    ([, value]) =>
+      value !== undefined &&
+      value !== null &&
+      String(value).trim() !== "",
+  );
+
+  return {
+    percentage: Math.round(
+      (completed.length / fields.length) * 100,
+    ),
+    completed: completed.length,
+    total: fields.length,
+    missing: fields
+      .filter(
+        ([, value]) =>
+          value === undefined ||
+          value === null ||
+          String(value).trim() === "",
+      )
+      .map(([label]) => label),
+  };
 }
 
 /* =========================================================
@@ -306,6 +344,8 @@ function EmptyState({
   icon: Icon = Box,
   title,
   text,
+  actionLabel,
+  onAction,
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
@@ -320,6 +360,17 @@ function EmptyState({
       <p className="mt-1 text-xs leading-5 text-slate-500">
         {text}
       </p>
+
+      {actionLabel ? (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 inline-flex items-center gap-1 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+        >
+          {actionLabel}
+          <ChevronRight size={14} />
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -356,6 +407,7 @@ function OrderStatusPill({ status }) {
 function QuickAction({
   icon: Icon,
   label,
+  description,
   onClick,
 }) {
   return (
@@ -373,8 +425,8 @@ function QuickAction({
           {label}
         </span>
 
-        <span className="mt-0.5 block text-[11px] text-slate-400">
-          Open
+        <span className="mt-0.5 block truncate text-[11px] text-slate-400">
+          {description || "Open"}
         </span>
       </span>
 
@@ -476,6 +528,220 @@ function FatalError({
 }
 
 /* =========================================================
+   BUSINESS PROFILE NOTICE
+========================================================= */
+
+function BusinessProfileNotice({
+  business,
+  completeness,
+  onCompleteProfile,
+}) {
+  const verificationStatus =
+    String(
+      business?.verification_status ||
+        business?.verification?.status ||
+        "not_submitted",
+    ).toLowerCase();
+
+  const isVerified =
+    verificationStatus === "verified";
+
+  const isPending =
+    verificationStatus === "pending" ||
+    verificationStatus === "under_review";
+
+  return (
+    <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 text-white sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+              <FileCheck2 size={23} />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                  Business profile
+                </span>
+
+                {isVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2.5 py-1 text-[11px] font-semibold text-emerald-100">
+                    <ShieldCheck size={12} />
+                    Verified
+                  </span>
+                ) : isPending ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
+                    <Clock3 size={12} />
+                    Verification pending
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-blue-50">
+                    <Briefcase size={12} />
+                    Profile active
+                  </span>
+                )}
+              </div>
+
+              <h2 className="mt-2 text-xl font-bold">
+                Keep your business identity complete
+              </h2>
+
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-blue-100">
+                Your Biashara workspace is connected to your
+                business profile. Complete the legal business
+                information so your identity, records and future
+                verification process remain consistent.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onCompleteProfile}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-blue-700 shadow-sm transition hover:bg-blue-50"
+          >
+            <FileCheck2 size={17} />
+            Complete profile
+          </button>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-slate-800">
+                Profile completeness
+              </p>
+
+              <span className="text-sm font-bold text-blue-600">
+                {completeness.percentage}%
+              </span>
+            </div>
+
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-blue-600 transition-all"
+                style={{
+                  width: `${completeness.percentage}%`,
+                }}
+              />
+            </div>
+
+            <p className="mt-2 text-xs text-slate-500">
+              {completeness.completed} of{" "}
+              {completeness.total} core profile fields
+              completed.
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3">
+            <ShieldCheck
+              size={17}
+              className={
+                isVerified
+                  ? "text-emerald-600"
+                  : "text-slate-400"
+              }
+            />
+
+            <div>
+              <p className="text-[11px] font-medium text-slate-500">
+                Verification
+              </p>
+
+              <p className="text-sm font-semibold text-slate-800">
+                {isVerified
+                  ? "Verified business"
+                  : isPending
+                    ? "Under review"
+                    : "Coming soon"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   NO BUSINESS STATE
+========================================================= */
+
+function CreateBusinessState({
+  onCreated,
+}) {
+  return (
+    <div className="min-h-full bg-slate-50">
+      <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 rounded-3xl bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-800 p-6 text-white shadow-sm sm:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+              <Store size={27} />
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                Biashara Hub
+              </p>
+
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                Create your legal business profile
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
+                Before you can manage products, sales, orders
+                and business analytics, create your business
+                profile. This becomes the official business
+                identity used throughout your Jumuiya workspace.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white/10 p-4">
+              <Briefcase size={18} />
+              <p className="mt-3 text-sm font-semibold">
+                Business identity
+              </p>
+              <p className="mt-1 text-xs leading-5 text-blue-100">
+                Name, type, category and location.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/10 p-4">
+              <FileCheck2 size={18} />
+              <p className="mt-3 text-sm font-semibold">
+                Business records
+              </p>
+              <p className="mt-1 text-xs leading-5 text-blue-100">
+                Keep your business information consistent.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/10 p-4">
+              <ShieldCheck size={18} />
+              <p className="mt-3 text-sm font-semibold">
+                Verification ready
+              </p>
+              <p className="mt-1 text-xs leading-5 text-blue-100">
+                Verification will be introduced soon.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <BiasharaBusinessOnboarding
+          onCreated={onCreated}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    MAIN DASHBOARD
 ========================================================= */
 
@@ -564,20 +830,7 @@ export default function BiasharaDashboard({
           extractBusiness(response);
 
         setBusiness(currentBusiness);
-
-        /*
-         * No business is a VALID state.
-         *
-         * The onboarding component will be shown below.
-         */
       } catch (err) {
-        /*
-         * Critical fix:
-         *
-         * "Business not found" is not a fatal error.
-         * It simply means the user needs to create
-         * their Biashara business profile.
-         */
         if (isBusinessNotFoundError(err)) {
           setBusiness(null);
           setError("");
@@ -729,6 +982,11 @@ export default function BiasharaDashboard({
     metrics.average_order_value,
   );
 
+  const completeness = useMemo(
+    () => getProfileCompleteness(business),
+    [business],
+  );
+
   const revenueRatio = useMemo(() => {
     if (totalRevenue <= 0) {
       return 0;
@@ -745,6 +1003,64 @@ export default function BiasharaDashboard({
     totalRevenue,
     netEstimate,
   ]);
+
+  /* =======================================================
+     PROFILE ACTION
+  ======================================================= */
+
+  const openBusinessProfile = useCallback(() => {
+    /*
+     * Keep this route flexible.
+     *
+     * If a dedicated business profile page is introduced,
+     * route it here without changing the dashboard.
+     */
+    navigate("business-profile");
+  }, [navigate]);
+
+  /* =======================================================
+     BUSINESS CREATED
+  ======================================================= */
+
+  const handleBusinessCreated = useCallback(
+    async (createdBusiness) => {
+      const normalizedBusiness =
+        extractBusiness(
+          createdBusiness,
+        ) || createdBusiness;
+
+      setBusiness(
+        normalizedBusiness,
+      );
+
+      setDashboard(null);
+      setError("");
+      setLastUpdated(null);
+
+      setLoadingDashboard(true);
+
+      try {
+        const dashboardData =
+          await getBiasharaDashboard();
+
+        setDashboard(
+          dashboardData || null,
+        );
+
+        setLastUpdated(
+          new Date(),
+        );
+      } catch (err) {
+        setError(
+          err?.message ||
+            "Your business was created, but the dashboard could not be loaded.",
+        );
+      } finally {
+        setLoadingDashboard(false);
+      }
+    },
+    [getBiasharaDashboard],
+  );
 
   /* =======================================================
      LOADING
@@ -780,51 +1096,8 @@ export default function BiasharaDashboard({
     !business
   ) {
     return (
-      <BiasharaBusinessOnboarding
-        onCreated={async (createdBusiness) => {
-          /*
-           * Set the new business immediately so
-           * the dashboard transitions smoothly.
-           */
-          const normalizedBusiness =
-            extractBusiness(
-              createdBusiness,
-            ) || createdBusiness;
-
-          setBusiness(
-            normalizedBusiness,
-          );
-
-          setDashboard(null);
-          setError("");
-          setLastUpdated(null);
-
-          /*
-           * Load dashboard for the newly-created
-           * business.
-           */
-          setLoadingDashboard(true);
-
-          try {
-            const dashboardData =
-              await getBiasharaDashboard();
-
-            setDashboard(
-              dashboardData || null,
-            );
-
-            setLastUpdated(
-              new Date(),
-            );
-          } catch (err) {
-            setError(
-              err?.message ||
-                "Your business was created, but the dashboard could not be loaded.",
-            );
-          } finally {
-            setLoadingDashboard(false);
-          }
-        }}
+      <CreateBusinessState
+        onCreated={handleBusinessCreated}
       />
     );
   }
@@ -877,15 +1150,10 @@ export default function BiasharaDashboard({
                     Biashara Hub
                   </span>
 
-                  {business?.status ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                      <CheckCircle2 size={12} />
-
-                      {statusLabel(
-                        business.status,
-                      )}
-                    </span>
-                  ) : null}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                    <CheckCircle2 size={12} />
+                    Active
+                  </span>
                 </div>
 
                 <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -924,6 +1192,15 @@ export default function BiasharaDashboard({
 
               <button
                 type="button"
+                onClick={openBusinessProfile}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <Briefcase size={16} />
+                Profile
+              </button>
+
+              <button
+                type="button"
                 onClick={loadDashboard}
                 disabled={loadingDashboard}
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -953,6 +1230,18 @@ export default function BiasharaDashboard({
             </div>
           </div>
         </section>
+
+        {/* =================================================
+            BUSINESS PROFILE / LEGAL IDENTITY
+        ================================================= */}
+
+        <BusinessProfileNotice
+          business={business}
+          completeness={completeness}
+          onCompleteProfile={
+            openBusinessProfile
+          }
+        />
 
         {/* =================================================
             ERROR BANNER
@@ -987,10 +1276,11 @@ export default function BiasharaDashboard({
             title="Run your business"
           />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <QuickAction
               icon={Package}
               label="Products"
+              description="Manage stock"
               onClick={() =>
                 navigate("products")
               }
@@ -999,6 +1289,7 @@ export default function BiasharaDashboard({
             <QuickAction
               icon={ShoppingCart}
               label="Orders"
+              description="Manage orders"
               onClick={() =>
                 navigate("orders")
               }
@@ -1007,6 +1298,7 @@ export default function BiasharaDashboard({
             <QuickAction
               icon={Users}
               label="Customers"
+              description="Customer records"
               onClick={() =>
                 navigate("customers")
               }
@@ -1015,8 +1307,27 @@ export default function BiasharaDashboard({
             <QuickAction
               icon={WalletCards}
               label="Record sale"
+              description="Capture a sale"
               onClick={() =>
                 navigate("sales")
+              }
+            />
+
+            <QuickAction
+              icon={BarChart3}
+              label="Analytics"
+              description="Business performance"
+              onClick={() =>
+                navigate("biashara-analytics")
+              }
+            />
+
+            <QuickAction
+              icon={Sparkles}
+              label="Intelligence"
+              description="Business insights"
+              onClick={() =>
+                navigate("biashara-intelligence")
               }
             />
           </div>
@@ -1177,6 +1488,14 @@ export default function BiasharaDashboard({
             <SectionHeader
               eyebrow="Operations"
               title="Stock health"
+              actionLabel={
+                lowStockProducts.length
+                  ? "Manage"
+                  : undefined
+              }
+              onAction={() =>
+                navigate("products")
+              }
             />
 
             {lowStockProducts.length ? (
@@ -1244,6 +1563,50 @@ export default function BiasharaDashboard({
                 </span>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* =================================================
+            INTELLIGENCE CTA
+        ================================================= */}
+
+        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-5 text-white shadow-sm sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
+                <Sparkles size={22} />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-300">
+                  RevelaAI Business Intelligence
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold">
+                  Understand what your business should do next.
+                </h2>
+
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-300">
+                  Explore market conditions, demand signals,
+                  product opportunities, pricing insights and
+                  business alerts from your Biashara intelligence
+                  system.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  "biashara-intelligence",
+                )
+              }
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-blue-50"
+            >
+              Open intelligence
+              <ChevronRight size={16} />
+            </button>
           </div>
         </section>
 
@@ -1319,6 +1682,10 @@ export default function BiasharaDashboard({
               icon={BarChart3}
               title="No product sales yet"
               text="Once you record sales, your best-performing products will appear here."
+              actionLabel="Record first sale"
+              onAction={() =>
+                navigate("sales")
+              }
             />
           )}
         </section>
@@ -1404,6 +1771,10 @@ export default function BiasharaDashboard({
                 icon={ShoppingCart}
                 title="No orders yet"
                 text="New customer orders will appear here."
+                actionLabel="Manage orders"
+                onAction={() =>
+                  navigate("orders")
+                }
               />
             )}
           </div>
@@ -1460,7 +1831,10 @@ export default function BiasharaDashboard({
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-bold text-slate-900">
                           {formatMoney(
-                            sale.amount,
+                            sale.amount ??
+                              sale.total ??
+                              sale.total_amount ??
+                              0,
                             currency,
                           )}
                         </p>
@@ -1478,6 +1852,10 @@ export default function BiasharaDashboard({
                 icon={DollarSign}
                 title="No sales yet"
                 text="Completed sales will appear here as you record them."
+                actionLabel="Record sale"
+                onAction={() =>
+                  navigate("sales")
+                }
               />
             )}
           </div>
@@ -1489,8 +1867,10 @@ export default function BiasharaDashboard({
 
         <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <SectionHeader
-            eyebrow="Business profile"
+            eyebrow="Business identity"
             title="Workspace snapshot"
+            actionLabel="Manage profile"
+            onAction={openBusinessProfile}
           />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1523,8 +1903,62 @@ export default function BiasharaDashboard({
               value={currency}
             />
           </div>
+
+          {completeness.missing.length ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle
+                  size={18}
+                  className="mt-0.5 shrink-0 text-amber-600"
+                />
+
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">
+                    Complete your business profile
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-amber-700">
+                    Missing:{" "}
+                    {completeness.missing.join(
+                      ", ",
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  openBusinessProfile
+                }
+                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-amber-700"
+              >
+                Complete profile
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <CheckCircle2 size={18} />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-emerald-900">
+                  Core business profile complete
+                </p>
+
+                <p className="mt-0.5 text-xs text-emerald-700">
+                  Your profile is ready for the future
+                  business verification process.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
+
       </div>
     </div>
   );
 }
+
