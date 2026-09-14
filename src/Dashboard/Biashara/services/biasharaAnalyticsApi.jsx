@@ -6,7 +6,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
  * BIASHARA ANALYTICS API
  * =========================================================
  *
- * Responsible for historical/business performance data:
+ * Historical/business performance data:
  *
  * - Sales analytics
  * - Revenue
@@ -15,24 +15,66 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
  * - Products
  * - Expenses
  * - Profit
- * - Performance trends
+ * - Overall analytics
+ *
+ * NOTE:
+ * useJumuiyaApi().get() does not automatically serialize
+ * a `params` object into the query string.
+ *
+ * This service therefore builds the query string explicitly.
+ */
+
+/**
+ * =========================================================
+ * QUERY BUILDER
+ * =========================================================
+ */
+
+function buildQuery(params = {}) {
+  const entries = Object.entries(params).filter(
+    ([, value]) =>
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+  );
+
+  if (!entries.length) {
+    return "";
+  }
+
+  const searchParams = new URLSearchParams();
+
+  entries.forEach(([key, value]) => {
+    searchParams.set(key, String(value));
+  });
+
+  return `?${searchParams.toString()}`;
+}
+
+/**
+ * =========================================================
+ * HOOK
+ * =========================================================
  */
 
 export function useBiasharaAnalyticsApi() {
-  const {
-    get,
-  } = useJumuiyaApi();
+  const { get } = useJumuiyaApi();
 
   /**
    * -------------------------------------------------------
    * SALES ANALYTICS
    * -------------------------------------------------------
+   *
+   * GET /biashara/analytics/sales
+   *
+   * Example:
+   * ?days=30
    */
   const getSalesAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/sales", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/sales${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -44,9 +86,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getRevenueAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/revenue", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/revenue${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -58,9 +100,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getOrderAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/orders", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/orders${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -72,9 +114,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getCustomerAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/customers", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/customers${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -86,9 +128,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getProductAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/products", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/products${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -100,9 +142,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getExpenseAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/expenses", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/expenses${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -114,9 +156,9 @@ export function useBiasharaAnalyticsApi() {
    */
   const getProfitAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics/profit", {
-        params,
-      });
+      return get(
+        `/biashara/analytics/profit${buildQuery(params)}`
+      );
     },
     [get]
   );
@@ -125,15 +167,23 @@ export function useBiasharaAnalyticsApi() {
    * -------------------------------------------------------
    * COMPLETE ANALYTICS
    * -------------------------------------------------------
+   *
+   * GET /biashara/analytics
    */
   const getBiasharaAnalytics = useCallback(
     async (params = {}) => {
-      return get("/biashara/analytics", {
-        params,
-      });
+      return get(
+        `/biashara/analytics${buildQuery(params)}`
+      );
     },
     [get]
   );
+
+  /**
+   * -------------------------------------------------------
+   * PUBLIC API
+   * -------------------------------------------------------
+   */
 
   return {
     getSalesAnalytics,
