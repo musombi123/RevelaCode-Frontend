@@ -30,7 +30,7 @@ import {
 
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
-import BiasharaBusinessOnboarding from "@/Dashboard/biashara/BiasharaBusinessOnboarding.jsx";
+import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
 
 /* =========================================================
    HELPERS
