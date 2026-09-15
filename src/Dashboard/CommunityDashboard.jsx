@@ -6,7 +6,7 @@ import {
   Bell,
   Briefcase,
   ChevronRight,
-  CircleHelp,
+  HelpCircle,
   Compass,
   GraduationCap,
   Heart,
@@ -836,7 +836,7 @@ export default function CommunityDashboard({
                       gap-3
                     "
                   >
-                    <CircleHelp
+                    <HelpCircle
                       size={18}
                       className="
                         mt-0.5
