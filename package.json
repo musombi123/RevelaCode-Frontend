@@ -21,7 +21,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.5.2",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.0",
+    "remark-gfm": "^4.0.1",
     "shadcn-ui": "^0.9.5",
     "tailwind-merge": "^3.4.0"
   },
