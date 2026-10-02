@@ -1,4 +1,4 @@
-// @ai/AIAssistantDashboard.jsx
+// src/ai/AIAssistantDashboard.jsx
 
 import React, {
   useCallback,
@@ -20,15 +20,19 @@ import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
+import { useAuth } from "@/context/AuthContext";
 
 /* =========================================================
    CONSTANTS
 ========================================================= */
 
-const STORAGE_KEY = "revela_chats";
+const REVELAAI_URL = (
+  import.meta.env.VITE_REVELAAI_URL || ""
+)
+  .trim()
+  .replace(/\/+$/, "");
 
-const REVELAAI_URL =
-  import.meta.env.VITE_REVELAAI_URL;
+const LEGACY_STORAGE_KEY = "revela_chats";
 
 /* =========================================================
    MESSAGE FACTORY
@@ -37,23 +41,138 @@ const REVELAAI_URL =
 const createMessage = (
   role,
   text,
-  status = "done"
+  status = "done",
+  extra = {}
 ) => ({
   id:
     typeof crypto !== "undefined" &&
     crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`,
+
   role,
-  text,
+  text: String(text || ""),
+
   status,
+
+  createdAt: Date.now(),
+
+  ...extra,
 });
+
+/* =========================================================
+   STORAGE
+========================================================= */
+
+const getScopedStorageKey = (
+  userScope
+) => {
+  const normalized =
+    String(userScope || "guest").trim() ||
+    "guest";
+
+  return `revela_chats:${encodeURIComponent(
+    normalized
+  )}`;
+};
+
+const loadSavedChats = (
+  storageKey
+) => {
+  if (
+    typeof window === "undefined"
+  ) {
+    return [];
+  }
+
+  try {
+    const saved =
+      localStorage.getItem(
+        storageKey
+      );
+
+    if (!saved) {
+      return [];
+    }
+
+    const parsed =
+      JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (chat) =>
+        chat &&
+        typeof chat === "object" &&
+        chat.id
+    );
+  } catch (error) {
+    console.error(
+      "❌ Failed to restore RevelaAI chats:",
+      error
+    );
+
+    try {
+      localStorage.removeItem(
+        storageKey
+      );
+    } catch {
+      // Ignore local cleanup failure.
+    }
+
+    return [];
+  }
+};
+
+/* =========================================================
+   CHAT NORMALIZATION
+========================================================= */
+
+const normalizeChat = (
+  chat
+) => {
+  if (!chat || !chat.id) {
+    return null;
+  }
+
+  const messages =
+    Array.isArray(
+      chat.messages
+    )
+      ? chat.messages
+      : [];
+
+  return {
+    id: String(chat.id),
+
+    title:
+      String(
+        chat.title ||
+          "New Conversation"
+      ).trim() ||
+      "New Conversation",
+
+    messages,
+
+    createdAt:
+      chat.createdAt ||
+      Date.now(),
+
+    updatedAt:
+      chat.updatedAt ||
+      Date.now(),
+  };
+};
 
 /* =========================================================
    CONTEXT BUILDER
 ========================================================= */
 
-const buildContext = (messages) => {
+const buildContext = (
+  messages
+) => {
   return messages
     .slice(-12)
     .map((message) => {
@@ -62,18 +181,36 @@ const buildContext = (messages) => {
           ? "User"
           : "Assistant";
 
-      return `${role}: ${message.text}`;
+      let content =
+        message.text || "";
+
+      if (
+        message.attachmentName
+      ) {
+        content =
+          `[Attachment: ${message.attachmentName}] ` +
+          content;
+      }
+
+      return `${role}: ${content}`;
     })
     .join("\n");
 };
 
 /* =========================================================
-   PROMPT INTELLIGENCE
+   OPTIONAL PROMPT ENRICHMENT
+   ---------------------------------------------------------
+   Keep this light. The backend owns canonical intent
+   detection. We only preserve lightweight context markers
+   for compatibility with the current ecosystem.
 ========================================================= */
 
-const enrichPrompt = (text) => {
-  const lower = String(text || "")
-    .toLowerCase();
+const enrichPrompt = (
+  text
+) => {
+  const lower =
+    String(text || "")
+      .toLowerCase();
 
   if (
     lower.includes("bible") ||
@@ -86,8 +223,7 @@ const enrichPrompt = (text) => {
   if (
     lower.includes("prophecy") ||
     lower.includes("beast") ||
-    lower.includes("666") ||
-    lower.includes("revelation")
+    lower.includes("666")
   ) {
     return `[PROPHECY MODE] ${text}`;
   }
@@ -134,88 +270,73 @@ const enrichPrompt = (text) => {
 };
 
 /* =========================================================
-   SAFE LOCAL STORAGE
+   SAFE URL
 ========================================================= */
 
-const loadSavedChats = () => {
-  if (
-    typeof window === "undefined"
-  ) {
-    return [];
-  }
-
-  try {
-    const saved =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-    if (!saved) {
-      return [];
-    }
-
-    const parsed = JSON.parse(saved);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (chat) =>
-        chat &&
-        typeof chat === "object" &&
-        chat.id
-    );
-  } catch (error) {
-    console.error(
-      "❌ Failed to restore RevelaAI chats:",
-      error
-    );
-
-    try {
-      localStorage.removeItem(
-        STORAGE_KEY
-      );
-    } catch {
-      // Ignore cleanup failure.
-    }
-
-    return [];
-  }
+const isSafeHttpUrl = (
+  value
+) => {
+  return /^https?:\/\//i.test(
+    String(value || "").trim()
+  );
 };
 
 /* =========================================================
-   CHAT NORMALIZATION
+   AI RESPONSE NORMALIZATION
 ========================================================= */
 
-const normalizeChat = (
-  chat
+const normalizeAIResponse = (
+  data
 ) => {
-  if (!chat) {
-    return null;
-  }
+  const payload =
+    data?.data || {};
 
-  const messages = Array.isArray(
-    chat.messages
+  const isImage =
+    payload?.type === "image";
+
+  const imageUrls =
+    isImage &&
+    Array.isArray(
+      payload?.urls
+    )
+      ? payload.urls.filter(
+          isSafeHttpUrl
+        )
+      : [];
+
+  const assistantText =
+    payload?.content ||
+    data?.content ||
+    data?.response ||
+    (isImage
+      ? "Image generated successfully."
+      : "No response from RevelaAI.");
+
+  const sources = Array.isArray(
+    data?.sources
   )
-    ? chat.messages
-    : [];
+    ? data.sources
+    : Array.isArray(
+        data?.meta?.sources
+      )
+      ? data.meta.sources
+      : [];
 
   return {
-    id: chat.id,
-    title:
-      String(
-        chat.title ||
-          "New Conversation"
-      ).trim() ||
-      "New Conversation",
-    messages,
-    createdAt:
-      chat.createdAt ||
-      Date.now(),
-    updatedAt:
-      chat.updatedAt ||
-      Date.now(),
+    text: String(
+      assistantText || ""
+    ).trim(),
+
+    imageUrls,
+
+    sources,
+
+    metadata:
+      data?.meta || {},
+
+    type:
+      payload?.type ||
+      "text",
   };
 };
 
@@ -226,6 +347,34 @@ const normalizeChat = (
 export default function AIAssistantDashboard({
   onOpenAI,
 }) {
+  const {
+    user,
+    isGuest,
+    isReady,
+    authFetch,
+  } = useAuth();
+
+  /*
+   * Prefer the authoritative Mongo/RevelaCode user ID.
+   * Contact is only a browser-storage fallback for older
+   * login payloads that did not yet expose an ID.
+   */
+  const userScope =
+    user?.id ||
+    user?.user_id ||
+    user?.contact ||
+    (isGuest
+      ? "guest"
+      : "anonymous");
+
+  const storageKey = useMemo(
+    () =>
+      getScopedStorageKey(
+        userScope
+      ),
+    [userScope]
+  );
+
   const [messages, setMessages] =
     useState([]);
 
@@ -233,11 +382,7 @@ export default function AIAssistantDashboard({
     useState(true);
 
   const [chats, setChats] =
-    useState(() =>
-      loadSavedChats()
-        .map(normalizeChat)
-        .filter(Boolean)
-    );
+    useState([]);
 
   const [activeChatId, setActiveChatId] =
     useState(null);
@@ -245,17 +390,62 @@ export default function AIAssistantDashboard({
   const [voiceActive, setVoiceActive] =
     useState(false);
 
+  const [
+    storageReady,
+    setStorageReady,
+  ] = useState(false);
+
   const controllerRef =
     useRef(null);
 
   /* =======================================================
-     PERSIST CHATS
+     LOAD USER-SCOPED CHATS
   ======================================================= */
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    setStorageReady(false);
+
+    const restored =
+      loadSavedChats(
+        storageKey
+      )
+        .map(normalizeChat)
+        .filter(Boolean);
+
+    setChats(restored);
+
+    /*
+     * Switching accounts must never carry the previous
+     * account's active chat in React state.
+     */
+    setActiveChatId(null);
+    setMessages([]);
+
+    setStorageReady(true);
+  }, [
+    isReady,
+    storageKey,
+  ]);
+
+  /* =======================================================
+     PERSIST USER-SCOPED CHATS
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      !storageReady ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
     try {
       localStorage.setItem(
-        STORAGE_KEY,
+        storageKey,
         JSON.stringify(chats)
       );
     } catch (error) {
@@ -264,7 +454,36 @@ export default function AIAssistantDashboard({
         error
       );
     }
-  }, [chats]);
+  }, [
+    chats,
+    storageKey,
+    storageReady,
+  ]);
+
+  /* =======================================================
+     REMOVE OLD GLOBAL CHAT STORAGE
+     -------------------------------------------------------
+     We deliberately do NOT migrate the old global key.
+     Migrating it automatically could expose Account A's
+     previous browser chats to Account B on the same device.
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      !isReady ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    /*
+     * Leave the legacy key untouched for one release so
+     * users can still recover it manually if needed.
+     *
+     * The active application no longer reads from it.
+     */
+    void LEGACY_STORAGE_KEY;
+  }, [isReady]);
 
   /* =======================================================
      CLEANUP AI REQUEST ON UNMOUNT
@@ -288,403 +507,723 @@ export default function AIAssistantDashboard({
     return (
       chats.find(
         (chat) =>
-          chat.id === activeChatId
+          chat.id ===
+          activeChatId
       ) || null
     );
-  }, [activeChatId, chats]);
+  }, [
+    activeChatId,
+    chats,
+  ]);
 
   /* =======================================================
      START NEW CHAT
   ======================================================= */
 
-  const startNewChat = useCallback(() => {
-    const newChat = normalizeChat({
-      id:
-        typeof crypto !== "undefined" &&
-        crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()}`,
-
-      title: "New Conversation",
-
-      messages: [],
-
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    setChats((previous) => [
-      newChat,
-      ...previous,
-    ]);
-
-    setActiveChatId(newChat.id);
-    setMessages([]);
-
-    /* On mobile the new chat should open
-       the content immediately. */
-    setSidebarOpen(false);
-  }, []);
-
-  /* =======================================================
-     SELECT CHAT
-  ======================================================= */
-
-  const selectChat = useCallback(
-    (chat) => {
-      if (!chat) {
-        return;
-      }
-
-      const normalized =
-        normalizeChat(chat);
-
-      if (!normalized) {
-        return;
-      }
-
-      setActiveChatId(
-        normalized.id
-      );
-
-      setMessages([
-        ...normalized.messages,
-      ]);
-
-      setSidebarOpen(false);
-    },
-    []
-  );
-
-  /* =======================================================
-     UPDATE CHAT
-  ======================================================= */
-
-  const updateChat = useCallback(
-    (
-      chatId,
-      nextMessages,
-      nextTitle = null
-    ) => {
-      setChats((previous) =>
-        previous.map((chat) => {
-          if (
-            chat.id !== chatId
-          ) {
-            return chat;
-          }
-
-          const firstUserMessage =
-            nextMessages.find(
-              (message) =>
-                message.role === "user"
-            );
-
-          const derivedTitle =
-            nextTitle ||
-            (
-              chat.title ===
-                "New Conversation" &&
-              firstUserMessage?.text
-                ? firstUserMessage.text
-                    .trim()
-                    .slice(0, 45)
-                : chat.title
-            );
-
-          return {
-            ...chat,
-            title:
-              derivedTitle ||
-              "New Conversation",
-            messages:
-              nextMessages,
-            updatedAt: Date.now(),
-          };
-        })
-      );
-    },
-    []
-  );
-
-  /* =======================================================
-     ENSURE CHAT
-  ======================================================= */
-
-  const ensureActiveChat = useCallback(
-    (initialTitle = "New Conversation") => {
-      if (activeChatId) {
-        return activeChatId;
-      }
-
-      const newChat = normalizeChat({
-        id:
-          typeof crypto !== "undefined" &&
-          crypto.randomUUID
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random()}`,
-
-        title:
-          initialTitle
-            .trim()
-            .slice(0, 45) ||
-          "New Conversation",
-
-        messages: [],
-
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      setChats((previous) => [
-        newChat,
-        ...previous,
-      ]);
-
-      setActiveChatId(
-        newChat.id
-      );
-
-      return newChat.id;
-    },
-    [activeChatId]
-  );
-
-  /* =======================================================
-     AI REQUEST
-  ======================================================= */
-
-  const callRevelaAI = useCallback(
-    async (
-      message,
-      context,
-      signal
-    ) => {
-      if (!REVELAAI_URL) {
-        throw new Error(
-          "VITE_REVELAAI_URL is not configured."
-        );
-      }
-
-      const response =
-        await fetch(
-          `${REVELAAI_URL}/ai`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              message,
-              context,
-            }),
-            signal,
-          }
-        );
-
-      const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message ||
-            `AI request failed (HTTP ${response.status}).`
-        );
-      }
-
-      return data;
-    },
-    []
-  );
-
-  /* =======================================================
-     SEND MESSAGE
-  ======================================================= */
-
-  const sendTextMessage = useCallback(
-    async (text) => {
-      const cleaned =
-        String(text || "").trim();
-
-      if (!cleaned) {
-        return;
-      }
-
-      const currentMessages =
-        messages;
-
-      const chatId =
-        activeChatId ||
-        ensureActiveChat(cleaned);
-
-      const userMessage =
-        createMessage(
-          "user",
-          cleaned
-        );
-
-      const loadingId =
+  const startNewChat =
+    useCallback(() => {
+      const newId =
         typeof crypto !== "undefined" &&
         crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random()}`;
 
-      const loadingMessage = {
-        id: loadingId,
-        role: "assistant",
-        text: "Thinking…",
-        status: "loading",
-      };
+      const newChat =
+        normalizeChat({
+          id: newId,
 
-      const nextMessages = [
-        ...currentMessages,
-        userMessage,
-        loadingMessage,
-      ];
+          title:
+            "New Conversation",
 
-      setMessages(nextMessages);
+          messages: [],
 
-      updateChat(
-        chatId,
-        nextMessages,
-        cleaned.slice(0, 45)
+          createdAt:
+            Date.now(),
+
+          updatedAt:
+            Date.now(),
+        });
+
+      setChats(
+        (previous) => [
+          newChat,
+          ...previous,
+        ]
       );
 
-      /* Stop any older request. */
-      controllerRef.current?.abort();
+      setActiveChatId(
+        newId
+      );
 
-      const controller =
-        new AbortController();
+      setMessages([]);
 
-      controllerRef.current =
-        controller;
+      setSidebarOpen(false);
+    }, []);
 
-      const context =
-        buildContext(
-          currentMessages
+  /* =======================================================
+     SELECT CHAT
+  ======================================================= */
+
+  const selectChat =
+    useCallback(
+      (chat) => {
+        if (!chat) {
+          return;
+        }
+
+        const normalized =
+          normalizeChat(chat);
+
+        if (!normalized) {
+          return;
+        }
+
+        setActiveChatId(
+          normalized.id
         );
 
-      try {
-        const data =
-          await callRevelaAI(
-            enrichPrompt(
-              cleaned
-            ),
-            context,
-            controller.signal
+        setMessages([
+          ...normalized.messages,
+        ]);
+
+        setSidebarOpen(false);
+      },
+      []
+    );
+
+  /* =======================================================
+     UPDATE CHAT
+  ======================================================= */
+
+  const updateChat =
+    useCallback(
+      (
+        chatId,
+        nextMessages,
+        nextTitle = null
+      ) => {
+        if (!chatId) {
+          return;
+        }
+
+        setChats(
+          (previous) =>
+            previous.map(
+              (chat) => {
+                if (
+                  chat.id !==
+                  chatId
+                ) {
+                  return chat;
+                }
+
+                const firstUserMessage =
+                  nextMessages.find(
+                    (
+                      message
+                    ) =>
+                      message.role ===
+                      "user"
+                  );
+
+                const derivedTitle =
+                  nextTitle ||
+                  (
+                    chat.title ===
+                      "New Conversation" &&
+                    firstUserMessage?.text
+                      ? firstUserMessage.text
+                          .trim()
+                          .slice(0, 45)
+                      : chat.title
+                  );
+
+                return {
+                  ...chat,
+
+                  title:
+                    derivedTitle ||
+                    "New Conversation",
+
+                  messages:
+                    nextMessages,
+
+                  updatedAt:
+                    Date.now(),
+                };
+              }
+            )
+        );
+      },
+      []
+    );
+
+  /* =======================================================
+     ENSURE CHAT
+  ======================================================= */
+
+  const ensureActiveChat =
+    useCallback(
+      (
+        initialTitle =
+          "New Conversation"
+      ) => {
+        if (activeChatId) {
+          return activeChatId;
+        }
+
+        const newId =
+          typeof crypto !== "undefined" &&
+          crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`;
+
+        const newChat =
+          normalizeChat({
+            id: newId,
+
+            title:
+              String(
+                initialTitle || ""
+              )
+                .trim()
+                .slice(
+                  0,
+                  45
+                ) ||
+              "New Conversation",
+
+            messages: [],
+
+            createdAt:
+              Date.now(),
+
+            updatedAt:
+              Date.now(),
+          });
+
+        setChats(
+          (previous) => [
+            newChat,
+            ...previous,
+          ]
+        );
+
+        setActiveChatId(
+          newId
+        );
+
+        return newId;
+      },
+      [activeChatId]
+    );
+
+  /* =======================================================
+     AI REQUEST
+  ======================================================= */
+
+  const callRevelaAI =
+    useCallback(
+      async ({
+        message,
+        context,
+        file = null,
+        sessionId,
+        signal,
+      }) => {
+        if (!REVELAAI_URL) {
+          throw new Error(
+            "VITE_REVELAAI_URL is not configured."
+          );
+        }
+
+        const headers = {
+          "X-Session-ID":
+            sessionId || "",
+        };
+
+        let body;
+
+        /*
+         * FILE UPLOAD
+         *
+         * Do NOT set Content-Type manually.
+         * Browser must generate the multipart boundary.
+         */
+        if (file) {
+          const formData =
+            new FormData();
+
+          formData.append(
+            "file",
+            file,
+            file.name
           );
 
-        const assistantText =
-          data?.data?.content ||
-          data?.content ||
-          data?.response ||
-          "No response from RevelaAI.";
-
-        setMessages(
-          (previous) => {
-            const updated =
-              previous.map(
-                (message) =>
-                  message.id ===
-                  loadingId
-                    ? {
-                        ...message,
-                        text: assistantText,
-                        status: "done",
-                      }
-                    : message
-              );
-
-            updateChat(
-              chatId,
-              updated
+          if (message) {
+            formData.append(
+              "message",
+              message
             );
-
-            return updated;
           }
-        );
-      } catch (error) {
+
+          if (context) {
+            formData.append(
+              "context",
+              context
+            );
+          }
+
+          body =
+            formData;
+        } else {
+          headers[
+            "Content-Type"
+          ] =
+            "application/json";
+
+          body =
+            JSON.stringify({
+              message,
+              context,
+            });
+        }
+
+        const response =
+          await authFetch(
+            `${REVELAAI_URL}/ai`,
+            {
+              method: "POST",
+              headers,
+              body,
+              signal,
+            }
+          );
+
+        const data =
+          await response
+            .json()
+            .catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error?.message ||
+              data?.message ||
+              `AI request failed (HTTP ${response.status}).`
+          );
+        }
+
+        return data;
+      },
+      [authFetch]
+    );
+
+  /* =======================================================
+     SEND TEXT / FILE
+  ======================================================= */
+
+  const sendMessage =
+    useCallback(
+      async (
+        text,
+        attachedFile = null
+      ) => {
+        const cleaned =
+          String(text || "")
+            .trim();
+
+        /*
+         * A file can be sent without a typed prompt.
+         */
         if (
-          error?.name ===
-          "AbortError"
+          !cleaned &&
+          !attachedFile
         ) {
           return;
         }
 
-        console.error(
-          "❌ RevelaAI request failed:",
-          error
-        );
+        const currentMessages =
+          messages;
+
+        const fallbackTitle =
+          attachedFile?.name ||
+          cleaned ||
+          "New Conversation";
+
+        const chatId =
+          activeChatId ||
+          ensureActiveChat(
+            fallbackTitle
+          );
+
+        const userDisplayText =
+          cleaned ||
+          `Analyze ${attachedFile?.name || "this file"}`;
+
+        const userMessage =
+          createMessage(
+            "user",
+            userDisplayText,
+            "done",
+            {
+              attachmentName:
+                attachedFile?.name ||
+                null,
+
+              attachmentType:
+                attachedFile?.type ||
+                null,
+
+              attachmentSize:
+                attachedFile?.size ||
+                null,
+            }
+          );
+
+        const loadingId =
+          typeof crypto !== "undefined" &&
+          crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`;
+
+        const loadingMessage =
+          createMessage(
+            "assistant",
+            "Thinking…",
+            "loading"
+          );
+
+        /*
+         * Keep deterministic loading ID.
+         */
+        loadingMessage.id =
+          loadingId;
+
+        const nextMessages = [
+          ...currentMessages,
+          userMessage,
+          loadingMessage,
+        ];
 
         setMessages(
-          (previous) => {
-            const updated =
-              previous.map(
-                (message) =>
-                  message.id ===
-                  loadingId
-                    ? {
-                        ...message,
-                        text:
-                          error?.message ||
-                          "Request failed. Please try again.",
-                        status: "error",
-                      }
-                    : message
+          nextMessages
+        );
+
+        updateChat(
+          chatId,
+          nextMessages,
+          (
+            cleaned ||
+            attachedFile?.name ||
+            ""
+          )
+            .trim()
+            .slice(0, 45)
+        );
+
+        /*
+         * Stop any older request.
+         */
+        controllerRef.current?.abort();
+
+        const controller =
+          new AbortController();
+
+        controllerRef.current =
+          controller;
+
+        const context =
+          buildContext(
+            currentMessages
+          );
+
+        const requestMessage =
+          attachedFile
+            ? cleaned
+            : enrichPrompt(
+                cleaned
               );
 
-            updateChat(
-              chatId,
-              updated
+        try {
+          const data =
+            await callRevelaAI({
+              message:
+                requestMessage,
+              context,
+              file:
+                attachedFile,
+              sessionId:
+                chatId,
+              signal:
+                controller.signal,
+            });
+
+          const normalized =
+            normalizeAIResponse(
+              data
             );
 
-            return updated;
+          const assistantMessage =
+            {
+              id: loadingId,
+
+              role: "assistant",
+
+              text:
+                normalized.text ||
+                "RevelaAI returned an empty response.",
+
+              status:
+                "done",
+
+              imageUrls:
+                normalized.imageUrls,
+
+              sources:
+                normalized.sources,
+
+              metadata:
+                normalized.metadata,
+
+              contentType:
+                normalized.type,
+
+              createdAt:
+                Date.now(),
+            };
+
+          setMessages(
+            (previous) => {
+              const updated =
+                previous.map(
+                  (
+                    message
+                  ) =>
+                    message.id ===
+                    loadingId
+                      ? assistantMessage
+                      : message
+                );
+
+              updateChat(
+                chatId,
+                updated
+              );
+
+              return updated;
+            }
+          );
+        } catch (error) {
+          if (
+            error?.name ===
+            "AbortError"
+          ) {
+            return;
           }
-        );
-      } finally {
-        if (
-          controllerRef.current ===
-          controller
-        ) {
-          controllerRef.current =
-            null;
+
+          console.error(
+            "❌ RevelaAI request failed:",
+            error
+          );
+
+          setMessages(
+            (previous) => {
+              const updated =
+                previous.map(
+                  (
+                    message
+                  ) =>
+                    message.id ===
+                    loadingId
+                      ? {
+                          ...message,
+
+                          text:
+                            error?.message ||
+                            "Request failed. Please try again.",
+
+                          status:
+                            "error",
+                        }
+                      : message
+                );
+
+              updateChat(
+                chatId,
+                updated
+              );
+
+              return updated;
+            }
+          );
+        } finally {
+          if (
+            controllerRef.current ===
+            controller
+          ) {
+            controllerRef.current =
+              null;
+          }
         }
-      }
-    },
-    [
-      messages,
-      activeChatId,
-      ensureActiveChat,
-      updateChat,
-      callRevelaAI,
-    ]
-  );
+      },
+      [
+        messages,
+        activeChatId,
+        ensureActiveChat,
+        updateChat,
+        callRevelaAI,
+      ]
+    );
+
+  /* =======================================================
+     TEXT COMPATIBILITY HANDLER
+  ======================================================= */
+
+  const sendTextMessage =
+    useCallback(
+      (text) =>
+        sendMessage(
+          text,
+          null
+        ),
+      [sendMessage]
+    );
 
   /* =======================================================
      VOICE
   ======================================================= */
 
-  const openVoice = useCallback(() => {
-    setVoiceActive(true);
-  }, []);
+  const openVoice =
+    useCallback(() => {
+      const chatId =
+        ensureActiveChat(
+          "Voice Conversation"
+        );
 
-  const closeVoice = useCallback(() => {
-    setVoiceActive(false);
-  }, []);
+      /*
+       * ensureActiveChat updates state immediately enough
+       * for the next render where the modal receives the
+       * correct session ID.
+       */
+      if (chatId) {
+        setSidebarOpen(false);
+        setVoiceActive(true);
+      }
+    }, [
+      ensureActiveChat,
+    ]);
+
+  const closeVoice =
+    useCallback(() => {
+      setVoiceActive(false);
+    }, []);
 
   const handleVoiceResult =
     useCallback(
-      (text) => {
-        if (text) {
-          sendTextMessage(text);
+      (result) => {
+        if (!result) {
+          setVoiceActive(false);
+          return;
         }
+
+        const heard =
+          String(
+            result.heard || ""
+          ).trim();
+
+        const response =
+          String(
+            result.response || ""
+          ).trim();
+
+        if (
+          !heard &&
+          !response
+        ) {
+          setVoiceActive(false);
+          return;
+        }
+
+        const chatId =
+          activeChatId ||
+          ensureActiveChat(
+            heard ||
+              "Voice Conversation"
+          );
+
+        const currentMessages =
+          messages;
+
+        const userMessage =
+          createMessage(
+            "user",
+            heard ||
+              "Voice message",
+            "done",
+            {
+              inputType:
+                "voice",
+            }
+          );
+
+        const assistantMessage =
+          createMessage(
+            "assistant",
+            response ||
+              "RevelaAI returned an empty voice response.",
+            "done",
+            {
+              inputType:
+                "voice",
+
+              audioUrl:
+                isSafeHttpUrl(
+                  result.audio_url
+                )
+                  ? result.audio_url
+                  : null,
+
+              voice:
+                result.voice ||
+                null,
+
+              metadata:
+                result.meta ||
+                {},
+
+              contentType:
+                "voice",
+            }
+          );
+
+        const updated = [
+          ...currentMessages,
+          userMessage,
+          assistantMessage,
+        ];
+
+        setMessages(
+          updated
+        );
+
+        updateChat(
+          chatId,
+          updated,
+          (
+            heard ||
+            "Voice Conversation"
+          )
+            .slice(0, 45)
+        );
 
         setVoiceActive(false);
       },
-      [sendTextMessage]
+      [
+        activeChatId,
+        messages,
+        ensureActiveChat,
+        updateChat,
+      ]
     );
 
   /* =======================================================
@@ -694,7 +1233,8 @@ export default function AIAssistantDashboard({
   const hasConversation =
     messages.some(
       (message) =>
-        message.role === "user"
+        message.role ===
+        "user"
     );
 
   /* =======================================================
@@ -775,13 +1315,12 @@ export default function AIAssistantDashboard({
           "
         >
           <div className="flex min-w-0 items-center gap-2">
-            {/* Mobile sidebar button */}
-
             <button
               type="button"
               onClick={() =>
                 setSidebarOpen(
-                  (open) => !open
+                  (open) =>
+                    !open
                 )
               }
               className="
@@ -836,7 +1375,7 @@ export default function AIAssistantDashboard({
                   sm:block
                 "
               >
-                Intelligent assistant
+                RevelaCode intelligent assistant
               </p>
             </div>
           </div>
@@ -900,10 +1439,6 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         {!hasConversation ? (
-          /* =================================================
-             WELCOME MODE
-          ================================================= */
-
           <section
             className="
               relative
@@ -936,13 +1471,11 @@ export default function AIAssistantDashboard({
                   justify-center
                 "
               >
-                {/* Welcome */}
-
                 <WelcomeScreen
-                  onSuggestion={sendTextMessage}
+                  onSuggestion={
+                    sendTextMessage
+                  }
                 />
-
-                {/* Welcome composer */}
 
                 <div
                   className="
@@ -954,15 +1487,13 @@ export default function AIAssistantDashboard({
                   <InputBar
                     centered
                     onSend={
-                      sendTextMessage
+                      sendMessage
                     }
                     onMic={
                       openVoice
                     }
                   />
                 </div>
-
-                {/* Small capability note */}
 
                 <p
                   className="
@@ -977,17 +1508,13 @@ export default function AIAssistantDashboard({
                   Ask about Scripture,
                   prophecy, coding,
                   education, business,
-                  agriculture, or general
-                  knowledge.
+                  agriculture, documents,
+                  images, or general knowledge.
                 </p>
               </div>
             </div>
           </section>
         ) : (
-          /* =================================================
-             CONVERSATION MODE
-          ================================================= */
-
           <section
             className="
               flex
@@ -997,8 +1524,6 @@ export default function AIAssistantDashboard({
               overflow-hidden
             "
           >
-            {/* Messages */}
-
             <div
               className="
                 min-h-0
@@ -1013,8 +1538,6 @@ export default function AIAssistantDashboard({
                 }
               />
             </div>
-
-            {/* Conversation composer */}
 
             <div
               className="
@@ -1033,7 +1556,7 @@ export default function AIAssistantDashboard({
               <div className="mx-auto w-full max-w-4xl">
                 <InputBar
                   onSend={
-                    sendTextMessage
+                    sendMessage
                   }
                   onMic={
                     openVoice
@@ -1051,6 +1574,9 @@ export default function AIAssistantDashboard({
 
       {voiceActive && (
         <RevelaAIVoiceChat
+          sessionId={
+            activeChatId
+          }
           onVoiceResult={
             handleVoiceResult
           }
@@ -1059,10 +1585,6 @@ export default function AIAssistantDashboard({
           }
         />
       )}
-
-      {/* ===================================================
-          OPTIONAL GLOBAL AI OPEN HANDLER
-      =================================================== */}
 
       {onOpenAI && (
         <span className="sr-only">

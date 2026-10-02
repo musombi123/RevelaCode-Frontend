@@ -11,20 +11,16 @@ import {
   Mic,
   Paperclip,
   X,
+  FileText,
 } from "lucide-react";
 
 /* =========================================================
    INPUT BAR
-   ---------------------------------------------------------
-   IMPORTANT:
-   This component owns ONLY the composer.
 
-   It does NOT:
-   - position itself fixed to the viewport
-   - manage the chat layout
-   - move itself above the keyboard with bottom offsets
+   Emits:
+       onSend(text, file)
 
-   The parent dashboard controls its placement.
+   The parent decides how the message/file is transported.
 ========================================================= */
 
 export default function InputBar({
@@ -46,7 +42,7 @@ export default function InputBar({
     useRef(null);
 
   /* =======================================================
-     AUTO-GROW TEXTAREA
+     AUTO-GROW
   ======================================================= */
 
   useEffect(() => {
@@ -57,15 +53,17 @@ export default function InputBar({
       return;
     }
 
-    element.style.height = "0px";
+    element.style.height =
+      "0px";
 
-    const nextHeight = Math.min(
-      Math.max(
-        element.scrollHeight,
-        44
-      ),
-      180
-    );
+    const nextHeight =
+      Math.min(
+        Math.max(
+          element.scrollHeight,
+          44
+        ),
+        180
+      );
 
     element.style.height =
       `${nextHeight}px`;
@@ -79,11 +77,18 @@ export default function InputBar({
     const value =
       text.trim();
 
-    if (!value || disabled) {
+    if (
+      disabled ||
+      (!value &&
+        !attachedFile)
+    ) {
       return;
     }
 
-    onSend?.(value);
+    onSend?.(
+      value,
+      attachedFile
+    );
 
     setText("");
     setAttachedFile(null);
@@ -97,9 +102,12 @@ export default function InputBar({
      KEYBOARD
   ======================================================= */
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (
+    event
+  ) => {
     if (
-      event.key === "Enter" &&
+      event.key ===
+        "Enter" &&
       !event.shiftKey
     ) {
       event.preventDefault();
@@ -121,19 +129,41 @@ export default function InputBar({
       return;
     }
 
-    setAttachedFile(file);
-
     /*
-     * Reset the input so selecting
-     * the same file again still fires
-     * onChange.
+     * The backend currently processes:
+     * PDF, DOCX and text/source documents.
      */
-    event.target.value = "";
+    const maxSize =
+      20 * 1024 * 1024;
+
+    if (
+      file.size >
+      maxSize
+    ) {
+      window.alert(
+        "This file is too large. Maximum size is 20 MB."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    setAttachedFile(
+      file
+    );
+
+    event.target.value =
+      "";
   };
 
-  const removeAttachment = () => {
-    setAttachedFile(null);
-  };
+  const removeAttachment =
+    () => {
+      setAttachedFile(
+        null
+      );
+    };
 
   /* =======================================================
      RENDER
@@ -151,14 +181,19 @@ export default function InputBar({
           handleFileChange
         }
         accept="
-          .txt,
           .pdf,
-          .doc,
           .docx,
-          .jpg,
-          .jpeg,
-          .png,
-          .webp
+          .txt,
+          .md,
+          .csv,
+          .json,
+          .py,
+          .js,
+          .jsx,
+          .ts,
+          .tsx,
+          .html,
+          .css
         "
       />
 
@@ -170,20 +205,59 @@ export default function InputBar({
             mb-2
             flex
             items-center
-            gap-2
+            gap-3
             rounded-xl
             border
-            border-white/10
-            bg-white/5
+            border-emerald-500/20
+            bg-emerald-500/5
             px-3
             py-2
             text-xs
             text-gray-300
           "
         >
-          <span className="min-w-0 flex-1 truncate">
-            {attachedFile.name}
-          </span>
+          <div
+            className="
+              flex
+              h-8
+              w-8
+              shrink-0
+              items-center
+              justify-center
+              rounded-lg
+              bg-emerald-500/10
+              text-emerald-400
+            "
+          >
+            <FileText
+              size={15}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p
+              className="
+                truncate
+                font-semibold
+                text-gray-200
+              "
+            >
+              {attachedFile.name}
+            </p>
+
+            <p
+              className="
+                mt-0.5
+                text-[10px]
+                text-gray-500
+              "
+            >
+              {(
+                attachedFile.size /
+                1024
+              ).toFixed(1)} KB
+            </p>
+          </div>
 
           <button
             type="button"
@@ -192,8 +266,8 @@ export default function InputBar({
             }
             className="
               flex
-              h-6
-              w-6
+              h-7
+              w-7
               shrink-0
               items-center
               justify-center
@@ -227,7 +301,6 @@ export default function InputBar({
         "
       >
         <div className="flex items-end gap-2">
-
           {/* Attach */}
 
           <button
@@ -251,8 +324,8 @@ export default function InputBar({
               disabled:cursor-not-allowed
               disabled:opacity-40
             "
-            aria-label="Attach file"
-            title="Attach file"
+            aria-label="Attach document"
+            title="Attach document"
           >
             <Paperclip size={18} />
           </button>
@@ -267,7 +340,9 @@ export default function InputBar({
             placeholder={
               placeholder
             }
-            onChange={(event) =>
+            onChange={(
+              event
+            ) =>
               setText(
                 event.target.value
               )
@@ -302,7 +377,9 @@ export default function InputBar({
 
           <button
             type="button"
-            onClick={onMic}
+            onClick={
+              onMic
+            }
             disabled={disabled}
             className="
               flex
@@ -329,10 +406,15 @@ export default function InputBar({
 
           <button
             type="button"
-            onClick={submit}
+            onClick={
+              submit
+            }
             disabled={
               disabled ||
-              !text.trim()
+              (
+                !text.trim() &&
+                !attachedFile
+              )
             }
             className="
               flex
@@ -358,7 +440,7 @@ export default function InputBar({
           </button>
         </div>
 
-        {/* Footer hint */}
+        {/* Footer */}
 
         <div
           className="
@@ -391,7 +473,7 @@ export default function InputBar({
               sm:block
             "
           >
-            MVI Engine
+            RevelaAI
           </span>
         </div>
       </div>

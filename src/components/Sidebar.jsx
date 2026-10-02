@@ -1,12 +1,16 @@
 // src/components/Sidebar.jsx
 
+import { useEffect, useState } from "react";
+
 import {
   Plus,
   MessageSquare,
   PanelLeftClose,
   Sparkles,
-  Search,
   MessageCircle,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -17,8 +21,44 @@ export default function Sidebar({
   chats = [],
   onNewChat,
   onSelectChat,
+  onDeleteChat,
   activeChatId = null,
 }) {
+  /* =========================================================
+     DELETE CONFIRMATION
+  ========================================================= */
+
+  const [confirmId, setConfirmId] =
+    useState(null);
+
+  useEffect(() => {
+    if (!open) {
+      setConfirmId(null);
+    }
+  }, [open]);
+
+  /* =========================================================
+     DELETE
+  ========================================================= */
+
+  const handleDelete = (
+    chatId
+  ) => {
+    if (!chatId) {
+      return;
+    }
+
+    setConfirmId(null);
+
+    onDeleteChat?.(
+      chatId
+    );
+  };
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
   return (
     <>
       {/* =====================================================
@@ -29,7 +69,9 @@ export default function Sidebar({
         <button
           type="button"
           aria-label="Close RevelaAI sidebar"
-          onClick={() => setOpen(false)}
+          onClick={() =>
+            setOpen(false)
+          }
           className="
             fixed
             inset-0
@@ -43,13 +85,6 @@ export default function Sidebar({
 
       {/* =====================================================
           SIDEBAR
-          -----------------------------------------------------
-          Desktop:
-          - remains inside the flex layout
-          - always occupies width when open
-          
-          Mobile:
-          - becomes a slide-in drawer
       ===================================================== */}
 
       <aside
@@ -67,16 +102,11 @@ export default function Sidebar({
           text-white
           shadow-2xl
 
-          ${
-            open
-              ? "md:relative md:translate-x-0"
-              : "md:w-0 md:border-r-0"
-          }
-
           fixed
           inset-y-0
           left-0
           z-50
+
           transition-all
           duration-300
           ease-out
@@ -89,11 +119,17 @@ export default function Sidebar({
 
           md:static
           md:z-auto
+
+          ${
+            open
+              ? "md:translate-x-0"
+              : "md:w-0 md:border-r-0"
+          }
         `}
       >
-        {/* =================================================
+        {/* ===================================================
             HEADER
-        ================================================= */}
+        =================================================== */}
 
         <div
           className="
@@ -107,7 +143,14 @@ export default function Sidebar({
             px-4
           "
         >
-          <div className="flex min-w-0 items-center gap-3">
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-3
+            "
+          >
             <div
               className="
                 flex
@@ -120,6 +163,7 @@ export default function Sidebar({
                 bg-gradient-to-br
                 from-green-500
                 to-emerald-700
+                text-white
                 shadow-lg
               "
             >
@@ -140,7 +184,9 @@ export default function Sidebar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setOpen(false)}
+            onClick={() =>
+              setOpen(false)
+            }
             className="
               shrink-0
               text-gray-400
@@ -154,16 +200,16 @@ export default function Sidebar({
           </Button>
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             NEW CHAT
-        ================================================= */}
+        =================================================== */}
 
         <div className="shrink-0 p-3">
           <Button
             type="button"
-            onClick={() => {
-              onNewChat?.();
-            }}
+            onClick={() =>
+              onNewChat?.()
+            }
             className="
               flex
               w-full
@@ -190,9 +236,9 @@ export default function Sidebar({
           </Button>
         </div>
 
-        {/* =================================================
-            SEARCH / HISTORY LABEL
-        ================================================= */}
+        {/* ===================================================
+            LABEL
+        =================================================== */}
 
         <div className="shrink-0 px-3 pb-2">
           <div
@@ -213,9 +259,9 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             HISTORY
-        ================================================= */}
+        =================================================== */}
 
         <div
           className="
@@ -274,119 +320,239 @@ export default function Sidebar({
                   text-gray-500
                 "
               >
-                Start a new conversation and
-                your recent chats will appear here.
+                Start a new conversation and your
+                recent chats will appear here.
               </p>
             </div>
           ) : (
             <div className="space-y-1">
               {chats.map((chat) => {
                 const active =
-                  activeChatId === chat.id;
+                  activeChatId ===
+                  chat.id;
+
+                const confirming =
+                  confirmId ===
+                  chat.id;
 
                 return (
-                  <button
+                  <div
                     key={chat.id}
-                    type="button"
-                    onClick={() => {
-                      onSelectChat?.(chat);
-                      setOpen?.(false);
-                    }}
-                    className={`
+                    className="
                       group
-                      flex
-                      w-full
-                      min-w-0
-                      items-center
-                      gap-3
-                      rounded-xl
-                      px-3
-                      py-3
-                      text-left
-                      transition
-                      ${
-                        active
-                          ? "bg-white/10 text-white"
-                          : "text-gray-300 hover:bg-white/5 hover:text-white"
-                      }
-                    `}
+                      relative
+                    "
                   >
-                    <span
+                    {/* Conversation */}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          confirming
+                        ) {
+                          return;
+                        }
+
+                        onSelectChat?.(
+                          chat
+                        );
+                      }}
                       className={`
                         flex
-                        h-9
-                        w-9
-                        shrink-0
+                        w-full
+                        min-w-0
                         items-center
-                        justify-center
-                        rounded-lg
+                        gap-3
+                        rounded-xl
+                        py-3
+                        pl-3
+                        pr-14
+                        text-left
+                        transition
+
                         ${
                           active
-                            ? "bg-indigo-500/20 text-indigo-300"
-                            : "bg-white/5 text-gray-500 group-hover:text-gray-300"
+                            ? "bg-white/10 text-white"
+                            : "text-gray-300 hover:bg-white/5 hover:text-white"
                         }
                       `}
+                      aria-current={
+                        active
+                          ? "true"
+                          : undefined
+                      }
                     >
-                      <MessageSquare size={16} />
-                    </span>
-
-                    <span className="min-w-0 flex-1">
                       <span
                         className={`
-                          block
-                          truncate
-                          text-sm
-                          font-semibold
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-lg
+
                           ${
                             active
-                              ? "text-white"
-                              : "text-gray-300"
+                              ? "bg-indigo-500/20 text-indigo-300"
+                              : "bg-white/5 text-gray-500 group-hover:text-gray-300"
                           }
                         `}
                       >
-                        {chat.title ||
-                          "Untitled Chat"}
+                        <MessageSquare
+                          size={16}
+                        />
                       </span>
 
-                      {chat.messages?.length > 0 && (
+                      <span className="min-w-0 flex-1">
                         <span
-                          className="
-                            mt-0.5
+                          className={`
                             block
                             truncate
-                            text-[10px]
+                            text-sm
+                            font-semibold
+
+                            ${
+                              active
+                                ? "text-white"
+                                : "text-gray-300"
+                            }
+                          `}
+                        >
+                          {chat.title ||
+                            "Untitled Chat"}
+                        </span>
+
+                        {chat.messages
+                          ?.length >
+                          0 && (
+                          <span
+                            className="
+                              mt-0.5
+                              block
+                              truncate
+                              text-[10px]
+                              text-gray-500
+                            "
+                          >
+                            {
+                              chat
+                                .messages
+                                .length
+                            }{" "}
+                            {chat.messages
+                              .length ===
+                            1
+                              ? "message"
+                              : "messages"}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+
+                    {/* =================================================
+                        DELETE CONTROLS
+                    ================================================= */}
+
+                    <div
+                      className="
+                        absolute
+                        right-2
+                        top-1/2
+                        flex
+                        -translate-y-1/2
+                        items-center
+                        gap-1
+                      "
+                    >
+                      {confirming ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDelete(
+                                chat.id
+                              )
+                            }
+                            aria-label="Confirm delete"
+                            title="Confirm delete"
+                            className="
+                              rounded-lg
+                              p-1.5
+                              text-red-400
+                              transition
+                              hover:bg-red-500/20
+                              hover:text-red-300
+                            "
+                          >
+                            <Check
+                              size={15}
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConfirmId(
+                                null
+                              )
+                            }
+                            aria-label="Cancel delete"
+                            title="Cancel"
+                            className="
+                              rounded-lg
+                              p-1.5
+                              text-gray-400
+                              transition
+                              hover:bg-white/10
+                              hover:text-white
+                            "
+                          >
+                            <X size={15} />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setConfirmId(
+                              chat.id
+                            )
+                          }
+                          aria-label={`Delete chat: ${
+                            chat.title ||
+                            "Untitled Chat"
+                          }`}
+                          title="Delete chat"
+                          className="
+                            rounded-lg
+                            p-1.5
                             text-gray-500
+                            transition
+                            hover:bg-red-500/10
+                            hover:text-red-400
+                            focus:opacity-100
+                            md:opacity-0
+                            md:group-hover:opacity-100
                           "
                         >
-                          {chat.messages.length}{" "}
-                          {chat.messages.length === 1
-                            ? "message"
-                            : "messages"}
-                        </span>
+                          <Trash2
+                            size={15}
+                          />
+                        </button>
                       )}
-                    </span>
-
-                    {active && (
-                      <span
-                        className="
-                          h-2
-                          w-2
-                          shrink-0
-                          rounded-full
-                          bg-emerald-400
-                        "
-                      />
-                    )}
-                  </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             FOOTER
-        ================================================= */}
+        =================================================== */}
 
         <div
           className="
@@ -439,7 +605,7 @@ export default function Sidebar({
                     text-gray-500
                   "
                 >
-                  Powered by MVI Engine
+                  Powered by RevelaCode
                 </p>
               </div>
             </div>
