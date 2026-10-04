@@ -245,6 +245,167 @@ const writeAscii = (
 
 
 /* =========================================================
+   STREAMING AUDIO PLAYBACK (additive)
+========================================================= */
+
+const streamViaMediaSource = async (response, mime, playerRef) => {
+  const mediaSource = new MediaSource();
+  const audio = new Audio();
+  const url = URL.createObjectURL(mediaSource);
+  audio.src = url;
+
+  playerRef.current = {
+    stop: () => {
+      try { audio.pause(); } catch { /* ignore */ }
+      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+    },
+  };
+
+  await new Promise((resolve) =>
+    mediaSource.addEventListener("sourceopen", resolve, { once: true })
+  );
+
+  const sourceBuffer = mediaSource.addSourceBuffer(mime);
+  const reader = response.body.getReader();
+  const queue = [];
+  let finished = false;
+  let started = false;
+
+  const pump = () => {
+    if (sourceBuffer.updating) return;
+    if (queue.length) {
+      sourceBuffer.appendBuffer(queue.shift());
+    } else if (finished && mediaSource.readyState === "open") {
+      mediaSource.endOfStream();
+    }
+  };
+
+  sourceBuffer.addEventListener("updateend", pump);
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    queue.push(value);
+    pump();
+    if (!started) {
+      started = true;
+      audio.play().catch(() => { /* autoplay restrictions are non-fatal */ });
+    }
+  }
+
+  finished = true;
+  pump();
+};
+
+const streamWav = async (response, playerRef) => {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioContextClass();
+  if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+
+  playerRef.current = {
+    stop: () => {
+      try { ctx.close(); } catch { /* ignore */ }
+    },
+  };
+
+  const reader = response.body.getReader();
+  let header = new Uint8Array(0);
+  let headerParsed = false;
+  let sampleRate = 24000;
+  let channels = 1;
+  let leftover = new Uint8Array(0);
+  let nextTime = 0;
+
+  const concat = (a, b) => {
+    const out = new Uint8Array(a.length + b.length);
+    out.set(a, 0);
+    out.set(b, a.length);
+    return out;
+  };
+
+  const schedule = (bytes) => {
+    const frameSize = channels * 2;
+    const usable = bytes.length - (bytes.length % frameSize);
+    leftover = bytes.slice(usable);
+    if (!usable) return;
+
+    const view = new DataView(bytes.buffer, bytes.byteOffset, usable);
+    const frames = usable / frameSize;
+    const buffer = ctx.createBuffer(channels, frames, sampleRate);
+
+    for (let c = 0; c < channels; c += 1) {
+      const channelData = buffer.getChannelData(c);
+      for (let i = 0; i < frames; i += 1) {
+        channelData[i] = view.getInt16((i * channels + c) * 2, true) / 0x8000;
+      }
+    }
+
+    const node = ctx.createBufferSource();
+    node.buffer = buffer;
+    node.connect(ctx.destination);
+    nextTime = Math.max(nextTime, ctx.currentTime + 0.05);
+    node.start(nextTime);
+    nextTime += buffer.duration;
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    let chunk = value;
+
+    if (!headerParsed) {
+      header = concat(header, chunk);
+      if (header.length < 44) continue;
+
+      const hv = new DataView(header.buffer, header.byteOffset, header.length);
+      channels = hv.getUint16(22, true) || 1;
+      sampleRate = hv.getUint32(24, true) || 24000;
+      headerParsed = true;
+      chunk = header.slice(44);
+      header = new Uint8Array(0);
+    }
+
+    schedule(concat(leftover, chunk));
+  }
+};
+
+const streamAudioFromResponse = async (response, playerRef) => {
+  if (!response.body) {
+    throw new Error("Streaming is not supported by this browser.");
+  }
+
+  const type = (response.headers.get("content-type") || "").toLowerCase();
+
+  if (
+    type.includes("audio/mpeg") &&
+    typeof window.MediaSource !== "undefined" &&
+    window.MediaSource.isTypeSupported("audio/mpeg")
+  ) {
+    return streamViaMediaSource(response, "audio/mpeg", playerRef);
+  }
+
+  if (type.includes("wav")) {
+    return streamWav(response, playerRef);
+  }
+
+  // Fallback: buffer the whole stream, then play.
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+
+  playerRef.current = {
+    stop: () => {
+      try { audio.pause(); } catch { /* ignore */ }
+      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+    },
+  };
+
+  await audio.play().catch(() => {});
+};
+
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -303,6 +464,9 @@ export default function RevelaAIVoiceChat({
   ------------------------------------------------------- */
 
   const controllerRef =
+    useRef(null);
+
+  const voicePlayerRef =
     useRef(null);
 
   const timerRef =
@@ -447,6 +611,8 @@ export default function RevelaAIVoiceChat({
 
       controllerRef.current?.abort();
 
+      voicePlayerRef.current?.stop?.();
+
       cleanupAudio();
 
       onClose?.();
@@ -543,6 +709,45 @@ export default function RevelaAIVoiceChat({
                   controller.signal,
               }
             );
+
+          const contentType =
+            response.headers.get("content-type") || "";
+
+          if (
+            response.ok &&
+            /^audio\//i.test(contentType)
+          ) {
+            await streamAudioFromResponse(
+              response,
+              voicePlayerRef
+            );
+
+            let heard = "";
+            let reply = "";
+
+            try {
+              heard = decodeURIComponent(
+                response.headers.get("X-Heard") || ""
+              );
+              reply = decodeURIComponent(
+                response.headers.get("X-Response") || ""
+              );
+            } catch {
+              // Ignore malformed headers.
+            }
+
+            if (mountedRef.current) {
+              setStatus("complete");
+
+              onVoiceResult?.({
+                heard,
+                response: reply,
+                streamed: true,
+              });
+            }
+
+            return;
+          }
 
           const data =
             await response
@@ -1271,6 +1476,8 @@ export default function RevelaAIVoiceChat({
         false;
 
       controllerRef.current?.abort();
+
+      voicePlayerRef.current?.stop?.();
 
       cleanupAudio();
     };
