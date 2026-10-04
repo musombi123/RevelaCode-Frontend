@@ -30,7 +30,6 @@ const REVELAAI_URL = (
 
 const MAX_RECORDING_SECONDS = 60;
 
-
 /* =========================================================
    WAV ENCODER
 ========================================================= */
@@ -221,7 +220,6 @@ const encodeWav = (
   );
 };
 
-
 /* =========================================================
    ASCII HELPER
 ========================================================= */
@@ -243,173 +241,470 @@ const writeAscii = (
   }
 };
 
-
 /* =========================================================
-   STREAMING AUDIO PLAYBACK (additive)
+   STREAMING AUDIO PLAYBACK
 ========================================================= */
 
-const streamViaMediaSource = async (response, mime, playerRef) => {
-  const mediaSource = new MediaSource();
-  const audio = new Audio();
-  const url = URL.createObjectURL(mediaSource);
+const streamViaMediaSource = async (
+  response,
+  mime,
+  playerRef
+) => {
+  const mediaSource =
+    new MediaSource();
+
+  const audio =
+    new Audio();
+
+  const url =
+    URL.createObjectURL(
+      mediaSource
+    );
+
   audio.src = url;
 
   playerRef.current = {
     stop: () => {
-      try { audio.pause(); } catch { /* ignore */ }
-      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+      try {
+        audio.pause();
+      } catch {
+        // Ignore.
+      }
+
+      try {
+        URL.revokeObjectURL(
+          url
+        );
+      } catch {
+        // Ignore.
+      }
     },
   };
 
-  await new Promise((resolve) =>
-    mediaSource.addEventListener("sourceopen", resolve, { once: true })
+  await new Promise(
+    (resolve) =>
+      mediaSource.addEventListener(
+        "sourceopen",
+        resolve,
+        {
+          once: true,
+        }
+      )
   );
 
-  const sourceBuffer = mediaSource.addSourceBuffer(mime);
-  const reader = response.body.getReader();
+  const sourceBuffer =
+    mediaSource.addSourceBuffer(
+      mime
+    );
+
+  const reader =
+    response.body.getReader();
+
   const queue = [];
+
   let finished = false;
   let started = false;
 
   const pump = () => {
-    if (sourceBuffer.updating) return;
+    if (
+      sourceBuffer.updating
+    ) {
+      return;
+    }
+
     if (queue.length) {
-      sourceBuffer.appendBuffer(queue.shift());
-    } else if (finished && mediaSource.readyState === "open") {
-      mediaSource.endOfStream();
+      sourceBuffer.appendBuffer(
+        queue.shift()
+      );
+
+      return;
+    }
+
+    if (
+      finished &&
+      mediaSource.readyState ===
+        "open"
+    ) {
+      try {
+        mediaSource.endOfStream();
+      } catch {
+        // Ignore.
+      }
     }
   };
 
-  sourceBuffer.addEventListener("updateend", pump);
+  sourceBuffer.addEventListener(
+    "updateend",
+    pump
+  );
 
   while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
+    const {
+      value,
+      done,
+    } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
     queue.push(value);
+
     pump();
+
     if (!started) {
       started = true;
-      audio.play().catch(() => { /* autoplay restrictions are non-fatal */ });
+
+      audio
+        .play()
+        .catch(() => {
+          /*
+           * Autoplay restrictions are
+           * non-fatal.
+           */
+        });
     }
   }
 
   finished = true;
+
   pump();
 };
 
-const streamWav = async (response, playerRef) => {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  const ctx = new AudioContextClass();
-  if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+const streamWav = async (
+  response,
+  playerRef
+) => {
+  const AudioContextClass =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+  if (!AudioContextClass) {
+    throw new Error(
+      "Web Audio API is not supported by this browser."
+    );
+  }
+
+  const ctx =
+    new AudioContextClass();
+
+  if (
+    ctx.state ===
+    "suspended"
+  ) {
+    await ctx
+      .resume()
+      .catch(() => {});
+  }
 
   playerRef.current = {
     stop: () => {
-      try { ctx.close(); } catch { /* ignore */ }
+      try {
+        ctx.close();
+      } catch {
+        // Ignore.
+      }
     },
   };
 
-  const reader = response.body.getReader();
-  let header = new Uint8Array(0);
-  let headerParsed = false;
-  let sampleRate = 24000;
-  let channels = 1;
-  let leftover = new Uint8Array(0);
+  const reader =
+    response.body.getReader();
+
+  let header =
+    new Uint8Array(0);
+
+  let headerParsed =
+    false;
+
+  let sampleRate =
+    24000;
+
+  let channels =
+    1;
+
+  let leftover =
+    new Uint8Array(0);
+
   let nextTime = 0;
 
-  const concat = (a, b) => {
-    const out = new Uint8Array(a.length + b.length);
-    out.set(a, 0);
-    out.set(b, a.length);
+  const concat = (
+    a,
+    b
+  ) => {
+    const out =
+      new Uint8Array(
+        a.length +
+          b.length
+      );
+
+    out.set(
+      a,
+      0
+    );
+
+    out.set(
+      b,
+      a.length
+    );
+
     return out;
   };
 
-  const schedule = (bytes) => {
-    const frameSize = channels * 2;
-    const usable = bytes.length - (bytes.length % frameSize);
-    leftover = bytes.slice(usable);
-    if (!usable) return;
+  const schedule = (
+    bytes
+  ) => {
+    const frameSize =
+      channels * 2;
 
-    const view = new DataView(bytes.buffer, bytes.byteOffset, usable);
-    const frames = usable / frameSize;
-    const buffer = ctx.createBuffer(channels, frames, sampleRate);
+    const usable =
+      bytes.length -
+      (bytes.length %
+        frameSize);
 
-    for (let c = 0; c < channels; c += 1) {
-      const channelData = buffer.getChannelData(c);
-      for (let i = 0; i < frames; i += 1) {
-        channelData[i] = view.getInt16((i * channels + c) * 2, true) / 0x8000;
+    leftover =
+      bytes.slice(
+        usable
+      );
+
+    if (!usable) {
+      return;
+    }
+
+    const view =
+      new DataView(
+        bytes.buffer,
+        bytes.byteOffset,
+        usable
+      );
+
+    const frames =
+      usable /
+      frameSize;
+
+    const buffer =
+      ctx.createBuffer(
+        channels,
+        frames,
+        sampleRate
+      );
+
+    for (
+      let c = 0;
+      c < channels;
+      c += 1
+    ) {
+      const channelData =
+        buffer.getChannelData(
+          c
+        );
+
+      for (
+        let i = 0;
+        i < frames;
+        i += 1
+      ) {
+        channelData[i] =
+          view.getInt16(
+            (
+              i *
+                channels +
+              c
+            ) *
+              2,
+            true
+          ) /
+          0x8000;
       }
     }
 
-    const node = ctx.createBufferSource();
-    node.buffer = buffer;
-    node.connect(ctx.destination);
-    nextTime = Math.max(nextTime, ctx.currentTime + 0.05);
-    node.start(nextTime);
-    nextTime += buffer.duration;
+    const node =
+      ctx.createBufferSource();
+
+    node.buffer =
+      buffer;
+
+    node.connect(
+      ctx.destination
+    );
+
+    nextTime =
+      Math.max(
+        nextTime,
+        ctx.currentTime +
+          0.05
+      );
+
+    node.start(
+      nextTime
+    );
+
+    nextTime +=
+      buffer.duration;
   };
 
   while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
+    const {
+      value,
+      done,
+    } = await reader.read();
 
-    let chunk = value;
-
-    if (!headerParsed) {
-      header = concat(header, chunk);
-      if (header.length < 44) continue;
-
-      const hv = new DataView(header.buffer, header.byteOffset, header.length);
-      channels = hv.getUint16(22, true) || 1;
-      sampleRate = hv.getUint32(24, true) || 24000;
-      headerParsed = true;
-      chunk = header.slice(44);
-      header = new Uint8Array(0);
+    if (done) {
+      break;
     }
 
-    schedule(concat(leftover, chunk));
+    let chunk =
+      value;
+
+    if (!headerParsed) {
+      header =
+        concat(
+          header,
+          chunk
+        );
+
+      if (
+        header.length <
+        44
+      ) {
+        continue;
+      }
+
+      const headerView =
+        new DataView(
+          header.buffer,
+          header.byteOffset,
+          header.length
+        );
+
+      channels =
+        headerView.getUint16(
+          22,
+          true
+        ) || 1;
+
+      sampleRate =
+        headerView.getUint32(
+          24,
+          true
+        ) || 24000;
+
+      headerParsed =
+        true;
+
+      chunk =
+        header.slice(
+          44
+        );
+
+      header =
+        new Uint8Array(0);
+    }
+
+    schedule(
+      concat(
+        leftover,
+        chunk
+      )
+    );
   }
 };
 
-const streamAudioFromResponse = async (response, playerRef) => {
-  if (!response.body) {
-    throw new Error("Streaming is not supported by this browser.");
-  }
+const streamAudioFromResponse =
+  async (
+    response,
+    playerRef
+  ) => {
+    if (!response.body) {
+      throw new Error(
+        "Streaming is not supported by this browser."
+      );
+    }
 
-  const type = (response.headers.get("content-type") || "").toLowerCase();
+    const type =
+      (
+        response.headers.get(
+          "content-type"
+        ) || ""
+      ).toLowerCase();
 
-  if (
-    type.includes("audio/mpeg") &&
-    typeof window.MediaSource !== "undefined" &&
-    window.MediaSource.isTypeSupported("audio/mpeg")
-  ) {
-    return streamViaMediaSource(response, "audio/mpeg", playerRef);
-  }
+    /* -------------------------------------------------------
+       MPEG STREAM
+    ------------------------------------------------------- */
 
-  if (type.includes("wav")) {
-    return streamWav(response, playerRef);
-  }
+    if (
+      type.includes(
+        "audio/mpeg"
+      ) &&
+      typeof window.MediaSource !==
+        "undefined" &&
+      window.MediaSource.isTypeSupported(
+        "audio/mpeg"
+      )
+    ) {
+      return streamViaMediaSource(
+        response,
+        "audio/mpeg",
+        playerRef
+      );
+    }
 
-  // Fallback: buffer the whole stream, then play.
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
+    /* -------------------------------------------------------
+       WAV STREAM
+    ------------------------------------------------------- */
 
-  playerRef.current = {
-    stop: () => {
-      try { audio.pause(); } catch { /* ignore */ }
-      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
-    },
+    if (
+      type.includes("wav")
+    ) {
+      return streamWav(
+        response,
+        playerRef
+      );
+    }
+
+    /* -------------------------------------------------------
+       FALLBACK
+    ------------------------------------------------------- */
+
+    const blob =
+      await response.blob();
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const audio =
+      new Audio(url);
+
+    playerRef.current = {
+      stop: () => {
+        try {
+          audio.pause();
+        } catch {
+          // Ignore.
+        }
+
+        try {
+          URL.revokeObjectURL(
+            url
+          );
+        } catch {
+          // Ignore.
+        }
+      },
+    };
+
+    await audio
+      .play()
+      .catch(() => {});
   };
-
-  await audio.play().catch(() => {});
-};
-
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
 export default function RevelaAIVoiceChat({
+  open = false,
   sessionId,
   onVoiceResult,
   onClose,
@@ -472,6 +767,9 @@ export default function RevelaAIVoiceChat({
   const timerRef =
     useRef(null);
 
+  const autoStopTimerRef =
+    useRef(null);
+
   const mountedRef =
     useRef(true);
 
@@ -488,7 +786,9 @@ export default function RevelaAIVoiceChat({
   const [
     status,
     setStatus,
-  ] = useState("starting");
+  ] = useState(
+    "starting"
+  );
 
   const [
     error,
@@ -500,7 +800,6 @@ export default function RevelaAIVoiceChat({
     setElapsed,
   ] = useState(0);
 
-
   /* =======================================================
      CLEAN AUDIO
   ======================================================= */
@@ -509,6 +808,17 @@ export default function RevelaAIVoiceChat({
     useCallback(() => {
       recordingActiveRef.current =
         false;
+
+      /*
+       * Allow the component to start again
+       * when reopened.
+       */
+      startedRef.current =
+        false;
+
+      /* ---------------------------------------------------
+         ANIMATION
+      --------------------------------------------------- */
 
       if (
         animationIdRef.current
@@ -520,6 +830,10 @@ export default function RevelaAIVoiceChat({
         animationIdRef.current =
           null;
       }
+
+      /* ---------------------------------------------------
+         RECORDING TIMER
+      --------------------------------------------------- */
 
       if (
         timerRef.current
@@ -536,6 +850,25 @@ export default function RevelaAIVoiceChat({
           null;
       }
 
+      /* ---------------------------------------------------
+         AUTO STOP TIMER
+      --------------------------------------------------- */
+
+      if (
+        autoStopTimerRef.current
+      ) {
+        window.clearTimeout(
+          autoStopTimerRef.current
+        );
+
+        autoStopTimerRef.current =
+          null;
+      }
+
+      /* ---------------------------------------------------
+         PROCESSOR
+      --------------------------------------------------- */
+
       try {
         if (
           processorRef.current
@@ -549,11 +882,12 @@ export default function RevelaAIVoiceChat({
         // Ignore cleanup failure.
       }
 
-      try {
-        processorRef.current = null;
-      } catch {
-        // Ignore.
-      }
+      processorRef.current =
+        null;
+
+      /* ---------------------------------------------------
+         GAIN NODE
+      --------------------------------------------------- */
 
       try {
         silentGainRef.current?.disconnect();
@@ -564,6 +898,10 @@ export default function RevelaAIVoiceChat({
       silentGainRef.current =
         null;
 
+      /* ---------------------------------------------------
+         AUDIO SOURCE
+      --------------------------------------------------- */
+
       try {
         sourceRef.current?.disconnect();
       } catch {
@@ -572,6 +910,10 @@ export default function RevelaAIVoiceChat({
 
       sourceRef.current =
         null;
+
+      /* ---------------------------------------------------
+         MICROPHONE STREAM
+      --------------------------------------------------- */
 
       streamRef.current
         ?.getTracks()
@@ -582,6 +924,10 @@ export default function RevelaAIVoiceChat({
 
       streamRef.current =
         null;
+
+      /* ---------------------------------------------------
+         AUDIO CONTEXT
+      --------------------------------------------------- */
 
       try {
         audioContextRef.current?.close();
@@ -598,7 +944,6 @@ export default function RevelaAIVoiceChat({
       dataArrayRef.current =
         null;
     }, []);
-
 
   /* =======================================================
      CLOSE
@@ -620,7 +965,6 @@ export default function RevelaAIVoiceChat({
       cleanupAudio,
       onClose,
     ]);
-
 
   /* =======================================================
      SEND WAV
@@ -664,14 +1008,17 @@ export default function RevelaAIVoiceChat({
           return;
         }
 
-        /*
-         * Confirm we are actually sending WAV.
-         */
+        /* -------------------------------------------------
+           WAV DEBUG INFORMATION
+        ------------------------------------------------- */
+
         console.info(
           "🎙️ RevelaAI WAV upload:",
           {
-            size: wavBlob.size,
-            type: wavBlob.type,
+            size:
+              wavBlob.size,
+            type:
+              wavBlob.type,
           }
         );
 
@@ -711,11 +1058,19 @@ export default function RevelaAIVoiceChat({
             );
 
           const contentType =
-            response.headers.get("content-type") || "";
+            response.headers.get(
+              "content-type"
+            ) || "";
+
+          /* ------------------------------------------------
+             AUDIO RESPONSE
+          ------------------------------------------------ */
 
           if (
             response.ok &&
-            /^audio\//i.test(contentType)
+            /^audio\//i.test(
+              contentType
+            )
           ) {
             await streamAudioFromResponse(
               response,
@@ -726,28 +1081,45 @@ export default function RevelaAIVoiceChat({
             let reply = "";
 
             try {
-              heard = decodeURIComponent(
-                response.headers.get("X-Heard") || ""
-              );
-              reply = decodeURIComponent(
-                response.headers.get("X-Response") || ""
-              );
+              heard =
+                decodeURIComponent(
+                  response.headers.get(
+                    "X-Heard"
+                  ) || ""
+                );
+
+              reply =
+                decodeURIComponent(
+                  response.headers.get(
+                    "X-Response"
+                  ) || ""
+                );
             } catch {
               // Ignore malformed headers.
             }
 
-            if (mountedRef.current) {
-              setStatus("complete");
+            if (
+              mountedRef.current
+            ) {
+              setStatus(
+                "complete"
+              );
 
               onVoiceResult?.({
                 heard,
-                response: reply,
-                streamed: true,
+                response:
+                  reply,
+                streamed:
+                  true,
               });
             }
 
             return;
           }
+
+          /* ------------------------------------------------
+             JSON RESPONSE
+          ------------------------------------------------ */
 
           const data =
             await response
@@ -774,12 +1146,10 @@ export default function RevelaAIVoiceChat({
             );
           }
 
-          /*
-           * TTS may be disabled while HF credits
-           * are exhausted. That is not a voice-AI
-           * failure because transcription + AI can
-           * still succeed.
-           */
+          /* ------------------------------------------------
+             OPTIONAL TTS AUDIO
+          ------------------------------------------------ */
+
           if (
             data?.audio_url &&
             /^https?:\/\//i.test(
@@ -792,7 +1162,8 @@ export default function RevelaAIVoiceChat({
                   data.audio_url
                 );
 
-              audio.volume = 1;
+              audio.volume =
+                1;
 
               await audio.play();
             } catch {
@@ -856,7 +1227,6 @@ export default function RevelaAIVoiceChat({
       ]
     );
 
-
   /* =======================================================
      STOP RECORDING
   ======================================================= */
@@ -878,6 +1248,10 @@ export default function RevelaAIVoiceChat({
         recordingActiveRef.current =
           false;
 
+        /* -------------------------------------------------
+           CLEAR RECORDING TIMERS
+        ------------------------------------------------- */
+
         if (
           timerRef.current
         ) {
@@ -893,36 +1267,53 @@ export default function RevelaAIVoiceChat({
             null;
         }
 
+        if (
+          autoStopTimerRef.current
+        ) {
+          window.clearTimeout(
+            autoStopTimerRef.current
+          );
+
+          autoStopTimerRef.current =
+            null;
+        }
+
         const audioContext =
           audioContextRef.current;
 
         const processor =
           processorRef.current;
 
-        /*
-         * Stop collecting new PCM data.
-         */
+        /* -------------------------------------------------
+           STOP PCM COLLECTION
+        ------------------------------------------------- */
+
         if (processor) {
           processor.onaudioprocess =
             null;
         }
 
-        /*
-         * Copy the collected PCM.
-         */
+        /* -------------------------------------------------
+           COPY PCM CHUNKS
+        ------------------------------------------------- */
+
         const chunks =
           pcmChunksRef.current;
 
         pcmChunksRef.current =
           [];
 
-        /*
-         * Determine the sample rate used
-         * by the AudioContext.
-         */
+        /* -------------------------------------------------
+           SAMPLE RATE
+        ------------------------------------------------- */
+
         const sampleRate =
           audioContext?.sampleRate ||
           44100;
+
+        /* -------------------------------------------------
+           RELEASE MICROPHONE
+        ------------------------------------------------- */
 
         cleanupAudio();
 
@@ -931,6 +1322,10 @@ export default function RevelaAIVoiceChat({
         ) {
           return;
         }
+
+        /* -------------------------------------------------
+           VALIDATE CHUNKS
+        ------------------------------------------------- */
 
         if (
           !chunks.length
@@ -958,7 +1353,8 @@ export default function RevelaAIVoiceChat({
           );
 
         if (
-          totalSamples < 1
+          totalSamples <
+          1
         ) {
           setError(
             "No speech samples were captured."
@@ -970,6 +1366,10 @@ export default function RevelaAIVoiceChat({
 
           return;
         }
+
+        /* -------------------------------------------------
+           MERGE PCM CHUNKS
+        ------------------------------------------------- */
 
         const samples =
           new Float32Array(
@@ -990,15 +1390,16 @@ export default function RevelaAIVoiceChat({
             chunk.length;
         }
 
+        /* -------------------------------------------------
+           ENCODE WAV
+        ------------------------------------------------- */
+
         const wavBlob =
           encodeWav(
             samples,
             sampleRate
           );
 
-        /*
-         * Browser-side validation.
-         */
         console.info(
           "✅ WAV created:",
           {
@@ -1021,7 +1422,6 @@ export default function RevelaAIVoiceChat({
         sendAudio,
       ]
     );
-
 
   /* =======================================================
      WAVEFORM
@@ -1160,7 +1560,6 @@ export default function RevelaAIVoiceChat({
       draw();
     }, []);
 
-
   /* =======================================================
      START RECORDING
   ======================================================= */
@@ -1169,6 +1568,7 @@ export default function RevelaAIVoiceChat({
     useCallback(
       async () => {
         if (
+          !open ||
           startedRef.current
         ) {
           return;
@@ -1184,16 +1584,29 @@ export default function RevelaAIVoiceChat({
 
           setError("");
 
+          /*
+           * -----------------------------------------------
+           * BROWSER SUPPORT
+           * -----------------------------------------------
+           */
+
           if (
             typeof navigator ===
               "undefined" ||
-            !navigator.mediaDevices
+            !navigator
+              .mediaDevices
               ?.getUserMedia
           ) {
             throw new Error(
               "Microphone access is not supported by this browser."
             );
           }
+
+          /*
+           * -----------------------------------------------
+           * MICROPHONE
+           * -----------------------------------------------
+           */
 
           const stream =
             await navigator.mediaDevices.getUserMedia(
@@ -1208,7 +1621,8 @@ export default function RevelaAIVoiceChat({
             );
 
           if (
-            !mountedRef.current
+            !mountedRef.current ||
+            !open
           ) {
             stream
               .getTracks()
@@ -1224,10 +1638,11 @@ export default function RevelaAIVoiceChat({
             stream;
 
           /*
-           * AudioContext captures the raw PCM
-           * audio stream. No MediaRecorder,
-           * WebM, Opus, MP4 or OGG.
+           * -----------------------------------------------
+           * AUDIO CONTEXT
+           * -----------------------------------------------
            */
+
           const AudioContextClass =
             window.AudioContext ||
             window.webkitAudioContext;
@@ -1253,6 +1668,12 @@ export default function RevelaAIVoiceChat({
             await audioContext.resume();
           }
 
+          /*
+           * -----------------------------------------------
+           * MEDIA STREAM SOURCE
+           * -----------------------------------------------
+           */
+
           const source =
             audioContext.createMediaStreamSource(
               stream
@@ -1262,11 +1683,14 @@ export default function RevelaAIVoiceChat({
             source;
 
           /*
-           * ScriptProcessor is used here because it
-           * provides broad browser compatibility for
-           * PCM capture without requiring a separate
-           * AudioWorklet module file.
+           * -----------------------------------------------
+           * SCRIPT PROCESSOR
+           * -----------------------------------------------
+           *
+           * Used for broad browser compatibility
+           * without requiring a separate AudioWorklet.
            */
+
           const processor =
             audioContext.createScriptProcessor(
               4096,
@@ -1278,10 +1702,14 @@ export default function RevelaAIVoiceChat({
             processor;
 
           /*
-           * Zero-gain output prevents microphone
-           * feedback while keeping the processor
-           * active.
+           * -----------------------------------------------
+           * SILENT OUTPUT
+           * -----------------------------------------------
+           *
+           * Prevent microphone feedback while
+           * keeping ScriptProcessor active.
            */
+
           const silentGain =
             audioContext.createGain();
 
@@ -1292,8 +1720,11 @@ export default function RevelaAIVoiceChat({
             silentGain;
 
           /*
-           * Waveform analyser.
+           * -----------------------------------------------
+           * ANALYSER
+           * -----------------------------------------------
            */
+
           const analyser =
             audioContext.createAnalyser();
 
@@ -1317,10 +1748,19 @@ export default function RevelaAIVoiceChat({
           );
 
           /*
-           * PCM capture.
+           * -----------------------------------------------
+           * RESET PCM BUFFER
+           * -----------------------------------------------
            */
+
           pcmChunksRef.current =
             [];
+
+          /*
+           * -----------------------------------------------
+           * PCM CAPTURE
+           * -----------------------------------------------
+           */
 
           processor.onaudioprocess =
             (event) => {
@@ -1356,6 +1796,7 @@ export default function RevelaAIVoiceChat({
                 /*
                  * Average channels into mono.
                  */
+
                 for (
                   let i = 0;
                   i <
@@ -1387,12 +1828,30 @@ export default function RevelaAIVoiceChat({
               );
             };
 
+          /*
+           * -----------------------------------------------
+           * WAVEFORM
+           * -----------------------------------------------
+           */
+
           startWaveform();
+
+          /*
+           * -----------------------------------------------
+           * RECORDING STATE
+           * -----------------------------------------------
+           */
 
           setElapsed(0);
 
           recordingActiveRef.current =
             true;
+
+          /*
+           * -----------------------------------------------
+           * ELAPSED TIMER
+           * -----------------------------------------------
+           */
 
           timerRef.current =
             window.setInterval(
@@ -1410,22 +1869,25 @@ export default function RevelaAIVoiceChat({
           );
 
           /*
-           * Automatic safety stop after
-           * MAX_RECORDING_SECONDS.
+           * -----------------------------------------------
+           * SAFETY AUTO STOP
+           * -----------------------------------------------
            */
-          window.setTimeout(
-            () => {
-              if (
-                recordingActiveRef.current
-              ) {
-                stopRecording(
-                  true
-                );
-              }
-            },
-            MAX_RECORDING_SECONDS *
-              1000
-          );
+
+          autoStopTimerRef.current =
+            window.setTimeout(
+              () => {
+                if (
+                  recordingActiveRef.current
+                ) {
+                  stopRecording(
+                    true
+                  );
+                }
+              },
+              MAX_RECORDING_SECONDS *
+                1000
+            );
         } catch (err) {
           startedRef.current =
             false;
@@ -1437,34 +1899,86 @@ export default function RevelaAIVoiceChat({
 
           cleanupAudio();
 
-          setError(
-            err?.message ||
-              "Could not access the microphone."
-          );
+          if (
+            mountedRef.current
+          ) {
+            setError(
+              err?.message ||
+                "Could not access the microphone."
+            );
 
-          setStatus(
-            "error"
-          );
+            setStatus(
+              "error"
+            );
+          }
         }
       },
       [
         cleanupAudio,
+        open,
         startWaveform,
         stopRecording,
       ]
     );
 
-
   /* =======================================================
-     LIFECYCLE
+     CONTROLLED LIFECYCLE
   ======================================================= */
 
   useEffect(() => {
     mountedRef.current =
       true;
 
+    /*
+     * =====================================================
+     * CLOSED
+     * =====================================================
+     *
+     * When the component is mounted but closed:
+     *
+     * - Do NOT request microphone access.
+     * - Do NOT start recording.
+     * - Do NOT create audio context.
+     * - Do NOT render an overlay.
+     */
+
+    if (!open) {
+      shouldSubmitRef.current =
+        false;
+
+      controllerRef.current?.abort();
+
+      voicePlayerRef.current?.stop?.();
+
+      cleanupAudio();
+
+      return () => {
+        mountedRef.current =
+          false;
+
+        shouldSubmitRef.current =
+          false;
+
+        controllerRef.current?.abort();
+
+        voicePlayerRef.current?.stop?.();
+
+        cleanupAudio();
+      };
+    }
+
+    /*
+     * =====================================================
+     * OPEN
+     * =====================================================
+     */
+
     shouldSubmitRef.current =
       true;
+
+    setError("");
+    setElapsed(0);
+    setStatus("starting");
 
     startRecording();
 
@@ -1483,9 +1997,9 @@ export default function RevelaAIVoiceChat({
     };
   }, [
     cleanupAudio,
+    open,
     startRecording,
   ]);
-
 
   /* =======================================================
      FORMAT TIME
@@ -1506,6 +2020,21 @@ export default function RevelaAIVoiceChat({
       "0"
     )}`;
 
+  /* =======================================================
+     CLOSED STATE
+  ======================================================= */
+
+  /*
+   * This is critical.
+   *
+   * The component may remain mounted inside the real
+   * RevelaAI dashboard, but it takes up ZERO screen space
+   * while closed.
+   */
+
+  if (!open) {
+    return null;
+  }
 
   /* =======================================================
      UI
@@ -1537,7 +2066,9 @@ export default function RevelaAIVoiceChat({
           shadow-2xl
         "
       >
-        {/* Header */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div
           className="
@@ -1595,8 +2126,9 @@ export default function RevelaAIVoiceChat({
           </button>
         </div>
 
-
-        {/* Body */}
+        {/* =================================================
+            BODY
+        ================================================= */}
 
         <div
           className="
@@ -1607,7 +2139,9 @@ export default function RevelaAIVoiceChat({
             py-7
           "
         >
-          {/* Microphone */}
+          {/* =================================================
+              MICROPHONE
+          ================================================= */}
 
           <div
             className={`
@@ -1649,8 +2183,9 @@ export default function RevelaAIVoiceChat({
             )}
           </div>
 
-
-          {/* Status */}
+          {/* =================================================
+              STATUS
+          ================================================= */}
 
           <p
             className="
@@ -1685,8 +2220,9 @@ export default function RevelaAIVoiceChat({
             {formattedTime}
           </p>
 
-
-          {/* Waveform */}
+          {/* =================================================
+              WAVEFORM
+          ================================================= */}
 
           <canvas
             ref={
@@ -1705,8 +2241,9 @@ export default function RevelaAIVoiceChat({
             "
           />
 
-
-          {/* Error */}
+          {/* =================================================
+              ERROR
+          ================================================= */}
 
           {error && (
             <div
@@ -1737,8 +2274,9 @@ export default function RevelaAIVoiceChat({
             </div>
           )}
 
-
-          {/* Completed audio indicator */}
+          {/* =================================================
+              COMPLETED AUDIO INDICATOR
+          ================================================= */}
 
           {status ===
             "complete" && (
@@ -1762,8 +2300,9 @@ export default function RevelaAIVoiceChat({
             </div>
           )}
 
-
-          {/* Controls */}
+          {/* =================================================
+              CONTROLS
+          ================================================= */}
 
           <div
             className="
@@ -1837,6 +2376,9 @@ export default function RevelaAIVoiceChat({
             )}
           </div>
 
+          {/* =================================================
+              SECURITY / INFORMATION
+          ================================================= */}
 
           <p
             className="
@@ -1855,3 +2397,38 @@ export default function RevelaAIVoiceChat({
     </div>
   );
 }
+```
+
+### The required parent usage
+
+Your real AI dashboard should control it like this:
+
+```jsx
+const [voiceChatOpen, setVoiceChatOpen] =
+  useState(false);
+```
+
+Then:
+
+```jsx
+<button
+  type="button"
+  onClick={() =>
+    setVoiceChatOpen(true)
+  }
+>
+  Voice
+</button>
+```
+
+And:
+
+```jsx
+<RevelaAIVoiceChat
+  open={voiceChatOpen}
+  sessionId={sessionId}
+  onVoiceResult={handleVoiceResult}
+  onClose={() =>
+    setVoiceChatOpen(false)
+  }
+/>
