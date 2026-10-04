@@ -1,21 +1,25 @@
-// src/ai/RevelaAIVoiceChat.jsx
+// src/ai/AIAssistantDashboard.jsx
 
 import React, {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 import {
-  Mic,
-  Square,
-  X,
-  Loader2,
-  Volume2,
-  AlertCircle,
+  Menu,
+  Sparkles,
+  ShieldCheck,
+  MessageSquarePlus,
 } from "lucide-react";
 
+import Sidebar from "@/components/Sidebar";
+import ChatWindow from "@/components/ChatWindow";
+import InputBar from "@/components/InputBar";
+import WelcomeScreen from "@/components/WelcomeScreen";
+import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { useAuth } from "@/context/AuthContext";
 
 /* =========================================================
@@ -28,664 +32,899 @@ const REVELAAI_URL = (
   .trim()
   .replace(/\/+$/, "");
 
-const MAX_RECORDING_SECONDS = 60;
-
+const LEGACY_STORAGE_KEY = "revela_chats";
 
 /* =========================================================
-   WAV ENCODER
+   MESSAGE FACTORY
 ========================================================= */
 
-/**
- * Convert Float32 PCM samples to a valid
- * mono, 16-bit PCM WAV file.
- *
- * WAV structure:
- *
- * RIFF
- * WAVE
- * fmt
- * data
- */
-const encodeWav = (
-  samples,
-  sampleRate
+const createMessage = (
+  role,
+  text,
+  status = "done",
+  extra = {}
+) => ({
+  id:
+    typeof crypto !== "undefined" &&
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
+
+  role,
+  text: String(text || ""),
+
+  status,
+
+  createdAt: Date.now(),
+
+  ...extra,
+});
+
+/* =========================================================
+   STORAGE
+========================================================= */
+
+const getScopedStorageKey = (
+  userScope
 ) => {
-  if (
-    !samples ||
-    !samples.length
-  ) {
-    throw new Error(
-      "No PCM samples were captured."
-    );
-  }
+  const normalized =
+    String(userScope || "guest").trim() ||
+    "guest";
 
-  const bytesPerSample = 2;
-  const channels = 1;
-
-  const dataSize =
-    samples.length *
-    bytesPerSample;
-
-  const buffer = new ArrayBuffer(
-    44 + dataSize
-  );
-
-  const view =
-    new DataView(buffer);
-
-  /* -------------------------------------------------------
-     RIFF HEADER
-  ------------------------------------------------------- */
-
-  writeAscii(
-    view,
-    0,
-    "RIFF"
-  );
-
-  view.setUint32(
-    4,
-    36 + dataSize,
-    true
-  );
-
-  writeAscii(
-    view,
-    8,
-    "WAVE"
-  );
-
-  /* -------------------------------------------------------
-     FORMAT CHUNK
-  ------------------------------------------------------- */
-
-  writeAscii(
-    view,
-    12,
-    "fmt "
-  );
-
-  view.setUint32(
-    16,
-    16,
-    true
-  );
-
-  // PCM format
-  view.setUint16(
-    20,
-    1,
-    true
-  );
-
-  // Mono
-  view.setUint16(
-    22,
-    channels,
-    true
-  );
-
-  view.setUint32(
-    24,
-    sampleRate,
-    true
-  );
-
-  const byteRate =
-    sampleRate *
-    channels *
-    bytesPerSample;
-
-  view.setUint32(
-    28,
-    byteRate,
-    true
-  );
-
-  const blockAlign =
-    channels *
-    bytesPerSample;
-
-  view.setUint16(
-    32,
-    blockAlign,
-    true
-  );
-
-  // 16-bit
-  view.setUint16(
-    34,
-    16,
-    true
-  );
-
-  /* -------------------------------------------------------
-     DATA CHUNK
-  ------------------------------------------------------- */
-
-  writeAscii(
-    view,
-    36,
-    "data"
-  );
-
-  view.setUint32(
-    40,
-    dataSize,
-    true
-  );
-
-  /* -------------------------------------------------------
-     PCM SAMPLE DATA
-  ------------------------------------------------------- */
-
-  let offset = 44;
-
-  for (
-    let i = 0;
-    i < samples.length;
-    i += 1
-  ) {
-    let sample =
-      Number(
-        samples[i]
-      ) || 0;
-
-    sample = Math.max(
-      -1,
-      Math.min(
-        1,
-        sample
-      )
-    );
-
-    const int16 =
-      sample < 0
-        ? sample * 0x8000
-        : sample * 0x7fff;
-
-    view.setInt16(
-      offset,
-      int16,
-      true
-    );
-
-    offset += 2;
-  }
-
-  return new Blob(
-    [buffer],
-    {
-      type: "audio/wav",
-    }
-  );
+  return `revela_chats:${encodeURIComponent(
+    normalized
+  )}`;
 };
 
+const loadSavedChats = (
+  storageKey
+) => {
+  if (
+    typeof window === "undefined"
+  ) {
+    return [];
+  }
+
+  try {
+    const saved =
+      localStorage.getItem(
+        storageKey
+      );
+
+    if (!saved) {
+      return [];
+    }
+
+    const parsed =
+      JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (chat) =>
+        chat &&
+        typeof chat === "object" &&
+        chat.id
+    );
+  } catch (error) {
+    console.error(
+      "❌ Failed to restore RevelaAI chats:",
+      error
+    );
+
+    try {
+      localStorage.removeItem(
+        storageKey
+      );
+    } catch {
+      // Ignore local cleanup failure.
+    }
+
+    return [];
+  }
+};
 
 /* =========================================================
-   ASCII HELPER
+   CHAT NORMALIZATION
 ========================================================= */
 
-const writeAscii = (
-  view,
-  offset,
+const normalizeChat = (
+  chat
+) => {
+  if (!chat || !chat.id) {
+    return null;
+  }
+
+  const messages =
+    Array.isArray(
+      chat.messages
+    )
+      ? chat.messages
+      : [];
+
+  return {
+    id: String(chat.id),
+
+    title:
+      String(
+        chat.title ||
+          "New Conversation"
+      ).trim() ||
+      "New Conversation",
+
+    messages,
+
+    createdAt:
+      chat.createdAt ||
+      Date.now(),
+
+    updatedAt:
+      chat.updatedAt ||
+      Date.now(),
+  };
+};
+
+/* =========================================================
+   CONTEXT BUILDER
+========================================================= */
+
+const buildContext = (
+  messages
+) => {
+  return messages
+    .slice(-12)
+    .map((message) => {
+      const role =
+        message.role === "user"
+          ? "User"
+          : "Assistant";
+
+      let content =
+        message.text || "";
+
+      if (
+        message.attachmentName
+      ) {
+        content =
+          `[Attachment: ${message.attachmentName}] ` +
+          content;
+      }
+
+      return `${role}: ${content}`;
+    })
+    .join("\n");
+};
+
+/* =========================================================
+   OPTIONAL PROMPT ENRICHMENT
+   ---------------------------------------------------------
+   Keep this light. The backend owns canonical intent
+   detection. We only preserve lightweight context markers
+   for compatibility with the current ecosystem.
+========================================================= */
+
+const enrichPrompt = (
+  text
+) => {
+  const lower =
+    String(text || "")
+      .toLowerCase();
+
+  if (
+    lower.includes("bible") ||
+    lower.includes("verse") ||
+    lower.includes("scripture")
+  ) {
+    return `[BIBLE MODE] ${text}`;
+  }
+
+  if (
+    lower.includes("prophecy") ||
+    lower.includes("beast") ||
+    lower.includes("666")
+  ) {
+    return `[PROPHECY MODE] ${text}`;
+  }
+
+  if (
+    lower.includes("code") ||
+    lower.includes("programming") ||
+    lower.includes("error") ||
+    lower.includes("react") ||
+    lower.includes("python")
+  ) {
+    return `[DEVELOPER MODE] ${text}`;
+  }
+
+  if (
+    lower.includes("farm") ||
+    lower.includes("agriculture") ||
+    lower.includes("crop") ||
+    lower.includes("shamba")
+  ) {
+    return `[AGRICULTURE MODE] ${text}`;
+  }
+
+  if (
+    lower.includes("business") ||
+    lower.includes("businesses") ||
+    lower.includes("sales") ||
+    lower.includes("marketing") ||
+    lower.includes("biashara")
+  ) {
+    return `[BUSINESS MODE] ${text}`;
+  }
+
+  if (
+    lower.includes("school") ||
+    lower.includes("education") ||
+    lower.includes("student") ||
+    lower.includes("learning")
+  ) {
+    return `[EDUCATION MODE] ${text}`;
+  }
+
+  return text;
+};
+
+/* =========================================================
+   SAFE URL
+========================================================= */
+
+const isSafeHttpUrl = (
   value
 ) => {
-  for (
-    let i = 0;
-    i < value.length;
-    i += 1
-  ) {
-    view.setUint8(
-      offset + i,
-      value.charCodeAt(i)
-    );
-  }
-};
-
-
-/* =========================================================
-   STREAMING AUDIO PLAYBACK (additive)
-========================================================= */
-
-const streamViaMediaSource = async (response, mime, playerRef) => {
-  const mediaSource = new MediaSource();
-  const audio = new Audio();
-  const url = URL.createObjectURL(mediaSource);
-  audio.src = url;
-
-  playerRef.current = {
-    stop: () => {
-      try { audio.pause(); } catch { /* ignore */ }
-      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
-    },
-  };
-
-  await new Promise((resolve) =>
-    mediaSource.addEventListener("sourceopen", resolve, { once: true })
+  return /^https?:\/\//i.test(
+    String(value || "").trim()
   );
-
-  const sourceBuffer = mediaSource.addSourceBuffer(mime);
-  const reader = response.body.getReader();
-  const queue = [];
-  let finished = false;
-  let started = false;
-
-  const pump = () => {
-    if (sourceBuffer.updating) return;
-    if (queue.length) {
-      sourceBuffer.appendBuffer(queue.shift());
-    } else if (finished && mediaSource.readyState === "open") {
-      mediaSource.endOfStream();
-    }
-  };
-
-  sourceBuffer.addEventListener("updateend", pump);
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    queue.push(value);
-    pump();
-    if (!started) {
-      started = true;
-      audio.play().catch(() => { /* autoplay restrictions are non-fatal */ });
-    }
-  }
-
-  finished = true;
-  pump();
 };
-
-const streamWav = async (response, playerRef) => {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  const ctx = new AudioContextClass();
-  if (ctx.state === "suspended") await ctx.resume().catch(() => {});
-
-  playerRef.current = {
-    stop: () => {
-      try { ctx.close(); } catch { /* ignore */ }
-    },
-  };
-
-  const reader = response.body.getReader();
-  let header = new Uint8Array(0);
-  let headerParsed = false;
-  let sampleRate = 24000;
-  let channels = 1;
-  let leftover = new Uint8Array(0);
-  let nextTime = 0;
-
-  const concat = (a, b) => {
-    const out = new Uint8Array(a.length + b.length);
-    out.set(a, 0);
-    out.set(b, a.length);
-    return out;
-  };
-
-  const schedule = (bytes) => {
-    const frameSize = channels * 2;
-    const usable = bytes.length - (bytes.length % frameSize);
-    leftover = bytes.slice(usable);
-    if (!usable) return;
-
-    const view = new DataView(bytes.buffer, bytes.byteOffset, usable);
-    const frames = usable / frameSize;
-    const buffer = ctx.createBuffer(channels, frames, sampleRate);
-
-    for (let c = 0; c < channels; c += 1) {
-      const channelData = buffer.getChannelData(c);
-      for (let i = 0; i < frames; i += 1) {
-        channelData[i] = view.getInt16((i * channels + c) * 2, true) / 0x8000;
-      }
-    }
-
-    const node = ctx.createBufferSource();
-    node.buffer = buffer;
-    node.connect(ctx.destination);
-    nextTime = Math.max(nextTime, ctx.currentTime + 0.05);
-    node.start(nextTime);
-    nextTime += buffer.duration;
-  };
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    let chunk = value;
-
-    if (!headerParsed) {
-      header = concat(header, chunk);
-      if (header.length < 44) continue;
-
-      const hv = new DataView(header.buffer, header.byteOffset, header.length);
-      channels = hv.getUint16(22, true) || 1;
-      sampleRate = hv.getUint32(24, true) || 24000;
-      headerParsed = true;
-      chunk = header.slice(44);
-      header = new Uint8Array(0);
-    }
-
-    schedule(concat(leftover, chunk));
-  }
-};
-
-const streamAudioFromResponse = async (response, playerRef) => {
-  if (!response.body) {
-    throw new Error("Streaming is not supported by this browser.");
-  }
-
-  const type = (response.headers.get("content-type") || "").toLowerCase();
-
-  if (
-    type.includes("audio/mpeg") &&
-    typeof window.MediaSource !== "undefined" &&
-    window.MediaSource.isTypeSupported("audio/mpeg")
-  ) {
-    return streamViaMediaSource(response, "audio/mpeg", playerRef);
-  }
-
-  if (type.includes("wav")) {
-    return streamWav(response, playerRef);
-  }
-
-  // Fallback: buffer the whole stream, then play.
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-
-  playerRef.current = {
-    stop: () => {
-      try { audio.pause(); } catch { /* ignore */ }
-      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
-    },
-  };
-
-  await audio.play().catch(() => {});
-};
-
 
 /* =========================================================
-   COMPONENT
+   AI RESPONSE NORMALIZATION
 ========================================================= */
 
-export default function RevelaAIVoiceChat({
-  sessionId,
-  onVoiceResult,
-  onClose,
+const normalizeAIResponse = (
+  data
+) => {
+  const payload =
+    data?.data || {};
+
+  const isImage =
+    payload?.type === "image";
+
+  const imageUrls =
+    isImage &&
+    Array.isArray(
+      payload?.urls
+    )
+      ? payload.urls.filter(
+          isSafeHttpUrl
+        )
+      : [];
+
+  const assistantText =
+    payload?.content ||
+    data?.content ||
+    data?.response ||
+    (isImage
+      ? "Image generated successfully."
+      : "No response from RevelaAI.");
+
+  const sources = Array.isArray(
+    data?.sources
+  )
+    ? data.sources
+    : Array.isArray(
+        data?.meta?.sources
+      )
+      ? data.meta.sources
+      : [];
+
+  return {
+    text: String(
+      assistantText || ""
+    ).trim(),
+
+    imageUrls,
+
+    sources,
+
+    metadata:
+      data?.meta || {},
+
+    type:
+      payload?.type ||
+      "text",
+  };
+};
+
+/* =========================================================
+   MAIN DASHBOARD
+========================================================= */
+
+export default function AIAssistantDashboard({
+  onOpenAI,
 }) {
   const {
+    user,
+    isGuest,
+    isReady,
     authFetch,
   } = useAuth();
 
-  /* -------------------------------------------------------
-     AUDIO REFERENCES
-  ------------------------------------------------------- */
+  /*
+   * Prefer the authoritative Mongo/RevelaCode user ID.
+   * Contact is only a browser-storage fallback for older
+   * login payloads that did not yet expose an ID.
+   */
+  const userScope =
+    user?.id ||
+    user?.user_id ||
+    user?.contact ||
+    (isGuest
+      ? "guest"
+      : "anonymous");
 
-  const streamRef =
-    useRef(null);
+  const storageKey = useMemo(
+    () =>
+      getScopedStorageKey(
+        userScope
+      ),
+    [userScope]
+  );
 
-  const audioContextRef =
-    useRef(null);
+  const [messages, setMessages] =
+    useState([]);
 
-  const sourceRef =
-    useRef(null);
+  const [sidebarOpen, setSidebarOpen] =
+    useState(true);
 
-  const processorRef =
-    useRef(null);
+  const [chats, setChats] =
+    useState([]);
 
-  const silentGainRef =
-    useRef(null);
+  const [activeChatId, setActiveChatId] =
+    useState(null);
 
-  const analyserRef =
-    useRef(null);
+  const [voiceActive, setVoiceActive] =
+    useState(false);
 
-  const animationIdRef =
-    useRef(null);
-
-  const dataArrayRef =
-    useRef(null);
-
-  const canvasRef =
-    useRef(null);
-
-  /* -------------------------------------------------------
-     PCM BUFFER
-  ------------------------------------------------------- */
-
-  const pcmChunksRef =
-    useRef([]);
-
-  const recordingActiveRef =
-    useRef(false);
-
-  /* -------------------------------------------------------
-     CONTROL REFERENCES
-  ------------------------------------------------------- */
+  const [
+    storageReady,
+    setStorageReady,
+  ] = useState(false);
 
   const controllerRef =
     useRef(null);
 
-  const voicePlayerRef =
-    useRef(null);
-
-  const voiceHandedOffRef =
-    useRef(false);
-
-  const timerRef =
-    useRef(null);
-
-  const mountedRef =
-    useRef(true);
-
-  const shouldSubmitRef =
-    useRef(true);
-
-  const startedRef =
-    useRef(false);
-
-  /* -------------------------------------------------------
-     STATE
-  ------------------------------------------------------- */
-
-  const [
-    status,
-    setStatus,
-  ] = useState("starting");
-
-  const [
-    error,
-    setError,
-  ] = useState("");
-
-  const [
-    elapsed,
-    setElapsed,
-  ] = useState(0);
-
-
   /* =======================================================
-     CLEAN AUDIO
+     LOAD USER-SCOPED CHATS
   ======================================================= */
 
-  const cleanupAudio =
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    setStorageReady(false);
+
+    const restored =
+      loadSavedChats(
+        storageKey
+      )
+        .map(normalizeChat)
+        .filter(Boolean);
+
+    setChats(restored);
+
+    /*
+     * Switching accounts must never carry the previous
+     * account's active chat in React state.
+     */
+    setActiveChatId(null);
+    setMessages([]);
+
+    setStorageReady(true);
+  }, [
+    isReady,
+    storageKey,
+  ]);
+
+  /* =======================================================
+     PERSIST USER-SCOPED CHATS
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      !storageReady ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(chats)
+      );
+    } catch (error) {
+      console.error(
+        "❌ Failed to save RevelaAI chats:",
+        error
+      );
+    }
+  }, [
+    chats,
+    storageKey,
+    storageReady,
+  ]);
+
+  /* =======================================================
+     REMOVE OLD GLOBAL CHAT STORAGE
+     -------------------------------------------------------
+     We deliberately do NOT migrate the old global key.
+     Migrating it automatically could expose Account A's
+     previous browser chats to Account B on the same device.
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      !isReady ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    /*
+     * Leave the legacy key untouched for one release so
+     * users can still recover it manually if needed.
+     *
+     * The active application no longer reads from it.
+     */
+    void LEGACY_STORAGE_KEY;
+  }, [isReady]);
+
+  /* =======================================================
+     CLEANUP AI REQUEST ON UNMOUNT
+  ======================================================= */
+
+  useEffect(() => {
+    return () => {
+      controllerRef.current?.abort();
+    };
+  }, []);
+
+  /* =======================================================
+     ACTIVE CHAT
+  ======================================================= */
+
+  const activeChat = useMemo(() => {
+    if (!activeChatId) {
+      return null;
+    }
+
+    return (
+      chats.find(
+        (chat) =>
+          chat.id ===
+          activeChatId
+      ) || null
+    );
+  }, [
+    activeChatId,
+    chats,
+  ]);
+
+  /* =======================================================
+     START NEW CHAT
+  ======================================================= */
+
+  const startNewChat =
     useCallback(() => {
-      recordingActiveRef.current =
-        false;
+      const newId =
+        typeof crypto !== "undefined" &&
+        crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`;
 
-      if (
-        animationIdRef.current
-      ) {
-        cancelAnimationFrame(
-          animationIdRef.current
-        );
+      const newChat =
+        normalizeChat({
+          id: newId,
 
-        animationIdRef.current =
-          null;
-      }
+          title:
+            "New Conversation",
 
-      if (
-        timerRef.current
-      ) {
-        window.clearInterval(
-          timerRef.current
-        );
+          messages: [],
 
-        window.clearTimeout(
-          timerRef.current
-        );
+          createdAt:
+            Date.now(),
 
-        timerRef.current =
-          null;
-      }
+          updatedAt:
+            Date.now(),
+        });
 
-      try {
-        if (
-          processorRef.current
-        ) {
-          processorRef.current.onaudioprocess =
-            null;
+      setChats(
+        (previous) => [
+          newChat,
+          ...previous,
+        ]
+      );
 
-          processorRef.current.disconnect();
-        }
-      } catch {
-        // Ignore cleanup failure.
-      }
+      setActiveChatId(
+        newId
+      );
 
-      try {
-        processorRef.current = null;
-      } catch {
-        // Ignore.
-      }
+      setMessages([]);
 
-      try {
-        silentGainRef.current?.disconnect();
-      } catch {
-        // Ignore.
-      }
-
-      silentGainRef.current =
-        null;
-
-      try {
-        sourceRef.current?.disconnect();
-      } catch {
-        // Ignore.
-      }
-
-      sourceRef.current =
-        null;
-
-      streamRef.current
-        ?.getTracks()
-        .forEach(
-          (track) =>
-            track.stop()
-        );
-
-      streamRef.current =
-        null;
-
-      try {
-        audioContextRef.current?.close();
-      } catch {
-        // Ignore.
-      }
-
-      audioContextRef.current =
-        null;
-
-      analyserRef.current =
-        null;
-
-      dataArrayRef.current =
-        null;
+      setSidebarOpen(false);
     }, []);
 
-
   /* =======================================================
-     CLOSE
+     SELECT CHAT
   ======================================================= */
 
-  const handleClose =
-    useCallback(() => {
-      shouldSubmitRef.current =
-        false;
-
-      controllerRef.current?.abort();
-
-      voicePlayerRef.current?.stop?.();
-
-      cleanupAudio();
-
-      onClose?.();
-    }, [
-      cleanupAudio,
-      onClose,
-    ]);
-
-
-  /* =======================================================
-     SEND WAV
-  ======================================================= */
-
-  const sendAudio =
+  const selectChat =
     useCallback(
-      async (
-        wavBlob
-      ) => {
-        if (
-          !wavBlob ||
-          wavBlob.size < 44
-        ) {
-          setError(
-            "No valid WAV audio was captured."
-          );
-
-          setStatus(
-            "error"
-          );
-
+      (chat) => {
+        if (!chat) {
           return;
         }
 
-        setStatus(
-          "processing"
+        const normalized =
+          normalizeChat(chat);
+
+        if (!normalized) {
+          return;
+        }
+
+        setActiveChatId(
+          normalized.id
         );
 
-        setError("");
+        setMessages([
+          ...normalized.messages,
+        ]);
 
+        setSidebarOpen(false);
+      },
+      []
+    );
+
+  /* =======================================================
+     UPDATE CHAT
+  ======================================================= */
+
+  const updateChat =
+    useCallback(
+      (
+        chatId,
+        nextMessages,
+        nextTitle = null
+      ) => {
+        if (!chatId) {
+          return;
+        }
+
+        setChats(
+          (previous) =>
+            previous.map(
+              (chat) => {
+                if (
+                  chat.id !==
+                  chatId
+                ) {
+                  return chat;
+                }
+
+                const firstUserMessage =
+                  nextMessages.find(
+                    (
+                      message
+                    ) =>
+                      message.role ===
+                      "user"
+                  );
+
+                const derivedTitle =
+                  nextTitle ||
+                  (
+                    chat.title ===
+                      "New Conversation" &&
+                    firstUserMessage?.text
+                      ? firstUserMessage.text
+                          .trim()
+                          .slice(0, 45)
+                      : chat.title
+                  );
+
+                return {
+                  ...chat,
+
+                  title:
+                    derivedTitle ||
+                    "New Conversation",
+
+                  messages:
+                    nextMessages,
+
+                  updatedAt:
+                    Date.now(),
+                };
+              }
+            )
+        );
+      },
+      []
+    );
+
+  /* =======================================================
+     ENSURE CHAT
+  ======================================================= */
+
+  const ensureActiveChat =
+    useCallback(
+      (
+        initialTitle =
+          "New Conversation"
+      ) => {
+        if (activeChatId) {
+          return activeChatId;
+        }
+
+        const newId =
+          typeof crypto !== "undefined" &&
+          crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`;
+
+        const newChat =
+          normalizeChat({
+            id: newId,
+
+            title:
+              String(
+                initialTitle || ""
+              )
+                .trim()
+                .slice(
+                  0,
+                  45
+                ) ||
+              "New Conversation",
+
+            messages: [],
+
+            createdAt:
+              Date.now(),
+
+            updatedAt:
+              Date.now(),
+          });
+
+        setChats(
+          (previous) => [
+            newChat,
+            ...previous,
+          ]
+        );
+
+        setActiveChatId(
+          newId
+        );
+
+        return newId;
+      },
+      [activeChatId]
+    );
+
+  /* =======================================================
+     AI REQUEST
+  ======================================================= */
+
+  const callRevelaAI =
+    useCallback(
+      async ({
+        message,
+        context,
+        file = null,
+        sessionId,
+        signal,
+      }) => {
         if (!REVELAAI_URL) {
-          setError(
+          throw new Error(
             "VITE_REVELAAI_URL is not configured."
           );
+        }
 
-          setStatus(
-            "error"
+        const headers = {
+          "X-Session-ID":
+            sessionId || "",
+        };
+
+        let body;
+
+        /*
+         * FILE UPLOAD
+         *
+         * Do NOT set Content-Type manually.
+         * Browser must generate the multipart boundary.
+         */
+        if (file) {
+          const formData =
+            new FormData();
+
+          formData.append(
+            "file",
+            file,
+            file.name
           );
 
+          if (message) {
+            formData.append(
+              "message",
+              message
+            );
+          }
+
+          if (context) {
+            formData.append(
+              "context",
+              context
+            );
+          }
+
+          body =
+            formData;
+        } else {
+          headers[
+            "Content-Type"
+          ] =
+            "application/json";
+
+          body =
+            JSON.stringify({
+              message,
+              context,
+            });
+        }
+
+        const response =
+          await authFetch(
+            `${REVELAAI_URL}/ai`,
+            {
+              method: "POST",
+              headers,
+              body,
+              signal,
+            }
+          );
+
+        const data =
+          await response
+            .json()
+            .catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data?.error?.message ||
+              data?.message ||
+              `AI request failed (HTTP ${response.status}).`
+          );
+        }
+
+        return data;
+      },
+      [authFetch]
+    );
+
+  /* =======================================================
+     SEND TEXT / FILE
+  ======================================================= */
+
+  const sendMessage =
+    useCallback(
+      async (
+        text,
+        attachedFile = null
+      ) => {
+        const cleaned =
+          String(text || "")
+            .trim();
+
+        /*
+         * A file can be sent without a typed prompt.
+         */
+        if (
+          !cleaned &&
+          !attachedFile
+        ) {
           return;
         }
 
+        const currentMessages =
+          messages;
+
+        const fallbackTitle =
+          attachedFile?.name ||
+          cleaned ||
+          "New Conversation";
+
+        const chatId =
+          activeChatId ||
+          ensureActiveChat(
+            fallbackTitle
+          );
+
+        const userDisplayText =
+          cleaned ||
+          `Analyze ${attachedFile?.name || "this file"}`;
+
+        const userMessage =
+          createMessage(
+            "user",
+            userDisplayText,
+            "done",
+            {
+              attachmentName:
+                attachedFile?.name ||
+                null,
+
+              attachmentType:
+                attachedFile?.type ||
+                null,
+
+              attachmentSize:
+                attachedFile?.size ||
+                null,
+            }
+          );
+
+        const loadingId =
+          typeof crypto !== "undefined" &&
+          crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`;
+
+        const loadingMessage =
+          createMessage(
+            "assistant",
+            "Thinking…",
+            "loading"
+          );
+
         /*
-         * Confirm we are actually sending WAV.
+         * Keep deterministic loading ID.
          */
-        console.info(
-          "🎙️ RevelaAI WAV upload:",
-          {
-            size: wavBlob.size,
-            type: wavBlob.type,
-          }
+        loadingMessage.id =
+          loadingId;
+
+        const nextMessages = [
+          ...currentMessages,
+          userMessage,
+          loadingMessage,
+        ];
+
+        setMessages(
+          nextMessages
         );
 
-        const formData =
-          new FormData();
-
-        formData.append(
-          "audio",
-          wavBlob,
-          "voice.wav"
+        updateChat(
+          chatId,
+          nextMessages,
+          (
+            cleaned ||
+            attachedFile?.name ||
+            ""
+          )
+            .trim()
+            .slice(0, 45)
         );
+
+        /*
+         * Stop any older request.
+         */
+        controllerRef.current?.abort();
 
         const controller =
           new AbortController();
@@ -693,157 +932,130 @@ export default function RevelaAIVoiceChat({
         controllerRef.current =
           controller;
 
+        const context =
+          buildContext(
+            currentMessages
+          );
+
+        const requestMessage =
+          attachedFile
+            ? cleaned
+            : enrichPrompt(
+                cleaned
+              );
+
         try {
-          const response =
-            await authFetch(
-              `${REVELAAI_URL}/voice`,
-              {
-                method: "POST",
-
-                headers: {
-                  "X-Session-ID":
-                    sessionId || "",
-                },
-
-                body:
-                  formData,
-
-                signal:
-                  controller.signal,
-              }
-            );
-
-          const contentType =
-            response.headers.get("content-type") || "";
-
-          if (
-            response.ok &&
-            /^audio\//i.test(contentType)
-          ) {
-            await streamAudioFromResponse(
-              response,
-              voicePlayerRef
-            );
-
-            let heard = "";
-            let reply = "";
-
-            try {
-              heard = decodeURIComponent(
-                response.headers.get("X-Heard") || ""
-              );
-              reply = decodeURIComponent(
-                response.headers.get("X-Response") || ""
-              );
-            } catch {
-              // Ignore malformed headers.
-            }
-
-            if (mountedRef.current) {
-              voiceHandedOffRef.current = true;
-
-              setStatus("complete");
-
-              onVoiceResult?.({
-                heard,
-                response: reply,
-                streamed: true,
-              });
-            }
-
-            return;
-          }
-
           const data =
-            await response
-              .json()
-              .catch(
-                () => ({})
-              );
+            await callRevelaAI({
+              message:
+                requestMessage,
+              context,
+              file:
+                attachedFile,
+              sessionId:
+                chatId,
+              signal:
+                controller.signal,
+            });
 
-          if (!response.ok) {
-            throw new Error(
-              data?.error
-                ?.message ||
-                data?.message ||
-                `Voice request failed (HTTP ${response.status}).`
-            );
-          }
-
-          if (
-            !data?.heard &&
-            !data?.response
-          ) {
-            throw new Error(
-              "RevelaAI returned no voice result."
-            );
-          }
-
-          /*
-           * TTS may be disabled while HF credits
-           * are exhausted. That is not a voice-AI
-           * failure because transcription + AI can
-           * still succeed.
-           */
-          if (
-            data?.audio_url &&
-            /^https?:\/\//i.test(
-              data.audio_url
-            )
-          ) {
-            try {
-              const audio =
-                new Audio(
-                  data.audio_url
-                );
-
-              audio.volume = 1;
-
-              await audio.play();
-            } catch {
-              /*
-               * Browser autoplay restrictions
-               * are non-fatal.
-               */
-            }
-          }
-
-          if (
-            mountedRef.current
-          ) {
-            setStatus(
-              "complete"
-            );
-
-            onVoiceResult?.(
+          const normalized =
+            normalizeAIResponse(
               data
             );
-          }
-        } catch (err) {
+
+          const assistantMessage =
+            {
+              id: loadingId,
+
+              role: "assistant",
+
+              text:
+                normalized.text ||
+                "RevelaAI returned an empty response.",
+
+              status:
+                "done",
+
+              imageUrls:
+                normalized.imageUrls,
+
+              sources:
+                normalized.sources,
+
+              metadata:
+                normalized.metadata,
+
+              contentType:
+                normalized.type,
+
+              createdAt:
+                Date.now(),
+            };
+
+          setMessages(
+            (previous) => {
+              const updated =
+                previous.map(
+                  (
+                    message
+                  ) =>
+                    message.id ===
+                    loadingId
+                      ? assistantMessage
+                      : message
+                );
+
+              updateChat(
+                chatId,
+                updated
+              );
+
+              return updated;
+            }
+          );
+        } catch (error) {
           if (
-            err?.name ===
+            error?.name ===
             "AbortError"
           ) {
             return;
           }
 
           console.error(
-            "❌ RevelaAI voice request failed:",
-            err
+            "❌ RevelaAI request failed:",
+            error
           );
 
-          if (
-            mountedRef.current
-          ) {
-            setError(
-              err?.message ||
-                "Voice processing failed."
-            );
+          setMessages(
+            (previous) => {
+              const updated =
+                previous.map(
+                  (
+                    message
+                  ) =>
+                    message.id ===
+                    loadingId
+                      ? {
+                          ...message,
 
-            setStatus(
-              "error"
-            );
-          }
+                          text:
+                            error?.message ||
+                            "Request failed. Please try again.",
+
+                          status:
+                            "error",
+                        }
+                      : message
+                );
+
+              updateChat(
+                chatId,
+                updated
+              );
+
+              return updated;
+            }
+          );
         } finally {
           if (
             controllerRef.current ===
@@ -855,664 +1067,183 @@ export default function RevelaAIVoiceChat({
         }
       },
       [
-        authFetch,
-        onVoiceResult,
-        sessionId,
+        messages,
+        activeChatId,
+        ensureActiveChat,
+        updateChat,
+        callRevelaAI,
       ]
     );
 
-
   /* =======================================================
-     STOP RECORDING
+     TEXT COMPATIBILITY HANDLER
   ======================================================= */
 
-  const stopRecording =
+  const sendTextMessage =
     useCallback(
-      async (
-        submit = true
-      ) => {
-        shouldSubmitRef.current =
-          submit;
-
-        if (
-          !recordingActiveRef.current
-        ) {
-          return;
-        }
-
-        recordingActiveRef.current =
-          false;
-
-        if (
-          timerRef.current
-        ) {
-          window.clearInterval(
-            timerRef.current
-          );
-
-          window.clearTimeout(
-            timerRef.current
-          );
-
-          timerRef.current =
-            null;
-        }
-
-        const audioContext =
-          audioContextRef.current;
-
-        const processor =
-          processorRef.current;
-
-        /*
-         * Stop collecting new PCM data.
-         */
-        if (processor) {
-          processor.onaudioprocess =
-            null;
-        }
-
-        /*
-         * Copy the collected PCM.
-         */
-        const chunks =
-          pcmChunksRef.current;
-
-        pcmChunksRef.current =
-          [];
-
-        /*
-         * Determine the sample rate used
-         * by the AudioContext.
-         */
-        const sampleRate =
-          audioContext?.sampleRate ||
-          44100;
-
-        cleanupAudio();
-
-        if (
-          !submit
-        ) {
-          return;
-        }
-
-        if (
-          !chunks.length
-        ) {
-          setError(
-            "No speech was captured."
-          );
-
-          setStatus(
-            "error"
-          );
-
-          return;
-        }
-
-        const totalSamples =
-          chunks.reduce(
-            (
-              total,
-              chunk
-            ) =>
-              total +
-              chunk.length,
-            0
-          );
-
-        if (
-          totalSamples < 1
-        ) {
-          setError(
-            "No speech samples were captured."
-          );
-
-          setStatus(
-            "error"
-          );
-
-          return;
-        }
-
-        const samples =
-          new Float32Array(
-            totalSamples
-          );
-
-        let offset = 0;
-
-        for (
-          const chunk of chunks
-        ) {
-          samples.set(
-            chunk,
-            offset
-          );
-
-          offset +=
-            chunk.length;
-        }
-
-        const wavBlob =
-          encodeWav(
-            samples,
-            sampleRate
-          );
-
-        /*
-         * Browser-side validation.
-         */
-        console.info(
-          "✅ WAV created:",
-          {
-            size:
-              wavBlob.size,
-            type:
-              wavBlob.type,
-            sampleRate,
-            channels: 1,
-            bitsPerSample: 16,
-          }
-        );
-
-        await sendAudio(
-          wavBlob
-        );
-      },
-      [
-        cleanupAudio,
-        sendAudio,
-      ]
+      (text) =>
+        sendMessage(
+          text,
+          null
+        ),
+      [sendMessage]
     );
 
-
   /* =======================================================
-     WAVEFORM
+     VOICE
   ======================================================= */
 
-  const startWaveform =
+  const openVoice =
     useCallback(() => {
-      const canvas =
-        canvasRef.current;
-
-      const analyser =
-        analyserRef.current;
-
-      if (
-        !canvas ||
-        !analyser
-      ) {
-        return;
-      }
-
-      const context =
-        canvas.getContext(
-          "2d"
+      const chatId =
+        ensureActiveChat(
+          "Voice Conversation"
         );
 
-      if (!context) {
-        return;
+      /*
+       * ensureActiveChat updates state immediately enough
+       * for the next render where the modal receives the
+       * correct session ID.
+       */
+      if (chatId) {
+        setSidebarOpen(false);
+        setVoiceActive(true);
       }
+    }, [
+      ensureActiveChat,
+    ]);
 
-      analyser.fftSize =
-        256;
-
-      const bufferLength =
-        analyser.frequencyBinCount;
-
-      const dataArray =
-        new Uint8Array(
-          bufferLength
-        );
-
-      dataArrayRef.current =
-        dataArray;
-
-      const draw =
-        () => {
-          if (
-            !analyserRef.current
-          ) {
-            return;
-          }
-
-          animationIdRef.current =
-            requestAnimationFrame(
-              draw
-            );
-
-          analyserRef.current.getByteTimeDomainData(
-            dataArray
-          );
-
-          context.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-          );
-
-          context.fillStyle =
-            "rgba(255,255,255,0.03)";
-
-          context.fillRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-          );
-
-          context.lineWidth =
-            2;
-
-          context.strokeStyle =
-            "#10b981";
-
-          context.beginPath();
-
-          const sliceWidth =
-            canvas.width /
-            dataArray.length;
-
-          let x = 0;
-
-          for (
-            let i = 0;
-            i <
-            dataArray.length;
-            i += 1
-          ) {
-            const v =
-              dataArray[i] /
-              128.0;
-
-            const y =
-              (
-                v *
-                canvas.height
-              ) /
-              2;
-
-            if (
-              i === 0
-            ) {
-              context.moveTo(
-                x,
-                y
-              );
-            } else {
-              context.lineTo(
-                x,
-                y
-              );
-            }
-
-            x +=
-              sliceWidth;
-          }
-
-          context.lineTo(
-            canvas.width,
-            canvas.height /
-              2
-          );
-
-          context.stroke();
-        };
-
-      draw();
+  const closeVoice =
+    useCallback(() => {
+      setVoiceActive(false);
     }, []);
 
-
-  /* =======================================================
-     START RECORDING
-  ======================================================= */
-
-  const startRecording =
+  const handleVoiceResult =
     useCallback(
-      async () => {
-        if (
-          startedRef.current
-        ) {
+      (result) => {
+        if (!result) {
+          setVoiceActive(false);
           return;
         }
 
-        startedRef.current =
-          true;
+        const heard =
+          String(
+            result.heard || ""
+          ).trim();
 
-        try {
-          setStatus(
-            "requesting"
-          );
+        const response =
+          String(
+            result.response || ""
+          ).trim();
 
-          setError("");
-
-          if (
-            typeof navigator ===
-              "undefined" ||
-            !navigator.mediaDevices
-              ?.getUserMedia
-          ) {
-            throw new Error(
-              "Microphone access is not supported by this browser."
-            );
-          }
-
-          const stream =
-            await navigator.mediaDevices.getUserMedia(
-              {
-                audio: {
-                  channelCount: 1,
-                  echoCancellation: true,
-                  noiseSuppression: true,
-                  autoGainControl: true,
-                },
-              }
-            );
-
-          if (
-            !mountedRef.current
-          ) {
-            stream
-              .getTracks()
-              .forEach(
-                (track) =>
-                  track.stop()
-              );
-
-            return;
-          }
-
-          streamRef.current =
-            stream;
-
-          /*
-           * AudioContext captures the raw PCM
-           * audio stream. No MediaRecorder,
-           * WebM, Opus, MP4 or OGG.
-           */
-          const AudioContextClass =
-            window.AudioContext ||
-            window.webkitAudioContext;
-
-          if (
-            !AudioContextClass
-          ) {
-            throw new Error(
-              "Web Audio API is not supported by this browser."
-            );
-          }
-
-          const audioContext =
-            new AudioContextClass();
-
-          audioContextRef.current =
-            audioContext;
-
-          if (
-            audioContext.state ===
-            "suspended"
-          ) {
-            await audioContext.resume();
-          }
-
-          const source =
-            audioContext.createMediaStreamSource(
-              stream
-            );
-
-          sourceRef.current =
-            source;
-
-          /*
-           * ScriptProcessor is used here because it
-           * provides broad browser compatibility for
-           * PCM capture without requiring a separate
-           * AudioWorklet module file.
-           */
-          const processor =
-            audioContext.createScriptProcessor(
-              4096,
-              1,
-              1
-            );
-
-          processorRef.current =
-            processor;
-
-          /*
-           * Zero-gain output prevents microphone
-           * feedback while keeping the processor
-           * active.
-           */
-          const silentGain =
-            audioContext.createGain();
-
-          silentGain.gain.value =
-            0;
-
-          silentGainRef.current =
-            silentGain;
-
-          /*
-           * Waveform analyser.
-           */
-          const analyser =
-            audioContext.createAnalyser();
-
-          analyserRef.current =
-            analyser;
-
-          source.connect(
-            analyser
-          );
-
-          source.connect(
-            processor
-          );
-
-          processor.connect(
-            silentGain
-          );
-
-          silentGain.connect(
-            audioContext.destination
-          );
-
-          /*
-           * PCM capture.
-           */
-          pcmChunksRef.current =
-            [];
-
-          processor.onaudioprocess =
-            (event) => {
-              if (
-                !recordingActiveRef.current
-              ) {
-                return;
-              }
-
-              const input =
-                event.inputBuffer;
-
-              const channels =
-                input.numberOfChannels;
-
-              const frameCount =
-                input.length;
-
-              const mono =
-                new Float32Array(
-                  frameCount
-                );
-
-              if (
-                channels <= 1
-              ) {
-                mono.set(
-                  input.getChannelData(
-                    0
-                  )
-                );
-              } else {
-                /*
-                 * Average channels into mono.
-                 */
-                for (
-                  let i = 0;
-                  i <
-                  frameCount;
-                  i += 1
-                ) {
-                  let sum = 0;
-
-                  for (
-                    let channel = 0;
-                    channel <
-                    channels;
-                    channel += 1
-                  ) {
-                    sum +=
-                      input.getChannelData(
-                        channel
-                      )[i];
-                  }
-
-                  mono[i] =
-                    sum /
-                    channels;
-                }
-              }
-
-              pcmChunksRef.current.push(
-                mono
-              );
-            };
-
-          startWaveform();
-
-          setElapsed(0);
-
-          recordingActiveRef.current =
-            true;
-
-          timerRef.current =
-            window.setInterval(
-              () => {
-                setElapsed(
-                  (previous) =>
-                    previous + 1
-                );
-              },
-              1000
-            );
-
-          setStatus(
-            "recording"
-          );
-
-          /*
-           * Automatic safety stop after
-           * MAX_RECORDING_SECONDS.
-           */
-          window.setTimeout(
-            () => {
-              if (
-                recordingActiveRef.current
-              ) {
-                stopRecording(
-                  true
-                );
-              }
-            },
-            MAX_RECORDING_SECONDS *
-              1000
-          );
-        } catch (err) {
-          startedRef.current =
-            false;
-
-          console.error(
-            "❌ Microphone error:",
-            err
-          );
-
-          cleanupAudio();
-
-          setError(
-            err?.message ||
-              "Could not access the microphone."
-          );
-
-          setStatus(
-            "error"
-          );
+        if (
+          !heard &&
+          !response
+        ) {
+          setVoiceActive(false);
+          return;
         }
+
+        const chatId =
+          activeChatId ||
+          ensureActiveChat(
+            heard ||
+              "Voice Conversation"
+          );
+
+        const currentMessages =
+          messages;
+
+        const userMessage =
+          createMessage(
+            "user",
+            heard ||
+              "Voice message",
+            "done",
+            {
+              inputType:
+                "voice",
+            }
+          );
+
+        const assistantMessage =
+          createMessage(
+            "assistant",
+            response ||
+              "RevelaAI returned an empty voice response.",
+            "done",
+            {
+              inputType:
+                "voice",
+
+              audioUrl:
+                isSafeHttpUrl(
+                  result.audio_url
+                )
+                  ? result.audio_url
+                  : null,
+
+              voice:
+                result.voice ||
+                null,
+
+              metadata:
+                result.meta ||
+                {},
+
+              contentType:
+                "voice",
+            }
+          );
+
+        const updated = [
+          ...currentMessages,
+          userMessage,
+          assistantMessage,
+        ];
+
+        setMessages(
+          updated
+        );
+
+        updateChat(
+          chatId,
+          updated,
+          (
+            heard ||
+            "Voice Conversation"
+          )
+            .slice(0, 45)
+        );
+
+        setVoiceActive(false);
       },
       [
-        cleanupAudio,
-        startWaveform,
-        stopRecording,
+        activeChatId,
+        messages,
+        ensureActiveChat,
+        updateChat,
       ]
     );
 
-
   /* =======================================================
-     LIFECYCLE
+     CONVERSATION STATE
   ======================================================= */
 
-  useEffect(() => {
-    mountedRef.current =
-      true;
-
-    shouldSubmitRef.current =
-      true;
-
-    startRecording();
-
-    return () => {
-      mountedRef.current =
-        false;
-
-      shouldSubmitRef.current =
-        false;
-
-      controllerRef.current?.abort();
-
-      if (!voiceHandedOffRef.current) {
-        voicePlayerRef.current?.stop?.();
-      }
-
-      cleanupAudio();
-    };
-  }, [
-    cleanupAudio,
-    startRecording,
-  ]);
-
+  const hasConversation =
+    messages.some(
+      (message) =>
+        message.role ===
+        "user"
+    );
 
   /* =======================================================
-     FORMAT TIME
+     CHAT HEADER
   ======================================================= */
 
-  const formattedTime =
-    `${String(
-      Math.floor(
-        elapsed / 60
-      )
-    ).padStart(
-      2,
-      "0"
-    )}:${String(
-      elapsed % 60
-    ).padStart(
-      2,
-      "0"
-    )}`;
-
+  const chatTitle =
+    activeChat?.title ||
+    "RevelaAI";
 
   /* =======================================================
      UI
@@ -1521,344 +1252,345 @@ export default function RevelaAIVoiceChat({
   return (
     <div
       className="
-        fixed
-        inset-0
-        z-[100]
         flex
-        items-center
-        justify-center
-        bg-black/70
-        p-4
-        backdrop-blur-md
+        h-full
+        min-h-0
+        min-w-0
+        overflow-hidden
+        bg-revela-dark
+        text-white
       "
     >
-      <div
+      {/* ===================================================
+          SIDEBAR
+      =================================================== */}
+
+      <Sidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+        chats={chats}
+        activeChatId={
+          activeChatId
+        }
+        onNewChat={
+          startNewChat
+        }
+        onSelectChat={
+          selectChat
+        }
+      />
+
+      {/* ===================================================
+          MAIN AI WORKSPACE
+      =================================================== */}
+
+      <main
         className="
-          w-full
-          max-w-md
+          flex
+          min-h-0
+          min-w-0
+          flex-1
+          flex-col
           overflow-hidden
-          rounded-3xl
-          border
-          border-white/10
-          bg-revela-card
-          shadow-2xl
         "
       >
-        {/* Header */}
+        {/* =================================================
+            TOP BAR
+        ================================================= */}
 
-        <div
+        <header
           className="
             flex
+            h-14
+            shrink-0
             items-center
             justify-between
+            gap-3
             border-b
             border-white/10
-            px-5
-            py-4
+            bg-revela-dark/95
+            px-3
+            backdrop-blur-lg
+            sm:px-4
           "
         >
-          <div>
-            <p
-              className="
-                text-sm
-                font-bold
-                text-white
-              "
-            >
-              RevelaAI Voice
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-[11px]
-                text-gray-500
-              "
-            >
-              Speak naturally to RevelaAI
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              handleClose
-            }
-            className="
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-xl
-              text-gray-400
-              transition
-              hover:bg-white/10
-              hover:text-white
-            "
-            aria-label="Close voice input"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-
-        {/* Body */}
-
-        <div
-          className="
-            flex
-            flex-col
-            items-center
-            px-5
-            py-7
-          "
-        >
-          {/* Microphone */}
-
-          <div
-            className={`
-              flex
-              h-20
-              w-20
-              items-center
-              justify-center
-              rounded-full
-              border
-              ${
-                status ===
-                "recording"
-                  ? "border-emerald-400/40 bg-emerald-500/10"
-                  : "border-white/10 bg-white/5"
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(
+                  (open) =>
+                    !open
+                )
               }
-              transition
-            `}
-          >
-            {status ===
-            "processing" ? (
-              <Loader2
-                size={30}
+              className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-white/10
+                bg-white/5
+                text-gray-300
+                transition
+                hover:bg-white/10
+                hover:text-white
+                md:hidden
+              "
+              aria-label="Toggle AI sidebar"
+            >
+              <Menu size={18} />
+            </button>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Sparkles
+                  size={16}
+                  className="shrink-0 text-emerald-400"
+                />
+
+                <h1
+                  className="
+                    truncate
+                    text-sm
+                    font-bold
+                    text-white
+                  "
+                >
+                  {hasConversation
+                    ? chatTitle
+                    : "RevelaAI"}
+                </h1>
+              </div>
+
+              <p
                 className="
-                  animate-spin
-                  text-emerald-400
+                  hidden
+                  truncate
+                  text-[10px]
+                  text-gray-500
+                  sm:block
                 "
-              />
-            ) : (
-              <Mic
-                size={30}
-                className={
-                  status ===
-                  "recording"
-                    ? "text-emerald-400"
-                    : "text-gray-400"
-                }
-              />
-            )}
+              >
+                RevelaCode intelligent assistant
+              </p>
+            </div>
           </div>
 
-
-          {/* Status */}
-
-          <p
-            className="
-              mt-5
-              text-lg
-              font-bold
-              text-white
-            "
-          >
-            {status ===
-            "recording"
-              ? "Listening..."
-              : status ===
-                  "processing"
-                ? "RevelaAI is processing..."
-                : status ===
-                    "complete"
-                  ? "Complete"
-                  : status ===
-                      "error"
-                    ? "Voice error"
-                    : "Starting microphone..."}
-          </p>
-
-          <p
-            className="
-              mt-1
-              text-xs
-              text-gray-500
-            "
-          >
-            {formattedTime}
-          </p>
-
-
-          {/* Waveform */}
-
-          <canvas
-            ref={
-              canvasRef
-            }
-            width={520}
-            height={120}
-            className="
-              mt-6
-              h-28
-              w-full
-              rounded-2xl
-              border
-              border-white/10
-              bg-black/20
-            "
-          />
-
-
-          {/* Error */}
-
-          {error && (
+          <div className="flex shrink-0 items-center gap-2">
             <div
               className="
-                mt-4
-                flex
-                w-full
-                items-start
+                hidden
+                items-center
+                gap-1.5
+                rounded-full
+                border
+                border-emerald-500/20
+                bg-emerald-500/10
+                px-2.5
+                py-1.5
+                text-[10px]
+                font-bold
+                text-emerald-300
+                sm:flex
+              "
+            >
+              <ShieldCheck size={12} />
+              AI READY
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                startNewChat
+              }
+              className="
+                hidden
+                items-center
                 gap-2
                 rounded-xl
                 border
-                border-red-500/20
-                bg-red-500/5
+                border-white/10
+                bg-white/5
                 px-3
-                py-3
+                py-2
                 text-xs
-                text-red-300
+                font-bold
+                text-gray-300
+                transition
+                hover:bg-white/10
+                hover:text-white
+                sm:inline-flex
               "
             >
-              <AlertCircle
-                size={15}
-                className="mt-0.5 shrink-0"
+              <MessageSquarePlus
+                size={14}
               />
+              New Chat
+            </button>
+          </div>
+        </header>
 
-              <span>
-                {error}
-              </span>
-            </div>
-          )}
+        {/* =================================================
+            WORKSPACE BODY
+        ================================================= */}
 
-
-          {/* Completed audio indicator */}
-
-          {status ===
-            "complete" && (
+        {!hasConversation ? (
+          <section
+            className="
+              relative
+              min-h-0
+              flex-1
+              overflow-y-auto
+              overscroll-contain
+            "
+          >
             <div
               className="
-                mt-4
                 flex
+                min-h-full
+                w-full
                 items-center
-                gap-2
-                text-xs
-                text-emerald-300
+                justify-center
+                px-4
+                py-8
+                sm:px-6
+                sm:py-10
               "
             >
-              <Volume2
-                size={15}
-              />
-
-              <span>
-                Voice response received.
-              </span>
-            </div>
-          )}
-
-
-          {/* Controls */}
-
-          <div
-            className="
-              mt-6
-              flex
-              w-full
-              gap-3
-            "
-          >
-            {status ===
-            "recording" ? (
-              <button
-                type="button"
-                onClick={() =>
-                  stopRecording(
-                    true
-                  )
-                }
+              <div
                 className="
                   flex
-                  flex-1
+                  w-full
+                  max-w-3xl
+                  flex-col
                   items-center
                   justify-center
-                  gap-2
-                  rounded-2xl
-                  bg-red-600
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-white
-                  transition
-                  hover:bg-red-500
-                  active:scale-[0.99]
                 "
               >
-                <Square
-                  size={15}
-                  fill="currentColor"
+                <WelcomeScreen
+                  onSuggestion={
+                    sendTextMessage
+                  }
                 />
 
-                Stop & Send
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={
-                  handleClose
-                }
-                className="
-                  flex
-                  flex-1
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-white/10
-                  bg-white/5
-                  px-4
-                  py-3
-                  text-sm
-                  font-bold
-                  text-gray-200
-                  transition
-                  hover:bg-white/10
-                "
-              >
-                Close
-              </button>
-            )}
-          </div>
+                <div
+                  className="
+                    mt-8
+                    w-full
+                    max-w-3xl
+                  "
+                >
+                  <InputBar
+                    centered
+                    onSend={
+                      sendMessage
+                    }
+                    onMic={
+                      openVoice
+                    }
+                  />
+                </div>
 
-
-          <p
+                <p
+                  className="
+                    mt-4
+                    text-center
+                    text-[10px]
+                    leading-5
+                    text-gray-500
+                    sm:text-xs
+                  "
+                >
+                  Ask about Scripture,
+                  prophecy, coding,
+                  education, business,
+                  agriculture, documents,
+                  images, or general knowledge.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section
             className="
-              mt-4
-              text-center
-              text-[10px]
-              leading-5
-              text-gray-600
+              flex
+              min-h-0
+              flex-1
+              flex-col
+              overflow-hidden
             "
           >
-            Audio is captured as PCM WAV and sent
-            securely to RevelaAI for transcription.
-          </p>
-        </div>
-      </div>
+            <div
+              className="
+                min-h-0
+                flex-1
+                overflow-y-auto
+                overscroll-contain
+              "
+            >
+              <ChatWindow
+                messages={
+                  messages
+                }
+              />
+            </div>
+
+            <div
+              className="
+                shrink-0
+                border-t
+                border-white/10
+                bg-revela-dark/95
+                px-3
+                pb-3
+                pt-3
+                backdrop-blur-lg
+                sm:px-4
+                sm:pb-4
+              "
+            >
+              <div className="mx-auto w-full max-w-4xl">
+                <InputBar
+                  onSend={
+                    sendMessage
+                  }
+                  onMic={
+                    openVoice
+                  }
+                />
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* ===================================================
+          VOICE CHAT
+      =================================================== */}
+
+      {voiceActive && (
+        <RevelaAIVoiceChat
+          sessionId={
+            activeChatId
+          }
+          onVoiceResult={
+            handleVoiceResult
+          }
+          onClose={
+            closeVoice
+          }
+        />
+      )}
+
+      {onOpenAI && (
+        <span className="sr-only">
+          RevelaAI workspace active
+        </span>
+      )}
     </div>
   );
 }
