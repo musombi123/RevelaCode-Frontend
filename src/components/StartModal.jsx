@@ -301,73 +301,147 @@ export default function StartModal() {
   // =======================================================
 
   const completeLogin = (data = {}) => {
+    const responseData = data?.data || {};
+
     const user =
       data?.user ||
-      data?.data?.user ||
-      {};
+      responseData?.user ||
+    {};
+
+    const accessToken =
+      data?.access_token ||
+      data?.token ||
+      data?.accessToken ||
+      responseData?.access_token ||
+      responseData?.token ||
+      responseData?.accessToken ||
+      user?.access_token ||
+      user?.token ||
+      "";
+
+    const tokenType =
+      data?.token_type ||
+      data?.tokenType ||
+      responseData?.token_type ||
+      responseData?.tokenType ||
+      "Bearer";
 
     const authPayload = {
       contact:
-        data.contact ||
-        user.contact ||
+        data?.contact ||
+        responseData?.contact ||
+        user?.contact ||
         "",
 
       fullName:
-        data.full_name ||
-        data.fullName ||
-        user.full_name ||
-        user.fullName ||
+        data?.full_name ||
+        data?.fullName ||
+        responseData?.full_name ||
+        responseData?.fullName ||
+        user?.full_name ||
+        user?.fullName ||
         "",
 
       role:
-        data.role ||
-        user.role ||
+        data?.role ||
+        responseData?.role ||
+        user?.role ||
         "user",
 
       apiKey:
-        data.api_key ||
-        user.api_key ||
+        data?.api_key ||
+        data?.apiKey ||
+        responseData?.api_key ||
+        responseData?.apiKey ||
+        user?.api_key ||
         "",
 
-      accessToken:
-        data.access_token ||
-        data.token ||
-        data.accessToken ||
-        user.access_token ||
-        user.token ||
-        "",
+      accessToken,
 
-      tokenType:
-        data.token_type ||
-        data.tokenType ||
-        "Bearer",
+      tokenType,
 
       expiresIn:
-        data.expires_in ||
-        data.expiresIn ||
+        data?.expires_in ||
+        data?.expiresIn ||
+        responseData?.expires_in ||
+        responseData?.expiresIn ||
         0,
     };
 
+    // -------------------------------------------------------
+    // TOKEN VALIDATION
+    // -------------------------------------------------------
+
     if (!authPayload.accessToken) {
-      console.warn(
-        "Login succeeded but no access token was returned:",
-        data
+      console.error(
+        "LOGIN SUCCEEDED BUT NO ACCESS TOKEN WAS FOUND.",
+        {
+          response: data,
+          topLevelKeys: Object.keys(data || {}),
+          nestedDataKeys: Object.keys(responseData || {}),
+          userKeys: Object.keys(user || {}),
+        },
+      );
+
+      throw new Error(
+        "Login succeeded, but the backend did not provide an access token.",
       );
     }
+
+    // -------------------------------------------------------
+    // PERSIST AUTHENTICATION
+    // -------------------------------------------------------
+
+    localStorage.setItem(
+      "revelacode_access_token",
+      authPayload.accessToken,
+    );
+
+    localStorage.setItem(
+      "revelacode_token_type",
+      authPayload.tokenType,
+    );
+
+    // Optional compatibility keys
+    localStorage.setItem(
+      "access_token",
+      authPayload.accessToken,
+    );
+
+    localStorage.setItem(
+      "token",
+      authPayload.accessToken,
+    );
+
+    // -------------------------------------------------------
+    // UPDATE AUTH CONTEXT
+    // -------------------------------------------------------
 
     login(authPayload);
 
-    if (authPayload.accessToken) {
-      localStorage.setItem(
-        "revelacode_access_token",
-        authPayload.accessToken
-      );
+    // -------------------------------------------------------
+    // VERIFY PERSISTENCE
+    // -------------------------------------------------------
 
-      localStorage.setItem(
-        "revelacode_token_type",
-        authPayload.tokenType
+    const storedToken = localStorage.getItem(
+      "revelacode_access_token",
+    );
+
+    if (!storedToken) {
+      throw new Error(
+        "Authentication succeeded, but the access token could not be stored.",
       );
     }
+
+    console.log(
+      "RevelaCode authentication established.",
+      {
+        authenticated: true,
+        tokenStored: true,
+        tokenType: authPayload.tokenType,
+        hasToken: Boolean(storedToken),
+      },
+    );
 
     return authPayload;
   };
