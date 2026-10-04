@@ -30,477 +30,6 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 /* =========================================================
-   Official Announcement Modal
-========================================================= */
-
-function OfficialAnnouncementModal({
-  open,
-  onClose,
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="
-            fixed
-            inset-0
-            z-[10000]
-            flex
-            items-center
-            justify-center
-            bg-black/80
-            p-3
-            sm:p-4
-          "
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            initial={{
-              scale: 0.94,
-              y: 24,
-              opacity: 0,
-            }}
-            animate={{
-              scale: 1,
-              y: 0,
-              opacity: 1,
-            }}
-            exit={{
-              scale: 0.97,
-              y: 10,
-              opacity: 0,
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 220,
-              damping: 22,
-            }}
-            className="
-              flex
-              max-h-[94vh]
-              w-full
-              max-w-4xl
-              flex-col
-              overflow-hidden
-              rounded-3xl
-              border
-              border-gray-200
-              bg-white
-              shadow-2xl
-              dark:border-gray-800
-              dark:bg-gray-950
-            "
-          >
-            {/* =================================================
-                HEADER
-            ================================================= */}
-
-            <div
-              className="
-                sticky
-                top-0
-                z-20
-                shrink-0
-                border-b
-                border-gray-200
-                bg-white
-                p-4
-                dark:border-gray-800
-                dark:bg-gray-950
-                sm:p-6
-              "
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div
-                    className="
-                      flex
-                      h-11
-                      w-11
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-2xl
-                      bg-gradient-to-br
-                      from-indigo-600
-                      via-purple-600
-                      to-pink-600
-                      text-xl
-                      font-bold
-                      text-white
-                      shadow-lg
-                      sm:h-12
-                      sm:w-12
-                    "
-                  >
-                    R
-                  </div>
-
-                  <div className="min-w-0">
-                    <h2
-                      className="
-                        truncate
-                        text-lg
-                        font-extrabold
-                        text-gray-900
-                        dark:text-gray-100
-                        sm:text-2xl
-                      "
-                    >
-                      REVELACODE OFFICIAL STATEMENT
-                    </h2>
-
-                    <p
-                      className="
-                        mt-1
-                        text-xs
-                        text-gray-500
-                        dark:text-gray-400
-                        sm:text-sm
-                      "
-                    >
-                      Important platform development announcement
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="
-                    shrink-0
-                    rounded-xl
-                    p-2
-                    text-gray-500
-                    transition
-                    hover:bg-gray-100
-                    hover:text-gray-900
-                    dark:text-gray-400
-                    dark:hover:bg-gray-800
-                    dark:hover:text-white
-                  "
-                  title="Close announcement"
-                  aria-label="Close announcement"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* =================================================
-                CONTENT
-            ================================================= */}
-
-            <div
-              className="
-                overflow-y-auto
-                overscroll-contain
-                p-4
-                text-gray-700
-                dark:text-gray-300
-                sm:p-6
-              "
-            >
-              <div className="space-y-6">
-
-                {/* Temporary Notice */}
-
-                <div
-                  className="
-                    rounded-2xl
-                    border
-                    border-yellow-300/40
-                    bg-yellow-50
-                    p-5
-                    dark:border-yellow-800/40
-                    dark:bg-yellow-950/20
-                  "
-                >
-                  <h3
-                    className="
-                      mb-2
-                      text-lg
-                      font-bold
-                      text-yellow-800
-                      dark:text-yellow-300
-                    "
-                  >
-                    ⚠ Temporary Delay Notice
-                  </h3>
-
-                  <p className="leading-relaxed">
-                    Sorry for the inconvenience. We are
-                    working behind the scenes to ensure
-                    everything coming soon is stable,
-                    intelligent, secure, and ready for
-                    every user.
-                  </p>
-                </div>
-
-                {/* Main Statement */}
-
-                <div className="space-y-5 leading-relaxed">
-                  <p>
-                    To everyone who has been waiting,
-                    supporting, and believing in the vision
-                    of RevelaCode — thank you.
-                  </p>
-
-                  <p>
-                    The RevelaCode project was originally
-                    scheduled for release this May.
-                    However, due to unavoidable circumstances
-                    involving system development,
-                    infrastructure improvements,
-                    integration challenges, and long-term
-                    platform planning, we made the
-                    difficult decision to postpone the
-                    official launch.
-                  </p>
-
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    This decision was not made lightly.
-                  </p>
-
-                  <p>
-                    As development continued, it became
-                    clear that releasing the platform before
-                    it met our standards would compromise
-                    quality, stability, and the long-term
-                    vision of the ecosystem we are building.
-                  </p>
-
-                  {/* Evolution */}
-
-                  <div
-                    className="
-                      rounded-2xl
-                      bg-gradient-to-br
-                      from-indigo-600
-                      via-purple-600
-                      to-pink-600
-                      p-5
-                      text-white
-                      shadow-lg
-                    "
-                  >
-                    <h3 className="mb-3 text-xl font-bold">
-                      RevelaCode Has Evolved
-                    </h3>
-
-                    <p className="text-white/90">
-                      RevelaCode is no longer just a simple
-                      project. It has evolved into a broader
-                      AI-powered ecosystem integrating
-                      theology, education, programming,
-                      agriculture, intelligent technologies,
-                      and advanced knowledge systems through
-                      the MVI-AI Engine and RevelaAI
-                      infrastructure.
-                    </p>
-                  </div>
-
-                  {/* Current Focus */}
-
-                  <div>
-                    <h3
-                      className="
-                        mb-4
-                        text-lg
-                        font-bold
-                        text-gray-900
-                        dark:text-gray-100
-                      "
-                    >
-                      Our Team Is Currently Focused On:
-                    </h3>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {[
-                        "Strengthening the AI systems",
-                        "Improving frontend and backend integration",
-                        "Refining documentation and infrastructure",
-                        "Enhancing security and scalability",
-                        "Preparing a more stable user experience",
-                        "Optimizing RevelaAI performance",
-                      ].map((item) => (
-                        <div
-                          key={item}
-                          className="
-                            rounded-2xl
-                            border
-                            border-gray-200
-                            bg-gray-50
-                            p-4
-                            dark:border-gray-800
-                            dark:bg-gray-900
-                          "
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-3 w-3 rounded-full bg-green-500" />
-
-                            <p className="font-medium">
-                              {item}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Closing */}
-
-                  <div
-                    className="
-                      rounded-2xl
-                      border
-                      border-indigo-200
-                      bg-indigo-50
-                      p-5
-                      dark:border-indigo-900/40
-                      dark:bg-indigo-950/20
-                    "
-                  >
-                    <p className="leading-relaxed">
-                      We understand the anticipation
-                      surrounding this launch and sincerely
-                      appreciate the patience, encouragement,
-                      and continued support from everyone
-                      following the journey.
-                    </p>
-
-                    <p
-                      className="
-                        mt-4
-                        font-semibold
-                        text-indigo-700
-                        dark:text-indigo-300
-                      "
-                    >
-                      This delay is not a step backward.
-                    </p>
-
-                    <p className="mt-2">
-                      It is a strategic step toward building
-                      something stronger, smarter, and more
-                      impactful for the future.
-                    </p>
-                  </div>
-
-                  {/* Contact */}
-
-                  <div
-                    className="
-                      rounded-2xl
-                      border
-                      border-gray-200
-                      bg-gray-50
-                      p-5
-                      dark:border-gray-800
-                      dark:bg-gray-900
-                    "
-                  >
-                    <h3
-                      className="
-                        mb-4
-                        text-lg
-                        font-bold
-                        text-gray-900
-                        dark:text-gray-100
-                      "
-                    >
-                      CONTACT INFORMATION
-                    </h3>
-
-                    <div className="space-y-3 text-sm">
-                      <div>
-                        <span className="font-semibold">
-                          Official Email:
-                        </span>{" "}
-                        revelacodepro@gmail.com
-                      </div>
-
-                      <div>
-                        <span className="font-semibold">
-                          Personal Contact:
-                        </span>{" "}
-                        musombiwilliam769@mail.com
-                      </div>
-                    </div>
-
-                    <div
-                      className="
-                        mt-6
-                        border-t
-                        border-gray-200
-                        pt-4
-                        dark:border-gray-800
-                      "
-                    >
-                      <p className="font-bold text-gray-900 dark:text-gray-100">
-                        — REVELACODE OFFICIALS
-                      </p>
-
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <p className="font-semibold">
-                            Musombi William
-                          </p>
-
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Lead Architect
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="font-semibold">
-                            Makenji Mellan
-                          </p>
-
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Documentation Leader & Support Team Admin
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Continue */}
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="
-                    w-full
-                    rounded-2xl
-                    bg-gradient-to-r
-                    from-indigo-600
-                    via-purple-600
-                    to-pink-600
-                    py-4
-                    font-bold
-                    text-white
-                    shadow-xl
-                    transition
-                    hover:opacity-90
-                    active:scale-[0.99]
-                  "
-                >
-                  Continue to RevelaCode 🚀
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* =========================================================
    Fullscreen AI Assistant
 ========================================================= */
 
@@ -526,7 +55,9 @@ function FullscreenAIAssistant({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* AI Header */}
+          {/* =================================================
+              AI HEADER
+          ================================================= */}
 
           <div
             className="
@@ -544,14 +75,28 @@ function FullscreenAIAssistant({
               sm:px-4
             "
           >
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div
+              className="
+                flex
+                min-w-0
+                items-center
+                gap-2
+                sm:gap-3
+              "
+            >
               <div className="flex items-center gap-2">
                 <Bot
                   size={18}
                   className="text-green-600"
                 />
 
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                <h3
+                  className="
+                    font-bold
+                    text-gray-900
+                    dark:text-gray-100
+                  "
+                >
                   RevelaAI
                 </h3>
               </div>
@@ -597,7 +142,9 @@ function FullscreenAIAssistant({
             </button>
           </div>
 
-          {/* AI Content */}
+          {/* =================================================
+              AI CONTENT
+          ================================================= */}
 
           <div className="min-h-0 flex-1 overflow-hidden">
             <Suspense fallback={<Loading />}>
@@ -618,11 +165,25 @@ function FullscreenAIAssistant({
                       dark:bg-gray-900
                     "
                   >
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                    <h4
+                      className="
+                        font-semibold
+                        text-gray-900
+                        dark:text-gray-100
+                      "
+                    >
                       AI Dashboard Not Found
                     </h4>
 
-                    <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                    <p
+                      className="
+                        mt-2
+                        text-sm
+                        leading-6
+                        text-gray-600
+                        dark:text-gray-300
+                      "
+                    >
                       Make sure you have a dashboard
                       with key{" "}
                       <code
@@ -666,6 +227,27 @@ function FullscreenAIAssistant({
 ========================================================= */
 
 export default function MainDashboardV2() {
+  /*
+   * IMPORTANT:
+   *
+   * MainDashboardV2 is the APPLICATION SHELL.
+   *
+   * It should NOT be registered as a dashboard inside
+   * dashboardConfig.jsx.
+   *
+   * dashboardConfig.jsx contains the actual dashboards:
+   *
+   *   home
+   *   bible
+   *   study
+   *   biashara
+   *   shamba
+   *   elimu
+   *   community
+   *   ai
+   *   etc.
+   */
+
   const defaultDashboard = "home";
 
   const [activeView, setActiveView] =
@@ -678,9 +260,6 @@ export default function MainDashboardV2() {
     useState(false);
 
   const [showStartModal, setShowStartModal] =
-    useState(false);
-
-  const [showAnnouncement, setShowAnnouncement] =
     useState(false);
 
   const [searchParams] =
@@ -726,49 +305,20 @@ export default function MainDashboardV2() {
   }, []);
 
   /* =========================================================
-     Start Modal
+     Start / Authentication Modal
   ========================================================= */
 
   useEffect(() => {
     if (!user) {
       setShowStartModal(true);
+      return;
     }
+
+    setShowStartModal(false);
   }, [user]);
 
   const handleStartComplete = useCallback(() => {
     setShowStartModal(false);
-  }, []);
-
-  /* =========================================================
-     Official Announcement
-  ========================================================= */
-
-  useEffect(() => {
-    const alreadySeen =
-      localStorage.getItem(
-        "revelacodeAnnouncementSeen"
-      );
-
-    if (alreadySeen) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setShowAnnouncement(true);
-    }, 1500);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, []);
-
-  const handleCloseAnnouncement = useCallback(() => {
-    localStorage.setItem(
-      "revelacodeAnnouncementSeen",
-      "true"
-    );
-
-    setShowAnnouncement(false);
   }, []);
 
   /* =========================================================
@@ -793,6 +343,11 @@ export default function MainDashboardV2() {
 
   useEffect(() => {
     const handler = (event) => {
+      /*
+       * Ctrl + K
+       * Open / close RevelaAI fullscreen.
+       */
+
       if (
         event.ctrlKey &&
         event.key.toLowerCase() === "k"
@@ -805,6 +360,11 @@ export default function MainDashboardV2() {
 
         return;
       }
+
+      /*
+       * Escape
+       * Close overlays.
+       */
 
       if (event.key === "Escape") {
         setAIFullscreenOpen(false);
@@ -856,21 +416,27 @@ export default function MainDashboardV2() {
      Navigation Entries
   ========================================================= */
 
-  const visibleDashboards = DASHBOARDS
-    .filter(
-      (dashboard) =>
-        !dashboard.hidden
-    )
-    .filter((dashboard) => {
-      if (
-        isGuest &&
-        dashboard.key === "accounts"
-      ) {
-        return false;
-      }
+  const visibleDashboards =
+    DASHBOARDS
+      .filter(
+        (dashboard) =>
+          !dashboard.hidden
+      )
+      .filter((dashboard) => {
+        /*
+         * Guests should not see the accounts
+         * dashboard in the main navigation.
+         */
 
-      return true;
-    });
+        if (
+          isGuest &&
+          dashboard.key === "accounts"
+        ) {
+          return false;
+        }
+
+        return true;
+      });
 
   /* =========================================================
      Render
@@ -878,17 +444,6 @@ export default function MainDashboardV2() {
 
   return (
     <>
-      {/* =====================================================
-          OFFICIAL ANNOUNCEMENT
-      ===================================================== */}
-
-      <OfficialAnnouncementModal
-        open={showAnnouncement}
-        onClose={
-          handleCloseAnnouncement
-        }
-      />
-
       {/* =====================================================
           START / AUTH MODAL
       ===================================================== */}
@@ -940,7 +495,9 @@ export default function MainDashboardV2() {
         <AnimatePresence>
           {sidebarOpen && (
             <>
-              {/* Mobile Overlay */}
+              {/* =================================================
+                  MOBILE OVERLAY
+              ================================================= */}
 
               <motion.button
                 type="button"
@@ -970,7 +527,9 @@ export default function MainDashboardV2() {
                 }
               />
 
-              {/* Drawer */}
+              {/* =================================================
+                  DRAWER
+              ================================================= */}
 
               <motion.aside
                 initial={{
@@ -1026,7 +585,14 @@ export default function MainDashboardV2() {
                     dark:border-gray-800
                   "
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className="
+                      flex
+                      min-w-0
+                      items-center
+                      gap-3
+                    "
+                  >
                     <div
                       className="
                         flex
@@ -1050,7 +616,13 @@ export default function MainDashboardV2() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold">
+                      <p
+                        className="
+                          truncate
+                          text-sm
+                          font-bold
+                        "
+                      >
                         RevelaCode
                       </p>
 
@@ -1062,7 +634,7 @@ export default function MainDashboardV2() {
                           dark:text-gray-400
                         "
                       >
-                        Intelligent Scripture Workspace
+                        AI-Powered Technology Ecosystem
                       </p>
                     </div>
                   </div>
@@ -1200,19 +772,36 @@ export default function MainDashboardV2() {
                                 }
                               `}
                             >
-                              <Icon size={17} />
+                              {Icon ? (
+                                <Icon size={17} />
+                              ) : (
+                                <span className="text-xs">
+                                  •
+                                </span>
+                              )}
                             </span>
 
                             {/* Label */}
 
-                            <span className="min-w-0 flex-1 truncate">
+                            <span
+                              className="
+                                min-w-0
+                                flex-1
+                                truncate
+                              "
+                            >
                               {label}
                             </span>
 
                             {/* Active Dot */}
 
                             {active && (
-                              <span className="text-xs text-gray-400">
+                              <span
+                                className="
+                                  text-xs
+                                  text-gray-400
+                                "
+                              >
                                 ●
                               </span>
                             )}
@@ -1278,7 +867,13 @@ export default function MainDashboardV2() {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">
+                        <p
+                          className="
+                            truncate
+                            text-sm
+                            font-semibold
+                          "
+                        >
                           {user?.fullName ||
                             "Guest"}
                         </p>
@@ -1303,7 +898,6 @@ export default function MainDashboardV2() {
                   {/* Footer Actions */}
 
                   <div className="grid grid-cols-2 gap-2">
-
                     {/* Theme */}
 
                     <button
@@ -1429,8 +1023,14 @@ export default function MainDashboardV2() {
             >
               {/* LEFT */}
 
-              <div className="flex min-w-0 items-center gap-2">
-
+              <div
+                className="
+                  flex
+                  min-w-0
+                  items-center
+                  gap-2
+                "
+              >
                 {/* Sidebar Button */}
 
                 <button
@@ -1685,3 +1285,4 @@ export default function MainDashboardV2() {
     </>
   );
 }
+
