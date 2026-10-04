@@ -3,18 +3,22 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
-
 
 // =========================================================
 // CONTEXT
 // =========================================================
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 const STORAGE_KEY = "revela_auth";
 const TOKEN_KEY = "revelacode_access_token";
 const TOKEN_TYPE_KEY = "revelacode_token_type";
+
+// Compatibility keys used by older frontend code.
+const LEGACY_TOKEN_KEY = "access_token";
+const LEGACY_TOKEN_ALIAS = "token";
 
 
 // =========================================================
@@ -23,22 +27,88 @@ const TOKEN_TYPE_KEY = "revelacode_token_type";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [isGuest, setIsGuest] =
-    useState(false);
-
-  const [hasStarted, setHasStarted] =
-    useState(false);
-
-  const [hydrated, setHydrated] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(true);
 
   const isReady =
     hasStarted &&
     hydrated;
+
+
+  // =======================================================
+  // TOKEN HELPERS
+  // =======================================================
+
+  const readAccessToken = useCallback(() => {
+    return (
+      localStorage.getItem(TOKEN_KEY) ||
+      localStorage.getItem(LEGACY_TOKEN_KEY) ||
+      localStorage.getItem(LEGACY_TOKEN_ALIAS) ||
+      ""
+    );
+  }, []);
+
+
+  const readTokenType = useCallback(() => {
+    return (
+      localStorage.getItem(TOKEN_TYPE_KEY) ||
+      "Bearer"
+    );
+  }, []);
+
+
+  const persistToken = useCallback(
+    (accessToken, tokenType = "Bearer") => {
+      if (!accessToken) {
+        return false;
+      }
+
+      const normalizedTokenType =
+        tokenType || "Bearer";
+
+      /*
+       * Canonical storage.
+       */
+      localStorage.setItem(
+        TOKEN_KEY,
+        accessToken
+      );
+
+      localStorage.setItem(
+        TOKEN_TYPE_KEY,
+        normalizedTokenType
+      );
+
+      /*
+       * Compatibility storage for older
+       * RevelaCode frontend code.
+       */
+      localStorage.setItem(
+        LEGACY_TOKEN_KEY,
+        accessToken
+      );
+
+      localStorage.setItem(
+        LEGACY_TOKEN_ALIAS,
+        accessToken
+      );
+
+      return true;
+    },
+    []
+  );
+
+
+  const clearToken = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_TYPE_KEY);
+
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_ALIAS);
+  }, []);
 
 
   // =======================================================
@@ -53,14 +123,7 @@ export function AuthProvider({ children }) {
         );
 
       const storedToken =
-        localStorage.getItem(
-          TOKEN_KEY
-        );
-
-      const storedTokenType =
-        localStorage.getItem(
-          TOKEN_TYPE_KEY
-        ) || "Bearer";
+        readAccessToken();
 
       if (stored) {
         try {
@@ -68,9 +131,7 @@ export function AuthProvider({ children }) {
             JSON.parse(stored);
 
           if (parsed?.user) {
-            setUser(
-              parsed.user
-            );
+            setUser(parsed.user);
           }
 
           setIsGuest(
@@ -78,7 +139,12 @@ export function AuthProvider({ children }) {
               parsed?.isGuest
             )
           );
-        } catch {
+        } catch (error) {
+          console.warn(
+            "Invalid stored authentication session. Clearing it.",
+            error
+          );
+
           localStorage.removeItem(
             STORAGE_KEY
           );
@@ -86,13 +152,12 @@ export function AuthProvider({ children }) {
       }
 
       /*
-       * If a JWT exists, keep it available.
-       *
-       * The token itself is not placed inside the
-       * user object to keep identity data separate
-       * from credentials.
+       * A persisted JWT means the application
+       * has an authenticated session available.
        */
       if (storedToken) {
+        setHasStarted(true);
+      } else {
         setHasStarted(true);
       }
     } catch (error) {
@@ -105,145 +170,248 @@ export function AuthProvider({ children }) {
       setHasStarted(true);
       setHydrated(true);
     }
-  }, []);
+  }, [readAccessToken]);
 
 
   // =======================================================
   // NORMALIZE USER
   // =======================================================
 
-  const normalizeUser = (
-    u
-  ) => ({
-    id:
-      u?.id ||
-      u?._id ||
-      u?.user_id ||
-      "",
+  const normalizeUser = useCallback((u) => {
+    return {
+      id:
+        u?.id ||
+        u?._id ||
+        u?.user_id ||
+        "",
 
-    fullName:
-      u?.full_name ||
-      u?.fullName ||
-      "Guest User",
+      fullName:
+        u?.full_name ||
+        u?.fullName ||
+        u?.name ||
+        "Guest User",
 
-    contact:
-      u?.contact ||
-      u?.phone ||
-      u?.id ||
-      "guest",
+      contact:
+        u?.contact ||
+        u?.phone ||
+        u?.email ||
+        u?.id ||
+        "guest",
 
-    role:
-      u?.role ||
-      "guest",
+      role:
+        u?.role ||
+        "guest",
 
-    roles:
-      Array.isArray(
-        u?.roles
-      )
-        ? u.roles
-        : u?.role
-          ? [u.role]
-          : ["guest"],
+      roles:
+        Array.isArray(u?.roles)
+          ? u.roles
+          : u?.role
+            ? [u.role]
+            : ["guest"],
 
-    verified:
-      Boolean(
-        u?.verified
-      ),
+      verified:
+        Boolean(
+          u?.verified
+        ),
 
-    apiKey:
-      u?.apiKey ||
-      u?.api_key ||
-      "",
+      apiKey:
+        u?.apiKey ||
+        u?.api_key ||
+        "",
 
-    /*
-     * Existing RevelaCode-specific data.
-     */
-    history:
-      u?.history ||
-      [],
+      history:
+        u?.history ||
+        [],
 
-    /*
-     * Useful authentication metadata.
-     */
-    tokenType:
-      u?.tokenType ||
-      u?.token_type ||
-      "Bearer",
+      tokenType:
+        u?.tokenType ||
+        u?.token_type ||
+        "Bearer",
 
-    expiresIn:
-      u?.expiresIn ||
-      u?.expires_in ||
-      0,
-  });
+      expiresIn:
+        u?.expiresIn ||
+        u?.expires_in ||
+        0,
+    };
+  }, []);
 
 
   // =======================================================
   // LOGIN
   // =======================================================
 
-  const login = (
-    userData
-  ) => {
-    if (!userData) {
-      return;
-    }
+  const login = useCallback(
+    (payload) => {
+      if (!payload) {
+        throw new Error(
+          "Authentication payload is missing."
+        );
+      }
 
-    const normalizedUser =
-      normalizeUser(
-        userData
+      /*
+       * Support all common response shapes.
+       *
+       * Shape 1:
+       * {
+       *   user,
+       *   accessToken
+       * }
+       *
+       * Shape 2:
+       * {
+       *   user,
+       *   access_token
+       * }
+       *
+       * Shape 3:
+       * {
+       *   data: {
+       *     user,
+       *     access_token
+       *   }
+       * }
+       *
+       * Shape 4:
+       * {
+       *   data: {
+       *     data: {
+       *       user,
+       *       access_token
+       *     }
+       *   }
+       * }
+       */
+
+      const root =
+        payload || {};
+
+      const level1 =
+        root?.data || {};
+
+      const level2 =
+        level1?.data || {};
+
+      const userData =
+        root?.user ||
+        level1?.user ||
+        level2?.user ||
+        root?.account ||
+        level1?.account ||
+        {};
+
+      const accessToken =
+        root?.accessToken ||
+        root?.access_token ||
+        root?.token ||
+        level1?.accessToken ||
+        level1?.access_token ||
+        level1?.token ||
+        level2?.accessToken ||
+        level2?.access_token ||
+        level2?.token ||
+        userData?.accessToken ||
+        userData?.access_token ||
+        userData?.token ||
+        "";
+
+      const tokenType =
+        root?.tokenType ||
+        root?.token_type ||
+        level1?.tokenType ||
+        level1?.token_type ||
+        level2?.tokenType ||
+        level2?.token_type ||
+        userData?.tokenType ||
+        userData?.token_type ||
+        "Bearer";
+
+
+      /*
+       * A normal authenticated session must have
+       * an access token.
+       */
+      if (!accessToken) {
+        console.error(
+          "Login payload received without access token:",
+          payload
+        );
+
+        throw new Error(
+          "Login succeeded but no access token was returned by the backend."
+        );
+      }
+
+
+      const normalizedUser =
+        normalizeUser(
+          userData
+        );
+
+
+      /*
+       * Update React state.
+       */
+      setUser(
+        normalizedUser
       );
 
-    const accessToken =
-      userData?.accessToken ||
-      userData?.access_token ||
-      "";
+      setIsGuest(false);
+      setHasStarted(true);
 
-    const tokenType =
-      userData?.tokenType ||
-      userData?.token_type ||
-      "Bearer";
 
-    setUser(
-      normalizedUser
-    );
-
-    setIsGuest(false);
-
-    setHasStarted(true);
-
-    /*
-     * Persist identity.
-     */
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        user: normalizedUser,
-        isGuest: false,
-      })
-    );
-
-    /*
-     * Persist JWT separately.
-     */
-    if (accessToken) {
+      /*
+       * Persist identity.
+       */
       localStorage.setItem(
-        TOKEN_KEY,
-        accessToken
+        STORAGE_KEY,
+        JSON.stringify({
+          user: normalizedUser,
+          isGuest: false,
+        })
       );
 
-      localStorage.setItem(
-        TOKEN_TYPE_KEY,
+
+      /*
+       * Persist JWT.
+       */
+      persistToken(
+        accessToken,
         tokenType
       );
-    }
-  };
+
+
+      /*
+       * Verify persistence immediately.
+       */
+      const storedToken =
+        localStorage.getItem(
+          TOKEN_KEY
+        );
+
+      if (!storedToken) {
+        throw new Error(
+          "Access token could not be persisted in localStorage."
+        );
+      }
+
+      return {
+        user: normalizedUser,
+        accessToken: storedToken,
+        tokenType:
+          localStorage.getItem(
+            TOKEN_TYPE_KEY
+          ) || "Bearer",
+      };
+    },
+    [normalizeUser, persistToken]
+  );
 
 
   // =======================================================
   // GUEST MODE
   // =======================================================
 
-  const guestMode = () => {
+  const guestMode = useCallback(() => {
     const guestUser = {
       id: "guest",
       fullName: "Guest User",
@@ -257,24 +425,15 @@ export function AuthProvider({ children }) {
       expiresIn: 0,
     };
 
-    setUser(
-      guestUser
-    );
-
+    setUser(guestUser);
     setIsGuest(true);
-
     setHasStarted(true);
 
     /*
-     * A guest must never retain an old JWT.
+     * Guests must never retain
+     * an authenticated JWT.
      */
-    localStorage.removeItem(
-      TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-      TOKEN_TYPE_KEY
-    );
+    clearToken();
 
     localStorage.setItem(
       STORAGE_KEY,
@@ -283,133 +442,147 @@ export function AuthProvider({ children }) {
         isGuest: true,
       })
     );
-  };
+  }, [clearToken]);
 
 
   // =======================================================
   // LOGOUT
   // =======================================================
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
-
     setIsGuest(false);
-
     setHasStarted(false);
 
-    /*
-     * Remove both session identity
-     * and authentication credentials.
-     */
     localStorage.removeItem(
       STORAGE_KEY
     );
 
-    localStorage.removeItem(
-      TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-      TOKEN_TYPE_KEY
-    );
-  };
+    clearToken();
+  }, [clearToken]);
 
 
   // =======================================================
   // GET ACCESS TOKEN
   // =======================================================
 
-  const getAccessToken = () => {
-    return (
-      localStorage.getItem(
-        TOKEN_KEY
-      ) || ""
-    );
-  };
+  const getAccessToken = useCallback(() => {
+    return readAccessToken();
+  }, [readAccessToken]);
 
 
   // =======================================================
   // GET TOKEN TYPE
   // =======================================================
 
-  const getTokenType = () => {
-    return (
-      localStorage.getItem(
-        TOKEN_TYPE_KEY
-      ) || "Bearer"
-    );
-  };
+  const getTokenType = useCallback(() => {
+    return readTokenType();
+  }, [readTokenType]);
 
 
   // =======================================================
   // AUTHENTICATED REQUEST
   // =======================================================
 
-  const authFetch = async (
-    url,
-    options = {}
-  ) => {
-    const token =
-      getAccessToken();
+  const authFetch = useCallback(
+    async (
+      url,
+      options = {}
+    ) => {
+      const token =
+        getAccessToken();
 
-    const tokenType =
-      getTokenType();
+      const tokenType =
+        getTokenType();
 
-    const headers = {
-      ...(options.headers || {}),
-    };
+      /*
+       * Use Headers instead of a plain object.
+       * This handles Headers instances and different
+       * casing of HTTP header names safely.
+       */
+      const headers =
+        new Headers(
+          options.headers || {}
+        );
 
-    /*
-     * Attach JSON content type only when
-     * the request has a body that is not FormData.
-     */
-    if (
-      options.body &&
-      !(options.body instanceof FormData) &&
-      !headers["Content-Type"]
-    ) {
-      headers["Content-Type"] =
-        "application/json";
-    }
 
-    /*
-     * Add JWT when authenticated.
-     */
-    if (
-      token &&
-      tokenType
-    ) {
-      headers.Authorization =
-        `${tokenType} ${token}`;
-    }
+      /*
+       * Add JSON content type only when there
+       * is a body and it is not FormData.
+       */
+      if (
+        options.body &&
+        !(
+          options.body instanceof
+          FormData
+        ) &&
+        !headers.has(
+          "Content-Type"
+        )
+      ) {
+        headers.set(
+          "Content-Type",
+          "application/json"
+        );
+      }
 
-    const response =
-      await fetch(
-        url,
-        {
-          ...options,
-          headers,
-        }
-      );
 
-    /*
-     * Automatic auth cleanup on explicit
-     * unauthorized responses.
-     */
-    if (
-      response.status === 401
-    ) {
-      localStorage.removeItem(
-        TOKEN_KEY
-      );
+      /*
+       * Attach JWT.
+       *
+       * Do not overwrite an explicitly supplied
+       * Authorization header.
+       */
+      if (
+        token &&
+        tokenType &&
+        !headers.has(
+          "Authorization"
+        )
+      ) {
+        headers.set(
+          "Authorization",
+          `${tokenType} ${token}`
+        );
+      }
 
-      localStorage.removeItem(
-        TOKEN_TYPE_KEY
-      );
-    }
 
-    return response;
-  };
+      const response =
+        await fetch(
+          url,
+          {
+            ...options,
+            headers,
+          }
+        );
+
+
+      /*
+       * Only remove authentication credentials
+       * when the backend explicitly says the
+       * credentials are unauthorized.
+       */
+      if (
+        response.status === 401
+      ) {
+        clearToken();
+
+        /*
+         * Keep identity state consistent with
+         * the removed credentials.
+         */
+        setUser(null);
+        setIsGuest(false);
+      }
+
+      return response;
+    },
+    [
+      getAccessToken,
+      getTokenType,
+      clearToken,
+    ]
+  );
 
 
   // =======================================================
@@ -468,7 +641,7 @@ export function AuthProvider({ children }) {
 // HOOK
 // =========================================================
 
-export const useAuth =
-  () => useContext(
+export const useAuth = () =>
+  useContext(
     AuthContext
   );
