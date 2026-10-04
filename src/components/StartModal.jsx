@@ -297,154 +297,398 @@ export default function StartModal() {
 
 
   // =======================================================
-  // STORE AUTHENTICATION
-  // =======================================================
+// STORE AUTHENTICATION
+// =======================================================
 
-  const completeLogin = (data = {}) => {
-    const responseData = data?.data || {};
+const completeLogin = (data = {}) => {
 
-    const user =
-      data?.user ||
-      responseData?.user ||
+
+  const level1 = data?.data || {};
+  const level2 = level1?.data || {};
+
+  const user =
+    data?.user ||
+    level1?.user ||
+    level2?.user ||
+    data?.account ||
+    level1?.account ||
+    level2?.account ||
     {};
 
-    const accessToken =
-      data?.access_token ||
-      data?.token ||
-      data?.accessToken ||
-      responseData?.access_token ||
-      responseData?.token ||
-      responseData?.accessToken ||
-      user?.access_token ||
-      user?.token ||
-      "";
+  /*
+   * -------------------------------------------------------
+   * ACCESS TOKEN
+   * -------------------------------------------------------
+   */
 
-    const tokenType =
-      data?.token_type ||
-      data?.tokenType ||
-      responseData?.token_type ||
-      responseData?.tokenType ||
-      "Bearer";
+  const accessToken =
+    data?.access_token ||
+    data?.accessToken ||
+    data?.token ||
+    level1?.access_token ||
+    level1?.accessToken ||
+    level1?.token ||
+    level2?.access_token ||
+    level2?.accessToken ||
+    level2?.token ||
+    user?.access_token ||
+    user?.accessToken ||
+    user?.token ||
+    "";
 
-    const authPayload = {
-      contact:
-        data?.contact ||
-        responseData?.contact ||
-        user?.contact ||
-        "",
+  /*
+   * -------------------------------------------------------
+   * TOKEN TYPE
+   * -------------------------------------------------------
+   */
 
-      fullName:
-        data?.full_name ||
-        data?.fullName ||
-        responseData?.full_name ||
-        responseData?.fullName ||
-        user?.full_name ||
-        user?.fullName ||
-        "",
+  const tokenType =
+    data?.token_type ||
+    data?.tokenType ||
+    level1?.token_type ||
+    level1?.tokenType ||
+    level2?.token_type ||
+    level2?.tokenType ||
+    user?.token_type ||
+    user?.tokenType ||
+    "Bearer";
 
-      role:
-        data?.role ||
-        responseData?.role ||
-        user?.role ||
-        "user",
+  /*
+   * -------------------------------------------------------
+   * USER ID
+   * -------------------------------------------------------
+   */
 
-      apiKey:
-        data?.api_key ||
-        data?.apiKey ||
-        responseData?.api_key ||
-        responseData?.apiKey ||
-        user?.api_key ||
-        "",
+  const userId =
+    data?.id ||
+    data?._id ||
+    data?.user_id ||
+    level1?.id ||
+    level1?._id ||
+    level1?.user_id ||
+    level2?.id ||
+    level2?._id ||
+    level2?.user_id ||
+    user?.id ||
+    user?._id ||
+    user?.user_id ||
+    "";
 
+  /*
+   * -------------------------------------------------------
+   * FULL NAME
+   * -------------------------------------------------------
+   *
+   * Support all common backend naming conventions.
+   */
+
+  const resolvedFullName =
+    data?.full_name ||
+    data?.fullName ||
+    data?.name ||
+    data?.display_name ||
+    data?.displayName ||
+    level1?.full_name ||
+    level1?.fullName ||
+    level1?.name ||
+    level1?.display_name ||
+    level1?.displayName ||
+    level2?.full_name ||
+    level2?.fullName ||
+    level2?.name ||
+    level2?.display_name ||
+    level2?.displayName ||
+    user?.full_name ||
+    user?.fullName ||
+    user?.name ||
+    user?.display_name ||
+    user?.displayName ||
+    user?.username ||
+    "";
+
+  /*
+   * -------------------------------------------------------
+   * CONTACT
+   * -------------------------------------------------------
+   */
+
+  const resolvedContact =
+    data?.contact ||
+    data?.email ||
+    data?.phone ||
+    level1?.contact ||
+    level1?.email ||
+    level1?.phone ||
+    level2?.contact ||
+    level2?.email ||
+    level2?.phone ||
+    user?.contact ||
+    user?.email ||
+    user?.phone ||
+    "";
+
+  /*
+   * -------------------------------------------------------
+   * ROLE
+   * -------------------------------------------------------
+   */
+
+  const resolvedRole =
+    data?.role ||
+    level1?.role ||
+    level2?.role ||
+    user?.role ||
+    "user";
+
+  /*
+   * -------------------------------------------------------
+   * ROLES
+   * -------------------------------------------------------
+   */
+
+  const resolvedRoles =
+    Array.isArray(
+      data?.roles
+    )
+      ? data.roles
+      : Array.isArray(
+          level1?.roles
+        )
+        ? level1.roles
+        : Array.isArray(
+            level2?.roles
+          )
+          ? level2.roles
+          : Array.isArray(
+              user?.roles
+            )
+            ? user.roles
+            : [resolvedRole];
+
+  /*
+   * -------------------------------------------------------
+   * API KEY
+   * -------------------------------------------------------
+   */
+
+  const resolvedApiKey =
+    data?.api_key ||
+    data?.apiKey ||
+    level1?.api_key ||
+    level1?.apiKey ||
+    level2?.api_key ||
+    level2?.apiKey ||
+    user?.api_key ||
+    user?.apiKey ||
+    "";
+
+  /*
+   * -------------------------------------------------------
+   * EXPIRATION
+   * -------------------------------------------------------
+   */
+
+  const expiresIn =
+    data?.expires_in ||
+    data?.expiresIn ||
+    level1?.expires_in ||
+    level1?.expiresIn ||
+    level2?.expires_in ||
+    level2?.expiresIn ||
+    user?.expires_in ||
+    user?.expiresIn ||
+    0;
+
+  /*
+   * -------------------------------------------------------
+   * TOKEN VALIDATION
+   * -------------------------------------------------------
+   */
+
+  if (!accessToken) {
+    console.error(
+      "LOGIN SUCCEEDED BUT NO ACCESS TOKEN WAS FOUND.",
+      {
+        response: data,
+        level1,
+        level2,
+        user,
+        topLevelKeys: Object.keys(
+          data || {}
+        ),
+        level1Keys: Object.keys(
+          level1 || {}
+        ),
+        level2Keys: Object.keys(
+          level2 || {}
+        ),
+        userKeys: Object.keys(
+          user || {}
+        ),
+      }
+    );
+
+    throw new Error(
+      "Login succeeded, but the backend did not provide an access token."
+    );
+  }
+
+  /*
+   * -------------------------------------------------------
+   * BUILD COMPLETE AUTH USER
+   * -------------------------------------------------------
+   *
+   * Keep the original backend user properties while
+   * guaranteeing the canonical properties expected by
+   * AuthContext and the dashboard.
+   */
+
+  const authUser = {
+    ...user,
+
+    id: userId,
+
+    full_name:
+      user?.full_name ||
+      resolvedFullName,
+
+    fullName:
+      resolvedFullName,
+
+    name:
+      user?.name ||
+      resolvedFullName,
+
+    contact:
+      resolvedContact,
+
+    role:
+      resolvedRole,
+
+    roles:
+      resolvedRoles,
+
+    api_key:
+      user?.api_key ||
+      resolvedApiKey,
+
+    apiKey:
+      resolvedApiKey,
+
+    verified:
+      Boolean(
+        user?.verified ??
+        user?.is_verified ??
+        data?.verified ??
+        level1?.verified ??
+        level2?.verified
+      ),
+
+    access_token:
       accessToken,
 
+    accessToken,
+
+    token_type:
       tokenType,
 
-      expiresIn:
-        data?.expires_in ||
-        data?.expiresIn ||
-        responseData?.expires_in ||
-        responseData?.expiresIn ||
-        0,
-    };
+    tokenType,
 
-    // -------------------------------------------------------
-    // TOKEN VALIDATION
-    // -------------------------------------------------------
+    expires_in:
+      expiresIn,
 
-    if (!authPayload.accessToken) {
-      console.error(
-        "LOGIN SUCCEEDED BUT NO ACCESS TOKEN WAS FOUND.",
-        {
-          response: data,
-          topLevelKeys: Object.keys(data || {}),
-          nestedDataKeys: Object.keys(responseData || {}),
-          userKeys: Object.keys(user || {}),
-        },
-      );
-
-      throw new Error(
-        "Login succeeded, but the backend did not provide an access token.",
-      );
-    }
-
-    // -------------------------------------------------------
-    // PERSIST AUTHENTICATION
-    // -------------------------------------------------------
-
-    localStorage.setItem(
-      "revelacode_access_token",
-      authPayload.accessToken,
-    );
-
-    localStorage.setItem(
-      "revelacode_token_type",
-      authPayload.tokenType,
-    );
-
-    // Optional compatibility keys
-    localStorage.setItem(
-      "access_token",
-      authPayload.accessToken,
-    );
-
-    localStorage.setItem(
-      "token",
-      authPayload.accessToken,
-    );
-
-    // -------------------------------------------------------
-    // UPDATE AUTH CONTEXT
-    // -------------------------------------------------------
-
-    login(authPayload);
-
-    // -------------------------------------------------------
-    // VERIFY PERSISTENCE
-    // -------------------------------------------------------
-
-    const storedToken = localStorage.getItem(
-      "revelacode_access_token",
-    );
-
-    if (!storedToken) {
-      throw new Error(
-        "Authentication succeeded, but the access token could not be stored.",
-      );
-    }
-
-    console.log(
-      "RevelaCode authentication established.",
-      {
-        authenticated: true,
-        tokenStored: true,
-        tokenType: authPayload.tokenType,
-        hasToken: Boolean(storedToken),
-      },
-    );
-
-    return authPayload;
+    expiresIn,
   };
+
+  /*
+   * -------------------------------------------------------
+   * PERSIST TOKEN
+   * -------------------------------------------------------
+   */
+
+  localStorage.setItem(
+    "revelacode_access_token",
+    accessToken
+  );
+
+  localStorage.setItem(
+    "revelacode_token_type",
+    tokenType
+  );
+
+  /*
+   * Compatibility keys
+   */
+
+  localStorage.setItem(
+    "access_token",
+    accessToken
+  );
+
+  localStorage.setItem(
+    "token",
+    accessToken
+  );
+
+  /*
+   * -------------------------------------------------------
+   * UPDATE AUTH CONTEXT
+   * -------------------------------------------------------
+   */
+
+  login(authUser);
+
+  /*
+   * -------------------------------------------------------
+   * VERIFY PERSISTENCE
+   * -------------------------------------------------------
+   */
+
+  const storedToken =
+    localStorage.getItem(
+      "revelacode_access_token"
+    );
+
+  if (!storedToken) {
+    throw new Error(
+      "Authentication succeeded, but the access token could not be stored."
+    );
+  }
+
+  console.log(
+    "RevelaCode authentication established.",
+    {
+      authenticated: true,
+      tokenStored: true,
+      tokenType,
+      hasToken: Boolean(
+        storedToken
+      ),
+      userId,
+      fullName:
+        resolvedFullName,
+      contact:
+        resolvedContact,
+      role:
+        resolvedRole,
+    }
+  );
+
+  /*
+   * Return the normalized user so callers can use
+   * the correct role instead of reading data.role
+   * from an unknown response level.
+   */
+
+  return {
+    user: authUser,
+    role: resolvedRole,
+    fullName: resolvedFullName,
+    contact: resolvedContact,
+    accessToken,
+    tokenType,
+  };
+};
 
 
   // =======================================================
@@ -465,13 +709,12 @@ export default function StartModal() {
           password
         );
 
-      completeLogin(
-        data
-      );
+      const authResult =
+        completeLogin(data);
 
-      goHomeByRole(
-        data.role
-      );
+        goHomeByRole(
+          authResult.role
+        );
     };
 
 
@@ -524,13 +767,13 @@ export default function StartModal() {
           resetNewPassword
         );
 
-      completeLogin(
-        data
-      );
+      const authResult =
+        completeLogin(data);
+      
+        goHomeByRole(
+          authResult.role
+        );
 
-      goHomeByRole(
-        data.role
-      );
     };
 
 
@@ -708,13 +951,12 @@ export default function StartModal() {
               password
             );
 
-          completeLogin(
-            data
-          );
+          const authResult =
+            completeLogin(data);
 
-          goHomeByRole(
-            data.role
-          );
+            goHomeByRole(
+              authResult.role
+            );
 
           return;
         }
