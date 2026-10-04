@@ -875,7 +875,11 @@ export default function MainDashboardV2() {
                           "
                         >
                           {user?.fullName ||
-                            "Guest"}
+                            user?.full_name ||
+                            user?.name ||
+                            user?.display_name ||
+                            user?.contact ||
+                          "Guest"}
                         </p>
 
                         <p
