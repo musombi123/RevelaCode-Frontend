@@ -859,9 +859,12 @@ export default function MainDashboardV2() {
                       >
                         {(
                           user?.fullName ||
+                          ser?.full_name ||
+                          user?.name ||
+                          user?.display_name ||
                           user?.contact ||
                           "G"
-                        )
+                         )
                           .charAt(0)
                           .toUpperCase()}
                       </div>
