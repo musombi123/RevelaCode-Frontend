@@ -2397,38 +2397,4 @@ export default function RevelaAIVoiceChat({
     </div>
   );
 }
-```
 
-### The required parent usage
-
-Your real AI dashboard should control it like this:
-
-```jsx
-const [voiceChatOpen, setVoiceChatOpen] =
-  useState(false);
-```
-
-Then:
-
-```jsx
-<button
-  type="button"
-  onClick={() =>
-    setVoiceChatOpen(true)
-  }
->
-  Voice
-</button>
-```
-
-And:
-
-```jsx
-<RevelaAIVoiceChat
-  open={voiceChatOpen}
-  sessionId={sessionId}
-  onVoiceResult={handleVoiceResult}
-  onClose={() =>
-    setVoiceChatOpen(false)
-  }
-/>
