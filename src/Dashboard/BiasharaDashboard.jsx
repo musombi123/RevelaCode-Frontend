@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -37,6 +38,14 @@ import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnb
 ========================================================= */
 
 function numberValue(value, fallback = 0) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return fallback;
+  }
+
   const numeric = Number(value);
 
   return Number.isFinite(numeric) ? numeric : fallback;
@@ -49,7 +58,9 @@ function formatNumber(value) {
 }
 
 function formatMoney(value, currency = "KES") {
-  const safeCurrency = currency || "KES";
+  const safeCurrency = String(currency || "KES")
+    .trim()
+    .toUpperCase();
 
   try {
     return new Intl.NumberFormat("en-KE", {
@@ -64,19 +75,23 @@ function formatMoney(value, currency = "KES") {
 
 function formatCompactMoney(value, currency = "KES") {
   const numeric = numberValue(value);
-  const safeCurrency = currency || "KES";
+
+  const safeCurrency = String(currency || "KES")
+    .trim()
+    .toUpperCase();
+
   const absolute = Math.abs(numeric);
 
-  if (absolute >= 1000000000) {
-    return `${safeCurrency} ${(numeric / 1000000000).toFixed(1)}B`;
+  if (absolute >= 1_000_000_000) {
+    return `${safeCurrency} ${(numeric / 1_000_000_000).toFixed(1)}B`;
   }
 
-  if (absolute >= 1000000) {
-    return `${safeCurrency} ${(numeric / 1000000).toFixed(1)}M`;
+  if (absolute >= 1_000_000) {
+    return `${safeCurrency} ${(numeric / 1_000_000).toFixed(1)}M`;
   }
 
-  if (absolute >= 1000) {
-    return `${safeCurrency} ${(numeric / 1000).toFixed(1)}K`;
+  if (absolute >= 1_000) {
+    return `${safeCurrency} ${(numeric / 1_000).toFixed(1)}K`;
   }
 
   return formatMoney(numeric, safeCurrency);
@@ -131,6 +146,7 @@ function getOrderAmount(order) {
       order?.amount ??
       order?.grand_total ??
       order?.total_amount ??
+      order?.order_total ??
       0,
   );
 }
@@ -139,6 +155,8 @@ function getOrderCustomer(order) {
   return (
     order?.customer_name ||
     order?.customer?.name ||
+    order?.customer?.full_name ||
+    order?.buyer_name ||
     (typeof order?.customer === "string"
       ? order.customer
       : null) ||
@@ -151,9 +169,32 @@ function getOrderReference(order) {
     order?.order_number ||
     order?.reference ||
     order?.number ||
+    order?.order_id ||
     order?.id ||
     order?._id ||
     "Order"
+  );
+}
+
+function getSaleAmount(sale) {
+  return numberValue(
+    sale?.amount ??
+      sale?.total ??
+      sale?.total_amount ??
+      sale?.sale_amount ??
+      sale?.grand_total ??
+      0,
+  );
+}
+
+function getProductStock(product) {
+  return numberValue(
+    product?.stock_quantity ??
+      product?.quantity ??
+      product?.stock ??
+      product?.available_stock ??
+      product?.current_stock ??
+      0,
   );
 }
 
@@ -162,6 +203,8 @@ function isBusinessNotFoundError(error) {
     error?.message ||
       error?.error ||
       error?.detail ||
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
       "",
   ).toLowerCase();
 
@@ -208,6 +251,65 @@ function extractBusiness(payload) {
   }
 
   if (
+    payload.result?.business &&
+    typeof payload.result.business === "object" &&
+    !Array.isArray(payload.result.business)
+  ) {
+    return payload.result.business;
+  }
+
+  if (
+    typeof payload === "object" &&
+    !Array.isArray(payload)
+  ) {
+    const looksLikeBusiness =
+      payload.name ||
+      payload.business_name ||
+      payload.business_type ||
+      payload.category ||
+      payload.phone ||
+      payload.email ||
+      payload.county ||
+      payload.location;
+
+    if (looksLikeBusiness) {
+      return payload;
+    }
+  }
+
+  return null;
+}
+
+function extractDashboard(payload) {
+  if (!payload) {
+    return null;
+  }
+
+  if (
+    payload.dashboard &&
+    typeof payload.dashboard === "object" &&
+    !Array.isArray(payload.dashboard)
+  ) {
+    return payload.dashboard;
+  }
+
+  if (
+    payload.data?.dashboard &&
+    typeof payload.data.dashboard === "object" &&
+    !Array.isArray(payload.data.dashboard)
+  ) {
+    return payload.data.dashboard;
+  }
+
+  if (
+    payload.result?.dashboard &&
+    typeof payload.result.dashboard === "object" &&
+    !Array.isArray(payload.result.dashboard)
+  ) {
+    return payload.result.dashboard;
+  }
+
+  if (
     typeof payload === "object" &&
     !Array.isArray(payload)
   ) {
@@ -215,6 +317,31 @@ function extractBusiness(payload) {
   }
 
   return null;
+}
+
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function getDashboardMetrics(dashboard) {
+  return (
+    dashboard?.metrics ||
+    dashboard?.overview ||
+    dashboard?.summary ||
+    dashboard?.data?.metrics ||
+    dashboard?.business_metrics ||
+    {}
+  );
+}
+
+function getDashboardToday(dashboard) {
+  return (
+    dashboard?.today ||
+    dashboard?.today_metrics ||
+    dashboard?.daily ||
+    dashboard?.data?.today ||
+    {}
+  );
 }
 
 /* =========================================================
@@ -232,13 +359,13 @@ function getProfileCompleteness(business) {
   }
 
   const fields = [
-    ["Business name", business.name],
+    ["Business name", business.name || business.business_name],
     ["Business category", business.category],
     ["Business type", business.business_type],
-    ["Phone number", business.phone],
-    ["Email", business.email],
+    ["Phone number", business.phone || business.phone_number],
+    ["Email", business.email || business.email_address],
     ["County", business.county],
-    ["Location", business.location],
+    ["Location", business.location || business.address],
     ["Description", business.description],
   ];
 
@@ -376,21 +503,30 @@ function EmptyState({
 }
 
 function OrderStatusPill({ status }) {
-  const normalized = String(status || "").toLowerCase();
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
 
   let className = "bg-slate-100 text-slate-600";
 
-  if (normalized === "completed") {
+  if (
+    normalized === "completed" ||
+    normalized === "complete" ||
+    normalized === "delivered"
+  ) {
     className = "bg-emerald-50 text-emerald-700";
   } else if (
     normalized === "pending" ||
     normalized === "confirmed" ||
-    normalized === "processing"
+    normalized === "processing" ||
+    normalized === "paid"
   ) {
     className = "bg-amber-50 text-amber-700";
   } else if (
     normalized === "cancelled" ||
-    normalized === "canceled"
+    normalized === "canceled" ||
+    normalized === "failed" ||
+    normalized === "rejected"
   ) {
     className = "bg-red-50 text-red-700";
   }
@@ -536,12 +672,11 @@ function BusinessProfileNotice({
   completeness,
   onCompleteProfile,
 }) {
-  const verificationStatus =
-    String(
-      business?.verification_status ||
-        business?.verification?.status ||
-        "not_submitted",
-    ).toLowerCase();
+  const verificationStatus = String(
+    business?.verification_status ||
+      business?.verification?.status ||
+      "not_submitted",
+  ).toLowerCase();
 
   const isVerified =
     verificationStatus === "verified";
@@ -589,7 +724,7 @@ function BusinessProfileNotice({
 
               <p className="mt-1 max-w-2xl text-sm leading-6 text-blue-100">
                 Your Biashara workspace is connected to your
-                business profile. Complete the legal business
+                business profile. Complete the core business
                 information so your identity, records and future
                 verification process remain consistent.
               </p>
@@ -622,7 +757,7 @@ function BusinessProfileNotice({
 
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-blue-600 transition-all"
+                className="h-full rounded-full bg-blue-600 transition-all duration-500"
                 style={{
                   width: `${completeness.percentage}%`,
                 }}
@@ -676,13 +811,13 @@ function CreateBusinessState({
   return (
     <div className="min-h-full bg-slate-50">
       <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 rounded-3xl bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-800 p-6 text-white shadow-sm sm:p-8">
+        <div className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-800 p-6 text-white shadow-sm sm:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
               <Store size={27} />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
                 Biashara Hub
               </p>
@@ -703,9 +838,11 @@ function CreateBusinessState({
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white/10 p-4">
               <Briefcase size={18} />
+
               <p className="mt-3 text-sm font-semibold">
                 Business identity
               </p>
+
               <p className="mt-1 text-xs leading-5 text-blue-100">
                 Name, type, category and location.
               </p>
@@ -713,9 +850,11 @@ function CreateBusinessState({
 
             <div className="rounded-2xl bg-white/10 p-4">
               <FileCheck2 size={18} />
+
               <p className="mt-3 text-sm font-semibold">
                 Business records
               </p>
+
               <p className="mt-1 text-xs leading-5 text-blue-100">
                 Keep your business information consistent.
               </p>
@@ -723,9 +862,11 @@ function CreateBusinessState({
 
             <div className="rounded-2xl bg-white/10 p-4">
               <ShieldCheck size={18} />
+
               <p className="mt-3 text-sm font-semibold">
                 Verification ready
               </p>
+
               <p className="mt-1 text-xs leading-5 text-blue-100">
                 Verification will be introduced soon.
               </p>
@@ -766,25 +907,36 @@ export default function BiasharaDashboard({
     useState(false);
 
   const [error, setError] = useState("");
+
   const [lastUpdated, setLastUpdated] =
     useState(null);
 
+  const businessRequestRef = useRef(0);
+  const dashboardRequestRef = useRef(0);
+
   /* =======================================================
      NAVIGATION
+     All Biashara actions flow through the parent router.
   ======================================================= */
 
   const navigate = useCallback(
     (route) => {
+      if (!route) {
+        return;
+      }
+
       if (typeof onNavigate === "function") {
         onNavigate(route);
         return;
       }
 
-      window.dispatchEvent(
-        new CustomEvent("revelacode:navigate", {
-          detail: { route },
-        }),
-      );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("revelacode:navigate", {
+            detail: { route },
+          }),
+        );
+      }
     },
     [onNavigate],
   );
@@ -794,21 +946,53 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   const loadDashboard = useCallback(async () => {
+    const requestId =
+      dashboardRequestRef.current + 1;
+
+    dashboardRequestRef.current = requestId;
+
     setLoadingDashboard(true);
     setError("");
 
     try {
-      const data = await getBiasharaDashboard();
+      const response =
+        await getBiasharaDashboard();
 
-      setDashboard(data || null);
+      if (
+        dashboardRequestRef.current !==
+        requestId
+      ) {
+        return;
+      }
+
+      const normalizedDashboard =
+        extractDashboard(response);
+
+      setDashboard(
+        normalizedDashboard || null,
+      );
+
       setLastUpdated(new Date());
     } catch (err) {
+      if (
+        dashboardRequestRef.current !==
+        requestId
+      ) {
+        return;
+      }
+
       setError(
         err?.message ||
+          err?.error ||
           "Failed to load Biashara dashboard.",
       );
     } finally {
-      setLoadingDashboard(false);
+      if (
+        dashboardRequestRef.current ===
+        requestId
+      ) {
+        setLoadingDashboard(false);
+      }
     }
   }, [getBiasharaDashboard]);
 
@@ -818,6 +1002,12 @@ export default function BiasharaDashboard({
 
   const checkBusiness = useCallback(
     async () => {
+      const requestId =
+        businessRequestRef.current + 1;
+
+      businessRequestRef.current =
+        requestId;
+
       setCheckingBusiness(true);
       setError("");
       setHasCheckedBusiness(false);
@@ -826,12 +1016,30 @@ export default function BiasharaDashboard({
         const response =
           await getBiasharaBusiness();
 
+        if (
+          businessRequestRef.current !==
+          requestId
+        ) {
+          return;
+        }
+
         const currentBusiness =
           extractBusiness(response);
 
-        setBusiness(currentBusiness);
+        setBusiness(
+          currentBusiness || null,
+        );
       } catch (err) {
-        if (isBusinessNotFoundError(err)) {
+        if (
+          businessRequestRef.current !==
+          requestId
+        ) {
+          return;
+        }
+
+        if (
+          isBusinessNotFoundError(err)
+        ) {
           setBusiness(null);
           setError("");
         } else {
@@ -839,12 +1047,18 @@ export default function BiasharaDashboard({
 
           setError(
             err?.message ||
+              err?.error ||
               "Unable to check your business account.",
           );
         }
       } finally {
-        setCheckingBusiness(false);
-        setHasCheckedBusiness(true);
+        if (
+          businessRequestRef.current ===
+          requestId
+        ) {
+          setCheckingBusiness(false);
+          setHasCheckedBusiness(true);
+        }
       }
     },
     [getBiasharaBusiness],
@@ -855,21 +1069,7 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   useEffect(() => {
-    let mounted = true;
-
-    const initialise = async () => {
-      if (!mounted) {
-        return;
-      }
-
-      await checkBusiness();
-    };
-
-    initialise();
-
-    return () => {
-      mounted = false;
-    };
+    checkBusiness();
   }, [checkBusiness]);
 
   /* =======================================================
@@ -877,25 +1077,14 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   useEffect(() => {
-    if (!hasCheckedBusiness || !business) {
+    if (
+      !hasCheckedBusiness ||
+      !business
+    ) {
       return;
     }
 
-    let mounted = true;
-
-    const load = async () => {
-      if (!mounted) {
-        return;
-      }
-
-      await loadDashboard();
-    };
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
+    loadDashboard();
   }, [
     hasCheckedBusiness,
     business,
@@ -906,81 +1095,130 @@ export default function BiasharaDashboard({
      DERIVED DATA
   ======================================================= */
 
-  const metrics = dashboard?.metrics || {};
-  const today = dashboard?.today || {};
+  const metrics =
+    getDashboardMetrics(dashboard);
+
+  const today =
+    getDashboardToday(dashboard);
 
   const currency =
     dashboard?.currency ||
+    metrics?.currency ||
     business?.currency ||
     "KES";
 
-  const topProducts = Array.isArray(
-    dashboard?.top_products,
-  )
-    ? dashboard.top_products
-    : [];
+  const topProducts = normalizeArray(
+    dashboard?.top_products ??
+      dashboard?.topProducts ??
+      dashboard?.products_top ??
+      dashboard?.data?.top_products,
+  );
 
-  const recentOrders = Array.isArray(
-    dashboard?.recent_orders,
-  )
-    ? dashboard.recent_orders
-    : [];
+  const recentOrders = normalizeArray(
+    dashboard?.recent_orders ??
+      dashboard?.recentOrders ??
+      dashboard?.orders_recent ??
+      dashboard?.data?.recent_orders,
+  );
 
-  const recentSales = Array.isArray(
-    dashboard?.recent_sales,
-  )
-    ? dashboard.recent_sales
-    : [];
+  const recentSales = normalizeArray(
+    dashboard?.recent_sales ??
+      dashboard?.recentSales ??
+      dashboard?.sales_recent ??
+      dashboard?.data?.recent_sales,
+  );
 
-  const lowStockProducts = Array.isArray(
-    dashboard?.low_stock_products,
-  )
-    ? dashboard.low_stock_products
-    : [];
+  const lowStockProducts =
+    normalizeArray(
+      dashboard?.low_stock_products ??
+        dashboard?.lowStockProducts ??
+        dashboard?.low_stock_items ??
+        dashboard?.data?.low_stock_products,
+    );
 
   const totalRevenue = numberValue(
-    metrics.sales_total,
+    metrics?.sales_total ??
+      metrics?.total_sales ??
+      metrics?.revenue ??
+      metrics?.total_revenue,
   );
 
   const totalExpenses = numberValue(
-    metrics.expenses_total,
+    metrics?.expenses_total ??
+      metrics?.total_expenses ??
+      metrics?.expenses,
   );
 
   const netEstimate = numberValue(
-    metrics.net_estimate,
+    metrics?.net_estimate ??
+      metrics?.net ??
+      metrics?.estimated_profit ??
+      metrics?.profit_estimate ??
+      totalRevenue - totalExpenses,
   );
 
   const todaySales = numberValue(
-    today.sales,
+    today?.sales ??
+      today?.sales_total ??
+      today?.revenue ??
+      today?.total_sales,
   );
 
   const todayOrders = numberValue(
-    today.orders,
+    today?.orders ??
+      today?.orders_count ??
+      today?.total_orders,
   );
 
   const pendingOrders = numberValue(
-    metrics.pending_orders,
+    metrics?.pending_orders ??
+      metrics?.pending ??
+      metrics?.active_orders,
   );
 
   const completedOrders = numberValue(
-    metrics.completed_orders,
+    metrics?.completed_orders ??
+      metrics?.completed ??
+      metrics?.fulfilled_orders,
   );
 
   const totalOrders = numberValue(
-    metrics.orders,
+    metrics?.orders ??
+      metrics?.total_orders ??
+      metrics?.order_count,
   );
 
   const customers = numberValue(
-    metrics.customers,
+    metrics?.customers ??
+      metrics?.total_customers ??
+      metrics?.customer_count,
+  );
+
+  const productsTracked = numberValue(
+    metrics?.products ??
+      metrics?.total_products ??
+      metrics?.product_count,
+  );
+
+  const activeProducts = numberValue(
+    metrics?.active_products ??
+      metrics?.active_product_count ??
+      metrics?.products_active ??
+      productsTracked,
   );
 
   const lowStockCount = numberValue(
-    metrics.low_stock,
+    metrics?.low_stock ??
+      metrics?.low_stock_count ??
+      lowStockProducts.length,
   );
 
-  const averageOrderValue = numberValue(
-    metrics.average_order_value,
-  );
+  const averageOrderValue =
+    numberValue(
+      metrics?.average_order_value ??
+        metrics?.average_order ??
+        metrics?.avg_order_value,
+    );
 
   const completeness = useMemo(
     () => getProfileCompleteness(business),
@@ -988,7 +1226,10 @@ export default function BiasharaDashboard({
   );
 
   const revenueRatio = useMemo(() => {
-    if (totalRevenue <= 0) {
+    if (
+      totalRevenue <= 0 ||
+      !Number.isFinite(totalRevenue)
+    ) {
       return 0;
     }
 
@@ -1008,59 +1249,48 @@ export default function BiasharaDashboard({
      PROFILE ACTION
   ======================================================= */
 
-  const openBusinessProfile = useCallback(() => {
-    /*
-     * Keep this route flexible.
-     *
-     * If a dedicated business profile page is introduced,
-     * route it here without changing the dashboard.
-     */
-    navigate("business-profile");
-  }, [navigate]);
+  const openBusinessProfile =
+    useCallback(() => {
+      navigate("business-profile");
+    }, [navigate]);
 
   /* =======================================================
      BUSINESS CREATED
   ======================================================= */
 
-  const handleBusinessCreated = useCallback(
-    async (createdBusiness) => {
-      const normalizedBusiness =
-        extractBusiness(
-          createdBusiness,
-        ) || createdBusiness;
+  const handleBusinessCreated =
+    useCallback(
+      (createdBusiness) => {
+        const normalizedBusiness =
+          extractBusiness(
+            createdBusiness,
+          ) ||
+          createdBusiness ||
+          null;
 
-      setBusiness(
-        normalizedBusiness,
-      );
+        setBusiness(
+          normalizedBusiness,
+        );
 
+        setDashboard(null);
+        setError("");
+        setLastUpdated(null);
+
+        setHasCheckedBusiness(true);
+      },
+      [],
+    );
+
+  /* =======================================================
+     RETRY BUSINESS CHECK
+  ======================================================= */
+
+  const handleRetryBusiness =
+    useCallback(() => {
       setDashboard(null);
-      setError("");
       setLastUpdated(null);
-
-      setLoadingDashboard(true);
-
-      try {
-        const dashboardData =
-          await getBiasharaDashboard();
-
-        setDashboard(
-          dashboardData || null,
-        );
-
-        setLastUpdated(
-          new Date(),
-        );
-      } catch (err) {
-        setError(
-          err?.message ||
-            "Your business was created, but the dashboard could not be loaded.",
-        );
-      } finally {
-        setLoadingDashboard(false);
-      }
-    },
-    [getBiasharaDashboard],
-  );
+      checkBusiness();
+    }, [checkBusiness]);
 
   /* =======================================================
      LOADING
@@ -1071,7 +1301,7 @@ export default function BiasharaDashboard({
   }
 
   /* =======================================================
-     REAL ERROR
+     REAL INITIAL ERROR
   ======================================================= */
 
   if (
@@ -1082,7 +1312,7 @@ export default function BiasharaDashboard({
     return (
       <FatalError
         message={error}
-        onRetry={checkBusiness}
+        onRetry={handleRetryBusiness}
       />
     );
   }
@@ -1103,7 +1333,7 @@ export default function BiasharaDashboard({
   }
 
   /* =======================================================
-     DASHBOARD LOADING
+     DASHBOARD INITIAL LOADING
   ======================================================= */
 
   if (
@@ -1135,9 +1365,15 @@ export default function BiasharaDashboard({
                     src={business.logo_url}
                     alt={
                       business?.name ||
+                      business?.business_name ||
                       "Business logo"
                     }
                     className="h-full w-full object-cover"
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.style.display =
+                        "none";
+                    }}
                   />
                 ) : (
                   <Briefcase size={24} />
@@ -1158,6 +1394,7 @@ export default function BiasharaDashboard({
 
                 <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                   {business?.name ||
+                    business?.business_name ||
                     "Your Business"}
                 </h1>
 
@@ -1165,8 +1402,12 @@ export default function BiasharaDashboard({
                   {business?.category ||
                     "Business workspace"}
 
-                  {business?.location
-                    ? ` · ${business.location}`
+                  {business?.location ||
+                  business?.address
+                    ? ` · ${
+                        business?.location ||
+                        business?.address
+                      }`
                     : ""}
 
                   {business?.county
@@ -1192,7 +1433,9 @@ export default function BiasharaDashboard({
 
               <button
                 type="button"
-                onClick={openBusinessProfile}
+                onClick={
+                  openBusinessProfile
+                }
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <Briefcase size={16} />
@@ -1318,7 +1561,9 @@ export default function BiasharaDashboard({
               label="Analytics"
               description="Business performance"
               onClick={() =>
-                navigate("biashara-analytics")
+                navigate(
+                  "biashara-analytics",
+                )
               }
             />
 
@@ -1327,7 +1572,9 @@ export default function BiasharaDashboard({
               label="Intelligence"
               description="Business insights"
               onClick={() =>
-                navigate("biashara-intelligence")
+                navigate(
+                  "biashara-intelligence",
+                )
               }
             />
           </div>
@@ -1350,7 +1597,7 @@ export default function BiasharaDashboard({
             </div>
 
             <span className="text-xs font-medium text-slate-400">
-              {currency}
+              {String(currency).toUpperCase()}
             </span>
           </div>
 
@@ -1363,7 +1610,7 @@ export default function BiasharaDashboard({
                 currency,
               )}
               supporting={`${formatNumber(
-                metrics.products,
+                productsTracked,
               )} products tracked`}
               iconClassName="bg-blue-50 text-blue-600"
             />
@@ -1509,9 +1756,9 @@ export default function BiasharaDashboard({
                     ) => (
                       <div
                         key={
+                          product.product_id ||
                           product.id ||
                           product._id ||
-                          product.product_id ||
                           product.name ||
                           index
                         }
@@ -1520,15 +1767,15 @@ export default function BiasharaDashboard({
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-800">
                             {product.name ||
+                              product.product_name ||
                               "Product"}
                           </p>
 
                           <p className="mt-0.5 text-xs text-red-600">
                             {formatNumber(
-                              product.stock_quantity ??
-                                product.quantity ??
-                                product.stock ??
-                                0,
+                              getProductStock(
+                                product,
+                              ),
                             )}{" "}
                             left
                           </p>
@@ -1558,7 +1805,7 @@ export default function BiasharaDashboard({
 
                 <span className="text-sm font-bold text-slate-900">
                   {formatNumber(
-                    metrics.active_products,
+                    activeProducts,
                   )}
                 </span>
               </div>
@@ -1649,20 +1896,27 @@ export default function BiasharaDashboard({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">
                         {product.name ||
+                          product.product_name ||
                           "Product"}
                       </p>
 
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                         <span>
                           {formatNumber(
-                            product.units,
+                            product.units ??
+                              product.quantity_sold ??
+                              product.units_sold ??
+                              0,
                           )}{" "}
                           units
                         </span>
 
                         <span>
                           {formatMoney(
-                            product.revenue,
+                            product.revenue ??
+                              product.sales_total ??
+                              product.total_revenue ??
+                              0,
                             currency,
                           )}
                         </span>
@@ -1718,6 +1972,7 @@ export default function BiasharaDashboard({
                         order.id ||
                         order._id ||
                         order.order_number ||
+                        order.reference ||
                         index
                       }
                       className="rounded-2xl border border-slate-100 p-3.5"
@@ -1739,7 +1994,8 @@ export default function BiasharaDashboard({
 
                         <OrderStatusPill
                           status={
-                            order.status
+                            order.status ||
+                            order.order_status
                           }
                         />
                       </div>
@@ -1748,6 +2004,7 @@ export default function BiasharaDashboard({
                         <span className="text-xs text-slate-400">
                           {formatDate(
                             order.created_at ||
+                              order.createdAt ||
                               order.updated_at ||
                               order.ordered_at,
                           )}
@@ -1803,6 +2060,7 @@ export default function BiasharaDashboard({
                         sale._id ||
                         sale.reference ||
                         sale.sale_number ||
+                        sale.sale_id ||
                         index
                       }
                       className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-3.5"
@@ -1816,13 +2074,16 @@ export default function BiasharaDashboard({
                           <p className="truncate text-sm font-semibold text-slate-900">
                             {sale.reference ||
                               sale.sale_number ||
+                              sale.sale_id ||
                               "Sale"}
                           </p>
 
                           <p className="mt-1 text-xs text-slate-500">
                             {formatDateTime(
                               sale.created_at ||
-                                sale.sold_at,
+                                sale.createdAt ||
+                                sale.sold_at ||
+                                sale.sale_date,
                             )}
                           </p>
                         </div>
@@ -1831,10 +2092,9 @@ export default function BiasharaDashboard({
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-bold text-slate-900">
                           {formatMoney(
-                            sale.amount ??
-                              sale.total ??
-                              sale.total_amount ??
-                              0,
+                            getSaleAmount(
+                              sale,
+                            ),
                             currency,
                           )}
                         </p>
@@ -1870,7 +2130,9 @@ export default function BiasharaDashboard({
             eyebrow="Business identity"
             title="Workspace snapshot"
             actionLabel="Manage profile"
-            onAction={openBusinessProfile}
+            onAction={
+              openBusinessProfile
+            }
           />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1894,13 +2156,16 @@ export default function BiasharaDashboard({
               label="Location"
               value={
                 business?.location ||
+                business?.address ||
                 "Not specified"
               }
             />
 
             <ProfileStat
               label="Currency"
-              value={currency}
+              value={String(
+                currency || "KES",
+              ).toUpperCase()}
             />
           </div>
 
@@ -1949,14 +2214,14 @@ export default function BiasharaDashboard({
                 </p>
 
                 <p className="mt-0.5 text-xs text-emerald-700">
-                  Your profile is ready for the future
-                  business verification process.
+                  Your profile is ready for the
+                  future business verification
+                  process.
                 </p>
               </div>
             </div>
           )}
         </section>
-
       </div>
     </div>
   );

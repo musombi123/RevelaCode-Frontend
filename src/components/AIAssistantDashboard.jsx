@@ -1118,113 +1118,50 @@ export default function AIAssistantDashboard({
       setVoiceActive(false);
     }, []);
 
-  const handleVoiceResult =
-    useCallback(
-      (result) => {
-        if (!result) {
-          setVoiceActive(false);
-          return;
-        }
+  const handleVoiceResult = useCallback(
+  (result) => {
+    if (!result) return;
 
-        const heard =
-          String(
-            result.heard || ""
-          ).trim();
+    const heard = String(result.heard || "").trim();
+    const response = String(result.response || "").trim();
 
-        const response =
-          String(
-            result.response || ""
-          ).trim();
+    if (!heard && !response && !result.streamed) return;
 
-        if (
-          !heard &&
-          !response
-        ) {
-          setVoiceActive(false);
-          return;
-        }
+    const chatId =
+      activeChatId || ensureActiveChat(heard || "Voice Conversation");
 
-        const chatId =
-          activeChatId ||
-          ensureActiveChat(
-            heard ||
-              "Voice Conversation"
-          );
-
-        const currentMessages =
-          messages;
-
-        const userMessage =
-          createMessage(
-            "user",
-            heard ||
-              "Voice message",
-            "done",
-            {
-              inputType:
-                "voice",
-            }
-          );
-
-        const assistantMessage =
-          createMessage(
-            "assistant",
-            response ||
-              "RevelaAI returned an empty voice response.",
-            "done",
-            {
-              inputType:
-                "voice",
-
-              audioUrl:
-                isSafeHttpUrl(
-                  result.audio_url
-                )
-                  ? result.audio_url
-                  : null,
-
-              voice:
-                result.voice ||
-                null,
-
-              metadata:
-                result.meta ||
-                {},
-
-              contentType:
-                "voice",
-            }
-          );
-
-        const updated = [
-          ...currentMessages,
-          userMessage,
-          assistantMessage,
-        ];
-
-        setMessages(
-          updated
-        );
-
-        updateChat(
-          chatId,
-          updated,
-          (
-            heard ||
-            "Voice Conversation"
-          )
-            .slice(0, 45)
-        );
-
-        setVoiceActive(false);
-      },
-      [
-        activeChatId,
-        messages,
-        ensureActiveChat,
-        updateChat,
-      ]
+    const userMessage = createMessage(
+      "user",
+      heard || "Voice message",
+      "done",
+      { inputType: "voice" }
     );
+
+    const assistantMessage = createMessage(
+      "assistant",
+      response ||
+        (result.streamed
+          ? "🔊 Voice reply played."
+          : "RevelaAI returned an empty voice response."),
+      "done",
+      {
+        inputType: "voice",
+        audioUrl: isSafeHttpUrl(result.audio_url) ? result.audio_url : null,
+        voice: result.voice || null,
+        metadata: result.meta || {},
+        contentType: "voice",
+      }
+    );
+
+    const updated = [...messages, userMessage, assistantMessage];
+
+    setMessages(updated);
+
+    updateChat(chatId, updated, (heard || "Voice Conversation").slice(0, 45));
+    // The voice session stays open for the next turn.
+  },
+  [activeChatId, messages, ensureActiveChat, updateChat]
+);
 
   /* =======================================================
      CONVERSATION STATE

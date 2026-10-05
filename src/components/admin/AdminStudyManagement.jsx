@@ -5,7 +5,12 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-const API = import.meta.env.VITE_API_URL;
+const API = (
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  "https://revelacode-backend.onrender.com"
+).replace(/\/+$/, "");
 
 export default function AdminStudyManagement() {
 

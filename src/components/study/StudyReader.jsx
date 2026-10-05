@@ -21,12 +21,12 @@ import {
 
 import AIStudyPanel from "./AIStudyPanel";
 
-const API =
-  import.meta.env.VITE_API_URL?.replace(
-    /\/$/,
-    ""
-  ) ||
-  "https://revelacode-backend.onrender.com";
+const API = (
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  "https://revelacode-backend.onrender.com"
+).replace(/\/+$/, "");
 
 const resolveMaterialId = (
   material

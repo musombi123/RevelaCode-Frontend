@@ -29,6 +29,27 @@ import StartModal from "./StartModal.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
+function RevelaAIIcon({ size = 32, className = "" }) {
+  return (
+    <>
+      <img
+        src="/revelaai-icon.svg"
+        alt=""
+        width={size}
+        height={size}
+        className={`dark:hidden ${className}`}
+      />
+      <img
+        src="/revelaai-icon-dark.svg"
+        alt=""
+        width={size}
+        height={size}
+        className={`hidden dark:block ${className}`}
+      />
+    </>
+  );
+}
+
 /* =========================================================
    Fullscreen AI Assistant
 ========================================================= */
@@ -85,22 +106,9 @@ function FullscreenAIAssistant({
               "
             >
               <div className="flex items-center gap-2">
-                <Bot
-                  size={18}
-                  className="text-green-600"
-                />
-
-                <h3
-                  className="
-                    font-bold
-                    text-gray-900
-                    dark:text-gray-100
-                  "
-                >
-                  RevelaAI
-                </h3>
+                <RevelaAIIcon size={24} />
+                <h3 className="font-bold text-gray-900 dark:text-gray-100">RevelaAI</h3>
               </div>
-
               <span
                 className="
                   hidden
@@ -437,6 +445,26 @@ export default function MainDashboardV2() {
 
         return true;
       });
+
+/* =========================================================
+BIASHARA INTERNAL SECTIONS
+========================================================= */
+
+const BIASHARA_SECTIONS = {
+  OVERVIEW: "overview",
+  PRODUCTS: "products",
+  ORDERS: "orders",
+  CUSTOMERS: "customers",
+  SALES: "sales",
+  ANALYTICS: "biashara-analytics",
+  INTELLIGENCE: "biashara-intelligence",
+  BUSINESS_PROFILE: "business-profile",
+  NOTIFICATIONS: "notifications",
+};
+
+const BIASHARA_SECTION_KEYS = new Set(
+  Object.values(BIASHARA_SECTIONS)
+);
 
   /* =========================================================
      Render
@@ -1255,37 +1283,20 @@ export default function MainDashboardV2() {
 
           <button
             type="button"
-            onClick={() =>
-              setAIFullscreenOpen(true)
-            }
+            onClick={() => setAIFullscreenOpen(true)}
             className="
-              fixed
-              bottom-4
-              right-4
-              z-40
-              flex
-              h-14
-              w-14
-              items-center
-              justify-center
-              rounded-2xl
-              bg-gradient-to-br
-              from-green-600
-              to-emerald-700
-              text-white
-              shadow-xl
-              shadow-green-900/20
-              transition
-              hover:-translate-y-1
-              hover:shadow-2xl
-              active:scale-95
-              sm:bottom-6
-              sm:right-6
+              fixed bottom-4 right-4 z-40
+              flex h-14 w-14 items-center justify-center
+              rounded-2xl border border-gray-200 bg-white
+              shadow-xl transition
+              hover:-translate-y-1 hover:shadow-2xl active:scale-95
+              dark:border-gray-700 dark:bg-gray-900
+              sm:bottom-6 sm:right-6
             "
             title="RevelaAI Assistant (Ctrl + K)"
             aria-label="Open RevelaAI Assistant"
           >
-            <Bot size={22} />
+            <RevelaAIIcon size={34} />
           </button>
         </main>
       </div>

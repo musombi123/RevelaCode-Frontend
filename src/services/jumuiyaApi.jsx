@@ -927,192 +927,509 @@ export function useJumuiyaApi() {
 
 
   // =======================================================
-  // SHAMBA
-  // =======================================================
+// SHAMBA
+// =======================================================
 
-  const getShambaHealth =
-    useCallback(
-      async () =>
-        extractData(
-          await get(
-            "/shamba/health",
-          ),
+const getShambaHealth =
+  useCallback(
+    async () =>
+      extractData(
+        await get(
+          "/shamba/health",
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
-  const getFarmer =
-    useCallback(
-      async () =>
-        extractData(
-          await get(
-            "/shamba/farmer",
-          ),
+
+// =======================================================
+// FARMER
+// =======================================================
+
+const getFarmer =
+  useCallback(
+    async () =>
+      extractData(
+        await get(
+          "/shamba/farmer",
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
-  const saveFarmer =
-    useCallback(
-      async (data) =>
-        extractData(
-          await post(
-            "/shamba/farmer",
-            data,
-          ),
+const saveFarmer =
+  useCallback(
+    async (data) =>
+      extractData(
+        await post(
+          "/shamba/farmer",
+          data,
         ),
-      [post],
-    );
+      ),
+    [post],
+  );
 
-  const getFarms =
-    useCallback(
-      async () =>
-        extractData(
-          await get(
-            "/shamba/farms",
-          ),
+
+// =======================================================
+// FARMS
+// =======================================================
+
+const getFarms =
+  useCallback(
+    async () =>
+      extractData(
+        await get(
+          "/shamba/farms",
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
-  const createFarm =
-    useCallback(
-      async (data) =>
-        extractData(
-          await post(
-            "/shamba/farms",
-            data,
-          ),
+const createFarm =
+  useCallback(
+    async (data) =>
+      extractData(
+        await post(
+          "/shamba/farms",
+          data,
         ),
-      [post],
-    );
+      ),
+    [post],
+  );
 
-  const getFarm =
-    useCallback(
-      async (farmId) =>
-        extractData(
-          await get(
-            `/shamba/farms/${farmId}`,
-          ),
+const getFarm =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}`,
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
-  const updateFarm =
-    useCallback(
-      async (
-        farmId,
-        data,
-      ) =>
-        extractData(
-          await put(
-            `/shamba/farms/${farmId}`,
-            data,
-          ),
+const updateFarm =
+  useCallback(
+    async (
+      farmId,
+      data,
+    ) =>
+      extractData(
+        await put(
+          `/shamba/farms/${farmId}`,
+          data,
         ),
-      [put],
-    );
+      ),
+    [put],
+  );
 
-  const deleteFarm =
-    useCallback(
-      async (farmId) =>
-        extractData(
-          await del(
-            `/shamba/farms/${farmId}`,
-          ),
+const deleteFarm =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await del(
+          `/shamba/farms/${farmId}`,
         ),
-      [del],
-    );
+      ),
+    [del],
+  );
 
-  const getCrops =
-    useCallback(
-      async (farmId) =>
-        extractData(
-          await get(
-            `/shamba/farms/${farmId}/crops`,
-          ),
+
+// =======================================================
+// FARM LOCATION / GPS
+// =======================================================
+
+const updateFarmLocation =
+  useCallback(
+    async (
+      farmId,
+      {
+        latitude,
+        longitude,
+        accuracy = null,
+        source = "browser_gps",
+        county = "",
+        town = "",
+        location = "",
+      } = {},
+    ) =>
+      extractData(
+        await put(
+          `/shamba/farms/${farmId}/location`,
+          {
+            latitude,
+            longitude,
+            accuracy,
+            source,
+            county,
+            town,
+            location,
+          },
         ),
-      [get],
-    );
+      ),
+    [put],
+  );
 
-  const createCrop =
-    useCallback(
-      async (
-        farmId,
-        data,
-      ) =>
-        extractData(
-          await post(
-            `/shamba/farms/${farmId}/crops`,
-            data,
-          ),
+
+// =======================================================
+// CROPS
+// =======================================================
+
+const getCrops =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/crops`,
         ),
-      [post],
-    );
+      ),
+    [get],
+  );
 
-  const getFarmActivities =
-    useCallback(
-      async (farmId) =>
-        extractData(
-          await get(
-            `/shamba/farms/${farmId}/activities`,
-          ),
+const createCrop =
+  useCallback(
+    async (
+      farmId,
+      data,
+    ) =>
+      extractData(
+        await post(
+          `/shamba/farms/${farmId}/crops`,
+          data,
         ),
-      [get],
-    );
+      ),
+    [post],
+  );
 
-  const createFarmActivity =
-    useCallback(
-      async (
-        farmId,
-        data,
-      ) =>
-        extractData(
-          await post(
-            `/shamba/farms/${farmId}/activities`,
-            data,
-          ),
+
+// =======================================================
+// CROP INTELLIGENCE
+// =======================================================
+
+const getCropAnalysis =
+  useCallback(
+    async (
+      farmId,
+      cropId,
+    ) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/crops/${cropId}/analysis`,
         ),
-      [post],
-    );
+      ),
+    [get],
+  );
 
-  const getHarvests =
-    useCallback(
-      async (farmId) =>
-        extractData(
-          await get(
-            `/shamba/farms/${farmId}/harvests`,
-          ),
+
+// =======================================================
+// FARM ACTIVITIES
+// =======================================================
+
+const getFarmActivities =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/activities`,
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
-  const createHarvest =
-    useCallback(
-      async (
-        farmId,
-        data,
-      ) =>
-        extractData(
-          await post(
-            `/shamba/farms/${farmId}/harvests`,
-            data,
-          ),
+const createFarmActivity =
+  useCallback(
+    async (
+      farmId,
+      data,
+    ) =>
+      extractData(
+        await post(
+          `/shamba/farms/${farmId}/activities`,
+          data,
         ),
-      [post],
-    );
+      ),
+    [post],
+  );
 
-  const getShambaDashboard =
-    useCallback(
-      async () =>
-        extractData(
-          await get(
-            "/shamba/dashboard",
-          ),
+
+// =======================================================
+// HARVESTS
+// =======================================================
+
+const getHarvests =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/harvests`,
         ),
-      [get],
-    );
+      ),
+    [get],
+  );
 
+const createHarvest =
+  useCallback(
+    async (
+      farmId,
+      data,
+    ) =>
+      extractData(
+        await post(
+          `/shamba/farms/${farmId}/harvests`,
+          data,
+        ),
+      ),
+    [post],
+  );
+
+
+// =======================================================
+// FARM COMMAND CENTER
+// =======================================================
+
+const getFarmCommandCenter =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/command-center`,
+        ),
+      ),
+    [get],
+  );
+
+
+// =======================================================
+// FARM INSIGHTS
+// =======================================================
+
+const getFarmInsights =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/insights`,
+        ),
+      ),
+    [get],
+  );
+
+const refreshFarmIntelligence =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await post(
+          `/shamba/farms/${farmId}/insights/refresh`,
+        ),
+      ),
+    [post],
+  );
+
+
+// =======================================================
+// FARM RECOMMENDATIONS
+// =======================================================
+
+const getFarmRecommendations =
+  useCallback(
+    async (
+      farmId,
+      {
+        category = "",
+        priority = "",
+        cropId = "",
+      } = {},
+    ) => {
+      const params =
+        new URLSearchParams();
+
+      if (category) {
+        params.set(
+          "category",
+          category,
+        );
+      }
+
+      if (priority) {
+        params.set(
+          "priority",
+          priority,
+        );
+      }
+
+      if (cropId) {
+        params.set(
+          "crop_id",
+          cropId,
+        );
+      }
+
+      const query =
+        params.toString();
+
+      return extractData(
+        await get(
+          `/shamba/farms/${farmId}/recommendations${
+            query
+              ? `?${query}`
+              : ""
+          }`,
+        ),
+      );
+    },
+    [get],
+  );
+
+const createFarmRecommendation =
+  useCallback(
+    async (
+      farmId,
+      data,
+    ) =>
+      extractData(
+        await post(
+          `/shamba/farms/${farmId}/recommendations`,
+          data,
+        ),
+      ),
+    [post],
+  );
+
+
+// =======================================================
+// FARM ALERTS
+// =======================================================
+
+const getFarmAlerts =
+  useCallback(
+    async (
+      farmId,
+      {
+        unreadOnly = false,
+        severity = "",
+      } = {},
+    ) => {
+      const params =
+        new URLSearchParams();
+
+      if (unreadOnly) {
+        params.set(
+          "unread",
+          "true",
+        );
+      }
+
+      if (severity) {
+        params.set(
+          "severity",
+          severity,
+        );
+      }
+
+      const query =
+        params.toString();
+
+      return extractData(
+        await get(
+          `/shamba/farms/${farmId}/alerts${
+            query
+              ? `?${query}`
+              : ""
+          }`,
+        ),
+      );
+    },
+    [get],
+  );
+
+const getFarmAlertSummary =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/alerts/summary`,
+        ),
+      ),
+    [get],
+  );
+
+const markFarmAlertRead =
+  useCallback(
+    async (
+      farmId,
+      alertId,
+    ) =>
+      extractData(
+        await put(
+          `/shamba/farms/${farmId}/alerts/${alertId}/read`,
+        ),
+      ),
+    [put],
+  );
+
+
+// =======================================================
+// WEATHER
+// =======================================================
+
+const getFarmWeather =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/weather`,
+        ),
+      ),
+    [get],
+  );
+
+
+// =======================================================
+// MARKET INTELLIGENCE
+// =======================================================
+
+const getFarmMarket =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/market`,
+        ),
+      ),
+    [get],
+  );
+
+
+// =======================================================
+// REVELAAI STRUCTURED CONTEXT
+// =======================================================
+
+const getFarmAIContext =
+  useCallback(
+    async (farmId) =>
+      extractData(
+        await get(
+          `/shamba/farms/${farmId}/ai-context`,
+        ),
+      ),
+    [get],
+  );
+
+
+// =======================================================
+// SHAMBA DASHBOARD
+// =======================================================
+
+const getShambaDashboard =
+  useCallback(
+    async () =>
+      extractData(
+        await get(
+          "/shamba/dashboard",
+        ),
+      ),
+    [get],
+  );
 
   // =======================================================
   // ELIMU
@@ -1537,25 +1854,64 @@ export function useJumuiyaApi() {
 
     getBiasharaDashboard,
 
-    // -----------------------------------------------------
-    // Shamba
-    // -----------------------------------------------------
+  // -----------------------------------------------------
+  // Shamba
+  // -----------------------------------------------------
 
-    getShambaHealth,
-    getFarmer,
-    saveFarmer,
-    getFarms,
-    createFarm,
-    getFarm,
-    updateFarm,
-    deleteFarm,
-    getCrops,
-    createCrop,
-    getFarmActivities,
-    createFarmActivity,
-    getHarvests,
-    createHarvest,
-    getShambaDashboard,
+  getShambaHealth,
+
+  // Farmer
+  getFarmer,
+  saveFarmer,
+
+  // Farms
+  getFarms,
+  createFarm,
+  getFarm,
+  updateFarm,
+  deleteFarm,
+
+  // Location
+  updateFarmLocation,
+
+  // Crops
+  getCrops,
+  createCrop,
+  getCropAnalysis,
+
+  // Activities
+  getFarmActivities,
+  createFarmActivity,
+
+  // Harvests
+  getHarvests,
+  createHarvest,
+
+  // Intelligence
+  getFarmCommandCenter,
+  getFarmInsights,
+  refreshFarmIntelligence,
+
+  // Recommendations
+  getFarmRecommendations,
+  createFarmRecommendation,
+
+  // Alerts
+  getFarmAlerts,
+  getFarmAlertSummary,
+  markFarmAlertRead,
+
+  // Weather
+  getFarmWeather,
+
+  // Market
+  getFarmMarket,
+
+  // RevelaAI
+  getFarmAIContext,
+
+  // Dashboard
+  getShambaDashboard,
 
     // -----------------------------------------------------
     // Elimu

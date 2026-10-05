@@ -2,8 +2,9 @@
 <html lang="en" class="dark">
   <head>
     <!-- =========================================================
-         CORE DOCUMENT CONFIGURATION
+         CORE DOCUMENT
     ========================================================== -->
+
     <meta charset="UTF-8" />
 
     <meta
@@ -11,15 +12,9 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
-    <meta
-      name="theme-color"
-      content="#0f172a"
-    />
-
-    <meta
-      name="color-scheme"
-      content="dark light"
-    />
+    <meta name="theme-color" content="#020617" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="format-detection" content="telephone=no" />
 
     <meta
       name="author"
@@ -37,23 +32,53 @@
     />
 
     <!-- =========================================================
-         PRIMARY SEO
+         PRIMARY IDENTITY
     ========================================================== -->
+
     <title>RevelaCode — Code. Innovate. Transform.</title>
 
     <meta
       name="description"
-      content="RevelaCode is a technology ecosystem building intelligent digital solutions with software and AI for businesses, agriculture, education, communities, and faith-based learning."
+      content="RevelaCode is an AI-powered technology ecosystem building intelligent digital solutions for software, business, agriculture, education, community, and faith."
     />
 
     <meta
       name="keywords"
-      content="RevelaCode, RevelaCode Software Solutions, technology ecosystem, software development, artificial intelligence, MVI AI, Jumuiya, Jumuiya OS, Biashara, Shamba, Elimu, Community, theology, Bible study, education technology, agriculture technology, business technology, Kenya technology"
+      content="RevelaCode, RevelaCode Software Solutions, artificial intelligence, AI ecosystem, software development, RevelaAI, MVI-AI, Jumuiya, Jumuiya OS, Biashara, Shamba, Elimu, community technology, business technology, agriculture technology, education technology, Kenya technology"
     />
+
+    <meta
+      name="subject"
+      content="AI-powered technology ecosystem"
+    />
+
+    <meta
+      name="category"
+      content="Technology"
+    />
+
+    <meta
+      name="classification"
+      content="Technology, Software, Artificial Intelligence"
+    />
+
+    <!-- =========================================================
+         SEARCH ENGINE DIRECTIVES
+    ========================================================== -->
 
     <meta
       name="robots"
       content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <meta
+      name="googlebot"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <meta
+      name="bingbot"
+      content="index, follow"
     />
 
     <link
@@ -62,8 +87,9 @@
     />
 
     <!-- =========================================================
-         FAVICONS & WEB APP
+         BRAND / FAVICON
     ========================================================== -->
+
     <link
       rel="icon"
       type="image/png"
@@ -79,6 +105,11 @@
     />
 
     <link
+      rel="shortcut icon"
+      href="/favicon-32x32.png"
+    />
+
+    <link
       rel="apple-touch-icon"
       sizes="180x180"
       href="/apple-touch-icon.png"
@@ -88,6 +119,28 @@
       rel="manifest"
       href="/site.webmanifest"
     />
+
+    <!-- =========================================================
+         BRAND ASSETS
+    ========================================================== -->
+
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/logo.png"
+      type="image/png"
+    />
+
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/og-image.png"
+      type="image/png"
+    />
+
+    <!-- =========================================================
+         MOBILE / PWA
+    ========================================================== -->
 
     <meta
       name="mobile-web-app-capable"
@@ -110,8 +163,9 @@
     />
 
     <!-- =========================================================
-         OPEN GRAPH — FACEBOOK / WHATSAPP / LINKEDIN
+         OPEN GRAPH
     ========================================================== -->
+
     <meta
       property="og:type"
       content="website"
@@ -123,13 +177,18 @@
     />
 
     <meta
+      property="og:locale"
+      content="en_KE"
+    />
+
+    <meta
       property="og:title"
       content="RevelaCode — Code. Innovate. Transform."
     />
 
     <meta
       property="og:description"
-      content="Building intelligent digital solutions that connect AI, software, business, agriculture, education, community, and faith."
+      content="An AI-powered technology ecosystem connecting intelligent software, business, agriculture, education, community, and faith."
     />
 
     <meta
@@ -139,12 +198,12 @@
 
     <meta
       property="og:image"
-      content="https://revelacode-frontend.onrender.com/og-image.png"
+      content="https://revelacode-frontend.onrender.com/assets/og-image.png"
     />
 
     <meta
       property="og:image:secure_url"
-      content="https://revelacode-frontend.onrender.com/og-image.png"
+      content="https://revelacode-frontend.onrender.com/assets/og-image.png"
     />
 
     <meta
@@ -167,14 +226,10 @@
       content="RevelaCode — Code. Innovate. Transform."
     />
 
-    <meta
-      property="og:locale"
-      content="en_KE"
-    />
-
     <!-- =========================================================
          X / TWITTER
     ========================================================== -->
+
     <meta
       name="twitter:card"
       content="summary_large_image"
@@ -187,12 +242,12 @@
 
     <meta
       name="twitter:description"
-      content="An intelligent technology ecosystem connecting AI, software, business, agriculture, education, community, and faith."
+      content="An AI-powered technology ecosystem building intelligent digital solutions across software, business, agriculture, education, community, and faith."
     />
 
     <meta
       name="twitter:image"
-      content="https://revelacode-frontend.onrender.com/og-image.png"
+      content="https://revelacode-frontend.onrender.com/assets/og-image.png"
     />
 
     <meta
@@ -200,17 +255,63 @@
       content="RevelaCode — Code. Innovate. Transform."
     />
 
+    <meta
+      name="twitter:site"
+      content="@RevelaCode"
+    />
+
+    <meta
+      name="twitter:creator"
+      content="@RevelaCode"
+    />
+
+    <!-- =========================================================
+         APPLICATION / BRAND
+    ========================================================== -->
+
+    <meta
+      name="msapplication-TileColor"
+      content="#020617"
+    />
+
+    <meta
+      name="msapplication-navbutton-color"
+      content="#020617"
+    />
+
     <!-- =========================================================
          SECURITY / REFERRER
     ========================================================== -->
+
     <meta
       name="referrer"
       content="strict-origin-when-cross-origin"
     />
 
     <!-- =========================================================
-         STRUCTURED DATA — ORGANIZATION
+         PERFORMANCE
     ========================================================== -->
+
+    <link
+      rel="preconnect"
+      href="https://revelacode-backend.onrender.com"
+      crossorigin
+    />
+
+    <link
+      rel="dns-prefetch"
+      href="//revelacode-backend.onrender.com"
+    />
+
+    <link
+      rel="dns-prefetch"
+      href="//revelacode-frontend.onrender.com"
+    />
+
+    <!-- =========================================================
+         ORGANIZATION STRUCTURED DATA
+    ========================================================== -->
+
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -221,22 +322,37 @@
         "url": "https://revelacode-frontend.onrender.com/",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://revelacode-frontend.onrender.com/apple-touch-icon.png"
+          "url": "https://revelacode-frontend.onrender.com/assets/logo.png",
+          "contentUrl": "https://revelacode-frontend.onrender.com/assets/logo.png"
         },
-        "description": "A technology ecosystem building intelligent digital solutions through software and artificial intelligence across business, agriculture, education, community, and faith-based learning.",
+        "image": {
+          "@type": "ImageObject",
+          "url": "https://revelacode-frontend.onrender.com/assets/og-image.png",
+          "width": 1200,
+          "height": 630
+        },
+        "description": "RevelaCode is an AI-powered technology ecosystem building intelligent digital solutions across software, business, agriculture, education, community, and faith.",
+        "slogan": "Code. Innovate. Transform.",
         "foundingLocation": {
           "@type": "Country",
           "name": "Kenya"
         },
+        "areaServed": {
+          "@type": "Place",
+          "name": "Global"
+        },
         "knowsAbout": [
-          "Software Development",
           "Artificial Intelligence",
+          "Software Development",
+          "Full-Stack Development",
           "Business Technology",
           "Agricultural Technology",
           "Education Technology",
           "Community Technology",
-          "Bible Study Technology",
-          "Digital Platforms"
+          "Faith Technology",
+          "Digital Platforms",
+          "Intelligent Systems",
+          "Marketplace Technology"
         ],
         "sameAs": [
           "https://github.com/musombi123"
@@ -245,102 +361,79 @@
     </script>
 
     <!-- =========================================================
-         STRUCTURED DATA — WEBSITE
+         WEBSITE STRUCTURED DATA
     ========================================================== -->
+
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "@id": "https://revelacode-frontend.onrender.com/#website",
         "name": "RevelaCode",
+        "alternateName": "RevelaCode Software Solutions",
         "url": "https://revelacode-frontend.onrender.com/",
         "description": "RevelaCode — Code. Innovate. Transform.",
         "publisher": {
           "@id": "https://revelacode-frontend.onrender.com/#organization"
         },
-        "inLanguage": "en"
+        "image": "https://revelacode-frontend.onrender.com/assets/og-image.png",
+        "inLanguage": "en-KE"
       }
     </script>
 
     <!-- =========================================================
-         PERFORMANCE HINTS
+         SOFTWARE APPLICATION STRUCTURED DATA
     ========================================================== -->
-    <link
-      rel="preconnect"
-      href="https://revelacode-backend.onrender.com"
-    />
 
-    <!-- =========================================================
-         APPLICATION ENTRY
-    ========================================================== -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "@id": "https://revelacode-frontend.onrender.com/#application",
+        "name": "RevelaCode",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "Artificial Intelligence Platform",
+        "operatingSystem": "Web, Android",
+        "url": "https://revelacode-frontend.onrender.com/",
+        "image": "https://revelacode-frontend.onrender.com/assets/og-image.png",
+        "description": "An AI-powered technology ecosystem connecting intelligent software, business, agriculture, education, community, and faith.",
+        "publisher": {
+          "@id": "https://revelacode-frontend.onrender.com/#organization"
+        }
+      }
+    </script>
   </head>
 
-  <body
-    class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans"
-  >
-    <!-- React Application -->
-    <div id="root"></div>
-
+  <body>
     <!-- =========================================================
          JAVASCRIPT DISABLED FALLBACK
     ========================================================== -->
+
     <noscript>
-      <div
-        style="
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          background: #0f172a;
-          color: #f8fafc;
-          font-family: Arial, Helvetica, sans-serif;
-          text-align: center;
-        "
-      >
-        <div style="max-width: 720px;">
-          <h1 style="font-size: 2rem; margin-bottom: 12px;">
-            RevelaCode
-          </h1>
+      <p>RevelaCode — Code. Innovate. Transform.</p>
 
-          <p
-            style="
-              font-size: 1.2rem;
-              font-weight: 600;
-              margin-bottom: 16px;
-            "
-          >
-            Code. Innovate. Transform.
-          </p>
+      <p>
+        RevelaCode is an AI-powered technology ecosystem
+        building intelligent digital solutions across
+        software, business, agriculture, education,
+        community, and faith.
+      </p>
 
-          <p
-            style="
-              line-height: 1.7;
-              opacity: 0.85;
-            "
-          >
-            RevelaCode is a technology ecosystem building intelligent
-            digital solutions through software and artificial intelligence
-            for businesses, agriculture, education, communities, and
-            faith-based learning.
-          </p>
-
-          <p
-            style="
-              margin-top: 24px;
-              opacity: 0.7;
-            "
-          >
-            JavaScript is required to use the RevelaCode application.
-            Please enable JavaScript in your browser and reload the page.
-          </p>
-        </div>
-      </div>
+      <p>
+        JavaScript is required to use the RevelaCode ecosystem.
+      </p>
     </noscript>
+
+    <!-- =========================================================
+         APPLICATION ROOT
+    ========================================================== -->
+
+    <div id="root"></div>
 
     <!-- =========================================================
          REACT APPLICATION
     ========================================================== -->
+
     <script
       type="module"
       src="/src/main.jsx"

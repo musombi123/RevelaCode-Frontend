@@ -1,18 +1,27 @@
 // src/Dashboard/ShambaHub.jsx
 
+"use client";
+
 import React, {
   lazy,
   Suspense,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import {
   Activity,
-  CalendarDays,
+  Bell,
+  ChevronDown,
   CloudSun,
+  Compass,
   Leaf,
+  LocateFixed,
+  MapPin,
+  Menu,
+  MoreHorizontal,
   Package,
   ShoppingCart,
   Sprout,
@@ -21,6 +30,11 @@ import {
   Users,
   WalletCards,
   Wheat,
+  X,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Navigation,
 } from "lucide-react";
 
 import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
@@ -28,64 +42,41 @@ import Loading from "@/components/common/Loading.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 
-// =========================================================
-// SAFE LAZY
-// =========================================================
+// ============================================================
+// CONFIGURATION
+// ============================================================
 
-function safeLazy(
-  importFn,
-  name,
-) {
-  const LazyComponent = lazy(() =>
+const LOCATION_STORAGE_KEY =
+  "revelacode_shamba_location";
+
+const LOCATION_CACHE_DURATION =
+  30 * 60 * 1000;
+
+
+// ============================================================
+// SAFE LAZY LOADER
+// ============================================================
+
+function safeLazy(importFn, name) {
+  return lazy(() =>
     importFn().catch((error) => {
       console.error(
-        `🚨 SHAMBA LAZY LOAD FAILED → ${name}`,
+        `SHAMBA LAZY LOAD FAILED → ${name}`,
         error,
       );
 
       return {
         default: function ShambaLoadError() {
           return (
-            <div
-              className="
-                flex
-                min-h-[240px]
-                items-center
-                justify-center
-                p-6
-              "
-            >
-              <div
-                className="
-                  w-full
-                  max-w-md
-                  rounded-2xl
-                  border
-                  border-red-100
-                  bg-red-50
-                  p-5
-                  text-center
-                "
-              >
-                <div
-                  className="
-                    text-sm
-                    font-black
-                    text-red-700
-                  "
-                >
+            <div className="flex min-h-[260px] items-center justify-center p-6">
+              <div className="w-full max-w-md rounded-3xl border border-red-100 bg-red-50 p-6 text-center">
+                <div className="text-sm font-black text-red-700">
                   {name} could not be loaded
                 </div>
 
-                <p
-                  className="
-                    mt-2
-                    text-[10px]
-                    leading-5
-                    text-red-600
-                  "
-                >
-                  Please try opening this section again.
+                <p className="mt-2 text-xs leading-5 text-red-600">
+                  Something went wrong while opening this section.
+                  Please try again.
                 </p>
               </div>
             </div>
@@ -94,233 +85,644 @@ function safeLazy(
       };
     }),
   );
-
-  return LazyComponent;
 }
 
 
-// =========================================================
+// ============================================================
 // SHAMBA SCREENS
-// =========================================================
+// ============================================================
 
 const ShambaDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaDashboard.jsx"),
   "Shamba Dashboard",
 );
 
 const ShambaFarmsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaFarmsDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaFarmsDashboard.jsx"),
   "My Farms",
 );
 
 const ShambaCropsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaCropsDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaCropsDashboard.jsx"),
   "Crops",
 );
 
 const ShambaMarketDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaMarketDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaMarketDashboard.jsx"),
   "Market",
 );
 
 const ShambaInputsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaInputsDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaInputsDashboard.jsx"),
   "Inputs",
 );
 
 const ShambaBuyersDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaBuyersDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaBuyersDashboard.jsx"),
   "Buyers",
 );
 
 const ShambaOrdersDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaOrdersDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaOrdersDashboard.jsx"),
   "Orders",
 );
 
 const ShambaWeatherDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaWeatherDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaWeatherDashboard.jsx"),
   "Weather",
 );
 
 const ShambaHarvestsDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaHarvestsDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaHarvestsDashboard.jsx"),
   "Harvests",
 );
 
 const ShambaActivitiesDashboard = safeLazy(
-  () =>
-    import(
-      "@/Dashboard/ShambaActivitiesDashboard.jsx"
-    ),
+  () => import("@/Dashboard/ShambaActivitiesDashboard.jsx"),
   "Activities",
 );
 
 
-// =========================================================
-// INTERNAL NAVIGATION
-// =========================================================
+// ============================================================
+// NAVIGATION MODEL
+// ============================================================
 
 const SHAMBA_SECTIONS = {
   home: {
-    label: "Home",
+    label: "Overview",
+    shortLabel: "Home",
     icon: Leaf,
     component: ShambaDashboard,
+    primary: true,
   },
 
   farms: {
-    label: "My Farm",
+    label: "My Farms",
+    shortLabel: "Farms",
     icon: Tractor,
     component: ShambaFarmsDashboard,
+    primary: true,
   },
 
   crops: {
     label: "Crops",
+    shortLabel: "Crops",
     icon: Sprout,
     component: ShambaCropsDashboard,
+    primary: true,
   },
 
   market: {
     label: "Market",
+    shortLabel: "Market",
     icon: TrendingUp,
     component: ShambaMarketDashboard,
-  },
-
-  inputs: {
-    label: "Inputs",
-    icon: Package,
-    component: ShambaInputsDashboard,
-  },
-
-  buyers: {
-    label: "Buyers",
-    icon: Users,
-    component: ShambaBuyersDashboard,
-  },
-
-  orders: {
-    label: "Orders",
-    icon: WalletCards,
-    component: ShambaOrdersDashboard,
+    primary: true,
   },
 
   weather: {
     label: "Weather",
+    shortLabel: "Weather",
     icon: CloudSun,
     component: ShambaWeatherDashboard,
+    primary: true,
   },
 
   harvests: {
     label: "Harvests",
+    shortLabel: "Harvests",
     icon: Wheat,
     component: ShambaHarvestsDashboard,
+    primary: true,
+  },
+
+  inputs: {
+    label: "Farm Inputs",
+    shortLabel: "Inputs",
+    icon: Package,
+    component: ShambaInputsDashboard,
+    primary: false,
+  },
+
+  buyers: {
+    label: "Buyers",
+    shortLabel: "Buyers",
+    icon: Users,
+    component: ShambaBuyersDashboard,
+    primary: false,
+  },
+
+  orders: {
+    label: "Orders",
+    shortLabel: "Orders",
+    icon: ShoppingCart,
+    component: ShambaOrdersDashboard,
+    primary: false,
   },
 
   activities: {
     label: "Activities",
+    shortLabel: "Activities",
     icon: Activity,
     component: ShambaActivitiesDashboard,
+    primary: false,
   },
 };
 
 
-// =========================================================
-// NORMALIZE NAVIGATION TARGET
-// =========================================================
+// ============================================================
+// NAVIGATION ALIASES
+// ============================================================
 
-function normalizeSection(
-  target,
-) {
+function normalizeSection(target) {
   if (!target) {
     return "home";
   }
 
-  const value =
-    String(target)
-      .trim()
-      .toLowerCase();
+  const value = String(target)
+    .trim()
+    .toLowerCase()
+    .replace(/^\/+/, "");
 
   const aliases = {
     "/": "home",
-    home: "home",
 
     shamba: "home",
     "shamba/home": "home",
 
-    "shamba/farms": "farms",
     farm: "farms",
     farms: "farms",
+    "shamba/farms": "farms",
 
-    "shamba/crops": "crops",
     crop: "crops",
     crops: "crops",
+    "shamba/crops": "crops",
 
-    "shamba/market": "market",
     market: "market",
+    "shamba/market": "market",
 
-    "shamba/inputs": "inputs",
-    input: "inputs",
-    inputs: "inputs",
-
-    "shamba/buyers": "buyers",
-    buyer: "buyers",
-    buyers: "buyers",
-
-    "shamba/orders": "orders",
-    order: "orders",
-    orders: "orders",
-
-    "shamba/weather": "weather",
     weather: "weather",
+    "shamba/weather": "weather",
 
-    "shamba/harvests": "harvests",
     harvest: "harvests",
     harvests: "harvests",
+    "shamba/harvests": "harvests",
 
-    "shamba/activities": "activities",
+    input: "inputs",
+    inputs: "inputs",
+    "shamba/inputs": "inputs",
+
+    buyer: "buyers",
+    buyers: "buyers",
+    "shamba/buyers": "buyers",
+
+    order: "orders",
+    orders: "orders",
+    "shamba/orders": "orders",
+
     activity: "activities",
     activities: "activities",
+    "shamba/activities": "activities",
   };
 
+  return aliases[value] || "home";
+}
+
+
+// ============================================================
+// LOCATION UTILITIES
+// ============================================================
+
+function formatCoordinates(latitude, longitude) {
+  if (
+    typeof latitude !== "number" ||
+    typeof longitude !== "number"
+  ) {
+    return null;
+  }
+
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+}
+
+
+function readCachedLocation() {
+  try {
+    const raw = localStorage.getItem(
+      LOCATION_STORAGE_KEY,
+    );
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+
+    if (
+      !parsed?.timestamp ||
+      Date.now() - parsed.timestamp >
+        LOCATION_CACHE_DURATION
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+
+function saveCachedLocation(location) {
+  try {
+    localStorage.setItem(
+      LOCATION_STORAGE_KEY,
+      JSON.stringify({
+        ...location,
+        timestamp: Date.now(),
+      }),
+    );
+  } catch {
+    // Storage failure should never break Shamba.
+  }
+}
+
+
+// ============================================================
+// LOCATION HOOK
+// ============================================================
+
+function useFarmLocation() {
+  const [location, setLocation] =
+    useState(null);
+
+  const [status, setStatus] =
+    useState("idle");
+
+  const [error, setError] =
+    useState("");
+
+  const detectLocation =
+    useCallback(() => {
+      if (
+        typeof window === "undefined" ||
+        !navigator.geolocation
+      ) {
+        setStatus("error");
+        setError(
+          "Location services are not supported on this device.",
+        );
+        return;
+      }
+
+      setStatus("detecting");
+      setError("");
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const latitude =
+            position.coords.latitude;
+
+          const longitude =
+            position.coords.longitude;
+
+          const accuracy =
+            position.coords.accuracy;
+
+          const baseLocation = {
+            latitude,
+            longitude,
+            accuracy,
+          };
+
+          try {
+            const response =
+              await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(
+                  latitude,
+                )}&lon=${encodeURIComponent(
+                  longitude,
+                )}&zoom=18&addressdetails=1`,
+                {
+                  headers: {
+                    "Accept-Language": "en",
+                  },
+                },
+              );
+
+            if (!response.ok) {
+              throw new Error(
+                "Reverse geocoding failed.",
+              );
+            }
+
+            const data =
+              await response.json();
+
+            const address =
+              data?.address || {};
+
+            const locationData = {
+              ...baseLocation,
+
+              displayName:
+                data?.display_name ||
+                "Current location",
+
+              village:
+                address.village ||
+                address.suburb ||
+                address.neighbourhood ||
+                "",
+
+              town:
+                address.town ||
+                address.city ||
+                address.municipality ||
+                "",
+
+              county:
+                address.county ||
+                "",
+
+              state:
+                address.state ||
+                "",
+
+              country:
+                address.country ||
+                "",
+
+              countryCode:
+                address.country_code ||
+                "",
+
+              detectedAt:
+                new Date().toISOString(),
+            };
+
+            setLocation(
+              locationData,
+            );
+
+            saveCachedLocation(
+              locationData,
+            );
+
+            setStatus("success");
+          } catch (reverseError) {
+            console.warn(
+              "Shamba reverse geocoding failed:",
+              reverseError,
+            );
+
+            const locationData = {
+              ...baseLocation,
+
+              displayName:
+                "GPS location detected",
+
+              village: "",
+              town: "",
+              county: "",
+              state: "",
+              country: "",
+
+              detectedAt:
+                new Date().toISOString(),
+            };
+
+            setLocation(
+              locationData,
+            );
+
+            saveCachedLocation(
+              locationData,
+            );
+
+            setStatus("success");
+          }
+        },
+
+        (geoError) => {
+          let message =
+            "Unable to detect your location.";
+
+          if (
+            geoError.code ===
+            geoError.PERMISSION_DENIED
+          ) {
+            message =
+              "Location permission was denied. Enable location access and try again.";
+          }
+
+          if (
+            geoError.code ===
+            geoError.POSITION_UNAVAILABLE
+          ) {
+            message =
+              "Your device could not determine its current location.";
+          }
+
+          if (
+            geoError.code ===
+            geoError.TIMEOUT
+          ) {
+            message =
+              "Location detection timed out. Please try again.";
+          }
+
+          setStatus("error");
+          setError(message);
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        },
+      );
+    }, []);
+
+  useEffect(() => {
+    const cached =
+      readCachedLocation();
+
+    if (cached) {
+      setLocation(cached);
+      setStatus("success");
+    }
+  }, []);
+
+  return {
+    location,
+    status,
+    error,
+    detectLocation,
+  };
+}
+
+
+// ============================================================
+// LOCATION BADGE
+// ============================================================
+
+function LocationBadge({
+  location,
+  status,
+  onDetect,
+}) {
+  const [open, setOpen] =
+    useState(false);
+
+  if (status === "detecting") {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+        <LocateFixed
+          size={14}
+          className="animate-pulse"
+        />
+
+        <span>
+          Detecting location...
+        </span>
+      </div>
+    );
+  }
+
+  if (!location) {
+    return (
+      <button
+        type="button"
+        onClick={onDetect}
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+      >
+        <MapPin size={14} />
+
+        <span className="hidden sm:inline">
+          Detect farm location
+        </span>
+
+        <span className="sm:hidden">
+          Locate me
+        </span>
+      </button>
+    );
+  }
+
+  const primaryLocation =
+    location.town ||
+    location.village ||
+    location.county ||
+    "Current location";
+
   return (
-    aliases[value] ||
-    "home"
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() =>
+          setOpen((value) => !value)
+        }
+        className="inline-flex max-w-[230px] items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-left text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+      >
+        <CheckCircle2
+          size={14}
+          className="shrink-0"
+        />
+
+        <span className="min-w-0 truncate">
+          {primaryLocation}
+        </span>
+
+        <ChevronDown
+          size={13}
+          className="shrink-0"
+        />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                Farm location
+              </p>
+
+              <h4 className="mt-1 text-sm font-black text-slate-900">
+                {primaryLocation}
+              </h4>
+            </div>
+
+            <Navigation
+              size={18}
+              className="text-emerald-600"
+            />
+          </div>
+
+          <div className="mt-4 space-y-2 text-xs text-slate-500">
+            {location.county && (
+              <div className="flex justify-between gap-3">
+                <span>County</span>
+                <strong className="text-slate-700">
+                  {location.county}
+                </strong>
+              </div>
+            )}
+
+            {location.town && (
+              <div className="flex justify-between gap-3">
+                <span>Town</span>
+                <strong className="text-slate-700">
+                  {location.town}
+                </strong>
+              </div>
+            )}
+
+            <div className="flex justify-between gap-3">
+              <span>Coordinates</span>
+              <strong className="text-right text-slate-700">
+                {formatCoordinates(
+                  location.latitude,
+                  location.longitude,
+                )}
+              </strong>
+            </div>
+
+            <div className="flex justify-between gap-3">
+              <span>GPS accuracy</span>
+              <strong className="text-slate-700">
+                ±
+                {Math.round(
+                  location.accuracy || 0,
+                )}
+                m
+              </strong>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              onDetect();
+              setOpen(false);
+            }}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-black text-white transition hover:bg-slate-800"
+          >
+            <RefreshCw size={13} />
+
+            Update location
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
 
-// =========================================================
-// NAVIGATION BUTTON
-// =========================================================
+// ============================================================
+// DESKTOP NAV ITEM
+// ============================================================
 
-function ShambaNavItem({
+function DesktopNavItem({
   item,
   active,
   onClick,
@@ -331,27 +733,20 @@ function ShambaNavItem({
     <button
       type="button"
       onClick={onClick}
-      className={`
-        group
-        inline-flex
-        shrink-0
-        items-center
-        gap-2
-        rounded-xl
-        px-3
-        py-2
-        text-[10px]
-        font-black
-        transition-all
-        duration-200
-        ${
-          active
-            ? "bg-emerald-600 text-white shadow-sm"
-            : "bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
-        }
-      `}
+      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${
+        active
+          ? "bg-emerald-600 text-white shadow-sm"
+          : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
+      }`}
     >
-      <Icon size={14} />
+      <Icon
+        size={17}
+        className={
+          active
+            ? "text-white"
+            : "text-slate-400 group-hover:text-emerald-600"
+        }
+      />
 
       <span>
         {item.label}
@@ -361,9 +756,170 @@ function ShambaNavItem({
 }
 
 
-// =========================================================
-// MAIN CONTROLLER
-// =========================================================
+// ============================================================
+// MOBILE NAV ITEM
+// ============================================================
+
+function MobileNavItem({
+  item,
+  active,
+  onClick,
+}) {
+  const Icon = item.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 ${
+        active
+          ? "text-emerald-600"
+          : "text-slate-400"
+      }`}
+    >
+      <Icon size={17} />
+
+      <span className="max-w-full truncate text-[8px] font-black">
+        {item.shortLabel}
+      </span>
+    </button>
+  );
+}
+
+
+// ============================================================
+// MORE DRAWER
+// ============================================================
+
+function MoreDrawer({
+  open,
+  onClose,
+  activeSection,
+  onNavigate,
+}) {
+  if (!open) {
+    return null;
+  }
+
+  const secondary =
+    Object.entries(
+      SHAMBA_SECTIONS,
+    ).filter(
+      ([, item]) => !item.primary,
+    );
+
+  return (
+    <div className="fixed inset-0 z-[70]">
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px]"
+      />
+
+      <aside className="absolute bottom-0 right-0 top-0 w-[min(380px,88vw)] overflow-y-auto border-l border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600">
+              Shamba
+            </p>
+
+            <h3 className="mt-1 text-lg font-black text-slate-900">
+              More tools
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="grid gap-2">
+            {secondary.map(
+              ([key, item]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    onNavigate(key);
+                    onClose();
+                  }}
+                  className={`flex items-center gap-4 rounded-2xl border p-4 text-left transition ${
+                    activeSection === key
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-slate-100 hover:border-emerald-100 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                    <item.icon size={18} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-slate-900">
+                      {item.label}
+                    </div>
+
+                    <div className="mt-0.5 text-[10px] text-slate-500">
+                      Manage your{" "}
+                      {item.label.toLowerCase()}
+                    </div>
+                  </div>
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+
+// ============================================================
+// LOCATION ERROR
+// ============================================================
+
+function LocationError({
+  message,
+  onRetry,
+}) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <AlertCircle
+          size={17}
+          className="mt-0.5 shrink-0 text-amber-600"
+        />
+
+        <p className="text-xs leading-5 text-amber-800">
+          {message}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onRetry}
+        className="shrink-0 rounded-lg bg-white px-3 py-2 text-[10px] font-black text-amber-700 shadow-sm"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+
+// ============================================================
+// MAIN SHAMBA HUB
+// ============================================================
 
 export default function ShambaHub({
   onNavigate,
@@ -376,60 +932,66 @@ export default function ShambaHub({
     setActiveSection,
   ] = useState("home");
 
+  const [
+    moreOpen,
+    setMoreOpen,
+  ] = useState(false);
 
-  // =======================================================
-  // HANDLE INTERNAL NAVIGATION
-  // =======================================================
+  const {
+    location,
+    status: locationStatus,
+    error: locationError,
+    detectLocation,
+  } = useFarmLocation();
+
+
+  // ==========================================================
+  // INITIAL LOCATION DETECTION
+  // ==========================================================
+
+  useEffect(() => {
+    /*
+     * Only request GPS automatically when we
+     * have no cached location.
+     *
+     * This avoids repeatedly triggering the
+     * browser permission prompt.
+     */
+
+    if (!location) {
+      detectLocation();
+    }
+  }, [
+    location,
+    detectLocation,
+  ]);
+
+
+  // ==========================================================
+  // INTERNAL NAVIGATION
+  // ==========================================================
 
   const handleShambaNavigate =
-    useCallback(
-      (target) => {
-        const nextSection =
-          normalizeSection(
-            target,
-          );
+    useCallback((target) => {
+      const next =
+        normalizeSection(target);
 
-        setActiveSection(
-          nextSection,
-        );
-      },
-      [],
-    );
+      setActiveSection(next);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }, []);
 
 
-  // =======================================================
-  // CURRENT SECTION
-  // =======================================================
-
-  const currentSection =
-    useMemo(
-      () =>
-        SHAMBA_SECTIONS[
-          activeSection
-        ] ||
-        SHAMBA_SECTIONS.home,
-      [activeSection],
-    );
-
-
-  const ActiveComponent =
-    currentSection.component;
-
-
-  // =======================================================
-  // PROPAGATE NAVIGATION
-  // =======================================================
+  // ==========================================================
+  // GLOBAL NAVIGATION
+  // ==========================================================
 
   const handleDashboardNavigate =
     useCallback(
       (target) => {
-        /*
-         * Shamba targets stay inside Shamba.
-         *
-         * Anything unknown is forwarded to the
-         * global RevelaCode dashboard.
-         */
-
         if (!target) {
           return;
         }
@@ -457,11 +1019,6 @@ export default function ShambaHub({
           return;
         }
 
-        /*
-         * "Back" or other ecosystem-level
-         * destinations can still leave Shamba.
-         */
-
         onNavigate?.(target);
       },
       [
@@ -471,61 +1028,305 @@ export default function ShambaHub({
     );
 
 
-  // =======================================================
+  // ==========================================================
+  // CURRENT SECTION
+  // ==========================================================
+
+  const currentSection =
+    useMemo(
+      () =>
+        SHAMBA_SECTIONS[
+          activeSection
+        ] ||
+        SHAMBA_SECTIONS.home,
+      [activeSection],
+    );
+
+  const ActiveComponent =
+    currentSection.component;
+
+
+  const primarySections =
+    useMemo(
+      () =>
+        Object.entries(
+          SHAMBA_SECTIONS,
+        ).filter(
+          ([, item]) =>
+            item.primary,
+        ),
+      [],
+    );
+
+
+  // ==========================================================
   // RENDER
-  // =======================================================
+  // ==========================================================
 
   return (
     <JumuiyaDashboardShell
       title="Shamba"
-      subtitle="Grow better. Sell smarter. Feed Africa."
+      subtitle="Farm intelligence for better decisions."
       activeHub="shamba"
       user={user}
       onNavigate={onNavigate}
     >
-      <div
-        className="
-          mx-auto
-          w-full
-          max-w-[1200px]
-          pb-24
-        "
-      >
+      <div className="min-h-[calc(100vh-120px)] bg-slate-50/60">
+        <div className="mx-auto flex w-full max-w-[1440px]">
 
-        {/* ==================================================
-            SHAMBA INTERNAL NAVIGATION
-        ================================================== */}
+          {/* ==================================================
+              DESKTOP SIDEBAR
+          ================================================== */}
 
-        <div
-          className="
-            mb-4
-            overflow-x-auto
-            pb-1
-            [scrollbar-width:none]
-            [&::-webkit-scrollbar]:hidden
-          "
-        >
-          <div
-            className="
-              flex
-              w-max
-              min-w-full
-              gap-1.5
-              rounded-2xl
-              border
-              border-slate-100
-              bg-slate-50
-              p-1
-            "
-          >
-            {Object.entries(
-              SHAMBA_SECTIONS,
-            ).map(
-              ([
-                key,
-                item,
-              ]) => (
-                <ShambaNavItem
+          <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[230px] shrink-0 border-r border-slate-200 bg-white lg:block">
+            <div className="flex h-full flex-col p-4">
+
+              {/* Brand */}
+              <div className="mb-5 rounded-2xl bg-emerald-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                    <Leaf size={19} />
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-black text-slate-900">
+                      Shamba
+                    </div>
+
+                    <div className="text-[9px] font-bold text-emerald-700">
+                      Farm intelligence
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+              {/* Main navigation */}
+              <div className="space-y-1">
+                <div className="mb-2 px-3 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  Workspace
+                </div>
+
+                {primarySections.map(
+                  ([key, item]) => (
+                    <DesktopNavItem
+                      key={key}
+                      item={item}
+                      active={
+                        activeSection === key
+                      }
+                      onClick={() =>
+                        handleShambaNavigate(
+                          key,
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </div>
+
+
+              {/* More */}
+              <div className="mt-6 border-t border-slate-100 pt-5">
+                <div className="mb-2 px-3 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  Operations
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMoreOpen(true)
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-emerald-700"
+                >
+                  <MoreHorizontal
+                    size={18}
+                    className="text-slate-400"
+                  />
+
+                  More tools
+                </button>
+              </div>
+
+
+              {/* AI */}
+              <div className="mt-auto pt-5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenAI?.()
+                  }
+                  className="w-full rounded-2xl bg-slate-900 p-4 text-left text-white shadow-lg transition hover:bg-slate-800"
+                >
+                  <div className="text-[9px] font-black uppercase tracking-wider text-emerald-400">
+                    RevelaAI
+                  </div>
+
+                  <div className="mt-1 text-sm font-black">
+                    Ask about your farm
+                  </div>
+
+                  <div className="mt-1 text-[10px] leading-4 text-slate-400">
+                    Crops, weather, markets and farm decisions.
+                  </div>
+                </button>
+              </div>
+            </div>
+          </aside>
+
+
+          {/* ==================================================
+              MAIN CONTENT
+          ================================================== */}
+
+          <main className="min-w-0 flex-1 pb-24 lg:pb-8">
+
+            {/* ==================================================
+                COMMAND HEADER
+            ================================================== */}
+
+            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between gap-4">
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="truncate text-lg font-black text-slate-900 sm:text-xl">
+                      {currentSection.label}
+                    </h1>
+
+                    <span className="hidden rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-700 sm:inline-flex">
+                      Shamba
+                    </span>
+                  </div>
+
+                  <p className="mt-0.5 hidden text-[10px] text-slate-400 sm:block">
+                    Your agricultural command center
+                  </p>
+                </div>
+
+
+                <div className="flex items-center gap-2">
+
+                  <LocationBadge
+                    location={location}
+                    status={
+                      locationStatus
+                    }
+                    onDetect={
+                      detectLocation
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 sm:flex"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={17} />
+                  </button>
+
+                </div>
+              </div>
+            </header>
+
+
+            {/* ==================================================
+                LOCATION ERROR
+            ================================================== */}
+
+            <div className="px-4 pt-4 sm:px-6 lg:px-8">
+              <LocationError
+                message={
+                  locationError
+                }
+                onRetry={
+                  detectLocation
+                }
+              />
+            </div>
+
+
+            {/* ==================================================
+                LOCATION INTELLIGENCE CARD
+            ================================================== */}
+
+            {!location && (
+              <div className="px-4 pt-4 sm:px-6 lg:px-8">
+                <button
+                  type="button"
+                  onClick={
+                    detectLocation
+                  }
+                  className="flex w-full items-center gap-4 rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-5 text-left shadow-sm"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+                    <LocateFixed
+                      size={22}
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-slate-900">
+                      Enable farm location
+                    </h3>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Shamba uses your device location to improve farm weather, regional recommendations, crop intelligence and local market information.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+
+            {/* ==================================================
+                ACTIVE DASHBOARD
+            ================================================== */}
+
+            <div className="px-4 pt-5 sm:px-6 lg:px-8 lg:pt-6">
+              <Suspense
+                fallback={
+                  <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+                    <Loading />
+                  </div>
+                }
+              >
+                <ActiveComponent
+                  user={user}
+                  location={location}
+                  onNavigate={
+                    handleDashboardNavigate
+                  }
+                  onOpenAI={
+                    onOpenAI
+                  }
+                />
+              </Suspense>
+            </div>
+          </main>
+        </div>
+
+
+        {/* ====================================================
+            MOBILE BOTTOM NAVIGATION
+        ==================================================== */}
+
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 py-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg lg:hidden">
+          <div className="mx-auto flex max-w-[600px] items-center gap-1">
+
+            {[
+              "home",
+              "farms",
+              "crops",
+              "market",
+            ].map((key) => {
+              const item =
+                SHAMBA_SECTIONS[
+                  key
+                ];
+
+              return (
+                <MobileNavItem
                   key={key}
                   item={item}
                   active={
@@ -538,138 +1339,45 @@ export default function ShambaHub({
                     )
                   }
                 />
-              ),
-            )}
-          </div>
-        </div>
+              );
+            })}
 
-
-        {/* ==================================================
-            ACTIVE SCREEN
-        ================================================== */}
-
-        <Suspense
-          fallback={
-            <div
-              className="
-                rounded-3xl
-                border
-                border-slate-100
-                bg-white
-                p-8
-                shadow-sm
-              "
+            <button
+              type="button"
+              onClick={() =>
+                setMoreOpen(true)
+              }
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-slate-400"
             >
-              <Loading />
-            </div>
-          }
-        >
-          <ActiveComponent
-            user={user}
-            onNavigate={
-              handleDashboardNavigate
-            }
-            onOpenAI={onOpenAI}
-          />
-        </Suspense>
+              <MoreHorizontal
+                size={17}
+              />
 
+              <span className="text-[8px] font-black">
+                More
+              </span>
+            </button>
 
-        {/* ==================================================
-            MOBILE SHAMBA NAV
-        ================================================== */}
-
-        <div
-          className="
-            fixed
-            bottom-0
-            left-0
-            right-0
-            z-30
-            border-t
-            border-slate-200
-            bg-white/95
-            px-2
-            py-2
-            shadow-[0_-6px_25px_rgba(15,23,42,0.08)]
-            backdrop-blur-md
-            lg:hidden
-          "
-        >
-          <div
-            className="
-              mx-auto
-              flex
-              max-w-[700px]
-              items-center
-              justify-between
-              gap-1
-            "
-          >
-            {[
-              ["home", Leaf],
-              ["farms", Tractor],
-              ["crops", Sprout],
-              ["market", TrendingUp],
-              ["activities", Activity],
-            ].map(
-              ([
-                key,
-                Icon,
-              ]) => {
-                const active =
-                  activeSection ===
-                  key;
-
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() =>
-                      handleShambaNavigate(
-                        key,
-                      )
-                    }
-                    className={`
-                      flex
-                      min-w-0
-                      flex-1
-                      flex-col
-                      items-center
-                      justify-center
-                      gap-1
-                      rounded-xl
-                      px-2
-                      py-1.5
-                      ${
-                        active
-                          ? "text-emerald-600"
-                          : "text-slate-400"
-                      }
-                    `}
-                  >
-                    <Icon size={16} />
-
-                    <span
-                      className="
-                        max-w-full
-                        truncate
-                        text-[8px]
-                        font-black
-                      "
-                    >
-                      {
-                        SHAMBA_SECTIONS[
-                          key
-                        ].label
-                      }
-                    </span>
-                  </button>
-                );
-              },
-            )}
           </div>
         </div>
 
+
+        {/* ====================================================
+            MORE DRAWER
+        ==================================================== */}
+
+        <MoreDrawer
+          open={moreOpen}
+          onClose={() =>
+            setMoreOpen(false)
+          }
+          activeSection={
+            activeSection
+          }
+          onNavigate={
+            handleShambaNavigate
+          }
+        />
       </div>
     </JumuiyaDashboardShell>
   );
