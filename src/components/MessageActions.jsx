@@ -1,23 +1,36 @@
+// src/components/MessageActions.jsx
+
 import React, { useCallback, useState } from "react";
 import {
-  Copy,
   Check,
+  Copy,
   Download,
-  Share2,
-  ThumbsUp,
-  ThumbsDown,
+  Loader2,
   RefreshCw,
+  Share2,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 
-function ActionButton({ label, onClick, active = false, activeClass = "text-emerald-400", children }) {
+import { downloadAsPdf } from "@/components/utils/exportPdf";
+
+function ActionButton({
+  label,
+  onClick,
+  active = false,
+  activeClass = "text-emerald-400",
+  disabled = false,
+  children,
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={label}
       aria-label={label}
       aria-pressed={active || undefined}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/10 ${
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
         active ? activeClass : "text-gray-500 hover:text-white"
       }`}
     >
@@ -33,6 +46,8 @@ export default function MessageActions({
   onFeedback,
 }) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadFailed, setDownloadFailed] = useState(false);
 
   const text = message.text || "";
   const isError = message.status === "error";
@@ -53,21 +68,27 @@ export default function MessageActions({
       document.execCommand("copy");
       area.remove();
     }
+
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }, [text]);
 
-  const handleDownload = useCallback(() => {
-    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `revelaai-response-${Date.now()}.md`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, [text]);
+  const handleDownload = useCallback(async () => {
+    if (downloading) return;
+
+    setDownloading(true);
+    setDownloadFailed(false);
+
+    try {
+      await downloadAsPdf(text);
+    } catch (error) {
+      console.error("❌ PDF export failed:", error);
+      setDownloadFailed(true);
+      setTimeout(() => setDownloadFailed(false), 2500);
+    } finally {
+      setDownloading(false);
+    }
+  }, [text, downloading]);
 
   const handleShare = useCallback(async () => {
     try {
@@ -85,8 +106,18 @@ export default function MessageActions({
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
           </ActionButton>
 
-          <ActionButton label="Download" onClick={handleDownload}>
-            <Download size={14} />
+          <ActionButton
+            label={downloadFailed ? "Download failed, try again" : "Download PDF"}
+            onClick={handleDownload}
+            disabled={downloading}
+            active={downloadFailed}
+            activeClass="text-red-400"
+          >
+            {downloading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
           </ActionButton>
 
           {canShare && (
