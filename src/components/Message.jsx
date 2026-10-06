@@ -12,6 +12,7 @@ import {
   FileText,
   Mic,
   Volume2,
+  X,
 } from "lucide-react";
 
 import ThinkingStages from "./ThinkingStages.jsx";
@@ -19,11 +20,27 @@ import CodeBlock from "@/ide/CodeBlock";
 import { getMessageEmotion } from "./utils/messageEmotion.js";
 
 /* =========================================================
+   CONSTANTS
+========================================================= */
+
+const FRESH_MS = 4000; // answers newer than this animate in
+const LONG_USER_TEXT = 600; // user messages longer than this collapse
+const COLLAPSED_CHARS = 420;
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
 const isSafeHttpUrl = (value) =>
   /^https?:\/\//i.test(String(value || "").trim());
+
+const hostnameOf = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
 
 const normalizeSources = (sources) => {
   const seen = new Set();
@@ -34,7 +51,7 @@ const normalizeSources = (sources) => {
         typeof source === "string" ? source : source?.url || source?.link || "";
       const title =
         typeof source === "string" ? source : source?.title || source?.name || url;
-      return { url, title };
+      return { url, title, host: hostnameOf(url) };
     })
     .filter(({ url }) => isSafeHttpUrl(url) && !seen.has(url) && seen.add(url))
     .slice(0, 8);
@@ -51,6 +68,51 @@ const EMOTION_STYLES = {
 const ERROR_STYLE = "bg-red-950/30 border-red-500/30 text-white";
 
 /* =========================================================
+   ANSWER REVEAL
+   -------------------------------------------------------
+   Reveals a fresh answer progressively. Old messages and
+   reduced-motion users get the full text immediately.
+========================================================= */
+
+function useReveal(text, fresh) {
+  const [skipped, setSkipped] = useState(false);
+  const [count, setCount] = useState(fresh ? 0 : text.length);
+  const active = fresh && !skipped;
+
+  useEffect(() => {
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (!active || reduceMotion) {
+      setCount(text.length);
+      return undefined;
+    }
+
+    let frame;
+    const start = performance.now();
+    const duration = Math.min(2600, Math.max(600, text.length * 5));
+
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      setCount(Math.round(text.length * (1 - (1 - t) ** 2)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [active, text]);
+
+  const revealing = active && count < text.length;
+
+  return {
+    visible: revealing ? text.slice(0, count) : text,
+    revealing,
+    skip: () => setSkipped(true),
+  };
+}
+
+/* =========================================================
    MARKDOWN
 ========================================================= */
 
@@ -63,9 +125,29 @@ const mdComponents = {
   h2: ({ children }) => <h2 className="mb-2 mt-4 text-base font-bold first:mt-0">{children}</h2>,
   h3: ({ children }) => <h3 className="mb-2 mt-3 text-sm font-bold first:mt-0">{children}</h3>,
 
-  ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
+  ul: ({ children, className }) => (
+    <ul
+      className={`mb-3 space-y-1 last:mb-0 ${
+        /contains-task-list/.test(className || "") ? "list-none pl-1" : "list-disc pl-5"
+      }`}
+    >
+      {children}
+    </ul>
+  ),
   ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+
+  // Task lists: - [x] done
+  input: ({ type, checked }) =>
+    type === "checkbox" ? (
+      <input
+        type="checkbox"
+        checked={Boolean(checked)}
+        readOnly
+        disabled
+        className="mr-2 align-middle accent-emerald-500"
+      />
+    ) : null,
 
   a: ({ href, children }) =>
     isSafeHttpUrl(href) ? (
@@ -80,6 +162,18 @@ const mdComponents = {
     ) : (
       <span>{children}</span>
     ),
+
+  // Only load images over http(s), and don't leak the page URL
+  img: ({ src, alt }) =>
+    isSafeHttpUrl(src) ? (
+      <img
+        src={src}
+        alt={alt || ""}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="my-2 h-auto max-w-full rounded-xl border border-white/10"
+      />
+    ) : null,
 
   blockquote: ({ children }) => (
     <blockquote className="mb-3 border-l-2 border-emerald-500/50 pl-3 italic text-gray-300">
@@ -130,6 +224,55 @@ const MarkdownBody = memo(function MarkdownBody({ text }) {
     </ReactMarkdown>
   );
 });
+
+/* =========================================================
+   IMAGE VIEWER
+========================================================= */
+
+function ImageViewer({ url, onClose }) {
+  useEffect(() => {
+    const onKey = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image viewer"
+      onClick={onClose}
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close image"
+        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+      >
+        <X size={20} />
+      </button>
+
+      <img
+        src={url}
+        alt="Generated"
+        referrerPolicy="no-referrer"
+        onClick={(event) => event.stopPropagation()}
+        className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl"
+      />
+
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => event.stopPropagation()}
+        className="absolute bottom-5 flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/20"
+      >
+        <ExternalLink size={13} /> Open original
+      </a>
+    </div>
+  );
+}
 
 /* =========================================================
    INLINE EDITOR (user messages)
@@ -211,15 +354,36 @@ function EditBox({ initial, onSave, onCancel }) {
    MESSAGE
 ========================================================= */
 
-function Message({ message, onEdit }) {
+function Message({ message, onEdit, onReveal }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState(null);
 
   const emotion = getMessageEmotion(message);
   const isUser = message.role === "user";
   const isError = message.status === "error";
   const isThinking = emotion === "thinking" || message.status === "loading";
   const isVoice = message.inputType === "voice";
+
+  const fullText = message.text || "";
+
+  // Decided once, when the message first appears
+  const [fresh] = useState(
+    () =>
+      !isUser &&
+      !isError &&
+      !isThinking &&
+      Date.now() - Number(message.createdAt || 0) < FRESH_MS
+  );
+
+  const { visible, revealing, skip } = useReveal(fullText, fresh);
+
+  // Keep the chat scrolled while the answer grows
+  const bucket = Math.floor(visible.length / 60);
+  useEffect(() => {
+    if (revealing) onReveal?.();
+  }, [revealing, bucket, onReveal]);
 
   const canEdit =
     isUser && typeof onEdit === "function" && !message.attachmentName && !isVoice;
@@ -232,15 +396,19 @@ function Message({ message, onEdit }) {
   const sources = normalizeSources(message.sources);
   const documentMeta = message.metadata?.multimodal || null;
 
+  const isLongUser = isUser && fullText.length > LONG_USER_TEXT;
+  const userText =
+    isLongUser && !expanded ? `${fullText.slice(0, COLLAPSED_CHARS).trimEnd()}…` : fullText;
+
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(message.text || "");
+      await navigator.clipboard.writeText(fullText);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       /* Ignore clipboard failure. */
     }
-  }, [message.text]);
+  }, [fullText]);
 
   const handleSaveEdit = useCallback(
     (nextText) => {
@@ -283,12 +451,24 @@ function Message({ message, onEdit }) {
 
             {editing ? (
               <EditBox
-                initial={message.text || ""}
+                initial={fullText}
                 onSave={handleSaveEdit}
                 onCancel={() => setEditing(false)}
               />
             ) : (
-              <p className="whitespace-pre-wrap break-words">{message.text}</p>
+              <>
+                <p className="whitespace-pre-wrap break-words">{userText}</p>
+
+                {isLongUser && (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((open) => !open)}
+                    className="mt-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200"
+                  >
+                    {expanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </>
             )}
 
             {message.attachmentName && (
@@ -306,37 +486,48 @@ function Message({ message, onEdit }) {
         {!isThinking && !isUser && isError && (
           <div role="alert" className="flex items-start gap-2 text-red-100">
             <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-400" />
-            <p className="break-words">{message.text}</p>
+            <p className="break-words">{fullText}</p>
           </div>
         )}
 
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isError && (
           <div className="break-words">
-            {message.text && <MarkdownBody text={message.text} />}
+            {visible && <MarkdownBody text={visible} />}
 
-            {imageUrls.length > 0 && (
+            {revealing && (
+              <button
+                type="button"
+                onClick={skip}
+                className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300"
+              >
+                Skip
+              </button>
+            )}
+
+            {!revealing && imageUrls.length > 0 && (
               <div className="mt-4 grid gap-3">
                 {imageUrls.map((url, index) => (
-                  <a
+                  <button
                     key={`${url}-${index}`}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+                    type="button"
+                    onClick={() => setViewerUrl(url)}
+                    aria-label={`View generated image ${index + 1}`}
+                    className="block cursor-zoom-in overflow-hidden rounded-2xl border border-white/10 bg-black/20"
                   >
                     <img
                       src={url}
                       alt={`Generated image ${index + 1}`}
                       loading="lazy"
+                      referrerPolicy="no-referrer"
                       className="block h-auto w-full object-cover"
                     />
-                  </a>
+                  </button>
                 ))}
               </div>
             )}
 
-            {audioUrl && (
+            {!revealing && audioUrl && (
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
                 <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-emerald-300">
                   <Volume2 size={14} />
@@ -346,7 +537,7 @@ function Message({ message, onEdit }) {
               </div>
             )}
 
-            {documentMeta?.type === "pdf" && (
+            {!revealing && documentMeta?.type === "pdf" && (
               <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px] text-gray-400">
                 <FileText size={13} className="text-emerald-400" />
                 <span>{documentMeta.filename || "PDF document"}</span>
@@ -365,14 +556,14 @@ function Message({ message, onEdit }) {
               </div>
             )}
 
-            {sources.length > 0 && (
+            {!revealing && sources.length > 0 && (
               <div className="mt-4 border-t border-white/10 pt-3">
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   Sources
                 </p>
 
                 <div className="space-y-2">
-                  {sources.map(({ url, title }, index) => (
+                  {sources.map(({ url, title, host }, index) => (
                     <a
                       key={`${url}-${index}`}
                       href={url}
@@ -381,7 +572,14 @@ function Message({ message, onEdit }) {
                       className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-gray-400 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
                     >
                       <ExternalLink size={12} className="shrink-0 text-emerald-400" />
+
                       <span className="min-w-0 flex-1 truncate">{title}</span>
+
+                      {host && host !== title && (
+                        <span className="hidden shrink-0 text-[10px] text-gray-600 sm:block">
+                          {host}
+                        </span>
+                      )}
                     </a>
                   ))}
                 </div>
@@ -417,6 +615,8 @@ function Message({ message, onEdit }) {
           </div>
         )}
       </div>
+
+      {viewerUrl && <ImageViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />}
     </div>
   );
 }
