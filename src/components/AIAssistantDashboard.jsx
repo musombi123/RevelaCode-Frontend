@@ -1162,6 +1162,124 @@ export default function AIAssistantDashboard({
   },
   [activeChatId, messages, ensureActiveChat, updateChat]
 );
+    /* =======================================================
+     REGENERABLE ANSWER
+     Only the latest typed answer can be refreshed. Files and
+     voice are excluded because they can't be resent.
+  ======================================================= */
+
+  const regenerableId = useMemo(() => {
+    const last = messages[messages.length - 1];
+    const prev = messages[messages.length - 2];
+
+    if (!last || last.role !== "assistant" || last.status === "loading") return null;
+    if (!prev || prev.role !== "user") return null;
+    if (prev.attachmentName || prev.inputType === "voice") return null;
+
+    return last.id;
+  }, [messages]);
+
+  /* =======================================================
+     LIKE / DISLIKE
+  ======================================================= */
+
+  const handleFeedback = useCallback(
+    (messageId, value) => {
+      if (!activeChatId) return;
+
+      const updated = messages.map((message) =>
+        message.id === messageId
+          ? { ...message, feedback: message.feedback === value ? null : value }
+          : message
+      );
+
+      setMessages(updated);
+      updateChat(activeChatId, updated);
+    },
+    [activeChatId, messages, updateChat]
+  );
+
+  /* =======================================================
+     REFRESH ANSWER
+  ======================================================= */
+
+  const regenerateResponse = useCallback(
+    async (assistantId) => {
+      if (!activeChatId || assistantId !== regenerableId) return;
+
+      const chatId = activeChatId;
+      const index = messages.length - 1;
+      const userMessage = messages[index - 1];
+      const history = messages.slice(0, index - 1);
+
+      const loadingMessages = messages.map((message) =>
+        message.id === assistantId
+          ? {
+              ...message,
+              text: "Thinking…",
+              status: "loading",
+              imageUrls: [],
+              sources: [],
+              feedback: null,
+            }
+          : message
+      );
+
+      setMessages(loadingMessages);
+      updateChat(chatId, loadingMessages);
+
+      controllerRef.current?.abort();
+      const controller = new AbortController();
+      controllerRef.current = controller;
+
+      try {
+        const data = await callRevelaAI({
+          message: enrichPrompt(userMessage.text),
+          context: buildContext(history),
+          sessionId: chatId,
+          signal: controller.signal,
+        });
+
+        const normalized = normalizeAIResponse(data);
+
+        const updated = loadingMessages.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                text: normalized.text || "RevelaAI returned an empty response.",
+                status: "done",
+                imageUrls: normalized.imageUrls,
+                sources: normalized.sources,
+                metadata: normalized.metadata,
+                contentType: normalized.type,
+                createdAt: Date.now(),
+              }
+            : message
+        );
+
+        setMessages(updated);
+        updateChat(chatId, updated);
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+
+        const updated = loadingMessages.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                text: error?.message || "Request failed. Please try again.",
+                status: "error",
+              }
+            : message
+        );
+
+        setMessages(updated);
+        updateChat(chatId, updated);
+      } finally {
+        if (controllerRef.current === controller) controllerRef.current = null;
+      }
+    },
+    [activeChatId, regenerableId, messages, updateChat, callRevelaAI]
+  );
 
   /* =======================================================
      CONVERSATION STATE
@@ -1470,9 +1588,10 @@ export default function AIAssistantDashboard({
               "
             >
               <ChatWindow
-                messages={
-                  messages
-                }
+                messages={messages}
+                regenerableId={regenerableId}
+                onRegenerate={regenerateResponse}
+                onFeedback={handleFeedback}
               />
             </div>
 

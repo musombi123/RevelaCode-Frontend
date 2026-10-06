@@ -1,22 +1,38 @@
 // src/components/ChatWindow.jsx
 
-import React, {
-  useEffect,
-  useRef,
-} from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import Message from "./Message";
-import TypingIndicator from "./TypingIndicator";
+import ThinkingStages from "./ThinkingStages";
+import MessageActions from "./MessageActions";
 
 export default function ChatWindow({
   messages = [],
+  regenerableId = null,
+  onRegenerate,
+  onFeedback,
 }) {
   const endRef = useRef(null);
 
   const isTyping =
     messages.length > 0 &&
-    messages[messages.length - 1]?.status ===
-      "loading";
+    messages[messages.length - 1]?.status === "loading";
+
+  /* =======================================================
+     LAST USER PROMPT
+     -------------------------------------------------------
+     Used to pick the right thinking steps (Scripture, code,
+     farming, business, etc.).
+  ======================================================= */
+
+  const lastUserText = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.role === "user") {
+        return messages[i].text || "";
+      }
+    }
+    return "";
+  }, [messages]);
 
   /* =======================================================
      AUTO SCROLL
@@ -49,15 +65,37 @@ export default function ChatWindow({
             MESSAGES
         ================================================= */}
 
-        {messages.map((message) => (
-          <Message
-            key={message.id}
-            message={message}
-          />
-        ))}
+        {messages.map((message) => {
+          const isLoading = message.status === "loading";
+
+          // The loading placeholder is replaced by the
+          // thinking steps below, so it is not drawn here.
+          if (isLoading) {
+            return null;
+          }
+
+          const showActions = message.role === "assistant";
+
+          return (
+            <div key={message.id}>
+              <Message message={message} />
+
+              {showActions && (
+                <div className="px-1">
+                  <MessageActions
+                    message={message}
+                    regenerableId={regenerableId}
+                    onRegenerate={onRegenerate}
+                    onFeedback={onFeedback}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* =================================================
-            TYPING INDICATOR
+            THINKING STEPS
         ================================================= */}
 
         {isTyping && (
@@ -73,7 +111,7 @@ export default function ChatWindow({
                 shadow-sm
               "
             >
-              <TypingIndicator />
+              <ThinkingStages prompt={lastUserText} />
             </div>
           </div>
         )}
