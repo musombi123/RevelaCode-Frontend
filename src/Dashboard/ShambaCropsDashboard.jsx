@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -14,6 +15,7 @@ import {
   Leaf,
   MapPin,
   Plus,
+  RefreshCw,
   Sprout,
   Tractor,
   X,
@@ -21,7 +23,6 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
 
 // =========================================================
@@ -54,6 +55,15 @@ function getCropId(crop) {
   return crop?.id || crop?._id || null;
 }
 
+function getFarmerName(user) {
+  return (
+    user?.full_name ||
+    user?.fullName ||
+    user?.name ||
+    "Farmer"
+  );
+}
+
 function getFarmLocation(farm) {
   return (
     farm?.location ||
@@ -75,15 +85,15 @@ function getCropName(crop) {
 }
 
 function getCropStatus(crop) {
-  if (crop?.status) {
-    return String(crop.status);
-  }
-
-  return "active";
+  return crop?.status
+    ? String(crop.status)
+    : "active";
 }
 
 function formatDate(value) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
 
   const date = new Date(value);
 
@@ -98,6 +108,10 @@ function formatDate(value) {
   });
 }
 
+function cloneEmptyForm() {
+  return { ...EMPTY_FORM };
+}
+
 
 // =========================================================
 // FIELD
@@ -110,17 +124,8 @@ function Field({
 }) {
   return (
     <div>
-      <label
-        className="
-          text-[10px]
-          font-black
-          uppercase
-          tracking-wide
-          text-slate-600
-        "
-      >
+      <label className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {label}
-
         {required && (
           <span className="ml-1 text-emerald-600">
             *
@@ -137,7 +142,7 @@ function Field({
 
 
 // =========================================================
-// INPUT
+// INPUT CLASS
 // =========================================================
 
 const inputClass = `
@@ -156,6 +161,12 @@ const inputClass = `
   focus:border-emerald-500
   focus:ring-2
   focus:ring-emerald-100
+  dark:border-slate-700
+  dark:bg-slate-900
+  dark:text-white
+  dark:placeholder:text-slate-500
+  dark:focus:border-emerald-500
+  dark:focus:ring-emerald-950/50
 `;
 
 
@@ -163,13 +174,9 @@ const inputClass = `
 // CROP CARD
 // =========================================================
 
-function CropCard({
-  crop,
-}) {
-  const status = getCropStatus(crop);
-
+function CropCard({ crop }) {
   const normalizedStatus =
-    String(status).toLowerCase();
+    getCropStatus(crop).toLowerCase();
 
   const statusLabel =
     normalizedStatus === "harvested"
@@ -180,223 +187,102 @@ function CropCard({
 
   const statusClass =
     normalizedStatus === "harvested"
-      ? "bg-amber-50 text-amber-700"
+      ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
       : normalizedStatus === "deleted"
-        ? "bg-red-50 text-red-700"
-        : "bg-emerald-50 text-emerald-700";
+        ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+        : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300";
+
+  const hasArea =
+    crop?.area !== undefined &&
+    crop?.area !== null &&
+    crop?.area !== "";
+
+  const hasQuantity =
+    crop?.quantity !== undefined &&
+    crop?.quantity !== null &&
+    crop?.quantity !== "";
 
   return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-slate-100
-        bg-white
-        p-4
-        shadow-[0_4px_18px_rgba(15,23,42,0.04)]
-      "
-    >
+    <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)] transition hover:border-emerald-100 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
       <div className="flex items-start gap-3">
-
-        <div
-          className="
-            flex
-            h-11
-            w-11
-            shrink-0
-            items-center
-            justify-center
-            rounded-2xl
-            bg-emerald-50
-            text-emerald-600
-          "
-        >
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
           <Sprout size={20} />
         </div>
 
         <div className="min-w-0 flex-1">
-
           <div className="flex items-start justify-between gap-2">
-
             <div className="min-w-0">
-              <h3
-                className="
-                  truncate
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
-              >
+              <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
                 {getCropName(crop)}
               </h3>
 
               {crop?.variety && (
-                <p
-                  className="
-                    mt-0.5
-                    truncate
-                    text-[9px]
-                    text-slate-400
-                  "
-                >
+                <p className="mt-0.5 truncate text-[9px] text-slate-400">
                   {crop.variety}
                 </p>
               )}
             </div>
 
             <span
-              className={`
-                shrink-0
-                rounded-full
-                px-2
-                py-1
-                text-[8px]
-                font-black
-                ${statusClass}
-              `}
+              className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-black ${statusClass}`}
             >
               {statusLabel}
             </span>
-
           </div>
 
-
-          <div
-            className="
-              mt-3
-              grid
-              grid-cols-2
-              gap-2
-            "
-          >
-
-            {(crop?.area !== undefined &&
-              crop?.area !== null &&
-              crop?.area !== "") && (
-              <div
-                className="
-                  rounded-xl
-                  bg-slate-50
-                  px-2.5
-                  py-2
-                "
-              >
-                <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
-                  Area
+          {(hasArea || hasQuantity) && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {hasArea && (
+                <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
+                  <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                    Area
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-200">
+                    {crop.area} {crop?.area_unit || "acres"}
+                  </div>
                 </div>
+              )}
 
-                <div className="mt-0.5 text-[10px] font-black text-slate-700">
-                  {crop.area}{" "}
-                  {crop?.area_unit || "acres"}
+              {hasQuantity && (
+                <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
+                  <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                    Quantity
+                  </div>
+                  <div className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-200">
+                    {crop.quantity} {crop?.quantity_unit || "kg"}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {(crop?.quantity !== undefined &&
-              crop?.quantity !== null &&
-              crop?.quantity !== "") && (
-              <div
-                className="
-                  rounded-xl
-                  bg-slate-50
-                  px-2.5
-                  py-2
-                "
-              >
-                <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
-                  Quantity
-                </div>
-
-                <div className="mt-0.5 text-[10px] font-black text-slate-700">
-                  {crop.quantity}{" "}
-                  {crop?.quantity_unit || "kg"}
-                </div>
-              </div>
-            )}
-
-          </div>
-
+              )}
+            </div>
+          )}
 
           {(crop?.planting_date ||
             crop?.expected_harvest_date) && (
-            <div
-              className="
-                mt-3
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-
+            <div className="mt-3 flex flex-wrap gap-2">
               {crop?.planting_date && (
-                <span
-                  className="
-                    inline-flex
-                    items-center
-                    gap-1
-                    rounded-lg
-                    bg-emerald-50
-                    px-2
-                    py-1.5
-                    text-[8px]
-                    font-bold
-                    text-emerald-700
-                  "
-                >
+                <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1.5 text-[8px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                   <CalendarDays size={10} />
-                  Planted{" "}
-                  {formatDate(
-                    crop.planting_date,
-                  ) || crop.planting_date}
+                  Planted {formatDate(crop.planting_date) || crop.planting_date}
                 </span>
               )}
 
               {crop?.expected_harvest_date && (
-                <span
-                  className="
-                    inline-flex
-                    items-center
-                    gap-1
-                    rounded-lg
-                    bg-amber-50
-                    px-2
-                    py-1.5
-                    text-[8px]
-                    font-bold
-                    text-amber-700
-                  "
-                >
+                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1.5 text-[8px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                   <CalendarDays size={10} />
-                  Harvest{" "}
-                  {formatDate(
-                    crop.expected_harvest_date,
-                  ) ||
-                    crop.expected_harvest_date}
+                  Harvest {formatDate(crop.expected_harvest_date) || crop.expected_harvest_date}
                 </span>
               )}
-
             </div>
           )}
 
           {crop?.notes && (
-            <p
-              className="
-                mt-3
-                border-t
-                border-slate-50
-                pt-3
-                text-[9px]
-                leading-5
-                text-slate-400
-              "
-            >
+            <p className="mt-3 border-t border-slate-50 pt-3 text-[9px] leading-5 text-slate-400 dark:border-slate-800">
               {crop.notes}
             </p>
           )}
-
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -426,222 +312,87 @@ function AddCropModal({
 
   return (
     <div
-      className="
-        fixed
-        inset-0
-        z-[100]
-        flex
-        items-center
-        justify-center
-        bg-slate-950/45
-        p-3
-        backdrop-blur-sm
-        sm:p-4
-      "
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-crop-title"
     >
-      <div
-        className="
-          flex
-          max-h-[92vh]
-          w-full
-          max-w-xl
-          flex-col
-          overflow-hidden
-          rounded-3xl
-          bg-white
-          shadow-2xl
-        "
-      >
-
-        {/* HEADER */}
-
-        <div
-          className="
-            flex
-            shrink-0
-            items-center
-            justify-between
-            border-b
-            border-slate-100
-            px-4
-            py-4
-            sm:px-5
-          "
-        >
-          <div className="flex items-center gap-3">
-
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-emerald-50
-                text-emerald-600
-              "
-            >
+      <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-4 dark:border-slate-800 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
               <Sprout size={18} />
             </div>
 
-            <div>
-              <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
-              >
+            <div className="min-w-0">
+              <h2 id="add-crop-title" className="text-sm font-black text-slate-900 dark:text-white">
                 Add Crop
               </h2>
-
-              <p
-                className="
-                  mt-0.5
-                  max-w-[230px]
-                  truncate
-                  text-[9px]
-                  text-slate-400
-                "
-              >
+              <p className="mt-0.5 max-w-[260px] truncate text-[9px] text-slate-400">
                 {farm?.name || "Selected farm"}
               </p>
             </div>
-
           </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-xl
-              bg-slate-100
-              text-slate-500
-              transition
-              hover:bg-slate-200
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-            aria-label="Close"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            aria-label="Close add crop dialog"
           >
             <X size={17} />
           </button>
         </div>
 
-
-        {/* FORM */}
-
         <div className="min-h-0 flex-1 overflow-y-auto">
-
-          <form
-            onSubmit={onSubmit}
-            className="
-              space-y-4
-              p-4
-              sm:p-5
-            "
-          >
-
+          <form onSubmit={onSubmit} className="space-y-4 p-4 sm:p-5">
             {error && (
-              <div
-                className="
-                  rounded-2xl
-                  border
-                  border-red-100
-                  bg-red-50
-                  px-3
-                  py-3
-                  text-[10px]
-                  leading-5
-                  text-red-700
-                "
-              >
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[10px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
                 {error}
               </div>
             )}
 
-
-            <Field
-              label="Crop name"
-              required
-            >
+            <Field label="Crop name" required>
               <input
                 type="text"
                 value={form.name}
-                onChange={(event) =>
-                  update(
-                    "name",
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => update("name", event.target.value)}
                 className={inputClass}
                 placeholder="e.g. Maize"
                 required
+                autoFocus
               />
             </Field>
 
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Variety">
+                <input
+                  type="text"
+                  value={form.variety}
+                  onChange={(event) => update("variety", event.target.value)}
+                  className={inputClass}
+                  placeholder="e.g. H614"
+                />
+              </Field>
 
-            <Field label="Variety">
-              <input
-                type="text"
-                value={form.variety}
-                onChange={(event) =>
-                  update(
-                    "variety",
-                    event.target.value,
-                  )
-                }
-                className={inputClass}
-                placeholder="e.g. H614"
-              />
-            </Field>
+              <Field label="Season">
+                <input
+                  type="text"
+                  value={form.season}
+                  onChange={(event) => update("season", event.target.value)}
+                  className={inputClass}
+                  placeholder="e.g. Long rains"
+                />
+              </Field>
+            </div>
 
-
-            <Field label="Season">
-              <input
-                type="text"
-                value={form.season}
-                onChange={(event) =>
-                  update(
-                    "season",
-                    event.target.value,
-                  )
-                }
-                className={inputClass}
-                placeholder="e.g. Long rains"
-              />
-            </Field>
-
-
-            {/* DATES */}
-
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-4
-                sm:grid-cols-2
-              "
-            >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Planting date">
                 <input
                   type="date"
-                  value={
-                    form.planting_date
-                  }
-                  onChange={(event) =>
-                    update(
-                      "planting_date",
-                      event.target.value,
-                    )
-                  }
+                  value={form.planting_date}
+                  onChange={(event) => update("planting_date", event.target.value)}
                   className={inputClass}
                 />
               </Field>
@@ -649,42 +400,21 @@ function AddCropModal({
               <Field label="Expected harvest">
                 <input
                   type="date"
-                  value={
-                    form.expected_harvest_date
-                  }
-                  onChange={(event) =>
-                    update(
-                      "expected_harvest_date",
-                      event.target.value,
-                    )
-                  }
+                  value={form.expected_harvest_date}
+                  onChange={(event) => update("expected_harvest_date", event.target.value)}
                   className={inputClass}
                 />
               </Field>
             </div>
 
-
-            {/* AREA */}
-
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-4
-              "
-            >
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Area">
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={form.area}
-                  onChange={(event) =>
-                    update(
-                      "area",
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => update("area", event.target.value)}
                   className={inputClass}
                   placeholder="2"
                 />
@@ -692,50 +422,24 @@ function AddCropModal({
 
               <Field label="Area unit">
                 <select
-                  value={
-                    form.area_unit
-                  }
-                  onChange={(event) =>
-                    update(
-                      "area_unit",
-                      event.target.value,
-                    )
-                  }
+                  value={form.area_unit}
+                  onChange={(event) => update("area_unit", event.target.value)}
                   className={inputClass}
                 >
-                  <option value="acres">
-                    Acres
-                  </option>
-
-                  <option value="hectares">
-                    Hectares
-                  </option>
+                  <option value="acres">Acres</option>
+                  <option value="hectares">Hectares</option>
                 </select>
               </Field>
             </div>
 
-
-            {/* QUANTITY */}
-
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-4
-              "
-            >
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Quantity">
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={form.quantity}
-                  onChange={(event) =>
-                    update(
-                      "quantity",
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => update("quantity", event.target.value)}
                   className={inputClass}
                   placeholder="100"
                 />
@@ -743,84 +447,36 @@ function AddCropModal({
 
               <Field label="Quantity unit">
                 <select
-                  value={
-                    form.quantity_unit
-                  }
-                  onChange={(event) =>
-                    update(
-                      "quantity_unit",
-                      event.target.value,
-                    )
-                  }
+                  value={form.quantity_unit}
+                  onChange={(event) => update("quantity_unit", event.target.value)}
                   className={inputClass}
                 >
-                  <option value="kg">
-                    Kg
-                  </option>
-
-                  <option value="bags">
-                    Bags
-                  </option>
-
-                  <option value="units">
-                    Units
-                  </option>
-
-                  <option value="tonnes">
-                    Tonnes
-                  </option>
+                  <option value="kg">Kg</option>
+                  <option value="bags">Bags</option>
+                  <option value="units">Units</option>
+                  <option value="tonnes">Tonnes</option>
                 </select>
               </Field>
             </div>
-
 
             <Field label="Notes">
               <textarea
                 rows={3}
                 value={form.notes}
-                onChange={(event) =>
-                  update(
-                    "notes",
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => update("notes", event.target.value)}
                 className={`${inputClass} resize-none`}
                 placeholder="Optional crop details"
               />
             </Field>
 
-
             <button
               type="submit"
               disabled={saving}
-              className="
-                flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-emerald-600
-                px-4
-                py-3
-                text-sm
-                font-black
-                text-white
-                shadow-sm
-                transition
-                hover:bg-emerald-700
-                active:scale-[0.99]
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-              "
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus size={17} />
-
-              {saving
-                ? "Saving Crop..."
-                : "Add Crop"}
+              {saving ? "Saving Crop..." : "Add Crop"}
             </button>
-
           </form>
         </div>
       </div>
@@ -837,88 +493,72 @@ export default function ShambaCropsDashboard({
   onNavigate,
 }) {
   const { user } = useAuth();
+  const { getFarms, getCrops, createCrop } = useJumuiyaApi();
 
-  const {
-    getFarms,
-    getCrops,
-    createCrop,
-  } = useJumuiyaApi();
+  const [farms, setFarms] = useState([]);
+  const [selectedFarmId, setSelectedFarmId] = useState("");
+  const [selectedFarm, setSelectedFarm] = useState(null);
+  const [crops, setCrops] = useState([]);
 
-  const [farms, setFarms] =
-    useState([]);
+  const [loadingFarms, setLoadingFarms] = useState(true);
+  const [loadingCrops, setLoadingCrops] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [selectedFarmId, setSelectedFarmId] =
-    useState("");
-
-  const [selectedFarm, setSelectedFarm] =
-    useState(null);
-
-  const [crops, setCrops] =
-    useState([]);
-
-  const [loadingFarms, setLoadingFarms] =
-    useState(true);
-
-  const [loadingCrops, setLoadingCrops] =
-    useState(false);
-
-  const [modalOpen, setModalOpen] =
-    useState(false);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [form, setForm] =
-    useState(EMPTY_FORM);
-
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState(cloneEmptyForm);
+  const selectedFarmIdRef = useRef("");
+  const cropsRequestRef = useRef(0);
 
   // =======================================================
   // LOAD FARMS
   // =======================================================
 
   const loadFarms = useCallback(
-    async () => {
+    async ({ preserveSelection = true } = {}) => {
       try {
         setLoadingFarms(true);
         setError("");
 
-        const result =
-          await getFarms();
+        const result = await getFarms();
+        const list = Array.isArray(result)
+          ? result
+          : result?.farms || [];
 
-        const list =
-          Array.isArray(result)
-            ? result
-            : result?.farms || [];
-
-        const active =
-          list.filter(
-            (farm) =>
-              farm?.status !== "deleted",
-          );
+        const active = list.filter(
+          (farm) => farm?.status !== "deleted",
+        );
 
         setFarms(active);
 
-        if (
-          !selectedFarmId &&
-          active.length > 0
-        ) {
-          const first =
-            active[0];
-
-          const firstId =
-            getFarmId(first);
-
-          setSelectedFarmId(
-            firstId,
-          );
-
-          setSelectedFarm(
-            first,
-          );
+        if (!active.length) {
+          selectedFarmIdRef.current = "";
+          setSelectedFarmId("");
+          setSelectedFarm(null);
+          setCrops([]);
+          return "";
         }
+
+        const requestedId = preserveSelection
+          ? selectedFarmIdRef.current
+          : "";
+
+        const matchingFarm = requestedId
+          ? active.find(
+              (farm) =>
+                String(getFarmId(farm)) ===
+                String(requestedId),
+            )
+          : null;
+
+        const nextFarm = matchingFarm || active[0];
+        const nextFarmId = getFarmId(nextFarm);
+
+        selectedFarmIdRef.current = nextFarmId;
+        setSelectedFarmId(nextFarmId);
+        setSelectedFarm(nextFarm);
+        return nextFarmId;
       } catch (err) {
         setError(
           err?.message ||
@@ -928,20 +568,15 @@ export default function ShambaCropsDashboard({
         setLoadingFarms(false);
       }
     },
-    [
-      getFarms,
-      selectedFarmId,
-    ],
+    [getFarms],
   );
 
-
   useEffect(() => {
-    loadFarms();
+    loadFarms({ preserveSelection: true });
   }, [loadFarms]);
 
-
   // =======================================================
-  // SELECT FARM
+  // SELECTED FARM
   // =======================================================
 
   useEffect(() => {
@@ -954,23 +589,15 @@ export default function ShambaCropsDashboard({
     const farm =
       farms.find(
         (item) =>
-          String(
-            getFarmId(item),
-          ) ===
-          String(
-            selectedFarmId,
-          ),
+          String(getFarmId(item)) ===
+          String(selectedFarmId),
       ) || null;
 
     setSelectedFarm(farm);
-  }, [
-    farms,
-    selectedFarmId,
-  ]);
-
+  }, [farms, selectedFarmId]);
 
   // =======================================================
-  // LOAD CROPS FOR FARM
+  // LOAD CROPS
   // =======================================================
 
   const loadCrops = useCallback(
@@ -980,91 +607,100 @@ export default function ShambaCropsDashboard({
         return;
       }
 
+      const requestId = ++cropsRequestRef.current;
+
       try {
         setLoadingCrops(true);
         setError("");
 
-        const result =
-          await getCrops(
-            farmId,
-          );
+        const result = await getCrops(farmId);
 
-        const list =
-          Array.isArray(result)
-            ? result
-            : result?.crops || [];
+        if (requestId !== cropsRequestRef.current) {
+          return;
+        }
+
+        const list = Array.isArray(result)
+          ? result
+          : result?.crops || [];
 
         setCrops(
           list.filter(
-            (crop) =>
-              crop?.status !==
-              "deleted",
+            (crop) => crop?.status !== "deleted",
           ),
         );
       } catch (err) {
-        setCrops([]);
+        if (requestId !== cropsRequestRef.current) {
+          return;
+        }
 
+        setCrops([]);
         setError(
           err?.message ||
             "Unable to load crops.",
         );
       } finally {
-        setLoadingCrops(false);
+        if (requestId === cropsRequestRef.current) {
+          setLoadingCrops(false);
+        }
       }
     },
     [getCrops],
   );
-
 
   useEffect(() => {
     if (!selectedFarmId) {
       return;
     }
 
-    loadCrops(
-      selectedFarmId,
-    );
-  }, [
-    selectedFarmId,
-    loadCrops,
-  ]);
-
+    loadCrops(selectedFarmId);
+  }, [selectedFarmId, loadCrops]);
 
   // =======================================================
-  // FARM SUMMARY
+  // SUMMARY
   // =======================================================
 
-  const activeCropCount =
-    useMemo(
-      () =>
-        crops.filter(
-          (crop) =>
-            String(
-              crop?.status ||
-                "active",
-            ).toLowerCase() !==
-            "harvested",
-        ).length,
-      [crops],
-    );
+  const activeCropCount = useMemo(
+    () =>
+      crops.filter(
+        (crop) =>
+          String(crop?.status || "active").toLowerCase() !==
+          "harvested",
+      ).length,
+    [crops],
+  );
 
+  const harvestedCropCount = useMemo(
+    () =>
+      crops.filter(
+        (crop) =>
+          String(crop?.status || "").toLowerCase() ===
+          "harvested",
+      ).length,
+    [crops],
+  );
 
-  const harvestedCropCount =
-    useMemo(
-      () =>
-        crops.filter(
-          (crop) =>
-            String(
-              crop?.status || "",
-            ).toLowerCase() ===
-            "harvested",
-        ).length,
-      [crops],
-    );
+  const farmArea = useMemo(() => {
+    if (!selectedFarm) {
+      return null;
+    }
 
+    const area = Number(selectedFarm?.size);
+    return Number.isFinite(area) ? area : null;
+  }, [selectedFarm]);
 
   // =======================================================
-  // FORM
+  // FARM SELECTION
+  // =======================================================
+
+  function handleFarmChange(event) {
+    const nextId = event.target.value;
+    setError("");
+    selectedFarmIdRef.current = nextId;
+    setSelectedFarmId(nextId);
+  }
+
+  // =======================================================
+  // ADD CROP
   // =======================================================
 
   function openAddCrop() {
@@ -1076,36 +712,52 @@ export default function ShambaCropsDashboard({
     }
 
     setError("");
-
-    setForm({
-      ...EMPTY_FORM,
-    });
-
+    setForm(cloneEmptyForm());
     setModalOpen(true);
   }
-
 
   // =======================================================
   // CREATE CROP
   // =======================================================
 
-  const handleSubmit = async (
-    event,
-  ) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!selectedFarmId) {
-      setError(
-        "Please select a farm first.",
-      );
+      setError("Please select a farm first.");
+      return;
+    }
+
+    if (!String(form.name || "").trim()) {
+      setError("Crop name is required.");
       return;
     }
 
     if (
-      !String(form.name || "").trim()
+      form.area !== "" &&
+      (!Number.isFinite(Number(form.area)) ||
+        Number(form.area) < 0)
+    ) {
+      setError("Enter a valid crop area.");
+      return;
+    }
+
+    if (
+      form.quantity !== "" &&
+      (!Number.isFinite(Number(form.quantity)) ||
+        Number(form.quantity) < 0)
+    ) {
+      setError("Enter a valid crop quantity.");
+      return;
+    }
+
+    if (
+      form.planting_date &&
+      form.expected_harvest_date &&
+      form.expected_harvest_date < form.planting_date
     ) {
       setError(
-        "Crop name is required.",
+        "Expected harvest date cannot be earlier than planting date.",
       );
       return;
     }
@@ -1115,64 +767,31 @@ export default function ShambaCropsDashboard({
       setError("");
 
       const payload = {
-        name:
-          String(form.name).trim(),
-
-        variety:
-          String(
-            form.variety || "",
-          ).trim(),
-
-        season:
-          String(
-            form.season || "",
-          ).trim(),
-
-        planting_date:
-          form.planting_date || "",
-
+        name: String(form.name).trim(),
+        variety: String(form.variety || "").trim(),
+        season: String(form.season || "").trim(),
+        planting_date: form.planting_date || "",
         expected_harvest_date:
-          form.expected_harvest_date ||
-          "",
-
+          form.expected_harvest_date || "",
         area:
           form.area === ""
             ? ""
             : Number(form.area),
-
-        area_unit:
-          form.area_unit ||
-          "acres",
-
+        area_unit: form.area_unit || "acres",
         quantity:
           form.quantity === ""
             ? ""
             : Number(form.quantity),
-
         quantity_unit:
-          form.quantity_unit ||
-          "kg",
-
-        notes:
-          String(
-            form.notes || "",
-          ).trim(),
+          form.quantity_unit || "kg",
+        notes: String(form.notes || "").trim(),
       };
 
-      await createCrop(
-        selectedFarmId,
-        payload,
-      );
+      await createCrop(selectedFarmId, payload);
 
-      setForm({
-        ...EMPTY_FORM,
-      });
-
+      setForm(cloneEmptyForm());
       setModalOpen(false);
-
-      await loadCrops(
-        selectedFarmId,
-      );
+      await loadCrops(selectedFarmId);
     } catch (err) {
       setError(
         err?.message ||
@@ -1183,662 +802,342 @@ export default function ShambaCropsDashboard({
     }
   };
 
+  // =======================================================
+  // REFRESH
+  // =======================================================
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      setError("");
+
+      const refreshedFarmId =
+        (await loadFarms({ preserveSelection: true })) ||
+        selectedFarmIdRef.current ||
+        selectedFarmId;
+
+      if (refreshedFarmId) {
+        await loadCrops(refreshedFarmId);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadFarms, loadCrops, selectedFarmId]);
 
   // =======================================================
   // RENDER
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Crops"
-      subtitle="Track what you grow across your farms."
-      activeHub="shamba"
-      user={user}
-      onNavigate={onNavigate}
-    >
-      <div
-        className="
-          mx-auto
-          w-full
-          max-w-[1100px]
-          pb-24
-        "
-      >
+    <div className="mx-auto w-full max-w-[1100px] pb-24">
+      {/* ==================================================
+          PAGE TOOLBAR
+      ================================================== */}
 
-        {/* ==================================================
-            HEADER
-        ================================================== */}
-
-        <div
-          className="
-            mb-4
-            flex
-            flex-col
-            gap-3
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-          "
-        >
-
-          <button
-            type="button"
-            onClick={() =>
-              onNavigate?.("shamba")
-            }
-            className="
-              inline-flex
-              w-fit
-              items-center
-              gap-1.5
-              text-[10px]
-              font-black
-              text-slate-500
-              transition
-              hover:text-emerald-600
-            "
-          >
-            <ArrowLeft size={14} />
-            Back to Shamba
-          </button>
-
-
-          <button
-            type="button"
-            onClick={openAddCrop}
-            disabled={
-              loadingFarms ||
-              !selectedFarmId
-            }
-            className="
-              inline-flex
-              items-center
-              justify-center
-              gap-1.5
-              rounded-xl
-              bg-emerald-600
-              px-4
-              py-2.5
-              text-[10px]
-              font-black
-              text-white
-              shadow-sm
-              transition
-              hover:bg-emerald-700
-              active:scale-[0.98]
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            <Plus size={15} />
-            Add Crop
-          </button>
-
-        </div>
-
-
-        {/* ==================================================
-            INTRO
-        ================================================== */}
-
-        <section
-          className="
-            mb-5
-            overflow-hidden
-            rounded-3xl
-            border
-            border-emerald-100
-            bg-gradient-to-br
-            from-emerald-50
-            via-white
-            to-lime-50
-            p-4
-            sm:p-5
-          "
-        >
-          <div className="flex items-center gap-3">
-
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                bg-emerald-600
-                text-white
-                shadow-lg
-              "
+      <section className="mb-5 border-b border-slate-200 pb-4 dark:border-slate-800">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate?.("shamba")}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
+              aria-label="Back to Shamba"
+              title="Back to Shamba"
             >
-              <Sprout size={20} />
-            </div>
+              <ArrowLeft size={16} />
+            </button>
 
             <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <Sprout size={15} />
+                </span>
+                <h1 className="truncate text-base font-black tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                  Crops
+                </h1>
+              </div>
 
-              <h1
-                className="
-                  text-lg
-                  font-black
-                  tracking-tight
-                  text-slate-900
-                "
-              >
-                Crop Management
-              </h1>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[10px]
-                  leading-5
-                  text-slate-500
-                "
-              >
-                Track crops, planting dates and
-                expected harvests.
-              </p>
-
+              <div className="mt-0.5 flex items-center gap-1.5 text-[9px] font-medium text-slate-400">
+                <span>Shamba</span>
+                <span>•</span>
+                <span>Crop workspace</span>
+                {selectedFarm && (
+                  <>
+                    <span>•</span>
+                    <span className="max-w-[220px] truncate">
+                      {selectedFarm.name || "Selected farm"}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
-
           </div>
-        </section>
 
-
-        {/* ==================================================
-            ERROR
-        ================================================== */}
-
-        {error && !modalOpen && (
-          <div
-            className="
-              mb-4
-              rounded-2xl
-              border
-              border-red-100
-              bg-red-50
-              px-4
-              py-3
-              text-[10px]
-              leading-5
-              text-red-700
-            "
-          >
-            {error}
-          </div>
-        )}
-
-
-        {/* ==================================================
-            FARM SELECTOR
-        ================================================== */}
-
-        <section
-          className="
-            mb-5
-            rounded-2xl
-            border
-            border-slate-100
-            bg-white
-            p-4
-            shadow-[0_4px_18px_rgba(15,23,42,0.035)]
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
-          >
-
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-emerald-50
-                text-emerald-600
-              "
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing || loadingFarms}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
+              aria-label="Refresh crops"
+              title="Refresh"
             >
+              <RefreshCw
+                size={16}
+                className={refreshing ? "animate-spin" : ""}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={openAddCrop}
+              disabled={loadingFarms || !selectedFarmId}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus size={15} />
+              Add Crop
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================================================
+          ERROR
+      ================================================== */}
+
+      {error && !modalOpen && (
+        <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {/* ==================================================
+          FARM SELECTOR
+      ================================================== */}
+
+      <section className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
               <Tractor size={17} />
             </div>
 
-            <div className="min-w-0 flex-1">
-
-              <div
-                className="
-                  text-[8px]
-                  font-black
-                  uppercase
-                  tracking-[0.16em]
-                  text-slate-400
-                "
-              >
-                Selected Farm
+            <div className="min-w-0">
+              <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Farm workspace
               </div>
 
-              {loadingFarms ? (
-                <div
-                  className="
-                    mt-2
-                    h-4
-                    w-40
-                    animate-pulse
-                    rounded
-                    bg-slate-100
-                  "
-                />
-              ) : farms.length > 0 ? (
-                <>
-
-                  <select
-                    value={selectedFarmId}
-                    onChange={(event) =>
-                      setSelectedFarmId(
-                        event.target.value,
-                      )
-                    }
-                    className="
-                      mt-1
-                      w-full
-                      max-w-md
-                      rounded-xl
-                      border
-                      border-slate-200
-                      bg-white
-                      px-3
-                      py-2.5
-                      text-sm
-                      font-bold
-                      text-slate-800
-                      outline-none
-                      focus:border-emerald-500
-                      focus:ring-2
-                      focus:ring-emerald-100
-                    "
-                  >
-                    {farms.map(
-                      (farm) => {
-                        const id =
-                          getFarmId(farm);
-
-                        return (
-                          <option
-                            key={id}
-                            value={id}
-                          >
-                            {farm?.name ||
-                              "Unnamed Farm"}
-                          </option>
-                        );
-                      },
-                    )}
-                  </select>
-
-                  {selectedFarm && (
-                    <div
-                      className="
-                        mt-2
-                        flex
-                        items-center
-                        gap-1
-                        text-[9px]
-                        text-slate-400
-                      "
-                    >
-                      <MapPin size={10} />
-
-                      <span className="truncate">
-                        {getFarmLocation(
-                          selectedFarm,
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                </>
-              ) : (
-                <div className="mt-1">
-                  <div className="text-xs font-bold text-slate-700">
-                    No farm available
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onNavigate?.(
-                        "shamba/farms",
-                      )
-                    }
-                    className="
-                      mt-2
-                      inline-flex
-                      items-center
-                      gap-1
-                      text-[9px]
-                      font-black
-                      text-emerald-600
-                    "
-                  >
-                    <Plus size={11} />
-                    Add a farm first
-                  </button>
-                </div>
-              )}
-
-            </div>
-          </div>
-
-        </section>
-
-
-        {/* ==================================================
-            SUMMARY
-        ================================================== */}
-
-        <section
-          className="
-            mb-5
-            grid
-            grid-cols-2
-            gap-2
-            sm:grid-cols-3
-          "
-        >
-
-          <div
-            className="
-              rounded-2xl
-              border
-              border-slate-100
-              bg-white
-              p-4
-              shadow-[0_4px_18px_rgba(15,23,42,0.035)]
-            "
-          >
-            <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
-              Total crops
-            </div>
-
-            <div className="mt-1 text-xl font-black text-emerald-700">
-              {crops.length}
-            </div>
-          </div>
-
-
-          <div
-            className="
-              rounded-2xl
-              border
-              border-slate-100
-              bg-white
-              p-4
-              shadow-[0_4px_18px_rgba(15,23-42,0.035)]
-            "
-          >
-            <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
-              Active
-            </div>
-
-            <div className="mt-1 text-xl font-black text-emerald-700">
-              {activeCropCount}
-            </div>
-          </div>
-
-
-          <div
-            className="
-              col-span-2
-              rounded-2xl
-              border
-              border-slate-100
-              bg-white
-              p-4
-              shadow-[0_4px_18px_rgba(15,23,42,0.035)]
-              sm:col-span-1
-            "
-          >
-            <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
-              Harvested
-            </div>
-
-            <div className="mt-1 text-xl font-black text-amber-600">
-              {harvestedCropCount}
-            </div>
-          </div>
-
-        </section>
-
-
-        {/* ==================================================
-            CROPS
-        ================================================== */}
-
-        <section>
-
-          <div className="mb-3 flex items-end justify-between">
-
-            <div>
-              <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
-              >
-                Crops on this farm
-              </h2>
-
-              <p
-                className="
-                  mt-0.5
-                  text-[9px]
-                  text-slate-400
-                "
-              >
-                Keep track of what is growing.
-              </p>
-            </div>
-
-            {!loadingFarms &&
-              selectedFarmId && (
-                <button
-                  type="button"
-                  onClick={openAddCrop}
-                  className="
-                    inline-flex
-                    items-center
-                    gap-1
-                    text-[9px]
-                    font-black
-                    text-emerald-600
-                  "
-                >
-                  <Plus size={11} />
-                  Add
-                </button>
-              )}
-
-          </div>
-
-
-          {loadingCrops ? (
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-3
-                md:grid-cols-2
-              "
-            >
-              {[1, 2, 3, 4].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="
-                      h-36
-                      animate-pulse
-                      rounded-2xl
-                      bg-slate-100
-                    "
-                  />
-                ),
-              )}
-            </div>
-          ) : crops.length > 0 ? (
-            <div
-              className="
-                grid
-                grid-cols-1
-                gap-3
-                md:grid-cols-2
-              "
-            >
-              {crops.map(
-                (crop, index) => (
-                  <CropCard
-                    key={
-                      getCropId(
-                        crop,
-                      ) ||
-                      index
-                    }
-                    crop={crop}
-                  />
-                ),
-              )}
-            </div>
-          ) : (
-            <div
-              className="
-                rounded-3xl
-                border
-                border-dashed
-                border-emerald-200
-                bg-emerald-50/40
-                px-5
-                py-12
-                text-center
-              "
-            >
-
-              <div
-                className="
-                  mx-auto
-                  flex
-                  h-14
-                  w-14
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-emerald-50
-                  text-emerald-600
-                "
-              >
-                <Leaf size={25} />
+              <div className="mt-0.5 truncate text-sm font-black text-slate-900 dark:text-white">
+                {selectedFarm?.name || "Select a farm"}
               </div>
 
-              <div
-                className="
-                  mt-4
-                  text-sm
-                  font-black
-                  text-slate-800
-                "
-              >
-                No crops yet
+              <div className="mt-0.5 flex items-center gap-1 text-[9px] text-slate-400">
+                <MapPin size={10} />
+                <span className="truncate">
+                  {getFarmLocation(selectedFarm)}
+                </span>
               </div>
+            </div>
+          </div>
 
-              <p
-                className="
-                  mx-auto
-                  mt-1
-                  max-w-sm
-                  text-[10px]
-                  leading-5
-                  text-slate-400
-                "
+          <div className="flex min-w-0 items-center gap-2 sm:min-w-[320px] sm:justify-end">
+            {loadingFarms ? (
+              <div className="h-10 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800 sm:w-72" />
+            ) : farms.length > 0 ? (
+              <select
+                value={selectedFarmId}
+                onChange={handleFarmChange}
+                className={`${inputClass} max-w-none py-2.5 font-bold sm:w-72`}
+                aria-label="Select farm"
               >
-                Add your first crop to start
-                tracking its growth and harvest.
-              </p>
+                {farms.map((farm, index) => {
+                  const id = getFarmId(farm) || `farm-${index}`;
 
+                  return (
+                    <option key={id} value={getFarmId(farm)}>
+                      {farm?.name || "Unnamed Farm"}
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onNavigate?.("shamba/farms")}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-[10px] font-black text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+              >
+                <Plus size={12} />
+                Add a farm first
+              </button>
+            )}
+          </div>
+        </div>
+
+        {selectedFarm && (
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 dark:border-slate-800 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70">
+              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                Farm area
+              </div>
+              <div className="mt-0.5 text-sm font-black text-slate-800 dark:text-slate-100">
+                {farmArea !== null
+                  ? `${farmArea} ${selectedFarm?.size_unit || "acres"}`
+                  : "—"}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70">
+              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                Crop records
+              </div>
+              <div className="mt-0.5 text-sm font-black text-emerald-700 dark:text-emerald-300">
+                {crops.length}
+              </div>
+            </div>
+
+            <div className="col-span-2 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70 sm:col-span-1">
+              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                Active crops
+              </div>
+              <div className="mt-0.5 text-sm font-black text-slate-800 dark:text-slate-100">
+                {activeCropCount}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ==================================================
+          SUMMARY
+      ================================================== */}
+
+      <section className="mb-5 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+            Total crops
+          </div>
+          <div className="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
+            {crops.length}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+            Active
+          </div>
+          <div className="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
+            {activeCropCount}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+            Harvested
+          </div>
+          <div className="mt-1 text-xl font-black text-amber-600 dark:text-amber-300">
+            {harvestedCropCount}
+          </div>
+        </div>
+      </section>
+
+      {/* ==================================================
+          CROPS
+      ================================================== */}
+
+      <section>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-black text-slate-900 dark:text-white">
+              Crops on this farm
+            </h2>
+            <p className="mt-0.5 text-[9px] text-slate-400">
+              Track what is growing and when it should be harvested.
+            </p>
+          </div>
+
+          {!loadingFarms && selectedFarmId && (
+            <button
+              type="button"
+              onClick={openAddCrop}
+              className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300"
+            >
+              <Plus size={11} />
+              Add crop
+            </button>
+          )}
+        </div>
+
+        {loadingCrops ? (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="h-36 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800"
+              />
+            ))}
+          </div>
+        ) : crops.length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {crops.map((crop, index) => (
+              <CropCard
+                key={getCropId(crop) || index}
+                crop={crop}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/40 px-5 py-12 text-center dark:border-emerald-900/60 dark:bg-emerald-950/15">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+              <Leaf size={25} />
+            </div>
+
+            <div className="mt-4 text-sm font-black text-slate-800 dark:text-white">
+              {selectedFarmId ? "No crops yet" : "Select a farm"}
+            </div>
+
+            <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-slate-400">
+              {selectedFarmId
+                ? "Add your first crop to start tracking its growth and harvest."
+                : "Choose a farm above to view and manage its crop records."}
+            </p>
+
+            {selectedFarmId ? (
               <button
                 type="button"
                 onClick={openAddCrop}
-                disabled={!selectedFarmId}
-                className="
-                  mt-5
-                  inline-flex
-                  items-center
-                  gap-1.5
-                  rounded-xl
-                  bg-emerald-600
-                  px-4
-                  py-2.5
-                  text-[10px]
-                  font-black
-                  text-white
-                  transition
-                  hover:bg-emerald-700
-                  active:scale-[0.98]
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 active:scale-[0.98]"
               >
                 <Plus size={15} />
                 Add First Crop
               </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onNavigate?.("shamba/farms")}
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+              >
+                <Tractor size={15} />
+                Open Farms
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
-            </div>
-          )}
+      {/* ==================================================
+          STATUS
+      ================================================== */}
 
-        </section>
+      {crops.length > 0 && !loadingCrops && (
+        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-[9px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300">
+          <CheckCircle2 size={14} />
+          Your crop records are ready for activity and harvest tracking.
+        </div>
+      )}
 
-
-        {/* ==================================================
-            STATUS
-        ================================================== */}
-
-        {crops.length > 0 &&
-          !loadingCrops && (
-            <div
-              className="
-                mt-5
-                flex
-                items-center
-                gap-2
-                rounded-2xl
-                border
-                border-emerald-100
-                bg-emerald-50/60
-                px-4
-                py-3
-                text-[9px]
-                font-semibold
-                text-emerald-700
-              "
-            >
-              <CheckCircle2 size={14} />
-
-              Your crop records are ready for
-              activity and harvest tracking.
-            </div>
-          )}
-
-      </div>
-
-
-      {/* ====================================================
+      {/* ==================================================
           ADD CROP MODAL
-      ==================================================== */}
+      ================================================== */}
 
       {modalOpen && (
         <AddCropModal
@@ -1856,6 +1155,6 @@ export default function ShambaCropsDashboard({
           onSubmit={handleSubmit}
         />
       )}
-    </JumuiyaDashboardShell>
+    </div>
   );
 }

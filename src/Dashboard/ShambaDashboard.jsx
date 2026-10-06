@@ -32,7 +32,6 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
 
 // =========================================================
@@ -1013,13 +1012,7 @@ export default function ShambaDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Shamba"
-      subtitle="Your farm operating system."
-      activeHub="shamba"
-      user={user}
-      onNavigate={onNavigate}
-    >
+    
       <div
         className="
           mx-auto
@@ -1030,228 +1023,162 @@ export default function ShambaDashboard({
       >
 
         {/* ==================================================
-            COMMAND HEADER
+            SHAMBA CONTEXT BAR
         ================================================== */}
 
-        <section
-          className="
-            mb-4
-            overflow-hidden
-            rounded-3xl
-            border
-            border-emerald-100
-            bg-gradient-to-br
-            from-emerald-700
-            via-emerald-600
-            to-lime-600
-            p-4
-            text-white
-            shadow-lg
-            sm:p-5
-          "
-        >
-          <div className="flex items-start justify-between gap-3">
-
+        <section className="mb-5">
+          <div
+            className="
+              flex flex-col gap-4 rounded-2xl border border-slate-200
+              bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900
+              sm:flex-row sm:items-center sm:justify-between sm:p-5
+            "
+          >
             <div className="min-w-0">
-
-              <div className="flex items-center gap-2">
-
+              <div className="flex min-w-0 items-center gap-3">
                 <div
                   className="
-                    flex
-                    h-10
-                    w-10
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    bg-white/15
-                    backdrop-blur
+                    flex h-11 w-11 shrink-0 items-center justify-center
+                    rounded-xl bg-emerald-50 text-emerald-600
+                    dark:bg-emerald-950/40 dark:text-emerald-400
                   "
                 >
-                  <Sprout size={20} />
+                  <Sprout size={21} />
                 </div>
 
                 <div className="min-w-0">
-
-                  <div
-                    className="
-                      text-[8px]
-                      font-black
-                      uppercase
-                      tracking-[0.18em]
-                      text-white/65
-                    "
-                  >
-                    Shamba Command Center
+                  <div className="flex items-center gap-2">
+                    <p
+                      className="truncate text-[10px] font-black uppercase
+                      tracking-[0.16em] text-emerald-600 dark:text-emerald-400"
+                    >
+                      Farm intelligence
+                    </p>
                   </div>
 
                   <h1
-                    className="
-                      mt-0.5
-                      truncate
-                      text-lg
-                      font-black
-                      tracking-tight
-                    "
+                    className="mt-0.5 truncate text-base font-black tracking-tight
+                    text-slate-900 dark:text-white sm:text-lg"
                   >
                     Hello, {getFarmerName(farmer, user)}
                   </h1>
 
+                  <div
+                    className="mt-1 flex min-w-0 items-center gap-1.5
+                    text-[10px] font-medium text-slate-400 dark:text-gray-500"
+                  >
+                    <MapPin size={12} className="shrink-0" />
+                    <span className="truncate">{locationLabel}</span>
+                  </div>
                 </div>
-
               </div>
+            </div>
 
+            <div className="flex shrink-0 items-center gap-2">
               <div
                 className="
-                  mt-3
-                  flex
-                  items-center
-                  gap-1.5
-                  text-[9px]
-                  font-semibold
-                  text-white/75
+                  flex min-w-0 max-w-[220px] items-center gap-2 rounded-xl
+                  border border-slate-200 bg-slate-50 px-3 py-2.5
+                  text-[10px] font-bold text-slate-600
+                  dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300
                 "
               >
-                <MapPin size={11} />
-
-                <span className="truncate">
-                  {locationLabel}
-                </span>
+                <MapPin size={13} className="shrink-0 text-emerald-600" />
+                <span className="truncate">{locationLabel}</span>
               </div>
 
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="
+                  flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
+                  border border-slate-200 bg-white text-slate-600 shadow-sm
+                  transition-all hover:border-emerald-200 hover:bg-emerald-50
+                  hover:text-emerald-700 active:scale-95 disabled:opacity-50
+                  dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300
+                  dark:hover:border-emerald-900 dark:hover:bg-emerald-950/40
+                  dark:hover:text-emerald-400
+                "
+                aria-label="Refresh farm intelligence"
+                title="Refresh farm intelligence"
+              >
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+              </button>
             </div>
-
-
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-white/10
-                text-white
-                backdrop-blur
-                transition
-                hover:bg-white/20
-                disabled:opacity-50
-              "
-              aria-label="Refresh farm intelligence"
-            >
-              <RefreshCw
-                size={16}
-                className={
-                  refreshing
-                    ? "animate-spin"
-                    : ""
-                }
-              />
-            </button>
-
           </div>
 
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              {
+                label: "Farm health",
+                value: Math.round(number(healthScore)),
+                suffix: "/100",
+                icon: Sprout,
+              },
+              {
+                label: "Active crops",
+                value: activeCrops.length || number(metrics?.active_crops),
+                suffix: "",
+                icon: Leaf,
+              },
+              {
+                label: "Productivity",
+                value: Math.round(number(productivityScore)),
+                suffix: "%",
+                icon: TrendingUp,
+              },
+              {
+                label: "Alerts",
+                value: unreadAlerts.length,
+                suffix: "",
+                icon: AlertTriangle,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
 
-          <div
-            className="
-              mt-4
-              grid
-              grid-cols-2
-              gap-2
-              sm:grid-cols-4
-            "
-          >
+              return (
+                <div
+                  key={item.label}
+                  className="
+                    rounded-2xl border border-slate-200 bg-white px-3 py-3
+                    shadow-sm dark:border-gray-800 dark:bg-gray-900
+                  "
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div
+                      className="
+                        flex h-8 w-8 items-center justify-center rounded-lg
+                        bg-emerald-50 text-emerald-600
+                        dark:bg-emerald-950/40 dark:text-emerald-400
+                      "
+                    >
+                      <Icon size={14} />
+                    </div>
 
-            <div
-              className="
-                rounded-2xl
-                bg-white/10
-                p-3
-                backdrop-blur
-              "
-            >
-              <div className="text-[8px] font-bold text-white/60">
-                Farm health
-              </div>
+                    <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
+                      {item.label}
+                    </span>
+                  </div>
 
-              <div className="mt-1 text-xl font-black">
-                {Math.round(number(healthScore))}
-                <span className="text-[9px] text-white/60">
-                  /100
-                </span>
-              </div>
-            </div>
-
-
-            <div
-              className="
-                rounded-2xl
-                bg-white/10
-                p-3
-                backdrop-blur
-              "
-            >
-              <div className="text-[8px] font-bold text-white/60">
-                Active crops
-              </div>
-
-              <div className="mt-1 text-xl font-black">
-                {activeCrops.length ||
-                  number(metrics?.active_crops)}
-              </div>
-            </div>
-
-
-            <div
-              className="
-                rounded-2xl
-                bg-white/10
-                p-3
-                backdrop-blur
-              "
-            >
-              <div className="text-[8px] font-bold text-white/60">
-                Productivity
-              </div>
-
-              <div className="mt-1 text-xl font-black">
-                {Math.round(
-                  number(
-                    productivityScore,
-                  ),
-                )}
-                <span className="text-[9px] text-white/60">
-                  %
-                </span>
-              </div>
-            </div>
-
-
-            <div
-              className="
-                rounded-2xl
-                bg-white/10
-                p-3
-                backdrop-blur
-              "
-            >
-              <div className="text-[8px] font-bold text-white/60">
-                Alerts
-              </div>
-
-              <div className="mt-1 text-xl font-black">
-                {unreadAlerts.length}
-              </div>
-            </div>
-
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-lg font-black text-slate-900 dark:text-white">
+                      {item.value}
+                    </span>
+                    {item.suffix && (
+                      <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
+                        {item.suffix}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
-
 
         {/* ==================================================
             ERROR
@@ -2596,46 +2523,6 @@ export default function ShambaDashboard({
           </div>
 
         </section>
-
-
-        {/* ==================================================
-            FLOATING AI BUTTON
-        ================================================== */}
-
-        <button
-          type="button"
-          onClick={() =>
-            onOpenAI
-              ? onOpenAI()
-              : onNavigate?.("assistant")
-          }
-          aria-label="Open Shamba assistant"
-          className="
-            fixed
-            bottom-5
-            right-5
-            z-40
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
-            rounded-full
-            bg-emerald-600
-            text-white
-            shadow-[0_10px_30px_rgba(5,150,105,0.28)]
-            transition-all
-            duration-200
-            hover:scale-105
-            hover:bg-emerald-700
-            hover:shadow-xl
-            active:scale-95
-          "
-        >
-          <Bot size={22} />
-        </button>
-
       </div>
-    </JumuiyaDashboardShell>
   );
 }
