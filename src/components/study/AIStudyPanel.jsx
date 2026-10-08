@@ -9,28 +9,14 @@ import { Card, CardContent } from "@/components/ui/Card";
 
 /* =========================================================
    REVELAAI
-   ---------------------------------------------------------
-   Canonical RevelaAI production endpoint.
-
-   RevelaCode Backend's ai_router.py sends requests to:
-
-       REVELA_AI_URL
-
-   with the payload:
-
-       {
-         prompt,
-         domain,
-         context
-       }
-
-   The public RevelaAI deployment is:
-
-       https://revelaai.onrender.com/ai
 ========================================================= */
+const REVELAAI_API = (
+  import.meta.env.VITE_REVELAAI_URL || ""
+)
+  .trim()
+  .replace(/\/+$/, "");
 
-const REVELAAI_API =
-  "https://revelaai.onrender.com/ai";
+const REVELAAI_ENDPOINT = `${REVELAAI_API}/ai`;
 
 /* =========================================================
    HELPERS

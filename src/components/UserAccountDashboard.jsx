@@ -2,7 +2,6 @@ import React, {
   useState,
   useEffect,
   Suspense,
-  useMemo,
 } from "react";
 
 import {
@@ -53,7 +52,12 @@ const Notifications = React.lazy(
   () => import("./Notifications.jsx")
 );
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = (
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  ""
+).replace(/\/+$/, "");
 
 /* =========================================================
    MENU CONFIG
@@ -162,12 +166,11 @@ function getInitials(value = "") {
 ========================================================= */
 
 export default function UserAccountDashboard({ onLogout }) {
-  const { user: authUser } = useAuth();
-
-  const isGuest = useMemo(
-    () => !authUser || authUser.role === "guest",
-    [authUser]
-  );
+  const {
+    user: authUser,
+    isGuest,
+    authFetch,
+  } = useAuth();
 
   const [activeView, setActiveView] = useState("profile");
 
@@ -197,7 +200,7 @@ export default function UserAccountDashboard({ onLogout }) {
     setError("");
     setMessage("");
 
-    fetch(
+    authFetch(
       `${API_BASE}/api/user/${encodeURIComponent(authUser.contact)}`
     )
       .then((res) => {
@@ -241,7 +244,7 @@ export default function UserAccountDashboard({ onLogout }) {
 
     setLoadingHistory(true);
 
-    fetch(
+    authFetch(
       `${API_BASE}/api/user/history?contact=${encodeURIComponent(
         userData.contact
       )}`
@@ -281,19 +284,24 @@ export default function UserAccountDashboard({ onLogout }) {
   ======================================================= */
 
   const apiPost = async (path, payload) => {
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await authFetch(
+      `${API_BASE}${path}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
       throw new Error(
-        data.message || data.error || "Request failed"
+        data?.message ||
+        data?.error ||
+        `Request failed (${res.status})`
       );
     }
 
