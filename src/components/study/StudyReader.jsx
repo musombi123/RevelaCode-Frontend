@@ -16,7 +16,7 @@ import {
   Clock3,
   Hash,
   Sparkles,
-  BookOpenText,
+  BookOpen as BookOpenText,
   CheckCircle2,
   Quote,
   FileText,
