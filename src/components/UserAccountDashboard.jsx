@@ -1,11 +1,13 @@
+// src/components/UserAccountDashboard.jsx
+
 import React, {
   useState,
   useEffect,
+  useMemo,
   Suspense,
 } from "react";
 
 import {
-  User,
   Settings,
   Bell,
   History,
@@ -13,7 +15,6 @@ import {
   BookOpen,
   FileText,
   Shield,
-  Link2,
   Trash2,
   LogOut,
   ChevronRight,
@@ -27,7 +28,10 @@ import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-// Lazy dashboards
+/* =========================================================
+   LAZY DASHBOARDS
+========================================================= */
+
 const PreferencesDashboard = React.lazy(
   () => import("./PreferencesDashboard")
 );
@@ -51,6 +55,10 @@ const LegalDocs = React.lazy(
 const Notifications = React.lazy(
   () => import("./Notifications.jsx")
 );
+
+/* =========================================================
+   API BASE
+========================================================= */
 
 const API_BASE = (
   import.meta.env.VITE_REVELACODE_URL ||
@@ -137,171 +145,428 @@ function formatDate(date) {
   if (!date) return "—";
 
   try {
-    return new Date(date).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return new Date(date).toLocaleDateString(
+      undefined,
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    );
   } catch {
     return "—";
   }
 }
 
 function getInitials(value = "") {
-  const clean = value.trim();
+  const clean = String(value).trim();
 
   if (!clean) return "RC";
 
   const parts = clean.split(/\s+/);
 
   if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
+    return parts[0]
+      .slice(0, 2)
+      .toUpperCase();
   }
 
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+/*
+ * Safely extract a user object from common
+ * RevelaCode API response shapes.
+ */
+function extractUserData(payload) {
+  if (!payload) return null;
+
+  if (
+    payload.user &&
+    typeof payload.user === "object"
+  ) {
+    return payload.user;
+  }
+
+  if (
+    payload.data &&
+    typeof payload.data === "object"
+  ) {
+    if (
+      payload.data.user &&
+      typeof payload.data.user === "object"
+    ) {
+      return payload.data.user;
+    }
+
+    if (
+      payload.data.data &&
+      typeof payload.data.data === "object"
+    ) {
+      if (
+        payload.data.data.user &&
+        typeof payload.data.data.user === "object"
+      ) {
+        return payload.data.data.user;
+      }
+
+      return payload.data.data;
+    }
+
+    return payload.data;
+  }
+
+  return payload;
+}
+
+/*
+ * Safely extract history from common
+ * RevelaCode API response shapes.
+ */
+function extractHistory(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (
+    payload &&
+    Array.isArray(payload.history)
+  ) {
+    return payload.history;
+  }
+
+  if (
+    payload &&
+    Array.isArray(payload.data)
+  ) {
+    return payload.data;
+  }
+
+  if (
+    payload?.data &&
+    Array.isArray(payload.data.history)
+  ) {
+    return payload.data.history;
+  }
+
+  if (
+    payload?.data?.data &&
+    Array.isArray(payload.data.data)
+  ) {
+    return payload.data.data;
+  }
+
+  return [];
+}
+
+/*
+ * Extract useful backend error information.
+ */
+async function getResponseError(response, fallback) {
+  let data = null;
+
+  try {
+    data = await response
+      .clone()
+      .json();
+  } catch {
+    try {
+      const text = await response
+        .clone()
+        .text();
+
+      if (text) {
+        data = {
+          raw: text,
+        };
+      }
+    } catch {
+      data = null;
+    }
+  }
+
+  return (
+    data?.message ||
+    data?.error ||
+    data?.detail ||
+    data?.raw ||
+    `${fallback} (${response.status})`
+  );
 }
 
 /* =========================================================
    COMPONENT
 ========================================================= */
 
-export default function UserAccountDashboard({ onLogout }) {
+export default function UserAccountDashboard({
+  onLogout,
+}) {
   const {
     user: authUser,
     isGuest,
     authFetch,
   } = useAuth();
 
-  const [activeView, setActiveView] = useState("profile");
+  const [activeView, setActiveView] =
+    useState("profile");
 
-  const [userData, setUserData] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [userData, setUserData] =
+    useState(null);
 
-  const [loadingUser, setLoadingUser] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [history, setHistory] =
+    useState([]);
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [loadingUser, setLoadingUser] =
+    useState(false);
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteCode, setDeleteCode] = useState("");
-  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [loadingHistory, setLoadingHistory] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [showDeleteModal, setShowDeleteModal] =
+    useState(false);
+
+  const [deleteCode, setDeleteCode] =
+    useState("");
+
+  const [deletingAccount, setDeletingAccount] =
+    useState(false);
 
   /* =======================================================
      LOAD USER
   ======================================================= */
 
   useEffect(() => {
-    if (isGuest || !authUser?.contact) return;
+    if (
+      isGuest ||
+      !authUser?.contact ||
+      !authFetch ||
+      !API_BASE
+    ) {
+      return;
+    }
 
     let cancelled = false;
 
-    setLoadingUser(true);
-    setError("");
-    setMessage("");
+    const loadUser = async () => {
+      setLoadingUser(true);
+      setError("");
+      setMessage("");
 
-    authFetch(
-      `${API_BASE}/api/user/${encodeURIComponent(authUser.contact)}`
-    )
-      .then((res) => {
+      try {
+        const url =
+          `${API_BASE}/api/user/${encodeURIComponent(
+            authUser.contact
+          )}`;
+
+        const res = await authFetch(url);
+
+        const data = await res
+          .json()
+          .catch(() => null);
+
         if (!res.ok) {
-          throw new Error("Failed to load user");
+          const reason =
+            await getResponseError(
+              res,
+              "Failed to load user"
+            );
+
+          throw new Error(reason);
         }
 
-        return res.json();
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setUserData(data);
+        const resolvedUser =
+          extractUserData(data);
+
+        if (!resolvedUser) {
+          throw new Error(
+            "The server returned an empty user response."
+          );
         }
-      })
-      .catch((err) => {
-        console.error(err);
 
         if (!cancelled) {
-          setError("Unable to load your account information.");
+          setUserData(resolvedUser);
         }
-      })
-      .finally(() => {
+      } catch (err) {
+        console.error(
+          "❌ Failed to load user:",
+          err
+        );
+
+        if (!cancelled) {
+          setUserData(null);
+
+          setError(
+            err?.message ||
+              "Unable to load your account information."
+          );
+        }
+      } finally {
         if (!cancelled) {
           setLoadingUser(false);
         }
-      });
+      }
+    };
+
+    loadUser();
 
     return () => {
       cancelled = true;
     };
-  }, [authUser?.contact, isGuest]);
+  }, [
+    authUser?.contact,
+    isGuest,
+    authFetch,
+  ]);
 
   /* =======================================================
      LOAD HISTORY
   ======================================================= */
 
   useEffect(() => {
-    if (activeView !== "history" || !userData?.contact) return;
+    if (
+      activeView !== "history" ||
+      !userData?.contact ||
+      !authFetch ||
+      !API_BASE
+    ) {
+      return;
+    }
 
     let cancelled = false;
 
-    setLoadingHistory(true);
+    const loadHistory = async () => {
+      setLoadingHistory(true);
 
-    authFetch(
-      `${API_BASE}/api/user/history?contact=${encodeURIComponent(
-        userData.contact
-      )}`
-    )
-      .then((res) => {
+      /*
+       * Only clear the error here when entering
+       * history. Do not destroy unrelated messages.
+       */
+      setError("");
+
+      try {
+        const url =
+          `${API_BASE}/api/user/history?contact=${encodeURIComponent(
+            userData.contact
+          )}`;
+
+        const res = await authFetch(url);
+
         if (!res.ok) {
-          throw new Error("Failed to load history");
+          const reason =
+            await getResponseError(
+              res,
+              "Failed to load history"
+            );
+
+          console.error(
+            "❌ History request rejected:",
+            {
+              status: res.status,
+              statusText: res.statusText,
+              url,
+              reason,
+            }
+          );
+
+          throw new Error(reason);
         }
 
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res
+          .json()
+          .catch(() => null);
+
+        const resolvedHistory =
+          extractHistory(data);
+
         if (!cancelled) {
-          setHistory(Array.isArray(data) ? data : []);
+          setHistory(
+            resolvedHistory
+          );
         }
-      })
-      .catch((err) => {
-        console.error(err);
+      } catch (err) {
+        console.error(
+          "❌ Failed to load history:",
+          err
+        );
 
         if (!cancelled) {
           setHistory([]);
+
+          setError(
+            err?.message ||
+              "Unable to load activity history."
+          );
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoadingHistory(false);
         }
-      });
+      }
+    };
+
+    loadHistory();
 
     return () => {
       cancelled = true;
     };
-  }, [activeView, userData?.contact]);
+  }, [
+    activeView,
+    userData?.contact,
+    authFetch,
+  ]);
 
   /* =======================================================
      API POST
   ======================================================= */
 
-  const apiPost = async (path, payload) => {
+  const apiPost = async (
+    path,
+    payload
+  ) => {
+    if (!API_BASE) {
+      throw new Error(
+        "Backend API URL is not configured."
+      );
+    }
+
+    if (!authFetch) {
+      throw new Error(
+        "Authentication request handler is unavailable."
+      );
+    }
+
     const res = await authFetch(
       `${API_BASE}${path}`,
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
+          Accept:
+            "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res
+      .json()
+      .catch(() => ({}));
 
     if (!res.ok) {
       throw new Error(
         data?.message ||
-        data?.error ||
-        `Request failed (${res.status})`
+          data?.error ||
+          data?.detail ||
+          `Request failed (${res.status})`
       );
     }
 
@@ -312,53 +577,102 @@ export default function UserAccountDashboard({ onLogout }) {
      DELETE ACCOUNT
   ======================================================= */
 
-  const confirmDeleteAccount = async () => {
-    if (!deleteCode.trim()) {
-      setError("Please enter the confirmation code.");
+  const confirmDeleteAccount =
+    async () => {
+      if (!deleteCode.trim()) {
+        setError(
+          "Please enter the confirmation code."
+        );
 
-      return;
-    }
+        return;
+      }
 
-    try {
-      setDeletingAccount(true);
-      setError("");
+      if (!userData?.contact) {
+        setError(
+          "Your account contact could not be resolved."
+        );
 
-      await apiPost("/api/confirm-delete", {
-        contact: userData.contact,
-        code: deleteCode.trim(),
-      });
+        return;
+      }
 
-      setShowDeleteModal(false);
-      setDeleteCode("");
+      try {
+        setDeletingAccount(true);
+        setError("");
+        setMessage("");
 
-      onLogout?.();
+        await apiPost(
+          "/api/confirm-delete",
+          {
+            contact:
+              userData.contact,
+            code:
+              deleteCode.trim(),
+          }
+        );
 
-      window.location.href = "/";
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setDeletingAccount(false);
-    }
-  };
+        setShowDeleteModal(false);
+        setDeleteCode("");
+
+        onLogout?.();
+
+        window.location.href = "/";
+      } catch (err) {
+        console.error(
+          "❌ Account deletion failed:",
+          err
+        );
+
+        setError(
+          err?.message ||
+            "Unable to delete your account."
+        );
+      } finally {
+        setDeletingAccount(false);
+      }
+    };
 
   /* =======================================================
      RESET PASSWORD
   ======================================================= */
 
-  const confirmResetPassword = async (payload) => {
-    try {
-      setError("");
+  const confirmResetPassword =
+    async (payload) => {
+      if (!userData?.contact) {
+        setError(
+          "Your account contact could not be resolved."
+        );
 
-      await apiPost("/api/reset-password", {
-        contact: userData.contact,
-        ...payload,
-      });
+        return;
+      }
 
-      setMessage("Password reset successful.");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+      try {
+        setError("");
+        setMessage("");
+
+        await apiPost(
+          "/api/reset-password",
+          {
+            contact:
+              userData.contact,
+            ...payload,
+          }
+        );
+
+        setMessage(
+          "Password reset successful."
+        );
+      } catch (err) {
+        console.error(
+          "❌ Password reset failed:",
+          err
+        );
+
+        setError(
+          err?.message ||
+            "Unable to reset your password."
+        );
+      }
+    };
 
   /* =======================================================
      ACTIVE ITEM
@@ -373,10 +687,14 @@ export default function UserAccountDashboard({ onLogout }) {
     ];
 
     return (
-      allItems.find((item) => item.key === activeView) || {
+      allItems.find(
+        (item) =>
+          item.key === activeView
+      ) || {
         key: "profile",
         label: "Profile",
-        description: "Your personal information",
+        description:
+          "Your personal information",
         icon: UserCircle2,
       }
     );
@@ -401,9 +719,12 @@ export default function UserAccountDashboard({ onLogout }) {
      RENDER MENU GROUP
   ======================================================= */
 
-  const renderMenuGroup = (title, items) => (
+  const renderMenuGroup = (
+    title,
+    items
+  ) => (
     <div className="mb-7">
-      <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+      <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
         {title}
       </p>
 
@@ -415,13 +736,16 @@ export default function UserAccountDashboard({ onLogout }) {
             description,
             icon: Icon,
           }) => {
-            const active = activeView === key;
+            const active =
+              activeView === key;
 
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => changeView(key)}
+                onClick={() =>
+                  changeView(key)
+                }
                 className={`
                   group relative flex w-full items-center gap-3
                   rounded-xl px-3 py-3 text-left
@@ -444,7 +768,10 @@ export default function UserAccountDashboard({ onLogout }) {
                     }
                   `}
                 >
-                  <Icon className="h-4 w-4" strokeWidth={1.8} />
+                  <Icon
+                    className="h-4 w-4"
+                    strokeWidth={1.8}
+                  />
                 </span>
 
                 <span className="min-w-0 flex-1">
@@ -502,15 +829,21 @@ export default function UserAccountDashboard({ onLogout }) {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Sign in to manage your profile, preferences,
-              account security, notifications, and activity.
+              Sign in to manage your
+              profile, preferences,
+              account security,
+              notifications, and
+              activity.
             </p>
           </div>
         </div>
       );
     }
 
-    if (loadingUser || !userData) {
+    if (
+      loadingUser ||
+      !userData
+    ) {
       return (
         <div className="flex min-h-[60vh] items-center justify-center">
           <Loading />
@@ -520,18 +853,26 @@ export default function UserAccountDashboard({ onLogout }) {
 
     switch (activeView) {
       case "profile":
-        return <UserProfile user={userData} />;
+        return (
+          <UserProfile
+            user={userData}
+          />
+        );
 
       case "settings":
         return (
-          <PreferencesDashboard userData={userData} />
+          <PreferencesDashboard
+            userData={userData}
+          />
         );
 
       case "accounts":
         return (
           <AccountDashboard
             userData={userData}
-            onResetPassword={confirmResetPassword}
+            onResetPassword={
+              confirmResetPassword
+            }
           />
         );
 
@@ -553,7 +894,9 @@ export default function UserAccountDashboard({ onLogout }) {
                   </h2>
 
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Review actions associated with your account.
+                    Review actions
+                    associated with
+                    your account.
                   </p>
                 </div>
               </div>
@@ -564,7 +907,8 @@ export default function UserAccountDashboard({ onLogout }) {
                 <div className="py-12">
                   <Loading />
                 </div>
-              ) : history.length === 0 ? (
+              ) : history.length ===
+                0 ? (
                 <div className="py-12 text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
                     <History className="h-6 w-6 text-slate-400" />
@@ -575,35 +919,45 @@ export default function UserAccountDashboard({ onLogout }) {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Your account activity will appear here.
+                    Your account
+                    activity will
+                    appear here.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {history.map((item, index) => (
-                    <div
-                      key={`${item.timestamp || "activity"}-${index}`}
-                      className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
-                    >
-                      <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-900">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      </div>
+                  {history.map(
+                    (
+                      item,
+                      index
+                    ) => (
+                      <div
+                        key={`${item.timestamp || "activity"}-${item.id || index}`}
+                        className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                      >
+                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-900">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        </div>
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 break-words">
-                          {item.action || "Account activity"}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-medium text-slate-800 dark:text-slate-200">
+                            {item.action ||
+                              item.event ||
+                              item.type ||
+                              "Account activity"}
+                          </p>
 
-                        <p className="mt-1 text-xs text-slate-400">
-                          {item.timestamp
-                            ? new Date(
-                                item.timestamp
-                              ).toLocaleString()
-                            : "Unknown time"}
-                        </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {item.timestamp
+                              ? new Date(
+                                  item.timestamp
+                                ).toLocaleString()
+                              : "Unknown time"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -614,13 +968,23 @@ export default function UserAccountDashboard({ onLogout }) {
         return <HelpModal />;
 
       case "referential":
-        return <ReferentialDashboard />;
+        return (
+          <ReferentialDashboard />
+        );
 
       case "privacy":
-        return <LegalDocs activeTab="privacy" />;
+        return (
+          <LegalDocs
+            activeTab="privacy"
+          />
+        );
 
       case "terms":
-        return <LegalDocs activeTab="terms" />;
+        return (
+          <LegalDocs
+            activeTab="terms"
+          />
+        );
 
       default:
         return null;
@@ -647,12 +1011,15 @@ export default function UserAccountDashboard({ onLogout }) {
     <>
       <div className="min-h-full bg-slate-50 dark:bg-slate-950">
         <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
+
           {/* =================================================
               SIDEBAR
           ================================================= */}
 
           <aside className="hidden w-[290px] flex-shrink-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:flex lg:flex-col">
+
             {/* Brand */}
+
             <div className="border-b border-slate-200 px-6 py-5 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900">
@@ -674,12 +1041,14 @@ export default function UserAccountDashboard({ onLogout }) {
             </div>
 
             {/* User */}
+
             <div className="px-5 pt-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-white dark:text-slate-900">
                     {getInitials(
                       userData?.name ||
+                        userData?.fullName ||
                         userData?.username ||
                         userData?.contact
                     )}
@@ -688,12 +1057,14 @@ export default function UserAccountDashboard({ onLogout }) {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
                       {userData?.name ||
+                        userData?.fullName ||
                         userData?.username ||
                         "RevelaCode User"}
                     </p>
 
                     <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                      {userData?.contact}
+                      {userData?.contact ||
+                        authUser?.contact}
                     </p>
                   </div>
                 </div>
@@ -704,13 +1075,17 @@ export default function UserAccountDashboard({ onLogout }) {
                   </p>
 
                   <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    {formatDate(userData?.created_at)}
+                    {formatDate(
+                      userData?.created_at ||
+                        userData?.createdAt
+                    )}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Navigation */}
+
             <div className="flex-1 overflow-y-auto px-4 py-6">
               {renderMenuGroup(
                 "Account",
@@ -733,8 +1108,9 @@ export default function UserAccountDashboard({ onLogout }) {
               )}
 
               {/* Danger zone */}
+
               <div className="mt-2 border-t border-slate-200 pt-5 dark:border-slate-800">
-                <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">
+                <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">
                   Danger Zone
                 </p>
 
@@ -742,8 +1118,11 @@ export default function UserAccountDashboard({ onLogout }) {
                   type="button"
                   onClick={() => {
                     setError("");
+                    setMessage("");
                     setDeleteCode("");
-                    setShowDeleteModal(true);
+                    setShowDeleteModal(
+                      true
+                    );
                   }}
                   className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
@@ -757,7 +1136,8 @@ export default function UserAccountDashboard({ onLogout }) {
                     </span>
 
                     <span className="block text-[11px] text-red-400">
-                      Permanently remove your account
+                      Permanently remove
+                      your account
                     </span>
                   </span>
                 </button>
@@ -765,11 +1145,14 @@ export default function UserAccountDashboard({ onLogout }) {
             </div>
 
             {/* Logout */}
+
             {onLogout && (
               <div className="border-t border-slate-200 p-4 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={onLogout}
+                  onClick={
+                    onLogout
+                  }
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 >
                   <LogOut className="h-4 w-4" />
@@ -780,12 +1163,18 @@ export default function UserAccountDashboard({ onLogout }) {
           </aside>
 
           {/* =================================================
-              MOBILE HEADER
+              MAIN AREA
           ================================================= */}
 
           <div className="flex min-w-0 flex-1 flex-col">
+
+            {/* =================================================
+                MOBILE HEADER
+            ================================================= */}
+
             <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
               <div className="px-4 py-4">
+
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white dark:bg-white dark:text-slate-900">
@@ -806,7 +1195,9 @@ export default function UserAccountDashboard({ onLogout }) {
                   {onLogout && (
                     <button
                       type="button"
-                      onClick={onLogout}
+                      onClick={
+                        onLogout
+                      }
                       className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400"
                       aria-label="Sign out"
                     >
@@ -815,7 +1206,8 @@ export default function UserAccountDashboard({ onLogout }) {
                   )}
                 </div>
 
-                {/* Mobile horizontal nav */}
+                {/* Mobile navigation */}
+
                 <div className="mt-4 -mx-1 overflow-x-auto pb-1">
                   <div className="flex min-w-max gap-2 px-1">
                     {[
@@ -829,13 +1221,18 @@ export default function UserAccountDashboard({ onLogout }) {
                         icon: Icon,
                       }) => {
                         const active =
-                          activeView === key;
+                          activeView ===
+                          key;
 
                         return (
                           <button
                             key={key}
                             type="button"
-                            onClick={() => changeView(key)}
+                            onClick={() =>
+                              changeView(
+                                key
+                              )
+                            }
                             className={`
                               flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition
                               ${
@@ -862,7 +1259,9 @@ export default function UserAccountDashboard({ onLogout }) {
 
             <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
               <div className="mx-auto w-full max-w-6xl">
+
                 {/* Page heading */}
+
                 <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
@@ -880,10 +1279,12 @@ export default function UserAccountDashboard({ onLogout }) {
                   </div>
 
                   {/* Desktop identity */}
+
                   <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900 sm:flex">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white dark:bg-white dark:text-slate-900">
                       {getInitials(
                         userData?.name ||
+                          userData?.fullName ||
                           userData?.username ||
                           userData?.contact
                       )}
@@ -892,37 +1293,48 @@ export default function UserAccountDashboard({ onLogout }) {
                     <div className="max-w-[180px]">
                       <p className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
                         {userData?.name ||
+                          userData?.fullName ||
                           userData?.username ||
                           "RevelaCode User"}
                       </p>
 
                       <p className="truncate text-[10px] text-slate-400">
-                        {userData?.contact}
+                        {userData?.contact ||
+                          authUser?.contact}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Alerts */}
-                {(message || error) && (
-                  <div className="mb-6">
+
+                {(message ||
+                  error) && (
+                  <div className="mb-6 space-y-2">
                     {message && (
                       <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
                         <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                        <span>{message}</span>
+
+                        <span>
+                          {message}
+                        </span>
                       </div>
                     )}
 
                     {error && (
                       <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
                         <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                        <span>{error}</span>
+
+                        <span className="break-words">
+                          {error}
+                        </span>
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Content */}
+
                 <Suspense
                   fallback={
                     <div className="flex min-h-[40vh] items-center justify-center">
@@ -945,6 +1357,7 @@ export default function UserAccountDashboard({ onLogout }) {
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md overflow-hidden rounded-3xl border border-red-200 bg-white shadow-2xl dark:border-red-900/40 dark:bg-slate-900">
+
             <div className="border-b border-red-100 bg-red-50 px-6 py-6 dark:border-red-900/30 dark:bg-red-950/20">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">
@@ -957,7 +1370,8 @@ export default function UserAccountDashboard({ onLogout }) {
                   </h2>
 
                   <p className="mt-0.5 text-xs text-red-500/80 dark:text-red-400/70">
-                    This action cannot be undone.
+                    This action
+                    cannot be undone.
                   </p>
                 </div>
               </div>
@@ -965,8 +1379,13 @@ export default function UserAccountDashboard({ onLogout }) {
 
             <div className="p-6">
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Deleting your account permanently removes your
-                account data and access to RevelaCode.
+                Deleting your
+                account
+                permanently
+                removes your
+                account data
+                and access to
+                RevelaCode.
               </p>
 
               <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
@@ -975,16 +1394,24 @@ export default function UserAccountDashboard({ onLogout }) {
                 </p>
 
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Enter the confirmation code provided by your
-                  account deletion flow.
+                  Enter the
+                  confirmation
+                  code provided
+                  by your account
+                  deletion flow.
                 </p>
 
                 <input
-                  value={deleteCode}
+                  value={
+                    deleteCode
+                  }
                   onChange={(e) =>
-                    setDeleteCode(e.target.value)
+                    setDeleteCode(
+                      e.target.value
+                    )
                   }
                   placeholder="Enter confirmation code"
+                  autoComplete="off"
                   className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
               </div>
@@ -993,8 +1420,12 @@ export default function UserAccountDashboard({ onLogout }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setShowDeleteModal(false);
-                    setDeleteCode("");
+                    setShowDeleteModal(
+                      false
+                    );
+                    setDeleteCode(
+                      ""
+                    );
                   }}
                   className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
@@ -1003,8 +1434,12 @@ export default function UserAccountDashboard({ onLogout }) {
 
                 <button
                   type="button"
-                  onClick={confirmDeleteAccount}
-                  disabled={deletingAccount}
+                  onClick={
+                    confirmDeleteAccount
+                  }
+                  disabled={
+                    deletingAccount
+                  }
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 className="h-4 w-4" />
