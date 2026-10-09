@@ -1,7 +1,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 
-import { LoaderCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
