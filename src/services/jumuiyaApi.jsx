@@ -1751,6 +1751,71 @@ const getShambaDashboard =
         ),
       [post],
     );
+  // =======================================================
+  // COMMUNITY WHATSAPP CONTACT PREFERENCES
+  // =======================================================
+
+  const getCommunityContactPreferences =
+    useCallback(
+      async () =>
+        extractData(
+          await get(
+            "/community/contact-preferences",
+          ),
+        ),
+      [get],
+    );
+
+  const saveCommunityContactPreferences =
+    useCallback(
+      async (data) =>
+        extractData(
+          await put(
+            "/community/contact-preferences",
+            {
+              enabled: Boolean(data?.enabled),
+              phone_number: String(
+                data?.phone_number || "",
+              ).trim(),
+            },
+          ),
+        ),
+      [put],
+    );
+
+  const getCommunityWhatsAppContact =
+    useCallback(
+      async (memberId, postId = null) => {
+        if (!memberId) {
+          throw new Error(
+            "The Community member ID is missing.",
+          );
+        }
+
+        const params =
+          new URLSearchParams();
+
+        if (postId) {
+          params.set(
+            "post_id",
+            String(postId),
+          );
+        }
+
+        const query = params.toString();
+
+        return extractData(
+          await get(
+            `/community/members/${encodeURIComponent(
+              String(memberId),
+            )}/whatsapp-contact${
+              query ? `?${query}` : ""
+            }`,
+          ),
+        );
+      },
+      [get],
+    );
 
 
   // =======================================================
@@ -1946,6 +2011,9 @@ const getShambaDashboard =
     getCommunityComments,
     addCommunityComment,
     reactToCommunityPost,
+    getCommunityContactPreferences,
+    saveCommunityContactPreferences,
+    getCommunityWhatsAppContact,
   };
 }
 

@@ -21,8 +21,6 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
-
 // ============================================================
 // CONFIG
 // ============================================================
@@ -351,13 +349,6 @@ export default function CommunityComposer({
   // ==========================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Create Post"
-      subtitle="Share something useful with the Jumuiya community."
-      activeHub="community"
-      user={user}
-      onNavigate={onNavigate}
-    >
       <div className="mx-auto w-full max-w-5xl space-y-5 pb-10">
 
         {/* ====================================================
@@ -1858,6 +1849,5 @@ export default function CommunityComposer({
           </aside>
         </div>
       </div>
-    </JumuiyaDashboardShell>
   );
 }

@@ -4,13 +4,12 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import {
   ArrowRight,
-  Bell,
-  Briefcase,
   Compass,
   GraduationCap,
   Leaf,
@@ -23,216 +22,134 @@ import {
   Sparkles,
   Target,
   Users,
-  WalletCards,
   X,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
+import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
+import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
+import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
+import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 
 // ============================================================
-// COMMUNITY SURFACES
+// COMMUNITY PILLARS
 // ============================================================
 
-const SURFACES = [
+const PILLARS = [
   {
     key: "pulse",
     label: "Pulse",
-    eyebrow: "Useful now",
-    description:
-      "What is useful to you right now?",
+    subtitle: "Useful now",
+    description: "What is useful to me right now?",
     icon: Sparkles,
   },
   {
     key: "discovery",
     label: "Discovery",
-    eyebrow: "Connect",
-    description:
-      "Who, what and where can you connect with?",
+    subtitle: "Connect",
+    description: "Who, what and where can I connect with?",
     icon: Compass,
   },
   {
     key: "groups",
     label: "Groups",
-    eyebrow: "Belong",
-    description:
-      "Persistent communities around real interests.",
+    subtitle: "Belong",
+    description: "Persistent communities around real interests.",
     icon: Users,
   },
   {
     key: "threads",
     label: "Threads",
-    eyebrow: "Focus",
-    description:
-      "Structured conversations around one matter.",
+    subtitle: "Focus",
+    description: "Focused conversations around one matter.",
     icon: MessageCircle,
   },
   {
     key: "actions",
     label: "Actions",
-    eyebrow: "Do",
-    description:
-      "Apply, respond, enquire, join, buy, help or attend.",
+    subtitle: "Do something",
+    description: "Move from conversation to a useful next step.",
     icon: Target,
   },
   {
     key: "trust",
     label: "Trust",
-    eyebrow: "Confidence",
-    description:
-      "Identity, ownership, moderation and reputation.",
+    subtitle: "Confidence",
+    description: "Identity, ownership and responsible participation.",
     icon: ShieldCheck,
   },
 ];
 
 const PULSE_MODES = [
-  {
-    key: "relevant",
-    label: "For you",
-  },
-  {
-    key: "recent",
-    label: "Recent",
-  },
-  {
-    key: "nearby",
-    label: "Nearby",
-  },
-  {
-    key: "actionable",
-    label: "Actionable",
-  },
-  {
-    key: "trusted",
-    label: "Trusted",
-  },
+  { value: "relevant", label: "For you" },
+  { value: "recent", label: "Recent" },
+  { value: "nearby", label: "Nearby" },
+  { value: "actionable", label: "Actionable" },
+  { value: "trusted", label: "Trusted" },
 ];
 
-const DISCOVERY_INTENTS = [
-  {
-    key: "",
-    label: "Explore anything",
-  },
-  {
-    key: "learn",
-    label: "Learn",
-  },
-  {
-    key: "find",
-    label: "Find something",
-  },
-  {
-    key: "connect",
-    label: "Connect",
-  },
-  {
-    key: "buy",
-    label: "Buy",
-  },
-  {
-    key: "sell",
-    label: "Sell",
-  },
-  {
-    key: "hire",
-    label: "Hire",
-  },
-  {
-    key: "work",
-    label: "Find work",
-  },
-  {
-    key: "help",
-    label: "Get help",
-  },
-  {
-    key: "join",
-    label: "Join",
-  },
-  {
-    key: "attend",
-    label: "Attend",
-  },
-  {
-    key: "collaborate",
-    label: "Collaborate",
-  },
+const INTENTS = [
+  { value: "", label: "I'm exploring" },
+  { value: "learn", label: "Learn something" },
+  { value: "find", label: "Find something" },
+  { value: "connect", label: "Connect with people" },
+  { value: "buy", label: "Buy" },
+  { value: "sell", label: "Sell" },
+  { value: "hire", label: "Hire" },
+  { value: "work", label: "Find work" },
+  { value: "help", label: "Get or offer help" },
+  { value: "join", label: "Join something" },
+  { value: "attend", label: "Attend an event" },
+  { value: "collaborate", label: "Collaborate" },
 ];
 
-// ============================================================
-// HUB META
-// ============================================================
-
-const HUB_META = {
-  community: {
-    label: "Community",
-    icon: Users,
-  },
-  biashara: {
+const HUBS = [
+  {
+    key: "biashara",
     label: "Biashara",
-    icon: Briefcase,
+    icon: "business",
   },
-  shamba: {
+  {
+    key: "shamba",
     label: "Shamba",
-    icon: Leaf,
+    icon: "farm",
   },
-  elimu: {
+  {
+    key: "elimu",
     label: "Elimu",
-    icon: GraduationCap,
+    icon: "education",
   },
-  marketplace: {
-    label: "Marketplace",
-    icon: WalletCards,
-  },
-};
+];
 
 // ============================================================
-// HELPERS
+// RESPONSE HELPERS
 // ============================================================
 
-function getDisplayName(user) {
-  if (!user) {
-    return "Member";
+function normalizeArray(response) {
+  if (Array.isArray(response)) {
+    return response;
   }
 
-  return (
-    user.name ||
-    user.full_name ||
-    user.fullName ||
-    user.username ||
-    user.email?.split("@")[0] ||
-    "Member"
-  );
-}
-
-function getInitials(name) {
-  if (!name) {
-    return "M";
+  if (Array.isArray(response?.data)) {
+    return response.data;
   }
 
-  const parts = String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "M";
+  if (Array.isArray(response?.posts)) {
+    return response.posts;
   }
 
-  if (parts.length === 1) {
-    return parts[0]
-      .slice(0, 2)
-      .toUpperCase();
+  if (Array.isArray(response?.results)) {
+    return response.results;
   }
 
-  return `${parts[0].charAt(
-    0,
-  )}${parts[
-    parts.length - 1
-  ].charAt(0)}`.toUpperCase();
+  if (Array.isArray(response?.items)) {
+    return response.items;
+  }
+
+  return [];
 }
 
 function getPostId(post) {
@@ -247,9 +164,7 @@ function getPostId(post) {
 
 function getPostType(post) {
   return String(
-    post?.type ||
-      post?.post_type ||
-      "",
+    post?.type || post?.post_type || "",
   ).toLowerCase();
 }
 
@@ -262,354 +177,124 @@ function getPostHub(post) {
   ).toLowerCase();
 }
 
-function getPostCategory(post) {
-  return String(
-    post?.category ||
-      "",
-  ).toLowerCase();
-}
-
-function getCreatedAt(post) {
+function getPostTitle(post) {
   return (
-    post?.created_at ||
-    post?.createdAt ||
-    post?.timestamp ||
-    post?.published_at ||
-    null
+    post?.title ||
+    post?.subject ||
+    "Community conversation"
   );
 }
 
-function formatRelativeTime(value) {
+function getPostBody(post) {
+  return (
+    post?.body ||
+    post?.content ||
+    post?.text ||
+    post?.description ||
+    ""
+  );
+}
+
+function getAuthor(post) {
+  return (
+    post?.author?.name ||
+    post?.author?.full_name ||
+    post?.author_name ||
+    post?.username ||
+    "Community member"
+  );
+}
+
+function getDiscoveryReason(post) {
+  return (
+    post?.discovery?.reason ||
+    post?._discovery_reason ||
+    ""
+  );
+}
+
+function formatTime(value) {
   if (!value) {
     return "Recently";
   }
 
   const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return "Recently";
   }
 
-  const diff = Math.max(
+  const elapsed = Math.max(
     0,
     Date.now() - date.getTime(),
   );
 
-  const minutes = Math.floor(
-    diff / 60000,
-  );
+  const minutes = Math.floor(elapsed / 60000);
+  const hours = Math.floor(elapsed / 3600000);
+  const days = Math.floor(elapsed / 86400000);
 
-  const hours = Math.floor(
-    diff / 3600000,
-  );
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
 
-  const days = Math.floor(
-    diff / 86400000,
-  );
-
-  if (minutes < 1) {
-    return "Just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-
-  if (days < 7) {
-    return `${days}d ago`;
-  }
-
-  return date.toLocaleDateString(
-    "en-KE",
-    {
-      day: "numeric",
-      month: "short",
-    },
-  );
-}
-
-function formatNumber(value) {
-  const number =
-    Number(value) || 0;
-
-  if (number >= 1000000) {
-    return `${(
-      number / 1000000
-    ).toFixed(1)}M`;
-  }
-
-  if (number >= 1000) {
-    return `${(
-      number / 1000
-    ).toFixed(1)}K`;
-  }
-
-  return String(number);
-}
-
-function normalizeResponse(response) {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (
-    Array.isArray(
-      response?.posts,
-    )
-  ) {
-    return response.posts;
-  }
-
-  if (
-    Array.isArray(
-      response?.results,
-    )
-  ) {
-    return response.results;
-  }
-
-  if (
-    Array.isArray(
-      response?.items,
-    )
-  ) {
-    return response.items;
-  }
-
-  if (
-    Array.isArray(
-      response?.data,
-    )
-  ) {
-    return response.data;
-  }
-
-  return [];
-}
-
-function getDiscoveryMeta(post) {
-  return (
-    post?.discovery ||
-    null
-  );
-}
-
-function getDiscoveryReason(post) {
-  const discovery =
-    getDiscoveryMeta(post);
-
-  return (
-    discovery?.reason ||
-    post?._discovery_reason ||
-    ""
-  );
-}
-
-function getDiscoveryScore(post) {
-  const discovery =
-    getDiscoveryMeta(post);
-
-  const score =
-    discovery?.score ??
-    post?._discovery_score;
-
-  const parsed =
-    Number(score);
-
-  if (
-    Number.isNaN(parsed)
-  ) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function getAction(post) {
-  if (
-    post?.action &&
-    typeof post.action ===
-      "object"
-  ) {
-    return post.action;
-  }
-
-  return null;
+  return date.toLocaleDateString("en-KE", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 // ============================================================
-// SMALL PRESENTATION HELPERS
+// SMALL UI COMPONENTS
 // ============================================================
 
-function HubBadge({
-  hub,
+function PillarButton({
+  pillar,
+  active,
+  onClick,
 }) {
-  const normalized =
-    String(hub || "community")
-      .toLowerCase();
-
-  const meta =
-    HUB_META[normalized] ||
-    HUB_META.community;
-
-  const Icon =
-    meta.icon;
+  const Icon = pillar.icon;
 
   return (
-    <span
-      className="
-        inline-flex
-        items-center
-        gap-1.5
-        rounded-full
-        border
-        border-slate-200
-        bg-white/80
-        px-2.5
-        py-1
-        text-[10px]
-        font-bold
-        text-slate-600
-        shadow-sm
-        dark:border-white/10
-        dark:bg-slate-900/80
-        dark:text-slate-300
-      "
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`
+        flex min-w-[125px] items-center gap-3
+        rounded-2xl border px-3 py-3 text-left
+        transition duration-200
+        ${
+          active
+            ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-900/10"
+            : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/20"
+        }
+      `}
     >
-      <Icon
-        size={11}
-      />
-
-      {meta.label}
-    </span>
-  );
-}
-
-function SignalBadge({
-  children,
-  icon: Icon = Sparkles,
-}) {
-  return (
-    <span
-      className="
-        inline-flex
-        items-center
-        gap-1.5
-        rounded-full
-        bg-emerald-50
-        px-2.5
-        py-1
-        text-[10px]
-        font-bold
-        text-emerald-700
-        dark:bg-emerald-950/30
-        dark:text-emerald-400
-      "
-    >
-      <Icon
-        size={11}
-      />
-
-      {children}
-    </span>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div
-      className="
-        animate-pulse
-        rounded-[24px]
-        border
-        border-slate-200
-        bg-white
-        p-5
-        dark:border-white/10
-        dark:bg-slate-900
-      "
-    >
-      <div
-        className="
-          flex
-          items-center
-          gap-3
-        "
+      <span
+        className={`
+          flex h-9 w-9 shrink-0 items-center justify-center rounded-xl
+          ${active ? "bg-white/15" : "bg-slate-100 dark:bg-slate-800"}
+        `}
       >
-        <div
-          className="
-            h-11
-            w-11
-            rounded-full
-            bg-slate-200
-            dark:bg-slate-800
-          "
-        />
+        <Icon size={17} />
+      </span>
 
-        <div className="flex-1 space-y-2">
-          <div
-            className="
-              h-3
-              w-36
-              rounded
-              bg-slate-200
-              dark:bg-slate-800
-            "
-          />
+      <span>
+        <span className="block text-xs font-black">
+          {pillar.label}
+        </span>
 
-          <div
-            className="
-              h-2.5
-              w-24
-              rounded
-              bg-slate-100
-              dark:bg-slate-800/70
-            "
-          />
-        </div>
-      </div>
-
-      <div
-        className="
-          mt-5
-          h-4
-          w-3/4
-          rounded
-          bg-slate-200
-          dark:bg-slate-800
-        "
-      />
-
-      <div className="mt-3 space-y-2">
-        <div
-          className="
-            h-3
-            w-full
-            rounded
-            bg-slate-100
-            dark:bg-slate-800/70
-          "
-        />
-
-        <div
-          className="
-            h-3
-            w-5/6
-            rounded
-            bg-slate-100
-            dark:bg-slate-800/70
-          "
-        />
-      </div>
-    </div>
+        <span
+          className={`
+            mt-0.5 block text-[9px] font-semibold
+            ${active ? "text-white/70" : "text-slate-400"}
+          `}
+        >
+          {pillar.subtitle}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -617,3359 +302,950 @@ function EmptyState({
   icon: Icon = Sparkles,
   title,
   description,
-  action,
+  onAction,
+  actionLabel,
 }) {
   return (
-    <div
-      className="
-        flex
-        min-h-[300px]
-        flex-col
-        items-center
-        justify-center
-        rounded-[26px]
-        border
-        border-dashed
-        border-slate-300
-        bg-white
-        px-6
-        py-10
-        text-center
-        dark:border-white/10
-        dark:bg-slate-900
-      "
-    >
-      <div
-        className="
-          flex
-          h-14
-          w-14
-          items-center
-          justify-center
-          rounded-2xl
-          bg-emerald-50
-          text-emerald-600
-          dark:bg-emerald-950/30
-          dark:text-emerald-400
-        "
-      >
-        <Icon
-          size={24}
-        />
+    <div className="flex min-h-[290px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center dark:border-white/10 dark:bg-slate-900">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+        <Icon size={24} />
       </div>
 
-      <h3
-        className="
-          mt-4
-          text-base
-          font-black
-          text-slate-900
-          dark:text-white
-        "
-      >
+      <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">
         {title}
       </h3>
 
-      <p
-        className="
-          mt-2
-          max-w-md
-          text-sm
-          leading-6
-          text-slate-500
-          dark:text-slate-400
-        "
-      >
+      <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
         {description}
       </p>
 
-      {action ? (
+      {onAction && actionLabel ? (
         <button
           type="button"
-          onClick={
-            action.onClick
-          }
-          className="
-            mt-5
-            inline-flex
-            items-center
-            gap-2
-            rounded-xl
-            bg-slate-900
-            px-4
-            py-2.5
-            text-xs
-            font-bold
-            text-white
-            transition
-            hover:bg-slate-800
-            dark:bg-white
-            dark:text-slate-950
-            dark:hover:bg-slate-100
-          "
+          onClick={onAction}
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
         >
-          {action.label}
-          <ArrowRight
-            size={14}
-          />
+          {actionLabel}
+          <ArrowRight size={14} />
         </button>
       ) : null}
     </div>
   );
 }
 
-// ============================================================
-// THREAD VIEW
-// ============================================================
-
-function ThreadsView({
-  posts,
-  onOpen,
-}) {
-  const threads =
-    useMemo(
-      () =>
-        posts
-          .filter((post) =>
-            [
-              "discussion",
-              "question",
-              "help_request",
-              "insight",
-              "project",
-            ].includes(
-              getPostType(post),
-            ),
-          )
-          .slice(0, 12),
-      [posts],
-    );
-
-  if (!threads.length) {
-    return (
-      <EmptyState
-        icon={MessageCircle}
-        title="No focused threads yet"
-        description="
-          Threads turn broad Community conversations into focused matters:
-          questions, help requests, decisions, ideas and projects.
-        "
-        action={
-          onOpen
-            ? {
-                label: "Explore Pulse",
-                onClick: onOpen,
-              }
-            : undefined
-        }
-      />
-    );
-  }
-
+function LoadingState() {
   return (
-    <div
-      className="
-        space-y-3
-      "
-    >
-      {threads.map(
-        (
-          post,
-          index,
-        ) => {
-          const author =
-            post?.author?.name ||
-            post?.author_name ||
-            post?.username ||
-            "Community member";
-
-          const type =
-            getPostType(post);
-
-          const title =
-            post?.title ||
-            post?.subject ||
-            post?.body ||
-            "Community thread";
-
-          const comments =
-            Number(
-              post?.comments_count ??
-                post?.comment_count ??
-                0,
-            );
-
-          return (
-            <button
-              key={
-                getPostId(post) ||
-                `thread-${index}`
-              }
-              type="button"
-              onClick={() =>
-                onOpen?.(post)
-              }
-              className="
-                group
-                flex
-                w-full
-                items-start
-                gap-4
-                rounded-[22px]
-                border
-                border-slate-200
-                bg-white
-                p-4
-                text-left
-                transition
-                hover:-translate-y-0.5
-                hover:border-emerald-200
-                hover:shadow-md
-                dark:border-white/10
-                dark:bg-slate-900
-                dark:hover:border-emerald-500/20
-              "
-            >
-              <div
-                className="
-                  flex
-                  h-11
-                  w-11
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-slate-100
-                  text-slate-600
-                  dark:bg-slate-800
-                  dark:text-slate-300
-                "
-              >
-                <MessageCircle
-                  size={18}
-                />
-              </div>
-
-              <div
-                className="
-                  min-w-0
-                  flex-1
-                "
-              >
-                <div
-                  className="
-                    flex
-                    flex-wrap
-                    items-center
-                    gap-2
-                  "
-                >
-                  <span
-                    className="
-                      rounded-full
-                      bg-violet-50
-                      px-2.5
-                      py-1
-                      text-[9px]
-                      font-black
-                      uppercase
-                      tracking-wide
-                      text-violet-700
-                      dark:bg-violet-950/30
-                      dark:text-violet-400
-                    "
-                  >
-                    {type
-                      .replace(
-                        /_/g,
-                        " ",
-                      )}
-                  </span>
-
-                  <span
-                    className="
-                      text-[10px]
-                      font-semibold
-                      text-slate-400
-                    "
-                  >
-                    {formatRelativeTime(
-                      getCreatedAt(post),
-                    )}
-                  </span>
-                </div>
-
-                <h3
-                  className="
-                    mt-2
-                    line-clamp-2
-                    text-sm
-                    font-black
-                    leading-5
-                    text-slate-900
-                    dark:text-white
-                  "
-                >
-                  {title}
-                </h3>
-
-                <div
-                  className="
-                    mt-2
-                    flex
-                    flex-wrap
-                    items-center
-                    gap-x-3
-                    gap-y-1
-                    text-[10px]
-                    font-semibold
-                    text-slate-400
-                  "
-                >
-                  <span>
-                    {author}
-                  </span>
-
-                  <span>
-                    {comments} responses
-                  </span>
-
-                  <HubBadge
-                    hub={getPostHub(
-                      post,
-                    )}
-                  />
-                </div>
-              </div>
-
-              <ArrowRight
-                size={16}
-                className="
-                  mt-1
-                  shrink-0
-                  text-slate-300
-                  transition
-                  group-hover:translate-x-0.5
-                  group-hover:text-emerald-500
-                "
-              />
-            </button>
-          );
-        },
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-// ACTION VIEW
-// ============================================================
-
-function ActionView({
-  posts,
-  onOpen,
-}) {
-  const actionable =
-    useMemo(
-      () =>
-        posts
-          .filter(
-            (post) =>
-              Boolean(
-                getAction(
-                  post,
-                ),
-              ) ||
-              [
-                "opportunity",
-                "offer",
-                "request",
-                "event",
-                "help_request",
-                "project",
-              ].includes(
-                getPostType(post),
-              ),
-          )
-          .slice(0, 12),
-      [posts],
-    );
-
-  if (!actionable.length) {
-    return (
-      <EmptyState
-        icon={Target}
-        title="Nothing needs your action yet"
-        description="
-          When Community finds something you can meaningfully respond to,
-          it appears here instead of being buried inside a normal feed.
-        "
-      />
-    );
-  }
-
-  return (
-    <div
-      className="
-        grid
-        gap-3
-        sm:grid-cols-2
-      "
-    >
-      {actionable.map(
-        (
-          post,
-          index,
-        ) => {
-          const action =
-            getAction(post);
-
-          const type =
-            getPostType(post);
-
-          const title =
-            post?.title ||
-            post?.subject ||
-            "Community opportunity";
-
-          const body =
-            post?.body ||
-            post?.content ||
-            "";
-
-          const actionType =
-            action?.type ||
-            (
-              type ===
-                "opportunity"
-                ? "apply"
-                : type ===
-                  "event"
-                ? "attend"
-                : type ===
-                  "help_request"
-                ? "help"
-                : "respond"
-            );
-
-          const actionLabel =
-            action?.label ||
-            actionType
-              .replace(
-                /_/g,
-                " ",
-              );
-
-          return (
-            <button
-              key={
-                getPostId(post) ||
-                `action-${index}`
-              }
-              type="button"
-              onClick={() =>
-                onOpen?.(post)
-              }
-              className="
-                group
-                rounded-[24px]
-                border
-                border-slate-200
-                bg-white
-                p-5
-                text-left
-                shadow-sm
-                transition
-                hover:-translate-y-0.5
-                hover:shadow-md
-                dark:border-white/10
-                dark:bg-slate-900
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-center
-                  justify-between
-                  gap-3
-                "
-              >
-                <SignalBadge
-                  icon={Target}
-                >
-                  {actionLabel}
-                </SignalBadge>
-
-                <HubBadge
-                  hub={getPostHub(
-                    post,
-                  )}
-                />
-              </div>
-
-              <h3
-                className="
-                  mt-4
-                  line-clamp-2
-                  text-base
-                  font-black
-                  leading-6
-                  text-slate-900
-                  dark:text-white
-                "
-              >
-                {title}
-              </h3>
-
-              <p
-                className="
-                  mt-2
-                  line-clamp-3
-                  text-xs
-                  leading-5
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {body}
-              </p>
-
-              <div
-                className="
-                  mt-5
-                  inline-flex
-                  items-center
-                  gap-1.5
-                  text-xs
-                  font-black
-                  text-emerald-600
-                  dark:text-emerald-400
-                "
-              >
-                {actionLabel}
-                <ArrowRight
-                  size={14}
-                  className="
-                    transition
-                    group-hover:translate-x-0.5
-                  "
-                />
-              </div>
-            </button>
-          );
-        },
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-// TRUST VIEW
-// ============================================================
-
-function TrustView({
-  posts,
-  onOpen,
-}) {
-  const trusted =
-    useMemo(
-      () =>
-        posts
-          .filter(
-            (post) =>
-              Boolean(
-                getDiscoveryScore(
-                  post,
-                ),
-              ) ||
-              Boolean(
-                post?.author?.verified ||
-                  post?.verified,
-              ),
-          )
-          .slice(0, 10),
-      [posts],
-    );
-
-  return (
-    <div className="space-y-4">
-      <div
-        className="
-          rounded-[24px]
-          border
-          border-emerald-200/70
-          bg-emerald-50
-          p-5
-          dark:border-emerald-500/20
-          dark:bg-emerald-950/20
-        "
-      >
+    <div className="space-y-4" aria-label="Loading Community">
+      {[1, 2, 3].map((item) => (
         <div
-          className="
-            flex
-            items-start
-            gap-4
-          "
+          key={item}
+          className="animate-pulse rounded-[24px] border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900"
         >
-          <div
-            className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              bg-white
-              text-emerald-600
-              shadow-sm
-              dark:bg-slate-900
-              dark:text-emerald-400
-            "
-          >
-            <ShieldCheck
-              size={21}
-            />
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-full bg-slate-200 dark:bg-slate-800" />
+
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-2.5 w-20 rounded bg-slate-100 dark:bg-slate-800" />
+            </div>
           </div>
 
-          <div>
-            <h3
-              className="
-                text-sm
-                font-black
-                text-emerald-950
-                dark:text-emerald-100
-              "
-            >
-              Trust is a first-class
-              Community signal.
-            </h3>
-
-            <p
-              className="
-                mt-1.5
-                text-xs
-                leading-5
-                text-emerald-900/70
-                dark:text-emerald-100/70
-              "
-            >
-              Identity, ownership,
-              verification, helpful
-              behavior and moderation
-              should influence confidence
-              without turning Community
-              into a popularity contest.
-            </p>
-          </div>
+          <div className="mt-5 h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="mt-3 h-3 w-full rounded bg-slate-100 dark:bg-slate-800" />
+          <div className="mt-2 h-3 w-5/6 rounded bg-slate-100 dark:bg-slate-800" />
         </div>
-      </div>
-
-      {trusted.length ? (
-        <div
-          className="
-            grid
-            gap-3
-          "
-        >
-          {trusted.map(
-            (
-              post,
-              index,
-            ) => {
-              const reason =
-                getDiscoveryReason(
-                  post,
-                ) ||
-                "Selected using Community trust and relevance signals.";
-
-              return (
-                <button
-                  key={
-                    getPostId(post) ||
-                    `trust-${index}`
-                  }
-                  type="button"
-                  onClick={() =>
-                    onOpen?.(post)
-                  }
-                  className="
-                    group
-                    flex
-                    w-full
-                    items-center
-                    gap-4
-                    rounded-[22px]
-                    border
-                    border-slate-200
-                    bg-white
-                    p-4
-                    text-left
-                    transition
-                    hover:shadow-md
-                    dark:border-white/10
-                    dark:bg-slate-900
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      h-11
-                      w-11
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-2xl
-                      bg-emerald-50
-                      text-emerald-600
-                      dark:bg-emerald-950/30
-                      dark:text-emerald-400
-                    "
-                  >
-                    <ShieldCheck
-                      size={18}
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className="
-                        flex
-                        flex-wrap
-                        items-center
-                        gap-2
-                      "
-                    >
-                      <span
-                        className="
-                          text-xs
-                          font-black
-                          text-slate-900
-                          dark:text-white
-                        "
-                      >
-                        {post?.author?.name ||
-                          post?.author_name ||
-                          "Community member"}
-                      </span>
-
-                      {post?.author
-                        ?.verified ||
-                      post?.verified ? (
-                        <span
-                          className="
-                            rounded-full
-                            bg-emerald-100
-                            px-2
-                            py-0.5
-                            text-[9px]
-                            font-black
-                            text-emerald-700
-                            dark:bg-emerald-950/50
-                            dark:text-emerald-400
-                          "
-                        >
-                          Verified
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <p
-                      className="
-                        mt-1
-                        line-clamp-2
-                        text-xs
-                        leading-5
-                        text-slate-500
-                        dark:text-slate-400
-                      "
-                    >
-                      {reason}
-                    </p>
-                  </div>
-
-                  <ArrowRight
-                    size={16}
-                    className="
-                      shrink-0
-                      text-slate-300
-                      transition
-                      group-hover:translate-x-0.5
-                      group-hover:text-emerald-500
-                    "
-                  />
-                </button>
-              );
-            },
-          )}
-        </div>
-      ) : (
-        <EmptyState
-          icon={ShieldCheck}
-          title="Trust signals are building"
-          description="
-            As Community activity and verification data become available,
-            trusted discovery will become more useful.
-          "
-        />
-      )}
+      ))}
     </div>
   );
 }
 
 // ============================================================
-// MAIN COMPONENT
+// MAIN DASHBOARD
 // ============================================================
 
 export default function CommunityDashboard({
   onNavigate,
 }) {
-  const { user } =
-    useAuth();
+  const { user } = useAuth();
 
   const {
     get,
     reactToCommunityPost,
   } = useJumuiyaApi();
 
-  const displayName =
-    useMemo(
-      () =>
-        getDisplayName(user),
-      [user],
-    );
+  // ----------------------------------------------------------
+  // Workspace navigation
+  // ----------------------------------------------------------
 
-  const initials =
-    useMemo(
-      () =>
-        getInitials(
-          displayName,
-        ),
-      [displayName],
-    );
+  const [workspacePage, setWorkspacePage] = useState("home");
+  const [activeSurface, setActiveSurface] = useState("pulse");
 
-  const [
-    activeSurface,
-    setActiveSurface,
-  ] = useState("pulse");
+  const navigate = useCallback(
+    (destination) => {
+      switch (destination) {
+        case "community":
+        case "community-home":
+        case "community-hub-community":
+          setWorkspacePage("home");
+          setActiveSurface("pulse");
+          return;
 
-  const [
-    pulseMode,
-    setPulseMode,
-  ] = useState("relevant");
+        case "community-feed":
+        case "community-activity":
+          setWorkspacePage("feed");
+          return;
 
-  const [
-    discoveryQuery,
-    setDiscoveryQuery,
-  ] = useState("");
+        case "community-composer":
+          setWorkspacePage("composer");
+          return;
 
-  const [
-    discoveryIntent,
-    setDiscoveryIntent,
-  ] = useState("");
+        case "community-notifications":
+          setWorkspacePage("notifications");
+          return;
 
-  const [
-    posts,
-    setPosts,
-  ] = useState([]);
+        case "community-groups":
+          setWorkspacePage("groups");
+          setActiveSurface("groups");
+          return;
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+        case "community-discover":
+        case "community-discovery":
+          setWorkspacePage("home");
+          setActiveSurface("discovery");
+          return;
 
-  const [
-    refreshing,
-    setRefreshing,
-  ] = useState(false);
+        case "community-hub-biashara":
+          onNavigate?.("biashara");
+          return;
 
-  const [
-    error,
-    setError,
-  ] = useState("");
+        case "community-hub-shamba":
+          onNavigate?.("shamba");
+          return;
 
-  // ==========================================================
-  // NAVIGATION
-  // ==========================================================
+        case "community-hub-elimu":
+          onNavigate?.("education");
+          return;
 
-  const navigate =
-    useCallback(
-      (destination) => {
-        if (
-          typeof onNavigate ===
-          "function"
-        ) {
-          onNavigate(
-            destination,
-          );
-          return true;
+        case "elimu":
+          onNavigate?.("education");
+          return;
+
+        default:
+          // Top-level dashboards still belong to the global shell.
+          onNavigate?.(destination);
+      }
+    },
+    [onNavigate],
+  );
+
+  // ----------------------------------------------------------
+  // Pulse and Discovery state
+  // ----------------------------------------------------------
+
+  const [pulseMode, setPulseMode] = useState("relevant");
+
+  const [discoveryQuery, setDiscoveryQuery] = useState("");
+  const [discoveryIntent, setDiscoveryIntent] = useState("");
+
+  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [submittedIntent, setSubmittedIntent] = useState("");
+
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+
+  const requestId = useRef(0);
+
+  // ----------------------------------------------------------
+  // Load the requested surface
+  // ----------------------------------------------------------
+
+  const loadSurface = useCallback(
+    async ({
+      surface,
+      mode = "relevant",
+      query = "",
+      intent = "",
+      silent = false,
+    }) => {
+      const thisRequest = ++requestId.current;
+
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      setError("");
+
+      try {
+        let endpoint = "/community/pulse";
+
+        const params = new URLSearchParams();
+        params.set("limit", "30");
+
+        switch (surface) {
+          case "pulse":
+            endpoint = "/community/pulse";
+            params.set("mode", mode);
+            break;
+
+          case "discovery":
+            endpoint = "/community/discovery";
+
+            if (query) {
+              params.set("q", query);
+            }
+
+            if (intent) {
+              params.set("intent", intent);
+            }
+            break;
+
+          case "nearby":
+            endpoint = "/community/nearby";
+            break;
+
+          case "actions":
+            endpoint = "/community/opportunities";
+            break;
+
+          case "trust":
+            endpoint = "/community/trusted";
+            break;
+
+          case "exploration":
+            endpoint = "/community/exploration";
+            break;
+
+          default:
+            endpoint = "/community/pulse";
         }
 
-        return false;
-      },
-      [onNavigate],
-    );
+        const response = await get(
+          `${endpoint}?${params.toString()}`,
+        );
 
-  // ==========================================================
-  // LOAD DATA
-  // ==========================================================
-
-  const loadSurface =
-    useCallback(
-      async (
-        options = {},
-      ) => {
-        const {
-          silent = false,
-          surface = activeSurface,
-        } = options;
-
-        try {
-          setError("");
-
-          if (silent) {
-            setRefreshing(
-              true,
-            );
-          } else {
-            setLoading(true);
-          }
-
-          let endpoint =
-            "/community/pulse";
-
-          const params =
-            new URLSearchParams();
-
-          params.set(
-            "limit",
-            "30",
-          );
-
-          // -----------------------------------------------
-          // PULSE
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "pulse"
-          ) {
-            endpoint =
-              "/community/pulse";
-
-            if (
-              pulseMode
-            ) {
-              params.set(
-                "mode",
-                pulseMode,
-              );
-            }
-          }
-
-          // -----------------------------------------------
-          // DISCOVERY
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "discovery"
-          ) {
-            endpoint =
-              "/community/discovery";
-
-            if (
-              discoveryQuery.trim()
-            ) {
-              params.set(
-                "q",
-                discoveryQuery.trim(),
-              );
-            }
-
-            if (
-              discoveryIntent
-            ) {
-              params.set(
-                "intent",
-                discoveryIntent,
-              );
-            }
-          }
-
-          // -----------------------------------------------
-          // NEARBY
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "nearby"
-          ) {
-            endpoint =
-              "/community/nearby";
-          }
-
-          // -----------------------------------------------
-          // ACTIONS
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "actions"
-          ) {
-            endpoint =
-              "/community/opportunities";
-          }
-
-          // -----------------------------------------------
-          // TRUST
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "trust"
-          ) {
-            endpoint =
-              "/community/trusted";
-          }
-
-          // -----------------------------------------------
-          // EXPLORATION
-          // -----------------------------------------------
-
-          if (
-            surface ===
-            "exploration"
-          ) {
-            endpoint =
-              "/community/exploration";
-          }
-
-          const suffix =
-            params.toString();
-
-          const response =
-            await get(
-              `${endpoint}${
-                suffix
-                  ? `?${suffix}`
-                  : ""
-              }`,
-            );
-
-          setPosts(
-            normalizeResponse(
-              response,
-            ),
-          );
-        } catch (
-          requestError
-        ) {
+        if (thisRequest === requestId.current) {
+          setPosts(normalizeArray(response));
+        }
+      } catch (requestError) {
+        if (thisRequest === requestId.current) {
           console.error(
-            "Community surface load failed:",
+            "Community surface request failed:",
             requestError,
           );
 
-          setPosts([]);
-
           setError(
             requestError?.message ||
-              "Unable to load Community right now.",
+              "Community could not load this view. Please try again.",
           );
-        } finally {
-          setLoading(
-            false,
-          );
-          setRefreshing(
-            false,
-          );
+
+          setPosts([]);
         }
-      },
-      [
-        activeSurface,
-        discoveryIntent,
-        discoveryQuery,
-        get,
-        pulseMode,
-      ],
-    );
-
-  // ==========================================================
-  // INITIAL / SURFACE RELOAD
-  // ==========================================================
-
-  useEffect(
-    () => {
-      if (
-        activeSurface ===
-        "groups"
-      ) {
-        setLoading(
-          false,
-        );
-        setPosts([]);
-        return;
+      } finally {
+        if (thisRequest === requestId.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
-
-      let surface =
-        activeSurface;
-
-      if (
-        activeSurface ===
-        "threads"
-      ) {
-        surface =
-          "pulse";
-      }
-
-      loadSurface({
-        surface,
-      });
     },
-    [
-      activeSurface,
-      loadSurface,
-    ],
+    [get],
   );
 
-  // ==========================================================
-  // REFRESH
-  // ==========================================================
+  // ----------------------------------------------------------
+  // Surface lifecycle
+  // ----------------------------------------------------------
 
-  const refresh =
-    useCallback(
-      () => {
-        if (
-          activeSurface ===
-          "groups"
-        ) {
-          return;
-        }
+  useEffect(() => {
+    if (workspacePage !== "home") {
+      requestId.current += 1;
+      setLoading(false);
+      setRefreshing(false);
+      return undefined;
+    }
 
-        const surface =
-          activeSurface ===
-          "threads"
-            ? "pulse"
-            : activeSurface;
+    if (activeSurface === "groups") {
+      requestId.current += 1;
+      setPosts([]);
+      setLoading(false);
+      setRefreshing(false);
+      setError("");
+      return undefined;
+    }
 
-        return loadSurface({
-          silent: true,
-          surface,
-        });
-      },
-      [
-        activeSurface,
-        loadSurface,
-      ],
-    );
+    const surface =
+      activeSurface === "threads"
+        ? "pulse"
+        : activeSurface;
 
-  // ==========================================================
-  // OPEN POST
-  // ==========================================================
+    const mode =
+      activeSurface === "pulse"
+        ? pulseMode
+        : activeSurface === "threads"
+          ? "relevant"
+          : "relevant";
 
-  const openPost =
-    useCallback(
-      (post) => {
-        // Keep navigation compatible with the existing Community
-        // Feed rather than introducing a new route prematurely.
-        if (
-          navigate(
-            "community-feed",
-          )
-        ) {
-          return;
-        }
+    loadSurface({
+      surface,
+      mode,
+      query:
+        activeSurface === "discovery"
+          ? submittedQuery
+          : "",
+      intent:
+        activeSurface === "discovery"
+          ? submittedIntent
+          : "",
+    });
 
-        console.info(
-          "Community post:",
-          post,
+    return () => {
+      requestId.current += 1;
+    };
+  }, [
+    workspacePage,
+    activeSurface,
+    pulseMode,
+    submittedQuery,
+    submittedIntent,
+    reloadToken,
+    loadSurface,
+  ]);
+
+  // ----------------------------------------------------------
+  // Refresh
+  // ----------------------------------------------------------
+
+  const refresh = useCallback(() => {
+    setReloadToken((value) => value + 1);
+  }, []);
+
+  // ----------------------------------------------------------
+  // Search
+  // ----------------------------------------------------------
+
+  const submitDiscovery = useCallback(
+    (event) => {
+      event.preventDefault();
+
+      setSubmittedQuery(
+        discoveryQuery.trim().slice(0, 100),
+      );
+
+      setSubmittedIntent(discoveryIntent);
+      setActiveSurface("discovery");
+      setReloadToken((value) => value + 1);
+    },
+    [discoveryQuery, discoveryIntent],
+  );
+
+  const chooseSuggestion = useCallback(
+    (query) => {
+      setDiscoveryQuery(query);
+      setSubmittedQuery(query);
+      setSubmittedIntent(discoveryIntent);
+      setActiveSurface("discovery");
+      setReloadToken((value) => value + 1);
+    },
+    [discoveryIntent],
+  );
+
+  // ----------------------------------------------------------
+  // Post actions
+  // ----------------------------------------------------------
+
+  const openPost = useCallback(
+    () => {
+      // The existing Feed handles comments and post interactions.
+      navigate("community-feed");
+    },
+    [navigate],
+  );
+
+  const handleLike = useCallback(
+    async (post) => {
+      const postId = getPostId(post);
+
+      if (!postId) {
+        throw new Error("The post ID is missing.");
+      }
+
+      await reactToCommunityPost(postId);
+
+      // Refresh server-authoritative reaction state.
+      setReloadToken((value) => value + 1);
+    },
+    [reactToCommunityPost],
+  );
+
+  const openComposer = useCallback(() => {
+    navigate("community-composer");
+  }, [navigate]);
+
+  // ----------------------------------------------------------
+  // Derived data
+  // ----------------------------------------------------------
+
+  const displayName =
+    user?.name ||
+    user?.full_name ||
+    user?.fullName ||
+    user?.username ||
+    user?.email?.split("@")[0] ||
+    "Member";
+
+  const activePillar =
+    PILLARS.find(
+      (pillar) => pillar.key === activeSurface,
+    ) || PILLARS[0];
+
+  const ActiveIcon = activePillar.icon;
+
+  const threadPosts = useMemo(
+    () =>
+      posts.filter((post) =>
+        [
+          "discussion",
+          "question",
+          "help_request",
+          "insight",
+          "project",
+        ].includes(getPostType(post)),
+      ),
+    [posts],
+  );
+
+  const actionPosts = useMemo(
+    () =>
+      posts.filter((post) => {
+        const type = getPostType(post);
+
+        return (
+          Boolean(post?.action) ||
+          [
+            "opportunity",
+            "offer",
+            "request",
+            "event",
+            "help_request",
+            "project",
+          ].includes(type)
         );
-      },
-      [navigate],
-    );
+      }),
+    [posts],
+  );
 
-  // ==========================================================
-  // LIKE
-  // ==========================================================
+  // ----------------------------------------------------------
+  // Existing Community workspaces
+  // ----------------------------------------------------------
 
-  const handleLike =
-    useCallback(
-      async (
-        post,
-      ) => {
-        const id =
-          getPostId(post);
+  if (workspacePage === "feed") {
+    return <CommunityFeed onNavigate={navigate} />;
+  }
 
-        if (!id) {
-          throw new Error(
-            "Community post id is missing.",
-          );
-        }
+  if (workspacePage === "composer") {
+    return <CommunityComposer onNavigate={navigate} />;
+  }
 
-        await reactToCommunityPost(
-          id,
-        );
-      },
-      [reactToCommunityPost],
-    );
+  if (workspacePage === "notifications") {
+    return <CommunityNotifications onNavigate={navigate} />;
+  }
 
-  // ==========================================================
-  // CREATE
-  // ==========================================================
-
-  const openComposer =
-    useCallback(
-      () => {
-        navigate(
-          "community-composer",
-        );
-      },
-      [navigate],
-    );
-
-  // ==========================================================
-  // SURFACE SELECTION
-  // ==========================================================
-
-  const handleSurface =
-    useCallback(
-      (key) => {
-        setError("");
-
-        if (
-          key ===
-          "groups"
-        ) {
-          setActiveSurface(
-            key,
-          );
-          return;
-        }
-
-        setActiveSurface(
-          key,
-        );
-      },
-      [],
-    );
-
-  // ==========================================================
-  // DISCOVERY SEARCH
-  // ==========================================================
-
-  const handleDiscoverySearch =
-    useCallback(
-      (event) => {
-        event.preventDefault();
-
-        if (
-          activeSurface !==
-          "discovery"
-        ) {
-          setActiveSurface(
-            "discovery",
-          );
-
-          return;
-        }
-
-        loadSurface({
-          surface:
-            "discovery",
-        });
-      },
-      [
-        activeSurface,
-        loadSurface,
-      ],
-    );
-
-  // ==========================================================
-  // DERIVED
-  // ==========================================================
-
-  const activeMeta =
-    useMemo(
-      () =>
-        SURFACES.find(
-          (item) =>
-            item.key ===
-            activeSurface,
-        ) ||
-        SURFACES[0],
-      [activeSurface],
-    );
-
-  const ActiveIcon =
-    activeMeta.icon;
-
-  const pulsePosts =
-    useMemo(
-      () =>
-        posts.slice(0, 12),
-      [posts],
-    );
-
-  const nearbyCount =
-    useMemo(
-      () =>
-        posts.filter(
-          (post) =>
-            Boolean(
-              post?.location,
-            ),
-        ).length,
-      [posts],
-    );
-
-  const actionableCount =
-    useMemo(
-      () =>
-        posts.filter(
-          (post) =>
-            Boolean(
-              getAction(post),
-            ) ||
-            [
-              "opportunity",
-              "offer",
-              "request",
-              "event",
-              "help_request",
-              "project",
-            ].includes(
-              getPostType(post),
-            ),
-        ).length,
-      [posts],
-    );
-
-  const threadCount =
-    useMemo(
-      () =>
-        posts.filter(
-          (post) =>
-            [
-              "discussion",
-              "question",
-              "help_request",
-              "insight",
-              "project",
-            ].includes(
-              getPostType(post),
-            ),
-        ).length,
-      [posts],
-    );
-
-  const trustCount =
-    useMemo(
-      () =>
-        posts.filter(
-          (post) =>
-            getDiscoveryScore(
-              post,
-            ) !== null ||
-            Boolean(
-              post?.author
-                ?.verified ||
-                post?.verified,
-            ),
-        ).length,
-      [posts],
-    );
+  if (workspacePage === "groups") {
+    return <CommunityGroups onNavigate={navigate} />;
+  }
 
   // ==========================================================
   // RENDER
   // ==========================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Community"
-      subtitle="
-        A living layer connecting people, knowledge,
-        opportunities and action across Jumuiya.
-      "
-      activeHub="community"
-      user={user}
-      onNavigate={onNavigate}
-    >
-      <div
-        className="
-          space-y-5
-          pb-12
-        "
-      >
+    
+      <div className="space-y-5 pb-10">
 
-        {/* ======================================================
+        {/* ====================================================
             HERO
-        ====================================================== */}
+        ==================================================== */}
 
-        <section
-          className="
-            relative
-            overflow-hidden
-            rounded-[30px]
-            border
-            border-slate-200
-            bg-slate-950
-            text-white
-            shadow-xl
-            dark:border-white/10
-          "
-        >
-          <div
-            className="
-              absolute
-              -right-16
-              -top-16
-              h-56
-              w-56
-              rounded-full
-              bg-emerald-500/20
-              blur-3xl
-            "
-          />
+        <section className="relative overflow-hidden rounded-[28px] bg-slate-950 p-5 text-white shadow-xl sm:p-7">
+          <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full bg-emerald-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
 
-          <div
-            className="
-              absolute
-              -bottom-24
-              left-1/3
-              h-72
-              w-72
-              rounded-full
-              bg-cyan-400/10
-              blur-3xl
-            "
-          />
-
-          <div
-            className="
-              relative
-              z-10
-              px-5
-              py-6
-              sm:px-7
-              sm:py-8
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                gap-6
-                xl:flex-row
-                xl:items-end
-                xl:justify-between
-              "
-            >
-              <div
-                className="
-                  max-w-3xl
-                "
-              >
-                <div
-                  className="
-                    flex
-                    flex-wrap
-                    items-center
-                    gap-2
-                  "
-                >
-                  <span
-                    className="
-                      inline-flex
-                      items-center
-                      gap-2
-                      rounded-full
-                      border
-                      border-white/10
-                      bg-white/5
-                      px-3
-                      py-1.5
-                      text-[10px]
-                      font-black
-                      uppercase
-                      tracking-[0.16em]
-                      text-emerald-300
-                    "
-                  >
-                    <Sparkles
-                      size={12}
-                    />
-
-                    Jumuiya Community
-                  </span>
-
-                  <span
-                    className="
-                      rounded-full
-                      border
-                      border-white/10
-                      px-3
-                      py-1.5
-                      text-[10px]
-                      font-bold
-                      text-white/60
-                    "
-                  >
-                    {activeMeta.eyebrow}
-                  </span>
-                </div>
-
-                <h1
-                  className="
-                    mt-4
-                    max-w-2xl
-                    text-2xl
-                    font-black
-                    leading-tight
-                    tracking-tight
-                    sm:text-3xl
-                    lg:text-4xl
-                  "
-                >
-                  Community is about
-                  usefulness, not noise.
-                </h1>
-
-                <p
-                  className="
-                    mt-3
-                    max-w-2xl
-                    text-sm
-                    leading-6
-                    text-white/65
-                    sm:text-base
-                  "
-                >
-                  {activeMeta.description}
-                  {" "}
-                  Your Community surface
-                  changes according to what
-                  you are trying to discover,
-                  understand or do.
-                </p>
-
-                <div
-                  className="
-                    mt-5
-                    flex
-                    flex-wrap
-                    gap-2
-                  "
-                >
-                  <SignalBadge
-                    icon={Sparkles}
-                  >
-                    Relevance first
-                  </SignalBadge>
-
-                  <SignalBadge
-                    icon={MapPin}
-                  >
-                    Local context
-                  </SignalBadge>
-
-                  <SignalBadge
-                    icon={ShieldCheck}
-                  >
-                    Trust aware
-                  </SignalBadge>
-
-                  <SignalBadge
-                    icon={Target}
-                  >
-                    Actionable
-                  </SignalBadge>
-                </div>
+          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
+                <Sparkles size={13} />
+                Jumuiya Community
               </div>
 
-              <div
-                className="
-                  flex
-                  shrink-0
-                  items-center
-                  gap-3
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-14
-                    w-14
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    border
-                    border-white/10
-                    bg-white/5
-                    text-lg
-                    font-black
-                    backdrop-blur
-                  "
-                  title={
-                    displayName
-                  }
-                >
-                  {initials}
-                </div>
+              <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+                Useful beats noisy.
+              </h1>
 
-                <button
-                  type="button"
-                  onClick={
-                    openComposer
-                  }
-                  className="
-                    inline-flex
-                    items-center
-                    gap-2
-                    rounded-xl
-                    bg-white
-                    px-4
-                    py-3
-                    text-xs
-                    font-black
-                    text-slate-950
-                    transition
-                    hover:bg-emerald-50
-                    active:scale-[0.98]
-                  "
-                >
-                  <Plus
-                    size={15}
-                  />
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+                A living connection layer for people, knowledge,
+                opportunities, shared interests and meaningful action.
+              </p>
 
-                  Start something
-                </button>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {[
+                  "Relevance first",
+                  "Real-world context",
+                  "Trust aware",
+                  "Built for action",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold text-white/80"
+                  >
+                    {item}
+                  </span>
+                ))}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={openComposer}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
+            >
+              <Plus size={16} />
+              Start something
+            </button>
           </div>
+
+          <p className="relative mt-5 border-t border-white/10 pt-4 text-xs font-semibold text-white/50">
+            Welcome back, {displayName}.
+          </p>
         </section>
 
-        {/* ======================================================
-            SIX COMMUNITY PILLARS
-        ====================================================== */}
+        {/* ====================================================
+            SIX PILLARS
+        ==================================================== */}
 
         <section>
-          <div
-            className="
-              overflow-x-auto
-              pb-1
-              [scrollbar-width:none]
-            "
-          >
-            <div
-              className="
-                flex
-                min-w-max
-                gap-2
-              "
-            >
-              {SURFACES.map(
-                (
-                  surface,
-                ) => {
-                  const Icon =
-                    surface.icon;
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 dark:text-white">
+                Your Community
+              </h2>
 
-                  const active =
-                    activeSurface ===
-                    surface.key;
-
-                  return (
-                    <button
-                      key={
-                        surface.key
-                      }
-                      type="button"
-                      onClick={() =>
-                        handleSurface(
-                          surface.key,
-                        )
-                      }
-                      className={`
-                        group
-                        flex
-                        min-w-[132px]
-                        items-center
-                        gap-3
-                        rounded-2xl
-                        border
-                        px-3.5
-                        py-3
-                        text-left
-                        transition
-                        ${
-                          active
-                            ? `
-                              border-emerald-500
-                              bg-emerald-600
-                              text-white
-                              shadow-lg
-                              shadow-emerald-900/10
-                            `
-                            : `
-                              border-slate-200
-                              bg-white
-                              text-slate-700
-                              hover:border-emerald-200
-                              hover:bg-emerald-50
-                              dark:border-white/10
-                              dark:bg-slate-900
-                              dark:text-slate-300
-                              dark:hover:border-emerald-500/20
-                              dark:hover:bg-emerald-950/20
-                            `
-                        }
-                      `}
-                    >
-                      <span
-                        className={`
-                          flex
-                          h-9
-                          w-9
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-xl
-                          ${
-                            active
-                              ? "bg-white/15"
-                              : "bg-slate-100 dark:bg-slate-800"
-                          }
-                        `}
-                      >
-                        <Icon
-                          size={16}
-                        />
-                      </span>
-
-                      <span
-                        className="
-                          min-w-0
-                        "
-                      >
-                        <span
-                          className="
-                            block
-                            text-xs
-                            font-black
-                          "
-                        >
-                          {
-                            surface.label
-                          }
-                        </span>
-
-                        <span
-                          className={`
-                            mt-0.5
-                            block
-                            text-[9px]
-                            font-semibold
-                            ${
-                              active
-                                ? "text-white/65"
-                                : "text-slate-400"
-                            }
-                          `}
-                        >
-                          {
-                            surface.eyebrow
-                          }
-                        </span>
-                      </span>
-                    </button>
-                  );
-                },
-              )}
+              <p className="mt-1 text-xs text-slate-400">
+                Six ways to turn connection into value.
+              </p>
             </div>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]">
+            {PILLARS.map((pillar) => (
+              <PillarButton
+                key={pillar.key}
+                pillar={pillar}
+                active={activeSurface === pillar.key}
+                onClick={() => {
+                  setError("");
+
+                  if (pillar.key === "groups") {
+                    setActiveSurface("groups");
+                    setWorkspacePage("groups");
+                    return;
+                  }
+
+                  setWorkspacePage("home");
+                  setActiveSurface(pillar.key);
+                }}
+              />
+            ))}
           </div>
         </section>
 
-        {/* ======================================================
-            PULSE CONTROLS
-        ====================================================== */}
+        {/* ====================================================
+            SURFACE HEADER
+        ==================================================== */}
 
-        {activeSurface ===
-        "pulse" ? (
-          <section
-            className="
-              rounded-[24px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
-              sm:p-5
-            "
-          >
-            <div
-              className="
-                flex
-                flex-col
-                gap-4
-                lg:flex-row
-                lg:items-center
-                lg:justify-between
-              "
-            >
+        <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                <ActiveIcon size={20} />
+              </div>
+
               <div>
-                <div
-                  className="
-                    flex
-                    items-center
-                    gap-2
-                  "
-                >
-                  <Sparkles
-                    size={17}
-                    className="
-                      text-emerald-600
-                      dark:text-emerald-400
-                    "
-                  />
+                <h2 className="text-base font-black text-slate-900 dark:text-white">
+                  {activePillar.label}
+                </h2>
 
-                  <h2
-                    className="
-                      text-sm
-                      font-black
-                      text-slate-900
-                      dark:text-white
-                    "
-                  >
-                    Your Pulse
-                  </h2>
-                </div>
-
-                <p
-                  className="
-                    mt-1
-                    text-xs
-                    text-slate-400
-                  "
-                >
-                  Ranked around usefulness
-                  rather than raw popularity.
+                <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  {activePillar.description}
                 </p>
               </div>
+            </div>
 
-              <div
-                className="
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-2
-                "
-              >
-                {PULSE_MODES.map(
-                  (mode) => (
+            <div className="flex items-center gap-2">
+              {activeSurface === "pulse" ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {PULSE_MODES.map((mode) => (
                     <button
-                      key={
-                        mode.key
-                      }
+                      key={mode.value}
                       type="button"
-                      onClick={() =>
-                        setPulseMode(
-                          mode.key,
-                        )
-                      }
+                      aria-pressed={pulseMode === mode.value}
+                      onClick={() => setPulseMode(mode.value)}
                       className={`
-                        rounded-full
-                        px-3
-                        py-1.5
-                        text-[10px]
-                        font-black
-                        transition
+                        rounded-full px-3 py-2 text-[10px] font-black transition
                         ${
-                          pulseMode ===
-                          mode.key
-                            ? `
-                              bg-slate-900
-                              text-white
-                              dark:bg-white
-                              dark:text-slate-950
-                            `
-                            : `
-                              bg-slate-100
-                              text-slate-500
-                              hover:bg-slate-200
-                              dark:bg-slate-800
-                              dark:text-slate-400
-                              dark:hover:bg-slate-700
-                            `
+                          pulseMode === mode.value
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                         }
                       `}
                     >
-                      {
-                        mode.label
-                      }
+                      {mode.label}
                     </button>
-                  ),
-                )}
-
-                <button
-                  type="button"
-                  onClick={
-                    refresh
-                  }
-                  disabled={
-                    refreshing
-                  }
-                  className="
-                    flex
-                    h-8
-                    w-8
-                    items-center
-                    justify-center
-                    rounded-full
-                    border
-                    border-slate-200
-                    text-slate-500
-                    transition
-                    hover:bg-slate-50
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                    dark:border-white/10
-                    dark:text-slate-400
-                    dark:hover:bg-white/5
-                  "
-                  title="Refresh"
-                >
-                  <RefreshCw
-                    size={14}
-                    className={
-                      refreshing
-                        ? "animate-spin"
-                        : ""
-                    }
-                  />
-                </button>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {/* ======================================================
-            DISCOVERY CONTROLS
-        ====================================================== */}
-
-        {activeSurface ===
-        "discovery" ? (
-          <section
-            className="
-              rounded-[24px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
-              sm:p-5
-            "
-          >
-            <form
-              onSubmit={
-                handleDiscoverySearch
-              }
-              className="
-                flex
-                flex-col
-                gap-3
-                lg:flex-row
-                lg:items-center
-              "
-            >
-              <div
-                className="
-                  relative
-                  flex-1
-                "
-              >
-                <Search
-                  size={17}
-                  className="
-                    pointer-events-none
-                    absolute
-                    left-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-slate-400
-                  "
-                />
-
-                <input
-                  type="search"
-                  value={
-                    discoveryQuery
-                  }
-                  onChange={(event) =>
-                    setDiscoveryQuery(
-                      event.target
-                        .value,
-                    )
-                  }
-                  placeholder="
-                    Search people, opportunities,
-                    knowledge, places...
-                  "
-                  className="
-                    h-12
-                    w-full
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    bg-slate-50
-                    pl-11
-                    pr-4
-                    text-sm
-                    font-medium
-                    text-slate-900
-                    outline-none
-                    transition
-                    placeholder:text-slate-400
-                    focus:border-emerald-400
-                    focus:bg-white
-                    dark:border-white/10
-                    dark:bg-slate-800
-                    dark:text-white
-                    dark:focus:bg-slate-800
-                  "
-                />
-
-                {discoveryQuery ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDiscoveryQuery(
-                        "",
-                      )
-                    }
-                    className="
-                      absolute
-                      right-3
-                      top-1/2
-                      flex
-                      h-8
-                      w-8
-                      -translate-y-1/2
-                      items-center
-                      justify-center
-                      rounded-full
-                      text-slate-400
-                      hover:bg-slate-200
-                      hover:text-slate-700
-                      dark:hover:bg-slate-700
-                      dark:hover:text-white
-                    "
-                    aria-label="Clear search"
-                  >
-                    <X
-                      size={14}
-                    />
-                  </button>
-                ) : null}
-              </div>
-
-              <select
-                value={
-                  discoveryIntent
-                }
-                onChange={(event) =>
-                  setDiscoveryIntent(
-                    event.target.value,
-                  )
-                }
-                className="
-                  h-12
-                  rounded-2xl
-                  border
-                  border-slate-200
-                  bg-slate-50
-                  px-4
-                  text-xs
-                  font-bold
-                  text-slate-700
-                  outline-none
-                  focus:border-emerald-400
-                  dark:border-white/10
-                  dark:bg-slate-800
-                  dark:text-slate-300
-                "
-              >
-                {DISCOVERY_INTENTS.map(
-                  (intent) => (
-                    <option
-                      key={
-                        intent.key ||
-                        "all"
-                      }
-                      value={
-                        intent.key
-                      }
-                    >
-                      {
-                        intent.label
-                      }
-                    </option>
-                  ),
-                )}
-              </select>
-
-              <button
-                type="submit"
-                className="
-                  inline-flex
-                  h-12
-                  shrink-0
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-2xl
-                  bg-slate-900
-                  px-5
-                  text-xs
-                  font-black
-                  text-white
-                  transition
-                  hover:bg-slate-800
-                  active:scale-[0.98]
-                  dark:bg-white
-                  dark:text-slate-950
-                  dark:hover:bg-slate-100
-                "
-              >
-                <Compass
-                  size={15}
-                />
-
-                Discover
-              </button>
-            </form>
-
-            <div
-              className="
-                mt-3
-                flex
-                flex-wrap
-                gap-2
-              "
-            >
-              {[
-                "business",
-                "opportunities",
-                "technology",
-                "education",
-                "agriculture",
-                "services",
-              ].map(
-                (suggestion) => (
-                  <button
-                    key={
-                      suggestion
-                    }
-                    type="button"
-                    onClick={() => {
-                      setDiscoveryQuery(
-                        suggestion,
-                      );
-                      setTimeout(
-                        () =>
-                          loadSurface({
-                            surface:
-                              "discovery",
-                          }),
-                        0,
-                      );
-                    }}
-                    className="
-                      rounded-full
-                      border
-                      border-slate-200
-                      bg-white
-                      px-3
-                      py-1.5
-                      text-[10px]
-                      font-bold
-                      text-slate-500
-                      transition
-                      hover:border-emerald-200
-                      hover:bg-emerald-50
-                      hover:text-emerald-700
-                      dark:border-white/10
-                      dark:bg-slate-900
-                      dark:text-slate-400
-                      dark:hover:border-emerald-500/20
-                      dark:hover:bg-emerald-950/20
-                      dark:hover:text-emerald-400
-                    "
-                  >
-                    {suggestion}
-                  </button>
-                ),
-              )}
-            </div>
-          </section>
-        ) : null}
-
-        {/* ======================================================
-            CONTEXT STRIP
-        ====================================================== */}
-
-        <section
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            lg:grid-cols-4
-          "
-        >
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              dark:border-white/10
-              dark:bg-slate-900
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-2
-              "
-            >
-              <span
-                className="
-                  text-[10px]
-                  font-black
-                  uppercase
-                  tracking-wide
-                  text-slate-400
-                "
-              >
-                Current view
-              </span>
-
-              <ActiveIcon
-                size={15}
-                className="
-                  text-emerald-500
-                "
-              />
-            </div>
-
-            <p
-              className="
-                mt-2
-                text-sm
-                font-black
-                text-slate-900
-                dark:text-white
-              "
-            >
-              {activeMeta.label}
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-[10px]
-                font-semibold
-                text-slate-400
-              "
-            >
-              {activeMeta.eyebrow}
-            </p>
-          </div>
-
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              dark:border-white/10
-              dark:bg-slate-900
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-2
-              "
-            >
-              <span
-                className="
-                  text-[10px]
-                  font-black
-                  uppercase
-                  tracking-wide
-                  text-slate-400
-                "
-              >
-                Threads
-              </span>
-
-              <MessageCircle
-                size={15}
-                className="
-                  text-violet-500
-                "
-              />
-            </div>
-
-            <p
-              className="
-                mt-2
-                text-sm
-                font-black
-                text-slate-900
-                dark:text-white
-              "
-            >
-              {formatNumber(
-                threadCount,
-              )}
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-[10px]
-                font-semibold
-                text-slate-400
-              "
-            >
-              Focused matters
-            </p>
-          </div>
-
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              dark:border-white/10
-              dark:bg-slate-900
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-2
-              "
-            >
-                <span
-                  className="
-                    text-[10px]
-                    font-black
-                    uppercase
-                    tracking-wide
-                    text-slate-400
-                  "
-                >
-                  Action
-                </span>
-
-              <Target
-                size={15}
-                className="
-                  text-amber-500
-                "
-              />
-            </div>
-
-            <p
-              className="
-                mt-2
-                text-sm
-                font-black
-                text-slate-900
-                dark:text-white
-              "
-            >
-              {formatNumber(
-                actionableCount,
-              )}
-            </p>
-
-            <p
-              className="
-                mt-1
-                text-[10px]
-                font-semibold
-                text-slate-400
-              "
-            >
-              Things you can do
-            </p>
-          </div>
-
-          <div
-            className="
-              rounded-[20px]
-              border
-              border-slate-200
-              bg-white
-              p-4
-              dark:border-white/10
-              dark:bg-slate-900
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-2
-              "
-            >
-                <span
-                  className="
-                    text-[10px]
-                    font-black
-                    uppercase
-                    tracking-wide
-                    text-slate-400
-                  "
-                >
-                  Trust
-                </span>
-
-                <ShieldCheck
-                  size={15}
-                  className="
-                    text-emerald-500
-                  "
-                />
-              </div>
-
-              <p
-                className="
-                  mt-2
-                  text-sm
-                  font-black
-                  text-slate-900
-                  dark:text-white
-                "
-              >
-                {formatNumber(
-                  trustCount,
-                )}
-              </p>
-
-              <p
-                className="
-                  mt-1
-                  text-[10px]
-                  font-semibold
-                  text-slate-400
-                "
-              >
-                Trust-aware results
-              </p>
-            </div>
-        </section>
-
-        {/* ======================================================
-            ERROR
-        ====================================================== */}
-
-        {error ? (
-          <div
-            className="
-              rounded-[22px]
-              border
-              border-rose-200
-              bg-rose-50
-              px-4
-              py-3
-              text-xs
-              font-semibold
-              text-rose-700
-              dark:border-rose-500/20
-              dark:bg-rose-950/20
-              dark:text-rose-300
-            "
-          >
-            <div
-              className="
-                flex
-                items-start
-                gap-3
-              "
-            >
-              <div
-                className="
-                  min-w-0
-                  flex-1
-                "
-              >
-                {error}
-              </div>
+                  ))}
+                </div>
+              ) : null}
 
               <button
                 type="button"
-                onClick={() =>
-                  setError(
-                    "",
-                  )
-                }
-                className="
-                  shrink-0
-                  rounded-lg
-                  p-1
-                  text-rose-400
-                  hover:bg-rose-100
-                  hover:text-rose-700
-                  dark:hover:bg-rose-900/30
-                "
-                aria-label="Dismiss error"
+                onClick={refresh}
+                disabled={loading || refreshing || activeSurface === "groups"}
+                aria-label="Refresh Community"
+                title="Refresh"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
               >
-                <X
-                  size={14}
+                <RefreshCw
+                  size={15}
+                  className={refreshing ? "animate-spin" : ""}
                 />
               </button>
             </div>
           </div>
+
+          {/* ================================================
+              DISCOVERY SEARCH
+          ================================================ */}
+
+          {activeSurface === "discovery" ? (
+            <div className="mt-5 border-t border-slate-100 pt-4 dark:border-white/5">
+              <form
+                onSubmit={submitDiscovery}
+                className="flex flex-col gap-3 md:flex-row"
+              >
+                <div className="relative min-w-0 flex-1">
+                  <Search
+                    size={17}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    type="search"
+                    value={discoveryQuery}
+                    maxLength={100}
+                    onChange={(event) =>
+                      setDiscoveryQuery(event.target.value)
+                    }
+                    placeholder="Search topics, questions and opportunities..."
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-10 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800"
+                  />
+
+                  {discoveryQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => setDiscoveryQuery("")}
+                      aria-label="Clear search"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    >
+                      <X size={14} />
+                    </button>
+                  ) : null}
+                </div>
+
+                <select
+                  value={discoveryIntent}
+                  onChange={(event) =>
+                    setDiscoveryIntent(event.target.value)
+                  }
+                  className="h-12 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  {INTENTS.map((intent) => (
+                    <option
+                      key={intent.value || "any"}
+                      value={intent.value}
+                    >
+                      {intent.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="submit"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-xs font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950"
+                >
+                  <Compass size={15} />
+                  Discover
+                </button>
+              </form>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  "business",
+                  "opportunities",
+                  "technology",
+                  "education",
+                  "agriculture",
+                  "services",
+                ].map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => chooseSuggestion(term)}
+                    className="rounded-full border border-slate-200 px-3 py-1.5 text-[10px] font-bold text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-white/10 dark:text-slate-400 dark:hover:bg-emerald-950/20"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        {/* ====================================================
+            REQUEST ERROR
+        ==================================================== */}
+
+        {error ? (
+          <div
+            role="alert"
+            className="flex items-start justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-500/20 dark:bg-rose-950/20 dark:text-rose-300"
+          >
+            <div>{error}</div>
+
+            <button
+              type="button"
+              onClick={refresh}
+              className="shrink-0 rounded-lg px-2 py-1 underline"
+            >
+              Retry
+            </button>
+          </div>
         ) : null}
 
-        {/* ======================================================
+        {/* ====================================================
             SURFACE CONTENT
-        ====================================================== */}
+        ==================================================== */}
 
-        <section
-          className="
-            grid
-            gap-5
-            xl:grid-cols-[minmax(0,1fr)_310px]
-          "
-        >
-          {/* ====================================================
-              MAIN
-          ==================================================== */}
+        {activeSurface === "groups" ? (
+          <EmptyState
+            icon={Users}
+            title="Groups are built around belonging"
+            description="Persistent groups need group records, membership, roles and join permissions on the backend. Those endpoints are not part of the current Community routes, so this view deliberately does not display fabricated groups or member counts."
+            onAction={openComposer}
+            actionLabel="Start a Community conversation"
+          />
+        ) : loading ? (
+          <LoadingState />
+        ) : activeSurface === "threads" && threadPosts.length === 0 ? (
+          <EmptyState
+            icon={MessageCircle}
+            title="No focused threads yet"
+            description="Questions, help requests, discussions and project posts will appear here. The current backend can supply those posts; dedicated thread records and resolution states are a subsequent step."
+            onAction={openComposer}
+            actionLabel="Start a conversation"
+          />
+        ) : activeSurface === "actions" && actionPosts.length === 0 ? (
+          <EmptyState
+            icon={Target}
+            title="No actionable opportunities found"
+            description="When the current Community feed contains opportunities, offers, requests, events or help requests, they can be surfaced here."
+            onAction={openComposer}
+            actionLabel="Publish something useful"
+          />
+        ) : activeSurface === "trust" && posts.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="No results in this view"
+            description="There are no results returned by the current trusted-discovery endpoint. This does not mean a person is untrustworthy; full identity verification and reputation services still need their own backend implementation."
+          />
+        ) : posts.length > 0 ? (
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="min-w-0 space-y-5">
+              {(activeSurface === "threads"
+                ? threadPosts
+                : activeSurface === "actions"
+                  ? actionPosts
+                  : posts
+              ).map((post, index) => {
+                const id =
+                  getPostId(post) ||
+                  `${getPostType(post)}-${index}`;
 
-          <div
-            className="
-              min-w-0
-            "
-          >
-            {activeSurface ===
-            "groups" ? (
-              <EmptyState
-                icon={Users}
-                title="Groups are communities with memory"
-                description="
-                  Groups will become persistent spaces around real interests,
-                  professions, institutions, places and projects. The existing
-                  Groups workspace remains available while the group backend
-                  grows into this model.
-                "
-                action={{
-                  label:
-                    "Open Groups",
-                  onClick: () =>
-                    navigate(
-                      "community-groups",
-                    ),
-                }}
-              />
-            ) : activeSurface ===
-              "threads" ? (
-              loading ? (
-                <div
-                  className="
-                    space-y-3
-                  "
-                >
-                  {[
-                    1,
-                    2,
-                    3,
-                    4,
-                  ].map(
-                    (item) => (
-                      <SkeletonCard
-                        key={
-                          item
-                        }
-                      />
-                    ),
-                  )}
-                </div>
-              ) : (
-                <ThreadsView
-                  posts={posts}
-                  onOpen={
-                    openPost
-                  }
-                />
-              )
-            ) : activeSurface ===
-              "actions" ? (
-              loading ? (
-                <div
-                  className="
-                    grid
-                    gap-3
-                    sm:grid-cols-2
-                  "
-                >
-                  {[
-                    1,
-                    2,
-                    3,
-                    4,
-                  ].map(
-                    (item) => (
-                      <SkeletonCard
-                        key={
-                          item
-                        }
-                      />
-                    ),
-                  )}
-                </div>
-              ) : (
-                <ActionView
-                  posts={posts}
-                  onOpen={
-                    openPost
-                  }
-                />
-              )
-            ) : activeSurface ===
-              "trust" ? (
-              loading ? (
-                <div
-                  className="
-                    space-y-3
-                  "
-                >
-                  {[
-                    1,
-                    2,
-                    3,
-                  ].map(
-                    (item) => (
-                      <SkeletonCard
-                        key={
-                          item
-                        }
-                      />
-                    ),
-                  )}
-                </div>
-              ) : (
-                <TrustView
-                  posts={posts}
-                  onOpen={
-                    openPost
-                  }
-                />
-              )
-            ) : loading ? (
-              <div
-                className="
-                  space-y-5
-                "
-              >
-                {[
-                  1,
-                  2,
-                  3,
-                ].map(
-                  (item) => (
-                    <SkeletonCard
-                      key={
-                        item
-                      }
-                    />
-                  ),
-                )}
-              </div>
-            ) : posts.length ? (
-              <div
-                className="
-                  space-y-5
-                "
-              >
-                {pulsePosts.map(
-                  (
-                    post,
-                  ) => {
-                    const reason =
-                      getDiscoveryReason(
-                        post,
-                      );
+                const reason =
+                  getDiscoveryReason(post);
 
-                    const score =
-                      getDiscoveryScore(
-                        post,
-                      );
-
-                    return (
-                      <div
-                        key={
-                          getPostId(
-                            post,
-                          ) ||
-                          `${getPostType(
-                            post,
-                          )}-${getCreatedAt(
-                            post,
-                          )}`
-                        }
-                        className="
-                          space-y-2
-                        "
-                      >
-                        {(reason ||
-                          score !==
-                            null) ? (
-                          <div
-                            className="
-                              flex
-                              flex-wrap
-                              items-center
-                              gap-2
-                              px-1
-                            "
-                          >
-                            <SignalBadge
-                              icon={
-                                Sparkles
-                              }
-                            >
-                              {reason ||
-                                "Selected for Community relevance"}
-                            </SignalBadge>
-
-                            {score !==
-                            null ? (
-                              <span
-                                className="
-                                  text-[9px]
-                                  font-bold
-                                  text-slate-400
-                                "
-                              >
-                                Relevance{" "}
-                                {score.toFixed(
-                                  0,
-                                )}
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : null}
-
-                        <CommunityPostCard
-                          post={
-                            post
-                          }
-                          currentUser={
-                            user
-                          }
-                          onOpen={
-                            openPost
-                          }
-                          onLike={
-                            handleLike
-                          }
-                        />
+                return (
+                  <article
+                    key={id}
+                    className="min-w-0"
+                  >
+                    {reason ? (
+                      <div className="mb-2 flex items-center gap-2 px-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        <Sparkles size={12} />
+                        <span>{reason}</span>
                       </div>
-                    );
-                  },
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={
-                  activeSurface ===
-                  "discovery"
-                    ? Compass
-                    : Sparkles
-                }
-                title={
-                  activeSurface ===
-                  "discovery"
-                    ? "Nothing matched yet"
-                    : "Your Pulse is quiet"
-                }
-                description={
-                  activeSurface ===
-                  "discovery"
-                    ? "Try a broader search or a different intent. Discovery will grow as Jumuiya connects more people and resources."
-                    : "There is not enough current Community activity to build a useful surface yet."
-                }
-                action={{
-                  label:
-                    "Start a conversation",
-                  onClick:
-                    openComposer,
-                }}
-              />
-            )}
-          </div>
+                    ) : null}
 
-          {/* ====================================================
-              RIGHT RAIL
-          ==================================================== */}
-
-          <aside
-            className="
-              hidden
-              space-y-4
-              xl:block
-            "
-          >
-            {/* -----------------------------------------------
-                NOW
-            ----------------------------------------------- */}
-
-            <div
-              className="
-                rounded-[24px]
-                border
-                border-slate-200
-                bg-white
-                p-5
-                shadow-sm
-                dark:border-white/10
-                dark:bg-slate-900
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <Sparkles
-                  size={16}
-                  className="
-                    text-emerald-500
-                  "
-                />
-
-                <h3
-                  className="
-                    text-sm
-                    font-black
-                    text-slate-900
-                    dark:text-white
-                  "
-                >
-                  Right now
-                </h3>
-              </div>
-
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  leading-5
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                Community should
-                answer one simple
-                question:
-                <span
-                  className="
-                    font-bold
-                    text-slate-700
-                    dark:text-slate-200
-                  "
-                >
-                  {" "}
-                  what can make your
-                  next step better?
-                </span>
-              </p>
-
-              <div
-                className="
-                  mt-4
-                  space-y-2
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveSurface(
-                      "discovery",
-                    )
-                  }
-                  className="
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-xl
-                    bg-slate-50
-                    px-3
-                    py-2.5
-                    text-left
-                    transition
-                    hover:bg-emerald-50
-                    dark:bg-slate-800
-                    dark:hover:bg-emerald-950/20
-                  "
-                >
-                  <span
-                    className="
-                      text-[10px]
-                      font-bold
-                      text-slate-600
-                      dark:text-slate-300
-                    "
-                  >
-                    Find something
-                  </span>
-
-                  <ArrowRight
-                    size={13}
-                    className="
-                      text-slate-400
-                    "
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveSurface(
-                      "actions",
-                    )
-                  }
-                  className="
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-xl
-                    bg-slate-50
-                    px-3
-                    py-2.5
-                    text-left
-                    transition
-                    hover:bg-emerald-50
-                    dark:bg-slate-800
-                    dark:hover:bg-emerald-950/20
-                  "
-                >
-                  <span
-                    className="
-                      text-[10px]
-                      font-bold
-                      text-slate-600
-                      dark:text-slate-300
-                    "
-                  >
-                    See opportunities
-                  </span>
-
-                  <ArrowRight
-                    size={13}
-                    className="
-                      text-slate-400
-                    "
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveSurface(
-                      "nearby",
-                    )
-                  }
-                  className="
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-xl
-                    bg-slate-50
-                    px-3
-                    py-2.5
-                    text-left
-                    transition
-                    hover:bg-emerald-50
-                    dark:bg-slate-800
-                    dark:hover:bg-emerald-950/20
-                  "
-                >
-                  <span
-                    className="
-                      inline-flex
-                      items-center
-                      gap-2
-                      text-[10px]
-                      font-bold
-                      text-slate-600
-                      dark:text-slate-300
-                    "
-                  >
-                    <MapPin
-                      size={12}
+                    <CommunityPostCard
+                      post={post}
+                      currentUser={user}
+                      onOpen={openPost}
+                      onLike={handleLike}
+                      onComment={openPost}
                     />
-
-                    Nearby
-                  </span>
-
-                  <span
-                    className="
-                      rounded-full
-                      bg-white
-                      px-2
-                      py-0.5
-                      text-[9px]
-                      font-black
-                      text-slate-500
-                      dark:bg-slate-900
-                    "
-                  >
-                    {nearbyCount}
-                  </span>
-                </button>
-              </div>
+                  </article>
+                );
+              })}
             </div>
 
-            {/* -----------------------------------------------
-                COMMUNITY PRINCIPLES
-            ----------------------------------------------- */}
+            <aside className="hidden space-y-4 xl:block">
+              <section className="rounded-[22px] border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+                <div className="flex items-center gap-2">
+                  <Sparkles
+                    size={16}
+                    className="text-emerald-500"
+                  />
 
-            <div
-              className="
-                rounded-[24px]
-                border
-                border-slate-200
-                bg-white
-                p-5
-                dark:border-white/10
-                dark:bg-slate-900
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <ShieldCheck
-                  size={16}
-                  className="
-                    text-emerald-500
-                  "
-                />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    Why this view?
+                  </h3>
+                </div>
 
-                <h3
-                  className="
-                    text-sm
-                    font-black
-                    text-slate-900
-                    dark:text-white
-                  "
-                >
-                  Community principles
-                </h3>
-              </div>
+                <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  Community prioritizes relevance, useful context and
+                  possible next steps. Raw popularity should not decide
+                  everything a member sees.
+                </p>
 
-              <div
-                className="
-                  mt-4
-                  space-y-3
-                "
-              >
-                {[
-                  [
-                    "Useful beats loud",
-                    "Popularity is not the same as value.",
-                  ],
-                  [
-                    "Context matters",
-                    "Location, intent and relevance shape discovery.",
-                  ],
-                  [
-                    "Action creates value",
-                    "A conversation should be able to become a real next step.",
-                  ],
-                  [
-                    "Trust matters",
-                    "Identity and responsible participation increase confidence.",
-                  ],
-                ].map(
-                  (
-                    item,
-                  ) => (
-                    <div
-                      key={
-                        item[0]
-                      }
-                    >
-                      <p
-                        className="
-                          text-[10px]
-                          font-black
-                          text-slate-700
-                          dark:text-slate-200
-                        "
-                      >
-                        {item[0]}
+                <div className="mt-4 space-y-3">
+                  {[
+                    ["Relevance", "Context matters more than noise."],
+                    ["Connection", "Discover people and knowledge across Jumuiya."],
+                    ["Action", "Move from discussion to a meaningful next step."],
+                    ["Trust", "Confidence should be grounded in real signals."],
+                  ].map(([title, detail]) => (
+                    <div key={title}>
+                      <p className="text-[10px] font-black text-slate-700 dark:text-slate-200">
+                        {title}
                       </p>
 
-                      <p
-                        className="
-                          mt-0.5
-                          text-[10px]
-                          leading-4
-                          text-slate-400
-                        "
-                      >
-                        {item[1]}
+                      <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
+                        {detail}
                       </p>
                     </div>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* -----------------------------------------------
-                CONNECTED HUBS
-            ----------------------------------------------- */}
-
-            <div
-              className="
-                rounded-[24px]
-                border
-                border-slate-200
-                bg-white
-                p-5
-                dark:border-white/10
-                dark:bg-slate-900
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-center
-                  justify-between
-                  gap-3
-                "
-              >
-                <div>
-                  <h3
-                    className="
-                      text-sm
-                      font-black
-                      text-slate-900
-                      dark:text-white
-                    "
-                  >
-                    Across Jumuiya
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      text-[10px]
-                      text-slate-400
-                    "
-                  >
-                    One identity.
-                    Connected context.
-                  </p>
+                  ))}
                 </div>
+              </section>
 
-                <Compass
-                  size={16}
-                  className="
-                    text-slate-400
-                  "
-                />
-              </div>
+              <section className="rounded-[22px] border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                  Connected hubs
+                </h3>
 
-              <div
-                className="
-                  mt-4
-                  grid
-                  grid-cols-2
-                  gap-2
-                "
-              >
-                {Object.entries(
-                  HUB_META,
-                )
-                  .filter(
-                    ([key]) =>
-                      key !==
-                      "marketplace",
-                  )
-                  .map(
-                    ([
-                      key,
-                      meta,
-                    ]) => {
-                      const Icon =
-                        meta.icon;
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Explore the wider Jumuiya ecosystem.
+                </p>
 
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() =>
-                            navigate(
-                              `community-hub-${key}`,
-                            )
-                          }
-                          className="
-                            flex
-                            items-center
-                            gap-2
-                            rounded-xl
-                            border
-                            border-slate-100
-                            bg-slate-50
-                            px-3
-                            py-2.5
-                            text-left
-                            transition
-                            hover:border-emerald-200
-                            hover:bg-emerald-50
-                            dark:border-white/5
-                            dark:bg-slate-800
-                            dark:hover:border-emerald-500/20
-                            dark:hover:bg-emerald-950/20
-                          "
-                        >
-                          <Icon
-                            size={13}
-                            className="
-                              text-slate-500
-                              dark:text-slate-400
-                            "
-                          />
+                <div className="mt-4 space-y-2">
+                  {HUBS.map((hub) => {
+                    const Icon =
+                      hub.icon === "business"
+                        ? Target
+                        : hub.icon === "farm"
+                          ? Leaf
+                          : GraduationCap;
 
-                          <span
-                            className="
-                              text-[10px]
-                              font-bold
-                              text-slate-600
-                              dark:text-slate-300
-                            "
-                          >
-                            {
-                              meta.label
-                            }
-                          </span>
-                        </button>
-                      );
-                    },
-                  )}
-              </div>
-            </div>
+                    return (
+                      <button
+                        key={hub.key}
+                        type="button"
+                        onClick={() =>
+                          navigate(`community-hub-${hub.key}`)
+                        }
+                        className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-3 py-3 text-left transition hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20"
+                      >
+                        <Icon
+                          size={15}
+                          className="text-slate-500 dark:text-slate-400"
+                        />
 
-            {/* -----------------------------------------------
-                REFRESH / ACTIVITY
-            ----------------------------------------------- */}
+                        <span className="flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+                          {hub.label}
+                        </span>
 
-            <div
-              className="
-                rounded-[24px]
-                border
-                border-slate-200
-                bg-slate-50
-                p-4
-                dark:border-white/10
-                dark:bg-slate-800/40
-              "
-            >
-              <div
-                className="
-                  flex
-                  items-start
-                  gap-3
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-9
-                    w-9
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-white
-                    text-slate-500
-                    shadow-sm
-                    dark:bg-slate-900
-                    dark:text-slate-400
-                  "
-                >
-                  <Bell
-                    size={15}
-                  />
+                        <ArrowRight
+                          size={14}
+                          className="text-slate-400"
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
+              </section>
+            </aside>
+          </div>
+        ) : (
+          <EmptyState
+            icon={
+              activeSurface === "discovery"
+                ? Compass
+                : activeSurface === "trust"
+                  ? ShieldCheck
+                  : Sparkles
+            }
+            title={
+              activeSurface === "discovery"
+                ? "No matching results"
+                : "Your Pulse is quiet"
+            }
+            description={
+              activeSurface === "discovery"
+                ? "Try another topic or intent. This version ranks Community post candidates; discovering actual businesses, farms, schools and people requires their source services to be connected."
+                : "The API returned no published Community posts for this view. You can be the person who starts the next useful conversation."
+            }
+            onAction={openComposer}
+            actionLabel="Create a post"
+          />
+        )}
 
-                <div
-                  className="
-                    min-w-0
-                    flex-1
-                  "
-                >
-                  <p
-                    className="
-                      text-[10px]
-                      font-black
-                      text-slate-700
-                      dark:text-slate-200
-                    "
-                  >
-                    Community intelligence
-                  </p>
+        {/* ====================================================
+            MOBILE QUICK ACTIONS
+        ==================================================== */}
 
-                  <p
-                    className="
-                      mt-1
-                      text-[10px]
-                      leading-4
-                      text-slate-400
-                    "
-                  >
-                    The feed is now a
-                    ranked surface, not
-                    just a chronological
-                    list.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </section>
+        <div className="grid grid-cols-2 gap-3 xl:hidden">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSurface("discovery");
+              setSubmittedQuery(discoveryQuery.trim());
+              setSubmittedIntent(discoveryIntent);
+            }}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
+          >
+            <Compass size={15} />
+            Discover
+          </button>
+
+          <button
+            type="button"
+            onClick={openComposer}
+            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-black text-white hover:bg-emerald-700"
+          >
+            <Plus size={15} />
+            Create post
+          </button>
+        </div>
       </div>
-    </JumuiyaDashboardShell>
   );
 }

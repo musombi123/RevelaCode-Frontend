@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
 // ============================================================
 // DISCOVER CATEGORIES
@@ -231,13 +230,6 @@ export default function CommunityDiscover({
   // ==========================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Discover"
-      subtitle="Find people, communities and opportunities across Jumuiya."
-      activeHub="community"
-      user={user}
-      onNavigate={onNavigate}
-    >
       <div className="space-y-6 pb-10">
 
         {/* ====================================================
@@ -1244,6 +1236,5 @@ export default function CommunityDiscover({
           </button>
         </div>
       </div>
-    </JumuiyaDashboardShell>
   );
 }

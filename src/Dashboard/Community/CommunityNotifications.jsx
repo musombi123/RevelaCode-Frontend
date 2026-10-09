@@ -21,8 +21,6 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
-
 // ============================================================
 // FILTERS
 // ============================================================
@@ -477,13 +475,6 @@ export default function CommunityNotifications({
   // ==========================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Notifications"
-      subtitle="Stay updated with what is happening around your Community."
-      activeHub="community"
-      user={user}
-      onNavigate={onNavigate}
-    >
       <div className="space-y-6 pb-10">
 
         {/* ====================================================
@@ -1744,6 +1735,5 @@ export default function CommunityNotifications({
           </button>
         </div>
       </div>
-    </JumuiyaDashboardShell>
   );
 }

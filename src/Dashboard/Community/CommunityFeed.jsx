@@ -22,8 +22,6 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
-
 // ============================================================
 // CONFIG
 // ============================================================
@@ -490,13 +488,6 @@ export default function CommunityFeed({
   // ==========================================================
 
   return (
-    <JumuiyaDashboardShell
-      title="Community Feed"
-      subtitle="Discover conversations and activity across Jumuiya."
-      activeHub="community"
-      user={user}
-      onNavigate={onNavigate}
-    >
       <div className="space-y-5 pb-10">
 
         {/* ====================================================
@@ -1930,6 +1921,5 @@ export default function CommunityFeed({
           </button>
         </div>
       </div>
-    </JumuiyaDashboardShell>
   );
 }
