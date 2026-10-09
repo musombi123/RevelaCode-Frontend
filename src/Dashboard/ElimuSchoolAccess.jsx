@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -8,13 +7,11 @@ import {
   Clock3,
   CreditCard,
   FileCheck2,
-  LoaderCircle,
+  Loader2,
   RefreshCw,
   School,
   ShieldCheck,
 } from "lucide-react";
-
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white";
@@ -33,12 +30,14 @@ function initialForm(school) {
     county: school?.county || "",
     town: school?.town || "",
     location: school?.location || "",
-    registration_evidence_url:
-      school?.registration_evidence_url || "",
+    registration_evidence_url: school?.registration_evidence_url || "",
     owner_declaration: false,
   };
 }
 
+// Pricing is displayed only when returned by the backend. The frontend does
+// not treat a Vite environment variable or a user-editable field as pricing
+// authority. Approved fee agreements should be exposed by the backend API.
 function getAccountPlan(access, school) {
   const sources = [
     access?.subscription,
@@ -59,17 +58,7 @@ function getAccountPlan(access, school) {
       source.monthly_fee ??
       source.subscription_fee_kes;
 
-    currency =
-      source.currency ||
-      currency;
-  }
-
-  if (
-    rawFee === undefined ||
-    rawFee === null ||
-    rawFee === ""
-  ) {
-    rawFee = import.meta.env.VITE_ELIMU_MONTHLY_FEE_KES;
+    if (source.currency) currency = source.currency;
   }
 
   const parsedFee =
@@ -92,33 +81,27 @@ function getAccountPlan(access, school) {
     {};
 
   const trialStart =
-    subscription.trial_started_at ||
-    school?.trial_started_at ||
-    null;
-
+    subscription.trial_started_at || school?.trial_started_at || null;
   const trialEnd =
-    subscription.trial_ends_at ||
-    school?.trial_ends_at ||
-    null;
+    subscription.trial_ends_at || school?.trial_ends_at || null;
 
   let remainingDays =
-    subscription.trial_days_remaining ??
-    school?.trial_days_remaining;
+    subscription.trial_days_remaining ?? school?.trial_days_remaining;
 
   if (
     remainingDays === undefined &&
     trialEnd
   ) {
-    const remainingMs =
-      new Date(trialEnd).getTime() - Date.now();
-
+    const remainingMs = new Date(trialEnd).getTime() - Date.now();
     if (Number.isFinite(remainingMs)) {
-      remainingDays = Math.max(
-        0,
-        Math.ceil(remainingMs / 86400000),
-      );
+      remainingDays = Math.max(0, Math.ceil(remainingMs / 86400000));
     }
   }
+
+  const parsedRemainingDays =
+    remainingDays === undefined || remainingDays === null || remainingDays === ""
+      ? null
+      : Number(remainingDays);
 
   return {
     monthlyFee,
@@ -126,8 +109,8 @@ function getAccountPlan(access, school) {
     trialStart,
     trialEnd,
     remainingDays:
-      Number.isFinite(Number(remainingDays))
-        ? Number(remainingDays)
+      parsedRemainingDays !== null && Number.isFinite(parsedRemainingDays)
+        ? parsedRemainingDays
         : null,
   };
 }
@@ -148,10 +131,7 @@ function formatDate(value) {
   if (!value) return null;
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
+  if (Number.isNaN(date.getTime())) return null;
 
   return new Intl.DateTimeFormat("en-KE", {
     day: "numeric",
@@ -161,7 +141,6 @@ function formatDate(value) {
 }
 
 export function ElimuAccountPlanBanner({ access, school }) {
-
   if (
     school?.is_demo === true ||
     school?.verification_status === "demo" ||
@@ -172,12 +151,10 @@ export function ElimuAccountPlanBanner({ access, school }) {
         <div className="flex items-start gap-3">
           <AlertCircle size={20} className="mt-0.5 shrink-0" />
           <div>
-            <h3 className="font-semibold">
-              DEMO SCHOOL — NOT VERIFIED
-            </h3>
+            <h3 className="font-semibold">DEMO SCHOOL â€” NOT VERIFIED</h3>
             <p className="mt-1 text-sm leading-6">
-              This is a testing workspace. Do not use it as proof of
-              school registration or for genuine school records.
+              This is a testing workspace. Do not use it as proof of school
+              registration or for genuine school records.
             </p>
           </div>
         </div>
@@ -201,17 +178,17 @@ export function ElimuAccountPlanBanner({ access, school }) {
               30-day school testing period
             </p>
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Every approved school account is intended to receive one
-              month of testing before its paid subscription begins.
+              Every approved school account is intended to receive one month
+              of testing before its paid subscription begins.
             </p>
 
             {(trialStart || trialEnd) && (
               <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                 {trialStart ? `Started ${trialStart}` : ""}
-                {trialStart && trialEnd ? " · " : ""}
+                {trialStart && trialEnd ? " Â· " : ""}
                 {trialEnd ? `Ends ${trialEnd}` : ""}
                 {plan.remainingDays !== null
-                  ? ` · ${plan.remainingDays} day(s) remaining`
+                  ? ` Â· ${plan.remainingDays} day(s) remaining`
                   : ""}
               </p>
             )}
@@ -226,27 +203,27 @@ export function ElimuAccountPlanBanner({ access, school }) {
           <p className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             {plan.monthlyFee !== null
               ? formatMoney(plan.monthlyFee, plan.currency)
-              : "Not configured"}
+              : "Awaiting approved pricing"}
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {plan.monthlyFee !== null
               ? "Per school account / month"
-              : "Awaiting the approved subscription price"}
+              : "The approved fee will appear when the API provides it"}
           </p>
         </div>
       </div>
 
       {plan.monthlyFee === null && (
         <div className="border-t border-slate-100 px-4 py-3 text-xs leading-5 text-slate-500 dark:border-white/10 dark:text-slate-400 sm:px-5">
-          The current API does not provide a subscription amount.
-          No amount is invented or charged by this display.
+          No price has been published here. This display does not determine,
+          create, or charge a subscription fee.
         </div>
       )}
 
       {!trialStart && !trialEnd && (
         <div className="border-t border-slate-100 px-4 py-3 text-xs leading-5 text-slate-500 dark:border-white/10 dark:text-slate-400 sm:px-5">
-          The 30-day benefit is displayed here. The server must provide
-          the actual trial start and expiry dates for the countdown to
+          The 30-day benefit is shown as the intended policy. The server must
+          provide the actual trial start and expiry dates for the countdown to
           be authoritative.
         </div>
       )}
@@ -255,7 +232,6 @@ export function ElimuAccountPlanBanner({ access, school }) {
 }
 
 export default function ElimuSchoolAccess({
-  user,
   access,
   school,
   loading,
@@ -267,7 +243,6 @@ export default function ElimuSchoolAccess({
   onSubmitApplication,
   onCreateDemo,
   allowDemo = false,
-  onNavigate,
 }) {
   const [form, setForm] = useState(() => initialForm(school));
   const [formError, setFormError] = useState("");
@@ -297,17 +272,11 @@ export default function ElimuSchoolAccess({
     verificationStatus === "pending_verification" ||
     verificationStatus === "under_review";
 
-  const needsInformation =
-    verificationStatus === "needs_information";
-
+  const needsInformation = verificationStatus === "needs_information";
   const isRejected =
-    verificationStatus === "rejected" ||
-    school?.status === "rejected";
+    verificationStatus === "rejected" || school?.status === "rejected";
 
-  const showApplicationForm =
-    !school ||
-    isRejected ||
-    needsInformation;
+  const showApplicationForm = !school || isRejected || needsInformation;
 
   const submit = async (event) => {
     event.preventDefault();
@@ -355,8 +324,7 @@ export default function ElimuSchoolAccess({
       county: form.county.trim(),
       town: form.town.trim(),
       location: form.location.trim(),
-      registration_evidence_url:
-        form.registration_evidence_url.trim(),
+      registration_evidence_url: form.registration_evidence_url.trim(),
     });
   };
 
@@ -378,17 +346,11 @@ export default function ElimuSchoolAccess({
   };
 
   return (
-    <JumuiyaDashboardShell
-      title="Elimu"
-      subtitle="School registration and verification"
-      activeHub="elimu"
-      user={user}
-      onNavigate={onNavigate}
-    >
+    <div className="min-h-full space-y-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
       {loading ? (
         <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-slate-500">
-          <LoaderCircle size={28} className="animate-spin text-emerald-600" />
-          <p className="text-sm">Checking your school account…</p>
+          <Loader2 size={28} className="animate-spin text-emerald-600" />
+          <p className="text-sm">Checking your school accountâ€¦</p>
         </div>
       ) : error && !access ? (
         <section className="mx-auto mt-8 max-w-xl rounded-3xl border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-slate-900">
@@ -430,8 +392,8 @@ export default function ElimuSchoolAccess({
                         : "Register your school to open Elimu"}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                  Elimu is school-first. A real school account must submit
-                  its official details and pass an independent review before
+                  Elimu is school-first. A real school account must submit its
+                  official details and pass an independent review before
                   school-management features are unlocked.
                 </p>
               </div>
@@ -513,7 +475,8 @@ export default function ElimuSchoolAccess({
                     Official school application
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Provide the school's official registration and contact details.
+                    Provide the school's official registration and contact
+                    details.
                   </p>
                 </div>
                 <BadgeCheck size={23} className="shrink-0 text-emerald-600" />
@@ -551,6 +514,7 @@ export default function ElimuSchoolAccess({
                     className={inputClass}
                     value={form.school_type}
                     onChange={(e) => updateField("school_type", e.target.value)}
+                    required
                   >
                     <option value="primary">Primary school</option>
                     <option value="junior_secondary">Junior secondary</option>
@@ -584,7 +548,7 @@ export default function ElimuSchoolAccess({
                     required
                     maxLength={40}
                     autoComplete="tel"
-                    placeholder="+254…"
+                    placeholder="+254â€¦"
                   />
                 </label>
 
@@ -647,12 +611,12 @@ export default function ElimuSchoolAccess({
                     onChange={(e) => updateField("registration_evidence_url", e.target.value)}
                     required
                     maxLength={1000}
-                    placeholder="https://…"
+                    placeholder="https://â€¦"
                   />
                   <span className="mt-1.5 block text-xs font-normal leading-5 text-slate-500 dark:text-slate-400">
-                    Supply an HTTPS link to registration evidence accessible
-                    to the authorised reviewer. A submitted link is not
-                    automatic proof of authenticity.
+                    Supply an HTTPS link to registration evidence accessible to
+                    the authorised reviewer. A submitted link is not automatic
+                    proof of authenticity.
                   </span>
                 </label>
               </div>
@@ -684,11 +648,11 @@ export default function ElimuSchoolAccess({
                   className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? (
-                    <LoaderCircle size={17} className="animate-spin" />
+                    <Loader2 size={17} className="animate-spin" />
                   ) : (
                     <FileCheck2 size={17} />
                   )}
-                  {saving ? "Submitting…" : "Submit for verification"}
+                  {saving ? "Submittingâ€¦" : "Submit for verification"}
                 </button>
               </div>
 
@@ -725,8 +689,8 @@ export default function ElimuSchoolAccess({
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
                     Your application is in the review process. Elimu's
-                    management features will appear after the backend
-                    confirms access is allowed.
+                    management features will appear after the backend confirms
+                    access is allowed.
                   </p>
                 </div>
               </div>
@@ -767,6 +731,6 @@ export default function ElimuSchoolAccess({
           </section>
         </div>
       )}
-    </JumuiyaDashboardShell>
+    </div>
   );
 }
