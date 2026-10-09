@@ -1617,6 +1617,32 @@ const getShambaDashboard =
         ),
       [get],
     );
+    const getElimuAccess =
+    useCallback(
+      async () =>
+        extractData(
+          await get("/elimu/access"),
+        ),
+      [get],
+    );
+
+  const getElimuBootstrap =
+    useCallback(
+      async () =>
+        extractData(
+          await get("/elimu/bootstrap"),
+        ),
+      [get],
+    );
+
+  const createElimuDemoSchool =
+    useCallback(
+      async (data) =>
+        extractData(
+          await post("/elimu/school/demo", data),
+        ),
+      [post],
+    );
 
 
   // =======================================================
