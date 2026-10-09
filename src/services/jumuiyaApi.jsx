@@ -2023,7 +2023,12 @@ const getShambaDashboard =
     createFee,
     getCBCProjects,
     createCBCProject,
-    getElimuDashboard,
+    getElimuDashboard,    
+
+    // Elimu access and school testing
+    getElimuAccess,
+    getElimuBootstrap,
+    createElimuDemoSchool,
 
     // -----------------------------------------------------
     // Community
