@@ -1,6 +1,6 @@
 ﻿import React, { useCallback, useEffect, useState } from "react";
 import { AlertCircle, GraduationCap, Loader, RefreshCw } from "lucide-react";
-import { useJumuiyaApi } from "@/services/elimuApi.jsx";
+import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuDashboardWorkspace from "@/Dashboard/ElimuDashboardWorkspace.jsx";
 import ElimuAccessDenied from "@/Dashboard/elimu/components/ElimuAccessDenied.jsx";
 
