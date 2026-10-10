@@ -1,913 +1,396 @@
-// src/services/elimuApi.jsx
-
 import { useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-// =========================================================
-// ELIMU API CONFIGURATION
-// =========================================================
+const DEFAULT_BACKEND_URL =
+  "https://revelacode-backend.onrender.com";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_REVELACODE_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  "";
+const API_PREFIX = "/api/jumuiya/elimu";
 
-function normalizeApiBase(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\/+$/, "")
-    .replace(/\/api\/jumuiya\/elimu$/i, "")
-    .replace(/\/api\/jumuiya$/i, "")
-    .replace(/\/api$/i, "")
-    .replace(/\/+$/, "");
+function normalizeBaseUrl(value) {
+  return String(value || DEFAULT_BACKEND_URL).replace(/\/+$/, "");
 }
 
-const API_BASE = normalizeApiBase(API_URL);
+function getToken(auth) {
+  const candidates = [
+    auth?.accessToken,
+    auth?.access_token,
+    auth?.token,
+    auth?.user?.accessToken,
+    auth?.user?.access_token,
+    auth?.user?.token,
+    auth?.session?.access_token,
+    auth?.session?.accessToken,
+  ];
 
-export const ELIMU_API_ROOT =
-  `${API_BASE}/api/jumuiya/elimu`;
-
-function buildUrl(path) {
-  const normalizedPath = String(path || "").startsWith("/")
-    ? String(path)
-    : `/${path}`;
-
-  return `${ELIMU_API_ROOT}${normalizedPath}`;
-}
-
-// =========================================================
-// HELPERS
-// =========================================================
-
-function encodeId(value, label = "ID") {
-  if (
-    value === undefined ||
-    value === null ||
-    String(value).trim() === ""
-  ) {
-    throw new Error(`${label} is required.`);
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
   }
 
-  return encodeURIComponent(String(value));
+  return null;
 }
 
-function withQuery(path, values = {}) {
-  const params = new URLSearchParams();
+function buildQuery(params = {}) {
+  const searchParams = new URLSearchParams();
 
-  for (const [key, value] of Object.entries(values)) {
-    if (
-      value === undefined ||
-      value === null ||
-      value === ""
-    ) {
-      continue;
-    }
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
 
     if (Array.isArray(value)) {
-      value.forEach((item) => {
-        if (item !== undefined && item !== null && item !== "") {
-          params.append(key, String(item));
-        }
-      });
-
-      continue;
+      value.forEach((item) => searchParams.append(key, String(item)));
+      return;
     }
 
-    params.set(key, String(value));
-  }
+    if (typeof value === "object") {
+      searchParams.set(key, JSON.stringify(value));
+      return;
+    }
 
-  const query = params.toString();
+    searchParams.set(key, String(value));
+  });
 
-  return query ? `${path}?${query}` : path;
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
 }
 
-function extractData(payload) {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    Object.prototype.hasOwnProperty.call(payload, "data")
-  ) {
-    return payload.data;
-  }
-
-  return payload;
+function normalizePath(path) {
+  return String(path || "")
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+    .join("/");
 }
 
-function isFormData(value) {
-  return (
-    typeof FormData !== "undefined" &&
-    value instanceof FormData
-  );
+function createApiError(message, status, payload) {
+  const error = new Error(message || "The Elimu API request failed.");
+  error.status = status;
+  error.payload = payload;
+  return error;
 }
 
-async function readResponse(response) {
-  if (response.status === 204) {
-    return null;
+export function createElimuApiClient({
+  baseUrl = DEFAULT_BACKEND_URL,
+  token = null,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  const origin = normalizeBaseUrl(baseUrl);
+
+  if (typeof fetchImpl !== "function") {
+    throw new Error("Fetch is unavailable in this environment.");
   }
 
-  const contentType =
-    response.headers.get("content-type") || "";
+  async function request(path, options = {}) {
+    const {
+      method = "GET",
+      params,
+      body,
+      headers: customHeaders = {},
+      signal,
+    } = options;
 
-  if (contentType.toLowerCase().includes("json")) {
-    return response.json().catch(() => null);
-  }
+    const normalizedPath = normalizePath(path);
+    const url = `${origin}${API_PREFIX}/${normalizedPath}${buildQuery(params)}`;
 
-  const text = await response.text().catch(() => "");
+    const headers = {
+      Accept: "application/json",
+      ...customHeaders,
+    };
 
-  if (!text) {
-    return null;
-  }
+    if (token) {
+      headers.Authorization = /^Bearer\s/i.test(token)
+        ? token
+        : `Bearer ${token}`;
+    }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { message: text.slice(0, 2000) };
-  }
-}
+    const requestOptions = {
+      method,
+      headers,
+      credentials: "include",
+      signal,
+    };
 
-function getErrorMessage(payload, status) {
-  return (
-    payload?.error?.message ||
-    payload?.message ||
-    payload?.detail ||
-    `Elimu request failed with HTTP ${status}.`
-  );
-}
+    if (body !== undefined) {
+      headers["Content-Type"] = "application/json";
+      requestOptions.body = JSON.stringify(body);
+    }
 
-// =========================================================
-// ELIMU API HOOK
-// =========================================================
+    let response;
 
-export function useElimuApi() {
-  const { authFetch } = useAuth();
+    try {
+      response = await fetchImpl(url, requestOptions);
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
 
-  // -------------------------------------------------------
-  // REQUEST ENGINE
-  // -------------------------------------------------------
+      throw createApiError(
+        "Unable to reach the Elimu service. Check your connection and try again.",
+        0,
+        null
+      );
+    }
 
-  const request = useCallback(
-    async (path, options = {}) => {
-      const url = buildUrl(path);
+    const contentType = response.headers?.get?.("content-type") || "";
+    let payload = null;
 
-      const {
-        method = "GET",
-        body,
-        headers = {},
-        ...rest
-      } = options;
-
-      const requestHeaders = new Headers(headers);
-
-      if (!requestHeaders.has("Accept")) {
-        requestHeaders.set("Accept", "application/json");
-      }
-
-      let requestBody = body;
-
-      if (
-        body !== undefined &&
-        body !== null &&
-        !isFormData(body) &&
-        typeof body !== "string" &&
-        !(body instanceof URLSearchParams)
-      ) {
-        requestBody = JSON.stringify(body);
-
-        if (!requestHeaders.has("Content-Type")) {
-          requestHeaders.set(
-            "Content-Type",
-            "application/json",
-          );
+    if (response.status !== 204) {
+      if (contentType.includes("application/json")) {
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+      } else {
+        try {
+          const text = await response.text();
+          payload = text ? { message: text } : null;
+        } catch {
+          payload = null;
         }
       }
+    }
 
-      let response;
+    if (!response.ok) {
+      const message =
+        payload?.message ||
+        payload?.error ||
+        payload?.detail ||
+        `Elimu request failed with HTTP ${response.status}.`;
 
-      try {
-        response = await authFetch(url, {
-          ...rest,
-          method,
-          headers: requestHeaders,
-          body: requestBody,
-        });
-      } catch (error) {
-        const detail =
-          error?.message || "Unknown network error.";
+      throw createApiError(message, response.status, payload);
+    }
 
-        throw new Error(
-          `Unable to reach the Elimu backend at ${url}. ${detail}`,
-        );
-      }
+    return payload;
+  }
 
-      const payload = await readResponse(response);
+  const get = (path, params, options = {}) =>
+    request(path, { ...options, method: "GET", params });
 
-      if (!response.ok) {
-        const error = new Error(
-          getErrorMessage(payload, response.status),
-        );
+  const post = (path, body, options = {}) =>
+    request(path, { ...options, method: "POST", body });
 
-        error.status = response.status;
-        error.code =
-          payload?.error?.code ||
-          payload?.code ||
-          `http_${response.status}`;
+  const put = (path, body, options = {}) =>
+    request(path, { ...options, method: "PUT", body });
 
-        error.details =
-          payload?.error?.details ||
-          payload?.details ||
-          null;
+  const patch = (path, body, options = {}) =>
+    request(path, { ...options, method: "PATCH", body });
 
-        throw error;
-      }
+  const del = (path, options = {}) =>
+    request(path, { ...options, method: "DELETE" });
 
-      if (payload?.success === false) {
-        const error = new Error(
-          getErrorMessage(payload, response.status),
-        );
+  return {
+    request,
 
-        error.status = response.status;
-        error.code =
-          payload?.error?.code || "request_failed";
+    getAccess: (options) => get("access", undefined, options),
+    getBootstrap: (options) => get("bootstrap", undefined, options),
+    getDashboard: (options) => get("dashboard", undefined, options),
+    getHealth: (options) => get("health", undefined, options),
 
-        error.details =
-          payload?.error?.details || null;
+    getSchool: (options) => get("school", undefined, options),
+    saveSchool: (data, options) => post("school", data, options),
 
-        throw error;
-      }
+    getProfile: (options) => get("profile", undefined, options),
+    saveProfile: (data, options) => post("profile", data, options),
 
-      return payload;
-    },
-    [authFetch],
-  );
+    getClasses: (params, options) => get("classes", params, options),
+    createClass: (data, options) => post("classes", data, options),
 
-  const get = useCallback(
-    (path, options = {}) =>
-      request(path, {
-        ...options,
-        method: "GET",
+    getStudents: (params, options) => get("students", params, options),
+    createStudent: (data, options) => post("students", data, options),
+    getStudent: (studentId, options) =>
+      get(`students/${studentId}`, undefined, options),
+    updateStudent: (studentId, data, options) =>
+      put(`students/${studentId}`, data, options),
+
+    getLessons: (params, options) => get("lessons", params, options),
+    createLesson: (data, options) => post("lessons", data, options),
+
+    getAssignments: (params, options) => get("assignments", params, options),
+    createAssignment: (data, options) => post("assignments", data, options),
+
+    getAssessments: (params, options) => get("assessments", params, options),
+    createAssessment: (data, options) => post("assessments", data, options),
+
+    getAttendance: (params, options) => get("attendance", params, options),
+    recordAttendance: (data, options) => post("attendance", data, options),
+
+    getFees: (params, options) => get("fees", params, options),
+    createFeeRecord: (data, options) => post("fees", data, options),
+
+    getEvents: (params, options) => get("events", params, options),
+    createEvent: (data, options) => post("events", data, options),
+    updateEvent: (eventId, data, options) =>
+      put(`events/${eventId}`, data, options),
+    deleteEvent: (eventId, options) => del(`events/${eventId}`, options),
+
+    getCalendar: (params, options) => get("calendar", params, options),
+
+    getCBCProjects: (params, options) => get("cbc/projects", params, options),
+    createCBCProject: (data, options) =>
+      post("cbc/projects", data, options),
+
+    getStaff: (params, options) => get("staff", params, options),
+    getStaffMember: (userId, options) =>
+      get(`staff/${userId}`, undefined, options),
+    updateStaffMember: (userId, data, options) =>
+      put(`staff/${userId}`, data, options),
+    deleteStaffMember: (userId, options) => del(`staff/${userId}`, options),
+    getCurrentStaffMember: (options) => get("staff/me", undefined, options),
+    getTeachers: (params, options) => get("staff/teachers", params, options),
+    inviteStaff: (data, options) => post("staff/invite", data, options),
+    acceptStaffInvitation: (data, options) =>
+      post("staff/invitations/accept", data, options),
+    assignStaff: (data, options) =>
+      post("staff/assignments", data, options),
+    removeStaffAssignment: (data, options) =>
+      del("staff/assignments", { ...options, body: data }),
+    getStaffAssignments: (params, options) =>
+      get("staff/assignments/list", params, options),
+
+    getAttendanceReport: (params, options) =>
+      get("reports/attendance", params, options),
+    getCurriculaReports: (params, options) =>
+      get("reports/curricula", params, options),
+    createCurriculaReport: (data, options) =>
+      post("reports/curricula", data, options),
+    getCurriculaReport: (reportId, options) =>
+      get(`reports/curricula/${reportId}`, undefined, options),
+    getReportsDashboard: (params, options) =>
+      get("reports/dashboard", params, options),
+    getExamReports: (params, options) =>
+      get("reports/exam-reports", params, options),
+    getExamReport: (reportId, options) =>
+      get(`reports/exam-reports/${reportId}`, undefined, options),
+    publishExamReport: (reportId, options) =>
+      post(`reports/exam-reports/${reportId}/publish`, {}, options),
+    createClassExamReport: (data, options) =>
+      post("reports/exam-reports/class", data, options),
+    createStudentExamReport: (data, options) =>
+      post("reports/exam-reports/student", data, options),
+    getFeesReport: (params, options) =>
+      get("reports/fees", params, options),
+    getReportsOverview: (params, options) =>
+      get("reports/overview", params, options),
+    getProgrammes: (params, options) =>
+      get("reports/programmes", params, options),
+    createProgramme: (data, options) =>
+      post("reports/programmes", data, options),
+    getProgramme: (programmeId, options) =>
+      get(`reports/programmes/${programmeId}`, undefined, options),
+    publishProgramme: (programmeId, options) =>
+      post(`reports/programmes/${programmeId}/publish`, {}, options),
+    getTimetableReport: (params, options) =>
+      get("reports/timetable", params, options),
+
+    getTimetable: (params, options) => get("timetable", params, options),
+    createTimetable: (data, options) => post("timetable", data, options),
+    getTimetableById: (timetableId, options) =>
+      get(`timetable/${timetableId}`, undefined, options),
+    generateTimetable: (timetableId, data = {}, options) =>
+      post(`timetable/${timetableId}/generate`, data, options),
+    optimizeTimetable: (timetableId, data = {}, options) =>
+      post(`timetable/${timetableId}/optimize`, data, options),
+    publishTimetable: (timetableId, data = {}, options) =>
+      post(`timetable/${timetableId}/publish`, data, options),
+    getClassTimetable: (classId, params, options) =>
+      get(`timetable/class/${classId}`, params, options),
+    updateTimetableEntry: (entryId, data, options) =>
+      patch(`timetable/entries/${entryId}`, data, options),
+    getMyTeacherTimetable: (params, options) =>
+      get("timetable/teacher/me", params, options),
+
+    getSyncStatus: (params, options) => get("sync/status", params, options),
+    getSyncConnections: (params, options) =>
+      get("sync/connections", params, options),
+    createSyncConnection: (data, options) =>
+      post("sync/connections", data, options),
+    getSyncConnection: (connectionId, options) =>
+      get(`sync/connections/${connectionId}`, undefined, options),
+    activateSyncConnection: (connectionId, data = {}, options) =>
+      post(`sync/connections/${connectionId}/activate`, data, options),
+    heartbeatSyncConnection: (connectionId, data = {}, options) =>
+      post(`sync/connections/${connectionId}/heartbeat`, data, options),
+    pauseSyncConnection: (connectionId, data = {}, options) =>
+      post(`sync/connections/${connectionId}/pause`, data, options),
+    revokeSyncConnection: (connectionId, data = {}, options) =>
+      post(`sync/connections/${connectionId}/revoke`, data, options),
+    getSyncDevices: (params, options) => get("sync/devices", params, options),
+    createSyncDevice: (data, options) => post("sync/devices", data, options),
+    exportSyncEntity: (entityType, params, options) =>
+      get(`sync/export/${entityType}`, params, options),
+    ingestSyncRecords: (data, options) => post("sync/ingest", data, options),
+    getSyncJobs: (params, options) => get("sync/jobs", params, options),
+    getSyncJob: (jobId, options) =>
+      get(`sync/jobs/${jobId}`, undefined, options),
+    cancelSyncJob: (jobId, data = {}, options) =>
+      post(`sync/jobs/${jobId}/cancel`, data, options),
+    pauseSyncJob: (jobId, data = {}, options) =>
+      post(`sync/jobs/${jobId}/pause`, data, options),
+    resumeSyncJob: (jobId, data = {}, options) =>
+      post(`sync/jobs/${jobId}/resume`, data, options),
+    retrySyncJob: (jobId, data = {}, options) =>
+      post(`sync/jobs/${jobId}/retry`, data, options),
+    recoverSyncJobs: (data = {}, options) =>
+      post("sync/jobs/recover", data, options),
+    getSyncConflicts: (params, options) =>
+      get("sync/conflicts", params, options),
+    resolveSyncConflict: (conflictId, data, options) =>
+      post(`sync/conflicts/${conflictId}/resolve`, data, options),
+
+    getAutomationStatus: (params, options) =>
+      get("automation/status", params, options),
+    getAutomationActions: (params, options) =>
+      get("automation/actions", params, options),
+    getAutomationJobs: (params, options) =>
+      get("automation/jobs", params, options),
+    getAutomationJob: (jobId, options) =>
+      get(`automation/jobs/${jobId}`, undefined, options),
+    cancelAutomationJob: (jobId, data = {}, options) =>
+      post(`automation/jobs/${jobId}/cancel`, data, options),
+    retryAutomationJob: (jobId, data = {}, options) =>
+      post(`automation/jobs/${jobId}/retry`, data, options),
+    recoverAutomationJobs: (data = {}, options) =>
+      post("automation/jobs/recover", data, options),
+    getAutomationLogs: (params, options) =>
+      get("automation/logs", params, options),
+    getAutomationRules: (params, options) =>
+      get("automation/rules", params, options),
+    createAutomationRule: (data, options) =>
+      post("automation/rules", data, options),
+    getAutomationRule: (ruleId, options) =>
+      get(`automation/rules/${ruleId}`, undefined, options),
+    updateAutomationRule: (ruleId, data, options) =>
+      patch(`automation/rules/${ruleId}`, data, options),
+    deleteAutomationRule: (ruleId, options) =>
+      del(`automation/rules/${ruleId}`, options),
+    enableAutomationRule: (ruleId, data = {}, options) =>
+      post(`automation/rules/${ruleId}/enable`, data, options),
+    disableAutomationRule: (ruleId, data = {}, options) =>
+      post(`automation/rules/${ruleId}/disable`, data, options),
+    runAutomationRule: (ruleId, data = {}, options) =>
+      post(`automation/rules/${ruleId}/run`, data, options),
+    runAutomation: (data = {}, options) =>
+      post("automation/run", data, options),
+  };
+}
+
+export function useElimuApi() {
+  const auth = useAuth();
+
+  const baseUrl =
+    import.meta.env?.VITE_BACKEND_URL ||
+    import.meta.env?.VITE_API_BASE_URL ||
+    DEFAULT_BACKEND_URL;
+
+  const token = getToken(auth);
+
+  return useMemo(
+    () =>
+      createElimuApiClient({
+        baseUrl,
+        token,
       }),
-    [request],
+    [baseUrl, token]
   );
-
-  const post = useCallback(
-    (path, body = {}) =>
-      request(path, {
-        method: "POST",
-        body,
-      }),
-    [request],
-  );
-
-  const put = useCallback(
-    (path, body = {}) =>
-      request(path, {
-        method: "PUT",
-        body,
-      }),
-    [request],
-  );
-
-  const patch = useCallback(
-    (path, body = {}) =>
-      request(path, {
-        method: "PATCH",
-        body,
-      }),
-    [request],
-  );
-
-  const del = useCallback(
-    (path, body) =>
-      request(path, {
-        method: "DELETE",
-        ...(body === undefined ? {} : { body }),
-      }),
-    [request],
-  );
-
-  const getData = useCallback(
-    async (path, options) =>
-      extractData(await get(path, options)),
-    [get],
-  );
-
-  const postData = useCallback(
-    async (path, body = {}) =>
-      extractData(await post(path, body)),
-    [post],
-  );
-
-  const putData = useCallback(
-    async (path, body = {}) =>
-      extractData(await put(path, body)),
-    [put],
-  );
-
-  const patchData = useCallback(
-    async (path, body = {}) =>
-      extractData(await patch(path, body)),
-    [patch],
-  );
-
-  const deleteData = useCallback(
-    async (path, body) =>
-      extractData(await del(path, body)),
-    [del],
-  );
-
-  // -------------------------------------------------------
-  // HEALTH, ACCESS AND SCHOOL SETUP
-  // -------------------------------------------------------
-
-  const api = useMemo(
-    () => ({
-      getElimuHealth: () =>
-        getData("/health"),
-
-      getElimuAccess: () =>
-        getData("/access"),
-
-      getElimuBootstrap: () =>
-        getData("/bootstrap"),
-
-      getEducationProfile: () =>
-        getData("/profile"),
-
-      saveEducationProfile: (data) =>
-        postData("/profile", data),
-
-      getSchool: () =>
-        getData("/school"),
-
-      saveSchool: (data) =>
-        postData("/school", data),
-
-      createElimuDemoSchool: (data) =>
-        postData("/school/demo", data),
-
-      getElimuDashboard: () =>
-        getData("/dashboard"),
-
-      // ---------------------------------------------------
-      // CLASSES
-      // ---------------------------------------------------
-
-      getClasses: () =>
-        getData("/classes"),
-
-      createClass: (data) =>
-        postData("/classes", data),
-
-      // ---------------------------------------------------
-      // STUDENTS
-      // ---------------------------------------------------
-
-      getStudents: ({ className = "" } = {}) =>
-        getData(
-          withQuery("/students", {
-            class_name: className,
-          }),
-        ),
-
-      createStudent: (data) =>
-        postData("/students", data),
-
-      getStudent: (studentId) =>
-        getData(
-          `/students/${encodeId(studentId, "Student ID")}`,
-        ),
-
-      updateStudent: (studentId, data) =>
-        putData(
-          `/students/${encodeId(studentId, "Student ID")}`,
-          data,
-        ),
-
-      // ---------------------------------------------------
-      // LESSONS
-      // ---------------------------------------------------
-
-      getLessons: ({ subject = "" } = {}) =>
-        getData(
-          withQuery("/lessons", { subject }),
-        ),
-
-      createLesson: (data) =>
-        postData("/lessons", data),
-
-      // ---------------------------------------------------
-      // ASSIGNMENTS
-      // ---------------------------------------------------
-
-      getAssignments: ({ className = "" } = {}) =>
-        getData(
-          withQuery("/assignments", {
-            class_name: className,
-          }),
-        ),
-
-      createAssignment: (data) =>
-        postData("/assignments", data),
-
-      // ---------------------------------------------------
-      // ATTENDANCE
-      // ---------------------------------------------------
-
-      getAttendance: ({
-        studentId = "",
-        className = "",
-        startDate = "",
-        endDate = "",
-      } = {}) =>
-        getData(
-          withQuery("/attendance", {
-            student_id: studentId,
-            class_name: className,
-            start_date: startDate,
-            end_date: endDate,
-          }),
-        ),
-
-      createAttendance: (data) =>
-        postData("/attendance", data),
-
-      // ---------------------------------------------------
-      // ASSESSMENTS
-      // ---------------------------------------------------
-
-      getAssessments: ({
-        studentId = "",
-        className = "",
-        subject = "",
-        academicYear = "",
-        term = "",
-      } = {}) =>
-        getData(
-          withQuery("/assessments", {
-            student_id: studentId,
-            class_name: className,
-            subject,
-            academic_year: academicYear,
-            term,
-          }),
-        ),
-
-      createAssessment: (data) =>
-        postData("/assessments", data),
-
-      // ---------------------------------------------------
-      // FEES
-      // ---------------------------------------------------
-
-      getFees: ({ status = "" } = {}) =>
-        getData(
-          withQuery("/fees", { status }),
-        ),
-
-      createFee: (data) =>
-        postData("/fees", data),
-
-      // ---------------------------------------------------
-      // CBC PROJECTS
-      // ---------------------------------------------------
-
-      getCBCProjects: () =>
-        getData("/cbc/projects"),
-
-      createCBCProject: (data) =>
-        postData("/cbc/projects", data),
-
-      // ---------------------------------------------------
-      // EVENTS AND CALENDAR
-      // ---------------------------------------------------
-
-      getEvents: ({
-        year = "",
-        eventType = "",
-      } = {}) =>
-        getData(
-          withQuery("/events", {
-            year,
-            event_type: eventType,
-          }),
-        ),
-
-      createEvent: (data) =>
-        postData("/events", data),
-
-      updateEvent: (eventId, data) =>
-        putData(
-          `/events/${encodeId(eventId, "Event ID")}`,
-          data,
-        ),
-
-      deleteEvent: (eventId) =>
-        deleteData(
-          `/events/${encodeId(eventId, "Event ID")}`,
-        ),
-
-      getCalendar: ({ year = "" } = {}) =>
-        getData(
-          withQuery("/calendar", { year }),
-        ),
-
-      // ---------------------------------------------------
-      // STAFF AND SCHOOL MEMBERS
-      // ---------------------------------------------------
-
-      getStaff: () =>
-        getData("/staff"),
-
-      getStaffMember: (userId) =>
-        getData(
-          `/staff/${encodeId(userId, "User ID")}`,
-        ),
-
-      updateStaffMember: (userId, data) =>
-        putData(
-          `/staff/${encodeId(userId, "User ID")}`,
-          data,
-        ),
-
-      removeStaffMember: (userId) =>
-        deleteData(
-          `/staff/${encodeId(userId, "User ID")}`,
-        ),
-
-      getMyStaffProfile: () =>
-        getData("/staff/me"),
-
-      getTeachers: () =>
-        getData("/staff/teachers"),
-
-      inviteStaff: (data) =>
-        postData("/staff/invite", data),
-
-      acceptStaffInvitation: (data) =>
-        postData("/staff/invitations/accept", data),
-
-      getStaffAssignments: ({
-        teacherUserId = "",
-      } = {}) =>
-        getData(
-          withQuery("/staff/assignments/list", {
-            teacher_user_id: teacherUserId,
-          }),
-        ),
-
-      assignTeacher: (data) =>
-        postData("/staff/assignments", data),
-
-      deactivateTeacherAssignment: (data) =>
-        deleteData("/staff/assignments", data),
-
-      rebuildTeacherScopes: () =>
-        postData("/staff/maintenance/rebuild-teacher-scopes", {}),
-
-      // ---------------------------------------------------
-      // TIMETABLE
-      // ---------------------------------------------------
-
-      getTimetables: () =>
-        getData("/timetable"),
-
-      createTimetable: (data) =>
-        postData("/timetable", data),
-
-      getTimetable: (timetableId) =>
-        getData(
-          `/timetable/${encodeId(timetableId, "Timetable ID")}`,
-        ),
-
-      generateTimetable: (timetableId, data = {}) =>
-        postData(
-          `/timetable/${encodeId(timetableId, "Timetable ID")}/generate`,
-          data,
-        ),
-
-      optimizeTimetable: (timetableId, data = {}) =>
-        postData(
-          `/timetable/${encodeId(timetableId, "Timetable ID")}/optimize`,
-          data,
-        ),
-
-      publishTimetable: (timetableId, data = {}) =>
-        postData(
-          `/timetable/${encodeId(timetableId, "Timetable ID")}/publish`,
-          data,
-        ),
-
-      getClassTimetable: (classId) =>
-        getData(
-          `/timetable/class/${encodeId(classId, "Class ID")}`,
-        ),
-
-      updateTimetableEntry: (entryId, data) =>
-        patchData(
-          `/timetable/entries/${encodeId(entryId, "Entry ID")}`,
-          data,
-        ),
-
-      getMyTeacherTimetable: () =>
-        getData("/timetable/teacher/me"),
-
-      // ---------------------------------------------------
-      // REPORTS AND CURRICULA
-      // ---------------------------------------------------
-
-      getReportsDashboard: () =>
-        getData("/reports/dashboard"),
-
-      getReportsOverview: () =>
-        getData("/reports/overview"),
-
-      getAttendanceReport: (filters = {}) =>
-        getData(
-          withQuery("/reports/attendance", filters),
-        ),
-
-      getFeesReport: (filters = {}) =>
-        getData(
-          withQuery("/reports/fees", filters),
-        ),
-
-      getTimetableReport: (filters = {}) =>
-        getData(
-          withQuery("/reports/timetable", filters),
-        ),
-
-      getCurricula: (filters = {}) =>
-        getData(
-          withQuery("/reports/curricula", filters),
-        ),
-
-      saveCurriculum: (data) =>
-        postData("/reports/curricula", data),
-
-      getCurriculum: (curriculumId) =>
-        getData(
-          `/reports/curricula/${encodeId(curriculumId, "Curriculum ID")}`,
-        ),
-
-      getExamReports: (filters = {}) =>
-        getData(
-          withQuery("/reports/exam-reports", filters),
-        ),
-
-      getExamReport: (reportId) =>
-        getData(
-          `/reports/exam-reports/${encodeId(reportId, "Report ID")}`,
-        ),
-
-      publishExamReport: (reportId, data = {}) =>
-        postData(
-          `/reports/exam-reports/${encodeId(reportId, "Report ID")}/publish`,
-          data,
-        ),
-
-      generateClassExamReports: (data) =>
-        postData("/reports/exam-reports/class", data),
-
-      generateStudentExamReport: (data) =>
-        postData("/reports/exam-reports/student", data),
-
-      getProgrammes: (filters = {}) =>
-        getData(
-          withQuery("/reports/programmes", filters),
-        ),
-
-      generateProgramme: (data) =>
-        postData("/reports/programmes", data),
-
-      getProgramme: (programmeId) =>
-        getData(
-          `/reports/programmes/${encodeId(programmeId, "Programme ID")}`,
-        ),
-
-      publishProgramme: (programmeId, data = {}) =>
-        postData(
-          `/reports/programmes/${encodeId(programmeId, "Programme ID")}/publish`,
-          data,
-        ),
-
-      // ---------------------------------------------------
-      // SYNC: CONNECTIONS, DEVICES, JOBS AND CONFLICTS
-      // ---------------------------------------------------
-
-      getSyncStatus: () =>
-        getData("/sync/status"),
-
-      getSyncConnections: () =>
-        getData("/sync/connections"),
-
-      createSyncConnection: (data) =>
-        postData("/sync/connections", data),
-
-      getSyncConnection: (connectionId) =>
-        getData(
-          `/sync/connections/${encodeId(connectionId, "Connection ID")}`,
-        ),
-
-      activateSyncConnection: (connectionId, data = {}) =>
-        postData(
-          `/sync/connections/${encodeId(connectionId, "Connection ID")}/activate`,
-          data,
-        ),
-
-      heartbeatSyncConnection: (connectionId, data = {}) =>
-        postData(
-          `/sync/connections/${encodeId(connectionId, "Connection ID")}/heartbeat`,
-          data,
-        ),
-
-      pauseSyncConnection: (connectionId, data = {}) =>
-        postData(
-          `/sync/connections/${encodeId(connectionId, "Connection ID")}/pause`,
-          data,
-        ),
-
-      revokeSyncConnection: (connectionId, data = {}) =>
-        postData(
-          `/sync/connections/${encodeId(connectionId, "Connection ID")}/revoke`,
-          data,
-        ),
-
-      getSyncDevices: () =>
-        getData("/sync/devices"),
-
-      registerSyncDevice: (data) =>
-        postData("/sync/devices", data),
-
-      exportSyncEntity: (entityType, filters = {}) =>
-        getData(
-          withQuery(
-            `/sync/export/${encodeId(entityType, "Entity type")}`,
-            filters,
-          ),
-        ),
-
-      ingestSyncRecords: (data) =>
-        postData("/sync/ingest", data),
-
-      getSyncJobs: (filters = {}) =>
-        getData(
-          withQuery("/sync/jobs", filters),
-        ),
-
-      getSyncJob: (jobId) =>
-        getData(
-          `/sync/jobs/${encodeId(jobId, "Job ID")}`,
-        ),
-
-      cancelSyncJob: (jobId, data = {}) =>
-        postData(
-          `/sync/jobs/${encodeId(jobId, "Job ID")}/cancel`,
-          data,
-        ),
-
-      pauseSyncJob: (jobId, data = {}) =>
-        postData(
-          `/sync/jobs/${encodeId(jobId, "Job ID")}/pause`,
-          data,
-        ),
-
-      resumeSyncJob: (jobId, data = {}) =>
-        postData(
-          `/sync/jobs/${encodeId(jobId, "Job ID")}/resume`,
-          data,
-        ),
-
-      retrySyncJob: (jobId, data = {}) =>
-        postData(
-          `/sync/jobs/${encodeId(jobId, "Job ID")}/retry`,
-          data,
-        ),
-
-      recoverSyncJobs: (data = {}) =>
-        postData("/sync/jobs/recover", data),
-
-      getSyncConflicts: (filters = {}) =>
-        getData(
-          withQuery("/sync/conflicts", filters),
-        ),
-
-      resolveSyncConflict: (conflictId, data) =>
-        postData(
-          `/sync/conflicts/${encodeId(conflictId, "Conflict ID")}/resolve`,
-          data,
-        ),
-
-      // ---------------------------------------------------
-      // AUTOMATION
-      // ---------------------------------------------------
-
-      getAutomationStatus: () =>
-        getData("/automation/status"),
-
-      getAutomationActions: () =>
-        getData("/automation/actions"),
-
-      runAutomation: (data) =>
-        postData("/automation/run", data),
-
-      getAutomationJobs: (filters = {}) =>
-        getData(
-          withQuery("/automation/jobs", filters),
-        ),
-
-      getAutomationJob: (jobId) =>
-        getData(
-          `/automation/jobs/${encodeId(jobId, "Job ID")}`,
-        ),
-
-      cancelAutomationJob: (jobId, data = {}) =>
-        postData(
-          `/automation/jobs/${encodeId(jobId, "Job ID")}/cancel`,
-          data,
-        ),
-
-      retryAutomationJob: (jobId, data = {}) =>
-        postData(
-          `/automation/jobs/${encodeId(jobId, "Job ID")}/retry`,
-          data,
-        ),
-
-      recoverAutomationJobs: (data = {}) =>
-        postData("/automation/jobs/recover", data),
-
-      getAutomationLogs: (filters = {}) =>
-        getData(
-          withQuery("/automation/logs", filters),
-        ),
-
-      getAutomationRules: (filters = {}) =>
-        getData(
-          withQuery("/automation/rules", filters),
-        ),
-
-      createAutomationRule: (data) =>
-        postData("/automation/rules", data),
-
-      getAutomationRule: (ruleId) =>
-        getData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}`,
-        ),
-
-      updateAutomationRule: (ruleId, data) =>
-        patchData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}`,
-          data,
-        ),
-
-      deleteAutomationRule: (ruleId) =>
-        deleteData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}`,
-        ),
-
-      disableAutomationRule: (ruleId, data = {}) =>
-        postData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}/disable`,
-          data,
-        ),
-
-      enableAutomationRule: (ruleId, data = {}) =>
-        postData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}/enable`,
-          data,
-        ),
-
-      runAutomationRule: (ruleId, data = {}) =>
-        postData(
-          `/automation/rules/${encodeId(ruleId, "Rule ID")}/run`,
-          data,
-        ),
-
-      // ---------------------------------------------------
-      // PLATFORM SCHOOL VERIFICATION
-      // ---------------------------------------------------
-
-      getSchoolApplications: (filters = {}) =>
-        getData(
-          withQuery("/verification/applications", filters),
-        ),
-
-      reviewSchoolApplication: (applicationId, data) =>
-        postData(
-          `/verification/applications/${encodeId(applicationId, "Application ID")}/review`,
-          data,
-        ),
-    }),
-    [
-      getData,
-      postData,
-      putData,
-      patchData,
-      deleteData,
-    ],
-  );
-
-  return api;
 }
 
 export default useElimuApi;
