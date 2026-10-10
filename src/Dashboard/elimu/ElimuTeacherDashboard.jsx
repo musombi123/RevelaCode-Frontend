@@ -12,7 +12,7 @@ import {
   Users,
   ClipboardList,
 } from "lucide-react";
-import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import { useElimuApi } from "@/services/elimuApi.jsx";
 
 const numberFormat = new Intl.NumberFormat("en-KE");
 
@@ -259,7 +259,7 @@ export default function ElimuTeacherDashboard({
   onRefresh,
   refreshing = false,
 }) {
-  const api = useJumuiyaApi();
+  const api = useElimuApi();
 
   const [dashboard, setDashboard] = useState(initialDashboard || null);
   const [lessons, setLessons] = useState([]);

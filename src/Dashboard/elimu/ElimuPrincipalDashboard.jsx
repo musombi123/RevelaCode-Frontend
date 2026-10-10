@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   AlertCircle,
   ArrowRight,
@@ -6,30 +13,40 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  FileCheck2,
+  FileText,
   GraduationCap,
   RefreshCw,
   ShieldCheck,
   Users,
   Wallet,
 } from "lucide-react";
-import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+
+import { useElimuApi } from "@/services/elimuApi.jsx";
 
 const numberFormat = new Intl.NumberFormat("en-KE");
 
 function unwrap(response) {
   if (!response || typeof response !== "object") return response;
+
   return response.data && typeof response.data === "object"
     ? response.data
     : response;
 }
 
-function getCollection(response, keys) {
+function getCollection(response, keys = []) {
   const data = unwrap(response);
 
   if (Array.isArray(data)) return data;
 
   for (const key of keys) {
     if (Array.isArray(data?.[key])) return data[key];
+  }
+
+  if (data?.data && typeof data.data === "object") {
+    for (const key of keys) {
+      if (Array.isArray(data.data[key])) return data.data[key];
+    }
   }
 
   return [];
@@ -66,7 +83,13 @@ function formatDate(value) {
   }).format(date);
 }
 
-function MetricCard({ icon: Icon, label, value, detail, tone = "blue" }) {
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  detail,
+  tone = "blue",
+}) {
   const tones = {
     blue: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
     green:
@@ -84,9 +107,11 @@ function MetricCard({ icon: Icon, label, value, detail, tone = "blue" }) {
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
             {label}
           </p>
+
           <p className="mt-3 break-words text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
             {value}
           </p>
+
           {detail && (
             <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
               {detail}
@@ -95,7 +120,9 @@ function MetricCard({ icon: Icon, label, value, detail, tone = "blue" }) {
         </div>
 
         <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tones[tone] || tones.blue}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+            tones[tone] || tones.blue
+          }`}
         >
           <Icon size={21} />
         </span>
@@ -111,6 +138,7 @@ function SectionHeading({ title, description, action, onAction }) {
         <h2 className="text-base font-bold text-slate-950 dark:text-white">
           {title}
         </h2>
+
         {description && (
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {description}
@@ -122,7 +150,7 @@ function SectionHeading({ title, description, action, onAction }) {
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-300"
+          className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-300"
         >
           {action}
           <ArrowRight size={16} />
@@ -143,6 +171,7 @@ function ActivityRow({ icon: Icon, title, subtitle, trailing }) {
         <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
           {title}
         </p>
+
         {subtitle && (
           <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
             {subtitle}
@@ -164,9 +193,9 @@ function QuickAction({ icon: Icon, title, description, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex h-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-900 dark:hover:bg-blue-950/20"
+      className="group flex h-full min-h-28 items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-900 dark:hover:bg-blue-950/20"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 group-hover:bg-blue-100 group-hover:text-blue-700 dark:bg-slate-900 dark:text-slate-300 dark:group-hover:bg-blue-500/10 dark:group-hover:text-blue-300">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-blue-100 group-hover:text-blue-700 dark:bg-slate-900 dark:text-slate-300 dark:group-hover:bg-blue-500/10 dark:group-hover:text-blue-300">
         <Icon size={19} />
       </span>
 
@@ -174,6 +203,7 @@ function QuickAction({ icon: Icon, title, description, onClick }) {
         <span className="block text-sm font-semibold text-slate-900 dark:text-white">
           {title}
         </span>
+
         <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">
           {description}
         </span>
@@ -195,137 +225,204 @@ export default function ElimuPrincipalDashboard({
   onRefresh,
   refreshing = false,
 }) {
-  const api = useJumuiyaApi();
+  const api = useElimuApi();
 
   const [dashboard, setDashboard] = useState(initialDashboard || null);
   const [classes, setClasses] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [fees, setFees] = useState([]);
   const [cbcProjects, setCbcProjects] = useState([]);
   const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const mountedRef = useRef(false);
+  const requestVersionRef = useRef(0);
+
+  const getDashboardRequest = api.getDashboard || api.getElimuDashboard;
+  const getClassesRequest = api.getClasses || api.getElimuClasses;
+  const getLessonsRequest = api.getLessons || api.getElimuLessons;
+  const getAssignmentsRequest =
+    api.getAssignments || api.getElimuAssignments;
+  const getCBCProjectsRequest =
+    api.getCBCProjects || api.getElimuCBCProjects;
+  const getEducationProfileRequest =
+    api.getEducationProfile || api.getProfile;
+  const getEventsRequest = api.getEvents || api.getElimuEvents;
+
   useEffect(() => {
     setDashboard(initialDashboard || null);
   }, [initialDashboard]);
 
   const loadData = useCallback(async () => {
+    const requestVersion = ++requestVersionRef.current;
+
     setLoading(true);
     setError("");
 
     const requests = [
       {
         name: "dashboard",
-        request: api.getElimuDashboard,
+        request: getDashboardRequest,
         setter: setDashboard,
         keys: ["dashboard", "hub"],
       },
       {
         name: "classes",
-        request: api.getClasses,
+        request: getClassesRequest,
         setter: setClasses,
-        keys: ["classes", "items"],
+        keys: ["classes", "items", "records"],
       },
       {
         name: "lessons",
-        request: api.getLessons,
+        request: getLessonsRequest,
         setter: setLessons,
-        keys: ["lessons", "items"],
+        keys: ["lessons", "items", "records"],
       },
       {
         name: "assignments",
-        request: api.getAssignments,
+        request: getAssignmentsRequest,
         setter: setAssignments,
-        keys: ["assignments", "items"],
-      },
-      {
-        name: "fees",
-        request: api.getFees,
-        setter: setFees,
-        keys: ["fees", "records", "items"],
+        keys: ["assignments", "items", "records"],
       },
       {
         name: "CBC projects",
-        request: api.getCBCProjects,
+        request: getCBCProjectsRequest,
         setter: setCbcProjects,
-        keys: ["projects", "cbc_projects", "items"],
+        keys: ["projects", "cbc_projects", "items", "records"],
       },
       {
         name: "profile",
-        request: api.getEducationProfile,
+        request: getEducationProfileRequest,
         setter: setProfile,
         keys: ["profile", "education_profile"],
       },
       {
         name: "calendar",
-        request: api.getElimuEvents,
+        request: getEventsRequest,
         setter: setEvents,
-        keys: ["events", "items"],
+        keys: ["events", "items", "records"],
       },
     ];
 
-    const failures = [];
-
-    await Promise.all(
+    const results = await Promise.allSettled(
       requests.map(async ({ name, request, setter, keys }) => {
-        if (typeof request !== "function") return;
+        if (typeof request !== "function") {
+          throw new Error(`Elimu API method is unavailable: ${name}`);
+        }
 
-        try {
-          const response = await request();
-          const data = unwrap(response);
+        const response = await request();
 
-          if (name === "dashboard") {
-            setter(data);
-          } else {
-            setter(getCollection(data, keys));
-          }
-        } catch {
-          failures.push(name);
+        if (
+          !mountedRef.current ||
+          requestVersion !== requestVersionRef.current
+        ) {
+          return;
+        }
+
+        const data = unwrap(response);
+
+        if (name === "dashboard") {
+          setter(data || null);
+        } else if (name === "profile") {
+          const candidate =
+            data?.profile ||
+            data?.education_profile ||
+            data?.data?.profile ||
+            data?.data?.education_profile ||
+            data;
+
+          setter(
+            candidate && !Array.isArray(candidate) ? candidate : null
+          );
+        } else {
+          setter(getCollection(data, keys));
         }
       })
     );
 
+    if (
+      !mountedRef.current ||
+      requestVersion !== requestVersionRef.current
+    ) {
+      return;
+    }
+
+    const failures = results.reduce((failed, result, index) => {
+      if (result.status === "rejected") {
+        failed.push(requests[index].name);
+      }
+
+      return failed;
+    }, []);
+
     if (failures.length) {
       setError(
-        `Some information could not be loaded: ${failures.join(", ")}. Other available records remain visible.`
+        `Some information could not be loaded: ${failures.join(
+          ", "
+        )}. Other available records remain visible.`
       );
     }
 
     setLoading(false);
   }, [
-    api.getElimuDashboard,
-    api.getClasses,
-    api.getLessons,
-    api.getAssignments,
-    api.getFees,
-    api.getCBCProjects,
-    api.getEducationProfile,
-    api.getElimuEvents,
+    getDashboardRequest,
+    getClassesRequest,
+    getLessonsRequest,
+    getAssignmentsRequest,
+    getCBCProjectsRequest,
+    getEducationProfileRequest,
+    getEventsRequest,
   ]);
 
   useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      await loadData();
-    };
-
-    run();
+    mountedRef.current = true;
+    void loadData();
 
     return () => {
-      active = false;
+      mountedRef.current = false;
+      requestVersionRef.current += 1;
     };
   }, [loadData]);
+
+  const navigate = useCallback(
+    (path) => {
+      if (typeof onNavigate === "function") {
+        onNavigate(path);
+      }
+    },
+    [onNavigate]
+  );
+
+  const refresh = useCallback(async () => {
+    await loadData();
+
+    if (typeof onRefresh === "function") {
+      await onRefresh();
+    }
+  }, [loadData, onRefresh]);
 
   const schoolData = school || dashboard?.school || {};
   const metrics = dashboard?.metrics || dashboard?.hub?.metrics || {};
 
-  const totalClasses = getMetric(metrics, ["classes", "total_classes"], classes.length);
-  const totalStudents = getMetric(metrics, ["students", "total_students"]);
-  const totalLessons = getMetric(metrics, ["lessons", "total_lessons"], lessons.length);
+  const totalClasses = getMetric(
+    metrics,
+    ["classes", "total_classes"],
+    classes.length
+  );
+
+  const totalStudents = getMetric(metrics, [
+    "students",
+    "total_students",
+  ]);
+
+  const totalLessons = getMetric(
+    metrics,
+    ["lessons", "total_lessons"],
+    lessons.length
+  );
+
   const totalAssignments = getMetric(
     metrics,
     ["assignments", "total_assignments"],
@@ -346,28 +443,27 @@ export default function ElimuPrincipalDashboard({
     ? dashboard.recent_assignments
     : assignments;
 
-  const navigate = (path) => {
-    if (typeof onNavigate === "function") onNavigate(path);
-  };
-
-  const refresh = async () => {
-    await loadData();
-
-    if (typeof onRefresh === "function") {
-      await onRefresh();
-    }
-  };
-
   const schoolName =
     schoolData.name ||
     schoolData.school_name ||
     schoolData.institution_name ||
     "Your school";
 
+  const location = [
+    schoolData.town,
+    schoolData.county,
+    schoolData.location,
+  ]
+    .filter(Boolean)
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .join(", ");
+
   return (
     <div className="space-y-8">
+      {/* Principal's overview */}
       <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
+
         <div className="pointer-events-none absolute -bottom-28 right-1/3 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -378,30 +474,26 @@ export default function ElimuPrincipalDashboard({
             </div>
 
             <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">
-              Principal's dashboard
+              Principal&apos;s dashboard
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
               Coordinate academic delivery, monitor school activity, review
-              student records and keep teaching operations on track.
+              teaching operations and keep school-wide resources organized.
             </p>
 
             <p className="mt-4 text-sm font-semibold text-white">
               {schoolName}
             </p>
 
-            {(schoolData.county || schoolData.town || schoolData.location) && (
-              <p className="mt-1 text-xs text-slate-400">
-                {[schoolData.town, schoolData.county, schoolData.location]
-                  .filter(Boolean)
-                  .join(", ")}
-              </p>
+            {location && (
+              <p className="mt-1 text-xs text-slate-400">{location}</p>
             )}
           </div>
 
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => void refresh()}
             disabled={loading || refreshing}
             className="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -420,10 +512,12 @@ export default function ElimuPrincipalDashboard({
           className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
         >
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
+
           <p className="flex-1">{error}</p>
+
           <button
             type="button"
-            onClick={refresh}
+            onClick={() => void refresh()}
             className="shrink-0 font-semibold underline underline-offset-2"
           >
             Retry
@@ -431,12 +525,13 @@ export default function ElimuPrincipalDashboard({
         </div>
       )}
 
+      {/* Academic overview */}
       <section>
         <SectionHeading
           title="Academic overview"
-          description="Current totals from the records available to your account."
+          description="Current totals from records available to your account."
           action="Refresh data"
-          onAction={refresh}
+          onAction={() => void refresh()}
         />
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -486,6 +581,63 @@ export default function ElimuPrincipalDashboard({
         </div>
       </section>
 
+      {/* Principal document centre */}
+      <section className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 dark:border-indigo-900/60 dark:from-indigo-950/30 dark:to-slate-950 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300">
+              <FileCheck2 size={23} />
+            </span>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold text-slate-950 dark:text-white">
+                  Document submission and review
+                </h2>
+
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-300">
+                  Principal access
+                </span>
+              </div>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Prepare school notices, calendars, handbooks, policies and
+                other approved school publications. Review resources submitted
+                by staff and use the document centre to manage the publication
+                workflow granted to your account.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  "School notices",
+                  "Calendars",
+                  "Handbooks",
+                  "Staff submissions",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-lg border border-indigo-100 bg-white/80 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("elimu/documents")}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          >
+            <FileText size={17} />
+            Open document centre
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </section>
+
+      {/* School operations */}
       <section>
         <SectionHeading
           title="School operations"
@@ -531,17 +683,20 @@ export default function ElimuPrincipalDashboard({
           <QuickAction
             icon={Wallet}
             title="Finance reports"
-            description="Review school fee reporting according to your permissions."
+            description="Review fee reporting according to your permissions."
             onClick={() => navigate("elimu/reports")}
           />
         </div>
       </section>
 
+      {/* Academic activity */}
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <SectionHeading
             title="Recent assignments"
-            description={`${numberFormat.format(totalAssignments)} assignment records reported`}
+            description={`${numberFormat.format(
+              totalAssignments
+            )} assignment records reported`}
             action="View assignments"
             onAction={() => navigate("elimu/assignments")}
           />
@@ -570,7 +725,9 @@ export default function ElimuPrincipalDashboard({
                   }
                   trailing={
                     assignment.due_date || assignment.dueDate
-                      ? formatDate(assignment.due_date || assignment.dueDate)
+                      ? formatDate(
+                          assignment.due_date || assignment.dueDate
+                        )
                       : assignment.status || ""
                   }
                 />
@@ -581,11 +738,13 @@ export default function ElimuPrincipalDashboard({
                   size={25}
                   className="mx-auto text-slate-300 dark:text-slate-600"
                 />
+
                 <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                   No recent assignments available
                 </p>
+
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Assignment activity will appear here when records are available.
+                  Assignment activity will appear when records are available.
                 </p>
               </div>
             )}
@@ -624,12 +783,15 @@ export default function ElimuPrincipalDashboard({
                   size={25}
                   className="mx-auto text-slate-300 dark:text-slate-600"
                 />
+
                 <p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                   No upcoming events available
                 </p>
+
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  School activities will appear here when calendar records exist.
+                  School activities will appear when calendar records exist.
                 </p>
+
                 <button
                   type="button"
                   onClick={() => navigate("elimu/calendar")}
@@ -643,6 +805,7 @@ export default function ElimuPrincipalDashboard({
         </section>
       </div>
 
+      {/* Academic delivery */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
         <SectionHeading
           title="Academic delivery"
@@ -656,6 +819,7 @@ export default function ElimuPrincipalDashboard({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Lessons
             </p>
+
             <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">
               {numberFormat.format(totalLessons)}
             </p>
@@ -665,6 +829,7 @@ export default function ElimuPrincipalDashboard({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               CBC projects
             </p>
+
             <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">
               {numberFormat.format(cbcProjects.length)}
             </p>
@@ -674,14 +839,31 @@ export default function ElimuPrincipalDashboard({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Workspace status
             </p>
+
             <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              <CheckCircle2 size={17} className="text-emerald-600" />
-              {loading ? "Refreshing records" : "Dashboard loaded"}
+              {loading ? (
+                <>
+                  <RefreshCw
+                    size={17}
+                    className="animate-spin text-blue-600"
+                  />
+                  Refreshing records
+                </>
+              ) : (
+                <>
+                  <CheckCircle2
+                    size={17}
+                    className="text-emerald-600"
+                  />
+                  Dashboard loaded
+                </>
+              )}
             </p>
           </div>
         </div>
       </section>
 
+      {/* Education profile */}
       {profile && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <SectionHeading
@@ -695,6 +877,7 @@ export default function ElimuPrincipalDashboard({
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
               <GraduationCap size={19} />
             </span>
+
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
                 {profile.name ||
@@ -702,8 +885,11 @@ export default function ElimuPrincipalDashboard({
                   profile.display_name ||
                   "Education profile"}
               </p>
+
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {profile.email || profile.description || "Profile information loaded."}
+                {profile.email ||
+                  profile.description ||
+                  "Profile information loaded."}
               </p>
             </div>
           </div>
