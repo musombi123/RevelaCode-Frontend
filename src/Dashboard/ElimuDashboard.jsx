@@ -13,7 +13,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuSchoolAccess from "@/Dashboard/ElimuSchoolAccess.jsx";
 import ElimuDashboardWorkspace from "@/Dashboard/ElimuDashboardWorkspace.jsx";
 
@@ -34,7 +34,7 @@ function getErrorMessage(error, fallback) {
 }
 
 function isNetworkError(error) {
-  return /failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|unable to reach the elimu backend/i.test(
     String(error?.message || error || ""),
   );
 }
@@ -49,7 +49,7 @@ export default function ElimuDashboard({ onNavigate }) {
     getSchool,
     saveSchool,
     createElimuDemoSchool,
-  } = useJumuiyaApi();
+  } = useElimuApi();
 
   // -------------------------------------------------------
   // STATE
@@ -65,7 +65,7 @@ export default function ElimuDashboard({ onNavigate }) {
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Ignore outdated requests and prevent state updates after unmount.
+  // Prevent outdated requests and updates after unmount.
   const mountedRef = useRef(false);
   const requestIdRef = useRef(0);
 
@@ -88,7 +88,7 @@ export default function ElimuDashboard({ onNavigate }) {
       try {
         if (typeof getElimuAccess !== "function") {
           throw new Error(
-            "getElimuAccess is missing from useJumuiyaApi(). Check the Elimu API methods returned by src/services/jumuiyaApi.jsx.",
+            "getElimuAccess is missing from useElimuApi(). Check src/services/elimuApi.jsx.",
           );
         }
 
@@ -104,7 +104,7 @@ export default function ElimuDashboard({ onNavigate }) {
         }
 
         // Access is authoritative. A secondary school lookup may fail
-        // for a new account, so it must not invalidate valid access data.
+        // for a new account or an account with a pending application.
         let schoolResult = null;
 
         if (typeof getSchool === "function") {
@@ -186,7 +186,7 @@ export default function ElimuDashboard({ onNavigate }) {
       try {
         if (typeof saveSchool !== "function") {
           throw new Error(
-            "School registration is not connected. saveSchool is missing from useJumuiyaApi().",
+            "School registration is not connected. saveSchool is missing from useElimuApi().",
           );
         }
 
@@ -200,9 +200,10 @@ export default function ElimuDashboard({ onNavigate }) {
           "Your school application was submitted. Access remains restricted until the backend confirms verification.",
         );
 
-        // Preserve the successful submission message while refreshing
-        // the status from the authoritative access endpoint.
-        await loadAccess({ keepFeedback: true });
+        // Preserve feedback while refreshing authoritative status.
+        await loadAccess({
+          keepFeedback: true,
+        });
       } catch (requestError) {
         if (mountedRef.current) {
           setActionError(
@@ -234,7 +235,7 @@ export default function ElimuDashboard({ onNavigate }) {
       try {
         if (typeof createElimuDemoSchool !== "function") {
           throw new Error(
-            "Demo creation is not connected. createElimuDemoSchool is missing from useJumuiyaApi().",
+            "Demo creation is not connected. createElimuDemoSchool is missing from useElimuApi().",
           );
         }
 
@@ -248,7 +249,9 @@ export default function ElimuDashboard({ onNavigate }) {
           "Development demo created. This workspace is not a verified school.",
         );
 
-        await loadAccess({ keepFeedback: true });
+        await loadAccess({
+          keepFeedback: true,
+        });
       } catch (requestError) {
         if (mountedRef.current) {
           setActionError(
@@ -280,7 +283,10 @@ export default function ElimuDashboard({ onNavigate }) {
           aria-busy="true"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-            <Loader2 size={27} className="animate-spin" />
+            <Loader2
+              size={27}
+              className="animate-spin"
+            />
           </div>
 
           <h2 className="mt-4 font-semibold text-slate-900 dark:text-white">
@@ -327,10 +333,9 @@ export default function ElimuDashboard({ onNavigate }) {
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-amber-900 dark:text-amber-100">
-                The browser could not complete the access request. Check
-                the configured backend URL, backend availability, and
-                whether the backend CORS configuration allows this
-                frontend origin.
+                The browser could not complete the Elimu request.
+                Check the API URL, backend availability, authentication,
+                and whether the backend permits this frontend origin.
               </p>
 
               <p className="mt-2 text-xs leading-5 text-amber-900/80 dark:text-amber-100/80">
@@ -350,7 +355,10 @@ export default function ElimuDashboard({ onNavigate }) {
             className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             {loading ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2
+                size={16}
+                className="animate-spin"
+              />
             ) : (
               <RefreshCw size={16} />
             )}

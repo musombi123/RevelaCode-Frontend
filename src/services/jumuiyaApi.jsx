@@ -1,16 +1,17 @@
 // src/services/jumuiyaApi.jsx
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 // =========================================================
 // BACKEND CONFIGURATION
 // =========================================================
 
-// Environment variables should contain the backend origin,
-// not the frontend URL and not a complete API endpoint.
-const DEFAULT_BACKEND_URL =
-  "https://revelacode-backend.onrender.com";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "";
 
 function normalizeBackendBase(value) {
   let base = String(value || "").trim();
@@ -19,29 +20,14 @@ function normalizeBackendBase(value) {
     return "";
   }
 
-  // Accept an origin, /api, or /api/jumuiya as the
-  // configured URL without accidentally duplicating paths.
   base = base.replace(/\/+$/, "");
   base = base.replace(/\/api\/jumuiya$/i, "");
   base = base.replace(/\/api$/i, "");
-  base = base.replace(/\/+$/, "");
 
-  return base;
+  return base.replace(/\/+$/, "");
 }
 
-const configuredBackendUrl = [
-  import.meta.env.VITE_REVELACODE_URL,
-  import.meta.env.VITE_BACKEND_URL,
-  import.meta.env.VITE_API_URL,
-].find(
-  (value) =>
-    typeof value === "string" && value.trim().length > 0,
-);
-
-export const BASE_URL = normalizeBackendBase(
-  configuredBackendUrl || DEFAULT_BACKEND_URL,
-);
-
+export const BASE_URL = normalizeBackendBase(API_URL);
 export const API_ROOT = `${BASE_URL}/api/jumuiya`;
 
 // =========================================================
@@ -83,8 +69,6 @@ function normalizeApiPath(path) {
     );
   }
 
-  // Avoid duplicating the API prefix when a caller already
-  // passes /api/jumuiya/...
   if (/^\/api\/jumuiya(?:\/|$)/i.test(rawPath)) {
     return rawPath.replace(/^\/api\/jumuiya/i, "");
   }
@@ -103,6 +87,20 @@ function withQuery(path, values = {}) {
       value === null ||
       value === ""
     ) {
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (
+          item !== undefined &&
+          item !== null &&
+          item !== ""
+        ) {
+          params.append(key, String(item));
+        }
+      });
+
       continue;
     }
 
@@ -130,6 +128,13 @@ function encodeId(value, name = "ID") {
   return encodeURIComponent(String(value));
 }
 
+function isFormData(value) {
+  return (
+    typeof FormData !== "undefined" &&
+    value instanceof FormData
+  );
+}
+
 // =========================================================
 // RESPONSE PARSER
 // =========================================================
@@ -148,9 +153,19 @@ async function parseResponse(response) {
         .text()
         .catch(() => "");
 
-      payload = responseText
-        ? { message: responseText.slice(0, 2000) }
-        : null;
+      if (responseText) {
+        payload = {
+          message: responseText.slice(0, 2000),
+        };
+
+        // Support JSON responses from servers with a missing
+        // or incorrect content-type header.
+        try {
+          payload = JSON.parse(responseText);
+        } catch {
+          // Keep the response text as a message.
+        }
+      }
     }
   }
 
@@ -216,7 +231,7 @@ async function performRequest(
 ) {
   if (!BASE_URL) {
     throw new JumuiyaAPIError(
-      "The Jumuiya backend URL is not configured.",
+      "The Jumuiya backend URL is not configured. Set VITE_API_URL, VITE_REVELACODE_URL, or VITE_BACKEND_URL.",
       0,
       "backend_url_missing",
     );
@@ -228,10 +243,12 @@ async function performRequest(
     parsedBase = new URL(BASE_URL);
   } catch {
     throw new JumuiyaAPIError(
-      "The configured backend URL is invalid. Set VITE_REVELACODE_URL, VITE_BACKEND_URL, or VITE_API_URL to a valid backend origin.",
+      "The configured backend URL is invalid. Set an environment variable to a valid backend origin.",
       0,
       "backend_url_invalid",
-      { configuredBase: BASE_URL },
+      {
+        configuredBase: BASE_URL,
+      },
     );
   }
 
@@ -260,14 +277,10 @@ async function performRequest(
 
   let requestBody = body;
 
-  const isFormData =
-    typeof FormData !== "undefined" &&
-    body instanceof FormData;
-
   if (
     body !== undefined &&
     body !== null &&
-    !isFormData &&
+    !isFormData(body) &&
     typeof body !== "string" &&
     !(body instanceof URLSearchParams)
   ) {
@@ -306,11 +319,11 @@ async function performRequest(
       url,
       message: originalMessage,
       hint:
-        "Check the backend URL, server availability, browser CORS errors, TLS/network connectivity, and the backend logs.",
+        "Check the configured backend URL, server availability, CORS, TLS, network connectivity, and backend logs.",
     });
 
     throw new JumuiyaAPIError(
-      `Unable to reach the Jumuiya backend at ${url}. The browser received no HTTP response. Check backend availability, the configured URL, and backend CORS settings.`,
+      `Unable to reach the Jumuiya backend at ${url}. The browser received no HTTP response. Check the backend URL, availability, and CORS configuration.`,
       0,
       "network_error",
       {
@@ -325,7 +338,18 @@ async function performRequest(
 }
 
 // =========================================================
-// MAIN HOOK
+// MAIN JUMUIYA API HOOK
+//
+// Responsibilities:
+//   Identity
+//   Wallet
+//   Marketplace
+//   Biashara
+//   Shamba
+//   Community
+//
+// Elimu has its own service in:
+//   src/services/elimuApi.jsx
 // =========================================================
 
 export function useJumuiyaApi() {
@@ -336,15 +360,19 @@ export function useJumuiyaApi() {
     isGuest,
   } = useAuth();
 
+  // -------------------------------------------------------
+  // REQUEST
+  // -------------------------------------------------------
+
   const request = useCallback(
-    async (path, options = {}) =>
+    (path, options = {}) =>
       performRequest(authFetch, path, options),
     [authFetch],
   );
 
-  // =======================================================
-  // GENERIC HTTP HELPERS
-  // =======================================================
+  // -------------------------------------------------------
+  // HTTP METHODS
+  // -------------------------------------------------------
 
   const get = useCallback(
     (path, options = {}) =>
@@ -394,7 +422,10 @@ export function useJumuiyaApi() {
     [request],
   );
 
-  // Data helpers centralize response unwrapping.
+  // -------------------------------------------------------
+  // DATA HELPERS
+  // -------------------------------------------------------
+
   const getData = useCallback(
     async (path, options) =>
       extractData(await get(path, options)),
@@ -420,1004 +451,681 @@ export function useJumuiyaApi() {
   );
 
   const deleteData = useCallback(
-    async (path) =>
-      extractData(await del(path)),
+    async (path, options = {}) =>
+      extractData(await del(path, options)),
     [del],
   );
 
-  // =======================================================
-  // IDENTITY
-  // =======================================================
-
-  const getIdentity = useCallback(
-    () => getData("/identity/me"),
-    [getData],
-  );
-
-  const updateIdentityProfile = useCallback(
-    (data) => putData("/identity/profile", data),
-    [putData],
-  );
-
-  // =======================================================
-  // WALLET
-  // =======================================================
-
-  const getWalletLedger = useCallback(
-    () => getData("/wallet/ledger"),
-    [getData],
-  );
-
-  const recordWalletTransaction = useCallback(
-    (data) => postData("/wallet/transactions", data),
-    [postData],
-  );
-
-  // =======================================================
-  // MARKETPLACE
-  // =======================================================
-
-  const getMarketplaceListings = useCallback(
-    ({ hub = "", category = "" } = {}) =>
-      getData(
-        withQuery("/marketplace/listings", {
-          hub,
-          category,
-        }),
-      ),
-    [getData],
-  );
-
-  const createMarketplaceListing = useCallback(
-    (data) => postData("/marketplace/listings", data),
-    [postData],
-  );
-
-  const deleteMarketplaceListing = useCallback(
-    (listingId) =>
-      deleteData(
-        `/marketplace/listings/${encodeId(listingId, "Listing ID")}`,
-      ),
-    [deleteData],
-  );
-
-  // =======================================================
-  // BIASHARA — BUSINESS
-  // =======================================================
-
-  const getBiasharaHealth = useCallback(
-    () => getData("/biashara/health"),
-    [getData],
-  );
-
-  const getBusiness = useCallback(
-    () => getData("/biashara/business"),
-    [getData],
-  );
-
-  const getBiasharaBusiness = getBusiness;
-
-  const saveBusiness = useCallback(
-    (data) => postData("/biashara/business", data),
-    [postData],
-  );
-
-  const createBiasharaBusiness = saveBusiness;
-
-  // =======================================================
-  // BIASHARA — PRODUCTS
-  // =======================================================
-
-  const getProducts = useCallback(
-    ({
-      status = "",
-      category = "",
-      search = "",
-      limit = 50,
-    } = {}) =>
-      getData(
-        withQuery("/biashara/products", {
-          status,
-          category,
-          search,
-          limit,
-        }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaProducts = getProducts;
-
-  const createProduct = useCallback(
-    (data) => postData("/biashara/products", data),
-    [postData],
-  );
-
-  const createBiasharaProduct = createProduct;
-
-  const updateProduct = useCallback(
-    (productId, data) =>
-      putData(
-        `/biashara/products/${encodeId(productId, "Product ID")}`,
-        data,
-      ),
-    [putData],
-  );
-
-  const updateBiasharaProduct = updateProduct;
-
-  const deleteProduct = useCallback(
-    (productId) =>
-      deleteData(
-        `/biashara/products/${encodeId(productId, "Product ID")}`,
-      ),
-    [deleteData],
-  );
-
-  const deleteBiasharaProduct = deleteProduct;
-
-  // =======================================================
-  // BIASHARA — INVENTORY
-  // =======================================================
-
-  const getLowStockProducts = useCallback(
-    (threshold) =>
-      getData(
-        withQuery("/biashara/inventory/low-stock", {
-          threshold,
-        }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaLowStock = getLowStockProducts;
-
-  const adjustInventory = useCallback(
-    (productId, data) =>
-      postData(
-        `/biashara/inventory/${encodeId(productId, "Product ID")}/adjust`,
-        data,
-      ),
-    [postData],
-  );
-
-  const adjustBiasharaInventory = adjustInventory;
-
-  const getInventoryHistory = useCallback(
-    ({ productId = "", limit = 50 } = {}) =>
-      getData(
-        withQuery("/biashara/inventory/history", {
-          product_id: productId,
-          limit,
-        }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaInventoryHistory = getInventoryHistory;
-
-  // =======================================================
-  // BIASHARA — CUSTOMERS
-  // =======================================================
-
-  const getCustomers = useCallback(
-    ({ search = "", limit = 50 } = {}) =>
-      getData(
-        withQuery("/biashara/customers", {
-          search,
-          limit,
-        }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaCustomers = getCustomers;
-
-  const createCustomer = useCallback(
-    (data) => postData("/biashara/customers", data),
-    [postData],
-  );
-
-  const createBiasharaCustomer = createCustomer;
-
-  // =======================================================
-  // BIASHARA — ORDERS
-  // =======================================================
-
-  const getOrders = useCallback(
-    ({ status = "", limit = 50 } = {}) =>
-      getData(
-        withQuery("/biashara/orders", {
-          status,
-          limit,
-        }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaOrders = getOrders;
-
-  const createOrder = useCallback(
-    (data) => postData("/biashara/orders", data),
-    [postData],
-  );
-
-  const createBiasharaOrder = createOrder;
-
-  const getOrder = useCallback(
-    (orderId) =>
-      getData(
-        `/biashara/orders/${encodeId(orderId, "Order ID")}`,
-      ),
-    [getData],
-  );
-
-  const getBiasharaOrder = getOrder;
-
-  const updateOrderStatus = useCallback(
-    (orderId, status) =>
-      patchData(
-        `/biashara/orders/${encodeId(orderId, "Order ID")}/status`,
-        { status },
-      ),
-    [patchData],
-  );
-
-  const updateBiasharaOrderStatus = updateOrderStatus;
-
-  // =======================================================
-  // BIASHARA — SALES
-  // =======================================================
-
-  const recordSale = useCallback(
-    (data) => postData("/biashara/sales", data),
-    [postData],
-  );
-
-  const recordBiasharaSale = recordSale;
-
-  // =======================================================
-  // BIASHARA — EXPENSES
-  // =======================================================
-
-  const getExpenses = useCallback(
-    ({ limit = 50 } = {}) =>
-      getData(
-        withQuery("/biashara/expenses", { limit }),
-      ),
-    [getData],
-  );
-
-  const getBiasharaExpenses = getExpenses;
-
-  const createExpense = useCallback(
-    (data) => postData("/biashara/expenses", data),
-    [postData],
-  );
-
-  const createBiasharaExpense = createExpense;
-
-  // =======================================================
-  // BIASHARA — DASHBOARD
-  // =======================================================
-
-  const getBiasharaDashboard = useCallback(
-    () => getData("/biashara/dashboard"),
-    [getData],
-  );
-
-  // =======================================================
-  // SHAMBA — HEALTH AND FARMER
-  // =======================================================
-
-  const getShambaHealth = useCallback(
-    () => getData("/shamba/health"),
-    [getData],
-  );
-
-  const getFarmer = useCallback(
-    () => getData("/shamba/farmer"),
-    [getData],
-  );
-
-  const saveFarmer = useCallback(
-    (data) => postData("/shamba/farmer", data),
-    [postData],
-  );
-
-  // =======================================================
-  // SHAMBA — FARMS
-  // =======================================================
-
-  const getFarms = useCallback(
-    () => getData("/shamba/farms"),
-    [getData],
-  );
-
-  const createFarm = useCallback(
-    (data) => postData("/shamba/farms", data),
-    [postData],
-  );
-
-  const getFarm = useCallback(
-    (farmId) =>
-      getData(`/shamba/farms/${encodeId(farmId, "Farm ID")}`),
-    [getData],
-  );
-
-  const updateFarm = useCallback(
-    (farmId, data) =>
-      putData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}`,
-        data,
-      ),
-    [putData],
-  );
-
-  const deleteFarm = useCallback(
-    (farmId) =>
-      deleteData(`/shamba/farms/${encodeId(farmId, "Farm ID")}`),
-    [deleteData],
-  );
-
-  // =======================================================
-  // SHAMBA — FARM LOCATION
-  // =======================================================
-
-  const updateFarmLocation = useCallback(
-    (
-      farmId,
-      {
-        latitude,
-        longitude,
-        accuracy = null,
-        source = "browser_gps",
-        county = "",
-        town = "",
-        location = "",
-      } = {},
-    ) =>
-      putData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/location`,
+  // -------------------------------------------------------
+  // STABLE PUBLIC API
+  // -------------------------------------------------------
+
+  return useMemo(
+    () => ({
+      // ===================================================
+      // GENERIC HTTP
+      // ===================================================
+
+      request,
+      get,
+      post,
+      put,
+      patch,
+      del,
+
+      isAuthenticated,
+      isGuest,
+      getAccessToken,
+
+      // ===================================================
+      // IDENTITY
+      // ===================================================
+
+      getIdentity: () =>
+        getData("/identity/me"),
+
+      updateIdentityProfile: (data) =>
+        putData("/identity/profile", data),
+
+      // ===================================================
+      // WALLET
+      // ===================================================
+
+      getWalletLedger: () =>
+        getData("/wallet/ledger"),
+
+      recordWalletTransaction: (data) =>
+        postData("/wallet/transactions", data),
+
+      // ===================================================
+      // MARKETPLACE
+      // ===================================================
+
+      getMarketplaceListings: (
+        { hub = "", category = "" } = {},
+      ) =>
+        getData(
+          withQuery("/marketplace/listings", {
+            hub,
+            category,
+          }),
+        ),
+
+      createMarketplaceListing: (data) =>
+        postData("/marketplace/listings", data),
+
+      deleteMarketplaceListing: (listingId) =>
+        deleteData(
+          `/marketplace/listings/${encodeId(listingId, "Listing ID")}`,
+        ),
+
+      // ===================================================
+      // BIASHARA — BUSINESS
+      // ===================================================
+
+      getBiasharaHealth: () =>
+        getData("/biashara/health"),
+
+      getBusiness: () =>
+        getData("/biashara/business"),
+
+      getBiasharaBusiness: () =>
+        getData("/biashara/business"),
+
+      saveBusiness: (data) =>
+        postData("/biashara/business", data),
+
+      createBiasharaBusiness: (data) =>
+        postData("/biashara/business", data),
+
+      // ===================================================
+      // BIASHARA — PRODUCTS
+      // ===================================================
+
+      getProducts: (
+        {
+          status = "",
+          category = "",
+          search = "",
+          limit = 50,
+        } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/products", {
+            status,
+            category,
+            search,
+            limit,
+          }),
+        ),
+
+      getBiasharaProducts: (
+        {
+          status = "",
+          category = "",
+          search = "",
+          limit = 50,
+        } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/products", {
+            status,
+            category,
+            search,
+            limit,
+          }),
+        ),
+
+      createProduct: (data) =>
+        postData("/biashara/products", data),
+
+      createBiasharaProduct: (data) =>
+        postData("/biashara/products", data),
+
+      updateProduct: (productId, data) =>
+        putData(
+          `/biashara/products/${encodeId(productId, "Product ID")}`,
+          data,
+        ),
+
+      updateBiasharaProduct: (productId, data) =>
+        putData(
+          `/biashara/products/${encodeId(productId, "Product ID")}`,
+          data,
+        ),
+
+      deleteProduct: (productId) =>
+        deleteData(
+          `/biashara/products/${encodeId(productId, "Product ID")}`,
+        ),
+
+      deleteBiasharaProduct: (productId) =>
+        deleteData(
+          `/biashara/products/${encodeId(productId, "Product ID")}`,
+        ),
+
+      // ===================================================
+      // BIASHARA — INVENTORY
+      // ===================================================
+
+      getLowStockProducts: (threshold) =>
+        getData(
+          withQuery("/biashara/inventory/low-stock", {
+            threshold,
+          }),
+        ),
+
+      getBiasharaLowStock: (threshold) =>
+        getData(
+          withQuery("/biashara/inventory/low-stock", {
+            threshold,
+          }),
+        ),
+
+      adjustInventory: (productId, data) =>
+        postData(
+          `/biashara/inventory/${encodeId(productId, "Product ID")}/adjust`,
+          data,
+        ),
+
+      adjustBiasharaInventory: (productId, data) =>
+        postData(
+          `/biashara/inventory/${encodeId(productId, "Product ID")}/adjust`,
+          data,
+        ),
+
+      getInventoryHistory: (
+        { productId = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/inventory/history", {
+            product_id: productId,
+            limit,
+          }),
+        ),
+
+      getBiasharaInventoryHistory: (
+        { productId = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/inventory/history", {
+            product_id: productId,
+            limit,
+          }),
+        ),
+
+      // ===================================================
+      // BIASHARA — CUSTOMERS
+      // ===================================================
+
+      getCustomers: (
+        { search = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/customers", {
+            search,
+            limit,
+          }),
+        ),
+
+      getBiasharaCustomers: (
+        { search = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/customers", {
+            search,
+            limit,
+          }),
+        ),
+
+      createCustomer: (data) =>
+        postData("/biashara/customers", data),
+
+      createBiasharaCustomer: (data) =>
+        postData("/biashara/customers", data),
+
+      // ===================================================
+      // BIASHARA — ORDERS
+      // ===================================================
+
+      getOrders: (
+        { status = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/orders", {
+            status,
+            limit,
+          }),
+        ),
+
+      getBiasharaOrders: (
+        { status = "", limit = 50 } = {},
+      ) =>
+        getData(
+          withQuery("/biashara/orders", {
+            status,
+            limit,
+          }),
+        ),
+
+      createOrder: (data) =>
+        postData("/biashara/orders", data),
+
+      createBiasharaOrder: (data) =>
+        postData("/biashara/orders", data),
+
+      getOrder: (orderId) =>
+        getData(
+          `/biashara/orders/${encodeId(orderId, "Order ID")}`,
+        ),
+
+      getBiasharaOrder: (orderId) =>
+        getData(
+          `/biashara/orders/${encodeId(orderId, "Order ID")}`,
+        ),
+
+      updateOrderStatus: (orderId, status) =>
+        patchData(
+          `/biashara/orders/${encodeId(orderId, "Order ID")}/status`,
+          { status },
+        ),
+
+      updateBiasharaOrderStatus: (orderId, status) =>
+        patchData(
+          `/biashara/orders/${encodeId(orderId, "Order ID")}/status`,
+          { status },
+        ),
+
+      // ===================================================
+      // BIASHARA — SALES
+      // ===================================================
+
+      recordSale: (data) =>
+        postData("/biashara/sales", data),
+
+      recordBiasharaSale: (data) =>
+        postData("/biashara/sales", data),
+
+      // ===================================================
+      // BIASHARA — EXPENSES
+      // ===================================================
+
+      getExpenses: ({ limit = 50 } = {}) =>
+        getData(
+          withQuery("/biashara/expenses", { limit }),
+        ),
+
+      getBiasharaExpenses: ({ limit = 50 } = {}) =>
+        getData(
+          withQuery("/biashara/expenses", { limit }),
+        ),
+
+      createExpense: (data) =>
+        postData("/biashara/expenses", data),
+
+      createBiasharaExpense: (data) =>
+        postData("/biashara/expenses", data),
+
+      // ===================================================
+      // BIASHARA — DASHBOARD
+      // ===================================================
+
+      getBiasharaDashboard: () =>
+        getData("/biashara/dashboard"),
+
+      // ===================================================
+      // SHAMBA — HEALTH AND FARMER
+      // ===================================================
+
+      getShambaHealth: () =>
+        getData("/shamba/health"),
+
+      getFarmer: () =>
+        getData("/shamba/farmer"),
+
+      saveFarmer: (data) =>
+        postData("/shamba/farmer", data),
+
+      // ===================================================
+      // SHAMBA — FARMS
+      // ===================================================
+
+      getFarms: () =>
+        getData("/shamba/farms"),
+
+      createFarm: (data) =>
+        postData("/shamba/farms", data),
+
+      getFarm: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}`,
+        ),
+
+      updateFarm: (farmId, data) =>
+        putData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}`,
+          data,
+        ),
+
+      deleteFarm: (farmId) =>
+        deleteData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}`,
+        ),
+
+      // ===================================================
+      // SHAMBA — LOCATION
+      // ===================================================
+
+      updateFarmLocation: (
+        farmId,
         {
           latitude,
           longitude,
-          accuracy,
-          source,
-          county,
-          town,
-          location,
-        },
-      ),
-    [putData],
-  );
+          accuracy = null,
+          source = "browser_gps",
+          county = "",
+          town = "",
+          location = "",
+        } = {},
+      ) =>
+        putData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/location`,
+          {
+            latitude,
+            longitude,
+            accuracy,
+            source,
+            county,
+            town,
+            location,
+          },
+        ),
 
-  // =======================================================
-  // SHAMBA — CROPS
-  // =======================================================
+      // ===================================================
+      // SHAMBA — CROPS
+      // ===================================================
 
-  const getCrops = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops`,
-      ),
-    [getData],
-  );
+      getCrops: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops`,
+        ),
 
-  const createCrop = useCallback(
-    (farmId, data) =>
-      postData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops`,
-        data,
-      ),
-    [postData],
-  );
+      createCrop: (farmId, data) =>
+        postData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops`,
+          data,
+        ),
 
-  const getCropAnalysis = useCallback(
-    (farmId, cropId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops/${encodeId(cropId, "Crop ID")}/analysis`,
-      ),
-    [getData],
-  );
+      getCropAnalysis: (farmId, cropId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/crops/${encodeId(cropId, "Crop ID")}/analysis`,
+        ),
 
-  // =======================================================
-  // SHAMBA — FARM ACTIVITIES
-  // =======================================================
+      // ===================================================
+      // SHAMBA — FARM ACTIVITIES
+      // ===================================================
 
-  const getFarmActivities = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/activities`,
-      ),
-    [getData],
-  );
+      getFarmActivities: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/activities`,
+        ),
 
-  const createFarmActivity = useCallback(
-    (farmId, data) =>
-      postData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/activities`,
-        data,
-      ),
-    [postData],
-  );
+      createFarmActivity: (farmId, data) =>
+        postData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/activities`,
+          data,
+        ),
 
-  // =======================================================
-  // SHAMBA — HARVESTS
-  // =======================================================
+      // ===================================================
+      // SHAMBA — HARVESTS
+      // ===================================================
 
-  const getHarvests = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/harvests`,
-      ),
-    [getData],
-  );
+      getHarvests: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/harvests`,
+        ),
 
-  const createHarvest = useCallback(
-    (farmId, data) =>
-      postData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/harvests`,
-        data,
-      ),
-    [postData],
-  );
+      createHarvest: (farmId, data) =>
+        postData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/harvests`,
+          data,
+        ),
 
-  // =======================================================
-  // SHAMBA — FARM COMMAND CENTER
-  // =======================================================
+      // ===================================================
+      // SHAMBA — COMMAND CENTER
+      // ===================================================
 
-  const getFarmCommandCenter = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/command-center`,
-      ),
-    [getData],
-  );
+      getFarmCommandCenter: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/command-center`,
+        ),
 
-  // =======================================================
-  // SHAMBA — INSIGHTS
-  // =======================================================
+      // ===================================================
+      // SHAMBA — INSIGHTS
+      // ===================================================
 
-  const getFarmInsights = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/insights`,
-      ),
-    [getData],
-  );
+      getFarmInsights: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/insights`,
+        ),
 
-  const refreshFarmIntelligence = useCallback(
-    (farmId) =>
-      postData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/insights/refresh`,
-      ),
-    [postData],
-  );
+      refreshFarmIntelligence: (farmId) =>
+        postData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/insights/refresh`,
+        ),
 
-  // =======================================================
-  // SHAMBA — RECOMMENDATIONS
-  // =======================================================
+      // ===================================================
+      // SHAMBA — RECOMMENDATIONS
+      // ===================================================
 
-  const getFarmRecommendations = useCallback(
-    (
-      farmId,
-      {
-        category = "",
-        priority = "",
-        cropId = "",
-      } = {},
-    ) =>
-      getData(
-        withQuery(
+      getFarmRecommendations: (
+        farmId,
+        {
+          category = "",
+          priority = "",
+          cropId = "",
+        } = {},
+      ) =>
+        getData(
+          withQuery(
+            `/shamba/farms/${encodeId(farmId, "Farm ID")}/recommendations`,
+            {
+              category,
+              priority,
+              crop_id: cropId,
+            },
+          ),
+        ),
+
+      createFarmRecommendation: (farmId, data) =>
+        postData(
           `/shamba/farms/${encodeId(farmId, "Farm ID")}/recommendations`,
-          {
+          data,
+        ),
+
+      // ===================================================
+      // SHAMBA — ALERTS
+      // ===================================================
+
+      getFarmAlerts: (
+        farmId,
+        {
+          unreadOnly = false,
+          severity = "",
+        } = {},
+      ) =>
+        getData(
+          withQuery(
+            `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts`,
+            {
+              unread: unreadOnly ? "true" : "",
+              severity,
+            },
+          ),
+        ),
+
+      getFarmAlertSummary: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts/summary`,
+        ),
+
+      markFarmAlertRead: (farmId, alertId) =>
+        putData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts/${encodeId(alertId, "Alert ID")}/read`,
+        ),
+
+      // ===================================================
+      // SHAMBA — WEATHER AND MARKET
+      // ===================================================
+
+      getFarmWeather: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/weather`,
+        ),
+
+      getFarmMarket: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/market`,
+        ),
+
+      // ===================================================
+      // SHAMBA — REVELAAI CONTEXT
+      // ===================================================
+
+      getFarmAIContext: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/ai-context`,
+        ),
+
+      // ===================================================
+      // SHAMBA — DASHBOARD
+      // ===================================================
+
+      getShambaDashboard: () =>
+        getData("/shamba/dashboard"),
+
+      // ===================================================
+      // COMMUNITY — HEALTH AND FEED
+      // ===================================================
+
+      getCommunityHealth: () =>
+        getData("/community/health"),
+
+      getCommunityFeed: (
+        {
+          category = "",
+          hub = "",
+          limit = 30,
+        } = {},
+      ) =>
+        getData(
+          withQuery("/community/feed", {
             category,
-            priority,
-            crop_id: cropId,
-          },
+            hub,
+            limit,
+          }),
         ),
-      ),
-    [getData],
-  );
 
-  const createFarmRecommendation = useCallback(
-    (farmId, data) =>
-      postData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/recommendations`,
-        data,
-      ),
-    [postData],
-  );
+      // ===================================================
+      // COMMUNITY — POSTS
+      // ===================================================
 
-  // =======================================================
-  // SHAMBA — ALERTS
-  // =======================================================
+      createCommunityPost: (data) =>
+        postData("/community/posts", data),
 
-  const getFarmAlerts = useCallback(
-    (
-      farmId,
-      {
-        unreadOnly = false,
-        severity = "",
-      } = {},
-    ) =>
-      getData(
-        withQuery(
-          `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts`,
-          {
-            unread: unreadOnly ? "true" : "",
-            severity,
-          },
+      updateCommunityPost: (postId, data) =>
+        putData(
+          `/community/posts/${encodeId(postId, "Post ID")}`,
+          data,
         ),
-      ),
-    [getData],
-  );
 
-  const getFarmAlertSummary = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts/summary`,
-      ),
-    [getData],
-  );
+      deleteCommunityPost: (postId) =>
+        deleteData(
+          `/community/posts/${encodeId(postId, "Post ID")}`,
+        ),
 
-  const markFarmAlertRead = useCallback(
-    (farmId, alertId) =>
-      putData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/alerts/${encodeId(alertId, "Alert ID")}/read`,
-      ),
-    [putData],
-  );
+      // ===================================================
+      // COMMUNITY — COMMENTS AND REACTIONS
+      // ===================================================
 
-  // =======================================================
-  // SHAMBA — WEATHER AND MARKET
-  // =======================================================
+      getCommunityComments: (postId, limit = 100) =>
+        getData(
+          withQuery(
+            `/community/posts/${encodeId(postId, "Post ID")}/comments`,
+            { limit },
+          ),
+        ),
 
-  const getFarmWeather = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/weather`,
-      ),
-    [getData],
-  );
-
-  const getFarmMarket = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/market`,
-      ),
-    [getData],
-  );
-
-  // =======================================================
-  // SHAMBA — REVELAAI CONTEXT
-  // =======================================================
-
-  const getFarmAIContext = useCallback(
-    (farmId) =>
-      getData(
-        `/shamba/farms/${encodeId(farmId, "Farm ID")}/ai-context`,
-      ),
-    [getData],
-  );
-
-  // =======================================================
-  // SHAMBA — DASHBOARD
-  // =======================================================
-
-  const getShambaDashboard = useCallback(
-    () => getData("/shamba/dashboard"),
-    [getData],
-  );
-
-  // =======================================================
-  // ELIMU — HEALTH AND ACCESS
-  // =======================================================
-
-  const getElimuHealth = useCallback(
-    () => getData("/elimu/health"),
-    [getData],
-  );
-
-  const getElimuAccess = useCallback(
-    () => getData("/elimu/access"),
-    [getData],
-  );
-
-  const getElimuBootstrap = useCallback(
-    () => getData("/elimu/bootstrap"),
-    [getData],
-  );
-
-  // =======================================================
-  // ELIMU — PROFILES AND SCHOOLS
-  // =======================================================
-
-  const getEducationProfile = useCallback(
-    () => getData("/elimu/profile"),
-    [getData],
-  );
-
-  const saveEducationProfile = useCallback(
-    (data) => postData("/elimu/profile", data),
-    [postData],
-  );
-
-  const getSchool = useCallback(
-    () => getData("/elimu/school"),
-    [getData],
-  );
-
-  const saveSchool = useCallback(
-    (data) => postData("/elimu/school", data),
-    [postData],
-  );
-
-  const createElimuDemoSchool = useCallback(
-    (data) => postData("/elimu/school/demo", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — CLASSES
-  // =======================================================
-
-  const getClasses = useCallback(
-    () => getData("/elimu/classes"),
-    [getData],
-  );
-
-  const createClass = useCallback(
-    (data) => postData("/elimu/classes", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — LESSONS
-  // =======================================================
-
-  const getLessons = useCallback(
-    () => getData("/elimu/lessons"),
-    [getData],
-  );
-
-  const createLesson = useCallback(
-    (data) => postData("/elimu/lessons", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — ASSIGNMENTS
-  // =======================================================
-
-  const getAssignments = useCallback(
-    () => getData("/elimu/assignments"),
-    [getData],
-  );
-
-  const createAssignment = useCallback(
-    (data) => postData("/elimu/assignments", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — FEES
-  // =======================================================
-
-  const getFees = useCallback(
-    () => getData("/elimu/fees"),
-    [getData],
-  );
-
-  const createFee = useCallback(
-    (data) => postData("/elimu/fees", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — CBC
-  // =======================================================
-
-  const getCBCProjects = useCallback(
-    () => getData("/elimu/cbc/projects"),
-    [getData],
-  );
-
-  const createCBCProject = useCallback(
-    (data) => postData("/elimu/cbc/projects", data),
-    [postData],
-  );
-
-  // =======================================================
-  // ELIMU — DASHBOARD
-  // =======================================================
-
-  const getElimuDashboard = useCallback(
-    () => getData("/elimu/dashboard"),
-    [getData],
-  );
-
-  // =======================================================
-  // COMMUNITY — HEALTH AND FEED
-  // =======================================================
-
-  const getCommunityHealth = useCallback(
-    () => getData("/community/health"),
-    [getData],
-  );
-
-  const getCommunityFeed = useCallback(
-    ({
-      category = "",
-      hub = "",
-      limit = 30,
-    } = {}) =>
-      getData(
-        withQuery("/community/feed", {
-          category,
-          hub,
-          limit,
-        }),
-      ),
-    [getData],
-  );
-
-  // =======================================================
-  // COMMUNITY — POSTS
-  // =======================================================
-
-  const createCommunityPost = useCallback(
-    (data) => postData("/community/posts", data),
-    [postData],
-  );
-
-  const updateCommunityPost = useCallback(
-    (postId, data) =>
-      putData(
-        `/community/posts/${encodeId(postId, "Post ID")}`,
-        data,
-      ),
-    [putData],
-  );
-
-  const deleteCommunityPost = useCallback(
-    (postId) =>
-      deleteData(
-        `/community/posts/${encodeId(postId, "Post ID")}`,
-      ),
-    [deleteData],
-  );
-
-  // =======================================================
-  // COMMUNITY — COMMENTS AND REACTIONS
-  // =======================================================
-
-  const getCommunityComments = useCallback(
-    (postId, limit = 100) =>
-      getData(
-        withQuery(
+      addCommunityComment: (postId, body) =>
+        postData(
           `/community/posts/${encodeId(postId, "Post ID")}/comments`,
-          { limit },
+          { body },
         ),
-      ),
-    [getData],
+
+      reactToCommunityPost: (postId) =>
+        postData(
+          `/community/posts/${encodeId(postId, "Post ID")}/react`,
+        ),
+
+      // ===================================================
+      // COMMUNITY — WHATSAPP PREFERENCES
+      // ===================================================
+
+      getCommunityContactPreferences: () =>
+        getData("/community/contact-preferences"),
+
+      saveCommunityContactPreferences: (data = {}) =>
+        putData("/community/contact-preferences", {
+          enabled: Boolean(data.enabled),
+          phone_number: String(data.phone_number || "").trim(),
+        }),
+
+      getCommunityWhatsAppContact: (
+        memberId,
+        postId = null,
+      ) =>
+        getData(
+          withQuery(
+            `/community/members/${encodeId(memberId, "Member ID")}/whatsapp-contact`,
+            {
+              post_id: postId,
+            },
+          ),
+        ),
+    }),
+    [
+      request,
+      get,
+      post,
+      put,
+      patch,
+      del,
+      getData,
+      postData,
+      putData,
+      patchData,
+      deleteData,
+      isAuthenticated,
+      isGuest,
+      getAccessToken,
+    ],
   );
-
-  const addCommunityComment = useCallback(
-    (postId, body) =>
-      postData(
-        `/community/posts/${encodeId(postId, "Post ID")}/comments`,
-        { body },
-      ),
-    [postData],
-  );
-
-  const reactToCommunityPost = useCallback(
-    (postId) =>
-      postData(
-        `/community/posts/${encodeId(postId, "Post ID")}/react`,
-      ),
-    [postData],
-  );
-
-  // =======================================================
-  // COMMUNITY — WHATSAPP PREFERENCES
-  // =======================================================
-
-  const getCommunityContactPreferences = useCallback(
-    () => getData("/community/contact-preferences"),
-    [getData],
-  );
-
-  const saveCommunityContactPreferences = useCallback(
-    (data = {}) =>
-      putData("/community/contact-preferences", {
-        enabled: Boolean(data.enabled),
-        phone_number: String(data.phone_number || "").trim(),
-      }),
-    [putData],
-  );
-
-  const getCommunityWhatsAppContact = useCallback(
-    (memberId, postId = null) => {
-      const path = withQuery(
-        `/community/members/${encodeId(memberId, "Member ID")}/whatsapp-contact`,
-        { post_id: postId },
-      );
-
-      return getData(path);
-    },
-    [getData],
-  );
-
-  // =======================================================
-  // PUBLIC API
-  // =======================================================
-
-  return {
-    // Generic HTTP
-    request,
-    get,
-    post,
-    put,
-    patch,
-    del,
-
-    isAuthenticated,
-    isGuest,
-    getAccessToken,
-
-    // Identity
-    getIdentity,
-    updateIdentityProfile,
-
-    // Wallet
-    getWalletLedger,
-    recordWalletTransaction,
-
-    // Marketplace
-    getMarketplaceListings,
-    createMarketplaceListing,
-    deleteMarketplaceListing,
-
-    // Biashara — business
-    getBiasharaHealth,
-    getBusiness,
-    getBiasharaBusiness,
-    saveBusiness,
-    createBiasharaBusiness,
-
-    // Biashara — products
-    getProducts,
-    getBiasharaProducts,
-    createProduct,
-    createBiasharaProduct,
-    updateProduct,
-    updateBiasharaProduct,
-    deleteProduct,
-    deleteBiasharaProduct,
-
-    // Biashara — inventory
-    getLowStockProducts,
-    getBiasharaLowStock,
-    adjustInventory,
-    adjustBiasharaInventory,
-    getInventoryHistory,
-    getBiasharaInventoryHistory,
-
-    // Biashara — customers
-    getCustomers,
-    getBiasharaCustomers,
-    createCustomer,
-    createBiasharaCustomer,
-
-    // Biashara — orders
-    getOrders,
-    getBiasharaOrders,
-    createOrder,
-    createBiasharaOrder,
-    getOrder,
-    getBiasharaOrder,
-    updateOrderStatus,
-    updateBiasharaOrderStatus,
-
-    // Biashara — sales
-    recordSale,
-    recordBiasharaSale,
-
-    // Biashara — expenses
-    getExpenses,
-    getBiasharaExpenses,
-    createExpense,
-    createBiasharaExpense,
-
-    // Biashara — dashboard
-    getBiasharaDashboard,
-
-    // Shamba
-    getShambaHealth,
-    getFarmer,
-    saveFarmer,
-    getFarms,
-    createFarm,
-    getFarm,
-    updateFarm,
-    deleteFarm,
-    updateFarmLocation,
-    getCrops,
-    createCrop,
-    getCropAnalysis,
-    getFarmActivities,
-    createFarmActivity,
-    getHarvests,
-    createHarvest,
-    getFarmCommandCenter,
-    getFarmInsights,
-    refreshFarmIntelligence,
-    getFarmRecommendations,
-    createFarmRecommendation,
-    getFarmAlerts,
-    getFarmAlertSummary,
-    markFarmAlertRead,
-    getFarmWeather,
-    getFarmMarket,
-    getFarmAIContext,
-    getShambaDashboard,
-
-    // Elimu — access and health
-    getElimuHealth,
-    getElimuAccess,
-    getElimuBootstrap,
-    createElimuDemoSchool,
-
-    // Elimu — profile and school
-    getEducationProfile,
-    saveEducationProfile,
-    getSchool,
-    saveSchool,
-
-    // Elimu — modules
-    getClasses,
-    createClass,
-    getLessons,
-    createLesson,
-    getAssignments,
-    createAssignment,
-    getFees,
-    createFee,
-    getCBCProjects,
-    createCBCProject,
-    getElimuDashboard,
-
-    // Community
-    getCommunityHealth,
-    getCommunityFeed,
-    createCommunityPost,
-    updateCommunityPost,
-    deleteCommunityPost,
-    getCommunityComments,
-    addCommunityComment,
-    reactToCommunityPost,
-    getCommunityContactPreferences,
-    saveCommunityContactPreferences,
-    getCommunityWhatsAppContact,
-  };
 }
 
 // =========================================================
 // OPTIONAL STATIC API CLIENT
 // =========================================================
 
-// Use only outside React components. This function reads
-// the JWT from localStorage and sends it explicitly.
+// Use this only outside React components.
+// Authentication uses the JWT stored by AuthContext.
 
 export async function jumuiyaRequest(path, options = {}) {
   let token = "";
   let tokenType = "Bearer";
 
   try {
-    token = localStorage.getItem("revelacode_access_token") ||
+    token =
+      localStorage.getItem("revelacode_access_token") ||
       localStorage.getItem("access_token") ||
       localStorage.getItem("token") ||
       "";
@@ -1426,7 +1134,7 @@ export async function jumuiyaRequest(path, options = {}) {
       localStorage.getItem("revelacode_token_type") ||
       "Bearer";
   } catch {
-    // Continue unauthenticated. The backend will decide access.
+    // Continue without a token; the backend controls access.
   }
 
   const {
@@ -1441,7 +1149,10 @@ export async function jumuiyaRequest(path, options = {}) {
     requestHeaders.set("Accept", "application/json");
   }
 
-  if (token && !requestHeaders.has("Authorization")) {
+  if (
+    token &&
+    !requestHeaders.has("Authorization")
+  ) {
     requestHeaders.set(
       "Authorization",
       `${tokenType} ${token}`,
