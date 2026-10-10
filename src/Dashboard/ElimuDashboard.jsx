@@ -1,6 +1,5 @@
-﻿// src/Dashboard/ElimuDashboard.jsx
-
-import React, { useCallback, useEffect, useState } from "react";
+﻿
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   GraduationCap,
@@ -12,11 +11,124 @@ import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuDashboardWorkspace from "@/Dashboard/ElimuDashboardWorkspace.jsx";
 import ElimuAccessDenied from "@/Dashboard/elimu/components/ElimuAccessDenied.jsx";
 
+function getApiPayload(response, preferredKey) {
+  let current = response;
+
+  for (let depth = 0; depth < 5; depth += 1) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) {
+      return current;
+    }
+
+    if (current.success === false || current.ok === false) {
+      throw new Error(
+        current.message ||
+          current.error ||
+          "The Elimu service returned an unsuccessful response."
+      );
+    }
+
+    if (
+      preferredKey &&
+      Object.prototype.hasOwnProperty.call(current, preferredKey)
+    ) {
+      current = current[preferredKey];
+      continue;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(current, "data")) {
+      current = current.data;
+      continue;
+    }
+
+    return current;
+  }
+
+  return current;
+}
+
+function getErrorMessage(error, fallback) {
+  return (
+    error?.payload?.message ||
+    error?.payload?.error ||
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+      <div className="flex flex-col items-center text-center">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+          <GraduationCap size={28} />
+        </span>
+
+        <Loader
+          size={24}
+          className="mt-6 animate-spin text-blue-600"
+          aria-label="Loading"
+        />
+
+        <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
+          Preparing your school workspace
+        </p>
+
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          Checking school access and loading your dashboard.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function LoadErrorScreen({ error, refreshing, onRetry }) {
+  return (
+    <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
+      <section
+        role="alert"
+        className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      >
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300">
+          <AlertCircle size={24} />
+        </span>
+
+        <h1 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+          Unable to open Elimu
+        </h1>
+
+        <p className="mt-2 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {error}
+        </p>
+
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={refreshing}
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <RefreshCw
+            size={16}
+            className={refreshing ? "animate-spin" : ""}
+          />
+          {refreshing ? "Retrying…" : "Try again"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
 export default function ElimuDashboard({
   onNavigate,
   currentPath = "elimu",
 }) {
-  const { getElimuAccess, getElimuDashboard } = useElimuApi();
+  const api = useElimuApi();
+
+  // These method names match src/services/elimuApi.jsx.
+  // GET /api/jumuiya/elimu/access
+  // GET /api/jumuiya/elimu/dashboard
+  const { getAccess, getDashboard } = api;
 
   const [access, setAccess] = useState(null);
   const [dashboard, setDashboard] = useState(null);
@@ -24,8 +136,16 @@ export default function ElimuDashboard({
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  const controllerRef = useRef(null);
+
   const loadDashboard = useCallback(
     async ({ refresh = false } = {}) => {
+      // Cancel any older load or refresh before starting another request.
+      controllerRef.current?.abort();
+
+      const controller = new AbortController();
+      controllerRef.current = controller;
+
       if (refresh) {
         setRefreshing(true);
       } else {
@@ -34,196 +154,147 @@ export default function ElimuDashboard({
 
       setError("");
 
+      let accessResolved = null;
+
       try {
-        if (typeof getElimuAccess !== "function") {
+        if (typeof getAccess !== "function") {
           throw new Error(
-            "getElimuAccess() is missing from src/services/elimuApi.jsx."
+            "getAccess() is missing from src/services/elimuApi.jsx."
           );
         }
 
-        const accessResponse = await getElimuAccess();
+        if (typeof getDashboard !== "function") {
+          throw new Error(
+            "getDashboard() is missing from src/services/elimuApi.jsx."
+          );
+        }
 
-        const accessData =
-          accessResponse?.data?.access ??
-          accessResponse?.data ??
-          accessResponse?.access ??
-          accessResponse;
+        // Step 1: check school access before requesting the dashboard.
+        const accessResponse = await getAccess({
+          signal: controller.signal,
+        });
 
-        setAccess(accessData);
+        if (controller.signal.aborted) return;
 
-        if (!accessData?.allowed) {
+        accessResolved = getApiPayload(accessResponse, "access");
+
+        if (
+          !accessResolved ||
+          typeof accessResolved !== "object" ||
+          Array.isArray(accessResolved)
+        ) {
+          throw new Error(
+            "The access endpoint returned an invalid response. Expected an access object."
+          );
+        }
+
+        setAccess(accessResolved);
+
+        // Access is denied unless the server explicitly allows it.
+        if (accessResolved.allowed !== true) {
           setDashboard(null);
           return;
         }
 
-        if (typeof getElimuDashboard !== "function") {
+        // Step 2: only request the dashboard after access is allowed.
+        const dashboardResponse = await getDashboard({
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const dashboardData = getApiPayload(
+          dashboardResponse,
+          "dashboard"
+        );
+
+        if (
+          dashboardData === null ||
+          dashboardData === undefined ||
+          typeof dashboardData !== "object" ||
+          Array.isArray(dashboardData)
+        ) {
           throw new Error(
-            "getElimuDashboard() is missing from src/services/elimuApi.jsx."
+            "The dashboard endpoint returned an invalid response."
           );
         }
 
-        const dashboardResponse = await getElimuDashboard();
-
-        const dashboardData =
-          dashboardResponse?.data?.dashboard ??
-          dashboardResponse?.data ??
-          dashboardResponse?.dashboard ??
-          dashboardResponse;
-
         setDashboard(dashboardData);
-      } catch (err) {
-        setError(
-          err?.response?.data?.message ||
-            err?.response?.data?.error ||
-            err?.message ||
-            "Unable to load the Elimu workspace. Please try again."
-        );
+      } catch (requestError) {
+        if (
+          controller.signal.aborted ||
+          requestError?.name === "AbortError"
+        ) {
+          return;
+        }
+
+        const status = requestError?.status;
+
+        // An access failure should not accidentally leave an old dashboard
+        // visible to an account that is no longer authorized.
+        if (
+          !accessResolved &&
+          (status === 401 || status === 403)
+        ) {
+          setAccess({
+            allowed: false,
+            reason:
+              status === 401
+                ? "authentication_required"
+                : "forbidden",
+            message:
+              getErrorMessage(
+                requestError,
+                "Your account does not currently have access to this school workspace."
+              ),
+          });
+          setDashboard(null);
+          setError("");
+        } else {
+          setError(
+            getErrorMessage(
+              requestError,
+              "Unable to load the Elimu workspace. Please try again."
+            )
+          );
+        }
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
-    [getElimuAccess, getElimuDashboard]
+    [getAccess, getDashboard]
   );
 
   useEffect(() => {
-    let active = true;
-
-    const initialize = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        if (typeof getElimuAccess !== "function") {
-          throw new Error(
-            "getElimuAccess() is missing from src/services/elimuApi.jsx."
-          );
-        }
-
-        const accessResponse = await getElimuAccess();
-
-        if (!active) return;
-
-        const accessData =
-          accessResponse?.data?.access ??
-          accessResponse?.data ??
-          accessResponse?.access ??
-          accessResponse;
-
-        setAccess(accessData);
-
-        if (!accessData?.allowed) {
-          setDashboard(null);
-          return;
-        }
-
-        if (typeof getElimuDashboard !== "function") {
-          throw new Error(
-            "getElimuDashboard() is missing from src/services/elimuApi.jsx."
-          );
-        }
-
-        const dashboardResponse = await getElimuDashboard();
-
-        if (!active) return;
-
-        const dashboardData =
-          dashboardResponse?.data?.dashboard ??
-          dashboardResponse?.data ??
-          dashboardResponse?.dashboard ??
-          dashboardResponse;
-
-        setDashboard(dashboardData);
-      } catch (err) {
-        if (!active) return;
-
-        setError(
-          err?.response?.data?.message ||
-            err?.response?.data?.error ||
-            err?.message ||
-            "Unable to load the Elimu workspace. Please try again."
-        );
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initialize();
+    loadDashboard();
 
     return () => {
-      active = false;
+      controllerRef.current?.abort();
     };
-  }, [getElimuAccess, getElimuDashboard]);
+  }, [loadDashboard]);
 
   const handleRefresh = useCallback(() => {
     return loadDashboard({ refresh: true });
   }, [loadDashboard]);
 
   if (loading) {
-    return (
-      <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
-        <div className="flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-            <GraduationCap size={28} />
-          </span>
-
-          <Loader
-            size={24}
-            className="mt-6 animate-spin text-blue-600"
-            aria-label="Loading"
-          />
-
-          <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Preparing your school workspace
-          </p>
-
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Checking school access and loading your dashboard.
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (error && !access) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-        <section
-          role="alert"
-          className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300">
-            <AlertCircle size={24} />
-          </span>
-
-          <h1 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-            Unable to open Elimu
-          </h1>
-
-          <p className="mt-2 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
-            {error}
-          </p>
-
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw
-              size={16}
-              className={refreshing ? "animate-spin" : ""}
-            />
-            Try again
-          </button>
-        </section>
-      </main>
+      <LoadErrorScreen
+        error={error}
+        refreshing={refreshing}
+        onRetry={handleRefresh}
+      />
     );
   }
 
-  if (!access?.allowed) {
+  if (!access || access.allowed !== true) {
     return (
       <ElimuAccessDenied
         access={access}
@@ -246,7 +317,11 @@ export default function ElimuDashboard({
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
 
           <div className="min-w-0 flex-1 break-words">
-            {error}
+            <p className="font-semibold">
+              Your school access is available, but the dashboard could not
+              refresh.
+            </p>
+            <p className="mt-1">{error}</p>
           </div>
 
           <button
@@ -255,7 +330,7 @@ export default function ElimuDashboard({
             disabled={refreshing}
             className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-60"
           >
-            Retry
+            {refreshing ? "Retrying…" : "Retry"}
           </button>
         </div>
       )}
