@@ -1,4 +1,7 @@
+// src/Dashboard/ElimuSchoolAccess.jsx
+
 import React from "react";
+
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,6 +11,8 @@ import {
   GraduationCap,
   ShieldCheck,
   Sparkles,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 
 const PLAN_FEATURES = [
@@ -45,6 +50,17 @@ function getVerificationPresentation(status) {
       icon: BadgeCheck,
       classes:
         "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300",
+    };
+  }
+
+  if (status === "demo") {
+    return {
+      label: "Demo school",
+      description:
+        "This is a demonstration environment, not a verified real school.",
+      icon: Sparkles,
+      classes:
+        "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300",
     };
   }
 
@@ -87,6 +103,20 @@ function getVerificationPresentation(status) {
   };
 }
 
+function StatusPill({ status }) {
+  const presentation = getVerificationPresentation(status);
+  const Icon = presentation.icon;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${presentation.classes}`}
+    >
+      <Icon size={14} />
+      {presentation.label}
+    </span>
+  );
+}
+
 export function ElimuAccountPlanBanner({
   access,
   school,
@@ -100,11 +130,9 @@ export function ElimuAccountPlanBanner({
   const currentSchool = school || access?.school || dashboard?.school;
   const schoolName = getSchoolName(currentSchool);
   const status = getVerificationStatus(access);
-  const verification = getVerificationPresentation(status);
-  const VerificationIcon = verification.icon;
-
   const allowed = Boolean(access?.allowed);
   const hasSchool = Boolean(access?.has_school || currentSchool);
+
   const role =
     access?.role_label ||
     access?.role ||
@@ -120,21 +148,13 @@ export function ElimuAccountPlanBanner({
       return;
     }
 
-    if (typeof onRefresh === "function") {
-      onRefresh();
-    }
+    onRefresh?.();
   };
 
   if (compact) {
     return (
       <section
-        className={[
-          "flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4",
-          "dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        className={`flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between ${className}`}
       >
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
@@ -151,28 +171,14 @@ export function ElimuAccountPlanBanner({
           </div>
         </div>
 
-        <span
-          className={[
-            "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
-            verification.classes,
-          ].join(" ")}
-        >
-          <VerificationIcon size={14} />
-          {verification.label}
-        </span>
+        <StatusPill status={status} />
       </section>
     );
   }
 
   return (
     <section
-      className={[
-        "overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm",
-        "dark:border-slate-800 dark:bg-slate-950",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 ${className}`}
     >
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-4">
@@ -185,16 +191,7 @@ export function ElimuAccountPlanBanner({
               <h2 className="text-base font-bold text-slate-950 dark:text-white">
                 Elimu school workspace
               </h2>
-
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
-                  verification.classes,
-                ].join(" ")}
-              >
-                <VerificationIcon size={13} />
-                {verification.label}
-              </span>
+              <StatusPill status={status} />
             </div>
 
             <p className="mt-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -205,8 +202,8 @@ export function ElimuAccountPlanBanner({
               {allowed
                 ? "Manage your school's academic and administrative operations from one workspace."
                 : hasSchool
-                  ? verification.description
-                  : "Set up your school workspace to begin managing school operations."}
+                  ? getVerificationPresentation(status).description
+                  : "Register a real school or create a development demo to explore the Elimu workspace."}
             </p>
           </div>
         </div>
@@ -215,7 +212,7 @@ export function ElimuAccountPlanBanner({
           type="button"
           onClick={handleAction}
           disabled={refreshing}
-          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-900 dark:hover:bg-blue-950/30 dark:hover:text-blue-300"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-blue-950/30"
         >
           {allowed ? "School profile" : "View school access"}
           <ArrowRight size={16} />
@@ -229,14 +226,22 @@ export function ElimuSchoolAccessCard({
   access,
   onNavigate,
   onRefresh,
+  onCreateDemo,
   refreshing = false,
+  creatingDemo = false,
+  demoError = "",
   className = "",
 }) {
   const status = getVerificationStatus(access);
   const verification = getVerificationPresentation(status);
   const VerificationIcon = verification.icon;
+
   const hasSchool = Boolean(access?.has_school || access?.school);
   const allowed = Boolean(access?.allowed);
+  const canCreateDemo =
+    !hasSchool &&
+    !allowed &&
+    typeof onCreateDemo === "function";
 
   const title = !hasSchool
     ? "Create your school workspace"
@@ -245,7 +250,7 @@ export function ElimuSchoolAccessCard({
       : verification.label;
 
   const description = !hasSchool
-    ? "Set up your school's profile before adding staff, classes, students, and academic records."
+    ? "Start with a development demo to explore the workspace, or submit your real school for verification."
     : allowed
       ? "Your school workspace is available. Continue to manage school operations."
       : verification.description;
@@ -256,24 +261,16 @@ export function ElimuSchoolAccessCard({
       return;
     }
 
-    if (typeof onNavigate === "function") {
-      onNavigate(
-        allowed
-          ? "elimu"
-          : access?.redirect?.screen || "elimu-school-setup"
-      );
-    }
+    onNavigate?.(
+      allowed
+        ? "elimu"
+        : access?.redirect?.screen || "elimu-school-setup"
+    );
   };
 
   return (
     <section
-      className={[
-        "relative isolate overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm",
-        "dark:border-slate-800 dark:bg-slate-950",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={`relative isolate overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 ${className}`}
     >
       <div className="absolute inset-x-0 top-0 -z-10 h-40 bg-gradient-to-br from-blue-50 via-indigo-50/60 to-transparent dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-transparent" />
 
@@ -296,24 +293,16 @@ export function ElimuSchoolAccessCard({
 
         {hasSchool && (
           <div className="mt-5">
-            <span
-              className={[
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
-                verification.classes,
-              ].join(" ")}
-            >
-              <VerificationIcon size={15} />
-              {verification.label}
-            </span>
+            <StatusPill status={status} />
           </div>
         )}
 
-        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
             onClick={handlePrimaryAction}
-            disabled={refreshing}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-slate-950"
+            disabled={refreshing || creatingDemo}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {refreshing
               ? "Checking access…"
@@ -321,22 +310,80 @@ export function ElimuSchoolAccessCard({
                 ? "Open workspace"
                 : hasSchool
                   ? "Refresh access status"
-                  : "Set up school"}
+                  : "Register a real school"}
             <ArrowRight size={16} />
           </button>
 
-          {!allowed && typeof onRefresh === "function" && (
+          {canCreateDemo && (
+            <button
+              type="button"
+              onClick={onCreateDemo}
+              disabled={creatingDemo || refreshing}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-3 text-sm font-semibold text-violet-800 transition hover:border-violet-300 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-200 dark:hover:bg-violet-950/60"
+            >
+              {creatingDemo ? (
+                <RefreshCw size={16} className="animate-spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+
+              {creatingDemo ? "Creating demo school…" : "Create demo school"}
+            </button>
+          )}
+
+          {!allowed && typeof onRefresh === "function" && hasSchool && (
             <button
               type="button"
               onClick={onRefresh}
               disabled={refreshing}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
             >
               <Clock3 size={16} />
               Check status
             </button>
           )}
         </div>
+
+        {canCreateDemo && (
+          <div className="mt-5 rounded-xl border border-violet-100 bg-violet-50/70 p-4 dark:border-violet-900/40 dark:bg-violet-950/20">
+            <div className="flex items-start gap-2.5">
+              <Sparkles
+                size={17}
+                className="mt-0.5 shrink-0 text-violet-700 dark:text-violet-300"
+              />
+
+              <div>
+                <p className="text-sm font-semibold text-violet-950 dark:text-violet-100">
+                  Explore Elimu before registering
+                </p>
+                <p className="mt-1 text-xs leading-5 text-violet-900/80 dark:text-violet-200/80">
+                  A demo workspace is clearly labelled and does not verify a
+                  real school. Demo creation is controlled by the backend and
+                  may be disabled on production servers.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {demoError && (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
+          >
+            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Demo school could not be created</p>
+              <p className="mt-1">{demoError}</p>
+            </div>
+          </div>
+        )}
+
+        {refreshing && (
+          <p className="mt-4 text-xs text-slate-500">
+            Checking your school's access status…
+          </p>
+        )}
       </div>
     </section>
   );
@@ -348,20 +395,16 @@ export default function ElimuSchoolAccess({
   dashboard,
   onNavigate,
   onRefresh,
+  onCreateDemo,
+  creatingDemo = false,
+  demoError = "",
   refreshing = false,
   className = "",
 }) {
   const allowed = Boolean(access?.allowed);
 
   return (
-    <div
-      className={[
-        "space-y-6",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <div className={`space-y-6 ${className}`}>
       <ElimuAccountPlanBanner
         access={access}
         school={school}
@@ -376,6 +419,9 @@ export default function ElimuSchoolAccess({
           access={access}
           onNavigate={onNavigate}
           onRefresh={onRefresh}
+          onCreateDemo={onCreateDemo}
+          creatingDemo={creatingDemo}
+          demoError={demoError}
           refreshing={refreshing}
         />
       )}
@@ -392,8 +438,8 @@ export default function ElimuSchoolAccess({
                 School access is active
               </p>
               <p className="mt-1 text-sm leading-5 text-emerald-800 dark:text-emerald-300">
-                Your school workspace is ready for authorized school
-                operations.
+                Your account can open the school workspace. Demo accounts
+                remain distinct from verified real schools.
               </p>
             </div>
           </div>

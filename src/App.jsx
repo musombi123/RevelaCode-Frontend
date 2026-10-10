@@ -1,13 +1,13 @@
-// /workspaces/RevelaCode-Frontend/src/App.jsx
+// src/App.jsx
 
 import React from "react";
+
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-
 
 // =========================================================
 // EXISTING REVELACODE COMPONENTS
@@ -19,105 +19,64 @@ import Pages from "./app/pages.jsx";
 import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 
+import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 
 // =========================================================
 // GLOBAL CONTEXT
 // =========================================================
 
-import {
-  HistoryProvider,
-} from "./context/HistoryContext.jsx";
+import { HistoryProvider } from "./context/HistoryContext.jsx";
 
-import {
-  PreferencesProvider,
-} from "./context/PreferencesContext.jsx";
+import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 
 import {
   AuthProvider,
   useAuth,
 } from "./context/AuthContext.jsx";
 
-
 // =========================================================
 // SPA AUTH WRAPPER
+// Internal RevelaCode dashboards remain behind startup/auth.
+// Public school websites do not use this wrapper.
 // =========================================================
 
-function SPAWrapper({
-  children,
-}) {
-  const {
-    hasStarted,
-    loading,
-  } = useAuth();
-
-
-  // -------------------------------------------------------
-  // AUTH BOOT
-  // -------------------------------------------------------
+function SPAWrapper({ children }) {
+  const { hasStarted, loading } = useAuth();
 
   if (loading) {
     return (
-      <div
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-slate-50
-          p-6
-          text-sm
-          text-slate-500
-          dark:bg-slate-950
-          dark:text-slate-400
-        "
-      >
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-          "
-        >
-          <div
-            className="
-              h-5
-              w-5
-              animate-spin
-              rounded-full
-              border-2
-              border-slate-300
-              border-t-emerald-600
-            "
-          />
-
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600" />
           Booting secure session…
         </div>
       </div>
     );
   }
 
-
-  // -------------------------------------------------------
-  // START MODAL
-  // -------------------------------------------------------
-
   if (!hasStarted) {
-    return (
-      <StartModal />
-    );
+    return <StartModal />;
   }
-
-
-  // -------------------------------------------------------
-  // AUTHENTICATED APPLICATION
-  // -------------------------------------------------------
 
   return children;
 }
 
+// =========================================================
+// INTERNAL DASHBOARD ROUTE
+// =========================================================
+
+function InternalDashboard() {
+  return (
+    <SPAWrapper>
+      <Layout>
+        <MainDashboardV2 />
+      </Layout>
+    </SPAWrapper>
+  );
+}
 
 // =========================================================
-// APP
+// APP ROUTES
 // =========================================================
 
 export default function App() {
@@ -126,13 +85,8 @@ export default function App() {
       <AuthProvider>
         <HistoryProvider>
           <BrowserRouter>
-
             <Routes>
-
-              {/* =================================================
-                  MAIN ECOSYSTEM
-              ================================================= */}
-
+              {/* Main RevelaCode ecosystem */}
               <Route
                 path="/"
                 element={
@@ -144,11 +98,7 @@ export default function App() {
                 }
               />
 
-
-              {/* =================================================
-                  GENERAL PAGES
-              ================================================= */}
-
+              {/* General pages */}
               <Route
                 path="/pages"
                 element={
@@ -160,12 +110,7 @@ export default function App() {
                 }
               />
 
-
-              {/* =================================================
-                  BIBLE
-                  Existing RevelaCode direct route.
-              ================================================= */}
-
+              {/* Bible */}
               <Route
                 path="/bible"
                 element={
@@ -177,140 +122,66 @@ export default function App() {
                 }
               />
 
-
-              {/* =================================================
-                  JUMUIYA ENTRY
-                  The actual hubs still render through
-                  MainDashboardV2 + dashboardConfig.jsx.
-              ================================================= */}
-
+              {/* Jumuiya entry */}
               <Route
                 path="/jumuiya"
-                element={
-                  <Navigate
-                    to="/"
-                    replace
-                  />
-                }
+                element={<Navigate to="/" replace />}
               />
 
-
-              {/* =================================================
-                  BIASHARA ENTRY
-                  Deep-link support.
-                  MainDashboardV2 can interpret the requested
-                  dashboard through the query state if you add
-                  that behavior there.
-              ================================================= */}
-
+              {/* Jumuiya hubs */}
               <Route
                 path="/jumuiya/biashara"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
-
-
-              {/* =================================================
-                  SHAMBA ENTRY
-              ================================================= */}
 
               <Route
                 path="/jumuiya/shamba"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
-
-
-              {/* =================================================
-                  ELIMU ENTRY
-              ================================================= */}
 
               <Route
                 path="/jumuiya/elimu"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
-
-
-              {/* =================================================
-                  COMMUNITY ENTRY
-              ================================================= */}
 
               <Route
                 path="/jumuiya/community"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
-
-
-              {/* =================================================
-                  WALLET / PAYMENTS ENTRY
-              ================================================= */}
 
               <Route
                 path="/jumuiya/payments"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
-
-
-              {/* =================================================
-                  MARKETPLACE ENTRY
-              ================================================= */}
 
               <Route
                 path="/jumuiya/marketplace"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
+                element={<InternalDashboard />}
               />
 
-
               {/* =================================================
-                  FALLBACK
+                  PUBLIC SCHOOL WEBSITES
+
+                  Example:
+                  https://revelacode.com/namarambi
+
+                  A school slug is resolved by the public Elimu API.
+                  This route is intentionally outside SPAWrapper so
+                  visitors can view published school pages without
+                  opening the private dashboard first.
               ================================================= */}
 
               <Route
-                path="*"
-                element={
-                  <Navigate
-                    to="/"
-                    replace
-                  />
-                }
+                path="/:schoolSlug"
+                element={<ElimuPublicSchoolPage />}
               />
 
+              {/* Unknown multi-segment URLs */}
+              <Route
+                path="*"
+                element={<Navigate to="/" replace />}
+              />
             </Routes>
-
           </BrowserRouter>
         </HistoryProvider>
       </AuthProvider>
