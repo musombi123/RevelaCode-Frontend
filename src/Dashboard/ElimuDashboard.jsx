@@ -8,7 +8,7 @@ export default function ElimuDashboard({ onNavigate, currentPath = "elimu" }) {
   const {
     getElimuAccess,
     getElimuDashboard,
-  } = useJumuiyaApi();
+  } = useElimuApi();
 
   const [access, setAccess] = useState(null);
   const [dashboard, setDashboard] = useState(null);
