@@ -1,998 +1,314 @@
-// src/Dashboard/ElimuDashboardWorkspace.jsx
-
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   AlertCircle,
-  ArrowUpRight,
-  BookOpen,
-  CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardList,
-  GraduationCap,
-  Loader2,
+  Menu,
   RefreshCw,
-  School,
-  WalletCards,
 } from "lucide-react";
 
-import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import { ElimuAccountPlanBanner } from "@/Dashboard/ElimuSchoolAccess.jsx";
+import ElimuDashboardHeader from "@/Dashboard/elimu/components/ElimuDashboardHeader.jsx";
+import ElimuDashboardSidebar from "@/Dashboard/elimu/components/ElimuDashboardSidebar.jsx";
 
-// =========================================================
-// HELPERS
-// =========================================================
+import ElimuOwnerDashboard from "@/Dashboard/elimu/ElimuOwnerDashboard.jsx";
+import ElimuPrincipalDashboard from "@/Dashboard/elimu/ElimuPrincipalDashboard.jsx";
+import ElimuBursarDashboard from "@/Dashboard/elimu/ElimuBursarDashboard.jsx";
+import ElimuRegistrarDashboard from "@/Dashboard/elimu/ElimuRegistrarDashboard.jsx";
+import ElimuTeacherDashboard from "@/Dashboard/elimu/ElimuTeacherDashboard.jsx";
 
-function asList(value, key) {
-  if (Array.isArray(value)) {
-    return value;
+const ROLE_LABELS = {
+  owner: "Owner / School Director",
+  principal: "Principal",
+  bursar: "Bursar",
+  registrar: "Registrar",
+  teacher: "Teacher",
+};
+
+const ROLE_DESCRIPTIONS = {
+  owner: "Oversee school operations, staff, academic performance and finances.",
+  principal: "Coordinate school operations, academic delivery and staff performance.",
+  bursar: "Manage school fees, financial records and financial reporting.",
+  registrar: "Manage admissions, enrolment and student records.",
+  teacher: "Manage assigned classes, lessons, attendance and learner assessments.",
+};
+
+function unwrapResponse(response) {
+  if (!response || typeof response !== "object") return response;
+
+  if (response.data && typeof response.data === "object") {
+    return response.data;
   }
 
-  if (key && Array.isArray(value?.[key])) {
-    return value[key];
-  }
+  return response;
+}
 
-  for (const property of [
-    "items",
-    "results",
-    "records",
-    "data",
-  ]) {
-    if (Array.isArray(value?.[property])) {
-      return value[property];
+function normalizeRole(access) {
+  const candidates = [
+    access?.role,
+    access?.membership?.role,
+    access?.access?.role,
+    access?.role_label,
+    access?.membership?.role_label,
+  ];
+
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim().toLowerCase();
+
+    if (!value) continue;
+
+    if (value === "owner" || value.includes("school owner")) {
+      return "owner";
+    }
+
+    if (value.includes("director")) return "owner";
+    if (value.includes("principal")) return "principal";
+    if (value.includes("bursar") || value.includes("finance")) {
+      return "bursar";
+    }
+    if (value.includes("registrar") || value.includes("admission")) {
+      return "registrar";
+    }
+    if (value.includes("teacher") || value.includes("educator")) {
+      return "teacher";
     }
   }
 
-  return [];
+  return "";
 }
 
-function errorMessage(error) {
+function getSchool(access, dashboard) {
   return (
-    error?.message ||
-    error?.error?.message ||
-    "An unexpected request error occurred."
+    access?.school ||
+    dashboard?.school ||
+    dashboard?.hub?.school ||
+    null
   );
 }
 
-function formatCount(value) {
-  const number = Number(value);
-
-  return Number.isFinite(number)
-    ? new Intl.NumberFormat("en-KE", {
-        maximumFractionDigits: 0,
-      }).format(number)
-    : "0";
-}
-
-function getClassName(item) {
+function getSchoolName(school) {
   return (
-    item?.name ||
-    item?.class_name ||
-    item?.title ||
-    item?.grade ||
-    "Class"
+    school?.name ||
+    school?.school_name ||
+    school?.institution_name ||
+    "School workspace"
   );
 }
 
-function getItemId(item) {
-  return item?.id || item?._id || item?.school_id || "";
-}
-
-// =========================================================
-// METRIC CARD
-// =========================================================
-
-function MetricCard({ icon: Icon, label, value, helper }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
-          <Icon size={20} />
-        </div>
-
-        <ArrowUpRight
-          size={17}
-          aria-hidden="true"
-          className="text-slate-300 dark:text-slate-600"
-        />
-      </div>
-
-      <div className="mt-5">
-        <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          {formatCount(value)}
-        </div>
-
-        <div className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-          {label}
-        </div>
-
-        <div className="mt-1 text-xs text-slate-400">
-          {helper}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// =========================================================
-// QUICK ACTION
-// =========================================================
-
-function QuickAction({
-  icon: Icon,
-  title,
-  description,
-  onClick,
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-900 dark:hover:border-emerald-700"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:group-hover:bg-emerald-950/60">
-          <Icon size={18} />
-        </div>
-
-        <div className="min-w-0">
-          <div className="truncate font-semibold text-slate-900 dark:text-white">
-            {title}
-          </div>
-
-          <div className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {description}
-          </div>
-        </div>
-      </div>
-
-      <ChevronRight
-        size={17}
-        aria-hidden="true"
-        className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-600"
-      />
-    </button>
-  );
-}
-
-// =========================================================
-// SECTION HEADER
-// =========================================================
-
-function SectionHeading({
-  title,
-  description,
-  actionLabel,
-  onAction,
-}) {
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h3 className="font-semibold text-slate-900 dark:text-white">
-          {title}
-        </h3>
-
-        {description ? (
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {description}
-          </p>
-        ) : null}
-      </div>
-
-      {actionLabel && typeof onAction === "function" ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="inline-flex w-fit items-center gap-1 text-sm font-medium text-emerald-700 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-emerald-400"
-        >
-          {actionLabel}
-          <ChevronRight size={15} />
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-// =========================================================
-// EMPTY STATE
-// =========================================================
-
-function EmptyState({
-  icon: Icon = School,
-  title,
-  description,
-  actionLabel,
-  onAction,
-}) {
-  return (
-    <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center dark:border-white/10">
-      <Icon
-        size={28}
-        aria-hidden="true"
-        className="mx-auto text-emerald-500"
-      />
-
-      <h4 className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
-        {title}
-      </h4>
-
-      <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">
-        {description}
-      </p>
-
-      {actionLabel && typeof onAction === "function" ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="mt-3 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500"
-        >
-          {actionLabel}
-          <ChevronRight size={14} />
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-// =========================================================
-// LOADING SKELETON
-// =========================================================
-
-function DashboardSkeleton() {
-  return (
-    <div
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      aria-label="Loading dashboard metrics"
-      aria-busy="true"
-    >
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-36 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"
-        />
-      ))}
-    </div>
-  );
-}
-
-// =========================================================
-// ELIMU DASHBOARD WORKSPACE
-//
-// This component intentionally does not wrap itself in
-// JumuiyaDashboardShell.
-// =========================================================
-
-export default function ElimuDashboardWorkspace({
-  onNavigate,
-  accountAccess,
-  accountSchool,
-}) {
-  const {
-    getEducationProfile,
-    getSchool,
-    getClasses,
-    getLessons,
-    getAssignments,
-    getFees,
-    getCBCProjects,
-    getElimuDashboard,
-  } = useJumuiyaApi();
-
-  const [dashboard, setDashboard] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [school, setSchool] = useState(accountSchool || null);
-
-  const [classes, setClasses] = useState([]);
-  const [lessons, setLessons] = useState([]);
-  const [assignments, setAssignments] = useState([]);
-  const [fees, setFees] = useState([]);
-  const [projects, setProjects] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [lastUpdated, setLastUpdated] = useState(null);
-
-  // =======================================================
-  // NAVIGATION
-  // =======================================================
-
-  const navigate = useCallback(
-    (destination) => {
-      if (typeof onNavigate === "function") {
-        onNavigate(destination);
-      }
-    },
-    [onNavigate],
-  );
-
-  // =======================================================
-  // LOAD DASHBOARD DATA
-  // =======================================================
-
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
-    const requests = [
-      ["dashboard", getElimuDashboard],
-      ["profile", getEducationProfile],
-      ["school", getSchool],
-      ["classes", getClasses],
-      ["lessons", getLessons],
-      ["assignments", getAssignments],
-      ["fees", getFees],
-      ["projects", getCBCProjects],
-    ];
-
-    const results = await Promise.all(
-      requests.map(async ([key, request]) => {
-        try {
-          return {
-            key,
-            data: await request(),
-            error: null,
-          };
-        } catch (requestError) {
-          return {
-            key,
-            data: null,
-            error: errorMessage(requestError),
-          };
-        }
-      }),
-    );
-
-    const data = {};
-    const failures = [];
-
-    for (const result of results) {
-      data[result.key] = result.data;
-
-      if (result.error) {
-        failures.push({
-          module: result.key,
-          message: result.error,
-        });
-      }
-    }
-
-    setDashboard(data.dashboard || null);
-    setProfile(data.profile || null);
-
-    const schoolResult =
-      data.school ||
-      data.dashboard?.school ||
-      accountSchool ||
-      null;
-
-    setSchool(schoolResult);
-
-    setClasses(asList(data.classes, "classes"));
-    setLessons(asList(data.lessons, "lessons"));
-    setAssignments(asList(data.assignments, "assignments"));
-    setFees(asList(data.fees, "fees"));
-    setProjects(asList(data.projects, "projects"));
-
-    if (failures.length === requests.length) {
-      setError(
-        "Every Elimu dashboard request failed. Check the backend connection, authentication, CORS configuration, and registered Elimu routes.",
-      );
-    } else if (failures.length > 0) {
-      const descriptions = failures.map(
-        (failure) =>
-          `${failure.module}: ${failure.message}`,
-      );
-
-      setError(
-        `Some Elimu modules could not load (${descriptions.join(
-          "; ",
-        )}). Available modules are still displayed. Retry after checking the affected endpoints.`,
-      );
-    }
-
-    setLastUpdated(new Date());
-    setLoading(false);
-  }, [
-    getElimuDashboard,
-    getEducationProfile,
-    getSchool,
-    getClasses,
-    getLessons,
-    getAssignments,
-    getFees,
-    getCBCProjects,
-    accountSchool,
-  ]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function run() {
-      await loadDashboard();
-
-      // The request handler checks no component state after unmount.
-      // This guard is retained for future asynchronous extensions.
-      if (!active) return;
-    }
-
-    run();
-
-    return () => {
-      active = false;
-    };
-  }, [loadDashboard]);
-
-  // =======================================================
-  // NORMALIZED DASHBOARD DATA
-  // =======================================================
-
-  const metrics =
-    dashboard?.metrics ||
-    dashboard?.summary ||
+function getCurrentUserName(access, dashboard) {
+  const user =
+    access?.user ||
+    access?.membership?.user ||
+    dashboard?.user ||
+    dashboard?.profile ||
     {};
 
-  const profileData =
-    dashboard?.profile ||
-    profile ||
-    null;
+  return (
+    user?.full_name ||
+    user?.name ||
+    user?.display_name ||
+    user?.username ||
+    ""
+  );
+}
 
-  const schoolData =
-    dashboard?.school ||
-    school ||
-    accountSchool ||
-    null;
+function getRoleDashboard(role) {
+  switch (role) {
+    case "owner":
+      return ElimuOwnerDashboard;
+    case "principal":
+      return ElimuPrincipalDashboard;
+    case "bursar":
+      return ElimuBursarDashboard;
+    case "registrar":
+      return ElimuRegistrarDashboard;
+    case "teacher":
+      return ElimuTeacherDashboard;
+    default:
+      return null;
+  }
+}
 
-  const dashboardClasses = asList(
-    dashboard?.classes ?? classes,
-    "classes",
+export default function ElimuDashboardWorkspace({
+  access,
+  dashboard,
+  onNavigate,
+  currentPath = "elimu",
+  onRefresh,
+  refreshing = false,
+}) {
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const role = useMemo(() => normalizeRole(access), [access]);
+  const school = useMemo(
+    () => getSchool(access, dashboard),
+    [access, dashboard]
   );
 
-  const dashboardLessons = asList(
-    dashboard?.lessons ?? lessons,
-    "lessons",
-  );
+  const schoolName = getSchoolName(school);
+  const userName = getCurrentUserName(access, dashboard);
+  const RoleDashboard = getRoleDashboard(role);
 
-  const dashboardAssignments = asList(
-    dashboard?.assignments ?? assignments,
-    "assignments",
-  );
+  const handleNavigate = (path) => {
+    if (typeof onNavigate === "function") {
+      onNavigate(path);
+    }
 
-  const dashboardFees = asList(
-    dashboard?.fees ?? fees,
-    "fees",
-  );
+    setMobileSidebarOpen(false);
+  };
 
-  const dashboardProjects = asList(
-    dashboard?.cbc_projects ??
-      dashboard?.projects ??
-      projects,
-    "projects",
-  );
+  const handleRefresh = () => {
+    if (typeof onRefresh === "function") {
+      return onRefresh();
+    }
 
-  const classCount =
-    metrics.classes ??
-    dashboardClasses.length;
+    return undefined;
+  };
 
-  const lessonCount =
-    metrics.lessons ??
-    dashboardLessons.length;
-
-  const assignmentCount =
-    metrics.assignments ??
-    dashboardAssignments.length;
-
-  const projectCount =
-    metrics.cbc_projects ??
-    dashboardProjects.length;
-
-  const feeCount =
-    metrics.fees ??
-    dashboardFees.length;
-
-  const pendingFees =
-    metrics.pending_fees ??
-    dashboardFees.filter((fee) =>
-      ["pending", "unpaid", "overdue"].includes(
-        String(fee?.status || "").toLowerCase(),
-      ),
-    ).length;
-
-  const pendingFeeNumber = Math.max(
-    0,
-    Number(pendingFees) || 0,
-  );
-
-  const feeTotal = Math.max(
-    0,
-    Number(feeCount) || 0,
-  );
-
-  const pendingFeePercentage =
-    feeTotal > 0
-      ? Math.min(100, (pendingFeeNumber / feeTotal) * 100)
-      : 0;
-
-  const schoolName =
-    schoolData?.name ||
-    profileData?.school_name ||
-    profileData?.full_name ||
-    profileData?.fullName ||
-    "Your education hub";
-
-  // =======================================================
-  // RENDER
-  // =======================================================
+  const headerTitle = ROLE_LABELS[role] || "School workspace";
+  const headerDescription =
+    ROLE_DESCRIPTIONS[role] ||
+    "Manage school operations from your Elimu workspace.";
 
   return (
-    <div className="space-y-6">
-      {/* SCHOOL ACCOUNT AND TRIAL INFORMATION */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+      <div className="flex min-h-screen">
+        <ElimuDashboardSidebar
+          access={access}
+          school={school}
+          currentPath={currentPath}
+          onNavigate={handleNavigate}
+          collapsed={sidebarCollapsed}
+          mobileOpen={mobileSidebarOpen}
+          onClose={() => setMobileSidebarOpen(false)}
+        />
 
-      <ElimuAccountPlanBanner
-        access={accountAccess}
-        school={schoolData}
-      />
-
-      {/* HERO */}
-
-      <section className="overflow-hidden rounded-3xl bg-slate-950 px-5 py-7 text-white shadow-xl sm:px-7 sm:py-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-emerald-200">
-              <GraduationCap size={14} />
-              Elimu education workspace
-            </div>
-
-            <h2 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">
-              {schoolName}
-            </h2>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-              Manage classes, lessons, assignments, school information,
-              fees, and CBC projects from your education workspace.
-            </p>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              {profileData?.profile_type ? (
-                <span className="rounded-full bg-white/10 px-3 py-1.5">
-                  {profileData.profile_type}
-                </span>
-              ) : null}
-
-              {schoolData?.county ? (
-                <span className="rounded-full bg-white/10 px-3 py-1.5">
-                  {schoolData.county}
-                </span>
-              ) : null}
-
-              {schoolData?.verification_status ? (
-                <span className="rounded-full bg-white/10 px-3 py-1.5">
-                  Verification: {schoolData.verification_status}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigate("elimu/classes")}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/30"
-          >
-            Open learning
-            <ChevronRight size={17} />
-          </button>
-        </div>
-      </section>
-
-      {/* DASHBOARD CONTROLS */}
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">
-            School overview
-          </h3>
-
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Live data returned by your Elimu API.
-            {lastUpdated
-              ? ` Last checked at ${lastUpdated.toLocaleTimeString("en-KE", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}.`
-              : ""}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadDashboard}
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-white/5"
-        >
-          {loading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <RefreshCw size={16} />
-          )}
-          {loading ? "Refreshing..." : "Refresh dashboard"}
-        </button>
-      </div>
-
-      {/* LOADING */}
-
-      {loading ? (
-        <DashboardSkeleton />
-      ) : null}
-
-      {/* API ERRORS */}
-
-      {!loading && error ? (
-        <section
-          role="alert"
-          className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
-        >
-          <div className="flex items-start gap-3">
-            <AlertCircle
-              size={21}
-              className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300"
-            />
-
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-amber-950 dark:text-amber-100">
-                Elimu data could not load completely
-              </h3>
-
-              <p className="mt-1 break-words text-sm leading-6 text-amber-900 dark:text-amber-100">
-                {error}
-              </p>
-
-              <button
-                type="button"
-                onClick={loadDashboard}
-                disabled={loading}
-                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-950 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-900/30"
-              >
-                <RefreshCw size={14} />
-                Retry failed requests
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* METRICS */}
-
-      {!loading ? (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            icon={School}
-            label="Classes"
-            value={classCount}
-            helper="Classes returned by the API"
-          />
-
-          <MetricCard
-            icon={BookOpen}
-            label="Lessons"
-            value={lessonCount}
-            helper="Learning resources"
-          />
-
-          <MetricCard
-            icon={ClipboardList}
-            label="Assignments"
-            value={assignmentCount}
-            helper="Learning tasks"
-          />
-
-          <MetricCard
-            icon={CheckCircle2}
-            label="CBC projects"
-            value={projectCount}
-            helper="Curriculum projects"
-          />
-        </section>
-      ) : null}
-
-      {/* MAIN DASHBOARD */}
-
-      {!loading ? (
-        <>
-          {/* CLASSES AND FEES */}
-
-          <section className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <SectionHeading
-                title="Classes"
-                description="Classes available to your education workspace."
-                actionLabel="View classes"
-                onAction={() => navigate("elimu/classes")}
-              />
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {dashboardClasses.slice(0, 4).map((item, index) => {
-                  const itemId = getItemId(item);
-
-                  return (
-                    <button
-                      type="button"
-                      key={itemId || index}
-                      onClick={() =>
-                        navigate(
-                          itemId
-                            ? `elimu/classes/${itemId}`
-                            : "elimu/classes",
-                        )
-                      }
-                      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3 text-left transition hover:border-emerald-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-white/5 dark:hover:bg-white/5"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
-                          <School size={17} />
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-slate-900 dark:text-white">
-                            {getClassName(item)}
-                          </div>
-
-                          <div className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                            {item.level ||
-                              item.stream ||
-                              item.academic_year ||
-                              "Education class"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <ChevronRight
-                        size={16}
-                        className="shrink-0 text-slate-400"
-                      />
-                    </button>
-                  );
-                })}
-
-                {dashboardClasses.length === 0 ? (
-                  <div className="col-span-full">
-                    <EmptyState
-                      icon={School}
-                      title="No classes yet"
-                      description="Create or connect a class to begin managing learning."
-                      actionLabel="Open classes"
-                      onAction={() => navigate("elimu/classes")}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              {dashboardClasses.length > 4 ? (
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
+            <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+              <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => navigate("elimu/classes")}
-                  className="mt-4 text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  aria-label="Open navigation menu"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
                 >
-                  View all {dashboardClasses.length} classes
+                  <Menu size={20} />
                 </button>
-              ) : null}
-            </div>
 
-            {/* FEES */}
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-              <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-white">
-                <WalletCards
-                  size={19}
-                  className="text-emerald-600"
-                />
-                School fees
-              </div>
-
-              <div className="mt-5 text-3xl font-bold text-slate-900 dark:text-white">
-                {formatCount(feeCount)}
-              </div>
-
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Fee records returned by the API
-              </p>
-
-              <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-white/5">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-slate-600 dark:text-slate-300">
-                    Pending or unpaid
-                  </span>
-
-                  <span className="font-semibold text-orange-600 dark:text-orange-400">
-                    {formatCount(pendingFeeNumber)}
-                  </span>
-                </div>
-
-                <div
-                  className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10"
-                  role="progressbar"
-                  aria-label="Proportion of pending school fee records"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(pendingFeePercentage)}
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed((value) => !value)}
+                  aria-label={
+                    sidebarCollapsed
+                      ? "Expand navigation sidebar"
+                      : "Collapse navigation sidebar"
+                  }
+                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 lg:inline-flex"
                 >
-                  <div
-                    className="h-full rounded-full bg-orange-500 transition-all"
-                    style={{
-                      width: `${pendingFeePercentage}%`,
-                    }}
-                  />
-                </div>
+                  <Menu size={19} />
+                </button>
 
-                {feeTotal === 0 ? (
-                  <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    No fee records are available to calculate a pending rate.
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-slate-950 dark:text-white">
+                    {schoolName}
                   </p>
-                ) : null}
+                  <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                    {userName
+                      ? `${userName} · ${ROLE_LABELS[role] || "School member"}`
+                      : ROLE_LABELS[role] || "School workspace"}
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => navigate("elimu/fees")}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-900 dark:hover:bg-blue-950/30 dark:hover:text-blue-300 sm:px-4"
               >
-                Manage fees
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </section>
-
-          {/* QUICK ACTIONS */}
-
-          <section>
-            <SectionHeading
-              title="Education administration"
-              description="Open the existing Elimu modules connected to this workspace."
-            />
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <QuickAction
-                icon={School}
-                title="School profile"
-                description="View school information"
-                onClick={() => navigate("elimu/school")}
-              />
-
-              <QuickAction
-                icon={BookOpen}
-                title="Lessons"
-                description="Manage learning resources"
-                onClick={() => navigate("elimu/lessons")}
-              />
-
-              <QuickAction
-                icon={ClipboardList}
-                title="Assignments"
-                description="Manage learning tasks"
-                onClick={() => navigate("elimu/assignments")}
-              />
-
-              <QuickAction
-                icon={GraduationCap}
-                title="CBC projects"
-                description="Manage curriculum projects"
-                onClick={() => navigate("elimu/cbc")}
-              />
-            </div>
-          </section>
-
-          {/* RECENT ASSIGNMENTS */}
-
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <SectionHeading
-              title="Recent assignments"
-              description="A quick overview of current learning tasks."
-              actionLabel="View all assignments"
-              onAction={() => navigate("elimu/assignments")}
-            />
-
-            {dashboardAssignments.length === 0 ? (
-              <div className="mt-5">
-                <EmptyState
-                  icon={ClipboardList}
-                  title="No assignments available"
-                  description="Assignments will appear here after they have been created and returned by the Elimu API."
-                  actionLabel="Open assignments"
-                  onAction={() => navigate("elimu/assignments")}
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
                 />
-              </div>
-            ) : (
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {dashboardAssignments.slice(0, 6).map(
-                  (assignment, index) => (
-                    <div
-                      key={
-                        assignment.id ||
-                        assignment._id ||
-                        index
-                      }
-                      className="rounded-xl border border-slate-100 p-4 dark:border-white/5"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h4 className="break-words text-sm font-semibold text-slate-900 dark:text-white">
-                            {assignment.title || "Assignment"}
-                          </h4>
-
-                          <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">
-                            {assignment.subject ||
-                              assignment.class_name ||
-                              assignment.class_id ||
-                              "Learning task"}
-                          </p>
-                        </div>
-
-                        <CalendarDays
-                          size={16}
-                          aria-hidden="true"
-                          className="shrink-0 text-slate-400"
-                        />
-                      </div>
-
-                      {assignment.due_date ? (
-                        <p className="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                          Due{" "}
-                          {String(assignment.due_date).slice(0, 10)}
-                        </p>
-                      ) : null}
-
-                      {assignment.status ? (
-                        <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                          {String(assignment.status).replace(
-                            /_/g,
-                            " ",
-                          )}
-                        </span>
-                      ) : null}
-                    </div>
-                  ),
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* LESSONS SUMMARY */}
-
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-            <SectionHeading
-              title="Learning resources"
-              description="Lesson activity reported by the Elimu service."
-              actionLabel="Open lessons"
-              onAction={() => navigate("elimu/lessons")}
-            />
-
-            <div className="mt-4 flex flex-col gap-4 rounded-xl bg-slate-50 p-4 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
-                  <BookOpen size={21} />
-                </div>
-
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
-                    {formatCount(lessonCount)} lesson record(s)
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Total currently available in this workspace
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate("elimu/lessons")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
-              >
-                Manage lessons
-                <ChevronRight size={16} />
+                <span className="hidden sm:inline">
+                  {refreshing ? "Refreshing…" : "Refresh"}
+                </span>
               </button>
             </div>
-          </section>
-        </>
-      ) : null}
+          </header>
+
+          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+            <div className="mx-auto w-full max-w-[1600px] space-y-6">
+              <ElimuDashboardHeader
+                access={access}
+                school={school}
+                title={headerTitle}
+                description={headerDescription}
+                onNavigate={handleNavigate}
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+              />
+
+              {!role && (
+                <section
+                  role="alert"
+                  className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30"
+                >
+                  <AlertCircle
+                    size={20}
+                    className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300"
+                  />
+                  <div>
+                    <h2 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      School role unavailable
+                    </h2>
+                    <p className="mt-1 text-sm leading-5 text-amber-800 dark:text-amber-300">
+                      Elimu could not identify your school role from the access
+                      response. Refresh the workspace or verify the active
+                      school membership. A role-specific dashboard cannot be
+                      selected safely until the role is known.
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              {RoleDashboard && (
+                <RoleDashboard
+                  access={access}
+                  dashboard={unwrapResponse(dashboard)}
+                  school={school}
+                  onNavigate={handleNavigate}
+                  currentPath={currentPath}
+                  onRefresh={handleRefresh}
+                  refreshing={refreshing}
+                />
+              )}
+
+              {!RoleDashboard && role && (
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 sm:p-8">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                    <AlertCircle size={24} />
+                  </div>
+                  <h2 className="mt-4 text-lg font-bold text-slate-950 dark:text-white">
+                    No dashboard is configured for this role
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    The active school membership returned a role that does not
+                    have a dedicated Elimu dashboard. Ask the school
+                    administrator to verify your membership and permissions.
+                  </p>
+                </section>
+              )}
+            </div>
+          </main>
+
+          <footer className="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+              <span>Elimu · School management workspace</span>
+              <span>School records are governed by your account permissions.</span>
+            </div>
+          </footer>
+        </div>
+      </div>
     </div>
   );
 }

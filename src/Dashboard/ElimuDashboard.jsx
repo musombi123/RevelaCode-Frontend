@@ -1,409 +1,237 @@
-// src/Dashboard/ElimuDashboard.jsx
-
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  AlertCircle,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
-
-import { useElimuApi } from "@/services/elimuApi.jsx";
-import ElimuSchoolAccess from "@/Dashboard/ElimuSchoolAccess.jsx";
+﻿import React, { useCallback, useEffect, useState } from "react";
+import { AlertCircle, GraduationCap, Loader, RefreshCw } from "lucide-react";
+import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import ElimuDashboardWorkspace from "@/Dashboard/ElimuDashboardWorkspace.jsx";
+import ElimuAccessDenied from "@/Dashboard/elimu/components/ElimuAccessDenied.jsx";
 
-// =========================================================
-// ERROR HELPERS
-// =========================================================
-
-function getErrorMessage(error, fallback) {
-  if (typeof error === "string" && error.trim()) {
-    return error;
-  }
-
-  return (
-    error?.message ||
-    error?.error?.message ||
-    fallback
-  );
-}
-
-function isNetworkError(error) {
-  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|unable to reach the elimu backend/i.test(
-    String(error?.message || error || ""),
-  );
-}
-
-// =========================================================
-// ELIMU ACCESS CONTROLLER
-// =========================================================
-
-export default function ElimuDashboard({ onNavigate }) {
+export default function ElimuDashboard({ onNavigate, currentPath = "elimu" }) {
   const {
     getElimuAccess,
-    getSchool,
-    saveSchool,
-    createElimuDemoSchool,
-  } = useElimuApi();
-
-  // -------------------------------------------------------
-  // STATE
-  // -------------------------------------------------------
+    getElimuDashboard,
+  } = useJumuiyaApi();
 
   const [access, setAccess] = useState(null);
-  const [school, setSchool] = useState(null);
-
+  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [actionError, setActionError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
-  // Prevent outdated requests and updates after unmount.
-  const mountedRef = useRef(false);
-  const requestIdRef = useRef(0);
-
-  // =======================================================
-  // LOAD ACCESS AND SCHOOL STATUS
-  // =======================================================
-
-  const loadAccess = useCallback(
-    async ({ keepFeedback = false } = {}) => {
-      const requestId = ++requestIdRef.current;
-
-      setLoading(true);
-      setError("");
-
-      if (!keepFeedback) {
-        setActionError("");
-        setSuccessMessage("");
+  const loadDashboard = useCallback(
+    async ({ refresh = false } = {}) => {
+      if (refresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
+
+      setError("");
 
       try {
         if (typeof getElimuAccess !== "function") {
           throw new Error(
-            "getElimuAccess is missing from useElimuApi(). Check src/services/elimuApi.jsx.",
+            "The Elimu access service is not available. Check src/services/jumuiyaApi.jsx."
           );
         }
 
-        const accessResult = await getElimuAccess();
+        const accessResponse = await getElimuAccess();
+        const accessData =
+          accessResponse?.data ??
+          accessResponse?.access ??
+          accessResponse;
 
-        if (
-          !accessResult ||
-          typeof accessResult.allowed !== "boolean"
-        ) {
-          throw new Error(
-            "The Elimu access endpoint returned an invalid response. Expected a boolean 'allowed' field.",
-          );
-        }
+        setAccess(accessData);
 
-        // Access is authoritative. A secondary school lookup may fail
-        // for a new account or an account with a pending application.
-        let schoolResult = null;
-
-        if (typeof getSchool === "function") {
-          try {
-            schoolResult = await getSchool();
-          } catch {
-            schoolResult = null;
-          }
-        }
-
-        if (
-          !mountedRef.current ||
-          requestId !== requestIdRef.current
-        ) {
+        if (!accessData?.allowed) {
+          setDashboard(null);
           return;
         }
 
-        setAccess(accessResult);
+        const dashboardResponse =
+          typeof getElimuDashboard === "function"
+            ? await getElimuDashboard()
+            : null;
 
-        setSchool(
-          schoolResult ||
-            accessResult.school ||
-            null,
-        );
-      } catch (requestError) {
-        if (
-          !mountedRef.current ||
-          requestId !== requestIdRef.current
-        ) {
-          return;
-        }
+        const dashboardData =
+          dashboardResponse?.data ??
+          dashboardResponse?.dashboard ??
+          dashboardResponse;
 
-        setAccess(null);
-        setSchool(null);
-
+        setDashboard(dashboardData);
+      } catch (err) {
         setError(
-          getErrorMessage(
-            requestError,
-            "Unable to check your Elimu school account.",
-          ),
+          err?.response?.data?.message ||
+            err?.message ||
+            "Unable to load the Elimu workspace. Please try again."
         );
       } finally {
-        if (
-          mountedRef.current &&
-          requestId === requestIdRef.current
-        ) {
-          setLoading(false);
-        }
+        setLoading(false);
+        setRefreshing(false);
       }
     },
-    [getElimuAccess, getSchool],
+    [getElimuAccess, getElimuDashboard]
   );
-
-  // =======================================================
-  // INITIAL ACCESS CHECK
-  // =======================================================
 
   useEffect(() => {
-    mountedRef.current = true;
+    let active = true;
 
-    void loadAccess();
+    const run = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        if (typeof getElimuAccess !== "function") {
+          throw new Error(
+            "The Elimu access service is not available. Check src/services/jumuiyaApi.jsx."
+          );
+        }
+
+        const accessResponse = await getElimuAccess();
+        if (!active) return;
+
+        const accessData =
+          accessResponse?.data ??
+          accessResponse?.access ??
+          accessResponse;
+
+        setAccess(accessData);
+
+        if (!accessData?.allowed) {
+          setDashboard(null);
+          return;
+        }
+
+        const dashboardResponse =
+          typeof getElimuDashboard === "function"
+            ? await getElimuDashboard()
+            : null;
+
+        if (!active) return;
+
+        setDashboard(
+          dashboardResponse?.data ??
+            dashboardResponse?.dashboard ??
+            dashboardResponse
+        );
+      } catch (err) {
+        if (!active) return;
+
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Unable to load the Elimu workspace. Please try again."
+        );
+      } finally {
+        if (active) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
+
+    run();
 
     return () => {
-      mountedRef.current = false;
-      requestIdRef.current += 1;
+      active = false;
     };
-  }, [loadAccess]);
+  }, [getElimuAccess, getElimuDashboard]);
 
-  // =======================================================
-  // SUBMIT REAL SCHOOL APPLICATION
-  // =======================================================
+  const handleRefresh = useCallback(() => {
+    return loadDashboard({ refresh: true });
+  }, [loadDashboard]);
 
-  const submitApplication = useCallback(
-    async (payload) => {
-      setSaving(true);
-      setActionError("");
-      setSuccessMessage("");
-
-      try {
-        if (typeof saveSchool !== "function") {
-          throw new Error(
-            "School registration is not connected. saveSchool is missing from useElimuApi().",
-          );
-        }
-
-        await saveSchool(payload);
-
-        if (!mountedRef.current) {
-          return;
-        }
-
-        setSuccessMessage(
-          "Your school application was submitted. Access remains restricted until the backend confirms verification.",
-        );
-
-        // Preserve feedback while refreshing authoritative status.
-        await loadAccess({
-          keepFeedback: true,
-        });
-      } catch (requestError) {
-        if (mountedRef.current) {
-          setActionError(
-            getErrorMessage(
-              requestError,
-              "The school application could not be submitted.",
-            ),
-          );
-        }
-      } finally {
-        if (mountedRef.current) {
-          setSaving(false);
-        }
-      }
-    },
-    [saveSchool, loadAccess],
-  );
-
-  // =======================================================
-  // CREATE DEVELOPMENT DEMO
-  // =======================================================
-
-  const createDemo = useCallback(
-    async (payload) => {
-      setSaving(true);
-      setActionError("");
-      setSuccessMessage("");
-
-      try {
-        if (typeof createElimuDemoSchool !== "function") {
-          throw new Error(
-            "Demo creation is not connected. createElimuDemoSchool is missing from useElimuApi().",
-          );
-        }
-
-        await createElimuDemoSchool(payload);
-
-        if (!mountedRef.current) {
-          return;
-        }
-
-        setSuccessMessage(
-          "Development demo created. This workspace is not a verified school.",
-        );
-
-        await loadAccess({
-          keepFeedback: true,
-        });
-      } catch (requestError) {
-        if (mountedRef.current) {
-          setActionError(
-            getErrorMessage(
-              requestError,
-              "The development demo could not be created.",
-            ),
-          );
-        }
-      } finally {
-        if (mountedRef.current) {
-          setSaving(false);
-        }
-      }
-    },
-    [createElimuDemoSchool, loadAccess],
-  );
-
-  // =======================================================
-  // LOADING STATE
-  // =======================================================
-
-  if (loading && !access) {
+  if (loading) {
     return (
-      <div className="min-h-72 px-4 py-8 sm:px-6 lg:px-8">
-        <div
-          className="mx-auto flex min-h-64 max-w-xl flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center dark:border-white/10 dark:bg-slate-900"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-            <Loader2
-              size={27}
-              className="animate-spin"
-            />
-          </div>
-
-          <h2 className="mt-4 font-semibold text-slate-900 dark:text-white">
-            Checking your Elimu account
-          </h2>
-
-          <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Verifying your account access and retrieving your school status.
+      <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+        <div className="flex flex-col items-center text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+            <GraduationCap size={28} />
+          </span>
+          <Loader
+            size={24}
+            className="mt-6 animate-spin text-blue-600"
+          />
+          <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            Preparing your school workspace
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Checking school access and loading your dashboard.
           </p>
         </div>
-      </div>
+      </main>
     );
   }
-
-  // =======================================================
-  // NETWORK OR ACCESS ERROR
-  // =======================================================
 
   if (error && !access) {
-    const networkFailure = isNetworkError(error);
-
     return (
-      <div className="min-h-72 px-4 py-8 sm:px-6 lg:px-8">
-        <section
-          role="alert"
-          className="mx-auto max-w-2xl rounded-3xl border border-red-200 bg-white p-5 shadow-sm dark:border-red-900/40 dark:bg-slate-900 sm:p-7"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300">
-            <AlertCircle size={25} />
-          </div>
-
-          <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-            Unable to check Elimu access
-          </h2>
-
-          <p className="mt-2 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+      <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
+        <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300">
+            <AlertCircle size={24} />
+          </span>
+          <h1 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+            Unable to open Elimu
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
             {error}
           </p>
-
-          {networkFailure ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-950/20">
-              <h3 className="font-semibold text-amber-950 dark:text-amber-100">
-                Backend connection required
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-amber-900 dark:text-amber-100">
-                The browser could not complete the Elimu request.
-                Check the API URL, backend availability, authentication,
-                and whether the backend permits this frontend origin.
-              </p>
-
-              <p className="mt-2 text-xs leading-5 text-amber-900/80 dark:text-amber-100/80">
-                Expected access endpoint:
-              </p>
-
-              <code className="mt-1 block break-all rounded-lg bg-white/70 px-3 py-2 text-xs text-slate-800 dark:bg-black/20 dark:text-slate-200">
-                /api/jumuiya/elimu/access
-              </code>
-            </div>
-          ) : null}
-
           <button
             type="button"
-            onClick={() => void loadAccess()}
-            disabled={loading}
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {loading ? (
-              <Loader2
-                size={16}
-                className="animate-spin"
-              />
-            ) : (
-              <RefreshCw size={16} />
-            )}
-
-            {loading ? "Checking..." : "Retry access check"}
+            <RefreshCw
+              size={16}
+              className={refreshing ? "animate-spin" : ""}
+            />
+            Try again
           </button>
         </section>
-      </div>
+      </main>
     );
   }
 
-  // =======================================================
-  // AUTHORITATIVE ACCESS GATE
-  // =======================================================
-
-  if (access?.allowed === true) {
+  if (!access?.allowed) {
     return (
-      <ElimuDashboardWorkspace
+      <ElimuAccessDenied
+        access={access}
+        reason={access?.reason}
+        message={access?.message}
+        refreshing={refreshing}
+        onRetry={handleRefresh}
         onNavigate={onNavigate}
-        accountAccess={access}
-        accountSchool={school || access.school || null}
       />
     );
   }
 
-  // =======================================================
-  // SCHOOL REGISTRATION AND VERIFICATION
-  // =======================================================
-
   return (
-    <ElimuSchoolAccess
-      access={access}
-      school={school || access?.school || null}
-      loading={loading}
-      error={error}
-      actionError={actionError}
-      successMessage={successMessage}
-      saving={saving}
-      onRetry={loadAccess}
-      onSubmitApplication={submitApplication}
-      onCreateDemo={createDemo}
-      allowDemo={
-        import.meta.env.DEV ||
-        import.meta.env.VITE_ELIMU_ENABLE_DEMO === "true"
-      }
-    />
+    <div className="min-h-full">
+      {error && (
+        <div
+          role="alert"
+          className="mx-4 mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200 sm:mx-6"
+        >
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">{error}</div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-60"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      <ElimuDashboardWorkspace
+        access={access}
+        dashboard={dashboard}
+        onNavigate={onNavigate}
+        currentPath={currentPath}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
+    </div>
   );
 }
