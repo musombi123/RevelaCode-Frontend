@@ -1,5 +1,12 @@
-﻿
-import React, { useCallback, useEffect, useRef, useState } from "react";
+﻿// src/Dashboard/ElimuDashboard.jsx
+
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import {
   AlertCircle,
   GraduationCap,
@@ -10,12 +17,17 @@ import {
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuDashboardWorkspace from "@/Dashboard/ElimuDashboardWorkspace.jsx";
 import ElimuAccessDenied from "@/Dashboard/elimu/components/ElimuAccessDenied.jsx";
+import ElimuSchoolAccess from "@/Dashboard/ElimuSchoolAccess.jsx";
 
 function getApiPayload(response, preferredKey) {
   let current = response;
 
-  for (let depth = 0; depth < 5; depth += 1) {
-    if (!current || typeof current !== "object" || Array.isArray(current)) {
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (
+      !current ||
+      typeof current !== "object" ||
+      Array.isArray(current)
+    ) {
       return current;
     }
 
@@ -54,6 +66,17 @@ function getErrorMessage(error, fallback) {
     error?.response?.data?.error ||
     error?.message ||
     fallback
+  );
+}
+
+function hasSchoolRecord(access) {
+  return Boolean(
+    access?.has_school === true ||
+      access?.school ||
+      access?.school_id ||
+      access?.schoolId ||
+      access?.membership?.school_id ||
+      access?.membership?.school
   );
 }
 
@@ -124,10 +147,6 @@ export default function ElimuDashboard({
   currentPath = "elimu",
 }) {
   const api = useElimuApi();
-
-  // These method names match src/services/elimuApi.jsx.
-  // GET /api/jumuiya/elimu/access
-  // GET /api/jumuiya/elimu/dashboard
   const { getAccess, getDashboard } = api;
 
   const [access, setAccess] = useState(null);
@@ -137,14 +156,22 @@ export default function ElimuDashboard({
   const [error, setError] = useState("");
 
   const controllerRef = useRef(null);
+  const requestIdRef = useRef(0);
+  const mountedRef = useRef(false);
 
   const loadDashboard = useCallback(
     async ({ refresh = false } = {}) => {
-      // Cancel any older load or refresh before starting another request.
       controllerRef.current?.abort();
 
       const controller = new AbortController();
       controllerRef.current = controller;
+
+      const requestId = ++requestIdRef.current;
+
+      const isCurrentRequest = () =>
+        mountedRef.current &&
+        !controller.signal.aborted &&
+        requestId === requestIdRef.current;
 
       if (refresh) {
         setRefreshing(true);
@@ -169,12 +196,12 @@ export default function ElimuDashboard({
           );
         }
 
-        // Step 1: check school access before requesting the dashboard.
+        // GET /api/jumuiya/elimu/access
         const accessResponse = await getAccess({
           signal: controller.signal,
         });
 
-        if (controller.signal.aborted) return;
+        if (!isCurrentRequest()) return;
 
         accessResolved = getApiPayload(accessResponse, "access");
 
@@ -184,24 +211,25 @@ export default function ElimuDashboard({
           Array.isArray(accessResolved)
         ) {
           throw new Error(
-            "The access endpoint returned an invalid response. Expected an access object."
+            "The access endpoint returned an invalid response."
           );
         }
 
         setAccess(accessResolved);
 
-        // Access is denied unless the server explicitly allows it.
+        // A school-less account must reach the school setup screen.
+        // Do not request the operational dashboard until access is allowed.
         if (accessResolved.allowed !== true) {
           setDashboard(null);
           return;
         }
 
-        // Step 2: only request the dashboard after access is allowed.
+        // GET /api/jumuiya/elimu/dashboard
         const dashboardResponse = await getDashboard({
           signal: controller.signal,
         });
 
-        if (controller.signal.aborted) return;
+        if (!isCurrentRequest()) return;
 
         const dashboardData = getApiPayload(
           dashboardResponse,
@@ -209,8 +237,7 @@ export default function ElimuDashboard({
         );
 
         if (
-          dashboardData === null ||
-          dashboardData === undefined ||
+          !dashboardData ||
           typeof dashboardData !== "object" ||
           Array.isArray(dashboardData)
         ) {
@@ -222,32 +249,33 @@ export default function ElimuDashboard({
         setDashboard(dashboardData);
       } catch (requestError) {
         if (
-          controller.signal.aborted ||
+          !isCurrentRequest() ||
           requestError?.name === "AbortError"
         ) {
           return;
         }
 
-        const status = requestError?.status;
+        const status =
+          requestError?.status ||
+          requestError?.response?.status;
 
-        // An access failure should not accidentally leave an old dashboard
-        // visible to an account that is no longer authorized.
         if (
           !accessResolved &&
           (status === 401 || status === 403)
         ) {
           setAccess({
             allowed: false,
+            has_school: false,
             reason:
               status === 401
                 ? "authentication_required"
                 : "forbidden",
-            message:
-              getErrorMessage(
-                requestError,
-                "Your account does not currently have access to this school workspace."
-              ),
+            message: getErrorMessage(
+              requestError,
+              "Your account does not currently have access to this school workspace."
+            ),
           });
+
           setDashboard(null);
           setError("");
         } else {
@@ -259,7 +287,7 @@ export default function ElimuDashboard({
           );
         }
       } finally {
-        if (!controller.signal.aborted) {
+        if (isCurrentRequest()) {
           setLoading(false);
           setRefreshing(false);
         }
@@ -269,9 +297,13 @@ export default function ElimuDashboard({
   );
 
   useEffect(() => {
+    mountedRef.current = true;
+
     loadDashboard();
 
     return () => {
+      mountedRef.current = false;
+      requestIdRef.current += 1;
       controllerRef.current?.abort();
     };
   }, [loadDashboard]);
@@ -291,6 +323,33 @@ export default function ElimuDashboard({
         refreshing={refreshing}
         onRetry={handleRefresh}
       />
+    );
+  }
+
+  // IMPORTANT:
+  // Accounts without a school must see the actual school setup entry point,
+  // not a generic access-denied screen.
+  if (access && !hasSchoolRecord(access)) {
+    return (
+      <div className="min-h-full bg-slate-50 px-4 py-6 dark:bg-slate-950 sm:px-6">
+        {error && (
+          <div
+            role="alert"
+            className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+          >
+            {error}
+          </div>
+        )}
+
+        <ElimuSchoolAccess
+          access={access}
+          school={null}
+          dashboard={null}
+          onNavigate={onNavigate}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
+        />
+      </div>
     );
   }
 
