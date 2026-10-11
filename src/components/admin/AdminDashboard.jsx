@@ -1,8 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-} from "react";
+import React, { useState } from "react";
 
 import {
   Menu,
@@ -12,6 +10,7 @@ import {
   ShieldCheck,
   BookMarked,
   Settings,
+  ClipboardCheck,
 } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
@@ -22,10 +21,11 @@ import AdminTeamManagement from "./AdminTeamManagement.jsx";
 import AdminStudyManagement from "./AdminStudyManagement.jsx";
 import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
+import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 
-/* =========================================================
-   ADMIN PAGES
-========================================================= */
+// =========================================================
+// ADMIN PAGES
+// =========================================================
 
 const adminPages = {
   overview: {
@@ -34,6 +34,14 @@ const adminPages = {
       "Monitor platform activity, resources, and system health.",
     icon: LayoutDashboard,
     component: AdminOverview,
+  },
+
+  verification: {
+    title: "School Verification",
+    description:
+      "Review school registrations, inspect evidence, and manage verification decisions.",
+    icon: ClipboardCheck,
+    component: AdminSchoolVerification,
   },
 
   team: {
@@ -77,43 +85,23 @@ const adminPages = {
   },
 };
 
-/* =========================================================
-   MAIN DASHBOARD
-========================================================= */
+// =========================================================
+// MAIN DASHBOARD
+// =========================================================
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] =
-    useState("overview");
-
-  const [mobileOpen, setMobileOpen] =
-    useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const activePage =
-    adminPages[activeTab] ||
-    adminPages.overview;
+    adminPages[activeTab] || adminPages.overview;
 
-  const ActiveIcon =
-    activePage.icon;
-
-  const ActiveComponent =
-    activePage.component;
+  const ActiveIcon = activePage.icon;
+  const ActiveComponent = activePage.component;
 
   return (
-    <div
-      className="
-        flex
-        min-h-screen
-        w-full
-        overflow-hidden
-        bg-slate-50
-        text-slate-900
-        dark:bg-slate-950
-        dark:text-white
-      "
-    >
-      {/* =====================================================
-          SIDEBAR
-      ===================================================== */}
+    <div className="flex min-h-screen w-full overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+      {/* SIDEBAR */}
 
       <AdminSidebar
         activeTab={activeTab}
@@ -122,64 +110,27 @@ export default function AdminDashboard() {
         setMobileOpen={setMobileOpen}
       />
 
-      {/* =====================================================
-          MAIN APPLICATION
-      ===================================================== */}
+      {/* MAIN APPLICATION */}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Header */}
         <AdminHeader />
-
-        {/* ===================================================
-            SCROLLABLE CONTENT
-        =================================================== */}
 
         <main className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-
-            {/* =================================================
-                MOBILE MENU BUTTON
-            ================================================= */}
+            {/* MOBILE MENU */}
 
             <div className="mb-5 lg:hidden">
               <button
                 type="button"
-                onClick={() =>
-                  setMobileOpen(true)
-                }
-                className="
-                  inline-flex
-                  items-center
-                  gap-2
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-white
-                  px-3.5
-                  py-2.5
-                  text-sm
-                  font-semibold
-                  text-slate-600
-                  shadow-sm
-                  transition
-                  hover:bg-slate-50
-                  hover:text-slate-900
-                  dark:border-slate-800
-                  dark:bg-slate-900
-                  dark:text-slate-300
-                  dark:hover:bg-slate-800
-                  dark:hover:text-white
-                "
+                onClick={() => setMobileOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
               >
                 <Menu className="h-4 w-4" />
-
                 Admin Menu
               </button>
             </div>
 
-            {/* =================================================
-                PAGE HEADER
-            ================================================= */}
+            {/* PAGE HEADER */}
 
             <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex min-w-0 items-start gap-3">
@@ -215,9 +166,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* =================================================
-                ACTIVE CONTENT
-            ================================================= */}
+            {/* ACTIVE PAGE */}
 
             <section className="min-w-0">
               <ActiveComponent />
@@ -229,9 +178,9 @@ export default function AdminDashboard() {
   );
 }
 
-/* =========================================================
-   SETTINGS
-========================================================= */
+// =========================================================
+// SETTINGS
+// =========================================================
 
 function AdminSettings() {
   return (
