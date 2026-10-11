@@ -17,6 +17,7 @@ import {
   FileCheck2,
   FileText,
   GraduationCap,
+  Images,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -28,7 +29,9 @@ import { useElimuApi } from "@/services/elimuApi.jsx";
 const numberFormat = new Intl.NumberFormat("en-KE");
 
 function unwrap(response) {
-  if (!response || typeof response !== "object") return response;
+  if (!response || typeof response !== "object") {
+    return response;
+  }
 
   return response.data && typeof response.data === "object"
     ? response.data
@@ -38,14 +41,20 @@ function unwrap(response) {
 function getCollection(response, keys = []) {
   const data = unwrap(response);
 
-  if (Array.isArray(data)) return data;
-
-  for (const key of keys) {
-    if (Array.isArray(data?.[key])) return data[key];
+  if (Array.isArray(data)) {
+    return data;
   }
 
   for (const key of keys) {
-    if (Array.isArray(data?.data?.[key])) return data.data[key];
+    if (Array.isArray(data?.[key])) {
+      return data[key];
+    }
+  }
+
+  for (const key of keys) {
+    if (Array.isArray(data?.data?.[key])) {
+      return data.data[key];
+    }
   }
 
   return [];
@@ -82,11 +91,15 @@ function money(value) {
 }
 
 function formatDate(value) {
-  if (!value) return "";
+  if (!value) {
+    return "";
+  }
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
 
   return new Intl.DateTimeFormat("en-KE", {
     day: "numeric",
@@ -179,7 +192,12 @@ function SectionHeading({
   );
 }
 
-function QuickAction({ icon: Icon, title, description, onClick }) {
+function QuickAction({
+  icon: Icon,
+  title,
+  description,
+  onClick,
+}) {
   return (
     <button
       type="button"
@@ -208,7 +226,13 @@ function QuickAction({ icon: Icon, title, description, onClick }) {
   );
 }
 
-function EmptyState({ icon: Icon, title, description, action, onAction }) {
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+  onAction,
+}) {
   return (
     <div className="py-8 text-center">
       <Icon
@@ -249,7 +273,9 @@ export default function ElimuOwnerDashboard({
   // Elimu-specific API service. No direct Jumuiya API dependency.
   const api = useElimuApi();
 
-  const [dashboard, setDashboard] = useState(initialDashboard || null);
+  const [dashboard, setDashboard] = useState(
+    initialDashboard || null
+  );
   const [staff, setStaff] = useState([]);
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
@@ -263,8 +289,8 @@ export default function ElimuOwnerDashboard({
   const requestVersionRef = useRef(0);
 
   /*
-   * Prefer the dedicated Elimu API method names.
-   * Legacy aliases are kept only where the service exposes them.
+   * Prefer dedicated Elimu API methods.
+   * Keep legacy aliases where the API service exposes them.
    */
   const requestMethods = useMemo(
     () => ({
@@ -272,7 +298,8 @@ export default function ElimuOwnerDashboard({
       staff: api.getStaff || api.getElimuStaff,
       classes: api.getClasses || api.getElimuClasses,
       students: api.getStudents || api.getElimuStudents,
-      assignments: api.getAssignments || api.getElimuAssignments,
+      assignments:
+        api.getAssignments || api.getElimuAssignments,
       lessons: api.getLessons || api.getElimuLessons,
       events: api.getEvents || api.getElimuEvents,
     }),
@@ -352,7 +379,9 @@ export default function ElimuOwnerDashboard({
     const results = await Promise.allSettled(
       requests.map(async (item) => {
         if (typeof item.request !== "function") {
-          throw new Error(`Elimu API method is unavailable: ${item.name}`);
+          throw new Error(
+            `Elimu API method is unavailable: ${item.name}`
+          );
         }
 
         const response = await item.request();
@@ -381,13 +410,16 @@ export default function ElimuOwnerDashboard({
       return;
     }
 
-    const failures = results.reduce((failed, result, index) => {
-      if (result.status === "rejected") {
-        failed.push(requests[index].name);
-      }
+    const failures = results.reduce(
+      (failed, result, index) => {
+        if (result.status === "rejected") {
+          failed.push(requests[index].name);
+        }
 
-      return failed;
-    }, []);
+        return failed;
+      },
+      []
+    );
 
     if (failures.length) {
       setError(
@@ -412,7 +444,9 @@ export default function ElimuOwnerDashboard({
 
   const navigate = useCallback(
     (path) => {
-      onNavigate?.(path);
+      if (typeof onNavigate === "function") {
+        onNavigate(path);
+      }
     },
     [onNavigate]
   );
@@ -426,23 +460,31 @@ export default function ElimuOwnerDashboard({
   }, [loadData, onRefresh]);
 
   const schoolData = school || dashboard?.school || {};
-  const metrics = dashboard?.metrics || dashboard?.hub?.metrics || {};
+
+  const metrics =
+    dashboard?.metrics || dashboard?.hub?.metrics || {};
 
   const totalClasses =
-    getMetric(metrics, ["classes", "total_classes"]) ?? classes.length;
+    getMetric(metrics, ["classes", "total_classes"]) ??
+    classes.length;
 
   const totalStudents =
-    getMetric(metrics, ["students", "total_students"]) ?? students.length;
+    getMetric(metrics, ["students", "total_students"]) ??
+    students.length;
 
   const totalStaff =
-    getMetric(metrics, ["staff", "total_staff", "teachers"]) ?? staff.length;
+    getMetric(metrics, ["staff", "total_staff", "teachers"]) ??
+    staff.length;
 
   const totalLessons =
-    getMetric(metrics, ["lessons", "total_lessons"]) ?? lessons.length;
+    getMetric(metrics, ["lessons", "total_lessons"]) ??
+    lessons.length;
 
   const totalAssignments =
-    getMetric(metrics, ["assignments", "total_assignments"]) ??
-    assignments.length;
+    getMetric(metrics, [
+      "assignments",
+      "total_assignments",
+    ]) ?? assignments.length;
 
   const outstandingFees = getMetric(metrics, [
     "pending_fees",
@@ -462,56 +504,74 @@ export default function ElimuOwnerDashboard({
     schoolData.location,
   ]
     .filter(Boolean)
-    .filter((value, index, values) => values.indexOf(value) === index)
+    .filter(
+      (value, index, values) =>
+        values.indexOf(value) === index
+    )
     .join(", ");
 
   const quickActions = [
     {
       icon: Users,
       title: "Manage staff",
-      description: "Review school members, invitations and access.",
+      description:
+        "Review school members, invitations and access.",
       path: "elimu/staff",
     },
     {
       icon: GraduationCap,
       title: "Student records",
-      description: "Review enrolment and student information.",
+      description:
+        "Review enrolment and student information.",
       path: "elimu/students",
     },
     {
       icon: CalendarDays,
       title: "Timetable",
-      description: "Review class schedules and teaching allocations.",
+      description:
+        "Review class schedules and teaching allocations.",
       path: "elimu/timetable",
     },
     {
       icon: Wallet,
       title: "School finances",
-      description: "Review fees and financial reporting.",
+      description:
+        "Review fees and financial reporting.",
       path: "elimu/fees",
     },
     {
       icon: BookOpen,
       title: "Academic activities",
-      description: "Review lessons, assignments and teaching activity.",
+      description:
+        "Review lessons, assignments and teaching activity.",
       path: "elimu/lessons",
     },
     {
       icon: ClipboardList,
       title: "School reports",
-      description: "Open available operational reports.",
+      description:
+        "Open available operational reports.",
       path: "elimu/reports",
     },
     {
       icon: FileText,
       title: "School documents",
-      description: "Review school publications and submitted resources.",
+      description:
+        "Review school publications and submitted resources.",
       path: "elimu/documents",
+    },
+    {
+      icon: Images,
+      title: "Photos and videos",
+      description:
+        "Upload campus photos, event pictures and videos for your school's public page.",
+      path: "elimu/media",
     },
     {
       icon: FileCheck2,
       title: "School profile",
-      description: "Manage school information and publication settings.",
+      description:
+        "Manage school information and publication settings.",
       path: "elimu/school",
     },
   ];
@@ -526,8 +586,10 @@ export default function ElimuOwnerDashboard({
 
   return (
     <div className="space-y-8">
+      {/* Owner overview */}
       <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
+
         <div className="pointer-events-none absolute -bottom-28 right-1/3 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -542,8 +604,9 @@ export default function ElimuOwnerDashboard({
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-              Monitor academic activity, school resources, staff, finances
-              and school-wide operations from one central workspace.
+              Monitor academic activity, school resources, staff,
+              finances and school-wide operations from one central
+              workspace.
             </p>
 
             <p className="mt-4 text-sm font-semibold text-white">
@@ -584,7 +647,11 @@ export default function ElimuOwnerDashboard({
           role="status"
           className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
         >
-          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <AlertCircle
+            size={18}
+            className="mt-0.5 shrink-0"
+          />
+
           <p className="flex-1">{error}</p>
 
           <button
@@ -598,6 +665,7 @@ export default function ElimuOwnerDashboard({
         </div>
       )}
 
+      {/* School metrics */}
       <section>
         <SectionHeading
           title="School at a glance"
@@ -649,7 +717,9 @@ export default function ElimuOwnerDashboard({
               icon={Wallet}
               label="Outstanding fees"
               value={
-                outstandingFees === null ? "—" : money(outstandingFees)
+                outstandingFees === null
+                  ? "—"
+                  : money(outstandingFees)
               }
               detail={
                 outstandingFees === null
@@ -662,6 +732,71 @@ export default function ElimuOwnerDashboard({
         )}
       </section>
 
+      {/* Owner media centre */}
+      <section className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 dark:border-blue-900/60 dark:from-blue-950/30 dark:via-slate-950 dark:to-indigo-950/20 sm:p-6">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-blue-400/10 blur-3xl" />
+
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+              <Images size={23} />
+            </span>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold text-slate-950 dark:text-white">
+                  School photos and videos
+                </h2>
+
+                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                  Owner access
+                </span>
+              </div>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Showcase your school with campus photographs,
+                school events, classroom activities, learner
+                achievements and introduction videos. Upload media
+                and manage what appears on the public school page.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  "School gallery",
+                  "Campus photos",
+                  "School events",
+                  "Videos",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-lg border border-blue-100 bg-white/80 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("elimu/media")}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          >
+            <Images size={17} />
+            Manage school media
+            <ArrowRight size={16} />
+          </button>
+        </div>
+
+        <p className="relative mt-4 border-t border-blue-100 pt-3 text-xs leading-5 text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          Publish only media your school has permission to share.
+          Public visibility depends on the media publication status
+          and the school&apos;s configured permissions.
+        </p>
+      </section>
+
+      {/* Leadership actions */}
       <section>
         <SectionHeading
           title="Leadership actions"
@@ -681,10 +816,11 @@ export default function ElimuOwnerDashboard({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/70 p-5 dark:border-blue-900/60 dark:bg-blue-950/20 sm:p-6">
+      {/* Document centre */}
+      <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300">
               <FileCheck2 size={23} />
             </span>
 
@@ -695,9 +831,9 @@ export default function ElimuOwnerDashboard({
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Open the central document centre for official school
-                documents, calendars, notices and educational resources.
-                Documents must follow the school's review and publication
-                permissions.
+                documents, calendars, notices and educational
+                resources. Documents must follow the school&apos;s
+                review and publication permissions.
               </p>
             </div>
           </div>
@@ -705,7 +841,7 @@ export default function ElimuOwnerDashboard({
           <button
             type="button"
             onClick={() => navigate("elimu/documents")}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800"
           >
             Open document centre
             <ArrowRight size={16} />
@@ -713,11 +849,14 @@ export default function ElimuOwnerDashboard({
         </div>
       </section>
 
+      {/* Assignments and events */}
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <SectionHeading
             title="Recent assignments"
-            description={`${numberFormat.format(totalAssignments)} assignments reported`}
+            description={`${numberFormat.format(
+              totalAssignments
+            )} assignments reported`}
             action="View assignments"
             onAction={() => navigate("elimu/assignments")}
           />
@@ -786,7 +925,12 @@ export default function ElimuOwnerDashboard({
             {upcomingEvents.length ? (
               upcomingEvents.map((event, index) => (
                 <div
-                  key={event.id || event._id || event.event_id || index}
+                  key={
+                    event.id ||
+                    event._id ||
+                    event.event_id ||
+                    index
+                  }
                   className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
@@ -829,6 +973,7 @@ export default function ElimuOwnerDashboard({
         </section>
       </div>
 
+      {/* Academic activity */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
         <SectionHeading
           title="Academic activity"
@@ -842,6 +987,7 @@ export default function ElimuOwnerDashboard({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Lessons
             </p>
+
             <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">
               {numberFormat.format(totalLessons)}
             </p>
@@ -851,6 +997,7 @@ export default function ElimuOwnerDashboard({
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Assignments
             </p>
+
             <p className="mt-2 text-xl font-bold text-slate-950 dark:text-white">
               {numberFormat.format(totalAssignments)}
             </p>
@@ -872,7 +1019,10 @@ export default function ElimuOwnerDashboard({
                 </>
               ) : (
                 <>
-                  <Activity size={17} className="text-emerald-600" />
+                  <Activity
+                    size={17}
+                    className="text-emerald-600"
+                  />
                   Loaded
                 </>
               )}

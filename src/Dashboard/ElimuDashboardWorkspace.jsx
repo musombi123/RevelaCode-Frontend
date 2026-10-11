@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   AlertCircle,
   ArrowRight,
@@ -6,6 +12,7 @@ import {
   FileText,
   FileUp,
   FolderOpen,
+  Images,
   LockKeyhole,
   Menu,
   RefreshCw,
@@ -21,6 +28,7 @@ import ElimuPrincipalDashboard from "@/Dashboard/elimu/ElimuPrincipalDashboard.j
 import ElimuBursarDashboard from "@/Dashboard/elimu/ElimuBursarDashboard.jsx";
 import ElimuRegistrarDashboard from "@/Dashboard/elimu/ElimuRegistrarDashboard.jsx";
 import ElimuTeacherDashboard from "@/Dashboard/elimu/ElimuTeacherDashboard.jsx";
+import ElimuMediaManager from "@/Dashboard/elimu/ElimuMediaManager.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -34,11 +42,14 @@ const ROLE_LABELS = {
 };
 
 const ROLE_DESCRIPTIONS = {
-  owner: "Oversee school operations, staff, academic performance and finances.",
+  owner:
+    "Oversee school operations, staff, academic performance and finances.",
   principal:
     "Coordinate school operations, academic delivery and staff performance.",
-  bursar: "Manage school fees, financial records and financial reporting.",
-  registrar: "Manage admissions, enrolment, school forms and official records.",
+  bursar:
+    "Manage school fees, financial records and financial reporting.",
+  registrar:
+    "Manage admissions, enrolment, school forms and official records.",
   teacher:
     "Manage assigned classes, lessons, attendance and learner assessments.",
 };
@@ -62,27 +73,31 @@ const DOCUMENT_CATEGORIES = [
 ];
 
 function unwrapResponse(response) {
-  if (!response || typeof response !== "object") return response;
-
-  if (response.data && typeof response.data === "object") {
-    return response.data;
+  if (!response || typeof response !== "object") {
+    return response;
   }
 
-  return response;
+  return response.data && typeof response.data === "object"
+    ? response.data
+    : response;
 }
 
 function getArray(response, keys = []) {
   const data = unwrapResponse(response);
 
-  if (Array.isArray(data)) return data;
-
-  for (const key of keys) {
-    if (Array.isArray(data?.[key])) return data[key];
+  if (Array.isArray(data)) {
+    return data;
   }
 
-  if (data?.data && typeof data.data === "object") {
-    for (const key of keys) {
-      if (Array.isArray(data.data[key])) return data.data[key];
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) {
+      return data[key];
+    }
+  }
+
+  for (const key of keys) {
+    if (Array.isArray(data?.data?.[key])) {
+      return data.data[key];
     }
   }
 
@@ -106,19 +121,45 @@ function normalizeRole(access) {
 
     if (!value) continue;
 
-    if (value === "owner" || value.includes("school owner")) return "owner";
-    if (value.includes("director")) return "owner";
-    if (value.includes("principal")) return "principal";
-    if (value.includes("bursar") || value.includes("finance")) return "bursar";
-    if (value.includes("registrar") || value.includes("admission")) {
+    if (
+      value === "owner" ||
+      value.includes("school owner") ||
+      value.includes("director")
+    ) {
+      return "owner";
+    }
+
+    if (value.includes("principal")) {
+      return "principal";
+    }
+
+    if (value.includes("bursar") || value.includes("finance")) {
+      return "bursar";
+    }
+
+    if (
+      value.includes("registrar") ||
+      value.includes("admission")
+    ) {
       return "registrar";
     }
-    if (value.includes("teacher") || value.includes("educator")) {
+
+    if (
+      value.includes("teacher") ||
+      value.includes("educator")
+    ) {
       return "teacher";
     }
   }
 
   return "";
+}
+
+function normalizePath(path) {
+  return String(path || "")
+    .split("?")[0]
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase();
 }
 
 function getSchool(access, dashboard) {
@@ -142,7 +183,12 @@ function getSchoolId(school) {
 }
 
 function getSchoolCode(school) {
-  return school?.school_code || school?.code || school?.schoolCode || "";
+  return (
+    school?.school_code ||
+    school?.code ||
+    school?.schoolCode ||
+    ""
+  );
 }
 
 function getSchoolName(school) {
@@ -199,7 +245,12 @@ function getDocumentId(document) {
 }
 
 function getDocumentTitle(document) {
-  return document?.title || document?.name || document?.filename || "Untitled document";
+  return (
+    document?.title ||
+    document?.name ||
+    document?.filename ||
+    "Untitled document"
+  );
 }
 
 function formatDocumentDate(value) {
@@ -268,7 +319,10 @@ async function responseMessage(response) {
     throw error;
   }
 
-  if (normalized?.success === false || normalized?.ok === false) {
+  if (
+    normalized?.success === false ||
+    normalized?.ok === false
+  ) {
     const error = new Error(
       normalized?.message ||
         normalized?.error?.message ||
@@ -285,7 +339,9 @@ async function responseMessage(response) {
 
 function getCategoryOptions(role) {
   if (role === "bursar") {
-    return DOCUMENT_CATEGORIES.filter((item) => item.value === "fees");
+    return DOCUMENT_CATEGORIES.filter(
+      (item) => item.value === "fees"
+    );
   }
 
   if (role === "teacher") {
@@ -305,14 +361,12 @@ function getCategoryOptions(role) {
   return DOCUMENT_CATEGORIES;
 }
 
-/**
- * This centre submits document metadata and an HTTPS URL for a file hosted
- * on approved storage. It does not upload local file bytes.
- *
- * The backend must authorize each role independently and keep submissions
- * private until an authorized reviewer publishes them.
- */
-function ElimuDocumentCenter({ access, school, role, onNavigate }) {
+function ElimuDocumentCenter({
+  access,
+  school,
+  role,
+  onNavigate,
+}) {
   const elimuApi = useElimuApi();
   const auth = useAuth();
 
@@ -332,15 +386,24 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
 
   const schoolId = getSchoolId(school);
   const schoolCode = getSchoolCode(school);
-  const canSubmit = ["owner", "principal", "registrar", "teacher", "bursar"].includes(
-    role
-  );
 
-  const categoryOptions = useMemo(() => getCategoryOptions(role), [role]);
+  const canSubmit = [
+    "owner",
+    "principal",
+    "registrar",
+    "teacher",
+    "bursar",
+  ].includes(role);
+
+  const categoryOptions = useMemo(
+    () => getCategoryOptions(role),
+    [role]
+  );
 
   useEffect(() => {
     setForm((current) => {
       const categories = getCategoryOptions(role);
+
       const stillAllowed = categories.some(
         (item) => item.value === current.category
       );
@@ -362,7 +425,7 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
         token = await auth.getAccessToken();
       }
     } catch {
-      // Try the available authentication state and browser token cache.
+      // Try the available authentication state and token cache.
     }
 
     token =
@@ -387,10 +450,15 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
     async (json = false) => {
       const headers = {};
 
-      if (json) headers["Content-Type"] = "application/json";
+      if (json) {
+        headers["Content-Type"] = "application/json";
+      }
 
       const token = await getToken();
-      if (token) headers.Authorization = `Bearer ${token}`;
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
       return headers;
     },
@@ -400,8 +468,11 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
   const schoolQuery = useMemo(() => {
     const params = new URLSearchParams();
 
-    if (schoolId) params.set("school_id", String(schoolId));
-    else if (schoolCode) params.set("school_code", String(schoolCode));
+    if (schoolId) {
+      params.set("school_id", String(schoolId));
+    } else if (schoolCode) {
+      params.set("school_code", String(schoolCode));
+    }
 
     return params.toString();
   }, [schoolId, schoolCode]);
@@ -441,15 +512,21 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
       const data = await responseMessage(response);
 
       setDocuments(
-        getArray(data, ["documents", "items", "results", "records"])
+        getArray(data, [
+          "documents",
+          "items",
+          "results",
+          "records",
+        ])
       );
     } catch (manageError) {
-      if (manageError?.status === 401 || manageError?.status === 403) {
+      if (
+        manageError?.status === 401 ||
+        manageError?.status === 403
+      ) {
         setManagementBlocked(true);
       }
 
-      // Staff who cannot open the private management list may still view
-      // documents already approved for public access.
       try {
         if (typeof elimuApi.getPublicDocuments !== "function") {
           throw manageError;
@@ -462,12 +539,16 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
         });
 
         setDocuments(
-          getArray(publicResponse, ["documents", "items", "results"])
+          getArray(publicResponse, [
+            "documents",
+            "items",
+            "results",
+          ])
         );
 
         if (manageError?.status === 403) {
           setNotice(
-            "The backend has not granted your current role access to the document management endpoint. Showing publicly approved documents only."
+            "Your current role cannot access the private document-management endpoint. Showing publicly approved documents only."
           );
         } else if (manageError?.status === 401) {
           setNotice(
@@ -526,7 +607,9 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
     }
 
     if (!downloadUrlValue) {
-      setError("Enter the HTTPS URL of the file on approved document storage.");
+      setError(
+        "Enter the HTTPS URL of the file on approved document storage."
+      );
       return;
     }
 
@@ -544,12 +627,10 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
       return;
     }
 
-    if (
-      schoolId &&
-      !schoolCode &&
-      !getSchoolId(school)
-    ) {
-      setError("The selected school could not be identified.");
+    if (!schoolId && !schoolCode) {
+      setError(
+        "The active school could not be identified. Refresh the workspace or verify the school membership."
+      );
       return;
     }
 
@@ -569,8 +650,6 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
           download_url: downloadUrlValue,
           school_id: schoolId || undefined,
           school_code: schoolCode || undefined,
-
-          // Staff submissions must not become public automatically.
           status: "draft",
           is_public: false,
         }),
@@ -586,19 +665,26 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
       }));
 
       setNotice(
-        "The server accepted the document submission. Check the document status below before assuming that it has been published."
+        "The server accepted the document submission. Confirm its status below; submission does not mean that the document has been published."
       );
 
       await loadDocuments();
     } catch (submitError) {
-      if (submitError?.status === 401 || submitError?.status === 403) {
+      if (
+        submitError?.status === 401 ||
+        submitError?.status === 403
+      ) {
         setManagementBlocked(true);
+
         setError(
-          "The backend denied this document submission. The current document-management route is owner-restricted or your membership lacks the required permission. The server must authorize registrar and staff submissions before this feature can work for those roles."
+          "The backend denied this document submission. Verify that the active membership has permission to submit documents for this school."
         );
-      } else if (submitError?.status === 404 || submitError?.status === 405) {
+      } else if (
+        submitError?.status === 404 ||
+        submitError?.status === 405
+      ) {
         setError(
-          "The document submission endpoint is not available at this backend route yet. Register and implement the document-management endpoint before retrying."
+          "The document submission endpoint is unavailable at this backend route. Register and implement the document-management endpoint before retrying."
         );
       } else {
         setError(
@@ -628,9 +714,9 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Prepare school forms, notices, calendars, fee structures and
-              supporting resources. Every submission must follow the school's
-              review and publication permissions.
+              Prepare school forms, notices, calendars, fee structures
+              and supporting resources. Every submission must follow
+              the school&apos;s review and publication permissions.
             </p>
 
             <p className="mt-3 text-sm font-semibold text-white">
@@ -691,11 +777,11 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-amber-900 dark:text-amber-300">
-                This screen does not bypass school access controls. The
-                backend must permit the Registrar to submit official
-                documents, the Bursar to submit fee documents, and Teachers to
-                submit learning resources. The Owner or another authorized
-                reviewer must control publication.
+                The screen does not bypass school access controls.
+                The backend must authorize submissions according to
+                each user&apos;s active school membership. Publication
+                must remain under the control of the owner or another
+                authorized reviewer.
               </p>
             </div>
           </div>
@@ -760,7 +846,10 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 {categoryOptions.map((category) => (
-                  <option key={category.value} value={category.value}>
+                  <option
+                    key={category.value}
+                    value={category.value}
+                  >
                     {category.label}
                   </option>
                 ))}
@@ -768,23 +857,23 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
 
               {role === "registrar" && (
                 <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  Use this area for official forms, notices, school calendars
-                  and other registrar-managed records. Admissions workflows
-                  can be connected separately.
+                  Use this area for official forms, notices, school
+                  calendars and other registrar-managed records.
                 </p>
               )}
 
               {role === "bursar" && (
                 <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  This role is restricted in the interface to fee documents.
-                  Private fee statements must not be published here.
+                  This role is restricted in the interface to fee
+                  documents. Confidential fee statements must not be
+                  published here.
                 </p>
               )}
 
               {role === "teacher" && (
                 <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  Teacher-submitted resources should remain private until the
-                  school completes its review.
+                  Teacher-submitted resources should remain private
+                  until the school completes its review.
                 </p>
               )}
             </div>
@@ -834,10 +923,10 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
               />
 
               <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                This backend route currently registers a URL for a file
-                hosted elsewhere. It does not transfer a file from your
-                computer. The server must validate the storage host before
-                allowing downloads.
+                This route registers a URL for a file hosted elsewhere.
+                It does not transfer a local file from your computer.
+                The server must validate storage hosts before allowing
+                downloads.
               </p>
             </div>
 
@@ -849,9 +938,9 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
                 />
 
                 <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
-                  Submissions are requested as drafts and are not intended to
-                  become public automatically. The backend remains responsible
-                  for enforcing the final status and publication permissions.
+                  Submissions are requested as drafts. The backend
+                  remains responsible for enforcing document status
+                  and publication permissions.
                 </p>
               </div>
             </div>
@@ -889,7 +978,8 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
             </div>
 
             <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {documents.length} {documents.length === 1 ? "record" : "records"}
+              {documents.length}{" "}
+              {documents.length === 1 ? "record" : "records"}
             </span>
           </div>
 
@@ -908,9 +998,17 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
                 const id = getDocumentId(document);
                 const status = describeDocumentStatus(document);
 
+                const documentDate =
+                  document.published_at ||
+                  document.updated_at ||
+                  document.created_at;
+
                 return (
                   <article
-                    key={id || `${document.title || "document"}-${index}`}
+                    key={
+                      id ||
+                      `${document.title || "document"}-${index}`
+                    }
                     className="flex items-start gap-3 py-4 first:pt-0 last:pb-0"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
@@ -930,10 +1028,9 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium capitalize text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                          {String(document.category || "document").replace(
-                            /[_-]+/g,
-                            " "
-                          )}
+                          {String(
+                            document.category || "document"
+                          ).replace(/[_-]+/g, " ")}
                         </span>
 
                         <span
@@ -942,17 +1039,9 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
                           {status.label}
                         </span>
 
-                        {formatDocumentDate(
-                          document.published_at ||
-                            document.updated_at ||
-                            document.created_at
-                        ) && (
+                        {formatDocumentDate(documentDate) && (
                           <span className="text-[11px] text-slate-400">
-                            {formatDocumentDate(
-                              document.published_at ||
-                                document.updated_at ||
-                                document.created_at
-                            )}
+                            {formatDocumentDate(documentDate)}
                           </span>
                         )}
                       </div>
@@ -987,8 +1076,8 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
               </p>
 
               <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-400">
-                Existing documents will appear here when the backend returns
-                them for your account.
+                Existing documents will appear here when the backend
+                returns them for your account.
               </p>
             </div>
           )}
@@ -1008,11 +1097,12 @@ function ElimuDocumentCenter({ access, school, role, onNavigate }) {
             </h2>
 
             <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Public school forms and official notices may be published after
-              approval. Student report cards, individual fee statements,
-              personal records and other confidential documents must use
-              authenticated, school-scoped endpoints and must never be exposed
-              through the public document library.
+              Public school forms and official notices may be published
+              after approval. Student report cards, individual fee
+              statements, personal records and other confidential
+              documents must use authenticated, school-scoped endpoints.
+              They must never be exposed through the public document
+              library.
             </p>
           </div>
         </div>
@@ -1040,26 +1130,41 @@ export default function ElimuDashboardWorkspace({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const role = useMemo(() => normalizeRole(access), [access]);
+  const role = useMemo(
+    () => normalizeRole(access),
+    [access]
+  );
+
+  const unwrappedDashboard = unwrapResponse(dashboard);
 
   const school = useMemo(
-    () => getSchool(access, unwrapResponse(dashboard)),
-    [access, dashboard]
+    () => getSchool(access, unwrappedDashboard),
+    [access, unwrappedDashboard]
   );
 
   const schoolName = getSchoolName(school);
-  const userName = getCurrentUserName(access, unwrapResponse(dashboard));
+
+  const userName = getCurrentUserName(
+    access,
+    unwrappedDashboard
+  );
+
   const RoleDashboard = getRoleDashboard(role);
 
-  const normalizedPath = String(currentPath || "")
-    .replace(/\/+$/, "")
-    .toLowerCase();
+  const normalizedPath = normalizePath(currentPath);
 
   const isDocumentCenter =
     normalizedPath === "elimu/documents" ||
-    normalizedPath === "/elimu/documents" ||
     normalizedPath === "documents" ||
     normalizedPath.endsWith("/elimu/documents");
+
+  const isMediaCenter =
+    normalizedPath === "elimu/media" ||
+    normalizedPath === "media" ||
+    normalizedPath.endsWith("/elimu/media");
+
+  const canManageMedia =
+    role === "owner" || role === "principal";
 
   const handleNavigate = useCallback(
     (path) => {
@@ -1085,6 +1190,26 @@ export default function ElimuDashboardWorkspace({
   const headerDescription =
     ROLE_DESCRIPTIONS[role] ||
     "Manage school operations from your Elimu workspace.";
+
+  const isSpecialCenter = isDocumentCenter || isMediaCenter;
+
+  const centerTitle = isMediaCenter
+    ? "School photos and videos"
+    : "School document centre";
+
+  const centerDescription = isMediaCenter
+    ? "Upload, organize and manage approved media for your school's public page."
+    : "Prepare, submit and review school document records.";
+
+  const headerActionPath = isSpecialCenter
+    ? "elimu"
+    : "elimu/documents";
+
+  const headerActionLabel = isSpecialCenter
+    ? "Dashboard"
+    : "Documents";
+
+  const HeaderActionIcon = isMediaCenter ? Images : FileText;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
@@ -1114,7 +1239,9 @@ export default function ElimuDashboardWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => setSidebarCollapsed((value) => !value)}
+                  onClick={() =>
+                    setSidebarCollapsed((value) => !value)
+                  }
                   aria-label={
                     sidebarCollapsed
                       ? "Expand navigation sidebar"
@@ -1132,7 +1259,9 @@ export default function ElimuDashboardWorkspace({
 
                   <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
                     {userName
-                      ? `${userName} · ${ROLE_LABELS[role] || "School member"}`
+                      ? `${userName} · ${
+                          ROLE_LABELS[role] || "School member"
+                        }`
                       : ROLE_LABELS[role] || "School workspace"}
                   </p>
                 </div>
@@ -1141,16 +1270,12 @@ export default function ElimuDashboardWorkspace({
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    handleNavigate(
-                      isDocumentCenter ? "elimu" : "elimu/documents"
-                    )
-                  }
+                  onClick={() => handleNavigate(headerActionPath)}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-900 dark:hover:bg-blue-950/30 dark:hover:text-blue-300 sm:px-4"
                 >
-                  <FileText size={16} />
+                  <HeaderActionIcon size={16} />
                   <span className="hidden sm:inline">
-                    {isDocumentCenter ? "Dashboard" : "Documents"}
+                    {headerActionLabel}
                   </span>
                 </button>
 
@@ -1164,6 +1289,7 @@ export default function ElimuDashboardWorkspace({
                     size={16}
                     className={refreshing ? "animate-spin" : ""}
                   />
+
                   <span className="hidden sm:inline">
                     {refreshing ? "Refreshing…" : "Refresh"}
                   </span>
@@ -1177,10 +1303,10 @@ export default function ElimuDashboardWorkspace({
               <ElimuDashboardHeader
                 access={access}
                 school={school}
-                title={isDocumentCenter ? "School document centre" : headerTitle}
+                title={isSpecialCenter ? centerTitle : headerTitle}
                 description={
-                  isDocumentCenter
-                    ? "Prepare, submit and review school document records."
+                  isSpecialCenter
+                    ? centerDescription
                     : headerDescription
                 }
                 onNavigate={handleNavigate}
@@ -1204,10 +1330,11 @@ export default function ElimuDashboardWorkspace({
                     </h2>
 
                     <p className="mt-1 text-sm leading-5 text-amber-800 dark:text-amber-300">
-                      Elimu could not identify your school role from the access
-                      response. Refresh the workspace or verify the active
-                      school membership. A role-specific dashboard cannot be
-                      selected safely until the role is known.
+                      Elimu could not identify your role from the access
+                      response. Refresh the workspace or verify the
+                      active school membership. A role-specific
+                      dashboard cannot be selected safely until the
+                      role is known.
                     </p>
                   </div>
                 </section>
@@ -1222,10 +1349,53 @@ export default function ElimuDashboardWorkspace({
                 />
               )}
 
-              {!isDocumentCenter && RoleDashboard && (
+              {isMediaCenter && role && (
+                canManageMedia ? (
+                  <ElimuMediaManager
+                    access={access}
+                    school={school}
+                    role={role}
+                    onNavigate={handleNavigate}
+                  />
+                ) : (
+                  <section
+                    role="alert"
+                    className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/60 dark:bg-amber-950/30"
+                  >
+                    <div className="flex items-start gap-3">
+                      <LockKeyhole
+                        size={22}
+                        className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300"
+                      />
+
+                      <div>
+                        <h2 className="text-base font-bold text-amber-950 dark:text-amber-200">
+                          Media management restricted
+                        </h2>
+
+                        <p className="mt-2 text-sm leading-6 text-amber-900 dark:text-amber-300">
+                          Only the school owner and authorized principal
+                          can access this media-management screen.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => handleNavigate("elimu")}
+                          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-800 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-900"
+                        >
+                          Return to dashboard
+                          <ArrowRight size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                )
+              )}
+
+              {!isSpecialCenter && RoleDashboard && (
                 <RoleDashboard
                   access={access}
-                  dashboard={unwrapResponse(dashboard)}
+                  dashboard={unwrappedDashboard}
                   school={school}
                   onNavigate={handleNavigate}
                   currentPath={currentPath}
@@ -1245,9 +1415,10 @@ export default function ElimuDashboardWorkspace({
                   </h2>
 
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                    The active school membership returned a role that does not
-                    have a dedicated Elimu dashboard. Ask the school
-                    administrator to verify your membership and permissions.
+                    The active school membership returned a role that
+                    does not have a dedicated Elimu dashboard. Ask the
+                    school administrator to verify your membership and
+                    permissions.
                   </p>
                 </section>
               )}
@@ -1257,6 +1428,7 @@ export default function ElimuDashboardWorkspace({
           <footer className="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
               <span>Elimu · School management workspace</span>
+
               <span>
                 School records are governed by your account permissions.
               </span>

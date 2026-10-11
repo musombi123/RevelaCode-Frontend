@@ -1,15 +1,16 @@
 ﻿import React from "react";
+
 import {
   Activity,
   ArrowLeftRight,
+  BarChart3,
   BookOpen,
   CalendarDays,
-  BarChart3,
   CheckSquare,
   ChevronRight,
-  CircleDollarSign,
   ClipboardCheck,
   GraduationCap,
+  Images,
   LayoutDashboard,
   Library,
   ListChecks,
@@ -47,8 +48,16 @@ const NAVIGATION = [
         path: "elimu/staff",
         roles: ["owner", "principal"],
       },
+      {
+        id: "media",
+        label: "Photos & videos",
+        icon: Images,
+        path: "elimu/media",
+        roles: ["owner", "principal"],
+      },
     ],
   },
+
   {
     label: "Academic management",
     items: [
@@ -110,6 +119,7 @@ const NAVIGATION = [
       },
     ],
   },
+
   {
     label: "Finance & reports",
     items: [
@@ -129,6 +139,7 @@ const NAVIGATION = [
       },
     ],
   },
+
   {
     label: "System",
     items: [
@@ -171,22 +182,40 @@ function normalizeRole(access) {
     access?.membership?.role ??
     access?.access?.role ??
     access?.membership?.role_label ??
+    access?.role_label ??
     "";
 
   const normalized = String(role).trim().toLowerCase();
 
-  if (normalized.includes("owner") || normalized.includes("director")) {
+  if (
+    normalized.includes("owner") ||
+    normalized.includes("director")
+  ) {
     return "owner";
   }
 
-  if (normalized.includes("principal")) return "principal";
-  if (normalized.includes("bursar") || normalized.includes("finance")) {
+  if (normalized.includes("principal")) {
+    return "principal";
+  }
+
+  if (
+    normalized.includes("bursar") ||
+    normalized.includes("finance")
+  ) {
     return "bursar";
   }
-  if (normalized.includes("registrar") || normalized.includes("admission")) {
+
+  if (
+    normalized.includes("registrar") ||
+    normalized.includes("admission")
+  ) {
     return "registrar";
   }
-  if (normalized.includes("teacher") || normalized.includes("educator")) {
+
+  if (
+    normalized.includes("teacher") ||
+    normalized.includes("educator")
+  ) {
     return "teacher";
   }
 
@@ -204,8 +233,13 @@ function isItemActive(item, currentPath) {
   const current = normalizePath(currentPath);
   const target = normalizePath(item.path);
 
-  if (!current || !target) return false;
-  if (current === target) return true;
+  if (!current || !target) {
+    return false;
+  }
+
+  if (current === target) {
+    return true;
+  }
 
   return current.startsWith(`${target}/`);
 }
@@ -221,7 +255,11 @@ export default function ElimuDashboardSidebar({
   className = "",
 }) {
   const role = normalizeRole(access);
-  const roleLabel = ROLE_LABELS[role] || access?.role_label || "School member";
+
+  const roleLabel =
+    ROLE_LABELS[role] ||
+    access?.role_label ||
+    "School member";
 
   const schoolName =
     school?.name ||
@@ -242,9 +280,14 @@ export default function ElimuDashboardSidebar({
   const visibleGroups = NAVIGATION.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      if (!item.roles.includes(role)) return false;
+      if (!item.roles.includes(role)) {
+        return false;
+      }
 
-      if (item.id === "staff" && !hasPermission("staff.manage")) {
+      if (
+        item.id === "staff" &&
+        !hasPermission("staff.manage")
+      ) {
         return role === "owner" || role === "principal";
       }
 
@@ -281,12 +324,15 @@ export default function ElimuDashboardSidebar({
           "dark:border-slate-800 dark:bg-slate-950",
           collapsed ? "w-[76px]" : "w-[272px]",
           "fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:z-20",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          mobileOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
       >
+        {/* Brand */}
         <div
           className={[
             "flex min-h-[76px] items-center border-b border-slate-200 px-4",
@@ -309,6 +355,7 @@ export default function ElimuDashboardSidebar({
                 <span className="block truncate text-base font-bold tracking-tight text-slate-900 dark:text-white">
                   Elimu
                 </span>
+
                 <span className="block truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                   School workspace
                 </span>
@@ -326,6 +373,7 @@ export default function ElimuDashboardSidebar({
           </button>
         </div>
 
+        {/* Current school and role */}
         <div className="border-b border-slate-200 p-3 dark:border-slate-800">
           <button
             type="button"
@@ -348,6 +396,7 @@ export default function ElimuDashboardSidebar({
                 <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">
                   {schoolName}
                 </span>
+
                 <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">
                   {roleLabel}
                 </span>
@@ -363,6 +412,7 @@ export default function ElimuDashboardSidebar({
           </button>
         </div>
 
+        {/* Navigation groups */}
         <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
           {visibleGroups.map((group) => (
             <div key={group.label}>
@@ -424,6 +474,7 @@ export default function ElimuDashboardSidebar({
           ))}
         </nav>
 
+        {/* Access information */}
         <div className="border-t border-slate-200 p-3 dark:border-slate-800">
           <div
             className={[
@@ -441,6 +492,7 @@ export default function ElimuDashboardSidebar({
                 <span className="block text-xs font-semibold text-slate-800 dark:text-slate-100">
                   School workspace
                 </span>
+
                 <span className="mt-0.5 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">
                   Your access follows your school role.
                 </span>
@@ -452,8 +504,3 @@ export default function ElimuDashboardSidebar({
     </>
   );
 }
-
-
-
-
-

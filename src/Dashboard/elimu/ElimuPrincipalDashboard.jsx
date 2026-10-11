@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -16,6 +15,7 @@ import {
   FileCheck2,
   FileText,
   GraduationCap,
+  Images,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -27,7 +27,9 @@ import { useElimuApi } from "@/services/elimuApi.jsx";
 const numberFormat = new Intl.NumberFormat("en-KE");
 
 function unwrap(response) {
-  if (!response || typeof response !== "object") return response;
+  if (!response || typeof response !== "object") {
+    return response;
+  }
 
   return response.data && typeof response.data === "object"
     ? response.data
@@ -37,15 +39,21 @@ function unwrap(response) {
 function getCollection(response, keys = []) {
   const data = unwrap(response);
 
-  if (Array.isArray(data)) return data;
+  if (Array.isArray(data)) {
+    return data;
+  }
 
   for (const key of keys) {
-    if (Array.isArray(data?.[key])) return data[key];
+    if (Array.isArray(data?.[key])) {
+      return data[key];
+    }
   }
 
   if (data?.data && typeof data.data === "object") {
     for (const key of keys) {
-      if (Array.isArray(data.data[key])) return data.data[key];
+      if (Array.isArray(data.data[key])) {
+        return data.data[key];
+      }
     }
   }
 
@@ -70,11 +78,15 @@ function getMetric(metrics, keys, fallback = null) {
 }
 
 function formatDate(value) {
-  if (!value) return "Date not specified";
+  if (!value) {
+    return "Date not specified";
+  }
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
 
   return new Intl.DateTimeFormat("en-KE", {
     day: "numeric",
@@ -131,7 +143,12 @@ function MetricCard({
   );
 }
 
-function SectionHeading({ title, description, action, onAction }) {
+function SectionHeading({
+  title,
+  description,
+  action,
+  onAction,
+}) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -160,7 +177,12 @@ function SectionHeading({ title, description, action, onAction }) {
   );
 }
 
-function ActivityRow({ icon: Icon, title, subtitle, trailing }) {
+function ActivityRow({
+  icon: Icon,
+  title,
+  subtitle,
+  trailing,
+}) {
   return (
     <div className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300">
@@ -188,7 +210,12 @@ function ActivityRow({ icon: Icon, title, subtitle, trailing }) {
   );
 }
 
-function QuickAction({ icon: Icon, title, description, onClick }) {
+function QuickAction({
+  icon: Icon,
+  title,
+  description,
+  onClick,
+}) {
   return (
     <button
       type="button"
@@ -227,7 +254,9 @@ export default function ElimuPrincipalDashboard({
 }) {
   const api = useElimuApi();
 
-  const [dashboard, setDashboard] = useState(initialDashboard || null);
+  const [dashboard, setDashboard] = useState(
+    initialDashboard || null
+  );
   const [classes, setClasses] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -240,16 +269,26 @@ export default function ElimuPrincipalDashboard({
   const mountedRef = useRef(false);
   const requestVersionRef = useRef(0);
 
-  const getDashboardRequest = api.getDashboard || api.getElimuDashboard;
-  const getClassesRequest = api.getClasses || api.getElimuClasses;
-  const getLessonsRequest = api.getLessons || api.getElimuLessons;
+  const getDashboardRequest =
+    api.getDashboard || api.getElimuDashboard;
+
+  const getClassesRequest =
+    api.getClasses || api.getElimuClasses;
+
+  const getLessonsRequest =
+    api.getLessons || api.getElimuLessons;
+
   const getAssignmentsRequest =
     api.getAssignments || api.getElimuAssignments;
+
   const getCBCProjectsRequest =
     api.getCBCProjects || api.getElimuCBCProjects;
+
   const getEducationProfileRequest =
     api.getEducationProfile || api.getProfile;
-  const getEventsRequest = api.getEvents || api.getElimuEvents;
+
+  const getEventsRequest =
+    api.getEvents || api.getElimuEvents;
 
   useEffect(() => {
     setDashboard(initialDashboard || null);
@@ -307,39 +346,45 @@ export default function ElimuPrincipalDashboard({
     ];
 
     const results = await Promise.allSettled(
-      requests.map(async ({ name, request, setter, keys }) => {
-        if (typeof request !== "function") {
-          throw new Error(`Elimu API method is unavailable: ${name}`);
+      requests.map(
+        async ({ name, request, setter, keys }) => {
+          if (typeof request !== "function") {
+            throw new Error(
+              `Elimu API method is unavailable: ${name}`
+            );
+          }
+
+          const response = await request();
+
+          if (
+            !mountedRef.current ||
+            requestVersion !== requestVersionRef.current
+          ) {
+            return;
+          }
+
+          const data = unwrap(response);
+
+          if (name === "dashboard") {
+            setter(data || null);
+          } else if (name === "profile") {
+            const candidate =
+              data?.profile ||
+              data?.education_profile ||
+              data?.data?.profile ||
+              data?.data?.education_profile ||
+              data;
+
+            setter(
+              candidate && !Array.isArray(candidate)
+                ? candidate
+                : null
+            );
+          } else {
+            setter(getCollection(data, keys));
+          }
         }
-
-        const response = await request();
-
-        if (
-          !mountedRef.current ||
-          requestVersion !== requestVersionRef.current
-        ) {
-          return;
-        }
-
-        const data = unwrap(response);
-
-        if (name === "dashboard") {
-          setter(data || null);
-        } else if (name === "profile") {
-          const candidate =
-            data?.profile ||
-            data?.education_profile ||
-            data?.data?.profile ||
-            data?.data?.education_profile ||
-            data;
-
-          setter(
-            candidate && !Array.isArray(candidate) ? candidate : null
-          );
-        } else {
-          setter(getCollection(data, keys));
-        }
-      })
+      )
     );
 
     if (
@@ -349,13 +394,16 @@ export default function ElimuPrincipalDashboard({
       return;
     }
 
-    const failures = results.reduce((failed, result, index) => {
-      if (result.status === "rejected") {
-        failed.push(requests[index].name);
-      }
+    const failures = results.reduce(
+      (failed, result, index) => {
+        if (result.status === "rejected") {
+          failed.push(requests[index].name);
+        }
 
-      return failed;
-    }, []);
+        return failed;
+      },
+      []
+    );
 
     if (failures.length) {
       setError(
@@ -404,7 +452,9 @@ export default function ElimuPrincipalDashboard({
   }, [loadData, onRefresh]);
 
   const schoolData = school || dashboard?.school || {};
-  const metrics = dashboard?.metrics || dashboard?.hub?.metrics || {};
+
+  const metrics =
+    dashboard?.metrics || dashboard?.hub?.metrics || {};
 
   const totalClasses = getMetric(
     metrics,
@@ -412,10 +462,10 @@ export default function ElimuPrincipalDashboard({
     classes.length
   );
 
-  const totalStudents = getMetric(metrics, [
-    "students",
-    "total_students",
-  ]);
+  const totalStudents = getMetric(
+    metrics,
+    ["students", "total_students"]
+  );
 
   const totalLessons = getMetric(
     metrics,
@@ -435,11 +485,15 @@ export default function ElimuPrincipalDashboard({
     "fees_outstanding",
   ]);
 
-  const upcomingEvents = Array.isArray(dashboard?.upcoming_events)
+  const upcomingEvents = Array.isArray(
+    dashboard?.upcoming_events
+  )
     ? dashboard.upcoming_events
     : events;
 
-  const recentAssignments = Array.isArray(dashboard?.recent_assignments)
+  const recentAssignments = Array.isArray(
+    dashboard?.recent_assignments
+  )
     ? dashboard.recent_assignments
     : assignments;
 
@@ -455,7 +509,10 @@ export default function ElimuPrincipalDashboard({
     schoolData.location,
   ]
     .filter(Boolean)
-    .filter((value, index, values) => values.indexOf(value) === index)
+    .filter(
+      (value, index, values) =>
+        values.indexOf(value) === index
+    )
     .join(", ");
 
   return (
@@ -478,8 +535,9 @@ export default function ElimuPrincipalDashboard({
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-              Coordinate academic delivery, monitor school activity, review
-              teaching operations and keep school-wide resources organized.
+              Coordinate academic delivery, monitor school activity,
+              review teaching operations and keep school-wide
+              resources organized.
             </p>
 
             <p className="mt-4 text-sm font-semibold text-white">
@@ -487,7 +545,9 @@ export default function ElimuPrincipalDashboard({
             </p>
 
             {location && (
-              <p className="mt-1 text-xs text-slate-400">{location}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {location}
+              </p>
             )}
           </div>
 
@@ -499,7 +559,9 @@ export default function ElimuPrincipalDashboard({
           >
             <RefreshCw
               size={16}
-              className={loading || refreshing ? "animate-spin" : ""}
+              className={
+                loading || refreshing ? "animate-spin" : ""
+              }
             />
             Refresh overview
           </button>
@@ -511,7 +573,10 @@ export default function ElimuPrincipalDashboard({
           role="status"
           className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
         >
-          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <AlertCircle
+            size={18}
+            className="mt-0.5 shrink-0"
+          />
 
           <p className="flex-1">{error}</p>
 
@@ -601,10 +666,11 @@ export default function ElimuPrincipalDashboard({
               </div>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Prepare school notices, calendars, handbooks, policies and
-                other approved school publications. Review resources submitted
-                by staff and use the document centre to manage the publication
-                workflow granted to your account.
+                Prepare school notices, calendars, handbooks,
+                policies and other approved school publications.
+                Review resources submitted by staff and use the
+                document centre to manage the publication workflow
+                granted to your account.
               </p>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -635,6 +701,72 @@ export default function ElimuPrincipalDashboard({
             <ArrowRight size={16} />
           </button>
         </div>
+      </section>
+
+      {/* School media centre */}
+      <section className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 dark:border-blue-900/60 dark:from-blue-950/30 dark:via-slate-950 dark:to-indigo-950/20 sm:p-6">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-blue-400/10 blur-3xl" />
+
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+              <Images size={23} />
+            </span>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold text-slate-950 dark:text-white">
+                  School photos and videos
+                </h2>
+
+                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">
+                  Principal access
+                </span>
+              </div>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Keep the school&apos;s public page up to date with
+                campus photographs, school events, classroom
+                activities, achievements and approved introduction
+                videos. Upload media and manage its publication
+                through the school media centre.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  "School gallery",
+                  "Campus photos",
+                  "Events",
+                  "Videos",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-lg border border-blue-100 bg-white/80 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("elimu/media")}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          >
+            <Images size={17} />
+            Manage school media
+            <ArrowRight size={16} />
+          </button>
+        </div>
+
+        <p className="relative mt-4 border-t border-blue-100 pt-3 text-xs leading-5 text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          Publish only photographs and videos the school has
+          permission to share. Media visibility depends on its
+          publication status and the school&apos;s configured access
+          permissions.
+        </p>
       </section>
 
       {/* School operations */}
@@ -686,6 +818,13 @@ export default function ElimuPrincipalDashboard({
             description="Review fee reporting according to your permissions."
             onClick={() => navigate("elimu/reports")}
           />
+
+          <QuickAction
+            icon={Images}
+            title="Photos and videos"
+            description="Upload school pictures and videos, and manage media for the public school page."
+            onClick={() => navigate("elimu/media")}
+          />
         </div>
       </section>
 
@@ -703,35 +842,38 @@ export default function ElimuPrincipalDashboard({
 
           <div className="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
             {recentAssignments.length ? (
-              recentAssignments.slice(0, 5).map((assignment, index) => (
-                <ActivityRow
-                  key={
-                    assignment.id ||
-                    assignment._id ||
-                    assignment.assignment_id ||
-                    index
-                  }
-                  icon={ClipboardCheck}
-                  title={
-                    assignment.title ||
-                    assignment.name ||
-                    "Untitled assignment"
-                  }
-                  subtitle={
-                    assignment.class_name ||
-                    assignment.className ||
-                    assignment.subject ||
-                    "School assignment"
-                  }
-                  trailing={
-                    assignment.due_date || assignment.dueDate
-                      ? formatDate(
-                          assignment.due_date || assignment.dueDate
-                        )
-                      : assignment.status || ""
-                  }
-                />
-              ))
+              recentAssignments.slice(0, 5).map(
+                (assignment, index) => (
+                  <ActivityRow
+                    key={
+                      assignment.id ||
+                      assignment._id ||
+                      assignment.assignment_id ||
+                      index
+                    }
+                    icon={ClipboardCheck}
+                    title={
+                      assignment.title ||
+                      assignment.name ||
+                      "Untitled assignment"
+                    }
+                    subtitle={
+                      assignment.class_name ||
+                      assignment.className ||
+                      assignment.subject ||
+                      "School assignment"
+                    }
+                    trailing={
+                      assignment.due_date || assignment.dueDate
+                        ? formatDate(
+                            assignment.due_date ||
+                              assignment.dueDate
+                          )
+                        : assignment.status || ""
+                    }
+                  />
+                )
+              )
             ) : (
               <div className="py-8 text-center">
                 <CheckCircle2
@@ -744,7 +886,8 @@ export default function ElimuPrincipalDashboard({
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Assignment activity will appear when records are available.
+                  Assignment activity will appear when records
+                  are available.
                 </p>
               </div>
             )}
@@ -763,9 +906,16 @@ export default function ElimuPrincipalDashboard({
             {upcomingEvents.length ? (
               upcomingEvents.slice(0, 5).map((event, index) => (
                 <ActivityRow
-                  key={event.id || event._id || event.event_id || index}
+                  key={
+                    event.id ||
+                    event._id ||
+                    event.event_id ||
+                    index
+                  }
                   icon={CalendarDays}
-                  title={event.title || event.name || "School event"}
+                  title={
+                    event.title || event.name || "School event"
+                  }
                   subtitle={
                     event.description ||
                     event.location ||
@@ -773,7 +923,9 @@ export default function ElimuPrincipalDashboard({
                     "Scheduled school activity"
                   }
                   trailing={formatDate(
-                    event.start_date || event.date || event.start
+                    event.start_date ||
+                      event.date ||
+                      event.start
                   )}
                 />
               ))
@@ -789,7 +941,8 @@ export default function ElimuPrincipalDashboard({
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  School activities will appear when calendar records exist.
+                  School activities will appear when calendar
+                  records exist.
                 </p>
 
                 <button
