@@ -1,9 +1,11 @@
-﻿"use client";
+﻿
+"use client";
 
 import React, { useEffect } from "react";
 
 import {
   LayoutDashboard,
+  ClipboardCheck,
   Users,
   BookOpen,
   ScrollText,
@@ -14,12 +16,22 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// =========================================================
+// ADMIN NAVIGATION
+// =========================================================
+
 const tabs = [
   {
     key: "overview",
     label: "Dashboard",
     description: "Platform overview",
     icon: LayoutDashboard,
+  },
+  {
+    key: "verification",
+    label: "School Verification",
+    description: "Review school applications",
+    icon: ClipboardCheck,
   },
   {
     key: "team",
@@ -53,15 +65,19 @@ const tabs = [
   },
 ];
 
+// =========================================================
+// ADMIN SIDEBAR
+// =========================================================
+
 export default function AdminSidebar({
   activeTab,
   setActiveTab,
   mobileOpen = false,
   setMobileOpen,
 }) {
-  /* =========================================================
-     CLOSE DRAWER ON ESC
-  ========================================================= */
+  // =======================================================
+  // CLOSE DRAWER ON ESC
+  // =======================================================
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -72,51 +88,44 @@ export default function AdminSidebar({
       }
     };
 
-    document.addEventListener(
-      "keydown",
-      handleEscape
-    );
+    document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener(
-        "keydown",
-        handleEscape
-      );
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [mobileOpen, setMobileOpen]);
 
-  /* =========================================================
-     LOCK BODY SCROLL ON MOBILE
-  ========================================================= */
+  // =======================================================
+  // LOCK BODY SCROLL ON MOBILE
+  // =======================================================
 
   useEffect(() => {
     if (!mobileOpen) return;
 
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [mobileOpen]);
 
-  /* =========================================================
-     NAVIGATION
-  ========================================================= */
+  // =======================================================
+  // NAVIGATION
+  // =======================================================
 
   const handleNavigation = (key) => {
     setActiveTab(key);
     setMobileOpen?.(false);
   };
 
-  /* =========================================================
-     SIDEBAR CONTENT
-  ========================================================= */
+  // =======================================================
+  // SIDEBAR CONTENT
+  // =======================================================
 
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col">
-      {/* =====================================================
-          BRAND
-      ===================================================== */}
+      {/* BRAND */}
 
       <div className="flex-shrink-0 border-b border-slate-800 px-5 py-5">
         <div className="flex items-center gap-3">
@@ -137,12 +146,9 @@ export default function AdminSidebar({
             </h1>
           </div>
 
-          {/* Mobile close */}
           <button
             type="button"
-            onClick={() =>
-              setMobileOpen?.(false)
-            }
+            onClick={() => setMobileOpen?.(false)}
             className="ml-auto flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-white lg:hidden"
             aria-label="Close admin menu"
           >
@@ -165,9 +171,7 @@ export default function AdminSidebar({
         </div>
       </div>
 
-      {/* =====================================================
-          NAVIGATION
-      ===================================================== */}
+      {/* NAVIGATION */}
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
         <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
@@ -177,16 +181,14 @@ export default function AdminSidebar({
         <div className="space-y-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const active =
-              activeTab === tab.key;
+            const active = activeTab === tab.key;
 
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() =>
-                  handleNavigation(tab.key)
-                }
+                onClick={() => handleNavigation(tab.key)}
+                aria-current={active ? "page" : undefined}
                 className={`
                   group
                   flex
@@ -264,9 +266,7 @@ export default function AdminSidebar({
         </div>
       </nav>
 
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
+      {/* FOOTER */}
 
       <div className="flex-shrink-0 border-t border-slate-800 p-4">
         <div className="rounded-xl bg-slate-950/50 px-3 py-3">
@@ -290,32 +290,24 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* =====================================================
-          DESKTOP SIDEBAR
-      ===================================================== */}
+      {/* DESKTOP SIDEBAR */}
 
       <aside className="hidden w-[280px] flex-shrink-0 border-r border-slate-800 bg-slate-900 text-white lg:block">
         {sidebarContent}
       </aside>
 
-      {/* =====================================================
-          MOBILE OVERLAY
-      ===================================================== */}
+      {/* MOBILE OVERLAY */}
 
       {mobileOpen && (
         <button
           type="button"
           aria-label="Close admin menu"
-          onClick={() =>
-            setMobileOpen?.(false)
-          }
+          onClick={() => setMobileOpen?.(false)}
           className="fixed inset-0 z-[9998] bg-slate-950/60 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
-      {/* =====================================================
-          MOBILE DRAWER
-      ===================================================== */}
+      {/* MOBILE DRAWER */}
 
       <aside
         className={`
@@ -344,4 +336,3 @@ export default function AdminSidebar({
     </>
   );
 }
-
