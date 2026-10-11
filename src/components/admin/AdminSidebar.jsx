@@ -14,6 +14,7 @@ import {
   Shield,
   X,
   ChevronRight,
+  Database,
 } from "lucide-react";
 
 // =========================================================
@@ -26,6 +27,12 @@ const tabs = [
     label: "Dashboard",
     description: "Platform overview",
     icon: LayoutDashboard,
+  },
+  {
+    key: "directories",
+    label: "Jumuiya Directory",
+    description: "Browse Jumuiya profiles and resources",
+    icon: Database,
   },
   {
     key: "verification",

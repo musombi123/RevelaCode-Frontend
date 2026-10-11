@@ -11,6 +11,7 @@ import {
   BookMarked,
   Settings,
   ClipboardCheck,
+  Database,
 } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
@@ -22,6 +23,7 @@ import AdminStudyManagement from "./AdminStudyManagement.jsx";
 import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
+import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 
 // =========================================================
 // ADMIN PAGES
@@ -34,6 +36,14 @@ const adminPages = {
       "Monitor platform activity, resources, and system health.",
     icon: LayoutDashboard,
     component: AdminOverview,
+  },
+
+  directories: {
+    title: "Jumuiya Directory",
+    description:
+      "Browse Shamba farmer profiles, Biashara businesses, and Elimu schools.",
+    icon: Database,
+    component: AdminJumuiyaDirectory,
   },
 
   verification: {
