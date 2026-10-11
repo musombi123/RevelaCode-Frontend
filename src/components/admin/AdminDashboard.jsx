@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 
@@ -11,6 +11,7 @@ import {
   BookMarked,
   Settings,
   ClipboardCheck,
+  CircleDollarSign,
   Database,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ import AdminStudyManagement from "./AdminStudyManagement.jsx";
 import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
+import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 
 // =========================================================
@@ -54,6 +56,12 @@ const adminPages = {
     component: AdminSchoolVerification,
   },
 
+  revenue: {
+    title: "Revenue Management",
+    description: "Manage pricing proposals and review revenue transaction intents across Jumuiya.",
+    icon: CircleDollarSign,
+    component: AdminRevenueManagement,
+  },
   team: {
     title: "User Management",
     description:

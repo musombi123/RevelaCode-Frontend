@@ -12,6 +12,7 @@ import {
   BookMarked,
   Settings,
   Shield,
+  CircleDollarSign,
   X,
   ChevronRight,
   Database,
@@ -41,6 +42,11 @@ const tabs = [
     icon: ClipboardCheck,
   },
   {
+    key: "revenue",
+    label: "Revenue Management",
+    description: "Pricing and transaction intents",
+    icon: CircleDollarSign,
+  },  {
     key: "team",
     label: "User Management",
     description: "Users and administrators",
