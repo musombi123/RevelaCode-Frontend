@@ -15,9 +15,6 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
-import RevenueCenter from "@/Dashboard/RevenueCenter.jsx";
-
-
 // =========================================================
 // PAYMENTS / WALLET DASHBOARD
 // =========================================================
@@ -1043,9 +1040,7 @@ export default function PaymentsDashboard({
           </button>
         </div>
       </section>
-      <section className="mt-8">
-        <RevenueCenter />
-      </section>
+
 
     </JumuiyaDashboardShell>
   );

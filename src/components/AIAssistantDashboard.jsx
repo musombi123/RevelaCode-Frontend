@@ -1,4 +1,4 @@
-// src/ai/AIAssistantDashboard.jsx
+﻿// src/ai/AIAssistantDashboard.jsx
 
 import React, {
   useCallback,
@@ -21,6 +21,7 @@ import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { useAuth } from "@/context/AuthContext";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 /* =========================================================
    CONSTANTS
@@ -1531,6 +1532,10 @@ export default function AIAssistantDashboard({
                     sendTextMessage
                   }
                 />
+
+                <div className="mt-6 w-full max-w-3xl">
+                  <HubRevenueOffers hub="smart_ai" compact />
+                </div>
 
                 <div
                   className="

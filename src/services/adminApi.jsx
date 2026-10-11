@@ -1,4 +1,4 @@
-
+﻿
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
@@ -152,12 +152,51 @@ async function parseResponse(response) {
   }
 }
 
+function getReadableErrorMessage(payload, status) {
+  const candidates = [
+    payload?.error?.message,
+    payload?.detail?.message,
+    payload?.message?.message,
+    payload?.message,
+    typeof payload?.error === "string" ? payload.error : null,
+    typeof payload?.detail === "string" ? payload.detail : null,
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      typeof candidate === "string" &&
+      candidate.trim()
+    ) {
+      return candidate.trim();
+    }
+  }
+
+  if (payload && typeof payload === "object") {
+    const nested = payload.error ?? payload.detail;
+
+    if (nested && typeof nested === "object") {
+      try {
+        const serialized = JSON.stringify(nested);
+
+        if (serialized && serialized !== "{}") {
+          return `Request failed: ${serialized}`;
+        }
+      } catch {
+        // Use the HTTP status fallback below.
+      }
+    }
+  }
+
+  if (typeof payload === "string" && payload.trim()) {
+    return payload.trim();
+  }
+
+  return `Admin API request failed with HTTP ${status}.`;
+}
+
 function makeApiError(response, payload, url, method) {
   const error = new Error(
-    payload?.message ||
-      payload?.error ||
-      payload?.detail ||
-      `Admin API request failed with HTTP ${response.status}.`,
+    getReadableErrorMessage(payload, response.status),
   );
 
   error.name = "AdminApiError";
@@ -168,7 +207,6 @@ function makeApiError(response, payload, url, method) {
 
   return error;
 }
-
 function validateId(value, label) {
   if (
     value === undefined ||
@@ -310,7 +348,7 @@ export function createAdminApiClient({
     });
 
   // =======================================================
-  // SCHOOL VERIFICATION — JWT AUTHENTICATED
+  // SCHOOL VERIFICATION â€” JWT AUTHENTICATED
   // =======================================================
 
   const verification = {

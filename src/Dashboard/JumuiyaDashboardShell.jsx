@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import {
   ArrowLeft,
   BarChart3,
@@ -593,6 +594,10 @@ export default function JumuiyaDashboardShell({
       <main className="min-w-0">
         {children}
       </main>
+
+      {normalizedActiveHub && !["home", "payments"].includes(normalizedActiveHub) ? (
+        <HubRevenueOffers hub={normalizedActiveHub} />
+      ) : null}
     </div>
   );
 }
