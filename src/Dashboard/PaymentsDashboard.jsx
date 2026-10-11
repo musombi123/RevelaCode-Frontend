@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 
 import {
   ArrowDownLeft,
@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import RevenueCenter from "@/Dashboard/RevenueCenter.jsx";
 
 
 // =========================================================
@@ -914,7 +915,7 @@ export default function PaymentsDashboard({
 
                         {transaction.reference && (
                           <>
-                            <span>•</span>
+                            <span>â€¢</span>
 
                             <span>
                               {
@@ -926,7 +927,7 @@ export default function PaymentsDashboard({
 
                         {transaction.created_at && (
                           <>
-                            <span>•</span>
+                            <span>â€¢</span>
 
                             <span>
                               {new Date(
@@ -1042,6 +1043,10 @@ export default function PaymentsDashboard({
           </button>
         </div>
       </section>
+      <section className="mt-8">
+        <RevenueCenter />
+      </section>
+
     </JumuiyaDashboardShell>
   );
 }
