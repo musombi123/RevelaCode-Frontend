@@ -1,3 +1,5 @@
+// src/Dashboard/elimu/ElimuOwnerDashboard.jsx
+
 import React, {
   useCallback,
   useEffect,
@@ -17,7 +19,7 @@ import {
   FileCheck2,
   FileText,
   GraduationCap,
-  Images,
+  Image,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -25,6 +27,10 @@ import {
 } from "lucide-react";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
+
+// ============================================================
+// FORMATTING UTILITIES
+// ============================================================
 
 const numberFormat = new Intl.NumberFormat("en-KE");
 
@@ -107,6 +113,10 @@ function formatDate(value) {
     year: "numeric",
   }).format(date);
 }
+
+// ============================================================
+// REUSABLE COMPONENTS
+// ============================================================
 
 function MetricCard({
   icon: Icon,
@@ -262,6 +272,10 @@ function EmptyState({
   );
 }
 
+// ============================================================
+// ELIMU OWNER DASHBOARD
+// ============================================================
+
 export default function ElimuOwnerDashboard({
   access,
   dashboard: initialDashboard,
@@ -270,28 +284,31 @@ export default function ElimuOwnerDashboard({
   onRefresh,
   refreshing = false,
 }) {
-  // Elimu-specific API service. No direct Jumuiya API dependency.
+  // Use the Elimu API gateway rather than accessing the database
+  // or another hub's API directly.
   const api = useElimuApi();
 
   const [dashboard, setDashboard] = useState(
     initialDashboard || null
   );
+
   const [staff, setStaff] = useState([]);
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [events, setEvents] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const mountedRef = useRef(false);
   const requestVersionRef = useRef(0);
 
-  /*
-   * Prefer dedicated Elimu API methods.
-   * Keep legacy aliases where the API service exposes them.
-   */
+  // ----------------------------------------------------------
+  // Resolve available Elimu API methods
+  // ----------------------------------------------------------
+
   const requestMethods = useMemo(
     () => ({
       dashboard: api.getDashboard || api.getElimuDashboard,
@@ -324,6 +341,10 @@ export default function ElimuOwnerDashboard({
   useEffect(() => {
     setDashboard(initialDashboard || null);
   }, [initialDashboard]);
+
+  // ----------------------------------------------------------
+  // Load school dashboard data
+  // ----------------------------------------------------------
 
   const loadData = useCallback(async () => {
     const requestVersion = ++requestVersionRef.current;
@@ -434,6 +455,7 @@ export default function ElimuOwnerDashboard({
 
   useEffect(() => {
     mountedRef.current = true;
+
     void loadData();
 
     return () => {
@@ -441,6 +463,10 @@ export default function ElimuOwnerDashboard({
       requestVersionRef.current += 1;
     };
   }, [loadData]);
+
+  // ----------------------------------------------------------
+  // Navigation and refresh
+  // ----------------------------------------------------------
 
   const navigate = useCallback(
     (path) => {
@@ -459,6 +485,10 @@ export default function ElimuOwnerDashboard({
     }
   }, [loadData, onRefresh]);
 
+  // ----------------------------------------------------------
+  // School information and metrics
+  // ----------------------------------------------------------
+
   const schoolData = school || dashboard?.school || {};
 
   const metrics =
@@ -473,8 +503,11 @@ export default function ElimuOwnerDashboard({
     students.length;
 
   const totalStaff =
-    getMetric(metrics, ["staff", "total_staff", "teachers"]) ??
-    staff.length;
+    getMetric(metrics, [
+      "staff",
+      "total_staff",
+      "teachers",
+    ]) ?? staff.length;
 
   const totalLessons =
     getMetric(metrics, ["lessons", "total_lessons"]) ??
@@ -509,6 +542,10 @@ export default function ElimuOwnerDashboard({
         values.indexOf(value) === index
     )
     .join(", ");
+
+  // ----------------------------------------------------------
+  // Leadership shortcuts
+  // ----------------------------------------------------------
 
   const quickActions = [
     {
@@ -561,7 +598,7 @@ export default function ElimuOwnerDashboard({
       path: "elimu/documents",
     },
     {
-      icon: Images,
+      icon: Image,
       title: "Photos and videos",
       description:
         "Upload campus photos, event pictures and videos for your school's public page.",
@@ -584,9 +621,13 @@ export default function ElimuOwnerDashboard({
       : events
   ).slice(0, 4);
 
+  // ----------------------------------------------------------
+  // Render dashboard
+  // ----------------------------------------------------------
+
   return (
     <div className="space-y-8">
-      {/* Owner overview */}
+      {/* Leadership overview */}
       <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
 
@@ -642,6 +683,7 @@ export default function ElimuOwnerDashboard({
         </div>
       </section>
 
+      {/* Load errors */}
       {error && (
         <div
           role="status"
@@ -732,14 +774,14 @@ export default function ElimuOwnerDashboard({
         )}
       </section>
 
-      {/* Owner media centre */}
+      {/* School media centre */}
       <section className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 dark:border-blue-900/60 dark:from-blue-950/30 dark:via-slate-950 dark:to-indigo-950/20 sm:p-6">
         <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-blue-400/10 blur-3xl" />
 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
-              <Images size={23} />
+              <Image size={23} />
             </span>
 
             <div className="min-w-0">
@@ -783,7 +825,7 @@ export default function ElimuOwnerDashboard({
             onClick={() => navigate("elimu/media")}
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
           >
-            <Images size={17} />
+            <Image size={17} />
             Manage school media
             <ArrowRight size={16} />
           </button>
@@ -849,7 +891,7 @@ export default function ElimuOwnerDashboard({
         </div>
       </section>
 
-      {/* Assignments and events */}
+      {/* Assignments and school events */}
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <SectionHeading

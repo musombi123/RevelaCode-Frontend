@@ -15,7 +15,7 @@ import {
   FileCheck2,
   FileText,
   GraduationCap,
-  Images,
+  Image,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
+
+// ============================================================
+// FORMATTING UTILITIES
+// ============================================================
 
 const numberFormat = new Intl.NumberFormat("en-KE");
 
@@ -94,6 +98,10 @@ function formatDate(value) {
     year: "numeric",
   }).format(date);
 }
+
+// ============================================================
+// REUSABLE COMPONENTS
+// ============================================================
 
 function MetricCard({
   icon: Icon,
@@ -244,6 +252,10 @@ function QuickAction({
   );
 }
 
+// ============================================================
+// PRINCIPAL DASHBOARD
+// ============================================================
+
 export default function ElimuPrincipalDashboard({
   access,
   dashboard: initialDashboard,
@@ -257,17 +269,23 @@ export default function ElimuPrincipalDashboard({
   const [dashboard, setDashboard] = useState(
     initialDashboard || null
   );
+
   const [classes, setClasses] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [cbcProjects, setCbcProjects] = useState([]);
   const [profile, setProfile] = useState(null);
   const [events, setEvents] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const mountedRef = useRef(false);
   const requestVersionRef = useRef(0);
+
+  // ----------------------------------------------------------
+  // API methods
+  // ----------------------------------------------------------
 
   const getDashboardRequest =
     api.getDashboard || api.getElimuDashboard;
@@ -293,6 +311,10 @@ export default function ElimuPrincipalDashboard({
   useEffect(() => {
     setDashboard(initialDashboard || null);
   }, [initialDashboard]);
+
+  // ----------------------------------------------------------
+  // Load dashboard data
+  // ----------------------------------------------------------
 
   const loadData = useCallback(async () => {
     const requestVersion = ++requestVersionRef.current;
@@ -367,7 +389,10 @@ export default function ElimuPrincipalDashboard({
 
           if (name === "dashboard") {
             setter(data || null);
-          } else if (name === "profile") {
+            return;
+          }
+
+          if (name === "profile") {
             const candidate =
               data?.profile ||
               data?.education_profile ||
@@ -380,9 +405,11 @@ export default function ElimuPrincipalDashboard({
                 ? candidate
                 : null
             );
-          } else {
-            setter(getCollection(data, keys));
+
+            return;
           }
+
+          setter(getCollection(data, keys));
         }
       )
     );
@@ -426,6 +453,7 @@ export default function ElimuPrincipalDashboard({
 
   useEffect(() => {
     mountedRef.current = true;
+
     void loadData();
 
     return () => {
@@ -433,6 +461,10 @@ export default function ElimuPrincipalDashboard({
       requestVersionRef.current += 1;
     };
   }, [loadData]);
+
+  // ----------------------------------------------------------
+  // Navigation and refresh
+  // ----------------------------------------------------------
 
   const navigate = useCallback(
     (path) => {
@@ -450,6 +482,10 @@ export default function ElimuPrincipalDashboard({
       await onRefresh();
     }
   }, [loadData, onRefresh]);
+
+  // ----------------------------------------------------------
+  // School information and metrics
+  // ----------------------------------------------------------
 
   const schoolData = school || dashboard?.school || {};
 
@@ -515,6 +551,10 @@ export default function ElimuPrincipalDashboard({
     )
     .join(", ");
 
+  // ----------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------
+
   return (
     <div className="space-y-8">
       {/* Principal's overview */}
@@ -568,6 +608,7 @@ export default function ElimuPrincipalDashboard({
         </div>
       </section>
 
+      {/* API errors */}
       {error && (
         <div
           role="status"
@@ -710,7 +751,7 @@ export default function ElimuPrincipalDashboard({
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
-              <Images size={23} />
+              <Image size={23} />
             </span>
 
             <div className="min-w-0">
@@ -755,7 +796,7 @@ export default function ElimuPrincipalDashboard({
             onClick={() => navigate("elimu/media")}
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
           >
-            <Images size={17} />
+            <Image size={17} />
             Manage school media
             <ArrowRight size={16} />
           </button>
@@ -820,7 +861,7 @@ export default function ElimuPrincipalDashboard({
           />
 
           <QuickAction
-            icon={Images}
+            icon={Image}
             title="Photos and videos"
             description="Upload school pictures and videos, and manage media for the public school page."
             onClick={() => navigate("elimu/media")}

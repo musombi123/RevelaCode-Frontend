@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useCallback,
   useEffect,
   useMemo,
@@ -12,12 +12,13 @@ import {
   FileText,
   FileUp,
   FolderOpen,
-  Images,
   LockKeyhole,
+  LayoutDashboard,
   Menu,
   RefreshCw,
   ShieldCheck,
   UploadCloud,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import ElimuDashboardHeader from "@/Dashboard/elimu/components/ElimuDashboardHeader.jsx";
@@ -29,6 +30,7 @@ import ElimuBursarDashboard from "@/Dashboard/elimu/ElimuBursarDashboard.jsx";
 import ElimuRegistrarDashboard from "@/Dashboard/elimu/ElimuRegistrarDashboard.jsx";
 import ElimuTeacherDashboard from "@/Dashboard/elimu/ElimuTeacherDashboard.jsx";
 import ElimuMediaManager from "@/Dashboard/elimu/ElimuMediaManager.jsx";
+import ElimuModuleWorkspace, { getElimuModuleMeta } from "@/Dashboard/elimu/ElimuModuleWorkspace.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -953,7 +955,7 @@ function ElimuDocumentCenter({
               {submitting ? (
                 <>
                   <RefreshCw size={17} className="animate-spin" />
-                  Submitting document…
+                  Submitting documentâ€¦
                 </>
               ) : (
                 <>
@@ -1163,6 +1165,9 @@ export default function ElimuDashboardWorkspace({
     normalizedPath === "media" ||
     normalizedPath.endsWith("/elimu/media");
 
+  const moduleMeta = getElimuModuleMeta(normalizedPath);
+  const isModuleCenter = Boolean(moduleMeta);
+
   const canManageMedia =
     role === "owner" || role === "principal";
 
@@ -1191,15 +1196,21 @@ export default function ElimuDashboardWorkspace({
     ROLE_DESCRIPTIONS[role] ||
     "Manage school operations from your Elimu workspace.";
 
-  const isSpecialCenter = isDocumentCenter || isMediaCenter;
+  // The workspace supports dedicated pages as well as role dashboards.
+  // Never fall through to the same dashboard when a module path is active.
+  const isSpecialCenter = isDocumentCenter || isMediaCenter || isModuleCenter;
 
   const centerTitle = isMediaCenter
     ? "School photos and videos"
-    : "School document centre";
+    : isDocumentCenter
+      ? "School document centre"
+      : moduleMeta?.title || "School workspace";
 
   const centerDescription = isMediaCenter
     ? "Upload, organize and manage approved media for your school's public page."
-    : "Prepare, submit and review school document records.";
+    : isDocumentCenter
+      ? "Prepare, submit and review school document records."
+      : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
 
   const headerActionPath = isSpecialCenter
     ? "elimu"
@@ -1209,7 +1220,11 @@ export default function ElimuDashboardWorkspace({
     ? "Dashboard"
     : "Documents";
 
-  const HeaderActionIcon = isMediaCenter ? Images : FileText;
+  const HeaderActionIcon = isMediaCenter
+    ? ImageIcon
+    : isSpecialCenter
+      ? LayoutDashboard
+      : FileText;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
@@ -1259,7 +1274,7 @@ export default function ElimuDashboardWorkspace({
 
                   <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
                     {userName
-                      ? `${userName} · ${
+                      ? `${userName} Â· ${
                           ROLE_LABELS[role] || "School member"
                         }`
                       : ROLE_LABELS[role] || "School workspace"}
@@ -1291,7 +1306,7 @@ export default function ElimuDashboardWorkspace({
                   />
 
                   <span className="hidden sm:inline">
-                    {refreshing ? "Refreshing…" : "Refresh"}
+                    {refreshing ? "Refreshingâ€¦" : "Refresh"}
                   </span>
                 </button>
               </div>
@@ -1392,6 +1407,16 @@ export default function ElimuDashboardWorkspace({
                 )
               )}
 
+              {isModuleCenter && role && (
+                <ElimuModuleWorkspace
+                  path={normalizedPath}
+                  role={role}
+                  access={access}
+                  school={school}
+                  onNavigate={handleNavigate}
+                />
+              )}
+
               {!isSpecialCenter && RoleDashboard && (
                 <RoleDashboard
                   access={access}
@@ -1427,7 +1452,7 @@ export default function ElimuDashboardWorkspace({
 
           <footer className="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-              <span>Elimu · School management workspace</span>
+              <span>Elimu Â· School management workspace</span>
 
               <span>
                 School records are governed by your account permissions.

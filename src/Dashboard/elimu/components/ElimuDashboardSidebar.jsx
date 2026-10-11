@@ -1,4 +1,6 @@
-﻿import React from "react";
+﻿// src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx
+
+import React from "react";
 
 import {
   Activity,
@@ -10,7 +12,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   GraduationCap,
-  Images,
+  Image,
   LayoutDashboard,
   Library,
   ListChecks,
@@ -23,6 +25,10 @@ import {
   X,
 } from "lucide-react";
 
+// ============================================================
+// NAVIGATION CONFIGURATION
+// ============================================================
+
 const NAVIGATION = [
   {
     label: "Workspace",
@@ -32,7 +38,13 @@ const NAVIGATION = [
         label: "Overview",
         icon: LayoutDashboard,
         path: "elimu",
-        roles: ["owner", "principal", "bursar", "registrar", "teacher"],
+        roles: [
+          "owner",
+          "principal",
+          "bursar",
+          "registrar",
+          "teacher",
+        ],
       },
       {
         id: "school",
@@ -51,7 +63,7 @@ const NAVIGATION = [
       {
         id: "media",
         label: "Photos & videos",
-        icon: Images,
+        icon: Image,
         path: "elimu/media",
         roles: ["owner", "principal"],
       },
@@ -66,14 +78,24 @@ const NAVIGATION = [
         label: "Student records",
         icon: GraduationCap,
         path: "elimu/students",
-        roles: ["owner", "principal", "registrar", "teacher"],
+        roles: [
+          "owner",
+          "principal",
+          "registrar",
+          "teacher",
+        ],
       },
       {
         id: "classes",
         label: "Classes",
         icon: Library,
         path: "elimu/classes",
-        roles: ["owner", "principal", "registrar", "teacher"],
+        roles: [
+          "owner",
+          "principal",
+          "registrar",
+          "teacher",
+        ],
       },
       {
         id: "lessons",
@@ -101,7 +123,12 @@ const NAVIGATION = [
         label: "Attendance",
         icon: UserCheck,
         path: "elimu/attendance",
-        roles: ["owner", "principal", "registrar", "teacher"],
+        roles: [
+          "owner",
+          "principal",
+          "registrar",
+          "teacher",
+        ],
       },
       {
         id: "timetable",
@@ -135,7 +162,13 @@ const NAVIGATION = [
         label: "Reports",
         icon: BarChart3,
         path: "elimu/reports",
-        roles: ["owner", "principal", "bursar", "registrar", "teacher"],
+        roles: [
+          "owner",
+          "principal",
+          "bursar",
+          "registrar",
+          "teacher",
+        ],
       },
     ],
   },
@@ -168,6 +201,10 @@ const NAVIGATION = [
   },
 ];
 
+// ============================================================
+// ROLE LABELS
+// ============================================================
+
 const ROLE_LABELS = {
   owner: "Owner / School Director",
   principal: "Principal",
@@ -175,6 +212,10 @@ const ROLE_LABELS = {
   registrar: "Registrar",
   teacher: "Teacher",
 };
+
+// ============================================================
+// ROLE NORMALIZATION
+// ============================================================
 
 function normalizeRole(access) {
   const role =
@@ -222,12 +263,21 @@ function normalizeRole(access) {
   return normalized;
 }
 
+// ============================================================
+// PATH NORMALIZATION
+// ============================================================
+
 function normalizePath(path) {
   return String(path || "")
     .split("?")[0]
+    .split("#")[0]
     .replace(/^\/+|\/+$/g, "")
     .toLowerCase();
 }
+
+// ============================================================
+// ACTIVE NAVIGATION ITEM
+// ============================================================
 
 function isItemActive(item, currentPath) {
   const current = normalizePath(currentPath);
@@ -241,8 +291,18 @@ function isItemActive(item, currentPath) {
     return true;
   }
 
+  // The overview must not remain active on every subpage.
+  if (item.id === "overview") {
+    return false;
+  }
+
+  // Keep parent navigation active for nested routes.
   return current.startsWith(`${target}/`);
 }
+
+// ============================================================
+// ELIMU DASHBOARD SIDEBAR
+// ============================================================
 
 export default function ElimuDashboardSidebar({
   access,
@@ -254,12 +314,20 @@ export default function ElimuDashboardSidebar({
   school,
   className = "",
 }) {
+  // ----------------------------------------------------------
+  // Current user role
+  // ----------------------------------------------------------
+
   const role = normalizeRole(access);
 
   const roleLabel =
     ROLE_LABELS[role] ||
     access?.role_label ||
     "School member";
+
+  // ----------------------------------------------------------
+  // School information
+  // ----------------------------------------------------------
 
   const schoolName =
     school?.name ||
@@ -268,32 +336,54 @@ export default function ElimuDashboardSidebar({
     access?.school?.name ||
     "Your school";
 
+  // ----------------------------------------------------------
+  // Permissions
+  // ----------------------------------------------------------
+
   const permissions = Array.isArray(access?.permissions)
     ? access.permissions
     : Array.isArray(access?.membership?.permissions)
       ? access.membership.permissions
       : [];
 
-  const hasPermission = (permission) =>
-    !permissions.length || permissions.includes(permission);
+  const hasPermission = (permission) => {
+    // Preserve compatibility when the API does not return
+    // a permissions array. Backend authorization remains required.
+    if (permissions.length === 0) {
+      return true;
+    }
+
+    return permissions.includes(permission);
+  };
+
+  // ----------------------------------------------------------
+  // Filter navigation by role and permissions
+  // ----------------------------------------------------------
 
   const visibleGroups = NAVIGATION.map((group) => ({
     ...group,
+
     items: group.items.filter((item) => {
+      // Only display items available to the current role.
       if (!item.roles.includes(role)) {
         return false;
       }
 
+      // Staff management additionally requires permission.
       if (
         item.id === "staff" &&
         !hasPermission("staff.manage")
       ) {
-        return role === "owner" || role === "principal";
+        return false;
       }
 
       return true;
     }),
   })).filter((group) => group.items.length > 0);
+
+  // ----------------------------------------------------------
+  // Navigation actions
+  // ----------------------------------------------------------
 
   const handleNavigate = (path) => {
     if (typeof onNavigate === "function") {
@@ -305,17 +395,29 @@ export default function ElimuDashboardSidebar({
     }
   };
 
+  const handleClose = () => {
+    if (typeof onClose === "function") {
+      onClose();
+    }
+  };
+
+  // ----------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------
+
   return (
     <>
+      {/* Mobile backdrop */}
       {mobileOpen && (
         <button
           type="button"
           aria-label="Close navigation menu"
-          onClick={onClose}
+          onClick={handleClose}
           className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-[2px] lg:hidden"
         />
       )}
 
+      {/* Sidebar */}
       <aside
         aria-label="Elimu dashboard navigation"
         className={[
@@ -347,7 +449,10 @@ export default function ElimuDashboardSidebar({
             title="Elimu workspace"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-600/20">
-              <GraduationCap size={23} strokeWidth={2.2} />
+              <GraduationCap
+                size={23}
+                strokeWidth={2.2}
+              />
             </span>
 
             {!collapsed && (
@@ -365,7 +470,7 @@ export default function ElimuDashboardSidebar({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close sidebar"
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden"
           >
@@ -413,7 +518,10 @@ export default function ElimuDashboardSidebar({
         </div>
 
         {/* Navigation groups */}
-        <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        <nav
+          aria-label="Workspace sections"
+          className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5"
+        >
           {visibleGroups.map((group) => (
             <div key={group.label}>
               {!collapsed && (
@@ -425,15 +533,25 @@ export default function ElimuDashboardSidebar({
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = isItemActive(item, currentPath);
+
+                  const active = isItemActive(
+                    item,
+                    currentPath
+                  );
 
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => handleNavigate(item.path)}
-                      aria-current={active ? "page" : undefined}
-                      title={collapsed ? item.label : undefined}
+                      onClick={() =>
+                        handleNavigate(item.path)
+                      }
+                      aria-current={
+                        active ? "page" : undefined
+                      }
+                      title={
+                        collapsed ? item.label : undefined
+                      }
                       className={[
                         "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
                         "text-sm font-medium transition-colors",
@@ -442,7 +560,9 @@ export default function ElimuDashboardSidebar({
                         active
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
                           : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white",
-                      ].join(" ")}
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     >
                       <Icon
                         size={19}
