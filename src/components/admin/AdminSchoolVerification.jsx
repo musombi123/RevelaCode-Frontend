@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
-  UserRound,
+  User,
   XCircle,
 } from "lucide-react";
 
@@ -872,7 +872,7 @@ export default function AdminSchoolVerification() {
                   />
 
                   <DetailRow
-                    icon={UserRound}
+                    icon={User}
                     label="Applicant / owner"
                     value={getOwnerName(selectedApplication)}
                   />
