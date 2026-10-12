@@ -139,6 +139,7 @@ export default function CommunityComposer({
 
   const {
     createCommunityPost,
+    uploadCommunityMedia,
   } = useJumuiyaApi();
 
   // ==========================================================
@@ -179,6 +180,9 @@ export default function CommunityComposer({
   // The current backend remains title/body/category/hub/location only.
   const [attachmentName, setAttachmentName] =
     useState("");
+
+  const [attachmentFile, setAttachmentFile] =
+    useState(null);
 
   const [externalLink, setExternalLink] =
     useState("");
@@ -286,6 +290,24 @@ export default function CommunityComposer({
     try {
       setPosting(true);
 
+      let attachments = [];
+
+      if (attachmentFile) {
+        const uploadResult = await uploadCommunityMedia(attachmentFile);
+        const uploadedAttachment =
+          uploadResult?.attachment ||
+          uploadResult?.data?.attachment ||
+          null;
+
+        if (!uploadedAttachment?.id) {
+          throw new Error(
+            "The media upload did not return a valid attachment ID. Please try again."
+          );
+        }
+
+        attachments = [{ media_id: String(uploadedAttachment.id) }];
+      }
+
       await createCommunityPost({
         title,
         body,
@@ -296,6 +318,7 @@ export default function CommunityComposer({
             ? "community"
             : postHub || "community",
         location,
+        attachments,
       });
 
       setSuccess(
@@ -308,6 +331,7 @@ export default function CommunityComposer({
       setPostHub("community");
       setPostLocation("");
       setAttachmentName("");
+      setAttachmentFile(null);
       setExternalLink("");
 
       window.setTimeout(() => {
@@ -337,19 +361,39 @@ export default function CommunityComposer({
   // ATTACHMENT UI
   // ==========================================================
 
-  const handleAttachment = (
-    event
-  ) => {
-    const file =
-      event.target.files?.[0];
-
+  const handleAttachment = (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      setError("Choose an image or video file.");
+      event.target.value = "";
+      return;
+    }
+
+    const maxBytes = isVideo ? 50 * 1024 * 1024 : 12 * 1024 * 1024;
+    if (file.size <= 0 || file.size > maxBytes) {
+      setError(
+        isVideo
+          ? "Video files must be no larger than 50 MB."
+          : "Images must be no larger than 12 MB."
+      );
+      event.target.value = "";
+      return;
+    }
+
+    setError("");
+    setAttachmentFile(file);
     setAttachmentName(file.name);
+    event.target.value = "";
   };
 
   const removeAttachment = () => {
     setAttachmentName("");
+    setAttachmentFile(null);
   };
 
   // ==========================================================
@@ -1197,7 +1241,7 @@ export default function CommunityComposer({
                             dark:text-slate-200
                           "
                         >
-                          Add image
+                          Add photo or video
                         </div>
 
                         <div
@@ -1209,13 +1253,13 @@ export default function CommunityComposer({
                           "
                         >
                           {attachmentName ||
-                            "UI ready for media support"}
+                            "Uploads when you publish · Images 12 MB · Videos 50 MB"}
                         </div>
                       </div>
 
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/mp4,video/quicktime,video/webm"
                         className="hidden"
                         onChange={
                           handleAttachment

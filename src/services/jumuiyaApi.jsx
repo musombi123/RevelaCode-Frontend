@@ -1027,6 +1027,56 @@ export function useJumuiyaApi() {
         ),
 
       // ===================================================
+      // COMMUNITY — GROUPS
+      // ===================================================
+
+      getCommunityGroups: (
+        { category = "", search = "", mine = false, limit = 100 } = {},
+      ) =>
+        getData(
+          withQuery("/community/groups", {
+            category: category === "all" ? "" : category,
+            search,
+            mine: mine ? "true" : "",
+            limit,
+          }),
+        ),
+
+      getCommunityGroup: (groupId) =>
+        getData(
+          `/community/groups/${encodeId(groupId, "Group ID")}`,
+        ),
+
+      createCommunityGroup: (data) =>
+        postData("/community/groups", data),
+
+      joinCommunityGroup: (groupId) =>
+        postData(
+          `/community/groups/${encodeId(groupId, "Group ID")}/join`,
+          {},
+        ),
+
+      leaveCommunityGroup: (groupId) =>
+        deleteData(
+          `/community/groups/${encodeId(groupId, "Group ID")}/join`,
+        ),
+
+      // Upload one image or video, then reference its returned ID in a post.
+      uploadCommunityMedia: (file) => {
+        if (!(file instanceof Blob)) {
+          throw new JumuiyaAPIError(
+            "Choose a valid media file before uploading.",
+            0,
+            "media_file_required",
+          );
+        }
+
+        const form = new FormData();
+        form.append("file", file, file.name || "community-media");
+        return postData("/community/media/upload", form);
+      },
+
+      // ===================================================
       // COMMUNITY — POSTS
       // ===================================================
 

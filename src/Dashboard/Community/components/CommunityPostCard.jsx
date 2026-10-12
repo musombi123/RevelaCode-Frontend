@@ -343,6 +343,10 @@ export default function CommunityPostCard({
     post?._id ||
     post?.post_id;
 
+  const attachments = Array.isArray(post?.attachments)
+    ? post.attachments.filter((item) => item && typeof item === "object")
+    : [];
+
   const isOwnPost =
     Boolean(
       currentUser &&
@@ -993,6 +997,46 @@ export default function CommunityPostCard({
           </div>
         )}
       </button>
+
+      {/* COMMUNITY MEDIA ATTACHMENTS */}
+      {attachments.length > 0 && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {attachments.slice(0, 4).map((attachment, index) => {
+            const url = String(attachment.url || attachment.secure_url || "");
+            if (!url.startsWith("https://")) return null;
+
+            const key = attachment.id || attachment.media_id || `${postId || "post"}-media-${index}`;
+            const isVideo = String(attachment.kind || attachment.resource_type || "").toLowerCase() === "video";
+
+            return isVideo ? (
+              <video
+                key={key}
+                src={url}
+                controls
+                preload="metadata"
+                className="max-h-[440px] w-full rounded-2xl border border-slate-200 bg-black object-contain dark:border-white/10"
+                aria-label={attachment.file_name || "Community video attachment"}
+              />
+            ) : (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10"
+                aria-label={`Open ${attachment.file_name || "community image"}`}
+              >
+                <img
+                  src={url}
+                  alt={attachment.file_name || "Community post attachment"}
+                  loading="lazy"
+                  className="max-h-[440px] w-full bg-slate-50 object-contain dark:bg-slate-950"
+                />
+              </a>
+            );
+          })}
+        </div>
+      )}
 
       {/* ======================================================
           EXPAND / COLLAPSE
