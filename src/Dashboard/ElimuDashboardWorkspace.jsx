@@ -480,7 +480,7 @@ function ElimuDocumentCenter({
   }, [schoolId, schoolCode]);
 
   const manageUrl = useMemo(() => {
-    const base = `${BACKEND_URL}${ELIMU_API_PREFIX}/public/documents/manage`;
+    const base = `${BACKEND_URL}${ELIMU_API_PREFIX}/documents/manage`;
 
     return schoolQuery ? `${base}?${schoolQuery}` : base;
   }, [schoolQuery]);
