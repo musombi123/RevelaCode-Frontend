@@ -22,9 +22,10 @@ const HUB_MAP = {
 // Cross-sell only related ecosystem streams within the active workspace.
 // Admins still control which plans exist for each stream.
 const RELATED_STREAMS = {
-  biashara: ["biashara", "marketplace", "transaction_fees"],
-  shamba: ["shamba", "marketplace"],
+  biashara: ["biashara", "transaction_fees"],
+  shamba: ["shamba"],
   elimu: ["elimu", "transaction_fees"],
+  // Marketplace and advertising offers are intentionally Community-only.
   community: ["community", "marketplace", "advertising"],
   smart_ai: ["smart_ai"],
 };

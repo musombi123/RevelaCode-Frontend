@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Target,
   Users,
@@ -359,6 +360,43 @@ function LoadingState() {
   );
 }
 
+function MarketplaceListingCard({ listing }) {
+  const title = listing?.title || "Marketplace listing";
+  const description = listing?.description || "Contact the seller for more information.";
+  const currency = String(listing?.currency || "KES").toUpperCase();
+  const priceValue = Number(listing?.price);
+  const price = Number.isFinite(priceValue)
+    ? `${currency} ${new Intl.NumberFormat("en-KE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(priceValue)}${listing?.unit ? ` / ${listing.unit}` : ""}`
+    : "Price available from seller";
+  const quantity = Number(listing?.quantity_available);
+  const location = listing?.location || "";
+
+  return (
+    <article className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900 sm:p-6">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          <ShoppingBag size={19} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Marketplace</span>
+            <span className="text-[10px] text-slate-400">Community</span>
+          </div>
+          <h3 className="break-words text-sm font-black text-slate-900 dark:text-white">{title}</h3>
+          <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">{description}</p>
+          <p className="mt-3 text-base font-black text-slate-950 dark:text-white">{price}</p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400">
+            {Number.isFinite(quantity) ? <span>{quantity} available</span> : null}
+            {location ? <span>{location}</span> : null}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
 // ============================================================
 // MAIN DASHBOARD
 // ============================================================
@@ -370,6 +408,7 @@ export default function CommunityDashboard({
 
   const {
     get,
+    getMarketplaceListings,
     reactToCommunityPost,
   } = useJumuiyaApi();
 
@@ -456,6 +495,9 @@ export default function CommunityDashboard({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [marketplaceListings, setMarketplaceListings] = useState([]);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [marketplaceError, setMarketplaceError] = useState("");
 
   const requestId = useRef(0);
 
@@ -555,6 +597,58 @@ export default function CommunityDashboard({
     },
     [get],
   );
+
+  // ----------------------------------------------------------
+  // Marketplace cards are sourced separately from community posts.
+  // They are loaded only on the Community Pulse and only for hub=community.
+  // ----------------------------------------------------------
+
+  useEffect(() => {
+    let active = true;
+
+    if (workspacePage !== "home" || activeSurface !== "pulse") {
+      setMarketplaceListings([]);
+      setMarketplaceError("");
+      setMarketplaceLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setMarketplaceLoading(true);
+    setMarketplaceError("");
+
+    getMarketplaceListings({ hub: "community" })
+      .then((response) => {
+        if (!active) return;
+        const payload = response?.data ?? response;
+        const rows = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.listings)
+            ? payload.listings
+            : Array.isArray(payload?.items)
+              ? payload.items
+              : Array.isArray(payload?.data)
+                ? payload.data
+                : [];
+        setMarketplaceListings(rows.filter((item) =>
+          !item?.hub || String(item.hub).toLowerCase() === "community"
+        ));
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        console.error("Community Marketplace listings failed:", requestError);
+        setMarketplaceListings([]);
+        setMarketplaceError("Marketplace listings could not be loaded. Community posts are still available.");
+      })
+      .finally(() => {
+        if (active) setMarketplaceLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [workspacePage, activeSurface, reloadToken, getMarketplaceListings]);
 
   // ----------------------------------------------------------
   // Surface lifecycle
@@ -1033,6 +1127,12 @@ export default function CommunityDashboard({
           </div>
         ) : null}
 
+        {activeSurface === "pulse" && marketplaceError ? (
+          <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
+            {marketplaceError}
+          </p>
+        ) : null}
+
         {/* ====================================================
             SURFACE CONTENT
         ==================================================== */}
@@ -1045,7 +1145,7 @@ export default function CommunityDashboard({
             onAction={openComposer}
             actionLabel="Start a Community conversation"
           />
-        ) : loading ? (
+        ) : loading || (activeSurface === "pulse" && marketplaceLoading) ? (
           <LoadingState />
         ) : activeSurface === "threads" && threadPosts.length === 0 ? (
           <EmptyState
@@ -1069,7 +1169,7 @@ export default function CommunityDashboard({
             title="No results in this view"
             description="There are no results returned by the current trusted-discovery endpoint. This does not mean a person is untrustworthy; full identity verification and reputation services still need their own backend implementation."
           />
-        ) : posts.length > 0 ? (
+        ) : posts.length > 0 || (activeSurface === "pulse" && marketplaceListings.length > 0) ? (
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
             <div className="min-w-0 space-y-5">
               {(activeSurface === "threads"
@@ -1107,6 +1207,13 @@ export default function CommunityDashboard({
                   </article>
                 );
               })}
+
+              {activeSurface === "pulse" ? marketplaceListings.map((listing, index) => (
+                <MarketplaceListingCard
+                  key={listing?.id || listing?._id || `community-marketplace-${index}`}
+                  listing={listing}
+                />
+              )) : null}
             </div>
 
             <aside className="hidden space-y-4 xl:block">

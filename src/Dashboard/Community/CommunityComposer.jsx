@@ -51,6 +51,12 @@ const POST_CATEGORIES = [
     icon: Megaphone,
   },
   {
+    value: "advertisement",
+    label: "Advertisement",
+    description: "Promote a product or service in the Community hub.",
+    icon: Megaphone,
+  },
+  {
     value: "opportunity",
     label: "Opportunity",
     description: "Share jobs, business or other opportunities.",
@@ -286,7 +292,9 @@ export default function CommunityComposer({
         category:
           postCategory || "general",
         hub:
-          postHub || "community",
+          postCategory === "advertisement"
+            ? "community"
+            : postHub || "community",
         location,
       });
 
@@ -756,11 +764,13 @@ export default function CommunityComposer({
                             key={
                               category.value
                             }
-                            onClick={() =>
-                              setPostCategory(
-                                category.value
-                              )
-                            }
+                            onClick={() => {
+                              setPostCategory(category.value);
+                              if (category.value === "advertisement") {
+                                setPostHub("community");
+                                setShowHubMenu(false);
+                              }
+                            }}
                             disabled={posting}
                             className={`
                               rounded-2xl
@@ -855,6 +865,7 @@ export default function CommunityComposer({
                     <div className="relative">
                       <button
                         type="button"
+                        disabled={posting || postCategory === "advertisement"}
                         onClick={() =>
                           setShowHubMenu(
                             (value) =>
