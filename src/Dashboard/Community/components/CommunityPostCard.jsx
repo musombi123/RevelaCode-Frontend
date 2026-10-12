@@ -209,6 +209,139 @@ function normalizeHubName(hub) {
 }
 
 // ============================================================
+// COMMUNITY MEDIA NORMALIZATION
+// ============================================================
+
+function normalizeCommunityAttachments(post = {}) {
+  const candidates = [
+    post?.attachments,
+    post?.media_attachments,
+    post?.mediaAttachments,
+    post?.media_files,
+    post?.mediaFiles,
+    post?.media,
+    post?.images,
+    post?.videos,
+  ];
+
+  const rawItems = [];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (Array.isArray(candidate)) {
+      rawItems.push(...candidate);
+      continue;
+    }
+
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (!trimmed) continue;
+
+      // Support APIs that store an attachment list as JSON text.
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) rawItems.push(...parsed);
+          else if (parsed && typeof parsed === "object") {
+            const nested = parsed.attachments || parsed.items || parsed.files || parsed.media;
+            if (Array.isArray(nested)) rawItems.push(...nested);
+            else rawItems.push(parsed);
+          }
+          continue;
+        } catch {
+          // Treat it as a plain URL below.
+        }
+      }
+
+      rawItems.push(trimmed);
+      continue;
+    }
+
+    if (typeof candidate === "object") {
+      const nested = candidate.attachments || candidate.items || candidate.files;
+      if (Array.isArray(nested)) rawItems.push(...nested);
+      else rawItems.push(candidate);
+    }
+  }
+
+  // Older post records may store one attachment in a top-level field.
+  rawItems.push(
+    post?.image_url,
+    post?.imageUrl,
+    post?.image,
+    post?.media_url,
+    post?.mediaUrl,
+    post?.video_url,
+    post?.videoUrl,
+    post?.attachment,
+  );
+
+  const normalized = [];
+  const seen = new Set();
+
+  for (const rawItem of rawItems) {
+    if (!rawItem) continue;
+
+    let item = rawItem;
+    if (typeof item === "object" && !Array.isArray(item)) {
+      item = item.attachment || item.file || item.media || item;
+    }
+
+    let url = "";
+    if (typeof item === "string") {
+      url = item.trim();
+    } else if (item && typeof item === "object") {
+      url = String(
+        item.url ||
+          item.secure_url ||
+          item.secureUrl ||
+          item.media_url ||
+          item.mediaUrl ||
+          item.image_url ||
+          item.imageUrl ||
+          item.video_url ||
+          item.videoUrl ||
+          item.src ||
+          item.path ||
+          item.original_url ||
+          item.originalUrl ||
+          "",
+      ).trim();
+    }
+
+    if (url.startsWith("//")) url = `https:${url}`;
+    if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+
+    const details = item && typeof item === "object" ? item : {};
+    const typeHint = String(
+      details.kind ||
+        details.resource_type ||
+        details.resourceType ||
+        details.mime_type ||
+        details.mimeType ||
+        details.type ||
+        "",
+    ).toLowerCase();
+    const cleanUrl = url.split(/[?#]/, 1)[0].toLowerCase();
+    const videoByExtension = /\.(mp4|mov|m4v|webm|ogv|ogg)$/.test(cleanUrl);
+    const video = typeHint.includes("video") || videoByExtension;
+
+    normalized.push({
+      id: details.id || details.media_id || details._id || `community-media-${normalized.length}`,
+      url,
+      kind: video ? "video" : "image",
+      file_name: details.file_name || details.filename || details.name || (video ? "Community video" : "Community image"),
+      mime_type: details.mime_type || details.mimeType || "",
+      resource_type: details.resource_type || details.resourceType || (video ? "video" : "image"),
+    });
+    seen.add(url);
+  }
+
+  return normalized.slice(0, 4);
+}
+
+// ============================================================
 // COMPONENT
 // ============================================================
 
@@ -343,9 +476,10 @@ export default function CommunityPostCard({
     post?._id ||
     post?.post_id;
 
-  const attachments = Array.isArray(post?.attachments)
-    ? post.attachments.filter((item) => item && typeof item === "object")
-    : [];
+  const attachments = useMemo(
+    () => normalizeCommunityAttachments(post),
+    [post],
+  );
 
   const isOwnPost =
     Boolean(
@@ -1003,7 +1137,7 @@ export default function CommunityPostCard({
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {attachments.slice(0, 4).map((attachment, index) => {
             const url = String(attachment.url || attachment.secure_url || "");
-            if (!url.startsWith("https://")) return null;
+            if (!url.startsWith("https://") && !url.startsWith("http://")) return null;
 
             const key = attachment.id || attachment.media_id || `${postId || "post"}-media-${index}`;
             const isVideo = String(attachment.kind || attachment.resource_type || "").toLowerCase() === "video";
