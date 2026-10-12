@@ -32,6 +32,7 @@ import {
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
+import BiasharaInternalWorkspace from "@/Dashboard/Biashara/BiasharaInternalWorkspace.jsx";
 
 /* =========================================================
    HELPERS
@@ -911,6 +912,8 @@ export default function BiasharaDashboard({
   const [lastUpdated, setLastUpdated] =
     useState(null);
 
+  const [activeSection, setActiveSection] = useState("overview");
+
   const businessRequestRef = useRef(0);
   const dashboardRequestRef = useRef(0);
 
@@ -921,10 +924,29 @@ export default function BiasharaDashboard({
 
   const navigate = useCallback(
     (route) => {
-      if (!route) {
+      if (!route) return;
+
+      const internalRoutes = new Set([
+        "overview",
+        "products",
+        "orders",
+        "customers",
+        "sales",
+        "business-profile",
+        "biashara-analytics",
+        "biashara-intelligence",
+        "notifications",
+      ]);
+
+      if (internalRoutes.has(route)) {
+        setActiveSection(route);
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
         return;
       }
 
+      // Top-level destinations, such as RevelaAI, belong to the parent router.
       if (typeof onNavigate === "function") {
         onNavigate(route);
         return;
@@ -1335,6 +1357,26 @@ export default function BiasharaDashboard({
   /* =======================================================
      DASHBOARD INITIAL LOADING
   ======================================================= */
+
+  /* =======================================================
+     INTERNAL BIASHARA WORKSPACES
+     Internal pages remain inside Biashara instead of being
+     incorrectly sent to the global dashboard registry.
+  ======================================================= */
+
+  if (business && activeSection !== "overview") {
+    return (
+      <BiasharaInternalWorkspace
+        route={activeSection}
+        business={business}
+        dashboard={dashboard}
+        onBack={() => setActiveSection("overview")}
+        onNavigate={navigate}
+        onBusinessUpdated={handleBusinessCreated}
+        onRefresh={loadDashboard}
+      />
+    );
+  }
 
   if (
     business &&
