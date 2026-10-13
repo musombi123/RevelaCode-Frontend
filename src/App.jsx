@@ -16,6 +16,7 @@ import Pages from "./app/pages.jsx";
 import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
+import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 
@@ -102,6 +103,7 @@ export default function App() {
                 /school-slug/documents  Public documents
                 /school-slug/contact     Contact
               */}
+              <Route path="/elimu-invitation" element={<SPAWrapper><ElimuInvitationPage /></SPAWrapper>} />
               <Route path="/:schoolSlug/*" element={<ElimuPublicSchoolPage />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />

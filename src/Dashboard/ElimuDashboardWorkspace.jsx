@@ -34,6 +34,7 @@ import ElimuMediaManager from "@/Dashboard/elimu/ElimuMediaManager.jsx";
 import ElimuWebsiteSettings from "@/Dashboard/elimu/ElimuWebsiteSettings.jsx";
 import ElimuPortalRequests from "@/Dashboard/elimu/ElimuPortalRequests.jsx";
 import ElimuModuleWorkspace, { getElimuModuleMeta } from "@/Dashboard/elimu/ElimuModuleWorkspace.jsx";
+import ElimuStaffManagement from "@/Dashboard/elimu/ElimuStaffManagement.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -1498,13 +1499,22 @@ export default function ElimuDashboardWorkspace({
               )}
 
               {isModuleCenter && role && (
-                <ElimuModuleWorkspace
-                  path={normalizedPath}
-                  role={role}
-                  access={access}
-                  school={school}
-                  onNavigate={handleNavigate}
-                />
+                (normalizedPath === "elimu/staff" || normalizedPath === "staff") ? (
+                  <ElimuStaffManagement
+                    access={access}
+                    school={school}
+                    role={role}
+                    onNavigate={handleNavigate}
+                  />
+                ) : (
+                  <ElimuModuleWorkspace
+                    path={normalizedPath}
+                    role={role}
+                    access={access}
+                    school={school}
+                    onNavigate={handleNavigate}
+                  />
+                )
               )}
 
               {!isSpecialCenter && RoleDashboard && (

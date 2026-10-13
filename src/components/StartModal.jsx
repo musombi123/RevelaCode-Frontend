@@ -142,6 +142,9 @@ export default function StartModal() {
   // =======================================================
 
   const goHomeByRole = (role) => {
+    // Preserve the invitation route so authentication returns to the pending invite.
+    if (window.location.pathname === "/elimu-invitation") return;
+
     switch (role) {
       case "admin":
         window.location.replace(
