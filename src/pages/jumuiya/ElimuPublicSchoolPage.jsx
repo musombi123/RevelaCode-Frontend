@@ -22,11 +22,13 @@ import {
   Image as ImageIcon,
   Mail,
   MapPin,
+  Menu,
   Phone,
   RefreshCw,
   School,
   ShieldCheck,
   Video,
+  X,
   XCircle,
   Users,
 } from "lucide-react";
@@ -606,20 +608,110 @@ export default function ElimuPublicSchoolPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link to={homeUrl} className="flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
-            {logo ? <img src={logo} alt="" className="h-11 w-11 shrink-0 rounded-xl bg-slate-100 object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-800 text-white"><School size={23} /></span>}
-            <span className="min-w-0"><span className="block max-w-[230px] truncate text-sm font-extrabold sm:max-w-md">{schoolName}</span><span className="mt-0.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Official school website</span></span>
+      <header data-school-header="v2" className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+          <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
+              <School size={23} />
+              {logo && <img src={logo} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+            </span>
+            <span className="min-w-0">
+              <span className="block max-w-[190px] truncate text-sm font-extrabold tracking-tight text-slate-950 sm:max-w-[280px] sm:text-base">{schoolName}</span>
+              <span className="mt-0.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:text-[10px]">
+                <ShieldCheck size={12} className="shrink-0 text-emerald-700" /> Official school website
+              </span>
+            </span>
           </Link>
-          <button type="button" aria-expanded={mobileMenuOpen} aria-label={mobileMenuOpen ? "Close school navigation" : "Open school navigation"} onClick={() => setMobileMenuOpen((value) => !value)} className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 md:hidden">{mobileMenuOpen ? "Close" : "Menu"}</button>
-          <nav aria-label="School website navigation" className="hidden items-center gap-1 md:flex">
-            {NAV_ITEMS.map((item) => { const Icon = item.icon; const active = canonicalPage === item.path; return <Link key={item.path || "home"} to={pageUrl(item.path)} aria-current={active ? "page" : undefined} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold transition lg:px-3 lg:text-sm ${active ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}><Icon size={15}/>{item.label}</Link>; })}
-            <Link to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 lg:text-sm"><Users size={15}/>Parent portal</Link>
-            <Link to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 lg:text-sm"><GraduationCap size={15}/>Student portal</Link>
+
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Link
+              to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+            >
+              <Users size={16} /> Parent portal
+            </Link>
+            <Link
+              to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-900/15 transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+            >
+              <GraduationCap size={16} /> Student portal <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="school-mobile-navigation"
+            aria-label={mobileMenuOpen ? "Close school navigation" : "Open school navigation"}
+            onClick={() => setMobileMenuOpen((value) => !value)}
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 xl:hidden"
+          >
+            {mobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
+            <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
+          </button>
+        </div>
+
+        <div className="hidden border-t border-slate-100 bg-slate-50/70 xl:block">
+          <nav aria-label="School website navigation" className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = canonicalPage === item.path;
+              return (
+                <Link
+                  key={item.path || "home"}
+                  to={pageUrl(item.path)}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 ${active ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/15" : "text-slate-600 hover:bg-white hover:text-emerald-800 hover:shadow-sm"}`}
+                >
+                  <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
-        {mobileMenuOpen && <nav aria-label="Mobile school website navigation" className="border-t border-slate-100 bg-white px-4 py-3 md:hidden"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 sm:grid-cols-3">{NAV_ITEMS.map((item) => { const Icon = item.icon; const active = canonicalPage === item.path; return <Link key={item.path || "home"} to={pageUrl(item.path)} onClick={() => setMobileMenuOpen(false)} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold ${active ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-700"}`}><Icon size={15}/>{item.label}</Link>; })}<Link to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`} onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><Users size={15}/>Parent portal</Link><Link to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`} onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white"><GraduationCap size={15}/>Student portal</Link></div></nav>}
+
+        {mobileMenuOpen && (
+          <div id="school-mobile-navigation" className="border-t border-slate-100 bg-white px-4 py-4 shadow-lg shadow-slate-900/5 xl:hidden sm:px-6">
+            <nav aria-label="Mobile school website navigation" className="mx-auto max-w-7xl">
+              <p className="mb-3 px-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500">Explore the school</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const active = canonicalPage === item.path;
+                  return (
+                    <Link
+                      key={item.path || "home"}
+                      to={pageUrl(item.path)}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex min-h-11 min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1 sm:text-sm ${active ? "border-emerald-700 bg-emerald-700 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"}`}
+                    >
+                      <Icon size={16} className="shrink-0" />
+                      <span className="min-w-0">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
+                <Link
+                  to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                >
+                  <Users size={17} /> Parent portal <ArrowRight size={14} />
+                </Link>
+                <Link
+                  to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                >
+                  <GraduationCap size={17} /> Student portal <ArrowRight size={14} />
+                </Link>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main id="main-content" className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
