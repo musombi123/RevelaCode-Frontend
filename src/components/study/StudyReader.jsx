@@ -28,17 +28,19 @@ import {
 } from "@/components/ui/Card";
 
 import AIStudyPanel from "./AIStudyPanel";
+import { getCachedMaterial, saveCachedMaterial } from "./studyMaterialCache.js";
 
 /* =========================================================
    API
 ========================================================= */
 
 const API = (
+  import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_REVELACODE_URL ||
   import.meta.env.VITE_BACKEND_URL ||
-  import.meta.env.VITE_API_URL ||
   "https://revelacode-backend.onrender.com"
 ).replace(/\/+$/, "");
+const CACHE_SCOPE = API;
 
 /* =========================================================
    MATERIAL ID
@@ -845,6 +847,15 @@ export default function StudyReader({
   const [error, setError] =
     useState("");
 
+  const [cacheMode, setCacheMode] =
+    useState(initialMaterial?.content ? "saved" : "checking");
+
+  const [cachedAt, setCachedAt] =
+    useState("");
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
   const [bookmarked, setBookmarked] =
     useState(false);
 
@@ -873,89 +884,107 @@ export default function StudyReader({
     resolveMaterialId(material);
 
   /* =======================================================
-     LOAD MATERIAL
+     LOAD MATERIAL â€” CACHE FIRST
   ======================================================= */
 
-  const loadMaterial =
-    useCallback(async () => {
-      if (!materialId) {
+  const loadMaterial = useCallback(
+    async (options = {}) => {
+      const force = options?.force === true;
+      const targetId = materialId == null ? "" : String(materialId);
+      if (!targetId) {
+        setLoading(false);
         return;
       }
 
+      let cachedCopy = null;
       try {
-        setLoading(true);
+        cachedCopy = await getCachedMaterial(CACHE_SCOPE, targetId);
+      } catch {
+        cachedCopy = null;
+      }
+
+      if (!force && cachedCopy?.material?.content) {
+        setMaterial(cachedCopy.material);
         setError("");
+        setCacheMode("saved");
+        setCachedAt(cachedCopy.savedAt || "");
+        setLoading(false);
+        return;
+      }
 
-        const response =
-          await fetch(
-            `${API}/study/material/${encodeURIComponent(
-              materialId
-            )}`
-          );
+      if (
+        !force &&
+        initialMaterial &&
+        resolveMaterialId(initialMaterial) === targetId &&
+        normalizeContent(initialMaterial.content)
+      ) {
+        setMaterial(initialMaterial);
+        setError("");
+        setLoading(false);
+        const saved = await saveCachedMaterial(CACHE_SCOPE, targetId, initialMaterial);
+        setCacheMode(saved ? "saved" : "online");
+        setCachedAt(saved?.savedAt || "");
+        return;
+      }
 
-        const data =
-          await response
-            .json()
-            .catch(() => null);
+      if (force) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError("");
 
+      try {
+        // The Flask Study blueprint is mounted under /api; keep the /api prefix.
+        const response = await fetch(
+          `${API}/api/study/material/${encodeURIComponent(targetId)}`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json().catch(() => null);
         if (!response.ok) {
           throw new Error(
-            data?.message ||
-              data?.error ||
-              `Failed to load material (${response.status})`
+            data?.message || data?.error ||
+            `Failed to load material (${response.status}).`
           );
         }
-
         if (!data?.material) {
-          throw new Error(
-            "Material was not returned by the server."
-          );
+          throw new Error("Material was not returned by the server.");
         }
 
-        setMaterial(
-          data.material
-        );
+        setMaterial(data.material);
+        const saved = await saveCachedMaterial(CACHE_SCOPE, targetId, data.material);
+        setCacheMode(saved ? "saved" : "online");
+        setCachedAt(saved?.savedAt || "");
       } catch (err) {
-        console.error(
-          "Study Reader Error:",
-          err
-        );
-
+        console.error("Study Reader Error:", err);
+        const hasSavedLesson = Boolean(cachedCopy?.material?.content || normalizeContent(initialMaterial?.content));
+        setCacheMode(hasSavedLesson ? "saved" : "unavailable");
         setError(
-          err?.message ||
-            "Unable to load this study material."
+          hasSavedLesson
+            ? `Refresh failed. Your saved lesson remains available. ${err?.message || "Please try again."}`
+            : err?.message || "Unable to load this study material."
         );
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    }, [materialId]);
+    },
+    [materialId, initialMaterial]
+  );
 
   /* =======================================================
      INITIAL MATERIAL / LOAD
   ======================================================= */
 
   useEffect(() => {
-    if (
-      initialMaterial &&
-      resolveMaterialId(
-        initialMaterial
-      ) === String(materialId)
-    ) {
-      setMaterial(
-        initialMaterial
-      );
-
-      setLoading(false);
-
-      return;
-    }
-
     loadMaterial();
-  }, [
-    initialMaterial,
-    materialId,
-    loadMaterial,
-  ]);
+  }, [loadMaterial]);
 
   /* =======================================================
      CHECK BOOKMARK
@@ -1196,7 +1225,7 @@ export default function StudyReader({
      ERROR
   ======================================================= */
 
-  if (error || !material) {
+  if (!material) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
         <button
@@ -1317,12 +1346,30 @@ export default function StudyReader({
             Back to Library
           </button>
 
-          <div className="hidden items-center gap-2 text-xs text-slate-400 sm:flex">
-            <BookOpenText className="h-4 w-4" />
-            Study Reader
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+              <BookOpenText className="h-3.5 w-3.5" />
+              {cacheMode === "saved" ? "Saved for offline reading" : cacheMode === "online" ? "Loaded from backend" : "Lesson reader"}
+            </span>
+            {cachedAt && <span className="hidden text-[10px] text-slate-400 lg:inline">Saved {new Date(cachedAt).toLocaleDateString()}</span>}
+            <button
+              type="button"
+              onClick={() => loadMaterial({ force: true })}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              title="Refresh this lesson from the backend"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing" : "Refresh lesson"}
+            </button>
           </div>
         </div>
 
+        {error && material && (
+          <div role="status" className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+            {error}
+          </div>
+        )}
         {/* =================================================
             MAIN GRID
         ================================================= */}

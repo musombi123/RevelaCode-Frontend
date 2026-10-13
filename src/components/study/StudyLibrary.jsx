@@ -20,10 +20,18 @@ import {
   CardContent,
 } from "@/components/ui/Card";
 
-const API =
+import {
+  getCachedLibrary,
+  saveCachedLibrary,
+} from "./studyMaterialCache.js";
+
+const API = (
   import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_REVELACODE_URL ||
   import.meta.env.VITE_BACKEND_URL ||
-  "https://revelacode-backend.onrender.com";
+  "https://revelacode-backend.onrender.com"
+).replace(/\/+$/, "");
+const CACHE_SCOPE = API;
 
 /* =========================================================
    NORMALIZE MATERIAL ID
@@ -65,18 +73,47 @@ export default function StudyLibrary({
   const [error, setError] =
     useState("");
 
+  const [cacheStatus, setCacheStatus] =
+    useState("checking");
+
+  const [lastUpdated, setLastUpdated] =
+    useState("");
+
   /* =======================================================
-     LOAD MATERIALS
+     LOAD MATERIALS â€” CACHE FIRST
   ======================================================= */
 
   const loadMaterials = useCallback(
-    async ({ silent = false } = {}) => {
+    async ({ silent = false, force = false } = {}) => {
+      let savedCopy = null;
+
+      try {
+        savedCopy = await getCachedLibrary(CACHE_SCOPE);
+      } catch {
+        savedCopy = null;
+      }
+
+      // Normal navigation is cache-first: no repeated download when a saved
+      // library exists. The user can explicitly refresh to check the backend.
+      if (!force && savedCopy && Array.isArray(savedCopy.materials)) {
+        setMaterials(savedCopy.materials);
+        setCacheStatus("saved");
+        setLastUpdated(savedCopy.savedAt || "");
+        setError("");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
       if (!API) {
         setError(
-          "Study API is not configured."
+          savedCopy
+            ? "The backend URL is not configured. Your saved lesson library remains available."
+            : "Study API is not configured."
         );
-
+        setCacheStatus(savedCopy ? "saved" : "unavailable");
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
@@ -85,102 +122,54 @@ export default function StudyLibrary({
       } else {
         setLoading(true);
       }
-
       setError("");
 
       try {
-        /*
-         * Your frontend uses /api/... for backend routes.
-         *
-         * If your actual Flask route is different,
-         * change only this path.
-         */
-        const url =
-          `${API}/api/study/materials`;
+        const url = `${API}/api/study/materials`;
+        const headers = { Accept: "application/json" };
+        if (userId) headers["X-User-ID"] = String(userId);
 
-        const headers = {
-          Accept: "application/json",
-        };
+        const res = await fetch(url, {
+          method: "GET",
+          headers,
+          credentials: "include",
+          cache: "no-store",
+        });
 
-        /*
-         * Include user identity when available.
-         * This is harmless for public endpoints and useful
-         * for personalized study libraries.
-         */
-        if (userId) {
-          headers["X-User-ID"] =
-            String(userId);
-        }
-
-        const res = await fetch(
-          url,
-          {
-            method: "GET",
-            headers,
-            credentials: "include",
-            cache: "no-store",
-          }
-        );
-
-        const data =
-          await res
-            .json()
-            .catch(() => ({}));
-
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(
-            data?.message ||
-              data?.error ||
-              `Failed to load study materials (${res.status}).`
+            data?.message || data?.error ||
+            `Failed to load study materials (${res.status}).`
           );
         }
 
-        /*
-         * Support multiple backend response shapes:
-         *
-         * { materials: [] }
-         * { data: [] }
-         * []
-         */
-        const rawMaterials =
-          Array.isArray(
-            data?.materials
-          )
-            ? data.materials
-            : Array.isArray(
-                data?.data
-              )
-            ? data.data
-            : Array.isArray(data)
-            ? data
-            : [];
+        const rawMaterials = Array.isArray(data?.materials)
+          ? data.materials
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+          ? data
+          : [];
 
-        const normalized =
-          rawMaterials
-            .map((material) => ({
-              ...material,
-              id:
-                resolveMaterialId(
-                  material
-                ),
-            }))
-            .filter(
-              (material) =>
-                material.id
-            );
+        const normalized = rawMaterials
+          .map((material) => {
+            const id = material?.id ?? material?._id ?? material?.material_id ?? material?.materialId ?? null;
+            return { ...material, id: id == null ? null : String(id) };
+          })
+          .filter((material) => material.id);
 
         setMaterials(normalized);
+        const savedAt = await saveCachedLibrary(CACHE_SCOPE, normalized);
+        setCacheStatus(savedAt ? "saved" : "online");
+        setLastUpdated(savedAt || new Date().toISOString());
       } catch (err) {
-        console.error(
-          "Study Library Error:",
-          err
-        );
-
-        setMaterials([]);
-
+        console.error("Study Library Error:", err);
+        setCacheStatus(savedCopy ? "saved" : "unavailable");
         setError(
-          err?.message ||
-            "Unable to load study materials."
+          savedCopy
+            ? `Could not refresh from the backend. Your saved copy is still available. ${err?.message || "Please try again."}`
+            : err?.message || "Unable to load study materials."
         );
       } finally {
         setLoading(false);
@@ -316,6 +305,12 @@ export default function StudyLibrary({
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Explore your available learning materials.
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+              {cacheStatus === "saved" ? "Saved for offline reading" : cacheStatus === "online" ? "Loaded from backend" : "Backend-processed lessons"}
+            </span>
+            {lastUpdated && <span>{cacheStatus === "saved" ? "Saved " : "Fetched "}{new Date(lastUpdated).toLocaleString()}</span>}
+          </div>
         </div>
 
         <button
@@ -323,6 +318,7 @@ export default function StudyLibrary({
           onClick={() =>
             loadMaterials({
               silent: true,
+              force: true,
             })
           }
           disabled={refreshing}
@@ -360,7 +356,7 @@ export default function StudyLibrary({
             <button
               type="button"
               onClick={() =>
-                loadMaterials()
+                loadMaterials({ silent: true, force: true })
               }
               className="mt-2 text-xs font-semibold text-red-700 underline dark:text-red-300"
             >
