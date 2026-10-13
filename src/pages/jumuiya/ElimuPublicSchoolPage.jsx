@@ -469,8 +469,17 @@ export default function ElimuPublicSchoolPage() {
   const email = text(school, ["contact_email", "email", "email_address"]);
   const website = text(school, ["website"]);
   const logo = text(school, ["logo_url", "logo", "image_url"]);
-  const cover = media.find((item) => text(item, ["category"]).toLowerCase() === "hero" && text(item, ["kind", "resource_type"]).toLowerCase() !== "video");
-  const coverUrl = text(cover, ["url", "secure_url", "media_url"]);
+  // Website branding images are saved on the public school profile. Use the
+  // saved cover URL first; an uploaded hero may be unpublished in the gallery
+  // and therefore absent from the public media response.
+  const cover = media.find(
+    (item) =>
+      text(item, ["category", "media_category"]).toLowerCase() === "hero" &&
+      text(item, ["kind", "resource_type", "media_type"]).toLowerCase() !== "video"
+  );
+  const coverUrl =
+    text(school, ["cover_image_url", "hero_image_url", "banner_url"]) ||
+    text(cover, ["url", "secure_url", "media_url", "file_url"]);
   const heroStyle = coverUrl ? { backgroundImage: `linear-gradient(90deg, rgba(2,6,23,.92), rgba(2,44,34,.70)), url("${coverUrl.replace(/"/g, "%22")}")`, backgroundPosition: "center", backgroundSize: "cover" } : undefined;
   const pageTitle = NAV_ITEMS.find((item) => item.path === canonicalPage)?.label || "Home";
 
