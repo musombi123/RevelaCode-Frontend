@@ -142,11 +142,22 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
   const [form, setForm] = useState({
     display_name: "",
     email: "",
-    role: "teacher",
+    role: role === "owner" ? "principal" : "teacher",
     expires_in_days: "7",
   });
 
   const schoolName = school?.name || school?.school_name || school?.institution_name || "your school";
+  const principalMemberAssigned = staff.some((member) =>
+    String(member?.role || "").toLowerCase() === "principal" &&
+    !["removed", "suspended"].includes(String(member?.status || "").toLowerCase())
+  );
+  const principalInvitationPending = invitations.some((invitation) => {
+    if (String(invitation?.role || "").toLowerCase() !== "principal" || String(invitation?.status || "invited").toLowerCase() !== "invited") return false;
+    const expiry = invitation?.expires_at ? new Date(invitation.expires_at).getTime() : 0;
+    return !expiry || (Number.isFinite(expiry) && expiry > Date.now());
+  });
+  const principalAssigned = principalMemberAssigned || principalInvitationPending;
+  const canInvitePrincipal = role === "owner" && !principalAssigned;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,6 +189,12 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (principalAssigned) {
+      setForm((current) => current.role === "principal" ? { ...current, role: "teacher" } : current);
+    }
+  }, [principalAssigned]);
 
   const stats = useMemo(() => {
     const active = staff.filter((member) => String(member?.status || "").toLowerCase() === "active").length;
@@ -313,12 +330,18 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
       </section>
 
       <section className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)]">
+        <div className={`rounded-2xl border p-4 xl:col-span-2 ${principalAssigned ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/25" : role === "owner" ? "border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/25" : "border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/25"}`}>
+          <div className="flex items-start gap-3"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><div>
+            <p className="text-sm font-extrabold text-slate-950 dark:text-white">{principalAssigned ? "Principal appointed or invitation pending" : role === "owner" ? "First step: invite your school Principal" : "Principal appointment is required"}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-700 dark:text-slate-300">{principalAssigned ? (principalMemberAssigned ? "A Principal is linked to this school. Only one Principal can be appointed at a time." : "A Principal invitation record already exists. Check its delivery status below and resend the email if it failed; migration requires a delivered invitation or an active Principal membership.") : role === "owner" ? "The Principal role is pre-selected for you. Invite one trusted person before starting the legacy data import in Synchronization." : "Ask the School Owner to invite the designated Principal. The legacy migration stays blocked until the school has a delivered Principal invitation or an active Principal membership."}</p>
+          </div></div>
+        </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <div className="flex items-start gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"><Mail size={20} /></span><div><h3 className="text-base font-bold text-slate-950 dark:text-white">Invite staff member</h3><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">The invitee receives an email directly and accepts using their own verified RevelaCode account.</p></div></div>
           <form onSubmit={handleInvite} className="mt-5 space-y-4">
             <div><label htmlFor="elimu-staff-name" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitee name (optional)</label><input id="elimu-staff-name" name="display_name" autoComplete="name" value={form.display_name} onChange={(event) => changeForm("display_name", event.target.value)} placeholder="e.g. Jane Wanjiku" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></div>
             <div><label htmlFor="elimu-staff-email" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitee email address</label><input id="elimu-staff-email" name="email" type="email" autoComplete="email" required value={form.email} onChange={(event) => changeForm("email", event.target.value)} placeholder="person@example.com" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">They must register or sign in with this exact email address.</p></div>
-            <div><label htmlFor="elimu-staff-role" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">School role</label><select id="elimu-staff-role" name="role" required value={form.role} onChange={(event) => changeForm("role", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white">{ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Owner permissions cannot be granted from staff management.</p></div>
+            <div><label htmlFor="elimu-staff-role" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">School role</label><select id="elimu-staff-role" name="role" required value={form.role} onChange={(event) => changeForm("role", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white">{ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={option.value === "principal" && !canInvitePrincipal}>{option.label}{option.value === "principal" && principalAssigned ? " (already assigned)" : option.value === "principal" && role !== "owner" ? " (owner only)" : ""}</option>)}</select><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Owner permissions cannot be granted from staff management.</p></div>
             <div><label htmlFor="elimu-staff-expiry" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitation validity</label><select id="elimu-staff-expiry" name="expires_in_days" value={form.expires_in_days} onChange={(event) => changeForm("expires_in_days", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
             <Button type="submit" variant="primary" disabled={submitting} className="w-full">{submitting ? <><RefreshCw size={16} className="animate-spin" /> Sending invitation…</> : <><Mail size={16} /> Send invitation email</>}</Button>
           </form>

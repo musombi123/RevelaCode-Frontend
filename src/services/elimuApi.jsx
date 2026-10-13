@@ -861,6 +861,23 @@ export function createElimuApiClient({
     createSyncConnection: (data, options) =>
       post("sync/connections", data, options),
 
+    previewElimuLegacyImport: (file, { entity_type, field_mappings } = {}, options) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (entity_type) formData.append("entity_type", entity_type);
+      if (field_mappings) formData.append("field_mappings", JSON.stringify(field_mappings));
+      return post("sync/import/preview", formData, options);
+    },
+
+    startElimuLegacyImport: (data, options) =>
+      post("sync/import/start", data, options),
+
+    processElimuLegacyImportBatch: (data, options) =>
+      post("sync/import/process", data, options),
+
+    getElimuLegacyImportStatus: (importId, options) =>
+      get(`sync/import/status/${pathSegment(importId, "import ID")}`, undefined, options),
+
     getSyncConnection: (connectionId, options) =>
       get(
         `sync/connections/${pathSegment(connectionId, "connection ID")}`,
