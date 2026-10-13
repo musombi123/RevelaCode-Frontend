@@ -1119,6 +1119,9 @@ export function createElimuApiClient({
     uploadSchoolMedia: (formData, options) =>
       post("media/upload", formData, options),
 
+    uploadSchoolDocument: (formData, options) =>
+      post("media/upload-document", formData, options),
+
     updateSchoolMedia: (mediaId, data, options) =>
       patch(
         `media/${pathSegment(mediaId, "media ID")}`,

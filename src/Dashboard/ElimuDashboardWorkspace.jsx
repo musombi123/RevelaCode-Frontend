@@ -387,6 +387,7 @@ function ElimuDocumentCenter({
     category: role === "bursar" ? "fees" : "forms",
     downloadUrl: "",
   });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const schoolId = getSchoolId(school);
   const schoolCode = getSchoolCode(school);
@@ -590,6 +591,10 @@ function ElimuDocumentCenter({
   const updateField = (event) => {
     const { name, value } = event.target;
 
+    if (name === "downloadUrl" && value.trim()) {
+      setSelectedFile(null);
+    }
+
     setForm((current) => ({
       ...current,
       [name]: value,
@@ -610,25 +615,23 @@ function ElimuDocumentCenter({
       return;
     }
 
-    if (!downloadUrlValue) {
-      setError(
-        "Enter the HTTPS URL of the file on approved document storage."
-      );
+    if (!selectedFile && !downloadUrlValue) {
+      setError("Choose a document file to upload or enter an HTTPS document URL.");
       return;
     }
 
-    let parsedUrl;
-
-    try {
-      parsedUrl = new URL(downloadUrlValue);
-    } catch {
-      setError("Enter a valid HTTPS document URL.");
-      return;
-    }
-
-    if (parsedUrl.protocol !== "https:") {
-      setError("Only HTTPS document URLs can be submitted.");
-      return;
+    if (!selectedFile) {
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(downloadUrlValue);
+      } catch {
+        setError("Enter a valid HTTPS document URL.");
+        return;
+      }
+      if (parsedUrl.protocol !== "https:") {
+        setError("Only HTTPS document URLs can be submitted.");
+        return;
+      }
     }
 
     if (!schoolId && !schoolCode) {
@@ -641,25 +644,34 @@ function ElimuDocumentCenter({
     setSubmitting(true);
 
     try {
-      const headers = await buildHeaders(true);
-
-      const response = await fetch(manageUrl, {
-        method: "POST",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({
-          title,
-          description,
-          category: form.category,
-          download_url: downloadUrlValue,
-          school_id: schoolId || undefined,
-          school_code: schoolCode || undefined,
-          status: "draft",
-          is_public: false,
-        }),
-      });
-
-      await responseMessage(response);
+      if (selectedFile) {
+        const upload = new FormData();
+        upload.append("file", selectedFile);
+        upload.append("title", title);
+        upload.append("description", description);
+        upload.append("category", form.category);
+        await elimuApi.uploadSchoolDocument(upload);
+      } else {
+        const headers = await buildHeaders(true);
+        const response = await fetch(manageUrl, {
+          method: "POST",
+          headers,
+          credentials: "include",
+          body: JSON.stringify({
+            title,
+            description,
+            category: form.category,
+            download_url: downloadUrlValue,
+            filename: "",
+            file_type: "",
+            school_id: schoolId || undefined,
+            school_code: schoolCode || undefined,
+            status: "draft",
+            is_public: false,
+          }),
+        });
+        await responseMessage(response);
+      }
 
       setForm((current) => ({
         ...current,
@@ -667,33 +679,27 @@ function ElimuDocumentCenter({
         description: "",
         downloadUrl: "",
       }));
-
+      setSelectedFile(null);
       setNotice(
-        "The server accepted the document submission. Confirm its status below; submission does not mean that the document has been published."
+        selectedFile
+          ? "File uploaded successfully and submitted as a private draft for owner review."
+          : "Document link submitted successfully as a draft for owner review."
       );
-
       await loadDocuments();
     } catch (submitError) {
-      if (
-        submitError?.status === 401 ||
-        submitError?.status === 403
-      ) {
+      if (submitError?.status === 401 || submitError?.status === 403) {
         setManagementBlocked(true);
-
         setError(
-          "The backend denied this document submission. Verify that the active membership has permission to submit documents for this school."
+          "The backend denied this document submission. Verify that your active school membership is valid."
         );
-      } else if (
-        submitError?.status === 404 ||
-        submitError?.status === 405
-      ) {
+      } else if (submitError?.status === 404 || submitError?.status === 405) {
         setError(
-          "The document submission endpoint is unavailable at this backend route. Register and implement the document-management endpoint before retrying."
+          "The document upload or submission endpoint is unavailable on this backend deployment. Confirm that the latest Elimu backend is deployed."
         );
       } else {
         setError(
           submitError?.message ||
-            "The document could not be submitted. Verify the document URL and try again."
+            "The document could not be submitted. Verify the file or URL and try again."
         );
       }
     } finally {
@@ -905,35 +911,70 @@ function ElimuDocumentCenter({
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="elimu-document-url"
-                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
-              >
-                HTTPS document URL
-              </label>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="elimu-document-file"
+                  className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  Upload a file from this device
+                </label>
+                <input
+                  id="elimu-document-file"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt"
+                  disabled={submitting}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    event.currentTarget.value = "";
+                    if (file) {
+                      setSelectedFile(file);
+                      setForm((current) => ({ ...current, downloadUrl: "" }));
+                    }
+                  }}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:file:bg-blue-950/50 dark:file:text-blue-300"
+                />
+                {selectedFile && (
+                  <div className="mt-2 flex items-start justify-between gap-3 rounded-lg bg-blue-50 p-3 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+                    <span className="min-w-0 break-words">Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                    <button type="button" onClick={() => setSelectedFile(null)} className="shrink-0 font-semibold underline">Remove</button>
+                  </div>
+                )}
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  PDF, Word, Excel, PowerPoint, CSV or TXT. Maximum size: 25 MB. Files are stored securely and submitted as private drafts for review.
+                </p>
+              </div>
 
-              <input
-                id="elimu-document-url"
-                name="downloadUrl"
-                type="url"
-                inputMode="url"
-                autoComplete="url"
-                required
-                value={form.downloadUrl}
-                onChange={updateField}
-                placeholder="https://approved-storage.example/document.pdf"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
+              <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                Or use an existing link
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              </div>
 
-              <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                This route registers a URL for a file hosted elsewhere.
-                It does not transfer a local file from your computer.
-                The server must validate storage hosts before allowing
-                downloads.
-              </p>
+              <div>
+                <label
+                  htmlFor="elimu-document-url"
+                  className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  HTTPS document URL {!selectedFile ? "(choose a file above or enter a URL)" : "(not needed when uploading a file)"}
+                </label>
+                <input
+                  id="elimu-document-url"
+                  name="downloadUrl"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  required={!selectedFile}
+                  value={form.downloadUrl}
+                  onChange={updateField}
+                  placeholder="https://approved-storage.example/document.pdf"
+                  className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  External links must use HTTPS and a storage host approved by the backend. Choose either a file or a link.
+                </p>
+              </div>
             </div>
-
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-start gap-2">
                 <ShieldCheck

@@ -53,7 +53,7 @@ const FIELD_GROUPS = [
   },
   {
     title: "Branding",
-    description: "Paste HTTPS URLs for your school's logo and cover image. Images uploaded in Elimu Media can be used here.",
+    description: "Upload the logo and cover image from your device, or use an existing HTTPS image URL.",
     fields: [
       ["logo_url", "Logo image URL", "https://..."],
       ["cover_image_url", "Cover / hero image URL", "https://..."],
@@ -161,6 +161,7 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const [form, setForm] = useState(() => fromRecord(school || {}));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingField, setUploadingField] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -198,6 +199,49 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const change = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setNotice("");
+  };
+
+  const uploadBrandImage = async (field, file) => {
+    if (!file) return;
+    if (field !== "logo_url" && field !== "cover_image_url") return;
+
+    if (file.type && !file.type.startsWith("image/")) {
+      setError("Choose an image file for the logo or cover.");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setError("Website images must be 12 MB or smaller.");
+      return;
+    }
+
+    const isCover = field === "cover_image_url";
+    const label = isCover ? "Cover image" : "School logo";
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", `${form.name || school?.name || "School"} ${isCover ? "cover image" : "logo"}`);
+    formData.append("caption", "School website branding");
+    formData.append("alt_text", `${form.name || school?.name || "School"} ${isCover ? "cover image" : "logo"}`);
+    formData.append("category", isCover ? "hero" : "gallery");
+    formData.append("is_published", "false");
+
+    setUploadingField(field);
+    setError("");
+    setNotice("");
+    try {
+      const response = await api.uploadSchoolMedia(formData);
+      const result = unwrap(response);
+      const asset = result?.media || result?.item || result;
+      const url = asset?.url || asset?.secure_url || asset?.data?.url || "";
+      if (!url || typeof url !== "string") {
+        throw new Error("The image upload finished without returning a usable URL.");
+      }
+      setForm((current) => ({ ...current, [field]: url }));
+      setNotice(`${label} uploaded. Save the website settings to keep this image on the public page.`);
+    } catch (uploadError) {
+      setError(uploadError?.message || `Could not upload the ${label.toLowerCase()}.`);
+    } finally {
+      setUploadingField("");
+    }
   };
 
   const save = async (publishOverride) => {
@@ -316,6 +360,33 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
                   {field === "cover_image_url" && form.cover_image_url && (
                     <img src={form.cover_image_url} alt="School cover preview" className="mt-3 h-24 w-full rounded-xl border border-slate-200 object-cover" loading="lazy" />
                   )}
+                  {(field === "logo_url" || field === "cover_image_url") && (
+                    <div className="mt-3 rounded-xl border border-dashed border-slate-300 p-3 dark:border-slate-700">
+                      <label htmlFor={`${field}-upload`} className="block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        Upload image from this device
+                      </label>
+                      <input
+                        id={`${field}-upload`}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+                        disabled={Boolean(uploadingField)}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] || null;
+                          event.currentTarget.value = "";
+                          if (file) void uploadBrandImage(field, file);
+                        }}
+                        className="mt-2 block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 hover:file:bg-blue-100 dark:text-slate-300 dark:file:bg-blue-950/50 dark:file:text-blue-300"
+                      />
+                      {uploadingField === field && (
+                        <p className="mt-2 flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
+                          <Loader size={14} className="animate-spin" /> Uploading image...
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        JPG, PNG, WEBP or GIF; up to 12 MB. The image URL will be filled in automatically.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -338,10 +409,10 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={saving} onClick={() => save()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
               {saving ? <Loader className="animate-spin" size={16} /> : <Save size={16} />} Save changes
             </button>
-            <button type="button" disabled={saving} onClick={() => save(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
               {saving ? <Loader className="animate-spin" size={16} /> : <Globe size={16} />} Save & publish
             </button>
           </div>
