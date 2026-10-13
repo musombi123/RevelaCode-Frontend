@@ -23,6 +23,7 @@ import StudyLibrary from "./study/StudyLibrary.jsx";
 import BookmarksPanel from "./study/BookmarksPanel.jsx";
 import RecommendationsPanel from "./study/RecommendationsPanel.jsx";
 import StudyReader from "./study/StudyReader.jsx";
+import FaithAtlas from "./faith/FaithAtlas.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -247,6 +248,10 @@ export default function FaithDashboard({
   const openRecommendations = () => {
     setSelectedMaterial(null);
     setFaithSection("recommendations");
+  };
+  const openFaithAtlas = () => {
+    setSelectedMaterial(null);
+    setFaithSection("atlas");
   };
 
   const openMaterial = (material) => {
@@ -585,6 +590,18 @@ export default function FaithDashboard({
     );
   }
 
+  if (faithSection === "atlas") {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+        {renderStudyHeader(
+          "Faith Atlas",
+          "Explore connected passages and investigate the difference between textual observations and theological interpretations.",
+          closeStudyView
+        )}
+        <FaithAtlas userId={userId} />
+      </div>
+    );
+  }
   if (faithSection === "reader") {
     return (
       <div
@@ -1154,6 +1171,27 @@ export default function FaithDashboard({
         </button>
       </section>
 
+      <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 p-5 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-gray-900 dark:to-violet-950/20 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
+              <Layers size={22} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-black text-gray-900 dark:text-white">RevelaCode Faith Atlas</h2>
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">New preview</span>
+              </div>
+              <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
+                Follow connections across Daniel, Revelation, sanctuary themes, worship, and Christian hopeâ€”with interpretations clearly labeled for investigation.
+              </p>
+            </div>
+          </div>
+          <button type="button" onClick={openFaithAtlas} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700">
+            Explore Scripture map <ArrowRight size={16} />
+          </button>
+        </div>
+      </section>
       {/* =====================================================
           CONTINUE WHERE YOU LEFT OFF
       ===================================================== */}
