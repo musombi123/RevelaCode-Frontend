@@ -40,6 +40,10 @@ const EMPTY_FORM = {
   current_term: "",
   calendar_year: "",
   public_profile_enabled: false,
+  courses_text: "",
+  departments_text: "",
+  activities_text: "",
+  teacher_services_text: "",
 };
 
 const FIELD_GROUPS = [
@@ -98,6 +102,28 @@ const FIELD_GROUPS = [
       ["calendar_year", "Calendar year", "e.g. 2026"],
     ],
   },
+  {
+    title: "Courses and departments",
+    description: "Add the courses/programs and academic departments visitors should see. Put one entry on each line and separate fields with a vertical bar (|). Leave optional fields empty if they do not apply.",
+    fields: [
+      ["courses_text", "Courses / programs", "Course name | Description | Duration | Requirements\nEarly Years | Foundation learning | 2 years | Age requirements", "textarea"],
+      ["departments_text", "Departments", "Department name | Description | Subjects\nSciences | Practical science learning | Biology, Chemistry, Physics", "textarea"],
+    ],
+  },
+  {
+    title: "Co-curricular activities",
+    description: "List clubs, sports, arts, music, debates, STEM activities and other opportunities offered by the school.",
+    fields: [
+      ["activities_text", "Activities", "Activity name | Category | Description | Schedule\nFootball | Sports | School football team | Mon and Wed after class", "textarea"],
+    ],
+  },
+  {
+    title: "Teacher services",
+    description: "Publish school-approved services each teacher offers, such as tutoring, music coaching, mentorship or sports coaching. Do not enter private personal details. One service per line.",
+    fields: [
+      ["teacher_services_text", "Teacher service directory", "Teacher name | Subject/department | Service offered | Description | Availability\nJane M. | Mathematics | Remedial tutoring | Small-group mathematics support | By appointment", "textarea"],
+    ],
+  },
 ];
 
 function unwrap(payload) {
@@ -123,9 +149,31 @@ function slugify(value) {
     .replace(/-+$/g, "");
 }
 
+function formatStructuredLines(entries, keys) {
+  if (!Array.isArray(entries)) return "";
+  return entries
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) => keys.map((key) => String(entry[key] ?? "").replace(/[\r\n|]/g, " ").trim()).join(" | "))
+    .filter((line) => line.replace(/[|\s]/g, ""))
+    .join("\n");
+}
+
+function parseStructuredLines(value, keys, requiredKeys) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split("|").map((part) => part.trim());
+      return Object.fromEntries(keys.map((key, index) => [key, parts[index] || ""]));
+    })
+    .filter((entry) => requiredKeys.every((key) => entry[key]));
+}
+
 function fromRecord(record = {}) {
   const next = { ...EMPTY_FORM };
   for (const key of Object.keys(EMPTY_FORM)) {
+    if (["courses_text", "departments_text", "activities_text", "teacher_services_text"].includes(key)) continue;
     if (key === "public_profile_enabled") {
       next[key] = record[key] === true;
     } else {
@@ -133,6 +181,10 @@ function fromRecord(record = {}) {
       next[key] = value == null ? "" : String(value);
     }
   }
+  next.courses_text = formatStructuredLines(record.courses, ["name", "description", "duration", "requirements"]);
+  next.departments_text = formatStructuredLines(record.departments, ["name", "description", "subjects"]);
+  next.activities_text = formatStructuredLines(record.co_curricular_activities, ["name", "category", "description", "schedule"]);
+  next.teacher_services_text = formatStructuredLines(record.teacher_services, ["teacher_name", "subject", "service", "description", "availability"]);
   next.name = String(record.name || "");
   next.public_slug = String(record.public_slug || slugify(record.name) || "");
   return next;
@@ -253,9 +305,17 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
       : form.public_profile_enabled;
     const payload = {
       ...form,
+      courses: parseStructuredLines(form.courses_text, ["name", "description", "duration", "requirements"], ["name"]),
+      departments: parseStructuredLines(form.departments_text, ["name", "description", "subjects"], ["name"]),
+      co_curricular_activities: parseStructuredLines(form.activities_text, ["name", "category", "description", "schedule"], ["name"]),
+      teacher_services: parseStructuredLines(form.teacher_services_text, ["teacher_name", "subject", "service", "description", "availability"], ["teacher_name", "service"]),
       public_slug: slugify(form.public_slug || form.name),
       publish,
     };
+    delete payload.courses_text;
+    delete payload.departments_text;
+    delete payload.activities_text;
+    delete payload.teacher_services_text;
     try {
       const response = await api.saveWebsiteSettings(payload);
       const data = unwrap(response);

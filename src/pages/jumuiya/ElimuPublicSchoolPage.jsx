@@ -37,6 +37,8 @@ const NAV_ITEMS = [
   { path: "about", label: "About", icon: GraduationCap },
   { path: "events", label: "Events", icon: CalendarDays },
   { path: "academics", label: "Academics", icon: BookOpen },
+  { path: "activities", label: "Co-curricular", icon: CalendarDays },
+  { path: "teachers", label: "Teachers & services", icon: Users },
   { path: "media", label: "Photos & videos", icon: ImageIcon },
   { path: "documents", label: "Documents", icon: FileText },
   { path: "contact", label: "Contact", icon: Mail },
@@ -48,6 +50,11 @@ const ROUTE_ALIASES = {
   news: "events",
   calendar: "events",
   learning: "academics",
+  clubs: "activities",
+  sports: "activities",
+  faculty: "teachers",
+  staff: "teachers",
+  services: "teachers",
   gallery: "media",
   photos: "media",
   videos: "media",
@@ -267,6 +274,27 @@ function FeatureLink({ href, icon: Icon, title, description }) {
   );
 }
 
+function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) {
+  const cleanDetails = details.filter(Boolean);
+  const cleanTags = (Array.isArray(tags) ? tags : String(tags || "").split(/[,;]+/))
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+  return (
+    <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
+      {eyebrow && <p className="text-xs font-extrabold uppercase tracking-[0.13em] text-emerald-700">{eyebrow}</p>}
+      <h3 className="mt-2 break-words text-lg font-extrabold text-slate-950">{title}</h3>
+      {description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>}
+      {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{tag}</span>)}</div>}
+      {cleanDetails.length > 0 && <dl className="mt-4 space-y-2 border-t border-slate-100 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="text-xs leading-5 text-slate-500">{detail}</div>)}</dl>}
+    </article>
+  );
+}
+
+function PublicOfferingGrid({ items, emptyTitle, emptyDescription, icon: Icon = BookOpen, renderItem }) {
+  if (!items.length) return <EmptyState icon={Icon} title={emptyTitle} description={emptyDescription} />;
+  return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item, index) => renderItem(item, index))}</div>;
+}
+
 export default function ElimuPublicSchoolPage() {
   const { schoolSlug = "" } = useParams();
   const location = useLocation();
@@ -466,6 +494,10 @@ export default function ElimuPublicSchoolPage() {
   const motto = text(school, ["motto", "tagline"]);
   const principal = text(school, ["principal_name", "administrator_name"]);
   const locationText = text(school, ["physical_address", "address", "location"]) || [text(school, ["town", "city"]), text(school, ["county", "region"])].filter(Boolean).join(", ") || "Contact the school for location details.";
+  const courses = Array.isArray(school.courses) ? school.courses : [];
+  const departments = Array.isArray(school.departments) ? school.departments : [];
+  const coCurricularActivities = Array.isArray(school.co_curricular_activities) ? school.co_curricular_activities : [];
+  const teacherServices = Array.isArray(school.teacher_services) ? school.teacher_services : [];
   const phone = text(school, ["contact_phone", "phone", "telephone", "phone_number"]);
   const email = text(school, ["contact_email", "email", "email_address"]);
   const website = text(school, ["website"]);
@@ -507,7 +539,39 @@ export default function ElimuPublicSchoolPage() {
       pageContent = <><PageHeading icon={CalendarDays} eyebrow="School life" title="News and events" description="Updates, school activities and public events released by the school." />{events.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{events.map((item, index) => <ResourceCard key={recordId(item) || `event-${index}`} item={item} kind="event" />)}</div> : <EmptyState icon={CalendarDays} title="No public events yet" description="Published school events and announcements will appear here when the school releases them." />}</>;
       break;
     case "academics":
-      pageContent = <><PageHeading icon={BookOpen} eyebrow="Learning and achievement" title="Academics and CBC highlights" description="Explore school learning highlights and CBC projects approved for public viewing." />{projects.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map((item, index) => <ResourceCard key={recordId(item) || `project-${index}`} item={item} kind="project" />)}</div> : <EmptyState icon={BookOpen} title="Academic highlights coming soon" description="Published academic projects and learning highlights will appear here when available." />}</>;
+      pageContent = (
+        <>
+          <PageHeading icon={BookOpen} eyebrow="Learning and achievement" title="Courses, programs and departments" description="Explore the learning pathways and academic departments offered by this school, alongside its published CBC projects." />
+          <section className="mb-10 space-y-4">
+            <div><h2 className="text-xl font-extrabold text-slate-950">Courses and programs</h2><p className="mt-1 text-sm leading-6 text-slate-500">School-published courses, programs, duration and entry information.</p></div>
+            <PublicOfferingGrid items={courses} icon={BookOpen} emptyTitle="Courses will be listed here" emptyDescription="The school has not published course or program details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `course-${index}`} title={text(item, ["name", "title"], "Course / program")} eyebrow={text(item, ["level"], "Course / program")} description={text(item, ["description"])} details={[item.duration ? `Duration: ${item.duration}` : "", item.requirements ? `Entry requirements: ${item.requirements}` : ""]} />} />
+          </section>
+          <section className="mb-10 space-y-4">
+            <div><h2 className="text-xl font-extrabold text-slate-950">Academic departments</h2><p className="mt-1 text-sm leading-6 text-slate-500">Departments and the subjects or learning areas they support.</p></div>
+            <PublicOfferingGrid items={departments} icon={School} emptyTitle="Departments will be listed here" emptyDescription="The school has not published department details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `department-${index}`} title={text(item, ["name", "title"], "Department")} eyebrow="Academic department" description={text(item, ["description"])} tags={item.subjects || []} />} />
+          </section>
+          <section className="space-y-4">
+            <div><h2 className="text-xl font-extrabold text-slate-950">CBC projects and academic highlights</h2><p className="mt-1 text-sm leading-6 text-slate-500">Learning projects and highlights approved for public viewing.</p></div>
+            {projects.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map((item, index) => <ResourceCard key={recordId(item) || `project-${index}`} item={item} kind="project" />)}</div> : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm leading-6 text-slate-500">Published academic projects and learning highlights will appear here when available.</p>}
+          </section>
+        </>
+      );
+      break;
+    case "activities":
+      pageContent = (
+        <>
+          <PageHeading icon={CalendarDays} eyebrow="Beyond the classroom" title="Co-curricular activities" description="Discover the clubs, sports, arts, leadership and enrichment activities made available to learners by the school." />
+          <PublicOfferingGrid items={coCurricularActivities} icon={CalendarDays} emptyTitle="School activities will be listed here" emptyDescription="The school has not published co-curricular activity details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `activity-${index}`} title={text(item, ["name", "title"], "School activity")} eyebrow={text(item, ["category"], "Co-curricular activity")} description={text(item, ["description"])} details={[item.schedule ? `Schedule: ${item.schedule}` : ""]} />} />
+        </>
+      );
+      break;
+    case "teachers":
+      pageContent = (
+        <>
+          <PageHeading icon={Users} eyebrow="People and support" title="Teachers and services" description="Meet school-listed teachers and explore the extra learning, coaching and mentorship services they offer through the school." />
+          <PublicOfferingGrid items={teacherServices} icon={Users} emptyTitle="Teacher services will be listed here" emptyDescription="The school has not published teacher service information yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `teacher-service-${index}`} title={text(item, ["service", "title"], "Teacher service")} eyebrow={text(item, ["teacher_name"], "School teacher")} description={text(item, ["description"])} details={[item.subject ? `Subject / department: ${item.subject}` : "", item.availability ? `Availability: ${item.availability}` : ""]} />} />
+        </>
+      );
       break;
     case "media":
       pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
