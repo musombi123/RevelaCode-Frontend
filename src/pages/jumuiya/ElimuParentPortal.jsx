@@ -15,7 +15,7 @@ import {
   RefreshCw,
   School,
   ShieldCheck,
-  UserRound,
+  User,
   Users,
   Wallet,
   AlertCircle,
@@ -32,6 +32,8 @@ const API_BASE = `${DEFAULT_BACKEND_URL.replace(/\/+$/, "")}/api/jumuiya/elimu/p
 const INITIAL_LINK_FORM = {
   school_slug: "",
   student_identifier: "",
+  guardian_phone: "",
+  guardian_email: "",
   relationship: "parent",
   notes: "",
 };
@@ -423,11 +425,17 @@ export default function ElimuParentPortal({
 
     const school = form.school_slug.trim();
     const identifier = form.student_identifier.trim();
+    const guardianPhone = form.guardian_phone.trim();
+    const guardianEmail = form.guardian_email.trim();
 
     if (!school || !identifier) {
       setPageError(
         "Enter the school's identifier and the student's admission or school-issued identifier."
       );
+      return;
+    }
+    if (!guardianPhone && !guardianEmail) {
+      setPageError("Enter the guardian phone or email already registered with the school.");
       return;
     }
 
@@ -439,6 +447,8 @@ export default function ElimuParentPortal({
         body: {
           school_slug: school,
           student_identifier: identifier,
+          guardian_phone: guardianPhone,
+          guardian_email: guardianEmail,
           relationship: form.relationship,
           notes: form.notes.trim(),
         },
@@ -446,7 +456,7 @@ export default function ElimuParentPortal({
 
       setSuccessMessage(
         payload?.message ||
-          "Your linking request has been submitted. The school must verify it before student records become available."
+          "If the details match the school's student and registered guardian-contact records, the request can proceed to school review. Private records remain locked until the school approves the link."
       );
 
       setForm({
@@ -603,7 +613,7 @@ export default function ElimuParentPortal({
               <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
                 <Users size={20} className="text-emerald-200" />
                 <p className="mt-4 text-2xl font-extrabold">
-                  {loadingChildren ? "—" : children.length}
+                  {loadingChildren ? "â€”" : children.length}
                 </p>
                 <p className="mt-1 text-xs text-emerald-100/80">
                   Linked children
@@ -613,7 +623,7 @@ export default function ElimuParentPortal({
               <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
                 <CheckCircle2 size={20} className="text-emerald-200" />
                 <p className="mt-4 text-2xl font-extrabold">
-                  {loadingChildren ? "—" : verifiedChildren.length}
+                  {loadingChildren ? "â€”" : verifiedChildren.length}
                 </p>
                 <p className="mt-1 text-xs text-emerald-100/80">
                   Verified links
@@ -732,7 +742,7 @@ export default function ElimuParentPortal({
               >
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
-                    <UserRound size={20} />
+                    <User size={20} />
                   </div>
 
                   <div>
@@ -806,6 +816,15 @@ export default function ElimuParentPortal({
                   </div>
 
                   <div>
+                    <label htmlFor="guardian-phone" className="mb-1.5 block text-sm font-semibold text-slate-700">Registered guardian phone</label>
+                    <input id="guardian-phone" name="guardian_phone" type="tel" autoComplete="tel" maxLength={40} value={form.guardian_phone} onChange={(event) => setForm((current) => ({ ...current, guardian_phone: event.target.value }))} placeholder="Phone number registered with the school" className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
+                    <p className="mt-1.5 text-xs leading-5 text-slate-500">Enter the contact already recorded on the student's school file. You can use phone, email, or both.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="guardian-email" className="mb-1.5 block text-sm font-semibold text-slate-700">Registered guardian email</label>
+                    <input id="guardian-email" name="guardian_email" type="email" autoComplete="email" maxLength={254} value={form.guardian_email} onChange={(event) => setForm((current) => ({ ...current, guardian_email: event.target.value }))} placeholder="Email address registered with the school" className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
+                  </div>
+                  <div>
                     <label
                       htmlFor="relationship"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
@@ -874,7 +893,7 @@ export default function ElimuParentPortal({
                   {submittingLink ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                      Submitting request…
+                      Submitting requestâ€¦
                     </>
                   ) : (
                     <>
@@ -1113,7 +1132,7 @@ export default function ElimuParentPortal({
                 {loadingSection ? (
                   <div className="flex items-center gap-3 py-12 text-sm text-slate-500">
                     <span className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-700" />
-                    Loading authorized information…
+                    Loading authorized informationâ€¦
                   </div>
                 ) : sectionData ? (
                   <PrivateSection
@@ -1135,7 +1154,7 @@ export default function ElimuParentPortal({
         <footer className="mt-12 border-t border-slate-200 pt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-slate-500">
-              Jumuiya Elimu · Family and school access
+              Jumuiya Elimu Â· Family and school access
             </p>
 
             <p className="flex items-center gap-2 text-xs leading-5 text-slate-500">
@@ -1202,7 +1221,7 @@ function PrivateSection({ section, data }) {
                     document.category ||
                     "School document"}
                   {document.created_at
-                    ? ` · ${formatDate(document.created_at)}`
+                    ? ` Â· ${formatDate(document.created_at)}`
                     : ""}
                 </p>
               </div>

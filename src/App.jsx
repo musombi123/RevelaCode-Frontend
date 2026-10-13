@@ -6,6 +6,8 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
+  useLocation,
 } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
@@ -14,6 +16,8 @@ import Pages from "./app/pages.jsx";
 import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
+import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
+import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -47,6 +51,23 @@ function InternalDashboard() {
   );
 }
 
+function ElimuPortalRoute({ portal }) {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const schoolSlug = new URLSearchParams(location.search).get("school") || "";
+  const getAuthHeaders = async () => {
+    const token = typeof auth?.getAccessToken === "function" ? await auth.getAccessToken() : "";
+    const tokenType = typeof auth?.getTokenType === "function" ? await auth.getTokenType() : "Bearer";
+    return token ? { Authorization: `${tokenType || "Bearer"} ${String(token).replace(/^Bearer\s+/i, "")}` } : {};
+  };
+  const onLoginRequired = () => navigate("/", { replace: false });
+  const onBack = () => navigate(-1);
+  return portal === "parent"
+    ? <ElimuParentPortal schoolSlug={schoolSlug} getAuthHeaders={getAuthHeaders} onLoginRequired={onLoginRequired} onBack={onBack} />
+    : <ElimuStudentPortal schoolSlug={schoolSlug} getAuthHeaders={getAuthHeaders} onLoginRequired={onLoginRequired} onBack={onBack} />;
+}
+
 export default function App() {
   return (
     <PreferencesProvider>
@@ -60,6 +81,8 @@ export default function App() {
               <Route path="/jumuiya" element={<Navigate to="/" replace />} />
               <Route path="/jumuiya/biashara" element={<InternalDashboard />} />
               <Route path="/jumuiya/shamba" element={<InternalDashboard />} />
+              <Route path="/jumuiya/elimu/parent" element={<ElimuPortalRoute portal="parent" />} />
+              <Route path="/jumuiya/elimu/student" element={<ElimuPortalRoute portal="student" />} />
               <Route path="/jumuiya/elimu" element={<InternalDashboard />} />
               <Route path="/jumuiya/community" element={<InternalDashboard />} />
               <Route path="/jumuiya/payments" element={<InternalDashboard />} />

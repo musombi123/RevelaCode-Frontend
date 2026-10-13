@@ -32,6 +32,7 @@ import ElimuRegistrarDashboard from "@/Dashboard/elimu/ElimuRegistrarDashboard.j
 import ElimuTeacherDashboard from "@/Dashboard/elimu/ElimuTeacherDashboard.jsx";
 import ElimuMediaManager from "@/Dashboard/elimu/ElimuMediaManager.jsx";
 import ElimuWebsiteSettings from "@/Dashboard/elimu/ElimuWebsiteSettings.jsx";
+import ElimuPortalRequests from "@/Dashboard/elimu/ElimuPortalRequests.jsx";
 import ElimuModuleWorkspace, { getElimuModuleMeta } from "@/Dashboard/elimu/ElimuModuleWorkspace.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
@@ -1213,6 +1214,11 @@ export default function ElimuDashboardWorkspace({
     normalizedPath === "website" ||
     normalizedPath.endsWith("/elimu/website");
 
+  const isPortalRequestsCenter =
+    normalizedPath === "elimu/portal-requests" ||
+    normalizedPath === "portal-requests" ||
+    normalizedPath.endsWith("/elimu/portal-requests");
+
   const moduleMeta = getElimuModuleMeta(normalizedPath);
   const isModuleCenter = !isWebsiteCenter && Boolean(moduleMeta);
 
@@ -1247,9 +1253,11 @@ export default function ElimuDashboardWorkspace({
   // The workspace supports dedicated pages as well as role dashboards.
   // Never fall through to the same dashboard when a module path is active.
   const isSpecialCenter =
-    isDocumentCenter || isMediaCenter || isWebsiteCenter || isModuleCenter;
+    isDocumentCenter || isMediaCenter || isWebsiteCenter || isPortalRequestsCenter || isModuleCenter;
 
-  const centerTitle = isWebsiteCenter
+  const centerTitle = isPortalRequestsCenter
+    ? "Portal verification requests"
+    : isWebsiteCenter
     ? "Public school website"
     : isMediaCenter
       ? "School photos and videos"
@@ -1257,7 +1265,9 @@ export default function ElimuDashboardWorkspace({
         ? "School document centre"
         : moduleMeta?.title || "School workspace";
 
-  const centerDescription = isWebsiteCenter
+  const centerDescription = isPortalRequestsCenter
+    ? "Verify student and guardian links before private school records become available."
+    : isWebsiteCenter
     ? "Edit your public school page, set its web address, and publish verified school information."
     : isMediaCenter
       ? "Upload, organize and manage approved media for your school's public page."
@@ -1417,6 +1427,14 @@ export default function ElimuDashboardWorkspace({
                   role={role}
                   onNavigate={handleNavigate}
                 />
+              )}
+
+              {isPortalRequestsCenter && role === "owner" && (
+                <ElimuPortalRequests />
+              )}
+
+              {isPortalRequestsCenter && role && role !== "owner" && (
+                <section role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">Only the verified school owner can review portal verification requests.</section>
               )}
 
               {isWebsiteCenter && role === "owner" && (

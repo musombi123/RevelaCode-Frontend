@@ -62,6 +62,13 @@ const NAVIGATION = [
         roles: ["owner"],
       },
       {
+        id: "portal-requests",
+        label: "Portal verification",
+        icon: ShieldCheck,
+        path: "elimu/portal-requests",
+        roles: ["owner"],
+      },
+      {
         id: "staff",
         label: "Staff & access",
         icon: Users,

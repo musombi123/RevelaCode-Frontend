@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   ClipboardList,
   TrendingUp,
-  UserRound,
+  User,
   X,
 } from "lucide-react";
 
@@ -320,12 +320,16 @@ function AssessmentCard({ assessment }) {
 }
 
 export default function ElimuStudentPortal({
+  schoolSlug = "",
   getAuthHeaders,
   onBack,
   onLoginRequired,
   onOpenAssignment,
 }) {
   const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
+  const [linkForm, setLinkForm] = useState({ school_slug: schoolSlug, student_identifier: "" });
+  const [submittingLink, setSubmittingLink] = useState(false);
+  const [linkMessage, setLinkMessage] = useState("");
   const [assignments, setAssignments] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [timetable, setTimetable] = useState([]);
@@ -491,6 +495,33 @@ export default function ElimuStudentPortal({
     [assignments]
   );
 
+  const submitStudentLink = async (event) => {
+    event.preventDefault();
+    setError("");
+    setLinkMessage("");
+    if (!linkForm.school_slug.trim() || !linkForm.student_identifier.trim()) {
+      setError("Enter the school identifier and your official student identifier.");
+      return;
+    }
+    setSubmittingLink(true);
+    try {
+      const payload = await request("/link", {
+        method: "POST",
+        body: {
+          school_slug: linkForm.school_slug.trim(),
+          student_identifier: linkForm.student_identifier.trim(),
+        },
+      });
+      setLinkMessage(payload?.message || "If the details match a student record, the request can proceed to school review. Private records remain locked until the school approves the link.");
+      setLinkForm((current) => ({ ...current, student_identifier: "" }));
+      await loadDashboard();
+    } catch (linkError) {
+      setError(linkError.message || "Could not submit the student-link request.");
+    } finally {
+      setSubmittingLink(false);
+    }
+  };
+
   const loadSection = async (section) => {
     setActiveSection(section);
     setSectionData(null);
@@ -543,6 +574,26 @@ export default function ElimuStudentPortal({
     { id: "attendance", label: "Attendance", icon: CheckCircle2 },
     { id: "documents", label: "Documents", icon: FileText },
   ];
+
+  if (!loading && dashboard?.linked === false) {
+    return (
+      <main className="min-h-screen bg-slate-50 text-slate-900">
+        <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white"><GraduationCap size={24}/></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Jumuiya Elimu</p><h1 className="text-lg font-bold">Student portal activation</h1></div></div>{onBack && <button type="button" onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">Back</button>}</div></header>
+        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+          <section className="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10"><ShieldCheck size={24}/></div><h2 className="mt-5 text-2xl font-extrabold">Connect your student account</h2><p className="mt-2 text-sm leading-7 text-emerald-50/90">Your school must already have your student record. Enter the published school identifier and your official admission number or school-issued student code. The school will review the link before any private information is available.</p></section>
+          {linkMessage && <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">{linkMessage}</div>}
+          {error && <div role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">{error}</div>}
+          {authRequired && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">Sign in with the account you want the school to link to your student record. <button type="button" onClick={handleLogin} className="ml-1 font-bold underline">Sign in</button></div>}
+          <form onSubmit={submitStudentLink} className="mt-6 space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <div><label htmlFor="student-school-slug" className="mb-1.5 block text-sm font-semibold">School identifier</label><input id="student-school-slug" required maxLength={120} autoComplete="off" value={linkForm.school_slug} onChange={(event) => setLinkForm((current) => ({...current, school_slug: event.target.value}))} className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="School public slug or school code"/></div>
+            <div><label htmlFor="student-school-id" className="mb-1.5 block text-sm font-semibold">Admission / student identifier</label><input id="student-school-id" required maxLength={120} autoComplete="off" value={linkForm.student_identifier} onChange={(event) => setLinkForm((current) => ({...current, student_identifier: event.target.value}))} className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Your official student identifier"/></div>
+            <button type="submit" disabled={submittingLink || authRequired} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{submittingLink ? <RefreshCw size={16} className="animate-spin"/> : <ArrowRight size={16}/>} {submittingLink ? "Submitting request…" : "Request school verification"}</button>
+            <p className="text-xs leading-5 text-slate-500">An identifier does not grant access by itself. The school must approve this account-to-student link first.</p>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -680,7 +731,7 @@ export default function ElimuStudentPortal({
             </div>
 
             <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/15 bg-white/10 text-3xl font-extrabold text-white shadow-lg sm:h-28 sm:w-28">
-              {getInitials(studentName) || <UserRound size={36} />}
+              {getInitials(studentName) || <User size={36} />}
             </div>
           </div>
         </section>

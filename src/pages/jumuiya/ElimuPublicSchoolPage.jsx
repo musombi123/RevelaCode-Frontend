@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   Video,
   XCircle,
+  Users,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
 
@@ -550,9 +551,11 @@ export default function ElimuPublicSchoolPage() {
           <button type="button" aria-expanded={mobileMenuOpen} aria-label={mobileMenuOpen ? "Close school navigation" : "Open school navigation"} onClick={() => setMobileMenuOpen((value) => !value)} className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700 md:hidden">{mobileMenuOpen ? "Close" : "Menu"}</button>
           <nav aria-label="School website navigation" className="hidden items-center gap-1 md:flex">
             {NAV_ITEMS.map((item) => { const Icon = item.icon; const active = canonicalPage === item.path; return <Link key={item.path || "home"} to={pageUrl(item.path)} aria-current={active ? "page" : undefined} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold transition lg:px-3 lg:text-sm ${active ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}><Icon size={15}/>{item.label}</Link>; })}
+            <Link to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 lg:text-sm"><Users size={15}/>Parent portal</Link>
+            <Link to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 lg:text-sm"><GraduationCap size={15}/>Student portal</Link>
           </nav>
         </div>
-        {mobileMenuOpen && <nav aria-label="Mobile school website navigation" className="border-t border-slate-100 bg-white px-4 py-3 md:hidden"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 sm:grid-cols-3">{NAV_ITEMS.map((item) => { const Icon = item.icon; const active = canonicalPage === item.path; return <Link key={item.path || "home"} to={pageUrl(item.path)} onClick={() => setMobileMenuOpen(false)} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold ${active ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-700"}`}><Icon size={15}/>{item.label}</Link>; })}</div></nav>}
+        {mobileMenuOpen && <nav aria-label="Mobile school website navigation" className="border-t border-slate-100 bg-white px-4 py-3 md:hidden"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-2 sm:grid-cols-3">{NAV_ITEMS.map((item) => { const Icon = item.icon; const active = canonicalPage === item.path; return <Link key={item.path || "home"} to={pageUrl(item.path)} onClick={() => setMobileMenuOpen(false)} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold ${active ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-700"}`}><Icon size={15}/>{item.label}</Link>; })}<Link to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`} onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><Users size={15}/>Parent portal</Link><Link to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`} onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white"><GraduationCap size={15}/>Student portal</Link></div></nav>}
       </header>
 
       <main id="main-content" className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
