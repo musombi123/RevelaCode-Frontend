@@ -536,6 +536,12 @@ export function createElimuApiClient({
     updateSchoolPublicationSettings: (data, options) =>
       patch("school/publication", data, options),
 
+    getWebsiteSettings: (options) =>
+      get("school/website-settings", undefined, options),
+
+    saveWebsiteSettings: (data, options) =>
+      patch("school/website-settings", data, options),
+
     getProfile: (options) =>
       get("profile", undefined, options),
 

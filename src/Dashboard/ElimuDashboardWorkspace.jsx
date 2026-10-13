@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useCallback,
   useEffect,
   useMemo,
@@ -12,6 +12,7 @@ import {
   FileText,
   FileUp,
   FolderOpen,
+  Globe,
   LockKeyhole,
   LayoutDashboard,
   Menu,
@@ -30,6 +31,7 @@ import ElimuBursarDashboard from "@/Dashboard/elimu/ElimuBursarDashboard.jsx";
 import ElimuRegistrarDashboard from "@/Dashboard/elimu/ElimuRegistrarDashboard.jsx";
 import ElimuTeacherDashboard from "@/Dashboard/elimu/ElimuTeacherDashboard.jsx";
 import ElimuMediaManager from "@/Dashboard/elimu/ElimuMediaManager.jsx";
+import ElimuWebsiteSettings from "@/Dashboard/elimu/ElimuWebsiteSettings.jsx";
 import ElimuModuleWorkspace, { getElimuModuleMeta } from "@/Dashboard/elimu/ElimuModuleWorkspace.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
@@ -1165,8 +1167,13 @@ export default function ElimuDashboardWorkspace({
     normalizedPath === "media" ||
     normalizedPath.endsWith("/elimu/media");
 
+  const isWebsiteCenter =
+    normalizedPath === "elimu/website" ||
+    normalizedPath === "website" ||
+    normalizedPath.endsWith("/elimu/website");
+
   const moduleMeta = getElimuModuleMeta(normalizedPath);
-  const isModuleCenter = Boolean(moduleMeta);
+  const isModuleCenter = !isWebsiteCenter && Boolean(moduleMeta);
 
   const canManageMedia =
     role === "owner" || role === "principal";
@@ -1198,19 +1205,24 @@ export default function ElimuDashboardWorkspace({
 
   // The workspace supports dedicated pages as well as role dashboards.
   // Never fall through to the same dashboard when a module path is active.
-  const isSpecialCenter = isDocumentCenter || isMediaCenter || isModuleCenter;
+  const isSpecialCenter =
+    isDocumentCenter || isMediaCenter || isWebsiteCenter || isModuleCenter;
 
-  const centerTitle = isMediaCenter
-    ? "School photos and videos"
-    : isDocumentCenter
-      ? "School document centre"
-      : moduleMeta?.title || "School workspace";
+  const centerTitle = isWebsiteCenter
+    ? "Public school website"
+    : isMediaCenter
+      ? "School photos and videos"
+      : isDocumentCenter
+        ? "School document centre"
+        : moduleMeta?.title || "School workspace";
 
-  const centerDescription = isMediaCenter
-    ? "Upload, organize and manage approved media for your school's public page."
-    : isDocumentCenter
-      ? "Prepare, submit and review school document records."
-      : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
+  const centerDescription = isWebsiteCenter
+    ? "Edit your public school page, set its web address, and publish verified school information."
+    : isMediaCenter
+      ? "Upload, organize and manage approved media for your school's public page."
+      : isDocumentCenter
+        ? "Prepare, submit and review school document records."
+        : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
 
   const headerActionPath = isSpecialCenter
     ? "elimu"
@@ -1220,11 +1232,13 @@ export default function ElimuDashboardWorkspace({
     ? "Dashboard"
     : "Documents";
 
-  const HeaderActionIcon = isMediaCenter
-    ? ImageIcon
-    : isSpecialCenter
-      ? LayoutDashboard
-      : FileText;
+  const HeaderActionIcon = isWebsiteCenter
+    ? Globe
+    : isMediaCenter
+      ? ImageIcon
+      : isSpecialCenter
+        ? LayoutDashboard
+        : FileText;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
@@ -1362,6 +1376,23 @@ export default function ElimuDashboardWorkspace({
                   role={role}
                   onNavigate={handleNavigate}
                 />
+              )}
+
+              {isWebsiteCenter && role === "owner" && (
+                <ElimuWebsiteSettings
+                  access={access}
+                  school={school}
+                  onNavigate={handleNavigate}
+                />
+              )}
+
+              {isWebsiteCenter && role && role !== "owner" && (
+                <section
+                  role="alert"
+                  className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+                >
+                  Only the verified school owner can configure and publish the public website.
+                </section>
               )}
 
               {isMediaCenter && role && (

@@ -1,4 +1,4 @@
-﻿// src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx
+// src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx
 
 import React from "react";
 
@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   GraduationCap,
+  Globe,
   Image,
   LayoutDashboard,
   Library,
@@ -52,6 +53,13 @@ const NAVIGATION = [
         icon: School,
         path: "elimu/school",
         roles: ["owner", "principal"],
+      },
+      {
+        id: "website",
+        label: "Public website",
+        icon: Globe,
+        path: "elimu/website",
+        roles: ["owner"],
       },
       {
         id: "staff",
