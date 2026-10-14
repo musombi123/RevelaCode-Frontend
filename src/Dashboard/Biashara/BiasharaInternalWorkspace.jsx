@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   ClipboardList,
   FileCheck2,
+  Globe,
   Loader2,
   Package,
   RefreshCw,
@@ -17,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import BiasharaWebsiteBuilder from "@/Dashboard/Biashara/BiasharaWebsiteBuilder.jsx";
 
 const ROUTES = [
   { key: "products", label: "Products", icon: Package },
@@ -26,6 +28,7 @@ const ROUTES = [
   { key: "biashara-analytics", label: "Analytics", icon: BarChart3 },
   { key: "biashara-intelligence", label: "Intelligence", icon: Sparkles },
   { key: "business-profile", label: "Business profile", icon: FileCheck2 },
+  { key: "website", label: "Website", icon: Globe },
   { key: "notifications", label: "Alerts", icon: Bell },
 ];
 
@@ -35,6 +38,7 @@ const TITLES = {
   customers: ["Customer records", "Keep customer contact details in one place."],
   sales: ["Record a sale", "Submit a sale to the Biashara backend and review recent sales."],
   "business-profile": ["Business profile", "Update the business identity used across your Biashara workspace."],
+  website: ["Website and storefront", "Build, publish and manage your public Biashara website."],
   "biashara-analytics": ["Business analytics", "Review metrics returned by your business dashboard API."],
   "biashara-intelligence": ["Business intelligence", "Use your available business data to identify operational priorities."],
   notifications: ["Business alerts", "Actionable alerts derived from your currently loaded business data."],
@@ -184,7 +188,7 @@ export default function BiasharaInternalWorkspace({
   const reload = useCallback(async () => {
     setError("");
 
-    if (route === "business-profile" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
+    if (route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
       setRows([]);
       setLoading(false);
       return;
@@ -391,6 +395,10 @@ export default function BiasharaInternalWorkspace({
 
         {notice ? <Notice tone="green">{notice}</Notice> : null}
         {error ? <Notice tone="red">{error}</Notice> : null}
+
+        {route === "website" ? (
+          <BiasharaWebsiteBuilder business={business} />
+        ) : null}
 
         {route === "business-profile" ? (
           <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

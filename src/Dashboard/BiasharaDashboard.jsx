@@ -933,6 +933,7 @@ export default function BiasharaDashboard({
         "customers",
         "sales",
         "business-profile",
+        "website",
         "biashara-analytics",
         "biashara-intelligence",
         "notifications",

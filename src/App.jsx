@@ -18,6 +18,7 @@ import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
+import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -279,6 +280,9 @@ export default function App() {
                 path="/jumuiya/marketplace"
                 element={<InternalDashboard />}
               />
+
+              {/* Public Biashara storefronts are isolated from school vanity URLs. */}
+              <Route path="/b/:businessSlug" element={<BiasharaPublicWebsitePage />} />
 
               {/* Public school websites: /school-slug, /school-slug/about, etc. */}
               <Route
