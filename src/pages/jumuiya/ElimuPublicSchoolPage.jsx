@@ -46,6 +46,47 @@ const NAV_ITEMS = [
   { path: "contact", label: "Contact", icon: Mail },
 ];
 
+const DEFAULT_PUBLIC_THEME = {
+  primary: "#047857",
+  secondary: "#064e3b",
+  accent: "#d4af37",
+  background: "#f8fafc",
+  surface: "#ffffff",
+  heading: "#0f172a",
+  body: "#475569",
+  header: "#ffffff",
+  footer: "#ffffff",
+  font_style: "modern",
+  button_style: "solid",
+};
+
+const THEME_COLOUR_FIELDS = [
+  "primary", "secondary", "accent", "background", "surface",
+  "heading", "body", "header", "footer",
+];
+
+function normalizePublicTheme(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const theme = { ...DEFAULT_PUBLIC_THEME };
+  for (const field of THEME_COLOUR_FIELDS) {
+    const candidate = source[field];
+    if (typeof candidate === "string" && /^#[0-9a-f]{6}$/i.test(candidate.trim())) {
+      theme[field] = candidate.trim().toLowerCase();
+    }
+  }
+  if (["modern", "classic", "humanist"].includes(source.font_style)) theme.font_style = source.font_style;
+  if (["solid", "outline", "soft"].includes(source.button_style)) theme.button_style = source.button_style;
+  return theme;
+}
+
+function rgbaFromHex(hex, alpha) {
+  const safe = /^#[0-9a-f]{6}$/i.test(String(hex || "")) ? hex : "#047857";
+  const red = parseInt(safe.slice(1, 3), 16);
+  const green = parseInt(safe.slice(3, 5), 16);
+  const blue = parseInt(safe.slice(5, 7), 16);
+  return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
+}
+
 const ROUTE_ALIASES = {
   home: "",
   index: "",
@@ -323,6 +364,26 @@ export default function ElimuPublicSchoolPage() {
   const canonicalPage = ROUTE_ALIASES[pageSegment] ?? pageSegment;
   const validPages = useMemo(() => new Set(NAV_ITEMS.map((item) => item.path)), []);
   const schoolName = text(school, ["school_name", "name", "display_name", "title"], String(schoolSlug).split("-").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") || "School");
+  const websiteTheme = useMemo(() => normalizePublicTheme(school?.website_theme), [school]);
+  const websiteFontFamily = websiteTheme.font_style === "classic"
+    ? "Georgia, 'Times New Roman', serif"
+    : websiteTheme.font_style === "humanist"
+      ? "'Trebuchet MS', Arial, sans-serif"
+      : "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  const websiteThemeStyle = {
+    "--school-primary": websiteTheme.primary,
+    "--school-secondary": websiteTheme.secondary,
+    "--school-accent": websiteTheme.accent,
+    "--school-background": websiteTheme.background,
+    "--school-surface": websiteTheme.surface,
+    "--school-heading": websiteTheme.heading,
+    "--school-body": websiteTheme.body,
+    "--school-header": websiteTheme.header,
+    "--school-footer": websiteTheme.footer,
+    backgroundColor: websiteTheme.background,
+    color: websiteTheme.body,
+    fontFamily: websiteFontFamily,
+  };
   const homeUrl = absoluteSchoolUrl(schoolSlug);
   const pageUrl = useCallback((page = "") => absoluteSchoolUrl(schoolSlug, page), [schoolSlug]);
 
@@ -428,9 +489,40 @@ export default function ElimuPublicSchoolPage() {
   }, [canonicalPage, homeUrl, navigate, validPages]);
 
   useEffect(() => {
-    window.document.title = school ? `${schoolName} | Jumuiya Elimu` : "Jumuiya Elimu | School Website";
-    return () => { window.document.title = "RevelaCode"; };
-  }, [school, schoolName]);
+    const title = school
+      ? text(school, ["homepage_title"], schoolName) + " | " + schoolName
+      : "Jumuiya Elimu | School Website";
+    const description = text(school, ["public_description", "description", "about"], "Official school information and published resources.").slice(0, 300);
+    const oldTitle = window.document.title;
+    window.document.title = title;
+    let descriptionMeta = window.document.querySelector('meta[name="description"]');
+    const createdDescriptionMeta = !descriptionMeta;
+    if (!descriptionMeta) {
+      descriptionMeta = window.document.createElement("meta");
+      descriptionMeta.setAttribute("name", "description");
+      window.document.head.appendChild(descriptionMeta);
+    }
+    const previousDescription = descriptionMeta.getAttribute("content");
+    descriptionMeta.setAttribute("content", description);
+    let canonical = window.document.querySelector('link[rel="canonical"]');
+    const createdCanonical = !canonical;
+    if (!canonical) {
+      canonical = window.document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      window.document.head.appendChild(canonical);
+    }
+    const previousCanonical = canonical.getAttribute("href");
+    canonical.setAttribute("href", window.location.origin + location.pathname);
+    return () => {
+      window.document.title = oldTitle || "RevelaCode";
+      if (createdDescriptionMeta) descriptionMeta.remove();
+      else if (previousDescription == null) descriptionMeta.removeAttribute("content");
+      else descriptionMeta.setAttribute("content", previousDescription);
+      if (createdCanonical) canonical.remove();
+      else if (previousCanonical == null) canonical.removeAttribute("href");
+      else canonical.setAttribute("href", previousCanonical);
+    };
+  }, [school, schoolName, location.pathname]);
 
   const handleDownload = useCallback(async (document) => {
     const id = recordId(document);
@@ -515,7 +607,15 @@ export default function ElimuPublicSchoolPage() {
   const coverUrl =
     text(school, ["cover_image_url", "hero_image_url", "banner_url"]) ||
     text(cover, ["url", "secure_url", "media_url", "file_url"]);
-  const heroStyle = coverUrl ? { backgroundImage: `linear-gradient(90deg, rgba(2,6,23,.92), rgba(2,44,34,.70)), url("${coverUrl.replace(/"/g, "%22")}")`, backgroundPosition: "center", backgroundSize: "cover" } : undefined;
+  const heroStyle = coverUrl
+    ? {
+        backgroundImage: "linear-gradient(90deg, " + rgbaFromHex(websiteTheme.secondary, 0.92) + ", " + rgbaFromHex(websiteTheme.primary, 0.62) + '), url("' + coverUrl.replace(/"/g, "%22") + '")',
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }
+    : {
+        backgroundImage: "linear-gradient(120deg, " + websiteTheme.secondary + ", " + websiteTheme.primary + ")",
+      };
   const pageTitle = NAV_ITEMS.find((item) => item.path === canonicalPage)?.label || "Home";
 
   let pageContent;
@@ -592,7 +692,7 @@ export default function ElimuPublicSchoolPage() {
         <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-emerald-950 to-emerald-800 text-white" style={heroStyle}>
           <div className="pointer-events-none absolute -right-20 -top-28 -z-10 h-96 w-96 rounded-full border border-white/10 shadow-[0_0_0_40px_rgba(255,255,255,0.025),0_0_0_90px_rgba(255,255,255,0.02)]" />
           <div className="grid gap-10 px-6 py-12 sm:px-9 sm:py-16 lg:grid-cols-[1fr_.58fr] lg:items-center lg:px-12 lg:py-20">
-            <div><div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-emerald-100"><ShieldCheck size={15} />Official school website</div><h1 className="mt-6 max-w-3xl break-words text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">{schoolName}</h1><p className="mt-5 max-w-2xl whitespace-pre-line text-sm leading-8 text-emerald-50/90 sm:text-base">{about}</p>{motto && <p className="mt-4 text-sm font-bold italic text-emerald-100">“{motto}”</p>}<div className="mt-8 flex flex-wrap gap-3"><Link to={pageUrl("about")} className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 hover:bg-emerald-50">Discover our school <ArrowRight size={16} /></Link><Link to={pageUrl("documents")} className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15"><ArrowDownToLine size={16} />Public documents</Link></div></div>
+            <div><div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-emerald-100"><ShieldCheck size={15} />Official school website</div><h1 className="mt-6 max-w-3xl break-words text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl" style={{ color: websiteTheme.heading }}>{text(school, ["homepage_title"], schoolName)}</h1><p className="mt-5 max-w-2xl whitespace-pre-line text-sm leading-8 text-emerald-50/90 sm:text-base">{about}</p>{motto && <p className="mt-4 text-sm font-bold italic text-emerald-100">“{motto}”</p>}<div className="mt-8 flex flex-wrap gap-3"><Link to={pageUrl("about")} className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 hover:bg-emerald-50">Discover our school <ArrowRight size={16} /></Link><Link to={pageUrl("documents")} className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15"><ArrowDownToLine size={16} />Public documents</Link></div></div>
             <aside className="rounded-3xl border border-white/15 bg-white/[0.08] p-6 backdrop-blur"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-emerald-100"><GraduationCap size={26} /></div><h2 className="mt-5 text-xl font-extrabold">Welcome to our school</h2><p className="mt-3 text-sm leading-7 text-emerald-50/85">Find school information, published announcements, academic highlights, photos and official resources in one place.</p><div className="mt-6 flex items-center gap-2 text-xs font-bold text-emerald-100"><ShieldCheck size={15} />Powered by Jumuiya Elimu</div></aside>
           </div>
         </section>
@@ -606,9 +706,10 @@ export default function ElimuPublicSchoolPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div data-school-website="true" className="min-h-screen text-slate-900" style={websiteThemeStyle}>
+      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,white)!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,white)!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
-      <header data-school-header="v2" className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
+      <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
             <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
@@ -719,7 +820,7 @@ export default function ElimuPublicSchoolPage() {
         {pageContent}
       </main>
 
-      <footer className="mt-8 border-t border-slate-200 bg-white">
+      <footer style={{ backgroundColor: websiteTheme.footer }} className="mt-8 border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div><p className="text-sm font-extrabold text-slate-900">{schoolName}</p><p className="mt-1 text-xs text-slate-500">Official public school website</p></div>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="text-xs font-semibold text-slate-600 hover:text-emerald-700">{item.label}</Link>)}</nav>
