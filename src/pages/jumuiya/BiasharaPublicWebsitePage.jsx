@@ -123,7 +123,7 @@ export default function BiasharaPublicWebsitePage() {
             {safeHttpsImage(business.logo_url) ? <img src={safeHttpsImage(business.logo_url)} alt="" className="h-10 w-10 rounded-xl object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ backgroundColor: primary }}><Globe size={19} /></span>}
             <span className="truncate text-base font-black tracking-tight">{business.name || "Local business"}</span>
           </a>
-          <a href="#products" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Products</a>
+          {website.show_products !== false ? <a href="#products" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Products</a> : null}
         </div>
       </header>
 
