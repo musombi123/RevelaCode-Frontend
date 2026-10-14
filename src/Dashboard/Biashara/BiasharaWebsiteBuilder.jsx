@@ -96,8 +96,6 @@ export default function BiasharaWebsiteBuilder({ business }) {
 
   const slug = site?.slug || business?.slug || "";
   const publicPath = site?.url_path || (slug ? "/b/" + slug : "");
-  const setPublished = (published) => setField("published", published);
-
   return (
     <div className="space-y-5">
       {error ? <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
