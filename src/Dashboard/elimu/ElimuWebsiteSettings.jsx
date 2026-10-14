@@ -479,6 +479,10 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   };
 
   const saveTheme = async (publishTheme = false) => {
+    if (themeWarnings.some((warning) => warning.includes("six-digit"))) {
+      setError("Correct every invalid hexadecimal colour before saving or publishing the theme.");
+      return;
+    }
     setThemeSaving(true);
     setError("");
     setNotice("");
@@ -786,7 +790,7 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
           <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Changes are school-specific. Saving a draft does not change the public website. Publishing requires a successful server response.</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={resetThemeDraft} disabled={themeSaving} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200"><RotateCcw size={15} />Reset to default</button>
-            <button type="button" onClick={() => void saveTheme(false)} disabled={themeSaving || Boolean(uploadingField)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{themeSaving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}Save draft</button>
+            <button type="button" onClick={() => void saveTheme(false)} disabled={themeSaving || Boolean(uploadingField) || themeWarnings.some((warning) => warning.includes("six-digit"))} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{themeSaving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}Save draft</button>
             <button type="button" onClick={() => void saveTheme(true)} disabled={themeSaving || Boolean(uploadingField) || themeWarnings.some((warning) => warning.includes("six-digit"))} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"><Globe size={15} />Publish theme</button>
           </div>
         </div>
@@ -829,7 +833,6 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
           {!domainsLoading && domains.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm leading-6 text-slate-500 dark:border-slate-700 dark:text-slate-400">No custom domains have been saved for this school yet. If domain management reports that the hosting integration is not configured, an administrator must add the backend Render API key and static-site service ID before this feature can operate.</div>}
           {domains.map((domain) => {
             const statusLabels = { pending_dns: "DNS verification pending", https_pending: "Waiting for HTTPS", routing_pending: "Waiting for routing", active: "Active · HTTPS confirmed", failed: "Needs attention" };
-            const busy = domainBusy.endsWith(domain.id);
             return (
               <article key={domain.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
