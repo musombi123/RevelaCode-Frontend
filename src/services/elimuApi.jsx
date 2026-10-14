@@ -546,6 +546,27 @@ export function createElimuApiClient({
     saveWebsiteSettings: (data, options) =>
       patch("school/website-settings", data, options),
 
+    getSchoolDomains: (options) =>
+      get("school/domains", undefined, options),
+
+    addSchoolDomain: (data, options) =>
+      post("school/domains", data, options),
+
+    verifySchoolDomain: (domainId, options) =>
+      post(`school/domains/${pathSegment(domainId, "domain ID")}/verify`, {}, options),
+
+    setPrimarySchoolDomain: (domainId, options) =>
+      patch(`school/domains/${pathSegment(domainId, "domain ID")}/primary`, {}, options),
+
+    deleteSchoolDomain: (domainId, options) =>
+      del(`school/domains/${pathSegment(domainId, "domain ID")}`, options),
+
+    getSchoolInquiries: (params, options) =>
+      get("school/inquiries", params, options),
+
+    updateSchoolInquiryStatus: (inquiryId, data, options) =>
+      patch(`school/inquiries/${pathSegment(inquiryId, "inquiry ID")}/status`, data, options),
+
     getProfile: (options) =>
       get("profile", undefined, options),
 
@@ -1101,6 +1122,18 @@ export function createElimuApiClient({
     getPublicSchool: (params, options) =>
       publicGet("public/school", params, options),
 
+    getPublicSchoolByDomain: (params, options) =>
+      publicGet("public/school-domain", params, options),
+
+    submitPublicSchoolInquiry: (data, options = {}) =>
+      request("public/inquiries", {
+        ...options,
+        method: "POST",
+        body: data,
+        credentials: "omit",
+        includeAuth: false,
+      }),
+
     getPublicSchools: (params, options) =>
       publicGet("public/schools", params, options),
 
@@ -1248,6 +1281,8 @@ export function createElimuApiClient({
     },
 
     getPublicSchool: publicApi.getPublicSchool,
+    getPublicSchoolByDomain: publicApi.getPublicSchoolByDomain,
+    submitPublicSchoolInquiry: publicApi.submitPublicSchoolInquiry,
     getPublicSchools: publicApi.getPublicSchools,
     getPublicEvents: publicApi.getPublicEvents,
     getPublicCalendar: publicApi.getPublicCalendar,
