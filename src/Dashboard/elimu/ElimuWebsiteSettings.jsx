@@ -310,6 +310,11 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const [domainNotice, setDomainNotice] = useState("");
   const [newDomainHostname, setNewDomainHostname] = useState("");
   const [renderTarget, setRenderTarget] = useState("");
+  const [schoolInquiries, setSchoolInquiries] = useState([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(true);
+  const [inquiryStatusBusy, setInquiryStatusBusy] = useState("");
+  const [inquiriesError, setInquiriesError] = useState("");
+  const [inquiriesNotice, setInquiriesNotice] = useState("");
 
   const publicUrl = useMemo(
     () => (form.public_slug ? `/${encodeURIComponent(form.public_slug)}` : ""),
@@ -379,6 +384,58 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
     })();
     return () => { active = false; };
   }, [api, school]);
+
+  const loadInquiries = useCallback(async () => {
+    setInquiriesLoading(true);
+    try {
+      const response = await api.getSchoolInquiries({ limit: 100 });
+      const data = unwrap(response);
+      setSchoolInquiries(Array.isArray(data?.inquiries) ? data.inquiries : []);
+      setInquiriesError("");
+      return data;
+    } catch (err) {
+      setInquiriesError(err?.message || "School inquiries could not be loaded.");
+      throw err;
+    } finally {
+      setInquiriesLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const response = await api.getSchoolInquiries({ limit: 100 });
+        const data = unwrap(response);
+        if (!active) return;
+        setSchoolInquiries(Array.isArray(data?.inquiries) ? data.inquiries : []);
+        setInquiriesError("");
+      } catch (err) {
+        if (active) setInquiriesError(err?.message || "School inquiries could not be loaded.");
+      } finally {
+        if (active) setInquiriesLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [api, school]);
+
+  const updateInquiryStatus = async (inquiry, status) => {
+    setInquiryStatusBusy(inquiry.id);
+    setInquiriesError("");
+    setInquiriesNotice("");
+    try {
+      const response = await api.updateSchoolInquiryStatus(inquiry.id, { status });
+      const data = unwrap(response);
+      const updated = data?.inquiry || data;
+      if (!updated?.id) throw new Error("The backend did not confirm this inquiry update.");
+      setSchoolInquiries((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setInquiriesNotice("Inquiry status updated to " + updated.status + ".");
+    } catch (err) {
+      setInquiriesError(err?.message || "Could not update inquiry status.");
+    } finally {
+      setInquiryStatusBusy("");
+    }
+  };
 
   const addDomain = async (event) => {
     event.preventDefault();
@@ -854,6 +911,45 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-blue-700 dark:text-blue-300">Admissions and contact</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950 dark:text-white">School inquiry inbox</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Messages submitted through the public contact form are stored privately for this school's owner to review. They are not emailed automatically.</p>
+          </div>
+          <button type="button" onClick={() => { setInquiriesNotice(""); void loadInquiries().catch(() => {}); }} disabled={inquiriesLoading || Boolean(inquiryStatusBusy)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200"><Globe size={15} />Refresh inbox</button>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          <span className="rounded-full bg-blue-50 px-3 py-1.5 text-blue-800 dark:bg-blue-950 dark:text-blue-200">New: {schoolInquiries.filter((item) => item.status === "new").length}</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 dark:bg-slate-800 dark:text-slate-200">Read: {schoolInquiries.filter((item) => item.status === "read").length}</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 dark:bg-slate-800 dark:text-slate-200">Archived: {schoolInquiries.filter((item) => item.status === "archived").length}</span>
+        </div>
+        {inquiriesError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">{inquiriesError}</div>}
+        {inquiriesNotice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">{inquiriesNotice}</div>}
+        {inquiriesLoading && <p className="flex items-center gap-2 text-sm text-slate-500"><Loader size={16} className="animate-spin" />Loading inquiries...</p>}
+        {!inquiriesLoading && schoolInquiries.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm leading-6 text-slate-500 dark:border-slate-700 dark:text-slate-400">No public inquiries have been received yet. New submissions will appear here after the backend saves them.</div>}
+        <div className="space-y-3">
+          {schoolInquiries.map((item) => (
+            <article key={item.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2"><h4 className="text-sm font-bold text-slate-950 dark:text-white">{item.name}</h4><span className={"rounded-full px-2.5 py-1 text-[11px] font-bold " + (item.status === "new" ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200" : item.status === "archived" ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200")}>{item.status || "new"}</span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold capitalize text-slate-600 dark:bg-slate-800 dark:text-slate-300">{item.topic || "general"}</span></div>
+                  <p className="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">{item.email}{item.phone ? " · " + item.phone : ""}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleString() : "Date unavailable"}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.email && <a href={"mailto:" + item.email} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">Reply by email</a>}
+                  {item.status === "new" && <button type="button" onClick={() => void updateInquiryStatus(item, "read")} disabled={Boolean(inquiryStatusBusy)} className="inline-flex min-h-9 items-center justify-center rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">{inquiryStatusBusy === item.id ? <Loader size={13} className="animate-spin" /> : "Mark read"}</button>}
+                  {item.status !== "archived" ? <button type="button" onClick={() => void updateInquiryStatus(item, "archived")} disabled={Boolean(inquiryStatusBusy)} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">Archive</button> : <button type="button" onClick={() => void updateInquiryStatus(item, "new")} disabled={Boolean(inquiryStatusBusy)} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">Reopen</button>}
+                </div>
+              </div>
+              <p className="mt-4 whitespace-pre-line break-words rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700 dark:bg-slate-900 dark:text-slate-200">{item.message}</p>
+            </article>
+          ))}
         </div>
       </section>
 
