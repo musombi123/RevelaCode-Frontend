@@ -338,8 +338,9 @@ function PublicOfferingGrid({ items, emptyTitle, emptyDescription, icon: Icon = 
   return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item, index) => renderItem(item, index))}</div>;
 }
 
-export default function ElimuPublicSchoolPage() {
-  const { schoolSlug = "" } = useParams();
+export default function ElimuPublicSchoolPage({ customDomainMode = false } = {}) {
+  const { schoolSlug: routeSchoolSlug = "" } = useParams();
+  const schoolSlug = customDomainMode ? "" : routeSchoolSlug;
   const location = useLocation();
   const navigate = useNavigate();
   const api = useElimuApi();
@@ -359,11 +360,12 @@ export default function ElimuPublicSchoolPage() {
 
   const pageSegment = useMemo(() => {
     const segments = location.pathname.split("/").filter(Boolean);
-    return String(segments[1] || "").toLowerCase();
-  }, [location.pathname]);
+    return String(segments[customDomainMode ? 0 : 1] || "").toLowerCase();
+  }, [location.pathname, customDomainMode]);
   const canonicalPage = ROUTE_ALIASES[pageSegment] ?? pageSegment;
   const validPages = useMemo(() => new Set(NAV_ITEMS.map((item) => item.path)), []);
   const schoolName = text(school, ["school_name", "name", "display_name", "title"], String(schoolSlug).split("-").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") || "School");
+  const publicSchoolSlug = text(school, ["public_slug", "slug", "school_code", "code"], schoolSlug);
   const websiteTheme = useMemo(() => normalizePublicTheme(school?.website_theme), [school]);
   const websiteFontFamily = websiteTheme.font_style === "classic"
     ? "Georgia, 'Times New Roman', serif"
@@ -384,11 +386,11 @@ export default function ElimuPublicSchoolPage() {
     color: websiteTheme.body,
     fontFamily: websiteFontFamily,
   };
-  const homeUrl = absoluteSchoolUrl(schoolSlug);
-  const pageUrl = useCallback((page = "") => absoluteSchoolUrl(schoolSlug, page), [schoolSlug]);
+  const homeUrl = customDomainMode ? "/" : absoluteSchoolUrl(schoolSlug);
+  const pageUrl = useCallback((page = "") => customDomainMode ? (page ? "/" + page : "/") : absoluteSchoolUrl(schoolSlug, page), [customDomainMode, schoolSlug]);
 
   const loadPage = useCallback(async ({ silent = false, signal } = {}) => {
-    if (!schoolSlug) {
+    if (!customDomainMode && !schoolSlug) {
       setError("The school URL does not contain a school slug.");
       setLoading(false);
       return;
@@ -402,42 +404,50 @@ export default function ElimuPublicSchoolPage() {
     try {
       let foundSchool = null;
       let lastError = null;
-      for (const params of [{ school_code: schoolSlug }, { code: schoolSlug }]) {
-        if (signal?.aborted) return;
+      if (customDomainMode) {
         try {
-          const response = await api.getPublicSchool(params, { signal });
-          foundSchool = getSchool(response, schoolSlug, true);
-          if (foundSchool) break;
+          const response = await api.getPublicSchoolByDomain({ hostname: window.location.hostname }, { signal });
+          foundSchool = getSchool(response, window.location.hostname, true);
         } catch (requestError) {
           if (requestError?.name === "AbortError") return;
           lastError = requestError;
         }
-      }
-
-      if (!foundSchool && typeof api.getPublicSchools === "function") {
-        try {
-          const directoryResponse = await api.getPublicSchools({ limit: 100 }, { signal });
-          foundSchool = getSchool(directoryResponse, schoolSlug, false);
-          if (!foundSchool) {
-            const directory = records(directoryResponse, ["schools", "items", "results"]);
-            foundSchool = directory.find((item) => schoolSlugOf(item) === schoolSlug.toLowerCase()) || null;
+      } else {
+        for (const params of [{ school_code: schoolSlug }, { code: schoolSlug }]) {
+          if (signal?.aborted) return;
+          try {
+            const response = await api.getPublicSchool(params, { signal });
+            foundSchool = getSchool(response, schoolSlug, true);
+            if (foundSchool) break;
+          } catch (requestError) {
+            if (requestError?.name === "AbortError") return;
+            lastError = requestError;
           }
-        } catch (requestError) {
-          if (requestError?.name === "AbortError") return;
-          lastError = requestError;
+        }
+        if (!foundSchool && typeof api.getPublicSchools === "function") {
+          try {
+            const directoryResponse = await api.getPublicSchools({ limit: 100 }, { signal });
+            foundSchool = getSchool(directoryResponse, schoolSlug, false);
+            if (!foundSchool) {
+              const directory = records(directoryResponse, ["schools", "items", "results"]);
+              foundSchool = directory.find((item) => schoolSlugOf(item) === schoolSlug.toLowerCase()) || null;
+            }
+          } catch (requestError) {
+            if (requestError?.name === "AbortError") return;
+            lastError = requestError;
+          }
         }
       }
-
       if (signal?.aborted) return;
       if (!foundSchool) {
-        throw new Error(lastError?.message || `No published school was found for "${schoolSlug}". Check its public profile slug and publication status.`);
+        throw new Error(lastError?.message || (customDomainMode ? "No active verified school website is configured for this hostname." : `No published school was found for "${schoolSlug}". Check its public profile slug and publication status.`));
       }
       setSchool(foundSchool);
 
       const id = text(foundSchool, ["id", "_id", "school_id"]);
-      const query = id ? { school_id: id, limit: 50 } : { school_code: schoolSlug, limit: 50 };
+      const query = id ? { school_id: id, limit: 50 } : { school_code: publicSchoolSlug, limit: 50 };
       const mediaRequest = typeof api.getPublicSchoolMedia === "function"
-        ? api.getPublicSchoolMedia(schoolSlug, { limit: 50 }, { signal })
+        ? api.getPublicSchoolMedia(publicSchoolSlug || schoolSlug, { limit: 50 }, { signal })
         : Promise.reject(new Error("Public school media is not configured."));
       const results = await Promise.allSettled([
         api.getPublicEvents(query, { signal }),
@@ -472,7 +482,7 @@ export default function ElimuPublicSchoolPage() {
         setRefreshing(false);
       }
     }
-  }, [api, schoolSlug]);
+  }, [api, schoolSlug, customDomainMode]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -512,7 +522,14 @@ export default function ElimuPublicSchoolPage() {
       window.document.head.appendChild(canonical);
     }
     const previousCanonical = canonical.getAttribute("href");
-    canonical.setAttribute("href", window.location.origin + location.pathname);
+    const primaryDomain = text(school, ["primary_domain"]);
+    const canonicalPath = canonicalPage ? "/" + canonicalPage : "/";
+    const canonicalUrl = primaryDomain
+      ? "https://" + primaryDomain + canonicalPath
+      : customDomainMode
+        ? window.location.origin + canonicalPath
+        : window.location.origin + location.pathname;
+    canonical.setAttribute("href", canonicalUrl);
     return () => {
       window.document.title = oldTitle || "RevelaCode";
       if (createdDescriptionMeta) descriptionMeta.remove();
@@ -522,7 +539,7 @@ export default function ElimuPublicSchoolPage() {
       else if (previousCanonical == null) canonical.removeAttribute("href");
       else canonical.setAttribute("href", previousCanonical);
     };
-  }, [school, schoolName, location.pathname]);
+  }, [school, schoolName, location.pathname, canonicalPage, customDomainMode]);
 
   const handleDownload = useCallback(async (document) => {
     const id = recordId(document);
@@ -726,13 +743,13 @@ export default function ElimuPublicSchoolPage() {
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
             <Link
-              to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`}
+              to={`/jumuiya/elimu/parent?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               <Users size={16} /> Parent portal
             </Link>
             <Link
-              to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`}
+              to={`/jumuiya/elimu/student?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-900/15 transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               <GraduationCap size={16} /> Student portal <ArrowRight size={14} />
@@ -796,14 +813,14 @@ export default function ElimuPublicSchoolPage() {
               </div>
               <div className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
                 <Link
-                  to={`/jumuiya/elimu/parent?school=${encodeURIComponent(schoolSlug)}`}
+                  to={`/jumuiya/elimu/parent?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                 >
                   <Users size={17} /> Parent portal <ArrowRight size={14} />
                 </Link>
                 <Link
-                  to={`/jumuiya/elimu/student?school=${encodeURIComponent(schoolSlug)}`}
+                  to={`/jumuiya/elimu/student?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                 >
