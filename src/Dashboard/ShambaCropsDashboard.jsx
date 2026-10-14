@@ -124,10 +124,10 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+      <label className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {label}
         {required && (
-          <span className="ml-1 text-emerald-600">
+          <span className="ml-1 text-[#087F5B]">
             *
           </span>
         )}
@@ -149,7 +149,7 @@ const inputClass = `
   w-full
   rounded-xl
   border
-  border-slate-200
+  border-[#DCE5E1]
   bg-white
   px-3
   py-2.5
@@ -190,7 +190,7 @@ function CropCard({ crop }) {
       ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
       : normalizedStatus === "deleted"
         ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-        : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300";
+        : "bg-emerald-50 text-[#075E46] dark:bg-emerald-950/40 dark:text-emerald-300";
 
   const hasArea =
     crop?.area !== undefined &&
@@ -203,28 +203,28 @@ function CropCard({ crop }) {
     crop?.quantity !== "";
 
   return (
-    <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)] transition hover:border-emerald-100 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+    <article className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)] transition hover:border-emerald-100 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
           <Sprout size={20} />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
+              <h3 className="truncate font-black text-slate-900 dark:text-white text-base leading-snug text-[#172B25]">
                 {getCropName(crop)}
               </h3>
 
               {crop?.variety && (
-                <p className="mt-0.5 truncate text-[9px] text-slate-400">
+                <p className="mt-0.5 truncate text-[13px] text-slate-400">
                   {crop.variety}
                 </p>
               )}
             </div>
 
             <span
-              className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-black ${statusClass}`}
+              className={`shrink-0 rounded-full px-2 py-1 text-[13px] font-black ${statusClass}`}
             >
               {statusLabel}
             </span>
@@ -234,10 +234,10 @@ function CropCard({ crop }) {
             <div className="mt-3 grid grid-cols-2 gap-2">
               {hasArea && (
                 <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
-                  <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                  <div className="text-[13px] font-bold uppercase tracking-wide text-slate-400">
                     Area
                   </div>
-                  <div className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-200">
+                  <div className="mt-0.5 text-[13px] font-black text-slate-700 dark:text-slate-200">
                     {crop.area} {crop?.area_unit || "acres"}
                   </div>
                 </div>
@@ -245,10 +245,10 @@ function CropCard({ crop }) {
 
               {hasQuantity && (
                 <div className="rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-800/70">
-                  <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                  <div className="text-[13px] font-bold uppercase tracking-wide text-slate-400">
                     Quantity
                   </div>
-                  <div className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-200">
+                  <div className="mt-0.5 text-[13px] font-black text-slate-700 dark:text-slate-200">
                     {crop.quantity} {crop?.quantity_unit || "kg"}
                   </div>
                 </div>
@@ -260,14 +260,14 @@ function CropCard({ crop }) {
             crop?.expected_harvest_date) && (
             <div className="mt-3 flex flex-wrap gap-2">
               {crop?.planting_date && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1.5 text-[8px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1.5 text-[13px] font-bold text-[#075E46] dark:bg-emerald-950/40 dark:text-emerald-300">
                   <CalendarDays size={10} />
                   Planted {formatDate(crop.planting_date) || crop.planting_date}
                 </span>
               )}
 
               {crop?.expected_harvest_date && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1.5 text-[8px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1.5 text-[13px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                   <CalendarDays size={10} />
                   Harvest {formatDate(crop.expected_harvest_date) || crop.expected_harvest_date}
                 </span>
@@ -276,7 +276,7 @@ function CropCard({ crop }) {
           )}
 
           {crop?.notes && (
-            <p className="mt-3 border-t border-slate-50 pt-3 text-[9px] leading-5 text-slate-400 dark:border-slate-800">
+            <p className="mt-3 border-t border-slate-50 pt-3 text-[13px] leading-5 text-slate-400 dark:border-slate-800">
               {crop.notes}
             </p>
           )}
@@ -317,18 +317,18 @@ function AddCropModal({
       aria-modal="true"
       aria-labelledby="add-crop-title"
     >
-      <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-4 dark:border-slate-800 sm:px-5">
+      <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#DCE5E1] bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#DCE5E1] px-4 py-4 dark:border-slate-800 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
               <Sprout size={18} />
             </div>
 
             <div className="min-w-0">
-              <h2 id="add-crop-title" className="text-sm font-black text-slate-900 dark:text-white">
+              <h2 id="add-crop-title" className="font-black text-slate-900 dark:text-white text-xl leading-snug tracking-tight text-[#172B25]">
                 Add Crop
               </h2>
-              <p className="mt-0.5 max-w-[260px] truncate text-[9px] text-slate-400">
+              <p className="mt-0.5 max-w-[260px] truncate text-[13px] text-slate-400">
                 {farm?.name || "Selected farm"}
               </p>
             </div>
@@ -348,7 +348,7 @@ function AddCropModal({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <form onSubmit={onSubmit} className="space-y-4 p-4 sm:p-5">
             {error && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[10px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[13px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
                 {error}
               </div>
             )}
@@ -472,7 +472,7 @@ function AddCropModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#087F5B] px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus size={17} />
               {saving ? "Saving Crop..." : "Add Crop"}
@@ -829,18 +829,18 @@ export default function ShambaCropsDashboard({
   // =======================================================
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] pb-24">
+    <div className="mx-auto w-full max-w-none pb-24">
       {/* ==================================================
           PAGE TOOLBAR
       ================================================== */}
 
-      <section className="mb-5 border-b border-slate-200 pb-4 dark:border-slate-800">
+      <section className="mb-5 border-b border-[#DCE5E1] pb-4 dark:border-slate-800">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => onNavigate?.("shamba")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#DCE5E1] bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#075E46] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
               aria-label="Back to Shamba"
               title="Back to Shamba"
             >
@@ -849,15 +849,15 @@ export default function ShambaCropsDashboard({
 
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
                   <Sprout size={15} />
                 </span>
-                <h1 className="truncate text-base font-black tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                <h1 className="truncate font-black tracking-tight text-slate-900 dark:text-white text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]">
                   Crops
                 </h1>
               </div>
 
-              <div className="mt-0.5 flex items-center gap-1.5 text-[9px] font-medium text-slate-400">
+              <div className="mt-0.5 flex items-center gap-1.5 text-[13px] font-medium text-slate-400">
                 <span>Shamba</span>
                 <span>•</span>
                 <span>Crop workspace</span>
@@ -878,7 +878,7 @@ export default function ShambaCropsDashboard({
               type="button"
               onClick={handleRefresh}
               disabled={refreshing || loadingFarms}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DCE5E1] bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#075E46] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-emerald-950/30"
               aria-label="Refresh crops"
               title="Refresh"
             >
@@ -892,7 +892,7 @@ export default function ShambaCropsDashboard({
               type="button"
               onClick={openAddCrop}
               disabled={loadingFarms || !selectedFarmId}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={15} />
               Add Crop
@@ -906,7 +906,7 @@ export default function ShambaCropsDashboard({
       ================================================== */}
 
       {error && !modalOpen && (
-        <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+        <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
           {error}
         </div>
       )}
@@ -915,15 +915,15 @@ export default function ShambaCropsDashboard({
           FARM SELECTOR
       ================================================== */}
 
-      <section className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+      <section className="mb-5 rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
               <Tractor size={17} />
             </div>
 
             <div className="min-w-0">
-              <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-400">
+              <div className="text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                 Farm workspace
               </div>
 
@@ -931,7 +931,7 @@ export default function ShambaCropsDashboard({
                 {selectedFarm?.name || "Select a farm"}
               </div>
 
-              <div className="mt-0.5 flex items-center gap-1 text-[9px] text-slate-400">
+              <div className="mt-0.5 flex items-center gap-1 text-[13px] text-slate-400">
                 <MapPin size={10} />
                 <span className="truncate">
                   {getFarmLocation(selectedFarm)}
@@ -964,7 +964,7 @@ export default function ShambaCropsDashboard({
               <button
                 type="button"
                 onClick={() => onNavigate?.("shamba/farms")}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-[10px] font-black text-emerald-700 transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-[13px] font-black text-[#075E46] transition hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
               >
                 <Plus size={12} />
                 Add a farm first
@@ -974,9 +974,9 @@ export default function ShambaCropsDashboard({
         </div>
 
         {selectedFarm && (
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 dark:border-slate-800 sm:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#DCE5E1] pt-4 dark:border-slate-800 sm:grid-cols-3">
             <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70">
-              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-slate-400">
                 Farm area
               </div>
               <div className="mt-0.5 text-sm font-black text-slate-800 dark:text-slate-100">
@@ -987,16 +987,16 @@ export default function ShambaCropsDashboard({
             </div>
 
             <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70">
-              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-slate-400">
                 Crop records
               </div>
-              <div className="mt-0.5 text-sm font-black text-emerald-700 dark:text-emerald-300">
+              <div className="mt-0.5 text-sm font-black text-[#075E46] dark:text-emerald-300">
                 {crops.length}
               </div>
             </div>
 
             <div className="col-span-2 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/70 sm:col-span-1">
-              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-slate-400">
                 Active crops
               </div>
               <div className="mt-0.5 text-sm font-black text-slate-800 dark:text-slate-100">
@@ -1011,27 +1011,27 @@ export default function ShambaCropsDashboard({
           SUMMARY
       ================================================== */}
 
-      <section className="mb-5 grid grid-cols-3 gap-2">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+      <section className="mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[13px] font-black uppercase tracking-wide text-slate-400">
             Total crops
           </div>
-          <div className="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
+          <div className="mt-1 text-xl font-black text-[#075E46] dark:text-emerald-300">
             {crops.length}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+        <div className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[13px] font-black uppercase tracking-wide text-slate-400">
             Active
           </div>
-          <div className="mt-1 text-xl font-black text-emerald-700 dark:text-emerald-300">
+          <div className="mt-1 text-xl font-black text-[#075E46] dark:text-emerald-300">
             {activeCropCount}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+        <div className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div className="text-[13px] font-black uppercase tracking-wide text-slate-400">
             Harvested
           </div>
           <div className="mt-1 text-xl font-black text-amber-600 dark:text-amber-300">
@@ -1047,10 +1047,10 @@ export default function ShambaCropsDashboard({
       <section>
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-sm font-black text-slate-900 dark:text-white">
+            <h2 className="font-black text-slate-900 dark:text-white text-xl leading-snug tracking-tight text-[#172B25]">
               Crops on this farm
             </h2>
-            <p className="mt-0.5 text-[9px] text-slate-400">
+            <p className="mt-0.5 text-[13px] text-slate-400">
               Track what is growing and when it should be harvested.
             </p>
           </div>
@@ -1059,7 +1059,7 @@ export default function ShambaCropsDashboard({
             <button
               type="button"
               onClick={openAddCrop}
-              className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300"
+              className="inline-flex items-center gap-1 text-[13px] font-black text-[#087F5B] transition hover:text-[#075E46] dark:text-emerald-300"
             >
               <Plus size={11} />
               Add crop
@@ -1086,8 +1086,8 @@ export default function ShambaCropsDashboard({
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/40 px-5 py-12 text-center dark:border-emerald-900/60 dark:bg-emerald-950/15">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/40 px-5 py-12 text-center dark:border-emerald-900/60 dark:bg-emerald-950/15">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
               <Leaf size={25} />
             </div>
 
@@ -1095,7 +1095,7 @@ export default function ShambaCropsDashboard({
               {selectedFarmId ? "No crops yet" : "Select a farm"}
             </div>
 
-            <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-slate-400">
+            <p className="mx-auto mt-1 max-w-sm text-[13px] leading-5 text-slate-400">
               {selectedFarmId
                 ? "Add your first crop to start tracking its growth and harvest."
                 : "Choose a farm above to view and manage its crop records."}
@@ -1105,7 +1105,7 @@ export default function ShambaCropsDashboard({
               <button
                 type="button"
                 onClick={openAddCrop}
-                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98]"
               >
                 <Plus size={15} />
                 Add First Crop
@@ -1114,7 +1114,7 @@ export default function ShambaCropsDashboard({
               <button
                 type="button"
                 onClick={() => onNavigate?.("shamba/farms")}
-                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98]"
               >
                 <Tractor size={15} />
                 Open Farms
@@ -1129,7 +1129,7 @@ export default function ShambaCropsDashboard({
       ================================================== */}
 
       {crops.length > 0 && !loadingCrops && (
-        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-[9px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300">
+        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-[13px] font-semibold text-[#075E46] dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300">
           <CheckCircle2 size={14} />
           Your crop records are ready for activity and harvest tracking.
         </div>

@@ -20,7 +20,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -118,7 +118,7 @@ function Field({
     <div>
       <label
         className="
-          text-[10px]
+          text-[13px]
           font-black
           uppercase
           tracking-wide
@@ -128,7 +128,7 @@ function Field({
         {label}
 
         {required && (
-          <span className="ml-1 text-emerald-600">
+          <span className="ml-1 text-[#087F5B]">
             *
           </span>
         )}
@@ -146,7 +146,7 @@ const inputClass = `
   w-full
   rounded-xl
   border
-  border-slate-200
+  border-[#DCE5E1]
   bg-white
   px-3
   py-2.5
@@ -177,7 +177,7 @@ function HarvestCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
       "
@@ -222,12 +222,7 @@ function HarvestCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    truncate
-                    text-sm
-                    font-black
-                    text-slate-900
-                  "
+                  className="truncate font-black text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {harvest?.crop_name ||
                     harvest?.crop ||
@@ -238,7 +233,7 @@ function HarvestCard({
                   <div
                     className="
                       mt-1
-                      text-[9px]
+                      text-[13px]
                       text-slate-400
                     "
                   >
@@ -256,9 +251,9 @@ function HarvestCard({
                   bg-emerald-50
                   px-2
                   py-1
-                  text-[8px]
+                  text-[13px]
                   font-black
-                  text-emerald-700
+                  text-[#075E46]
                 "
               >
                 Recorded
@@ -286,7 +281,7 @@ function HarvestCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -299,7 +294,7 @@ function HarvestCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -318,7 +313,7 @@ function HarvestCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -331,7 +326,7 @@ function HarvestCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -354,7 +349,7 @@ function HarvestCard({
                   border-t
                   border-slate-50
                   pt-3
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -419,7 +414,7 @@ function AddHarvestModal({
           max-w-xl
           flex-col
           overflow-hidden
-          rounded-3xl
+          rounded-2xl
           bg-white
           shadow-2xl
         "
@@ -434,7 +429,7 @@ function AddHarvestModal({
             items-center
             justify-between
             border-b
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-4
             sm:px-5
@@ -459,11 +454,7 @@ function AddHarvestModal({
 
             <div>
               <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
+                className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Record Harvest
               </h2>
@@ -473,7 +464,7 @@ function AddHarvestModal({
                   mt-0.5
                   max-w-[240px]
                   truncate
-                  text-[9px]
+                  text-[13px]
                   text-slate-400
                 "
               >
@@ -530,7 +521,7 @@ function AddHarvestModal({
                   bg-red-50
                   px-3
                   py-3
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-red-700
                 "
@@ -753,14 +744,14 @@ function AddHarvestModal({
                 justify-center
                 gap-2
                 rounded-xl
-                bg-emerald-600
+                bg-[#087F5B]
                 px-4
                 py-3
                 text-sm
                 font-black
                 text-white
                 transition
-                hover:bg-emerald-700
+                hover:bg-[#075E46]
                 active:scale-[0.99]
                 disabled:cursor-not-allowed
                 disabled:opacity-60
@@ -788,6 +779,7 @@ function AddHarvestModal({
 
 export default function ShambaHarvestsDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -1204,7 +1196,8 @@ export default function ShambaHarvestsDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Harvests"
       subtitle="Record and track what your farms produce."
       activeHub="shamba"
@@ -1215,7 +1208,7 @@ export default function ShambaHarvestsDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -1248,11 +1241,11 @@ export default function ShambaHarvestsDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -1275,15 +1268,15 @@ export default function ShambaHarvestsDashboard({
               justify-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
               active:scale-[0.98]
               disabled:cursor-not-allowed
               disabled:opacity-50
@@ -1304,7 +1297,7 @@ export default function ShambaHarvestsDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             bg-gradient-to-br
             from-amber-400
             via-orange-400
@@ -1328,7 +1321,7 @@ export default function ShambaHarvestsDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.18em]
@@ -1339,12 +1332,7 @@ export default function ShambaHarvestsDashboard({
               </div>
 
               <h1
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-tight
-                "
+                className="mt-1 font-black tracking-tight text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Know what your farm produces.
               </h1>
@@ -1353,7 +1341,7 @@ export default function ShambaHarvestsDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-white/80
                 "
@@ -1400,7 +1388,7 @@ export default function ShambaHarvestsDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-red-700
             "
@@ -1419,7 +1407,7 @@ export default function ShambaHarvestsDashboard({
             mb-5
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-4
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1438,7 +1426,7 @@ export default function ShambaHarvestsDashboard({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Tractor size={17} />
@@ -1448,7 +1436,7 @@ export default function ShambaHarvestsDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.16em]
@@ -1486,7 +1474,7 @@ export default function ShambaHarvestsDashboard({
                       w-full
                       rounded-xl
                       border
-                      border-slate-200
+                      border-[#DCE5E1]
                       bg-white
                       px-3
                       py-2.5
@@ -1523,7 +1511,7 @@ export default function ShambaHarvestsDashboard({
                         flex
                         items-center
                         gap-1
-                        text-[9px]
+                        text-[13px]
                         text-slate-400
                       "
                     >
@@ -1541,7 +1529,7 @@ export default function ShambaHarvestsDashboard({
               ) : (
                 <div className="mt-1">
 
-                  <div className="text-xs font-bold text-slate-700">
+                  <div className="text-[13px] font-bold text-slate-700">
                     No farm available
                   </div>
 
@@ -1554,9 +1542,9 @@ export default function ShambaHarvestsDashboard({
                     }
                     className="
                       mt-2
-                      text-[9px]
+                      text-[13px]
                       font-black
-                      text-emerald-600
+                      text-[#087F5B]
                     "
                   >
                     Add a farm first →
@@ -1590,7 +1578,7 @@ export default function ShambaHarvestsDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1598,7 +1586,7 @@ export default function ShambaHarvestsDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1613,7 +1601,7 @@ export default function ShambaHarvestsDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loadingHarvests
@@ -1627,7 +1615,7 @@ export default function ShambaHarvestsDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1635,7 +1623,7 @@ export default function ShambaHarvestsDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1650,7 +1638,7 @@ export default function ShambaHarvestsDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loadingCrops
@@ -1665,7 +1653,7 @@ export default function ShambaHarvestsDashboard({
               col-span-2
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1674,7 +1662,7 @@ export default function ShambaHarvestsDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1697,7 +1685,7 @@ export default function ShambaHarvestsDashboard({
                 : totalQuantity}
             </div>
 
-            <div className="mt-0.5 text-[8px] text-slate-400">
+            <div className="mt-0.5 text-[13px] text-slate-400">
               Recorded units
             </div>
           </div>
@@ -1724,11 +1712,7 @@ export default function ShambaHarvestsDashboard({
             <div>
 
               <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
+                className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Harvest History
               </h2>
@@ -1736,7 +1720,7 @@ export default function ShambaHarvestsDashboard({
               <p
                 className="
                   mt-0.5
-                  text-[9px]
+                  text-[13px]
                   text-slate-400
                 "
               >
@@ -1755,7 +1739,7 @@ export default function ShambaHarvestsDashboard({
                   bg-amber-50
                   px-2
                   py-1.5
-                  text-[8px]
+                  text-[13px]
                   font-black
                   text-amber-700
                 "
@@ -1819,7 +1803,7 @@ export default function ShambaHarvestsDashboard({
           ) : (
             <div
               className="
-                rounded-3xl
+                rounded-2xl
                 border
                 border-dashed
                 border-amber-200
@@ -1847,12 +1831,7 @@ export default function ShambaHarvestsDashboard({
               </div>
 
               <h2
-                className="
-                  mt-4
-                  text-sm
-                  font-black
-                  text-slate-800
-                "
+                className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 No harvests recorded
               </h2>
@@ -1862,7 +1841,7 @@ export default function ShambaHarvestsDashboard({
                   mx-auto
                   mt-1
                   max-w-sm
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -1885,14 +1864,14 @@ export default function ShambaHarvestsDashboard({
                   items-center
                   gap-1.5
                   rounded-xl
-                  bg-emerald-600
+                  bg-[#087F5B]
                   px-4
                   py-2.5
-                  text-[10px]
+                  text-[13px]
                   font-black
                   text-white
                   transition
-                  hover:bg-emerald-700
+                  hover:bg-[#075E46]
                   disabled:cursor-not-allowed
                   disabled:opacity-50
                 "
@@ -1925,9 +1904,9 @@ export default function ShambaHarvestsDashboard({
                 bg-emerald-50/60
                 px-4
                 py-3
-                text-[9px]
+                text-[13px]
                 font-semibold
-                text-emerald-700
+                text-[#075E46]
               "
             >
               <CheckCircle2 size={14} />
@@ -1961,6 +1940,6 @@ export default function ShambaHarvestsDashboard({
           onSubmit={handleSubmit}
         />
       )}
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }

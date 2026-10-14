@@ -24,7 +24,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -115,13 +115,13 @@ function CategoryButton({
         rounded-xl
         px-3
         py-2
-        text-[9px]
+        text-[13px]
         font-black
         transition
         ${
           active
-            ? "bg-emerald-600 text-white shadow-sm"
-            : "border border-slate-100 bg-white text-slate-500 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-700"
+            ? "bg-[#087F5B] text-white shadow-sm"
+            : "border border-[#DCE5E1] bg-white text-slate-500 hover:border-emerald-100 hover:bg-emerald-50 hover:text-[#075E46]"
         }
       `}
     >
@@ -150,7 +150,7 @@ function MarketCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
         transition
@@ -174,7 +174,7 @@ function MarketCard({
               justify-center
               rounded-2xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <Leaf size={20} />
@@ -187,13 +187,7 @@ function MarketCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    line-clamp-2
-                    text-sm
-                    font-black
-                    leading-5
-                    text-slate-900
-                  "
+                  className="line-clamp-2 font-black leading-5 text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {listing?.title ||
                     "Produce listing"}
@@ -209,9 +203,9 @@ function MarketCard({
                       bg-emerald-50
                       px-2
                       py-1
-                      text-[8px]
+                      text-[13px]
                       font-black
-                      text-emerald-700
+                      text-[#075E46]
                     "
                   >
                     <Tag size={9} />
@@ -233,7 +227,7 @@ function MarketCard({
                 </div>
 
                 {listing?.unit && (
-                  <div className="mt-0.5 text-[8px] text-slate-400">
+                  <div className="mt-0.5 text-[13px] text-slate-400">
                     / {listing.unit}
                   </div>
                 )}
@@ -253,7 +247,7 @@ function MarketCard({
             className="
               mt-3
               line-clamp-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-slate-500
             "
@@ -295,7 +289,7 @@ function MarketCard({
             <span
               className="
                 truncate
-                text-[9px]
+                text-[13px]
                 font-semibold
                 text-slate-500
               "
@@ -326,7 +320,7 @@ function MarketCard({
               <span
                 className="
                   truncate
-                  text-[9px]
+                  text-[13px]
                   font-semibold
                   text-slate-500
                 "
@@ -355,7 +349,7 @@ function MarketCard({
               <span
                 className="
                   truncate
-                  text-[9px]
+                  text-[13px]
                   font-semibold
                   text-slate-500
                 "
@@ -387,11 +381,11 @@ function MarketCard({
 
         <div className="min-w-0">
 
-          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+          <div className="text-[13px] font-black uppercase tracking-wide text-slate-400">
             Seller
           </div>
 
-          <div className="mt-0.5 truncate text-[10px] font-bold text-slate-700">
+          <div className="mt-0.5 truncate text-[13px] font-bold text-slate-700">
             {listing?.seller_name ||
               listing?.seller ||
               "Shamba seller"}
@@ -410,9 +404,9 @@ function MarketCard({
             bg-emerald-50
             px-2
             py-1.5
-            text-[8px]
+            text-[13px]
             font-black
-            text-emerald-700
+            text-[#075E46]
           "
         >
           <TrendingUp size={9} />
@@ -436,7 +430,7 @@ function EmptyMarket({
   return (
     <div
       className="
-        rounded-3xl
+        rounded-2xl
         border
         border-dashed
         border-emerald-200
@@ -457,7 +451,7 @@ function EmptyMarket({
           justify-center
           rounded-2xl
           bg-emerald-50
-          text-emerald-600
+          text-[#087F5B]
         "
       >
         {filtered ? (
@@ -468,12 +462,7 @@ function EmptyMarket({
       </div>
 
       <h2
-        className="
-          mt-4
-          text-sm
-          font-black
-          text-slate-800
-        "
+        className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
       >
         {filtered
           ? "No matching listings"
@@ -485,7 +474,7 @@ function EmptyMarket({
           mx-auto
           mt-1
           max-w-sm
-          text-[10px]
+          text-[13px]
           leading-5
           text-slate-400
         "
@@ -505,14 +494,14 @@ function EmptyMarket({
             items-center
             gap-1.5
             rounded-xl
-            bg-emerald-600
+            bg-[#087F5B]
             px-4
             py-2.5
-            text-[10px]
+            text-[13px]
             font-black
             text-white
             transition
-            hover:bg-emerald-700
+            hover:bg-[#075E46]
             active:scale-[0.98]
           "
         >
@@ -532,6 +521,7 @@ function EmptyMarket({
 
 export default function ShambaMarketDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -698,7 +688,8 @@ export default function ShambaMarketDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Market"
       subtitle="Discover produce, prices and opportunities."
       activeHub="shamba"
@@ -709,7 +700,7 @@ export default function ShambaMarketDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -740,11 +731,11 @@ export default function ShambaMarketDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -763,15 +754,15 @@ export default function ShambaMarketDashboard({
               justify-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
               active:scale-[0.98]
             "
           >
@@ -790,7 +781,7 @@ export default function ShambaMarketDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             bg-gradient-to-br
             from-orange-400
             via-orange-500
@@ -814,7 +805,7 @@ export default function ShambaMarketDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.18em]
@@ -825,12 +816,7 @@ export default function ShambaMarketDashboard({
               </div>
 
               <h1
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-tight
-                "
+                className="mt-1 font-black tracking-tight text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Find the right market
                 for your produce.
@@ -840,7 +826,7 @@ export default function ShambaMarketDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-white/80
                 "
@@ -891,7 +877,7 @@ export default function ShambaMarketDashboard({
                 backdrop-blur-sm
               "
             >
-              <div className="text-[8px] font-bold uppercase tracking-wide text-white/60">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-white/60">
                 Listings
               </div>
 
@@ -911,7 +897,7 @@ export default function ShambaMarketDashboard({
                 backdrop-blur-sm
               "
             >
-              <div className="text-[8px] font-bold uppercase tracking-wide text-white/60">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-white/60">
                 Categories
               </div>
 
@@ -933,7 +919,7 @@ export default function ShambaMarketDashboard({
                 sm:col-span-1
               "
             >
-              <div className="text-[8px] font-bold uppercase tracking-wide text-white/60">
+              <div className="text-[13px] font-bold uppercase tracking-wide text-white/60">
                 Status
               </div>
 
@@ -956,7 +942,7 @@ export default function ShambaMarketDashboard({
             mb-4
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-3
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1044,7 +1030,7 @@ export default function ShambaMarketDashboard({
 
             <span
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1108,7 +1094,7 @@ export default function ShambaMarketDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-red-700
             "
@@ -1135,11 +1121,7 @@ export default function ShambaMarketDashboard({
           <div>
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               Market Listings
             </h2>
@@ -1147,7 +1129,7 @@ export default function ShambaMarketDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -1173,9 +1155,9 @@ export default function ShambaMarketDashboard({
                 );
               }}
               className="
-                text-[9px]
+                text-[13px]
                 font-black
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               Clear filters
@@ -1249,6 +1231,6 @@ export default function ShambaMarketDashboard({
         )}
 
       </div>
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }

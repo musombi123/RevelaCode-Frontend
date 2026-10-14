@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -70,7 +70,7 @@ const STATUS_CONFIG = {
   completed: {
     label: "Completed",
     className:
-      "bg-emerald-50 text-emerald-700",
+      "bg-emerald-50 text-[#075E46]",
     icon: CheckCircle2,
   },
 
@@ -163,7 +163,7 @@ function OrderCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
       "
@@ -193,7 +193,7 @@ function OrderCard({
               justify-center
               rounded-2xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <Package size={19} />
@@ -219,12 +219,7 @@ function OrderCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    truncate
-                    text-sm
-                    font-black
-                    text-slate-900
-                  "
+                  className="truncate font-black text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {order?.title ||
                     order?.product ||
@@ -234,7 +229,7 @@ function OrderCard({
                 <div
                   className="
                     mt-1
-                    text-[9px]
+                    text-[13px]
                     text-slate-400
                   "
                 >
@@ -256,7 +251,7 @@ function OrderCard({
                   rounded-full
                   px-2
                   py-1.5
-                  text-[8px]
+                  text-[13px]
                   font-black
                   ${config.className}
                 `}
@@ -289,7 +284,7 @@ function OrderCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -302,7 +297,7 @@ function OrderCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -327,7 +322,7 @@ function OrderCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -340,7 +335,7 @@ function OrderCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -367,7 +362,7 @@ function OrderCard({
             gap-2
             rounded-xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-slate-50
             px-3
             py-2.5
@@ -390,7 +385,7 @@ function OrderCard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -404,7 +399,7 @@ function OrderCard({
               className="
                 mt-0.5
                 truncate
-                text-[9px]
+                text-[13px]
                 font-bold
                 text-slate-600
               "
@@ -424,7 +419,7 @@ function OrderCard({
           <div
             className="
               mt-3
-              text-[8px]
+              text-[13px]
               text-slate-400
             "
           >
@@ -460,7 +455,7 @@ function OrderCard({
             flex
             items-center
             gap-1.5
-            text-[8px]
+            text-[13px]
             font-semibold
             text-slate-400
           "
@@ -472,7 +467,7 @@ function OrderCard({
 
         <span
           className="
-            text-[8px]
+            text-[13px]
             font-black
             text-slate-500
           "
@@ -501,7 +496,7 @@ function OrdersEmptyState({
   return (
     <div
       className="
-        rounded-3xl
+        rounded-2xl
         border
         border-dashed
         border-emerald-200
@@ -522,7 +517,7 @@ function OrdersEmptyState({
           justify-center
           rounded-2xl
           bg-emerald-50
-          text-emerald-600
+          text-[#087F5B]
         "
       >
         {selling ? (
@@ -534,12 +529,7 @@ function OrdersEmptyState({
 
 
       <h2
-        className="
-          mt-4
-          text-sm
-          font-black
-          text-slate-800
-        "
+        className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
       >
         No {selling ? "sales" : "purchases"} yet
       </h2>
@@ -550,7 +540,7 @@ function OrdersEmptyState({
           mx-auto
           mt-1
           max-w-sm
-          text-[10px]
+          text-[13px]
           leading-5
           text-slate-400
         "
@@ -576,14 +566,14 @@ function OrdersEmptyState({
           items-center
           gap-1.5
           rounded-xl
-          bg-emerald-600
+          bg-[#087F5B]
           px-4
           py-2.5
-          text-[10px]
+          text-[13px]
           font-black
           text-white
           transition
-          hover:bg-emerald-700
+          hover:bg-[#075E46]
           active:scale-[0.98]
         "
       >
@@ -602,6 +592,7 @@ function OrdersEmptyState({
 
 export default function ShambaOrdersDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -652,7 +643,8 @@ export default function ShambaOrdersDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Orders"
       subtitle="Track your Shamba purchases and sales."
       activeHub="shamba"
@@ -663,7 +655,7 @@ export default function ShambaOrdersDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -694,11 +686,11 @@ export default function ShambaOrdersDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -716,15 +708,15 @@ export default function ShambaOrdersDashboard({
               items-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
             "
           >
             <ShoppingCart size={14} />
@@ -742,7 +734,7 @@ export default function ShambaOrdersDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             bg-gradient-to-br
             from-emerald-600
             via-emerald-500
@@ -766,7 +758,7 @@ export default function ShambaOrdersDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.18em]
@@ -777,12 +769,7 @@ export default function ShambaOrdersDashboard({
               </div>
 
               <h1
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-tight
-                "
+                className="mt-1 font-black tracking-tight text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Keep every farm transaction
                 organized.
@@ -792,7 +779,7 @@ export default function ShambaOrdersDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-white/80
                 "
@@ -835,7 +822,7 @@ export default function ShambaOrdersDashboard({
             mb-4
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-1.5
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -859,12 +846,12 @@ export default function ShambaOrdersDashboard({
                 rounded-xl
                 px-4
                 py-3
-                text-[10px]
+                text-[13px]
                 font-black
                 transition
                 ${
                   mode === "buying"
-                    ? "bg-emerald-600 text-white shadow-sm"
+                    ? "bg-[#087F5B] text-white shadow-sm"
                     : "text-slate-500 hover:bg-slate-50"
                 }
               `}
@@ -885,12 +872,12 @@ export default function ShambaOrdersDashboard({
                 rounded-xl
                 px-4
                 py-3
-                text-[10px]
+                text-[13px]
                 font-black
                 transition
                 ${
                   mode === "selling"
-                    ? "bg-emerald-600 text-white shadow-sm"
+                    ? "bg-[#087F5B] text-white shadow-sm"
                     : "text-slate-500 hover:bg-slate-50"
                 }
               `}
@@ -928,7 +915,7 @@ export default function ShambaOrdersDashboard({
 
             <span
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -967,14 +954,14 @@ export default function ShambaOrdersDashboard({
                     rounded-xl
                     px-3
                     py-2
-                    text-[9px]
+                    text-[13px]
                     font-black
                     transition
                     ${
                       status ===
                       item.key
-                        ? "bg-emerald-600 text-white"
-                        : "border border-slate-100 bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                        ? "bg-[#087F5B] text-white"
+                        : "border border-[#DCE5E1] bg-white text-slate-500 hover:bg-emerald-50 hover:text-[#075E46]"
                     }
                   `}
                 >
@@ -1006,7 +993,7 @@ export default function ShambaOrdersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1014,7 +1001,7 @@ export default function ShambaOrdersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1029,7 +1016,7 @@ export default function ShambaOrdersDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               0
@@ -1041,7 +1028,7 @@ export default function ShambaOrdersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1049,7 +1036,7 @@ export default function ShambaOrdersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1076,7 +1063,7 @@ export default function ShambaOrdersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1084,7 +1071,7 @@ export default function ShambaOrdersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1111,7 +1098,7 @@ export default function ShambaOrdersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1119,7 +1106,7 @@ export default function ShambaOrdersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1153,11 +1140,7 @@ export default function ShambaOrdersDashboard({
           <div className="mb-3">
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               {mode === "buying"
                 ? "My Purchases"
@@ -1167,7 +1150,7 @@ export default function ShambaOrdersDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -1253,7 +1236,7 @@ export default function ShambaOrdersDashboard({
 
             <div
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 text-amber-800
               "
@@ -1264,7 +1247,7 @@ export default function ShambaOrdersDashboard({
             <p
               className="
                 mt-1
-                text-[9px]
+                text-[13px]
                 leading-5
                 text-amber-700/80
               "
@@ -1281,6 +1264,6 @@ export default function ShambaOrdersDashboard({
         </div>
 
       </div>
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }

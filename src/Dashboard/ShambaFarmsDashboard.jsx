@@ -39,7 +39,7 @@ const EMPTY_FORM = {
 };
 
 const INPUT_CLASS = `
-  w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5
+  w-full rounded-xl border border-[#DCE5E1] bg-white px-3 py-2.5
   text-sm text-slate-900 outline-none transition
   placeholder:text-slate-300
   focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
@@ -128,9 +128,9 @@ function displayArea(value) {
 function Field({ label, children, required = false }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+      <label className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {label}
-        {required && <span className="ml-1 text-emerald-600">*</span>}
+        {required && <span className="ml-1 text-[#087F5B]">*</span>}
       </label>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -148,7 +148,7 @@ function FarmCard({ farm }) {
   return (
     <article
       className="
-        rounded-2xl border border-slate-100 bg-white p-4
+        rounded-2xl border border-[#DCE5E1] bg-white p-4
         shadow-[0_4px_18px_rgba(15,23,42,0.035)] transition-all duration-200
         hover:-translate-y-0.5 hover:border-emerald-100 hover:shadow-md
         dark:border-slate-800 dark:bg-slate-900 dark:shadow-none
@@ -156,27 +156,27 @@ function FarmCard({ farm }) {
       "
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-400">
           <Tractor size={20} />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
+              <h3 className="truncate font-black text-slate-900 dark:text-white text-base leading-snug text-[#172B25]">
                 {farm?.name || "Unnamed Farm"}
               </h3>
 
-              <div className="mt-1 flex min-w-0 items-center gap-1 text-[9px] font-medium text-slate-400">
+              <div className="mt-1 flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-400">
                 <MapPin size={10} className="shrink-0" />
                 <span className="truncate">{getFarmLocation(farm)}</span>
               </div>
             </div>
 
             <span
-              className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-black ${
+              className={`shrink-0 rounded-full px-2 py-1 text-[13px] font-black ${
                 isActive
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                  ? "bg-emerald-50 text-[#075E46] dark:bg-emerald-950/50 dark:text-emerald-300"
                   : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
               }`}
             >
@@ -186,21 +186,21 @@ function FarmCard({ farm }) {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {farmSize && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 <Ruler size={10} />
                 {farmSize}
               </span>
             )}
 
             {farm?.soil_type && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 <Sprout size={10} />
                 {farm.soil_type}
               </span>
             )}
 
             {farm?.irrigation && (
-              <span className="rounded-lg bg-slate-50 px-2 py-1.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              <span className="rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 {farm.irrigation}
               </span>
             )}
@@ -209,7 +209,7 @@ function FarmCard({ farm }) {
       </div>
 
       {farm?.description && (
-        <p className="mt-3 border-t border-slate-50 pt-3 text-[9px] leading-5 text-slate-400 dark:border-slate-800">
+        <p className="mt-3 border-t border-slate-50 pt-3 text-[13px] leading-5 text-slate-400 dark:border-slate-800">
           {farm.description}
         </p>
       )}
@@ -223,16 +223,16 @@ function FarmCard({ farm }) {
 
 function SummaryCard({ label, value, icon: Icon, accent = false }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+    <div className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.035)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">
+          <div className="text-[13px] font-black uppercase tracking-wide text-slate-400">
             {label}
           </div>
           <div
             className={`mt-1 truncate text-xl font-black ${
               accent
-                ? "text-emerald-700 dark:text-emerald-400"
+                ? "text-[#075E46] dark:text-emerald-400"
                 : "text-slate-900 dark:text-white"
             }`}
           >
@@ -277,21 +277,21 @@ function AddFarmModal({
       aria-modal="true"
       aria-labelledby="add-farm-title"
     >
-      <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-4 dark:border-slate-800 sm:px-5">
+      <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#DCE5E1] bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#DCE5E1] px-4 py-4 dark:border-slate-800 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/50 dark:text-emerald-400">
               <Tractor size={18} />
             </div>
 
             <div className="min-w-0">
               <h2
                 id="add-farm-title"
-                className="truncate text-sm font-black text-slate-900 dark:text-white"
+                className="truncate font-black text-slate-900 dark:text-white text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Add Farm
               </h2>
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 Add a farm to your Shamba workspace.
               </p>
             </div>
@@ -311,7 +311,7 @@ function AddFarmModal({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <form onSubmit={onSubmit} className="space-y-4 p-4 sm:p-5">
             {error && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[10px] font-medium leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-3 py-3 text-[13px] font-medium leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
                 {error}
               </div>
             )}
@@ -422,7 +422,7 @@ function AddFarmModal({
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl border border-[#DCE5E1] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
@@ -430,7 +430,7 @@ function AddFarmModal({
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#087F5B] px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus size={16} />
                 {saving ? "Saving Farm..." : "Add Farm"}
@@ -580,19 +580,19 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
   // =======================================================
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] pb-24">
+    <div className="mx-auto w-full max-w-none pb-24">
       {/* ==================================================
           PAGE TOOLBAR
       ================================================== */}
 
-      <section className="mb-5 border-b border-slate-200 pb-4 dark:border-slate-800">
+      <section className="mb-5 border-b border-[#DCE5E1] pb-4 dark:border-slate-800">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="mb-2 flex items-center gap-2 text-[9px] font-bold text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-400">
               <button
                 type="button"
                 onClick={() => onNavigate?.("shamba")}
-                className="inline-flex items-center gap-1 transition hover:text-emerald-600"
+                className="inline-flex items-center gap-1 transition hover:text-[#087F5B]"
               >
                 <ArrowLeft size={12} />
                 Shamba
@@ -602,15 +602,15 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-400">
                 <Tractor size={19} />
               </div>
 
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl">
+                <h1 className="truncate font-black tracking-tight text-slate-900 dark:text-white text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]">
                   My Farms
                 </h1>
-                <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                <p className="mt-0.5 truncate text-[13px] text-slate-400">
                   Manage your farms and growing spaces.
                 </p>
               </div>
@@ -622,7 +622,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               type="button"
               onClick={() => loadFarms({ silent: true })}
               disabled={loading || refreshing}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DCE5E1] bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               aria-label="Refresh farms"
               title="Refresh farms"
             >
@@ -632,7 +632,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             <button
               type="button"
               onClick={openAddFarm}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.98]"
             >
               <Plus size={15} />
               Add Farm
@@ -672,7 +672,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       ================================================== */}
 
       {error && !modalOpen && (
-        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
           <span className="min-w-0 flex-1">{error}</span>
           <button
             type="button"
@@ -692,15 +692,15 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       <section>
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-sm font-black text-slate-900 dark:text-white">
+            <h2 className="font-black text-slate-900 dark:text-white text-xl leading-snug tracking-tight text-[#172B25]">
               Your Farms
             </h2>
-            <p className="mt-0.5 text-[9px] text-slate-400">
+            <p className="mt-0.5 text-[13px] text-slate-400">
               Keep your farm records organized and ready for Shamba intelligence.
             </p>
           </div>
 
-          <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[8px] font-black text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[13px] font-black text-slate-500 dark:bg-slate-800 dark:text-slate-300">
             {totalFarms} {totalFarms === 1 ? "farm" : "farms"}
           </span>
         </div>
@@ -724,8 +724,8 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/50 px-5 py-12 text-center dark:border-emerald-900/50 dark:bg-emerald-950/20">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm dark:bg-slate-900 dark:text-emerald-400">
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 px-5 py-12 text-center dark:border-emerald-900/50 dark:bg-emerald-950/20">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#087F5B] shadow-sm dark:bg-slate-900 dark:text-emerald-400">
               <Tractor size={25} />
             </div>
 
@@ -733,7 +733,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               No farms yet
             </div>
 
-            <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-slate-400">
+            <p className="mx-auto mt-1 max-w-sm text-[13px] leading-5 text-slate-400">
               Add your first farm to begin tracking crops, activities, harvests,
               weather and farm intelligence.
             </p>
@@ -741,7 +741,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             <button
               type="button"
               onClick={openAddFarm}
-              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98]"
             >
               <Plus size={15} />
               Add Your First Farm
@@ -755,7 +755,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       ================================================== */}
 
       {farms.length > 0 && !loading && (
-        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-[9px] font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+        <div className="mt-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-[13px] font-semibold text-[#075E46] dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
           <CheckCircle2 size={14} className="shrink-0" />
           <span>
             Your farm records are ready for crop, activity, weather and harvest

@@ -64,12 +64,12 @@ function safeLazy(importFn, name) {
         default: function ShambaLoadError() {
           return (
             <div className="flex min-h-[260px] items-center justify-center p-6">
-              <div className="w-full max-w-md rounded-3xl border border-red-100 bg-red-50 p-6 text-center">
+              <div className="w-full max-w-md rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
                 <div className="text-sm font-black text-red-700">
                   {name} could not be loaded
                 </div>
 
-                <p className="mt-2 text-xs leading-5 text-red-600">
+                <p className="mt-2 text-[13px] leading-5 text-red-600">
                   Something went wrong while opening this section. Please try
                   again.
                 </p>
@@ -500,7 +500,7 @@ function LocationBadge({ location, status, onDetect }) {
 
   if (status === "detecting") {
     return (
-      <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px] font-bold text-[#075E46] dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300">
         <LocateFixed size={14} className="animate-pulse" />
         <span>Detecting location...</span>
       </div>
@@ -512,13 +512,13 @@ function LocationBadge({ location, status, onDetect }) {
       <button
         type="button"
         onClick={onDetect}
-        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-emerald-800/60 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
-        aria-label="Detect farm location"
+        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] font-bold text-gray-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-[#075E46] dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-emerald-800/60 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
+        aria-label="Detect device location"
       >
         <MapPin size={14} />
 
-        <span className="hidden sm:inline">Detect farm location</span>
-        <span className="sm:hidden">Locate me</span>
+        <span className="hidden sm:inline">Set device location</span>
+        <span className="sm:hidden">Set location</span>
       </button>
     );
   }
@@ -536,7 +536,7 @@ function LocationBadge({ location, status, onDetect }) {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="inline-flex max-w-[230px] items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
+        className="inline-flex max-w-[230px] items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-[13px] font-bold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
       >
         <CheckCircle2 size={14} className="shrink-0" />
 
@@ -548,13 +548,13 @@ function LocationBadge({ location, status, onDetect }) {
       {open && (
         <div
           role="dialog"
-          aria-label="Farm location details"
+          aria-label="Device location details"
           className="absolute right-0 top-full z-50 mt-2 w-[300px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-gray-950"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
-                Farm location
+              <p className="text-[13px] font-black uppercase tracking-wider text-[#087F5B]">
+                Device location
               </p>
 
               <h4 className="mt-1 truncate text-sm font-black text-gray-900 dark:text-white">
@@ -562,10 +562,10 @@ function LocationBadge({ location, status, onDetect }) {
               </h4>
             </div>
 
-            <Navigation size={18} className="shrink-0 text-emerald-600" />
+            <Navigation size={18} className="shrink-0 text-[#087F5B]" />
           </div>
 
-          <div className="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-4 space-y-2 text-[13px] text-gray-500 dark:text-gray-400">
             {location.county && (
               <div className="flex justify-between gap-3">
                 <span>County</span>
@@ -610,7 +610,7 @@ function LocationBadge({ location, status, onDetect }) {
               onDetect();
               setOpen(false);
             }}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-3 py-2.5 text-xs font-black text-white transition hover:bg-gray-900 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gray-950 px-3 py-2.5 text-[13px] font-black text-white transition hover:bg-gray-900 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100"
           >
             <RefreshCw size={13} />
             Update location
@@ -635,8 +635,8 @@ function DesktopNavItem({ item, active, onClick }) {
       aria-current={active ? "page" : undefined}
       className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${
         active
-          ? "bg-emerald-600 text-white shadow-sm"
-          : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
+          ? "bg-[#087F5B] text-white shadow-sm"
+          : "text-slate-600 hover:bg-emerald-50 hover:text-[#075E46]"
       }`}
     >
       <Icon
@@ -644,7 +644,7 @@ function DesktopNavItem({ item, active, onClick }) {
         className={
           active
             ? "text-white"
-            : "text-slate-400 group-hover:text-emerald-600"
+            : "text-slate-400 group-hover:text-[#087F5B]"
         }
       />
 
@@ -666,12 +666,12 @@ function MobileNavItem({ item, active, onClick }) {
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition ${
-        active ? "text-emerald-600" : "text-slate-400"
+        active ? "text-[#087F5B]" : "text-slate-400"
       }`}
     >
       <Icon size={17} />
 
-      <span className="max-w-full truncate text-[8px] font-black">
+      <span className="max-w-full truncate text-[13px] font-black">
         {item.shortLabel}
       </span>
     </button>
@@ -730,14 +730,14 @@ function MoreDrawer({
         className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px]"
       />
 
-      <aside className="absolute bottom-0 right-0 top-0 w-[min(380px,88vw)] overflow-y-auto border-l border-slate-200 bg-white shadow-2xl">
-        <div className="sticky top-0 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-5">
+      <aside className="absolute bottom-0 right-0 top-0 w-[min(380px,88vw)] overflow-y-auto border-l border-[#DCE5E1] bg-white shadow-2xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-[#DCE5E1] bg-white px-5 py-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600">
+            <p className="text-[13px] font-black uppercase tracking-[0.16em] text-[#087F5B]">
               Shamba
             </p>
 
-            <h3 className="mt-1 text-lg font-black text-slate-900">
+            <h3 className="mt-1 font-black text-slate-900 text-base leading-snug text-[#172B25]">
               More tools
             </h3>
           </div>
@@ -769,13 +769,13 @@ function MoreDrawer({
                   className={`flex items-center gap-4 rounded-2xl border p-4 text-left transition ${
                     active
                       ? "border-emerald-200 bg-emerald-50"
-                      : "border-slate-100 hover:border-emerald-100 hover:bg-slate-50"
+                      : "border-[#DCE5E1] hover:border-emerald-100 hover:bg-slate-50"
                   }`}
                 >
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                       active
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-emerald-100 text-[#075E46]"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
@@ -787,7 +787,7 @@ function MoreDrawer({
                       {item.label}
                     </div>
 
-                    <div className="mt-0.5 text-[10px] text-slate-500">
+                    <div className="mt-0.5 text-[13px] text-slate-500">
                       Manage your {item.label.toLowerCase()}
                     </div>
                   </div>
@@ -818,13 +818,13 @@ function LocationError({ message, onRetry }) {
           className="mt-0.5 shrink-0 text-amber-600"
         />
 
-        <p className="text-xs leading-5 text-amber-800">{message}</p>
+        <p className="text-[13px] leading-5 text-amber-800">{message}</p>
       </div>
 
       <button
         type="button"
         onClick={onRetry}
-        className="shrink-0 rounded-lg bg-white px-3 py-2 text-[10px] font-black text-amber-700 shadow-sm transition hover:bg-amber-100"
+        className="shrink-0 rounded-lg bg-white px-3 py-2 text-[13px] font-black text-amber-700 shadow-sm transition hover:bg-amber-100"
       >
         Retry
       </button>
@@ -850,20 +850,8 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
     detectLocation,
   } = useFarmLocation();
 
-  // ==========================================================
-  // INITIAL LOCATION DETECTION
-  // ==========================================================
-
-  useEffect(() => {
-    /*
-     * Automatically request GPS only when there is no valid
-     * cached location. The location hook initializes from cache,
-     * preventing duplicate permission prompts on first render.
-     */
-    if (!location && locationStatus === "idle") {
-      detectLocation();
-    }
-  }, [location, locationStatus, detectLocation]);
+  // Device location is optional and is requested through an explicit user action.
+  // This avoids surprise permission prompts when opening the Shamba workspace.
 
   // ==========================================================
   // INTERNAL NAVIGATION
@@ -953,18 +941,18 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
   // ==========================================================
 
   return (
-    <div className="min-h-[calc(100vh-120px)] bg-slate-50/60">
-      <div className="mx-auto flex w-full max-w-[1440px]">
+    <div className="isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-none">
         {/* ==================================================
             DESKTOP SIDEBAR
         ================================================== */}
 
-        <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[230px] shrink-0 border-r border-slate-200 bg-white lg:block">
+        <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[244px] shrink-0 border-r border-[#DCE5E1] bg-white lg:block">
           <div className="flex h-full flex-col p-4">
             {/* Brand */}
-            <div className="mb-5 rounded-2xl bg-emerald-50 p-4">
+            <div className="mb-5 rounded-2xl border border-[#DCE5E1] bg-[#F0FAF5] p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087F5B] text-white shadow-sm">
                   <Leaf size={19} />
                 </div>
 
@@ -973,7 +961,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                     Shamba
                   </div>
 
-                  <div className="text-[9px] font-bold text-emerald-700">
+                  <div className="text-[13px] font-bold text-[#075E46]">
                     Farm intelligence
                   </div>
                 </div>
@@ -982,7 +970,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
 
             {/* Main navigation */}
             <div className="space-y-1">
-              <div className="mb-2 px-3 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+              <div className="mb-2 px-3 text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                 Workspace
               </div>
 
@@ -997,15 +985,15 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             </div>
 
             {/* More */}
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <div className="mb-2 px-3 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+            <div className="mt-6 border-t border-[#DCE5E1] pt-5">
+              <div className="mb-2 px-3 text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                 Operations
               </div>
 
               <button
                 type="button"
                 onClick={() => openMore("desktop")}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-emerald-700"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-[#075E46]"
               >
                 <MoreHorizontal
                   size={18}
@@ -1023,7 +1011,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                 onClick={() => onOpenAI?.()}
                 className="w-full rounded-2xl bg-slate-900 p-4 text-left text-white shadow-lg transition hover:bg-slate-800"
               >
-                <div className="text-[9px] font-black uppercase tracking-wider text-emerald-400">
+                <div className="text-[13px] font-black uppercase tracking-wider text-emerald-400">
                   RevelaAI
                 </div>
 
@@ -1031,7 +1019,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                   Ask about your farm
                 </div>
 
-                <div className="mt-1 text-[10px] leading-4 text-slate-400">
+                <div className="mt-1 text-[13px] leading-4 text-slate-400">
                   Crops, weather, markets and farm decisions.
                 </div>
               </button>
@@ -1043,7 +1031,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             MAIN CONTENT
         ================================================== */}
 
-        <main className="min-w-0 flex-1 pb-24 lg:pb-8">
+        <main className="min-w-0 flex-1 bg-[#F3F6F5] pb-24 lg:pb-8">
           {/* ==================================================
               COMMAND HEADER
           ================================================== */}
@@ -1055,7 +1043,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               z-40
               shrink-0
               border-b
-              border-gray-200
+              border-[#DCE5E1]
               bg-white/95
               backdrop-blur-md
               dark:border-gray-800
@@ -1085,9 +1073,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                     items-center
                     justify-center
                     rounded-xl
-                    bg-gradient-to-br
-                    from-emerald-500
-                    to-emerald-700
+                    bg-[#087F5B]
                     text-white
                     shadow-md
                     shadow-emerald-900/10
@@ -1099,7 +1085,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
 
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center gap-2">
-                    <h1
+                    <div
                       className="
                         truncate
                         text-sm
@@ -1109,46 +1095,25 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                         sm:text-base
                       "
                     >
-                      {currentSection.label}
-                    </h1>
-
-                    <span
-                      className="
-                        hidden
-                        rounded-full
-                        border
-                        border-emerald-200
-                        bg-emerald-50
-                        px-2
-                        py-1
-                        text-[9px]
-                        font-bold
-                        uppercase
-                        tracking-[0.12em]
-                        text-emerald-700
-                        dark:border-emerald-800/60
-                        dark:bg-emerald-950/50
-                        dark:text-emerald-300
-                        sm:inline-flex
-                      "
-                    >
-                      Shamba
-                    </span>
+                      Farm intelligence workspace
+                    </div>
                   </div>
 
-                  <p className="mt-0.5 hidden truncate text-[11px] text-gray-500 dark:text-gray-400 sm:block">
-                    Agricultural intelligence workspace
+                  <p className="mt-0.5 hidden truncate text-[13px] text-gray-500 dark:text-gray-400 sm:block">
+                    Your agricultural operations in one place
                   </p>
                 </div>
               </div>
 
               {/* CONTEXT ACTIONS */}
               <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
-                <LocationBadge
-                  location={location}
-                  status={locationStatus}
-                  onDetect={detectLocation}
-                />
+                {location && (
+                  <LocationBadge
+                    location={location}
+                    status={locationStatus}
+                    onDetect={detectLocation}
+                  />
+                )}
 
                 <button
                   type="button"
@@ -1189,7 +1154,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                       viewBox="0 0 24 24"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
-                      className="relative h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                      className="relative h-4 w-4 text-[#087F5B] dark:text-emerald-400"
                       aria-hidden="true"
                     >
                       <path
@@ -1228,9 +1193,9 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                 type="button"
                 onClick={detectLocation}
                 disabled={locationStatus === "detecting"}
-                className="flex w-full items-center gap-4 rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-5 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md disabled:cursor-wait disabled:opacity-80"
+                className="flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-5 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md disabled:cursor-wait disabled:opacity-80"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#087F5B] text-white">
                   <LocateFixed
                     size={22}
                     className={
@@ -1242,13 +1207,13 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                 </div>
 
                 <div className="min-w-0">
-                  <h3 className="text-sm font-black text-slate-900">
+                  <h3 className="font-black text-slate-900 text-base leading-snug text-[#172B25]">
                     {locationStatus === "detecting"
-                      ? "Detecting farm location"
-                      : "Enable farm location"}
+                      ? "Detecting device location"
+                      : "Set your device location"}
                   </h3>
 
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                  <p className="mt-1 text-[13px] leading-5 text-slate-500">
                     Shamba uses your device location to improve farm weather,
                     regional recommendations, crop intelligence and local
                     market information.
@@ -1265,7 +1230,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
           <div className="px-4 pt-5 sm:px-6 lg:px-8 lg:pt-6">
             <Suspense
               fallback={
-                <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+                <div className="rounded-2xl border border-[#DCE5E1] bg-white p-8 shadow-sm">
                   <Loading />
                 </div>
               }
@@ -1273,6 +1238,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               <ActiveComponent
                 user={user}
                 location={location}
+                embedded
                 onNavigate={handleDashboardNavigate}
                 onOpenAI={onOpenAI}
               />
@@ -1285,7 +1251,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
           MOBILE BOTTOM NAVIGATION
       ==================================================== */}
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 py-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#DCE5E1] bg-white/95 px-2 py-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg lg:hidden">
         <div className="mx-auto flex max-w-[600px] items-center gap-1">
           {MOBILE_PRIMARY_KEYS.map((key) => {
             const item = SHAMBA_SECTIONS[key];
@@ -1309,12 +1275,12 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             onClick={() => openMore("mobile")}
             aria-label="Open more Shamba tools"
             className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition ${
-              moreOpen ? "text-emerald-600" : "text-slate-400"
+              moreOpen ? "text-[#087F5B]" : "text-slate-400"
             }`}
           >
             <MoreHorizontal size={17} />
 
-            <span className="text-[8px] font-black">More</span>
+            <span className="text-[13px] font-black">More</span>
           </button>
         </div>
       </div>

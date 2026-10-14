@@ -25,7 +25,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -85,7 +85,7 @@ function WeatherMetric({
       className="
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         p-4
         shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -113,7 +113,7 @@ function WeatherMetric({
 
           <div
             className="
-              text-[8px]
+              text-[13px]
               font-black
               uppercase
               tracking-wide
@@ -138,7 +138,7 @@ function WeatherMetric({
             <div
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -160,6 +160,7 @@ function WeatherMetric({
 
 export default function ShambaWeatherDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -296,7 +297,8 @@ export default function ShambaWeatherDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Weather"
       subtitle="Plan your farm around the weather."
       activeHub="shamba"
@@ -307,7 +309,7 @@ export default function ShambaWeatherDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -340,11 +342,11 @@ export default function ShambaWeatherDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -363,17 +365,17 @@ export default function ShambaWeatherDashboard({
               gap-1.5
               rounded-xl
               border
-              border-slate-200
+              border-[#DCE5E1]
               bg-white
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-600
               shadow-sm
               transition
               hover:border-emerald-100
-              hover:text-emerald-700
+              hover:text-[#075E46]
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
@@ -400,7 +402,7 @@ export default function ShambaWeatherDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             bg-gradient-to-br
             from-sky-500
             via-cyan-500
@@ -424,7 +426,7 @@ export default function ShambaWeatherDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.18em]
@@ -435,12 +437,7 @@ export default function ShambaWeatherDashboard({
               </div>
 
               <h1
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-tight
-                "
+                className="mt-1 font-black tracking-tight text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Plan before you plant.
               </h1>
@@ -449,7 +446,7 @@ export default function ShambaWeatherDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-white/80
                 "
@@ -503,7 +500,7 @@ export default function ShambaWeatherDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-bold
                   uppercase
                   tracking-wide
@@ -517,7 +514,7 @@ export default function ShambaWeatherDashboard({
                 className="
                   mt-0.5
                   truncate
-                  text-[10px]
+                  text-[13px]
                   font-black
                 "
               >
@@ -545,7 +542,7 @@ export default function ShambaWeatherDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-red-700
             "
@@ -564,7 +561,7 @@ export default function ShambaWeatherDashboard({
             mb-5
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-4
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -589,7 +586,7 @@ export default function ShambaWeatherDashboard({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Tractor size={17} />
@@ -599,7 +596,7 @@ export default function ShambaWeatherDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.16em]
@@ -636,7 +633,7 @@ export default function ShambaWeatherDashboard({
                       w-full
                       rounded-xl
                       border
-                      border-slate-200
+                      border-[#DCE5E1]
                       bg-white
                       px-3
                       py-2.5
@@ -677,7 +674,7 @@ export default function ShambaWeatherDashboard({
                       flex
                       items-center
                       gap-1
-                      text-[9px]
+                      text-[13px]
                       text-slate-400
                     "
                   >
@@ -693,7 +690,7 @@ export default function ShambaWeatherDashboard({
 
                   <div
                     className="
-                      text-xs
+                      text-[13px]
                       font-bold
                       text-slate-700
                     "
@@ -710,9 +707,9 @@ export default function ShambaWeatherDashboard({
                     }
                     className="
                       mt-2
-                      text-[9px]
+                      text-[13px]
                       font-black
-                      text-emerald-600
+                      text-[#087F5B]
                     "
                   >
                     Add a farm first →
@@ -736,9 +733,9 @@ export default function ShambaWeatherDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             shadow-[0_4px_18px_rgba(15,23,42,0.04)]
           "
@@ -767,7 +764,7 @@ export default function ShambaWeatherDashboard({
 
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-[0.16em]
@@ -815,7 +812,7 @@ export default function ShambaWeatherDashboard({
 
                     <div
                       className="
-                        text-[10px]
+                        text-[13px]
                         font-bold
                         text-slate-500
                       "
@@ -843,7 +840,7 @@ export default function ShambaWeatherDashboard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -858,7 +855,7 @@ export default function ShambaWeatherDashboard({
                     mt-1
                     max-w-[150px]
                     truncate
-                    text-[9px]
+                    text-[13px]
                     font-bold
                     text-slate-600
                   "
@@ -883,7 +880,7 @@ export default function ShambaWeatherDashboard({
 
               <div
                 className="
-                  text-[9px]
+                  text-[13px]
                   font-black
                   text-amber-800
                 "
@@ -894,7 +891,7 @@ export default function ShambaWeatherDashboard({
               <p
                 className="
                   mt-1
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-amber-700/80
                 "
@@ -922,11 +919,7 @@ export default function ShambaWeatherDashboard({
           <div className="mb-3">
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               Farm Conditions
             </h2>
@@ -934,7 +927,7 @@ export default function ShambaWeatherDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -996,11 +989,7 @@ export default function ShambaWeatherDashboard({
           <div className="mb-3">
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               Weather Planning
             </h2>
@@ -1008,7 +997,7 @@ export default function ShambaWeatherDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -1032,7 +1021,7 @@ export default function ShambaWeatherDashboard({
               className="
                 rounded-2xl
                 border
-                border-slate-100
+                border-[#DCE5E1]
                 bg-white
                 p-4
                 shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1044,12 +1033,7 @@ export default function ShambaWeatherDashboard({
               />
 
               <h3
-                className="
-                  mt-3
-                  text-[11px]
-                  font-black
-                  text-slate-800
-                "
+                className="mt-3 font-black text-slate-800 text-base leading-snug text-[#172B25]"
               >
                 Planting
               </h3>
@@ -1057,7 +1041,7 @@ export default function ShambaWeatherDashboard({
               <p
                 className="
                   mt-1
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -1072,7 +1056,7 @@ export default function ShambaWeatherDashboard({
               className="
                 rounded-2xl
                 border
-                border-slate-100
+                border-[#DCE5E1]
                 bg-white
                 p-4
                 shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1084,12 +1068,7 @@ export default function ShambaWeatherDashboard({
               />
 
               <h3
-                className="
-                  mt-3
-                  text-[11px]
-                  font-black
-                  text-slate-800
-                "
+                className="mt-3 font-black text-slate-800 text-base leading-snug text-[#172B25]"
               >
                 Irrigation
               </h3>
@@ -1097,7 +1076,7 @@ export default function ShambaWeatherDashboard({
               <p
                 className="
                   mt-1
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -1112,7 +1091,7 @@ export default function ShambaWeatherDashboard({
               className="
                 rounded-2xl
                 border
-                border-slate-100
+                border-[#DCE5E1]
                 bg-white
                 p-4
                 shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1124,12 +1103,7 @@ export default function ShambaWeatherDashboard({
               />
 
               <h3
-                className="
-                  mt-3
-                  text-[11px]
-                  font-black
-                  text-slate-800
-                "
+                className="mt-3 font-black text-slate-800 text-base leading-snug text-[#172B25]"
               >
                 Harvest
               </h3>
@@ -1137,7 +1111,7 @@ export default function ShambaWeatherDashboard({
               <p
                 className="
                   mt-1
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -1163,7 +1137,7 @@ export default function ShambaWeatherDashboard({
             gap-3
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-slate-50
             px-4
             py-3
@@ -1181,7 +1155,7 @@ export default function ShambaWeatherDashboard({
 
           <p
             className="
-              text-[9px]
+              text-[13px]
               leading-5
               text-slate-500
             "
@@ -1193,6 +1167,6 @@ export default function ShambaWeatherDashboard({
         </div>
 
       </div>
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }

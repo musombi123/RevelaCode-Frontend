@@ -27,7 +27,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -212,7 +212,7 @@ function ActivityCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
       "
@@ -231,7 +231,7 @@ function ActivityCard({
               justify-center
               rounded-2xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <Icon size={20} />
@@ -252,12 +252,7 @@ function ActivityCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    truncate
-                    text-sm
-                    font-black
-                    text-slate-900
-                  "
+                  className="truncate font-black text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {getActivityLabel(
                     activity,
@@ -269,7 +264,7 @@ function ActivityCard({
                     className="
                       mt-1
                       line-clamp-2
-                      text-[9px]
+                      text-[13px]
                       leading-5
                       text-slate-400
                     "
@@ -291,9 +286,9 @@ function ActivityCard({
                   bg-emerald-50
                   px-2
                   py-1.5
-                  text-[8px]
+                  text-[13px]
                   font-black
-                  text-emerald-700
+                  text-[#075E46]
                 "
               >
                 <CheckCircle2 size={9} />
@@ -322,7 +317,7 @@ function ActivityCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -335,7 +330,7 @@ function ActivityCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -359,7 +354,7 @@ function ActivityCard({
               >
                 <div
                   className="
-                    text-[8px]
+                    text-[13px]
                     font-black
                     uppercase
                     tracking-wide
@@ -372,7 +367,7 @@ function ActivityCard({
                 <div
                   className="
                     mt-1
-                    text-[10px]
+                    text-[13px]
                     font-black
                     text-slate-800
                   "
@@ -405,7 +400,7 @@ function ActivityCard({
                     bg-blue-50
                     px-2.5
                     py-2
-                    text-[8px]
+                    text-[13px]
                     font-bold
                     text-blue-700
                   "
@@ -428,7 +423,7 @@ function ActivityCard({
                   border-t
                   border-slate-50
                   pt-3
-                  text-[9px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -459,7 +454,7 @@ function Field({
     <div>
       <label
         className="
-          text-[10px]
+          text-[13px]
           font-black
           uppercase
           tracking-wide
@@ -469,7 +464,7 @@ function Field({
         {label}
 
         {required && (
-          <span className="ml-1 text-emerald-600">
+          <span className="ml-1 text-[#087F5B]">
             *
           </span>
         )}
@@ -487,7 +482,7 @@ const inputClass = `
   w-full
   rounded-xl
   border
-  border-slate-200
+  border-[#DCE5E1]
   bg-white
   px-3
   py-2.5
@@ -548,7 +543,7 @@ function AddActivityModal({
           max-w-xl
           flex-col
           overflow-hidden
-          rounded-3xl
+          rounded-2xl
           bg-white
           shadow-2xl
         "
@@ -563,7 +558,7 @@ function AddActivityModal({
             items-center
             justify-between
             border-b
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-4
             sm:px-5
@@ -581,7 +576,7 @@ function AddActivityModal({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Activity size={18} />
@@ -590,11 +585,7 @@ function AddActivityModal({
             <div>
 
               <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
+                className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Record Activity
               </h2>
@@ -604,7 +595,7 @@ function AddActivityModal({
                   mt-0.5
                   max-w-[240px]
                   truncate
-                  text-[9px]
+                  text-[13px]
                   text-slate-400
                 "
               >
@@ -669,7 +660,7 @@ function AddActivityModal({
                   bg-red-50
                   px-3
                   py-3
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-red-700
                 "
@@ -853,14 +844,14 @@ function AddActivityModal({
                 justify-center
                 gap-2
                 rounded-xl
-                bg-emerald-600
+                bg-[#087F5B]
                 px-4
                 py-3
                 text-sm
                 font-black
                 text-white
                 transition
-                hover:bg-emerald-700
+                hover:bg-[#075E46]
                 active:scale-[0.99]
                 disabled:cursor-not-allowed
                 disabled:opacity-60
@@ -889,6 +880,7 @@ function AddActivityModal({
 
 export default function ShambaActivitiesDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -1292,7 +1284,8 @@ export default function ShambaActivitiesDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Activities"
       subtitle="Track the work happening across your farm."
       activeHub="shamba"
@@ -1303,7 +1296,7 @@ export default function ShambaActivitiesDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -1336,11 +1329,11 @@ export default function ShambaActivitiesDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -1363,15 +1356,15 @@ export default function ShambaActivitiesDashboard({
               justify-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
               active:scale-[0.98]
               disabled:cursor-not-allowed
               disabled:opacity-50
@@ -1392,7 +1385,7 @@ export default function ShambaActivitiesDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             bg-gradient-to-br
             from-emerald-600
             via-green-600
@@ -1416,7 +1409,7 @@ export default function ShambaActivitiesDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.18em]
@@ -1427,12 +1420,7 @@ export default function ShambaActivitiesDashboard({
               </div>
 
               <h1
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-tight
-                "
+                className="mt-1 font-black tracking-tight text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Know the work behind your farm.
               </h1>
@@ -1441,7 +1429,7 @@ export default function ShambaActivitiesDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-white/80
                 "
@@ -1489,7 +1477,7 @@ export default function ShambaActivitiesDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-red-700
             "
@@ -1508,7 +1496,7 @@ export default function ShambaActivitiesDashboard({
             mb-5
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-4
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1527,7 +1515,7 @@ export default function ShambaActivitiesDashboard({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Tractor size={17} />
@@ -1538,7 +1526,7 @@ export default function ShambaActivitiesDashboard({
 
               <div
                 className="
-                  text-[8px]
+                  text-[13px]
                   font-black
                   uppercase
                   tracking-[0.16em]
@@ -1577,7 +1565,7 @@ export default function ShambaActivitiesDashboard({
                       w-full
                       rounded-xl
                       border
-                      border-slate-200
+                      border-[#DCE5E1]
                       bg-white
                       px-3
                       py-2.5
@@ -1615,7 +1603,7 @@ export default function ShambaActivitiesDashboard({
                         flex
                         items-center
                         gap-1
-                        text-[9px]
+                        text-[13px]
                         text-slate-400
                       "
                     >
@@ -1635,7 +1623,7 @@ export default function ShambaActivitiesDashboard({
 
                   <div
                     className="
-                      text-xs
+                      text-[13px]
                       font-bold
                       text-slate-700
                     "
@@ -1652,9 +1640,9 @@ export default function ShambaActivitiesDashboard({
                     }
                     className="
                       mt-2
-                      text-[9px]
+                      text-[13px]
                       font-black
-                      text-emerald-600
+                      text-[#087F5B]
                     "
                   >
                     Add a farm first →
@@ -1688,7 +1676,7 @@ export default function ShambaActivitiesDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1696,7 +1684,7 @@ export default function ShambaActivitiesDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1711,7 +1699,7 @@ export default function ShambaActivitiesDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loadingActivities
@@ -1725,7 +1713,7 @@ export default function ShambaActivitiesDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1733,7 +1721,7 @@ export default function ShambaActivitiesDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1748,7 +1736,7 @@ export default function ShambaActivitiesDashboard({
                 mt-1
                 text-lg
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loadingActivities
@@ -1764,7 +1752,7 @@ export default function ShambaActivitiesDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1772,7 +1760,7 @@ export default function ShambaActivitiesDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1801,7 +1789,7 @@ export default function ShambaActivitiesDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1809,7 +1797,7 @@ export default function ShambaActivitiesDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1858,11 +1846,7 @@ export default function ShambaActivitiesDashboard({
             <div>
 
               <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
+                className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Activity History
               </h2>
@@ -1870,7 +1854,7 @@ export default function ShambaActivitiesDashboard({
               <p
                 className="
                   mt-0.5
-                  text-[9px]
+                  text-[13px]
                   text-slate-400
                 "
               >
@@ -1890,9 +1874,9 @@ export default function ShambaActivitiesDashboard({
                   inline-flex
                   items-center
                   gap-1
-                  text-[9px]
+                  text-[13px]
                   font-black
-                  text-emerald-600
+                  text-[#087F5B]
                 "
               >
                 <Plus size={11} />
@@ -1954,7 +1938,7 @@ export default function ShambaActivitiesDashboard({
           ) : (
             <div
               className="
-                rounded-3xl
+                rounded-2xl
                 border
                 border-dashed
                 border-emerald-200
@@ -1975,19 +1959,14 @@ export default function ShambaActivitiesDashboard({
                   justify-center
                   rounded-2xl
                   bg-emerald-50
-                  text-emerald-600
+                  text-[#087F5B]
                 "
               >
                 <Activity size={25} />
               </div>
 
               <h2
-                className="
-                  mt-4
-                  text-sm
-                  font-black
-                  text-slate-800
-                "
+                className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 No activities recorded
               </h2>
@@ -1997,7 +1976,7 @@ export default function ShambaActivitiesDashboard({
                   mx-auto
                   mt-1
                   max-w-sm
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-slate-400
                 "
@@ -2021,14 +2000,14 @@ export default function ShambaActivitiesDashboard({
                   items-center
                   gap-1.5
                   rounded-xl
-                  bg-emerald-600
+                  bg-[#087F5B]
                   px-4
                   py-2.5
-                  text-[10px]
+                  text-[13px]
                   font-black
                   text-white
                   transition
-                  hover:bg-emerald-700
+                  hover:bg-[#075E46]
                   disabled:cursor-not-allowed
                   disabled:opacity-50
                 "
@@ -2062,9 +2041,9 @@ export default function ShambaActivitiesDashboard({
                 bg-emerald-50/60
                 px-4
                 py-3
-                text-[9px]
+                text-[13px]
                 font-semibold
-                text-emerald-700
+                text-[#075E46]
               "
             >
               <CheckCircle2 size={14} />
@@ -2099,6 +2078,6 @@ export default function ShambaActivitiesDashboard({
           }
         />
       )}
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }

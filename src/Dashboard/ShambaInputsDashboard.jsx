@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -150,22 +150,22 @@ function CategoryCard({
         transition
         ${
           active
-            ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-            : "border-slate-100 bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50"
+            ? "border-emerald-600 bg-[#087F5B] text-white shadow-sm"
+            : "border-[#DCE5E1] bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50"
         }
       `}
     >
       <Icon size={14} />
 
       <div className="min-w-0">
-        <div className="text-[9px] font-black">
+        <div className="text-[13px] font-black">
           {category}
         </div>
 
         <div
           className={`
             mt-0.5
-            text-[8px]
+            text-[13px]
             ${
               active
                 ? "text-white/70"
@@ -197,7 +197,7 @@ function InputCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
         transition
@@ -219,7 +219,7 @@ function InputCard({
               justify-center
               rounded-2xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <Icon size={20} />
@@ -238,12 +238,7 @@ function InputCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    truncate
-                    text-sm
-                    font-black
-                    text-slate-900
-                  "
+                  className="truncate font-black text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {item.name}
                 </h3>
@@ -256,9 +251,9 @@ function InputCard({
                     bg-emerald-50
                     px-2
                     py-1
-                    text-[8px]
+                    text-[13px]
                     font-black
-                    text-emerald-700
+                    text-[#075E46]
                   "
                 >
                   {item.category}
@@ -273,7 +268,7 @@ function InputCard({
                   bg-slate-50
                   px-2
                   py-1.5
-                  text-[8px]
+                  text-[13px]
                   font-bold
                   text-slate-500
                 "
@@ -288,7 +283,7 @@ function InputCard({
         <p
           className="
             mt-3
-            text-[9px]
+            text-[13px]
             leading-5
             text-slate-400
           "
@@ -322,9 +317,9 @@ function InputCard({
             bg-emerald-50
             px-3
             py-2
-            text-[9px]
+            text-[13px]
             font-black
-            text-emerald-700
+            text-[#075E46]
             transition
             hover:bg-emerald-100
           "
@@ -370,7 +365,7 @@ function InputDetailModal({
           w-full
           max-w-md
           overflow-hidden
-          rounded-3xl
+          rounded-2xl
           bg-white
           shadow-2xl
         "
@@ -382,7 +377,7 @@ function InputDetailModal({
             items-center
             justify-between
             border-b
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-4
           "
@@ -398,18 +393,18 @@ function InputDetailModal({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Icon size={18} />
             </div>
 
             <div>
-              <h2 className="text-sm font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                 {item.name}
               </h2>
 
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 {item.category}
               </p>
             </div>
@@ -447,7 +442,7 @@ function InputDetailModal({
               p-4
             "
           >
-            <div className="text-[8px] font-black uppercase tracking-[0.16em] text-emerald-600">
+            <div className="text-[13px] font-black uppercase tracking-[0.16em] text-[#087F5B]">
               Farm Input
             </div>
 
@@ -463,7 +458,7 @@ function InputDetailModal({
                   bg-white
                   px-3
                   py-2
-                  text-[9px]
+                  text-[13px]
                   font-bold
                   text-slate-500
                 "
@@ -477,7 +472,7 @@ function InputDetailModal({
                   bg-white
                   px-3
                   py-2
-                  text-[9px]
+                  text-[13px]
                   font-bold
                   text-slate-500
                 "
@@ -493,16 +488,16 @@ function InputDetailModal({
               mt-4
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-slate-50
               p-4
             "
           >
-            <div className="text-[9px] font-black text-slate-700">
+            <div className="text-[13px] font-black text-slate-700">
               Marketplace integration
             </div>
 
-            <p className="mt-1 text-[9px] leading-5 text-slate-400">
+            <p className="mt-1 text-[13px] leading-5 text-slate-400">
               Supplier listings and purchase actions
               will appear here when the Shamba input
               marketplace is connected.
@@ -516,7 +511,7 @@ function InputDetailModal({
             flex
             justify-end
             border-t
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-3
           "
@@ -526,13 +521,13 @@ function InputDetailModal({
             onClick={onClose}
             className="
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
             "
           >
             Close
@@ -551,6 +546,7 @@ function InputDetailModal({
 
 export default function ShambaInputsDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -659,7 +655,8 @@ export default function ShambaInputsDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Inputs"
       subtitle="Find the supplies your farm needs."
       activeHub="shamba"
@@ -670,7 +667,7 @@ export default function ShambaInputsDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -701,11 +698,11 @@ export default function ShambaInputsDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -726,15 +723,15 @@ export default function ShambaInputsDashboard({
               justify-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
               active:scale-[0.98]
             "
           >
@@ -753,7 +750,7 @@ export default function ShambaInputsDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             border
             border-emerald-100
             bg-gradient-to-br
@@ -775,7 +772,7 @@ export default function ShambaInputsDashboard({
                 items-center
                 justify-center
                 rounded-2xl
-                bg-emerald-600
+                bg-[#087F5B]
                 text-white
                 shadow-lg
               "
@@ -786,12 +783,7 @@ export default function ShambaInputsDashboard({
             <div className="min-w-0">
 
               <h1
-                className="
-                  text-lg
-                  font-black
-                  tracking-tight
-                  text-slate-900
-                "
+                className="font-black tracking-tight text-slate-900 text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Farm Inputs
               </h1>
@@ -800,7 +792,7 @@ export default function ShambaInputsDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-slate-500
                 "
@@ -826,7 +818,7 @@ export default function ShambaInputsDashboard({
             mb-4
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-3
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -914,7 +906,7 @@ export default function ShambaInputsDashboard({
 
             <span
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -988,11 +980,7 @@ export default function ShambaInputsDashboard({
           <div>
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               Available Inputs
             </h2>
@@ -1000,7 +988,7 @@ export default function ShambaInputsDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -1023,9 +1011,9 @@ export default function ShambaInputsDashboard({
                 setCategory("all");
               }}
               className="
-                text-[9px]
+                text-[13px]
                 font-black
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               Clear filters
@@ -1065,7 +1053,7 @@ export default function ShambaInputsDashboard({
         ) : (
           <div
             className="
-              rounded-3xl
+              rounded-2xl
               border
               border-dashed
               border-emerald-200
@@ -1086,19 +1074,14 @@ export default function ShambaInputsDashboard({
                 justify-center
                 rounded-2xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <Search size={24} />
             </div>
 
             <h2
-              className="
-                mt-4
-                text-sm
-                font-black
-                text-slate-800
-              "
+              className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               No inputs found
             </h2>
@@ -1108,7 +1091,7 @@ export default function ShambaInputsDashboard({
                 mx-auto
                 mt-1
                 max-w-sm
-                text-[10px]
+                text-[13px]
                 leading-5
                 text-slate-400
               "
@@ -1161,7 +1144,7 @@ export default function ShambaInputsDashboard({
 
             <div
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 text-amber-800
               "
@@ -1172,7 +1155,7 @@ export default function ShambaInputsDashboard({
             <p
               className="
                 mt-1
-                text-[9px]
+                text-[13px]
                 leading-5
                 text-amber-700/80
               "
@@ -1203,7 +1186,7 @@ export default function ShambaInputsDashboard({
           }
         />
       )}
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }
 

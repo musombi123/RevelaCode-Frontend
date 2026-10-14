@@ -113,7 +113,7 @@ function scoreTone(score) {
   if (value >= 80) {
     return {
       label: "Excellent",
-      className: "text-emerald-700 bg-emerald-50",
+      className: "text-[#075E46] bg-emerald-50",
       bar: "bg-emerald-500",
     };
   }
@@ -171,7 +171,7 @@ function riskTone(level, score) {
 
   return {
     label: level || "Low",
-    className: "text-emerald-700 bg-emerald-50",
+    className: "text-[#075E46] bg-emerald-50",
     icon: CheckCircle2,
   };
 }
@@ -258,7 +258,7 @@ function QuickAccessTile({
         justify-center
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         px-2
         py-3
@@ -281,7 +281,7 @@ function QuickAccessTile({
           justify-center
           rounded-xl
           bg-emerald-50
-          text-emerald-600
+          text-[#087F5B]
           transition
           group-hover:bg-emerald-100
         "
@@ -293,7 +293,7 @@ function QuickAccessTile({
         className="
           mt-2
           truncate
-          text-[10px]
+          text-[13px]
           font-extrabold
           text-slate-800
         "
@@ -324,7 +324,7 @@ function MetricCard({
         min-w-0
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         px-3
         py-3
@@ -346,7 +346,7 @@ function MetricCard({
             justify-center
             rounded-xl
             bg-emerald-50
-            text-emerald-600
+            text-[#087F5B]
           "
         >
           <Icon size={15} />
@@ -361,13 +361,13 @@ function MetricCard({
       <div className="mt-2 text-lg font-black text-slate-900">
         {value}
         {suffix && (
-          <span className="ml-1 text-[9px] font-bold text-slate-400">
+          <span className="ml-1 text-[13px] font-bold text-slate-400">
             {suffix}
           </span>
         )}
       </div>
 
-      <div className="mt-0.5 truncate text-[9px] font-semibold text-slate-400">
+      <div className="mt-0.5 truncate text-[13px] font-semibold text-slate-400">
         {label}
       </div>
     </button>
@@ -395,7 +395,7 @@ function ScoreCard({
       className="
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         p-3
         shadow-[0_3px_14px_rgba(15,23,42,0.035)]
@@ -412,13 +412,13 @@ function ScoreCard({
               justify-center
               rounded-xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <Icon size={15} />
           </div>
 
-          <span className="text-[10px] font-black text-slate-700">
+          <span className="text-[13px] font-black text-slate-700">
             {label}
           </span>
         </div>
@@ -428,7 +428,7 @@ function ScoreCard({
             rounded-full
             px-2
             py-1
-            text-[8px]
+            text-[13px]
             font-black
             ${tone.className}
           `}
@@ -442,7 +442,7 @@ function ScoreCard({
           {Math.round(safeScore)}
         </span>
 
-        <span className="pb-1 text-[9px] font-bold text-slate-400">
+        <span className="pb-1 text-[13px] font-bold text-slate-400">
           /100
         </span>
       </div>
@@ -1017,7 +1017,7 @@ export default function ShambaDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1180px]
+          max-w-none
           pb-24
         "
       >
@@ -1029,7 +1029,7 @@ export default function ShambaDashboard({
         <section className="mb-5">
           <div
             className="
-              flex flex-col gap-4 rounded-2xl border border-slate-200
+              flex flex-col gap-4 rounded-2xl border border-[#DCE5E1]
               bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900
               sm:flex-row sm:items-center sm:justify-between sm:p-5
             "
@@ -1039,7 +1039,7 @@ export default function ShambaDashboard({
                 <div
                   className="
                     flex h-11 w-11 shrink-0 items-center justify-center
-                    rounded-xl bg-emerald-50 text-emerald-600
+                    rounded-xl bg-emerald-50 text-[#087F5B]
                     dark:bg-emerald-950/40 dark:text-emerald-400
                   "
                 >
@@ -1049,43 +1049,41 @@ export default function ShambaDashboard({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p
-                      className="truncate text-[10px] font-black uppercase
-                      tracking-[0.16em] text-emerald-600 dark:text-emerald-400"
+                      className="truncate text-[13px] font-black uppercase
+                      tracking-[0.16em] text-[#087F5B] dark:text-emerald-400"
                     >
                       Farm intelligence
                     </p>
                   </div>
 
                   <h1
-                    className="mt-0.5 truncate text-base font-black tracking-tight
-                    text-slate-900 dark:text-white sm:text-lg"
+                    className="mt-0.5 truncate font-black tracking-tight text-slate-900 dark:text-white text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
                   >
-                    Hello, {getFarmerName(farmer, user)}
+                    Farm Overview
                   </h1>
 
-                  <div
-                    className="mt-1 flex min-w-0 items-center gap-1.5
-                    text-[10px] font-medium text-slate-400 dark:text-gray-500"
-                  >
-                    <MapPin size={12} className="shrink-0" />
-                    <span className="truncate">{locationLabel}</span>
-                  </div>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600 dark:text-gray-300">
+                    Welcome back, {getFarmerName(farmer, user)}. View farm operations, crop performance and agricultural insights in one place.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <div
-                className="
-                  flex min-w-0 max-w-[220px] items-center gap-2 rounded-xl
-                  border border-slate-200 bg-slate-50 px-3 py-2.5
-                  text-[10px] font-bold text-slate-600
-                  dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300
-                "
-              >
-                <MapPin size={13} className="shrink-0 text-emerald-600" />
-                <span className="truncate">{locationLabel}</span>
-              </div>
+              {firstFarm && (
+                <div
+                  className="
+                    flex min-w-0 max-w-[240px] items-center gap-2 rounded-xl
+                    border border-[#DCE5E1] bg-slate-50 px-3 py-2.5
+                    text-sm font-semibold text-slate-600
+                    dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300
+                  "
+                  title="Registered farm location"
+                >
+                  <MapPin size={15} className="shrink-0 text-[#087F5B]" />
+                  <span className="truncate">{locationLabel}</span>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -1093,9 +1091,9 @@ export default function ShambaDashboard({
                 disabled={refreshing}
                 className="
                   flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
-                  border border-slate-200 bg-white text-slate-600 shadow-sm
+                  border border-[#DCE5E1] bg-white text-slate-600 shadow-sm
                   transition-all hover:border-emerald-200 hover:bg-emerald-50
-                  hover:text-emerald-700 active:scale-95 disabled:opacity-50
+                  hover:text-[#075E46] active:scale-95 disabled:opacity-50
                   dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300
                   dark:hover:border-emerald-900 dark:hover:bg-emerald-950/40
                   dark:hover:text-emerald-400
@@ -1111,73 +1109,75 @@ export default function ShambaDashboard({
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {[
-              {
-                label: "Farm health",
-                value: Math.round(number(healthScore)),
-                suffix: "/100",
-                icon: Sprout,
-              },
-              {
-                label: "Active crops",
-                value: activeCrops.length || number(metrics?.active_crops),
-                suffix: "",
-                icon: Leaf,
-              },
-              {
-                label: "Productivity",
-                value: Math.round(number(productivityScore)),
-                suffix: "%",
-                icon: TrendingUp,
-              },
-              {
-                label: "Alerts",
-                value: unreadAlerts.length,
-                suffix: "",
-                icon: AlertTriangle,
-              },
-            ].map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div
-                  key={item.label}
-                  className="
-                    rounded-2xl border border-slate-200 bg-white px-3 py-3
-                    shadow-sm dark:border-gray-800 dark:bg-gray-900
-                  "
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div
-                      className="
-                        flex h-8 w-8 items-center justify-center rounded-lg
-                        bg-emerald-50 text-emerald-600
-                        dark:bg-emerald-950/40 dark:text-emerald-400
-                      "
-                    >
-                      <Icon size={14} />
-                    </div>
-
-                    <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
-                      {item.label}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-lg font-black text-slate-900 dark:text-white">
-                      {item.value}
-                    </span>
-                    {item.suffix && (
-                      <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500">
-                        {item.suffix}
+          {firstFarm && (
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                {
+                  label: "Farm health",
+                  value: Math.round(number(healthScore)),
+                  suffix: "/100",
+                  icon: Sprout,
+                },
+                {
+                  label: "Active crops",
+                  value: activeCrops.length || number(metrics?.active_crops),
+                  suffix: "",
+                  icon: Leaf,
+                },
+                {
+                  label: "Productivity",
+                  value: Math.round(number(productivityScore)),
+                  suffix: "%",
+                  icon: TrendingUp,
+                },
+                {
+                  label: "Alerts",
+                  value: unreadAlerts.length,
+                  suffix: "",
+                  icon: AlertTriangle,
+                },
+              ].map((item) => {
+                const Icon = item.icon;
+  
+                return (
+                  <div
+                    key={item.label}
+                    className="
+                      rounded-2xl border border-[#DCE5E1] bg-white px-3 py-3
+                      shadow-sm dark:border-gray-800 dark:bg-gray-900
+                    "
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div
+                        className="
+                          flex h-8 w-8 items-center justify-center rounded-lg
+                          bg-emerald-50 text-[#087F5B]
+                          dark:bg-emerald-950/40 dark:text-emerald-400
+                        "
+                      >
+                        <Icon size={14} />
+                      </div>
+  
+                      <span className="text-[13px] font-bold text-slate-400 dark:text-gray-500">
+                        {item.label}
                       </span>
-                    )}
+                    </div>
+  
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                        {item.value}
+                      </span>
+                      {item.suffix && (
+                        <span className="text-[13px] font-bold text-slate-400 dark:text-gray-500">
+                          {item.suffix}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* ==================================================
@@ -1197,7 +1197,7 @@ export default function ShambaDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               font-medium
               text-red-700
             "
@@ -1220,7 +1220,7 @@ export default function ShambaDashboard({
           <section
             className="
               mb-5
-              rounded-3xl
+              rounded-2xl
               border
               border-dashed
               border-emerald-200
@@ -1239,21 +1239,20 @@ export default function ShambaDashboard({
                 justify-center
                 rounded-2xl
                 bg-white
-                text-emerald-600
+                text-[#087F5B]
                 shadow-sm
               "
             >
               <Tractor size={22} />
             </div>
 
-            <h2 className="mt-3 text-sm font-black text-slate-900">
-              Set up your farm
+            <h2 className="mt-3 font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
+              Set up your first farm
             </h2>
 
-            <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-slate-500">
-              Add your farm location, crops,
-              water source and production details
-              to unlock Shamba intelligence.
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600">
+              Add your farm details to unlock relevant crop, weather, productivity and market insights.
+              You can start with the farm name and location, then add more details as you go.
             </p>
 
             <button
@@ -1267,19 +1266,19 @@ export default function ShambaDashboard({
                 items-center
                 gap-2
                 rounded-xl
-                bg-emerald-600
+                bg-[#087F5B]
                 px-4
                 py-2.5
-                text-[10px]
+                text-[13px]
                 font-black
                 text-white
                 shadow-sm
                 transition
-                hover:bg-emerald-700
+                hover:bg-[#075E46]
               "
             >
-              Set up farm
-              <ArrowRight size={13} />
+              Create Your First Farm
+              <ArrowRight size={16} />
             </button>
           </section>
         )}
@@ -1295,11 +1294,11 @@ export default function ShambaDashboard({
             <div className="mb-3 flex items-end justify-between">
 
               <div>
-                <h2 className="text-sm font-black text-slate-900">
+                <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                   Farm Health
                 </h2>
 
-                <p className="mt-0.5 text-[9px] text-slate-400">
+                <p className="mt-0.5 text-[13px] text-slate-400">
                   The current condition of your farm.
                 </p>
               </div>
@@ -1309,7 +1308,7 @@ export default function ShambaDashboard({
                   rounded-full
                   px-2.5
                   py-1
-                  text-[8px]
+                  text-[13px]
                   font-black
                   ${risk.className}
                 `}
@@ -1377,7 +1376,7 @@ export default function ShambaDashboard({
               <div
                 className="
                   overflow-hidden
-                  rounded-3xl
+                  rounded-2xl
                   bg-gradient-to-br
                   from-sky-500
                   to-blue-600
@@ -1390,7 +1389,7 @@ export default function ShambaDashboard({
                 <div className="flex items-start justify-between">
 
                   <div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-white/65">
+                    <div className="text-[13px] font-black uppercase tracking-[0.16em] text-white/65">
                       Farm weather
                     </div>
 
@@ -1417,7 +1416,7 @@ export default function ShambaDashboard({
                       : "—"}
                   </span>
 
-                  <span className="pb-1 text-[9px] font-semibold text-white/70">
+                  <span className="pb-1 text-[13px] font-semibold text-white/70">
                     local farm conditions
                   </span>
                 </div>
@@ -1426,14 +1425,14 @@ export default function ShambaDashboard({
                   className="
                     mt-4
                     grid
-                    grid-cols-3
+                    grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
                     gap-2
                   "
                 >
 
                   <div className="rounded-xl bg-white/10 p-2">
                     <CloudRain size={13} />
-                    <div className="mt-1 text-[9px] font-black">
+                    <div className="mt-1 text-[13px] font-black">
                       {weatherData?.rainfall_probability !== undefined
                         ? `${Math.round(
                             number(
@@ -1442,14 +1441,14 @@ export default function ShambaDashboard({
                           )}%`
                         : "—"}
                     </div>
-                    <div className="text-[7px] text-white/60">
+                    <div className="text-[13px] text-white/60">
                       Rain chance
                     </div>
                   </div>
 
                   <div className="rounded-xl bg-white/10 p-2">
                     <Droplets size={13} />
-                    <div className="mt-1 text-[9px] font-black">
+                    <div className="mt-1 text-[13px] font-black">
                       {weatherData?.humidity !== undefined
                         ? `${Math.round(
                             number(
@@ -1458,21 +1457,21 @@ export default function ShambaDashboard({
                           )}%`
                         : "—"}
                     </div>
-                    <div className="text-[7px] text-white/60">
+                    <div className="text-[13px] text-white/60">
                       Humidity
                     </div>
                   </div>
 
                   <div className="rounded-xl bg-white/10 p-2">
                     <Wind size={13} />
-                    <div className="mt-1 text-[9px] font-black">
+                    <div className="mt-1 text-[13px] font-black">
                       {weatherData?.wind_speed !== undefined
                         ? `${number(
                             weatherData.wind_speed,
                           ).toFixed(1)}`
                         : "—"}
                     </div>
-                    <div className="text-[7px] text-white/60">
+                    <div className="text-[13px] text-white/60">
                       Wind
                     </div>
                   </div>
@@ -1484,9 +1483,9 @@ export default function ShambaDashboard({
 
               <div
                 className="
-                  rounded-3xl
+                  rounded-2xl
                   border
-                  border-slate-100
+                  border-[#DCE5E1]
                   bg-white
                   p-4
                   shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1496,11 +1495,11 @@ export default function ShambaDashboard({
                 <div className="flex items-start justify-between">
 
                   <div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    <div className="text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                       Water readiness
                     </div>
 
-                    <h3 className="mt-1 text-sm font-black text-slate-900">
+                    <h3 className="mt-1 font-black text-slate-900 text-base leading-snug text-[#172B25]">
                       {commandFarm?.water_source ||
                         "Water source not recorded"}
                     </h3>
@@ -1530,7 +1529,7 @@ export default function ShambaDashboard({
                       {Math.round(number(waterScore))}
                     </span>
 
-                    <span className="text-[9px] font-bold text-slate-400">
+                    <span className="text-[13px] font-bold text-slate-400">
                       /100
                     </span>
                   </div>
@@ -1552,7 +1551,7 @@ export default function ShambaDashboard({
 
                 </div>
 
-                <div className="mt-4 flex items-center gap-2 text-[9px] text-slate-500">
+                <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-500">
                   {number(waterScore) >= 60 ? (
                     <CheckCircle2
                       size={13}
@@ -1587,11 +1586,11 @@ export default function ShambaDashboard({
         <section className="mb-5">
 
           <div className="mb-3">
-            <h2 className="text-sm font-black text-slate-900">
+            <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
               Quick Access
             </h2>
 
-            <p className="mt-0.5 text-[9px] text-slate-400">
+            <p className="mt-0.5 text-[13px] text-slate-400">
               Manage your farm from one place.
             </p>
           </div>
@@ -1625,11 +1624,11 @@ export default function ShambaDashboard({
           <div className="mb-3 flex items-end justify-between">
 
             <div>
-              <h2 className="text-sm font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                 Crops
               </h2>
 
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 Current production on your farm.
               </p>
             </div>
@@ -1643,9 +1642,9 @@ export default function ShambaDashboard({
                 inline-flex
                 items-center
                 gap-1
-                text-[9px]
+                text-[13px]
                 font-black
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               View crops
@@ -1660,7 +1659,7 @@ export default function ShambaDashboard({
               overflow-hidden
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
             "
@@ -1753,7 +1752,7 @@ export default function ShambaDashboard({
                             justify-center
                             rounded-xl
                             bg-emerald-50
-                            text-emerald-600
+                            text-[#087F5B]
                           "
                         >
                           <Leaf size={16} />
@@ -1761,12 +1760,12 @@ export default function ShambaDashboard({
 
                         <div className="min-w-0 flex-1">
 
-                          <div className="truncate text-[10px] font-black text-slate-800">
+                          <div className="truncate text-[13px] font-black text-slate-800">
                             {crop?.name ||
                               "Crop"}
                           </div>
 
-                          <div className="mt-0.5 truncate text-[8px] text-slate-400">
+                          <div className="mt-0.5 truncate text-[13px] text-slate-400">
                             {crop?.variety ||
                               crop?.category ||
                               health}
@@ -1781,7 +1780,7 @@ export default function ShambaDashboard({
                               rounded-full
                               px-2
                               py-1
-                              text-[8px]
+                              text-[13px]
                               font-black
                               ${cropRiskTone.className}
                             `}
@@ -1790,7 +1789,7 @@ export default function ShambaDashboard({
                           </div>
 
                           {crop?.area !== undefined && (
-                            <div className="mt-1 text-[8px] text-slate-400">
+                            <div className="mt-1 text-[13px] text-slate-400">
                               {crop.area}{" "}
                               {crop.area_unit ||
                                 "acres"}
@@ -1811,11 +1810,11 @@ export default function ShambaDashboard({
                   className="mx-auto text-slate-300"
                 />
 
-                <div className="mt-2 text-[10px] font-black text-slate-700">
+                <div className="mt-2 text-[13px] font-black text-slate-700">
                   No crops recorded
                 </div>
 
-                <p className="mx-auto mt-1 max-w-xs text-[9px] leading-5 text-slate-400">
+                <p className="mx-auto mt-1 max-w-xs text-[13px] leading-5 text-slate-400">
                   Add your crops to start receiving
                   crop-level intelligence.
                 </p>
@@ -1834,11 +1833,11 @@ export default function ShambaDashboard({
         <section className="mb-5">
 
           <div className="mb-3">
-            <h2 className="text-sm font-black text-slate-900">
+            <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
               Farm Intelligence
             </h2>
 
-            <p className="mt-0.5 text-[9px] text-slate-400">
+            <p className="mt-0.5 text-[13px] text-slate-400">
               What Shamba recommends you do next.
             </p>
           </div>
@@ -1850,7 +1849,7 @@ export default function ShambaDashboard({
 
             <div
               className="
-                rounded-3xl
+                rounded-2xl
                 border
                 border-emerald-100
                 bg-emerald-50
@@ -1870,7 +1869,7 @@ export default function ShambaDashboard({
                     justify-center
                     rounded-2xl
                     bg-white
-                    text-emerald-600
+                    text-[#087F5B]
                     shadow-sm
                   "
                 >
@@ -1879,16 +1878,16 @@ export default function ShambaDashboard({
 
                 <div className="min-w-0 flex-1">
 
-                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-emerald-600">
+                  <div className="text-[13px] font-black uppercase tracking-[0.16em] text-[#087F5B]">
                     Recommended next
                   </div>
 
-                  <h3 className="mt-1 text-sm font-black text-slate-900">
+                  <h3 className="mt-1 font-black text-slate-900 text-base leading-snug text-[#172B25]">
                     {primaryRecommendation?.title ||
                       "Keep your farm data updated"}
                   </h3>
 
-                  <p className="mt-1 text-[9px] leading-5 text-slate-600">
+                  <p className="mt-1 text-[13px] leading-5 text-slate-600">
                     {primaryRecommendation?.recommendation ||
                       insight?.summary ||
                       "Update your crops, activities and farm conditions so Shamba can produce better recommendations."}
@@ -1911,15 +1910,15 @@ export default function ShambaDashboard({
                   items-center
                   gap-1.5
                   rounded-xl
-                  bg-emerald-600
+                  bg-[#087F5B]
                   px-3
                   py-2
-                  text-[9px]
+                  text-[13px]
                   font-black
                   text-white
                   shadow-sm
                   transition
-                  hover:bg-emerald-700
+                  hover:bg-[#075E46]
                 "
               >
                 Ask RevelaAI
@@ -1933,9 +1932,9 @@ export default function ShambaDashboard({
 
             <div
               className="
-                rounded-3xl
+                rounded-2xl
                 border
-                border-slate-100
+                border-[#DCE5E1]
                 bg-white
                 p-4
                 shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1945,11 +1944,11 @@ export default function ShambaDashboard({
               <div className="flex items-start justify-between">
 
                 <div>
-                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  <div className="text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                     Farm risks
                   </div>
 
-                  <h3 className="mt-1 text-sm font-black text-slate-900">
+                  <h3 className="mt-1 font-black text-slate-900 text-base leading-snug text-[#172B25]">
                     {riskItems.length
                       ? `${riskItems.length} areas need attention`
                       : "No major risks detected"}
@@ -1996,7 +1995,7 @@ export default function ShambaDashboard({
                           className="mt-0.5 shrink-0 text-amber-500"
                         />
 
-                        <span className="text-[9px] leading-4 text-slate-600">
+                        <span className="text-[13px] leading-4 text-slate-600">
                           {typeof item === "string"
                             ? item
                             : item?.message ||
@@ -2019,10 +2018,10 @@ export default function ShambaDashboard({
                   >
                     <CheckCircle2
                       size={14}
-                      className="text-emerald-600"
+                      className="text-[#087F5B]"
                     />
 
-                    <span className="text-[9px] font-semibold text-emerald-700">
+                    <span className="text-[13px] font-semibold text-[#075E46]">
                       Your current farm profile has no
                       major recorded risks.
                     </span>
@@ -2047,11 +2046,11 @@ export default function ShambaDashboard({
           <div className="mb-3 flex items-end justify-between">
 
             <div>
-              <h2 className="text-sm font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                 Market Opportunity
               </h2>
 
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 Current crop prices and demand signals.
               </p>
             </div>
@@ -2065,9 +2064,9 @@ export default function ShambaDashboard({
                 inline-flex
                 items-center
                 gap-1
-                text-[9px]
+                text-[13px]
                 font-black
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               Open market
@@ -2080,7 +2079,7 @@ export default function ShambaDashboard({
           <div
             className="
               overflow-hidden
-              rounded-3xl
+              rounded-2xl
               bg-gradient-to-br
               from-orange-400
               via-orange-500
@@ -2095,17 +2094,17 @@ export default function ShambaDashboard({
 
               <div className="min-w-0">
 
-                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-white/65">
+                <div className="text-[13px] font-black uppercase tracking-[0.18em] text-white/65">
                   Market today
                 </div>
 
-                <h3 className="mt-1 text-lg font-black">
+                <h3 className="mt-1 font-black text-base leading-snug text-[#172B25]">
                   {firstMarket?.crop_name ||
                     firstMarket?.name ||
                     "Market intelligence"}
                 </h3>
 
-                <p className="mt-1 text-[9px] leading-5 text-white/75">
+                <p className="mt-1 text-[13px] leading-5 text-white/75">
                   {firstMarket?.market ||
                     firstMarket?.target_market ||
                     "Track local demand and prices for your produce."}
@@ -2118,10 +2117,10 @@ export default function ShambaDashboard({
             </div>
 
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
 
               <div className="rounded-2xl bg-white/10 p-3">
-                <div className="text-[8px] text-white/60">
+                <div className="text-[13px] text-white/60">
                   Price
                 </div>
 
@@ -2132,7 +2131,7 @@ export default function ShambaDashboard({
                 </div>
 
                 {firstMarket?.unit && (
-                  <div className="text-[7px] text-white/60">
+                  <div className="text-[13px] text-white/60">
                     /{firstMarket.unit}
                   </div>
                 )}
@@ -2140,7 +2139,7 @@ export default function ShambaDashboard({
 
 
               <div className="rounded-2xl bg-white/10 p-3">
-                <div className="text-[8px] text-white/60">
+                <div className="text-[13px] text-white/60">
                   Trend
                 </div>
 
@@ -2160,7 +2159,7 @@ export default function ShambaDashboard({
 
 
               <div className="rounded-2xl bg-white/10 p-3">
-                <div className="text-[8px] text-white/60">
+                <div className="text-[13px] text-white/60">
                   Demand
                 </div>
 
@@ -2190,11 +2189,11 @@ export default function ShambaDashboard({
           <section className="mb-5">
 
             <div className="mb-3">
-              <h2 className="text-sm font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                 Farm Alerts
               </h2>
 
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 Things that may require action.
               </p>
             </div>
@@ -2248,12 +2247,12 @@ export default function ShambaDashboard({
 
                     <div className="min-w-0 flex-1">
 
-                      <div className="truncate text-[10px] font-black text-slate-800">
+                      <div className="truncate text-[13px] font-black text-slate-800">
                         {alert?.title ||
                           "Farm alert"}
                       </div>
 
-                      <div className="mt-0.5 text-[9px] leading-4 text-slate-500">
+                      <div className="mt-0.5 text-[13px] leading-4 text-slate-500">
                         {alert?.message ||
                           "This farm alert requires your attention."}
                       </div>
@@ -2283,11 +2282,11 @@ export default function ShambaDashboard({
           <div className="mb-3 flex items-end justify-between">
 
             <div>
-              <h2 className="text-sm font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
                 Recent Activity
               </h2>
 
-              <p className="mt-0.5 text-[9px] text-slate-400">
+              <p className="mt-0.5 text-[13px] text-slate-400">
                 What is happening on your farm.
               </p>
             </div>
@@ -2303,9 +2302,9 @@ export default function ShambaDashboard({
                 inline-flex
                 items-center
                 gap-1
-                text-[9px]
+                text-[13px]
                 font-black
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               View all
@@ -2320,7 +2319,7 @@ export default function ShambaDashboard({
               overflow-hidden
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
             "
@@ -2371,7 +2370,7 @@ export default function ShambaDashboard({
                           justify-center
                           rounded-xl
                           bg-emerald-50
-                          text-emerald-600
+                          text-[#087F5B]
                         "
                       >
                         <Activity size={15} />
@@ -2380,13 +2379,13 @@ export default function ShambaDashboard({
 
                       <div className="min-w-0 flex-1">
 
-                        <div className="truncate text-[10px] font-black text-slate-800">
+                        <div className="truncate text-[13px] font-black text-slate-800">
                           {activity?.type ||
                             activity?.activity_type ||
                             "Farm activity"}
                         </div>
 
-                        <div className="mt-0.5 truncate text-[9px] text-slate-400">
+                        <div className="mt-0.5 truncate text-[13px] text-slate-400">
                           {activity?.description ||
                             activity?.notes ||
                             formatDate(
@@ -2398,7 +2397,7 @@ export default function ShambaDashboard({
 
 
                       {activity?.cost !== undefined && (
-                        <div className="shrink-0 text-[9px] font-bold text-slate-500">
+                        <div className="shrink-0 text-[13px] font-bold text-slate-500">
                           {money(activity.cost)}
                         </div>
                       )}
@@ -2416,11 +2415,11 @@ export default function ShambaDashboard({
                   className="mx-auto text-slate-300"
                 />
 
-                <div className="mt-2 text-[10px] font-black text-slate-700">
+                <div className="mt-2 text-[13px] font-black text-slate-700">
                   No recent activity
                 </div>
 
-                <p className="mx-auto mt-1 max-w-xs text-[9px] leading-5 text-slate-400">
+                <p className="mx-auto mt-1 max-w-xs text-[13px] leading-5 text-slate-400">
                   Activities will appear here as you
                   work on your farm.
                 </p>
@@ -2442,7 +2441,7 @@ export default function ShambaDashboard({
           <div
             className="
               overflow-hidden
-              rounded-3xl
+              rounded-2xl
               bg-slate-950
               p-4
               text-white
@@ -2470,15 +2469,15 @@ export default function ShambaDashboard({
 
               <div className="min-w-0 flex-1">
 
-                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-emerald-400">
+                <div className="text-[13px] font-black uppercase tracking-[0.18em] text-emerald-400">
                   RevelaAI for Shamba
                 </div>
 
-                <h2 className="mt-1 text-sm font-black">
+                <h2 className="mt-1 font-black text-xl leading-snug tracking-tight text-[#172B25]">
                   Your farm intelligence assistant
                 </h2>
 
-                <p className="mt-1 text-[9px] leading-5 text-white/60">
+                <p className="mt-1 text-[13px] leading-5 text-white/60">
                   Ask about crops, weather, pests,
                   planting, production, markets or
                   what you should do next.
@@ -2512,7 +2511,7 @@ export default function ShambaDashboard({
               "
             >
 
-              <span className="text-[10px] font-black">
+              <span className="text-[13px] font-black">
                 Ask RevelaAI about my farm
               </span>
 

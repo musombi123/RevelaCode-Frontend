@@ -22,7 +22,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import JumuiyaDashboardShell from "@/Dashboard/JumuiyaDashboardShell.jsx";
+import ShambaDashboardFrame from "@/Dashboard/ShambaDashboardFrame.jsx";
 
 
 // =========================================================
@@ -85,7 +85,7 @@ function BuyerCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-100
+        border-[#DCE5E1]
         bg-white
         shadow-[0_4px_18px_rgba(15,23,42,0.04)]
         transition
@@ -113,7 +113,7 @@ function BuyerCard({
               justify-center
               rounded-2xl
               bg-emerald-50
-              text-emerald-600
+              text-[#087F5B]
             "
           >
             <User size={20} />
@@ -133,12 +133,7 @@ function BuyerCard({
               <div className="min-w-0">
 
                 <h3
-                  className="
-                    truncate
-                    text-sm
-                    font-black
-                    text-slate-900
-                  "
+                  className="truncate font-black text-slate-900 text-base leading-snug text-[#172B25]"
                 >
                   {getBuyerName(
                     listing,
@@ -151,7 +146,7 @@ function BuyerCard({
                     flex
                     items-center
                     gap-1
-                    text-[9px]
+                    text-[13px]
                     text-slate-400
                   "
                 >
@@ -173,9 +168,9 @@ function BuyerCard({
                   bg-emerald-50
                   px-2
                   py-1
-                  text-[8px]
+                  text-[13px]
                   font-black
-                  text-emerald-700
+                  text-[#075E46]
                 "
               >
                 Active
@@ -194,7 +189,7 @@ function BuyerCard({
             mt-4
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-slate-50
             p-3
           "
@@ -209,12 +204,12 @@ function BuyerCard({
           >
             <Leaf
               size={13}
-              className="text-emerald-600"
+              className="text-[#087F5B]"
             />
 
             <span
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -240,7 +235,7 @@ function BuyerCard({
           <div
             className="
               mt-1
-              text-[9px]
+              text-[13px]
               text-slate-400
             "
           >
@@ -268,7 +263,7 @@ function BuyerCard({
           >
             <span
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -280,7 +275,7 @@ function BuyerCard({
 
             <span
               className="
-                text-[10px]
+                text-[13px]
                 font-black
                 text-amber-800
               "
@@ -311,7 +306,7 @@ function BuyerCard({
         "
       >
 
-        <div className="text-[8px] text-slate-400">
+        <div className="text-[13px] text-slate-400">
           Connect with this market participant.
         </div>
 
@@ -325,14 +320,14 @@ function BuyerCard({
             items-center
             gap-1.5
             rounded-xl
-            bg-emerald-600
+            bg-[#087F5B]
             px-3
             py-2
-            text-[9px]
+            text-[13px]
             font-black
             text-white
             transition
-            hover:bg-emerald-700
+            hover:bg-[#075E46]
           "
         >
           <MessageCircle size={13} />
@@ -377,7 +372,7 @@ function ContactModal({
           w-full
           max-w-md
           overflow-hidden
-          rounded-3xl
+          rounded-2xl
           bg-white
           shadow-2xl
         "
@@ -391,7 +386,7 @@ function ContactModal({
             items-center
             justify-between
             border-b
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-4
           "
@@ -408,7 +403,7 @@ function ContactModal({
                 justify-center
                 rounded-xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <MessageCircle size={18} />
@@ -416,11 +411,7 @@ function ContactModal({
 
             <div>
               <h2
-                className="
-                  text-sm
-                  font-black
-                  text-slate-900
-                "
+                className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
               >
                 Contact Buyer
               </h2>
@@ -428,7 +419,7 @@ function ContactModal({
               <p
                 className="
                   mt-0.5
-                  text-[9px]
+                  text-[13px]
                   text-slate-400
                 "
               >
@@ -481,11 +472,11 @@ function ContactModal({
                 flex
                 items-center
                 gap-2
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-[0.16em]
-                text-emerald-700
+                text-[#075E46]
               "
             >
               <ShoppingBasket size={11} />
@@ -493,12 +484,7 @@ function ContactModal({
             </div>
 
             <h3
-              className="
-                mt-2
-                text-base
-                font-black
-                text-slate-900
-              "
+              className="mt-2 font-black text-slate-900 text-base leading-snug text-[#172B25]"
             >
               {listing?.title ||
                 "Produce requirement"}
@@ -507,7 +493,7 @@ function ContactModal({
             <p
               className="
                 mt-1
-                text-[10px]
+                text-[13px]
                 leading-5
                 text-slate-500
               "
@@ -524,20 +510,20 @@ function ContactModal({
               mt-4
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-slate-50
               p-4
             "
           >
 
-            <div className="text-[9px] font-black text-slate-700">
+            <div className="text-[13px] font-black text-slate-700">
               Buyer contact
             </div>
 
             <p
               className="
                 mt-1
-                text-[9px]
+                text-[13px]
                 leading-5
                 text-slate-400
               "
@@ -560,7 +546,7 @@ function ContactModal({
             flex
             justify-end
             border-t
-            border-slate-100
+            border-[#DCE5E1]
             px-4
             py-3
           "
@@ -571,13 +557,13 @@ function ContactModal({
             onClick={onClose}
             className="
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
             "
           >
             Close
@@ -597,6 +583,7 @@ function ContactModal({
 
 export default function ShambaBuyersDashboard({
   onNavigate,
+  embedded = false,
 }) {
   const { user } = useAuth();
 
@@ -760,7 +747,8 @@ export default function ShambaBuyersDashboard({
   // =======================================================
 
   return (
-    <JumuiyaDashboardShell
+    <ShambaDashboardFrame
+      embedded={embedded}
       title="Buyers"
       subtitle="Find people and opportunities for your produce."
       activeHub="shamba"
@@ -771,7 +759,7 @@ export default function ShambaBuyersDashboard({
         className="
           mx-auto
           w-full
-          max-w-[1100px]
+          max-w-none
           pb-24
         "
       >
@@ -802,11 +790,11 @@ export default function ShambaBuyersDashboard({
               w-fit
               items-center
               gap-1.5
-              text-[10px]
+              text-[13px]
               font-black
               text-slate-500
               transition
-              hover:text-emerald-600
+              hover:text-[#087F5B]
             "
           >
             <ArrowLeft size={14} />
@@ -823,15 +811,15 @@ export default function ShambaBuyersDashboard({
               items-center
               gap-1.5
               rounded-xl
-              bg-emerald-600
+              bg-[#087F5B]
               px-4
               py-2.5
-              text-[10px]
+              text-[13px]
               font-black
               text-white
               shadow-sm
               transition
-              hover:bg-emerald-700
+              hover:bg-[#075E46]
             "
           >
             <Leaf size={14} />
@@ -849,7 +837,7 @@ export default function ShambaBuyersDashboard({
           className="
             mb-5
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             border
             border-emerald-100
             bg-gradient-to-br
@@ -871,7 +859,7 @@ export default function ShambaBuyersDashboard({
                 items-center
                 justify-center
                 rounded-2xl
-                bg-emerald-600
+                bg-[#087F5B]
                 text-white
                 shadow-lg
               "
@@ -882,12 +870,7 @@ export default function ShambaBuyersDashboard({
             <div className="min-w-0">
 
               <h1
-                className="
-                  text-lg
-                  font-black
-                  tracking-tight
-                  text-slate-900
-                "
+                className="font-black tracking-tight text-slate-900 text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
                 Buyers
               </h1>
@@ -896,7 +879,7 @@ export default function ShambaBuyersDashboard({
                 className="
                   mt-1
                   max-w-xl
-                  text-[10px]
+                  text-[13px]
                   leading-5
                   text-slate-500
                 "
@@ -922,7 +905,7 @@ export default function ShambaBuyersDashboard({
             mb-4
             rounded-2xl
             border
-            border-slate-100
+            border-[#DCE5E1]
             bg-white
             p-3
             shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1017,7 +1000,7 @@ export default function ShambaBuyersDashboard({
 
             <span
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1056,14 +1039,14 @@ export default function ShambaBuyersDashboard({
                     rounded-xl
                     px-3
                     py-2
-                    text-[9px]
+                    text-[13px]
                     font-black
                     transition
                     ${
                       category ===
                       item
-                        ? "bg-emerald-600 text-white"
-                        : "border border-slate-100 bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                        ? "bg-[#087F5B] text-white"
+                        : "border border-[#DCE5E1] bg-white text-slate-500 hover:bg-emerald-50 hover:text-[#075E46]"
                     }
                   `}
                 >
@@ -1094,7 +1077,7 @@ export default function ShambaBuyersDashboard({
               bg-red-50
               px-4
               py-3
-              text-[10px]
+              text-[13px]
               leading-5
               text-red-700
             "
@@ -1122,7 +1105,7 @@ export default function ShambaBuyersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1130,7 +1113,7 @@ export default function ShambaBuyersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1145,7 +1128,7 @@ export default function ShambaBuyersDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loading
@@ -1159,7 +1142,7 @@ export default function ShambaBuyersDashboard({
             className="
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1167,7 +1150,7 @@ export default function ShambaBuyersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1182,7 +1165,7 @@ export default function ShambaBuyersDashboard({
                 mt-1
                 text-xl
                 font-black
-                text-emerald-700
+                text-[#075E46]
               "
             >
               {loading
@@ -1201,7 +1184,7 @@ export default function ShambaBuyersDashboard({
               col-span-2
               rounded-2xl
               border
-              border-slate-100
+              border-[#DCE5E1]
               bg-white
               p-4
               shadow-[0_4px_18px_rgba(15,23,42,0.035)]
@@ -1210,7 +1193,7 @@ export default function ShambaBuyersDashboard({
           >
             <div
               className="
-                text-[8px]
+                text-[13px]
                 font-black
                 uppercase
                 tracking-wide
@@ -1256,11 +1239,7 @@ export default function ShambaBuyersDashboard({
           <div>
 
             <h2
-              className="
-                text-sm
-                font-black
-                text-slate-900
-              "
+              className="font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               Buyer Opportunities
             </h2>
@@ -1268,7 +1247,7 @@ export default function ShambaBuyersDashboard({
             <p
               className="
                 mt-0.5
-                text-[9px]
+                text-[13px]
                 text-slate-400
               "
             >
@@ -1344,7 +1323,7 @@ export default function ShambaBuyersDashboard({
         ) : (
           <div
             className="
-              rounded-3xl
+              rounded-2xl
               border
               border-dashed
               border-emerald-200
@@ -1365,19 +1344,14 @@ export default function ShambaBuyersDashboard({
                 justify-center
                 rounded-2xl
                 bg-emerald-50
-                text-emerald-600
+                text-[#087F5B]
               "
             >
               <UsersIcon size={24} />
             </div>
 
             <h2
-              className="
-                mt-4
-                text-sm
-                font-black
-                text-slate-800
-              "
+              className="mt-4 font-black text-slate-800 text-xl leading-snug tracking-tight text-[#172B25]"
             >
               No buyer opportunities found
             </h2>
@@ -1387,7 +1361,7 @@ export default function ShambaBuyersDashboard({
                 mx-auto
                 mt-1
                 max-w-sm
-                text-[10px]
+                text-[13px]
                 leading-5
                 text-slate-400
               "
@@ -1411,13 +1385,13 @@ export default function ShambaBuyersDashboard({
                 className="
                   mt-5
                   rounded-xl
-                  bg-emerald-600
+                  bg-[#087F5B]
                   px-4
                   py-2.5
-                  text-[10px]
+                  text-[13px]
                   font-black
                   text-white
-                  hover:bg-emerald-700
+                  hover:bg-[#075E46]
                 "
               >
                 Clear Filters
@@ -1457,7 +1431,7 @@ export default function ShambaBuyersDashboard({
               justify-center
               rounded-xl
               bg-emerald-100
-              text-emerald-700
+              text-[#075E46]
             "
           >
             <CheckCircle2 size={14} />
@@ -1467,7 +1441,7 @@ export default function ShambaBuyersDashboard({
 
             <div
               className="
-                text-[9px]
+                text-[13px]
                 font-black
                 text-emerald-800
               "
@@ -1478,9 +1452,9 @@ export default function ShambaBuyersDashboard({
             <p
               className="
                 mt-1
-                text-[9px]
+                text-[13px]
                 leading-5
-                text-emerald-700/75
+                text-[#075E46]/75
               "
             >
               Buyer opportunities currently use
@@ -1510,7 +1484,7 @@ export default function ShambaBuyersDashboard({
         />
       )}
 
-    </JumuiyaDashboardShell>
+    </ShambaDashboardFrame>
   );
 }
 
