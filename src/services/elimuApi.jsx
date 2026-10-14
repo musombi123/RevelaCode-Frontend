@@ -561,6 +561,12 @@ export function createElimuApiClient({
     deleteSchoolDomain: (domainId, options) =>
       del(`school/domains/${pathSegment(domainId, "domain ID")}`, options),
 
+    getSchoolInquiries: (params, options) =>
+      get("school/inquiries", params, options),
+
+    updateSchoolInquiryStatus: (inquiryId, data, options) =>
+      patch(`school/inquiries/${pathSegment(inquiryId, "inquiry ID")}/status`, data, options),
+
     getProfile: (options) =>
       get("profile", undefined, options),
 
@@ -1119,6 +1125,15 @@ export function createElimuApiClient({
     getPublicSchoolByDomain: (params, options) =>
       publicGet("public/school-domain", params, options),
 
+    submitPublicSchoolInquiry: (data, options = {}) =>
+      request("public/inquiries", {
+        ...options,
+        method: "POST",
+        body: data,
+        credentials: "omit",
+        includeAuth: false,
+      }),
+
     getPublicSchools: (params, options) =>
       publicGet("public/schools", params, options),
 
@@ -1267,6 +1282,7 @@ export function createElimuApiClient({
 
     getPublicSchool: publicApi.getPublicSchool,
     getPublicSchoolByDomain: publicApi.getPublicSchoolByDomain,
+    submitPublicSchoolInquiry: publicApi.submitPublicSchoolInquiry,
     getPublicSchools: publicApi.getPublicSchools,
     getPublicEvents: publicApi.getPublicEvents,
     getPublicCalendar: publicApi.getPublicCalendar,
