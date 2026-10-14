@@ -303,6 +303,13 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const [notice, setNotice] = useState("");
   const [themeSaving, setThemeSaving] = useState(false);
   const [themePreviewExpanded, setThemePreviewExpanded] = useState(false);
+  const [domains, setDomains] = useState([]);
+  const [domainsLoading, setDomainsLoading] = useState(true);
+  const [domainBusy, setDomainBusy] = useState("");
+  const [domainError, setDomainError] = useState("");
+  const [domainNotice, setDomainNotice] = useState("");
+  const [newDomainHostname, setNewDomainHostname] = useState("");
+  const [renderTarget, setRenderTarget] = useState("");
 
   const publicUrl = useMemo(
     () => (form.public_slug ? `/${encodeURIComponent(form.public_slug)}` : ""),
@@ -336,6 +343,124 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
     })();
     return () => { active = false; };
   }, [api, school]);
+
+  const loadDomains = useCallback(async () => {
+    setDomainsLoading(true);
+    try {
+      const response = await api.getSchoolDomains();
+      const data = unwrap(response);
+      setDomains(Array.isArray(data?.domains) ? data.domains : []);
+      setRenderTarget(typeof data?.render_target === "string" ? data.render_target : "");
+      setDomainError("");
+      return data;
+    } catch (err) {
+      setDomainError(err?.message || "Custom domains could not be loaded.");
+      throw err;
+    } finally {
+      setDomainsLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const response = await api.getSchoolDomains();
+        const data = unwrap(response);
+        if (!active) return;
+        setDomains(Array.isArray(data?.domains) ? data.domains : []);
+        setRenderTarget(typeof data?.render_target === "string" ? data.render_target : "");
+        setDomainError("");
+      } catch (err) {
+        if (active) setDomainError(err?.message || "Custom-domain infrastructure is not configured yet.");
+      } finally {
+        if (active) setDomainsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [api, school]);
+
+  const addDomain = async (event) => {
+    event.preventDefault();
+    if (!newDomainHostname.trim()) {
+      setDomainError("Enter the hostname you registered, such as www.yourschool.ac.ke.");
+      return;
+    }
+    setDomainBusy("add");
+    setDomainError("");
+    setDomainNotice("");
+    try {
+      const response = await api.addSchoolDomain({ hostname: newDomainHostname.trim() });
+      const data = unwrap(response);
+      const record = data?.domain || data;
+      if (!record?.id || !record?.hostname) throw new Error("The hosting service did not return a saved domain record.");
+      setDomains((current) => [record, ...current.filter((item) => item.id !== record.id && item.hostname !== record.hostname)]);
+      setRenderTarget(record?.dns?.value || renderTarget);
+      setNewDomainHostname("");
+      setDomainNotice("Hostname added to the hosting service. Configure the displayed DNS record, then verify it.");
+      try { await loadDomains(); } catch (_) { /* Keep the saved result visible if refresh is temporarily unavailable. */ }
+    } catch (err) {
+      setDomainError(err?.message || "Could not add the custom hostname.");
+    } finally {
+      setDomainBusy("");
+    }
+  };
+
+  const verifyDomain = async (domain) => {
+    setDomainBusy("verify:" + domain.id);
+    setDomainError("");
+    setDomainNotice("");
+    try {
+      const response = await api.verifySchoolDomain(domain.id);
+      const data = unwrap(response);
+      const record = data?.domain || data;
+      if (!record?.id) throw new Error("The server did not return the updated domain status.");
+      setDomains((current) => current.map((item) => item.id === record.id ? record : item));
+      setDomainNotice(record.status === "active"
+        ? domain.hostname + " is verified and serving over HTTPS."
+        : "Verification was requested. Current status: " + (record.status || "pending") + ". The domain will not be marked active until the server confirms DNS routing and HTTPS.");
+      try { await loadDomains(); } catch (_) { /* The verification result remains visible. */ }
+    } catch (err) {
+      setDomainError(err?.message || "Could not verify the custom hostname.");
+    } finally {
+      setDomainBusy("");
+    }
+  };
+
+  const makePrimaryDomain = async (domain) => {
+    setDomainBusy("primary:" + domain.id);
+    setDomainError("");
+    setDomainNotice("");
+    try {
+      const response = await api.setPrimarySchoolDomain(domain.id);
+      const data = unwrap(response);
+      if (data?.school?.primary_domain !== domain.hostname) throw new Error("The backend did not confirm the primary-domain change.");
+      setDomains((current) => current.map((item) => ({ ...item, is_primary: item.id === domain.id })));
+      setDomainNotice(domain.hostname + " is now the primary domain. The platform URL remains available.");
+    } catch (err) {
+      setDomainError(err?.message || "Could not set the primary domain.");
+    } finally {
+      setDomainBusy("");
+    }
+  };
+
+  const removeDomain = async (domain) => {
+    if (!window.confirm("Remove " + domain.hostname + " from this school website? The hostname will stop resolving through this platform.")) return;
+    setDomainBusy("remove:" + domain.id);
+    setDomainError("");
+    setDomainNotice("");
+    try {
+      const response = await api.deleteSchoolDomain(domain.id);
+      const data = unwrap(response);
+      if (data?.removed !== true) throw new Error("The server did not confirm domain removal.");
+      setDomains((current) => current.filter((item) => item.id !== domain.id));
+      setDomainNotice(domain.hostname + " was removed.");
+    } catch (err) {
+      setDomainError(err?.message || "Could not remove the custom hostname.");
+    } finally {
+      setDomainBusy("");
+    }
+  };
 
   const change = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -664,6 +789,68 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
             <button type="button" onClick={() => void saveTheme(false)} disabled={themeSaving || Boolean(uploadingField)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{themeSaving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}Save draft</button>
             <button type="button" onClick={() => void saveTheme(true)} disabled={themeSaving || Boolean(uploadingField) || themeWarnings.some((warning) => warning.includes("six-digit"))} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"><Globe size={15} />Publish theme</button>
           </div>
+        </div>
+      </section>
+
+      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300"><Globe size={18} /><p className="text-xs font-extrabold uppercase tracking-[0.15em]">Domains and URLs</p></div>
+            <h3 className="mt-2 text-xl font-bold text-slate-950 dark:text-white">Connect your school's own domain</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">Keep your RevelaCode address and optionally connect a domain registered with any registrar. A hostname is not active until the hosting provider confirms DNS and HTTPS.</p>
+          </div>
+          <button type="button" onClick={() => { setDomainNotice(""); void loadDomains().catch(() => {}); }} disabled={domainsLoading || Boolean(domainBusy)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200"><Globe size={15} />Refresh status</button>
+        </div>
+
+        {domainError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">{domainError}</div>}
+        {domainNotice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">{domainNotice}</div>}
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Platform website</p>
+          <a href={publicUrl ? window.location.origin + publicUrl : window.location.origin} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 dark:text-blue-300">{publicUrl ? window.location.origin + publicUrl : "Save the public website slug to create the platform URL"}</a>
+          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">This address remains available when a custom domain is connected.</p>
+        </div>
+
+        <form onSubmit={addDomain} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <label htmlFor="elimu-custom-domain" className="block min-w-0 text-sm font-semibold text-slate-700 dark:text-slate-200">Custom hostname
+            <input id="elimu-custom-domain" type="text" autoComplete="url" spellCheck={false} value={newDomainHostname} onChange={(event) => setNewDomainHostname(event.target.value)} placeholder="www.yourschool.ac.ke" maxLength={253} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+          </label>
+          <div className="flex items-end"><button type="submit" disabled={Boolean(domainBusy) || domainsLoading || !newDomainHostname.trim()} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">{domainBusy === "add" ? <Loader size={16} className="animate-spin" /> : <Globe size={16} />} Add hostname</button></div>
+        </form>
+
+        <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-blue-950 dark:border-blue-900/60 dark:bg-blue-950/25 dark:text-blue-100">
+          <p className="font-bold">DNS setup</p>
+          <p className="mt-1">After adding a hostname, copy the exact record type, host and target shown in its details into your registrar's DNS panel. DNS is managed at your registrar; RevelaCode does not buy or transfer your domain.</p>
+          <p className="mt-1 text-xs">The hosting integration target {renderTarget ? <code className="break-all">{renderTarget}</code> : "will be shown once the backend's Render integration is configured"} comes from the deployment configuration, not an invented address.</p>
+        </div>
+
+        <div className="space-y-3">
+          {domainsLoading && <p className="flex items-center gap-2 text-sm text-slate-500"><Loader size={16} className="animate-spin" />Loading domain statuses...</p>}
+          {!domainsLoading && domains.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 p-5 text-sm leading-6 text-slate-500 dark:border-slate-700 dark:text-slate-400">No custom domains have been saved for this school yet. If domain management reports that the hosting integration is not configured, an administrator must add the backend Render API key and static-site service ID before this feature can operate.</div>}
+          {domains.map((domain) => {
+            const statusLabels = { pending_dns: "DNS verification pending", https_pending: "Waiting for HTTPS", routing_pending: "Waiting for routing", active: "Active · HTTPS confirmed", failed: "Needs attention" };
+            const busy = domainBusy.endsWith(domain.id);
+            return (
+              <article key={domain.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2"><h4 className="break-all text-sm font-bold text-slate-950 dark:text-white">{domain.hostname}</h4>{domain.is_primary && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-200">Primary</span>}</div>
+                    <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{statusLabels[domain.status] || domain.status || "Status unavailable"}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">DNS: {domain.verification_status || "unknown"} · HTTPS: {domain.https_status || "unknown"}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void verifyDomain(domain)} disabled={Boolean(domainBusy) || domainsLoading} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{domainBusy === "verify:" + domain.id ? <Loader size={14} className="animate-spin" /> : <ShieldCheck size={14} />}Verify</button>
+                    {!domain.is_primary && <button type="button" onClick={() => void makePrimaryDomain(domain)} disabled={Boolean(domainBusy) || domain.status !== "active" || domain.https_status !== "active"} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">Set primary</button>}
+                    <button type="button" onClick={() => void removeDomain(domain)} disabled={Boolean(domainBusy)} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-900/60 dark:text-rose-300"><RotateCcw size={14} />Remove</button>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {[["DNS record type", domain.dns?.record_type], ["DNS host/name", domain.dns?.host], ["DNS target/value", domain.dns?.value]].map(([label, value]) => <div key={label} className="min-w-0 rounded-lg bg-slate-50 p-3 dark:bg-slate-900"><p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p><p className="mt-1 break-all text-sm font-semibold text-slate-800 dark:text-slate-200">{value || "Not provided"}</p></div>)}
+                </div>
+                {domain.dns?.note && <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{domain.dns.note}</p>}
+              </article>
+            );
+          })}
         </div>
       </section>
 
