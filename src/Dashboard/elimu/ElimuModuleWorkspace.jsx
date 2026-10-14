@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuLegacyImport from "./ElimuLegacyImport.jsx";
+import ElimuTimetableWorkspace from "./ElimuTimetableWorkspace.jsx";
+
 
 const MODULES = {
   "elimu/school": {
@@ -974,8 +976,8 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
   }, [api, access, demo, meta, moduleKey, school]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (moduleKey !== "timetable") void load();
+  }, [load, moduleKey]);
 
   const createRecord = useCallback(async (event) => {
     event.preventDefault();
@@ -1036,7 +1038,19 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
     return <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">This Elimu module has no screen registered yet.</section>;
   }
 
+  if (moduleKey === "timetable") {
+    return (
+      <ElimuTimetableWorkspace
+        api={api}
+        school={school}
+        role={role}
+        onBack={() => onNavigate?.("elimu")}
+      />
+    );
+  }
+
   const count = rows.length;
+
   const numericMetrics = payload && typeof payload === "object" && !Array.isArray(payload)
     ? Object.entries(payload).filter(([, value]) => typeof value === "number" && Number.isFinite(value)).slice(0, 4)
     : [];
