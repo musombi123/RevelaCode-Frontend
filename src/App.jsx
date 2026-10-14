@@ -86,6 +86,39 @@ function PlatformDashboardRoute({ requiredRole }) {
   );
 }
 
+function isPlatformHostname() {
+  const hostname = String(window.location.hostname || "").trim().toLowerCase();
+  const configured = String(import.meta.env.VITE_PLATFORM_HOSTNAMES || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".onrender.com") ||
+    configured.includes(hostname)
+  );
+}
+
+function PlatformHomeRoute() {
+  if (!isPlatformHostname()) {
+    return <ElimuPublicSchoolPage customDomainMode />;
+  }
+  return (
+    <SPAWrapper>
+      <Layout>
+        <MainDashboardV2 />
+      </Layout>
+    </SPAWrapper>
+  );
+}
+
+function PlatformSchoolRoute() {
+  return isPlatformHostname()
+    ? <ElimuPublicSchoolPage />
+    : <ElimuPublicSchoolPage customDomainMode />;
+}
+
 function ElimuPortalRoute({ portal }) {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -139,16 +172,7 @@ export default function App() {
         <HistoryProvider>
           <BrowserRouter>
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <SPAWrapper>
-                    <Layout>
-                      <MainDashboardV2 />
-                    </Layout>
-                  </SPAWrapper>
-                }
-              />
+              <Route path="/" element={<PlatformHomeRoute />} />
 
               <Route
                 path="/pages"
@@ -268,7 +292,7 @@ export default function App() {
 
               <Route
                 path="/:schoolSlug/*"
-                element={<ElimuPublicSchoolPage />}
+                element={<PlatformSchoolRoute />}
               />
 
               <Route
