@@ -357,6 +357,9 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
   const [downloadError, setDownloadError] = useState("");
   const [downloadingId, setDownloadingId] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [inquiryForm, setInquiryForm] = useState({ name: "", email: "", phone: "", topic: "general", message: "", website_confirmation: "" });
+  const [inquirySubmitting, setInquirySubmitting] = useState(false);
+  const [inquiryFeedback, setInquiryFeedback] = useState(null);
 
   const pageSegment = useMemo(() => {
     const segments = location.pathname.split("/").filter(Boolean);
@@ -551,6 +554,39 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     window.location.replace(target);
   }, [school, canonicalPage, location.search, location.hash]);
 
+  const submitInquiry = useCallback(async (event) => {
+    event.preventDefault();
+    if (inquirySubmitting) return;
+    setInquirySubmitting(true);
+    setInquiryFeedback(null);
+    const payload = {
+      name: inquiryForm.name.trim(),
+      email: inquiryForm.email.trim(),
+      phone: inquiryForm.phone.trim(),
+      topic: inquiryForm.topic,
+      message: inquiryForm.message.trim(),
+      website_confirmation: inquiryForm.website_confirmation,
+      ...(customDomainMode
+        ? { hostname: window.location.hostname }
+        : { school_slug: publicSchoolSlug }),
+    };
+    try {
+      const response = await api.submitPublicSchoolInquiry(payload);
+      setInquiryFeedback({
+        type: "success",
+        message: response?.message || "Your inquiry was received and saved for school administration review. It has not been emailed automatically.",
+      });
+      setInquiryForm({ name: "", email: "", phone: "", topic: "general", message: "", website_confirmation: "" });
+    } catch (submitError) {
+      setInquiryFeedback({
+        type: "error",
+        message: submitError?.message || "The inquiry could not be submitted. Please try again or use the school's published contact details.",
+      });
+    } finally {
+      setInquirySubmitting(false);
+    }
+  }, [api, inquiryForm, inquirySubmitting, customDomainMode, publicSchoolSlug]);
+
   const handleDownload = useCallback(async (document) => {
     const id = recordId(document);
     if (!id) {
@@ -709,7 +745,58 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
       break;
     case "contact":
-      pageContent = <><PageHeading icon={Mail} eyebrow="Get in touch" title="Contact the school" description="Use the official contact details below to reach the school administration." /><div className="grid gap-5 lg:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"><h2 className="text-lg font-extrabold text-slate-950">Contact details</h2><div className="mt-6 space-y-5"><div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>{phone && <div className="flex items-start gap-3"><Phone size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</p><a className="mt-1 block text-sm font-semibold text-slate-900 hover:text-emerald-700" href={`tel:${phone}`}>{phone}</a></div></div>}{email && <div className="flex items-start gap-3"><Mail size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={`mailto:${email}`}>{email}</a></div></div>}{website && <div className="flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={/^https?:\/\//i.test(website) ? website : `https://${website}`} target="_blank" rel="noreferrer">{website}</a></div></div>}</div></section><aside className="rounded-2xl bg-slate-950 p-6 text-white sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-emerald-200"><School size={24} /></div><h2 className="mt-5 text-xl font-extrabold">{schoolName}</h2><p className="mt-3 text-sm leading-7 text-slate-300">For admissions, official notices or school-related enquiries, please use the published contact details. The website displays information approved for public access.</p><Link to={pageUrl("documents")} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-50">View school documents <ArrowRight size={15} /></Link></aside></div></>;
+      pageContent = (
+        <>
+          <PageHeading icon={Mail} eyebrow="Get in touch" title="Contact the school" description="Use the official contact details or send an inquiry to the school administration." />
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+              <h2 className="text-lg font-extrabold text-slate-950">Official contact details</h2>
+              <div className="mt-6 space-y-5">
+                <div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationText)} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>
+                {phone && <div className="flex items-start gap-3"><Phone size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</p><a className="mt-1 block text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"tel:" + phone}>{phone}</a></div></div>}
+                {email && <div className="flex items-start gap-3"><Mail size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"mailto:" + email}>{email}</a></div></div>}
+                {website && <div className="flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={website.startsWith("http://") || website.startsWith("https://") ? website : "https://" + website} target="_blank" rel="noreferrer">{website}</a></div></div>}
+              </div>
+            </section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+              <h2 className="text-xl font-extrabold text-slate-950">Send a school inquiry</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">For admissions, fees, or general questions, send a message for the school administration to review.</p>
+              {inquiryFeedback && <div role={inquiryFeedback.type === "error" ? "alert" : "status"} className={"mt-4 rounded-xl border p-3 text-sm leading-6 " + (inquiryFeedback.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900")}>{inquiryFeedback.message}</div>}
+              <form className="mt-5 space-y-4" onSubmit={submitInquiry}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-semibold text-slate-700">Your name
+                    <input required minLength={2} maxLength={100} autoComplete="name" value={inquiryForm.name} onChange={(event) => setInquiryForm((current) => ({ ...current, name: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                  </label>
+                  <label className="block text-sm font-semibold text-slate-700">Email address
+                    <input required type="email" maxLength={254} autoComplete="email" value={inquiryForm.email} onChange={(event) => setInquiryForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                  </label>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-semibold text-slate-700">Phone (optional)
+                    <input type="tel" maxLength={40} autoComplete="tel" value={inquiryForm.phone} onChange={(event) => setInquiryForm((current) => ({ ...current, phone: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                  </label>
+                  <label className="block text-sm font-semibold text-slate-700">Inquiry topic
+                    <select value={inquiryForm.topic} onChange={(event) => setInquiryForm((current) => ({ ...current, topic: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                      <option value="admissions">Admissions</option><option value="fees">Fees</option><option value="general">General inquiry</option><option value="other">Other</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="block text-sm font-semibold text-slate-700">Message
+                  <textarea required minLength={15} maxLength={4000} rows={5} value={inquiryForm.message} onChange={(event) => setInquiryForm((current) => ({ ...current, message: event.target.value }))} placeholder="Tell the school what you would like to know..." className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                </label>
+                <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
+                  <label htmlFor="school-website-confirmation">Leave this field empty</label>
+                  <input id="school-website-confirmation" type="text" tabIndex={-1} autoComplete="off" value={inquiryForm.website_confirmation} onChange={(event) => setInquiryForm((current) => ({ ...current, website_confirmation: event.target.value }))} />
+                </div>
+                <button type="submit" disabled={inquirySubmitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                  {inquirySubmitting ? <><RefreshCw size={16} className="animate-spin" />Submitting...</> : <>Submit inquiry <ArrowRight size={16} /></>}
+                </button>
+                <p className="text-xs leading-5 text-slate-500">Your message is saved for the school administration to review. This form does not send email automatically. Please do not include student ID numbers, passwords, or sensitive documents.</p>
+              </form>
+            </section>
+          </div>
+        </>
+      );
       break;
     default: {
       const visibleEvents = events.slice(0, 3);
