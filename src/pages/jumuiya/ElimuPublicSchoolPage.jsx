@@ -448,9 +448,10 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       setSchool(foundSchool);
 
       const id = text(foundSchool, ["id", "_id", "school_id"]);
-      const query = id ? { school_id: id, limit: 50 } : { school_code: publicSchoolSlug, limit: 50 };
+      const resolvedSchoolSlug = text(foundSchool, ["public_slug", "slug", "school_code", "code"], schoolSlug);
+      const query = id ? { school_id: id, limit: 50 } : { school_code: resolvedSchoolSlug, limit: 50 };
       const mediaRequest = typeof api.getPublicSchoolMedia === "function"
-        ? api.getPublicSchoolMedia(publicSchoolSlug || schoolSlug, { limit: 50 }, { signal })
+        ? api.getPublicSchoolMedia(resolvedSchoolSlug, { limit: 50 }, { signal })
         : Promise.reject(new Error("Public school media is not configured."));
       const results = await Promise.allSettled([
         api.getPublicEvents(query, { signal }),
