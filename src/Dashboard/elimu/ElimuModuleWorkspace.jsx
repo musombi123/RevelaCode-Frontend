@@ -405,7 +405,19 @@ function rowSubtitle(row) {
 }
 
 function responseMessage(error) {
-  return error?.payload?.message || error?.payload?.error || error?.message || "The request could not be completed.";
+  const candidates = [
+    error?.payload?.message,
+    error?.payload?.error?.message,
+    error?.payload?.error,
+    error?.response?.data?.message,
+    error?.response?.data?.error?.message,
+    error?.response?.data?.error,
+    error?.message,
+  ];
+  const message = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
+  );
+  return message || "The request could not be completed.";
 }
 
 function getSchoolIdentity(school) {

@@ -70,14 +70,20 @@ function getApiPayload(response, preferredKey) {
 }
 
 function getErrorMessage(error, fallback) {
-  return (
-    error?.payload?.message ||
-    error?.payload?.error ||
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    fallback
+  const candidates = [
+    error?.payload?.message,
+    error?.payload?.error?.message,
+    error?.payload?.error,
+    error?.response?.data?.message,
+    error?.response?.data?.error?.message,
+    error?.response?.data?.error,
+    error?.message,
+    fallback,
+  ];
+  const message = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
   );
+  return message || "The request could not be completed.";
 }
 
 function hasSchoolRecord(access) {

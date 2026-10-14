@@ -54,12 +54,16 @@ function getArray(payload, keys = []) {
 }
 
 function getErrorMessage(payload, fallback) {
-  return (
-    payload?.message ||
-    payload?.error ||
-    payload?.detail ||
-    fallback
+  const candidates = [
+    payload?.message,
+    payload?.error?.message,
+    payload?.error,
+    payload?.detail,
+  ];
+  const message = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
   );
+  return message || fallback;
 }
 
 function formatDate(value) {

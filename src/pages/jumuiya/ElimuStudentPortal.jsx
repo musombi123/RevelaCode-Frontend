@@ -53,12 +53,16 @@ function arrayFrom(payload, keys = []) {
 }
 
 function readableError(payload, fallback) {
-  return (
-    payload?.message ||
-    payload?.error ||
-    payload?.detail ||
-    fallback
+  const candidates = [
+    payload?.message,
+    payload?.error?.message,
+    payload?.error,
+    payload?.detail,
+  ];
+  const message = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
   );
+  return message || fallback;
 }
 
 function formatDate(value) {

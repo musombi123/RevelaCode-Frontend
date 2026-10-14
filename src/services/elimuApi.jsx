@@ -232,13 +232,17 @@ function getErrorMessage(payload, status) {
     return payload.trim();
   }
 
-  return (
-    payload?.message ||
-    payload?.error ||
-    payload?.detail ||
-    payload?.description ||
-    `Elimu request failed with HTTP ${status}.`
+  const candidates = [
+    payload?.message,
+    payload?.error?.message,
+    payload?.error,
+    payload?.detail,
+    payload?.description,
+  ];
+  const message = candidates.find(
+    (value) => typeof value === "string" && value.trim(),
   );
+  return message?.trim() || `Elimu request failed with HTTP ${status}.`;
 }
 
 function isFormDataBody(body) {
