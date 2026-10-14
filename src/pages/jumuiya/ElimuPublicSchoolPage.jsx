@@ -504,29 +504,59 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
   useEffect(() => {
     const title = school
-      ? text(school, ["homepage_title"], schoolName) + " | " + schoolName
+      ? text(school, ["seo_title"], text(school, ["homepage_title"], schoolName) + " | " + schoolName)
       : "Jumuiya Elimu | School Website";
-    const description = text(school, ["public_description", "description", "about"], "Official school information and published resources.").slice(0, 300);
+    const description = text(
+      school,
+      ["seo_description", "public_description", "description", "about"],
+      "Official school information and published resources."
+    ).slice(0, 300);
     const oldTitle = window.document.title;
     window.document.title = title;
-    let descriptionMeta = window.document.querySelector('meta[name="description"]');
-    const createdDescriptionMeta = !descriptionMeta;
-    if (!descriptionMeta) {
-      descriptionMeta = window.document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      window.document.head.appendChild(descriptionMeta);
-    }
-    const previousDescription = descriptionMeta.getAttribute("content");
-    descriptionMeta.setAttribute("content", description);
-    let canonical = window.document.querySelector('link[rel="canonical"]');
-    const createdCanonical = !canonical;
+    const changedAttributes = [];
+
+    const updateAttribute = (node, attribute, value) => {
+      changedAttributes.push({ node, attribute, previous: node.getAttribute(attribute) });
+      node.setAttribute(attribute, value);
+    };
+
+    const ensureMeta = (selector, key, value) => {
+      let node = window.document.head.querySelector(selector);
+      if (!node) {
+        node = window.document.createElement("meta");
+        node.setAttribute(key, selector.includes('property=') ? selector.match(/property="([^"]+)"/)?.[1] || "" : selector.match(/name="([^"]+)"/)?.[1] || "");
+        window.document.head.appendChild(node);
+        changedAttributes.push({ node, attribute: key, previous: null, created: true });
+      } else {
+        updateAttribute(node, "content", value);
+        return;
+      }
+      node.setAttribute("content", value);
+    };
+
+    ensureMeta('meta[name="description"]', "name", description);
+    ensureMeta('meta[property="og:title"]', "property", title);
+    ensureMeta('meta[property="og:description"]', "property", description);
+    ensureMeta('meta[property="og:site_name"]', "property", schoolName);
+    ensureMeta('meta[property="og:type"]', "property", "website");
+    ensureMeta('meta[property="og:url"]', "property", window.location.origin + location.pathname);
+    const socialImage = text(school, ["social_image_url", "cover_image_url", "logo_url", "favicon_url"]);
+    ensureMeta('meta[property="og:image"]', "property", socialImage);
+    ensureMeta('meta[name="twitter:card"]', "name", socialImage ? "summary_large_image" : "summary");
+    ensureMeta('meta[name="twitter:title"]', "name", title);
+    ensureMeta('meta[name="twitter:description"]', "name", description);
+    ensureMeta('meta[name="twitter:image"]', "name", socialImage);
+
+    let canonical = window.document.head.querySelector('link[rel="canonical"]');
+    let createdCanonical = false;
     if (!canonical) {
       canonical = window.document.createElement("link");
       canonical.setAttribute("rel", "canonical");
       window.document.head.appendChild(canonical);
+      createdCanonical = true;
     }
     const previousCanonical = canonical.getAttribute("href");
-    const primaryDomain = text(school, ["primary_domain"]);
+    const primaryDomain = text(school, ["primary_domain"]).trim().toLowerCase();
     const canonicalPath = canonicalPage ? "/" + canonicalPage : "/";
     const canonicalUrl = primaryDomain
       ? "https://" + primaryDomain + canonicalPath
@@ -534,14 +564,81 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         ? window.location.origin + canonicalPath
         : window.location.origin + location.pathname;
     canonical.setAttribute("href", canonicalUrl);
+
+    const faviconUrl = text(school, ["favicon_url", "logo_url"]);
+    const faviconNodes = Array.from(window.document.head.querySelectorAll('link[rel~="icon"]'));
+    const faviconChanges = [];
+    if (faviconUrl) {
+      const nodes = faviconNodes.length ? faviconNodes : [window.document.createElement("link")];
+      for (const node of nodes) {
+        const isNew = !node.isConnected;
+        if (isNew) {
+          node.setAttribute("rel", "icon");
+          window.document.head.appendChild(node);
+        }
+        faviconChanges.push({ node, previous: node.getAttribute("href"), created: isNew });
+        node.setAttribute("href", faviconUrl);
+      }
+    }
+
+    let structuredData = window.document.getElementById("elimu-school-structured-data");
+    const createdStructuredData = !structuredData;
+    if (!structuredData) {
+      structuredData = window.document.createElement("script");
+      structuredData.id = "elimu-school-structured-data";
+      structuredData.type = "application/ld+json";
+      window.document.head.appendChild(structuredData);
+    }
+    const previousStructuredData = structuredData.textContent;
+    const structuredSchool = {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      name: schoolName,
+      url: canonicalUrl,
+      description,
+    };
+    const logo = text(school, ["logo_url"]);
+    const telephone = text(school, ["phone"]);
+    const emailAddress = text(school, ["email"]);
+    const streetAddress = text(school, ["address", "postal_address"]);
+    const locality = text(school, ["town", "location"]);
+    const region = text(school, ["county"]);
+    const country = text(school, ["country"]);
+    if (logo) structuredSchool.logo = logo;
+    if (telephone) structuredSchool.telephone = telephone;
+    if (emailAddress) structuredSchool.email = emailAddress;
+    if (streetAddress || locality || region || country) {
+      structuredSchool.address = {
+        "@type": "PostalAddress",
+        ...(streetAddress ? { streetAddress } : {}),
+        ...(locality ? { addressLocality: locality } : {}),
+        ...(region ? { addressRegion: region } : {}),
+        ...(country ? { addressCountry: country } : {}),
+      };
+    }
+    structuredData.textContent = JSON.stringify(structuredSchool);
+
     return () => {
       window.document.title = oldTitle || "RevelaCode";
-      if (createdDescriptionMeta) descriptionMeta.remove();
-      else if (previousDescription == null) descriptionMeta.removeAttribute("content");
-      else descriptionMeta.setAttribute("content", previousDescription);
+      for (const item of changedAttributes.reverse()) {
+        if (item.created) {
+          item.node.remove();
+        } else if (item.previous == null) {
+          item.node.removeAttribute(item.attribute);
+        } else {
+          item.node.setAttribute(item.attribute, item.previous);
+        }
+      }
       if (createdCanonical) canonical.remove();
       else if (previousCanonical == null) canonical.removeAttribute("href");
       else canonical.setAttribute("href", previousCanonical);
+      for (const item of faviconChanges) {
+        if (item.created) item.node.remove();
+        else if (item.previous == null) item.node.removeAttribute("href");
+        else item.node.setAttribute("href", item.previous);
+      }
+      if (createdStructuredData) structuredData.remove();
+      else structuredData.textContent = previousStructuredData || "";
     };
   }, [school, schoolName, location.pathname, canonicalPage, customDomainMode]);
 
