@@ -8,10 +8,95 @@ import {
   Save,
   ShieldCheck,
   AlertTriangle,
+  Eye,
+  Palette,
+  RotateCcw,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
 
+const DEFAULT_WEBSITE_THEME = {
+  primary: "#047857",
+  secondary: "#064e3b",
+  accent: "#d4af37",
+  background: "#f8fafc",
+  surface: "#ffffff",
+  heading: "#0f172a",
+  body: "#475569",
+  header: "#ffffff",
+  footer: "#ffffff",
+  font_style: "modern",
+  button_style: "solid",
+};
+
+const WEBSITE_THEME_PRESETS = [
+  { name: "Navy Blue & Gold", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#1d4ed8", secondary: "#172554", accent: "#d4af37", header: "#ffffff", footer: "#172554" } },
+  { name: "Forest Green", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#166534", secondary: "#14532d", accent: "#d4af37", footer: "#14532d" } },
+  { name: "Royal Blue", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#1d4ed8", secondary: "#1e3a8a", accent: "#60a5fa", footer: "#1e3a8a" } },
+  { name: "Maroon & Cream", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#9f1239", secondary: "#4c0519", accent: "#f5e6c8", background: "#fffaf0", footer: "#4c0519" } },
+  { name: "Burgundy & Gold", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#881337", secondary: "#500724", accent: "#d4af37", footer: "#500724" } },
+  { name: "Teal & White", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#0f766e", secondary: "#134e4a", accent: "#f59e0b", footer: "#134e4a" } },
+  { name: "Purple & Silver", theme: { ...DEFAULT_WEBSITE_THEME, primary: "#6d28d9", secondary: "#3b0764", accent: "#cbd5e1", footer: "#3b0764" } },
+];
+
+const WEBSITE_THEME_COLORS = [
+  ["primary", "Primary colour"],
+  ["secondary", "Secondary colour"],
+  ["accent", "Accent colour"],
+  ["background", "Page background"],
+  ["surface", "Cards and surfaces"],
+  ["heading", "Heading text"],
+  ["body", "Body text"],
+  ["header", "Header background"],
+  ["footer", "Footer background"],
+];
+
+function normalizeWebsiteTheme(value = {}) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const result = { ...DEFAULT_WEBSITE_THEME };
+  for (const [key, fallback] of Object.entries(DEFAULT_WEBSITE_THEME)) {
+    const candidate = source[key];
+    if (key === "font_style") {
+      if (["modern", "classic", "humanist"].includes(candidate)) result[key] = candidate;
+    } else if (key === "button_style") {
+      if (["solid", "outline", "soft"].includes(candidate)) result[key] = candidate;
+    } else if (typeof candidate === "string" && /^#[0-9a-f]{6}$/i.test(candidate.trim())) {
+      result[key] = candidate.trim().toLowerCase();
+    } else if (typeof candidate === "string" && candidate.trim() && candidate !== fallback) {
+      result[key] = candidate;
+    }
+  }
+  return result;
+}
+
+function relativeLuminance(hex) {
+  const channels = hex.replace("#", "").match(/.{2}/g)?.map((pair) => parseInt(pair, 16) / 255) || [0, 0, 0];
+  const linear = channels.map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+function contrastRatio(foreground, background) {
+  const a = relativeLuminance(foreground);
+  const b = relativeLuminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+function websiteThemeWarnings(theme) {
+  const warnings = [];
+  const colourFields = WEBSITE_THEME_COLORS.map(([field]) => field);
+  for (const field of colourFields) {
+    if (typeof theme[field] !== "string" || !/^#[0-9a-f]{6}$/i.test(theme[field])) {
+      warnings.push(field + " must be a six-digit hexadecimal colour.");
+    }
+  }
+  const safe = normalizeWebsiteTheme(theme);
+  if (contrastRatio(safe.heading, safe.background) < 4.5) warnings.push("Heading text may be difficult to read against the page background.");
+  if (contrastRatio(safe.body, safe.background) < 4.5) warnings.push("Body text may be difficult to read against the page background.");
+  if (contrastRatio("#ffffff", safe.primary) < 4.5) warnings.push("White text on the primary button colour may not meet the recommended contrast ratio.");
+  return [...new Set(warnings)];
+}
+
 const EMPTY_FORM = {
+  website_theme_draft: { ...DEFAULT_WEBSITE_THEME },
   name: "",
   public_slug: "",
   homepage_title: "",
@@ -174,7 +259,9 @@ function fromRecord(record = {}) {
   const next = { ...EMPTY_FORM };
   for (const key of Object.keys(EMPTY_FORM)) {
     if (["courses_text", "departments_text", "activities_text", "teacher_services_text"].includes(key)) continue;
-    if (key === "public_profile_enabled") {
+    if (key === "website_theme_draft") {
+      next[key] = normalizeWebsiteTheme(record.website_theme_draft || record.website_theme || DEFAULT_WEBSITE_THEME);
+    } else if (key === "public_profile_enabled") {
       next[key] = record[key] === true;
     } else {
       const value = record[key];
@@ -216,11 +303,15 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const [uploadingField, setUploadingField] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themePreviewExpanded, setThemePreviewExpanded] = useState(false);
 
   const publicUrl = useMemo(
     () => (form.public_slug ? `/${encodeURIComponent(form.public_slug)}` : ""),
     [form.public_slug],
   );
+  const draftTheme = normalizeWebsiteTheme(form.website_theme_draft);
+  const themeWarnings = websiteThemeWarnings(form.website_theme_draft);
 
   useEffect(() => {
     let active = true;
@@ -251,6 +342,46 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   const change = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setNotice("");
+  };
+
+  const changeTheme = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      website_theme_draft: {
+        ...normalizeWebsiteTheme(current.website_theme_draft),
+        [field]: value,
+      },
+    }));
+    setNotice("");
+  };
+
+  const saveTheme = async (publishTheme = false) => {
+    setThemeSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await api.saveWebsiteSettings({
+        website_theme_draft: normalizeWebsiteTheme(form.website_theme_draft),
+        publish_website_theme: publishTheme,
+      });
+      const data = unwrap(response);
+      const record = data?.school || data;
+      const savedDraft = normalizeWebsiteTheme(record?.website_theme_draft || record?.website_theme || form.website_theme_draft);
+      setForm((current) => ({ ...current, website_theme_draft: savedDraft }));
+      setNotice(publishTheme
+        ? "Website theme published. The public website now uses these colours and design settings."
+        : "Website theme draft saved. Public visitors will continue to see the last published theme.");
+    } catch (err) {
+      setError(err?.message || "Could not save the website theme.");
+    } finally {
+      setThemeSaving(false);
+    }
+  };
+
+  const resetThemeDraft = () => {
+    setForm((current) => ({ ...current, website_theme_draft: { ...DEFAULT_WEBSITE_THEME } }));
+    setNotice("Default theme restored in the preview. Save the draft or publish it to persist this choice.");
+    setError("");
   };
 
   const uploadBrandImage = async (field, file) => {
@@ -316,6 +447,7 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
     delete payload.departments_text;
     delete payload.activities_text;
     delete payload.teacher_services_text;
+    delete payload.website_theme_draft;
     try {
       const response = await api.saveWebsiteSettings(payload);
       const data = unwrap(response);
@@ -453,6 +585,89 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
           </section>
         ))}
       </div>
+
+      <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-700"><Palette size={18} /><p className="text-xs font-extrabold uppercase tracking-[0.15em]">Website appearance</p></div>
+            <h3 className="mt-2 text-xl font-bold text-slate-950 dark:text-white">Make the website reflect your school</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">Choose an editable colour palette and review a live preview. Theme drafts are stored privately until you publish them.</p>
+          </div>
+          <button type="button" onClick={() => setThemePreviewExpanded((current) => !current)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+            <Eye size={16} /> {themePreviewExpanded ? "Hide preview" : "Preview changes"}
+          </button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {WEBSITE_THEME_PRESETS.map((preset) => {
+            const selected = WEBSITE_THEME_COLORS.every(([field]) => draftTheme[field].toLowerCase() === preset.theme[field].toLowerCase());
+            return (
+              <button key={preset.name} type="button" onClick={() => setForm((current) => ({ ...current, website_theme_draft: { ...preset.theme, font_style: draftTheme.font_style, button_style: draftTheme.button_style } }))} className={"flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 " + (selected ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30" : "border-slate-200 hover:border-slate-300 dark:border-slate-700")}>
+                <span className="flex shrink-0 overflow-hidden rounded-lg border border-black/10">
+                  <span className="h-9 w-3" style={{ backgroundColor: preset.theme.primary }} />
+                  <span className="h-9 w-3" style={{ backgroundColor: preset.theme.secondary }} />
+                  <span className="h-9 w-3" style={{ backgroundColor: preset.theme.accent }} />
+                </span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900 dark:text-white">{preset.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">Editable preset</span></span>
+                {selected && <CheckCircle2 size={16} className="shrink-0 text-emerald-700" />}
+              </button>
+            );
+          })}
+          <button type="button" onClick={() => setForm((current) => ({ ...current, website_theme_draft: normalizeWebsiteTheme(current.website_theme_draft) }))} className="flex min-h-16 items-center gap-3 rounded-xl border border-dashed border-slate-300 p-3 text-left transition hover:border-blue-400 dark:border-slate-700">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"><Palette size={18} /></span>
+            <span><span className="block text-sm font-bold text-slate-900 dark:text-white">Custom school colours</span><span className="block text-xs text-slate-500 dark:text-slate-400">Keep current selections</span></span>
+          </button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {WEBSITE_THEME_COLORS.map(([field, label]) => (
+            <div key={field} className="min-w-0 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+              <label htmlFor={"theme-" + field} className="block text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</label>
+              <div className="mt-2 flex items-center gap-2">
+                <input id={"theme-" + field} aria-label={label + " colour picker"} type="color" value={/^#[0-9a-f]{6}$/i.test(String(form.website_theme_draft?.[field] || "")) ? form.website_theme_draft[field] : DEFAULT_WEBSITE_THEME[field]} onChange={(event) => changeTheme(field, event.target.value)} className="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700" />
+                <input aria-label={label + " hexadecimal value"} value={form.website_theme_draft?.[field] ?? ""} onChange={(event) => changeTheme(field, event.target.value)} spellCheck={false} maxLength={7} className="min-w-0 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 font-mono text-sm uppercase text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">Typography style
+            <select value={draftTheme.font_style} onChange={(event) => changeTheme("font_style", event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+              <option value="modern">Modern sans-serif</option><option value="classic">Classic serif headings</option><option value="humanist">Humanist sans-serif</option>
+            </select>
+          </label>
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">Button style
+            <select value={draftTheme.button_style} onChange={(event) => changeTheme("button_style", event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+              <option value="solid">Solid</option><option value="outline">Outline</option><option value="soft">Soft background</option>
+            </select>
+          </label>
+        </div>
+
+        {themeWarnings.length > 0 && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><p className="font-bold">Review colour contrast before publishing</p><ul className="mt-1 list-disc pl-5">{themeWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div>}
+
+        {themePreviewExpanded && (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm dark:border-slate-700">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3" style={{ backgroundColor: draftTheme.header, color: draftTheme.heading, borderColor: draftTheme.primary + "33", fontFamily: draftTheme.font_style === "classic" ? "Georgia, serif" : draftTheme.font_style === "humanist" ? "Trebuchet MS, sans-serif" : "Inter, ui-sans-serif, system-ui" }}>
+              <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white" style={{ backgroundColor: draftTheme.primary }}>S</span><div><p className="font-extrabold">{form.name || school?.name || "Your school"}</p><p className="text-xs opacity-70">Official school website</p></div></div>
+              <span className="text-xs font-semibold">Home · About · Academics · Contact</span>
+            </div>
+            <div className="grid gap-5 p-5 sm:grid-cols-[1.25fr_.75fr] sm:p-7" style={{ backgroundColor: draftTheme.background, color: draftTheme.body, fontFamily: draftTheme.font_style === "classic" ? "Georgia, serif" : draftTheme.font_style === "humanist" ? "Trebuchet MS, sans-serif" : "Inter, ui-sans-serif, system-ui" }}>
+              <div><span className="inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: draftTheme.primary + "18", color: draftTheme.primary }}>WELCOME</span><h4 className="mt-4 text-2xl font-black" style={{ color: draftTheme.heading }}>{form.homepage_title || form.name || school?.name || "Your school"}</h4><p className="mt-3 max-w-lg text-sm leading-6">{form.public_description || form.about || form.description || "Your approved school introduction will appear here."}</p><div className="mt-5 flex flex-wrap gap-2"><span className="rounded-lg px-4 py-2 text-sm font-bold" style={{ backgroundColor: draftTheme.button_style === "soft" ? draftTheme.primary + "18" : draftTheme.button_style === "outline" ? "transparent" : draftTheme.primary, color: draftTheme.button_style === "soft" ? draftTheme.primary : "#ffffff", border: draftTheme.button_style === "outline" ? "1px solid " + draftTheme.primary : "1px solid transparent" }}>Explore the school</span><span className="rounded-lg border px-4 py-2 text-sm font-bold" style={{ borderColor: draftTheme.accent, color: draftTheme.secondary }}>Contact us</span></div></div>
+              <div className="rounded-xl border p-4" style={{ borderColor: draftTheme.primary + "33", backgroundColor: draftTheme.surface }}><div className="h-2 w-16 rounded-full" style={{ backgroundColor: draftTheme.accent }} /><h5 className="mt-4 font-bold" style={{ color: draftTheme.heading }}>School information</h5><p className="mt-2 text-sm leading-6">Preview the palette against the school's actual content before publication.</p><div className="mt-4 rounded-lg p-3 text-xs font-semibold text-white" style={{ backgroundColor: draftTheme.footer }}>Footer and navigation colour</div></div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center">
+          <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Changes are school-specific. Saving a draft does not change the public website. Publishing requires a successful server response.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={resetThemeDraft} disabled={themeSaving} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200"><RotateCcw size={15} />Reset to default</button>
+            <button type="button" onClick={() => void saveTheme(false)} disabled={themeSaving || Boolean(uploadingField)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{themeSaving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}Save draft</button>
+            <button type="button" onClick={() => void saveTheme(true)} disabled={themeSaving || Boolean(uploadingField) || themeWarnings.some((warning) => warning.includes("six-digit"))} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"><Globe size={15} />Publish theme</button>
+          </div>
+        </div>
+      </section>
 
       <section className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 sm:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
