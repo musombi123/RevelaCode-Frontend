@@ -541,6 +541,16 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     };
   }, [school, schoolName, location.pathname, canonicalPage, customDomainMode]);
 
+  useEffect(() => {
+    const primaryDomain = text(school, ["primary_domain"]).trim().toLowerCase();
+    const currentHost = String(window.location.hostname || "").toLowerCase();
+    if (!primaryDomain || primaryDomain === currentHost || currentHost === "localhost" || currentHost === "127.0.0.1") return;
+    if (!/^[a-z0-9.-]+$/.test(primaryDomain) || primaryDomain.endsWith(".onrender.com")) return;
+    const canonicalPath = canonicalPage ? "/" + canonicalPage : "/";
+    const target = "https://" + primaryDomain + canonicalPath + location.search + location.hash;
+    window.location.replace(target);
+  }, [school, canonicalPage, location.search, location.hash]);
+
   const handleDownload = useCallback(async (document) => {
     const id = recordId(document);
     if (!id) {
