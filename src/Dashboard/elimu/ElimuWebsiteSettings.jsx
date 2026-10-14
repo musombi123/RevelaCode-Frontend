@@ -61,8 +61,6 @@ function normalizeWebsiteTheme(value = {}) {
       if (["solid", "outline", "soft"].includes(candidate)) result[key] = candidate;
     } else if (typeof candidate === "string" && /^#[0-9a-f]{6}$/i.test(candidate.trim())) {
       result[key] = candidate.trim().toLowerCase();
-    } else if (typeof candidate === "string" && candidate.trim() && candidate !== fallback) {
-      result[key] = candidate;
     }
   }
   return result;
