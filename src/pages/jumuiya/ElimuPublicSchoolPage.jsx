@@ -539,7 +539,14 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     ensureMeta('meta[property="og:description"]', "property", description);
     ensureMeta('meta[property="og:site_name"]', "property", schoolName);
     ensureMeta('meta[property="og:type"]', "property", "website");
-    ensureMeta('meta[property="og:url"]', "property", window.location.origin + location.pathname);
+    const primaryDomain = text(school, ["primary_domain"]).trim().toLowerCase();
+    const canonicalPath = canonicalPage ? "/" + canonicalPage : "/";
+    const canonicalUrl = primaryDomain
+      ? "https://" + primaryDomain + canonicalPath
+      : customDomainMode
+        ? window.location.origin + canonicalPath
+        : window.location.origin + location.pathname;
+    ensureMeta('meta[property="og:url"]', "property", canonicalUrl);
     const socialImage = text(school, ["social_image_url", "cover_image_url", "logo_url", "favicon_url"]);
     ensureMeta('meta[property="og:image"]', "property", socialImage);
     ensureMeta('meta[name="twitter:card"]', "name", socialImage ? "summary_large_image" : "summary");
@@ -556,13 +563,6 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       createdCanonical = true;
     }
     const previousCanonical = canonical.getAttribute("href");
-    const primaryDomain = text(school, ["primary_domain"]).trim().toLowerCase();
-    const canonicalPath = canonicalPage ? "/" + canonicalPage : "/";
-    const canonicalUrl = primaryDomain
-      ? "https://" + primaryDomain + canonicalPath
-      : customDomainMode
-        ? window.location.origin + canonicalPath
-        : window.location.origin + location.pathname;
     canonical.setAttribute("href", canonicalUrl);
 
     const faviconUrl = text(school, ["favicon_url", "logo_url"]);
