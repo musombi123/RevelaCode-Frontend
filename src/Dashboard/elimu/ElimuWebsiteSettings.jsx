@@ -98,6 +98,10 @@ const EMPTY_FORM = {
   name: "",
   public_slug: "",
   homepage_title: "",
+  seo_title: "",
+  seo_description: "",
+  favicon_url: "",
+  social_image_url: "",
   description: "",
   public_description: "",
   about: "",
@@ -144,6 +148,16 @@ const FIELD_GROUPS = [
     fields: [
       ["logo_url", "Logo image URL", "https://..."],
       ["cover_image_url", "Cover / hero image URL", "https://..."],
+    ],
+  },
+  {
+    title: "Search and social sharing",
+    description: "These optional settings shape the browser title, search result description, favicon and link previews. Leave fields empty to use safe school-specific defaults.",
+    fields: [
+      ["seo_title", "Search title", "School name and a short, accurate description"],
+      ["seo_description", "Search description", "A concise description using approved school information", "textarea"],
+      ["favicon_url", "Favicon image URL", "https://..."],
+      ["social_image_url", "Social-sharing image URL", "https://..."],
     ],
   },
   {
