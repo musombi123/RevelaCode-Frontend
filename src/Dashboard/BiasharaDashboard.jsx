@@ -1394,7 +1394,7 @@ export default function BiasharaDashboard({
 
   return (
     <div className="min-h-full bg-[#f4f7fb]">
-      <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8>
+      <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
 
         {/* =================================================
             HEADER
@@ -1403,7 +1403,7 @@ export default function BiasharaDashboard({
         <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-xl shadow-slate-900/10">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="relative z-10 flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between>
+          <div className="relative z-10 flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-blue-100 ring-1 ring-white/15 backdrop-blur-sm">
                 {business?.logo_url ? (
