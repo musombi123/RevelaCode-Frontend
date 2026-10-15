@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/Dialog.jsx";
 import { Button } from "./ui/Button.jsx";
-import { Mail, Clipboard, Send, CircleCheck, AlertCircle } from "lucide-react";
+import { Mail, Clipboard, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { readSupportResponse, supportApiUrl } from "@/components/support/supportApi.js";
 
 export default function HelpModal() {
@@ -88,7 +88,7 @@ export default function HelpModal() {
             <Button type="submit" disabled={submitting} className="flex min-h-11 w-full items-center justify-center gap-2"><Send className="h-4 w-4" aria-hidden="true" />{submitting ? "Submitting request…" : "Submit support request"}</Button>
           </form>
 
-          {message && <div role={messageType === "error" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${messageType === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{messageType === "error" ? <AlertCircle size={18} className="mt-0.5 shrink-0" /> : <CircleCheck size={18} className="mt-0.5 shrink-0" />}<span>{message}</span></div>}
+          {message && <div role={messageType === "error" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${messageType === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>{messageType === "error" ? <AlertCircle size={18} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={18} className="mt-0.5 shrink-0" />}<span>{message}</span></div>}
           <p className="text-xs leading-5 text-slate-500">Do not include passwords, API keys, or other sensitive credentials in a support request.</p>
         </div>
       </DialogContent>
