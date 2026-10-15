@@ -11,7 +11,6 @@ import {
   useParams,
 } from "react-router-dom";
 import {
-  ArrowDownToLine,
   ArrowRight,
   BookOpen,
   CalendarDays,
@@ -301,19 +300,6 @@ function MediaCard({ item }) {
         {text(item, ["caption", "description"]) && <p className="mt-1 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
     </article>
-  );
-}
-
-function FeatureLink({ href, icon: Icon, title, description }) {
-  return (
-    <Link to={href} className="group flex h-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-emerald-200 hover:shadow-md">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={20} /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-extrabold text-slate-900">{title}</span>
-        <span className="mt-1 block text-sm leading-6 text-slate-500">{description}</span>
-        <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-700">Explore <ArrowRight size={13} className="transition group-hover:translate-x-0.5" /></span>
-      </span>
-    </Link>
   );
 }
 
@@ -768,15 +754,6 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
   const coverUrl =
     text(school, ["cover_image_url", "hero_image_url", "banner_url"]) ||
     text(cover, ["url", "secure_url", "media_url", "file_url"]);
-  const heroStyle = coverUrl
-    ? {
-        backgroundImage: "linear-gradient(90deg, " + rgbaFromHex(websiteTheme.secondary, 0.92) + ", " + rgbaFromHex(websiteTheme.primary, 0.62) + '), url("' + coverUrl.replace(/"/g, "%22") + '")',
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-      }
-    : {
-        backgroundImage: "linear-gradient(120deg, " + websiteTheme.secondary + ", " + websiteTheme.primary + ")",
-      };
   const pageTitle = NAV_ITEMS.find((item) => item.path === canonicalPage)?.label || "Home";
 
   let pageContent;
