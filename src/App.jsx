@@ -76,7 +76,7 @@ function PlatformDashboardRoute({ requiredRole }) {
   const role = String(user?.role || "").trim().toLowerCase();
 
   if (!user || role !== requiredRole) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/pages" replace />;
   }
 
   return (
@@ -210,7 +210,7 @@ export default function App() {
               {/* Use the regular authentication flow, not a public-school slug. */}
               <Route
                 path="/admin/login"
-                element={<Navigate to="/" replace />}
+                element={<Navigate to="/pages" replace />}
               />
 
               <Route
@@ -227,6 +227,11 @@ export default function App() {
               <Route
                 path="/support/dashboard"
                 element={<PlatformDashboardRoute requiredRole="support" />}
+              />
+
+              <Route
+                path="/support/login"
+                element={<Navigate to="/pages" replace />}
               />
 
               <Route
