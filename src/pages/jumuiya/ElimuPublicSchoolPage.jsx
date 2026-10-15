@@ -33,6 +33,7 @@ import {
   Users,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
+import "./ElimuPublicSchoolPage.css";
 
 const NAV_ITEMS = [
   { path: "", label: "Home", icon: School },
