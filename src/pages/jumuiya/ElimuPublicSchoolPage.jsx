@@ -220,7 +220,7 @@ function absoluteSchoolUrl(slug, page = "") {
 
 function PageHeading({ icon: Icon, eyebrow, title, description }) {
   return (
-    <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/80 p-5 shadow-sm ring-1 ring-slate-950/[0.03] sm:mb-10 sm:p-8">
+    <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.03] sm:mb-10 sm:p-8">
       <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border border-emerald-100/80 shadow-[0_0_0_18px_rgba(16,185,129,0.025),0_0_0_38px_rgba(16,185,129,0.02)]" />
       <div className="relative flex min-w-0 items-start gap-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10 sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
@@ -236,7 +236,7 @@ function PageHeading({ icon: Icon, eyebrow, title, description }) {
 
 function EmptyState({ icon: Icon, title, description }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-dashed border-slate-300/90 bg-gradient-to-br from-white to-slate-50 p-8 text-center shadow-sm ring-1 ring-slate-950/[0.025] sm:p-12">
+    <div className="relative overflow-hidden rounded-3xl border border-dashed border-slate-300/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-8 text-center shadow-sm ring-1 ring-slate-950/[0.025] sm:p-12">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10"><Icon size={25} strokeWidth={1.7} /></div>
       <h2 className="mt-5 text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</h2>
@@ -255,7 +255,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   const Icon = kind === "event" ? CalendarDays : kind === "project" ? BookOpen : FileText;
 
   return (
-    <article className="group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
+    <article className="group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
         <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 tracking-tight text-slate-900 sm:text-base">{title}</h2>
@@ -315,7 +315,7 @@ function MediaCard({ item, onOpen }) {
           </button>
         )}
       </div>
-      <div className="border-t border-slate-100/90 bg-gradient-to-br from-white to-emerald-50/30 p-4 sm:p-5">
+      <div className="border-t border-slate-100/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-4 sm:p-5">
         <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
         {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
@@ -327,7 +327,7 @@ function FeatureLink({ href, icon: Icon, title, description }) {
   return (
     <Link
       to={href}
-      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6
+      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
         <Icon size={21} strokeWidth={1.8} />
@@ -349,7 +349,7 @@ function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) 
     .map((item) => String(item || "").trim())
     .filter(Boolean);
   return (
-    <article className="group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-[var(--school-primary)] sm:p-6">
+    <article className="group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-[var(--school-primary)] sm:p-6">
       {eyebrow && <p className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-emerald-700 sm:text-xs"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{eyebrow}</p>}
       <h3 className="mt-3 break-words text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">{title}</h3>
       {description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>}
@@ -412,6 +412,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     "--school-body": websiteTheme.body,
     "--school-header": websiteTheme.header,
     "--school-footer": websiteTheme.footer,
+    "--school-surface-tint": rgbaFromHex(websiteTheme.primary, 0.045),
     backgroundColor: websiteTheme.background,
     color: websiteTheme.body,
     fontFamily: websiteFontFamily,
@@ -838,14 +839,14 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         <>
           <PageHeading icon={School} eyebrow="Our story" title="About our school" description="Learn about our purpose, leadership and the values that guide our school community." />
           <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-            <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
+            <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-lg font-extrabold text-slate-950">Who we are</h2>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{about}</p>
               {motto && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our motto</h3><p className="mt-2 text-sm leading-6 text-slate-600">{motto}</p></div>}
               {mission && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{mission}</p></div>}
               {vision && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{vision}</p></div>}
             </article>
-            <aside className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/60 p-6 shadow-sm ring-1 ring-slate-950/[0.025] sm:p-8"><div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10"><School size={20} /></div><h2 className="text-lg font-extrabold tracking-tight text-slate-950">School at a glance</h2><dl className="mt-5 space-y-4 text-sm">{principal && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School leadership</dt><dd className="mt-1 font-semibold text-slate-900">{principal}</dd></div>}<div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School type</dt><dd className="mt-1 font-semibold capitalize text-slate-900">{text(school, ["school_type", "type"], "School")}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</dt><dd className="mt-1 font-semibold text-slate-900">{locationText}</dd></div>{text(school, ["academic_year"]) && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Academic year</dt><dd className="mt-1 font-semibold text-slate-900">{text(school, ["academic_year"])}</dd></div>}</dl></aside>
+            <aside className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] sm:p-8"><div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10"><School size={20} /></div><h2 className="text-lg font-extrabold tracking-tight text-slate-950">School at a glance</h2><dl className="mt-5 space-y-4 text-sm">{principal && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School leadership</dt><dd className="mt-1 font-semibold text-slate-900">{principal}</dd></div>}<div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School type</dt><dd className="mt-1 font-semibold capitalize text-slate-900">{text(school, ["school_type", "type"], "School")}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</dt><dd className="mt-1 font-semibold text-slate-900">{locationText}</dd></div>{text(school, ["academic_year"]) && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Academic year</dt><dd className="mt-1 font-semibold text-slate-900">{text(school, ["academic_year"])}</dd></div>}</dl></aside>
           </div>
         </>
       );
@@ -899,7 +900,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         <>
           <PageHeading icon={Mail} eyebrow="Get in touch" title="Contact the school" description="Use the official contact details or send an inquiry to the school administration." />
           <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
+            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-lg font-extrabold text-slate-950">Official contact details</h2>
               <div className="mt-6 space-y-5">
                 <div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationText)} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>
@@ -908,7 +909,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                 {website && <div className="flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={website.startsWith("http://") || website.startsWith("https://") ? website : "https://" + website} target="_blank" rel="noreferrer">{website}</a></div></div>}
               </div>
             </section>
-            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
+            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-xl font-extrabold text-slate-950">Send a school inquiry</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">For admissions, fees, or general questions, send a message for the school administration to review.</p>
               {inquiryFeedback && <div role={inquiryFeedback.type === "error" ? "alert" : "status"} className={"mt-4 rounded-xl border p-3 text-sm leading-6 " + (inquiryFeedback.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900")}>{inquiryFeedback.message}</div>}
@@ -1058,8 +1059,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {mission && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><BookOpen size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{mission}</p></article>}
-              {vision && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><GraduationCap size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{vision}</p></article>}
+              {mission && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><BookOpen size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{mission}</p></article>}
+              {vision && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><GraduationCap size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{vision}</p></article>}
               {!mission && !vision && <aside className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:col-span-2 sm:p-7"><p className="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-700">Explore further</p><h3 className="mt-3 text-xl font-extrabold text-slate-950">Find the information you need</h3><p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">Browse published academic information, school activities, announcements and official resources.</p><div className="mt-5 flex flex-wrap gap-2"><Link to={pageUrl("academics")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Academics</Link><Link to={pageUrl("activities")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">School life</Link><Link to={pageUrl("contact")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Contact</Link></div></aside>}
             </div>
           </section>
