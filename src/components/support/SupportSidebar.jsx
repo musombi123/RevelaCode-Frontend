@@ -7,7 +7,7 @@ import {
   History,
   BarChart3,
   X,
-  Headset,
+  Headphones,
 } from "lucide-react";
 
 const views = [
@@ -40,7 +40,7 @@ export default function SupportSidebar({
       >
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-            <Headset size={22} aria-hidden="true" />
+            <Headphones size={22} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">RevelaCode</p>
