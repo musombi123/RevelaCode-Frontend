@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Eye, RefreshCw, Search, UserRoundPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Eye, RefreshCw, Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button.jsx";
 import { Input } from "@/components/ui/Input.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -164,7 +164,7 @@ export default function SupportTickets() {
                       <td className="px-5 py-4 text-sm text-slate-600">{isAssigned ? <span className="font-medium text-emerald-700">Support team</span> : <span className="text-slate-400">Unassigned</span>}</td>
                       <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{ticket.created_at && ticket.created_at !== "None" ? ticket.created_at : "—"}</td>
                       <td className="px-5 py-4 sm:px-6"><div className="flex justify-end gap-2">
-                        {!isAssigned && ticket.status !== "resolved" && <Button size="sm" variant="outline" onClick={() => assignToTeam(ticket)} disabled={Boolean(assigningId)} title="Assign this ticket to the shared support team"><UserRoundPlus size={15} />{assigningId === ticket.id ? "Assigning…" : "Assign"}</Button>}
+                        {!isAssigned && ticket.status !== "resolved" && <Button size="sm" variant="outline" onClick={() => assignToTeam(ticket)} disabled={Boolean(assigningId)} title="Assign this ticket to the shared support team"><UserPlus size={15} />{assigningId === ticket.id ? "Assigning…" : "Assign"}</Button>}
                         <Button size="sm" variant="outline" onClick={() => openDetails(ticket)}><Eye size={15} /> View</Button>
                         {ticket.status !== "resolved" && <Button size="sm" onClick={() => openResolve(ticket)}><CheckCircle2 size={15} /> Resolve</Button>}
                       </div></td>
