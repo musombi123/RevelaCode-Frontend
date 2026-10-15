@@ -171,7 +171,7 @@ function StatusBadge({ status }) {
 
 function SectionTitle({ eyebrow, title, description, action }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 border-l-2 border-emerald-600 pl-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {eyebrow && (
           <p className="text-xs font-bold uppercase tracking-[0.17em] text-emerald-700">
@@ -731,7 +731,7 @@ export default function ElimuParentPortal({
                     setPageError("");
                     setSuccessMessage("");
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-extrabold text-white shadow-md shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                 >
                   {showLinkForm ? <X size={16} /> : <Plus size={16} />}
                   {showLinkForm ? "Close form" : "Link a child"}
@@ -783,7 +783,7 @@ export default function ElimuParentPortal({
                         }))
                       }
                       placeholder="Enter the school's public identifier"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     />
 
                     <p className="mt-1.5 text-xs leading-5 text-slate-500">
@@ -815,18 +815,18 @@ export default function ElimuParentPortal({
                         }))
                       }
                       placeholder="Enter the official student identifier"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
 
                   <div>
                     <label htmlFor="guardian-phone" className="mb-1.5 block text-sm font-semibold text-slate-700">Registered guardian phone</label>
-                    <input id="guardian-phone" name="guardian_phone" type="tel" autoComplete="tel" maxLength={40} value={form.guardian_phone} onChange={(event) => setForm((current) => ({ ...current, guardian_phone: event.target.value }))} placeholder="Phone number registered with the school" className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
+                    <input id="guardian-phone" name="guardian_phone" type="tel" autoComplete="tel" maxLength={40} value={form.guardian_phone} onChange={(event) => setForm((current) => ({ ...current, guardian_phone: event.target.value }))} placeholder="Phone number registered with the school" className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100" />
                     <p className="mt-1.5 text-xs leading-5 text-slate-500">Enter the contact already recorded on the student's school file. You can use phone, email, or both.</p>
                   </div>
                   <div>
                     <label htmlFor="guardian-email" className="mb-1.5 block text-sm font-semibold text-slate-700">Registered guardian email</label>
-                    <input id="guardian-email" name="guardian_email" type="email" autoComplete="email" maxLength={254} value={form.guardian_email} onChange={(event) => setForm((current) => ({ ...current, guardian_email: event.target.value }))} placeholder="Email address registered with the school" className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
+                    <input id="guardian-email" name="guardian_email" type="email" autoComplete="email" maxLength={254} value={form.guardian_email} onChange={(event) => setForm((current) => ({ ...current, guardian_email: event.target.value }))} placeholder="Email address registered with the school" className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100" />
                   </div>
                   <div>
                     <label
@@ -846,7 +846,7 @@ export default function ElimuParentPortal({
                           relationship: event.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                     >
                       <option value="parent">Parent</option>
                       <option value="guardian">Legal guardian</option>

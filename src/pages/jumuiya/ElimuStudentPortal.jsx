@@ -106,7 +106,7 @@ function getInitials(value = "") {
 
 function MetricCard({ icon: Icon, label, value, description }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-emerald-200 hover:shadow-sm">
+    <article className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-emerald-300">
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
           <Icon size={22} />
@@ -129,8 +129,8 @@ function MetricCard({ icon: Icon, label, value, description }) {
 
 function EmptyState({ icon: Icon = BookOpen, title, description }) {
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-9 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
+    <div className="flex min-h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300/90 bg-gradient-to-br from-white to-emerald-50/40 px-6 py-10 text-center shadow-sm ring-1 ring-slate-950/[0.025]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-md ring-1 ring-emerald-700/10">
         <Icon size={23} />
       </div>
 
@@ -145,7 +145,7 @@ function EmptyState({ icon: Icon = BookOpen, title, description }) {
 
 function SectionHeading({ title, description, action }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 border-l-2 border-emerald-600 pl-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
           {title}
@@ -180,7 +180,7 @@ function AssignmentCard({ assignment, onOpen }) {
   };
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-emerald-200 sm:p-5">
+    <article className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/35 p-4 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl hover:border-emerald-300 sm:p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800">
           <ClipboardList size={21} />
@@ -223,7 +223,7 @@ function AssignmentCard({ assignment, onOpen }) {
           <button
             type="button"
             onClick={() => onOpen(assignment)}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+            className="group inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 transition hover:gap-2.5 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
           >
             View details
             <ChevronRight size={16} />
@@ -239,7 +239,7 @@ function EventCard({ event }) {
     event.start_at || event.date || event.event_date;
 
   return (
-    <article className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4">
+    <article className="group flex items-start gap-4 rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/35 p-4 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg sm:p-5">
       <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
         <CalendarDays size={19} />
       </div>
@@ -277,7 +277,7 @@ function AssessmentCard({ assessment }) {
     assessment.out_of;
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4">
+    <article className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-4 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-semibold text-slate-900">
@@ -581,16 +581,16 @@ export default function ElimuStudentPortal({
 
   if (!loading && dashboard?.linked === false) {
     return (
-      <main className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white"><GraduationCap size={24}/></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Jumuiya Elimu</p><h1 className="text-lg font-bold">Student portal activation</h1></div></div>{onBack && <button type="button" onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">Back</button>}</div></header>
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 text-slate-900">
+        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white"><GraduationCap size={24}/></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Jumuiya Elimu</p><h1 className="text-lg font-bold">Student portal activation</h1></div></div>{onBack && <button type="button" onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">Back</button>}</div></header>
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-          <section className="rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10"><ShieldCheck size={24}/></div><h2 className="mt-5 text-2xl font-extrabold">Connect your student account</h2><p className="mt-2 text-sm leading-7 text-emerald-50/90">Your school must already have your student record. Enter the published school identifier and your official admission number or school-issued student code. The school will review the link before any private information is available.</p></section>
+          <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white shadow-2xl shadow-emerald-950/20 ring-1 ring-emerald-950/10 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-inner"><ShieldCheck size={24}/></div><h2 className="mt-5 text-2xl font-extrabold">Connect your student account</h2><p className="mt-2 text-sm leading-7 text-emerald-50/90">Your school must already have your student record. Enter the published school identifier and your official admission number or school-issued student code. The school will review the link before any private information is available.</p></section>
           {linkMessage && <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">{linkMessage}</div>}
           {error && <div role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">{error}</div>}
           {authRequired && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">Sign in with the account you want the school to link to your student record. <button type="button" onClick={handleLogin} className="ml-1 font-bold underline">Sign in</button></div>}
-          <form onSubmit={submitStudentLink} className="mt-6 space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <div><label htmlFor="student-school-slug" className="mb-1.5 block text-sm font-semibold">School identifier</label><input id="student-school-slug" required maxLength={120} autoComplete="off" value={linkForm.school_slug} onChange={(event) => setLinkForm((current) => ({...current, school_slug: event.target.value}))} className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="School public slug or school code"/></div>
-            <div><label htmlFor="student-school-id" className="mb-1.5 block text-sm font-semibold">Admission / student identifier</label><input id="student-school-id" required maxLength={120} autoComplete="off" value={linkForm.student_identifier} onChange={(event) => setLinkForm((current) => ({...current, student_identifier: event.target.value}))} className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Your official student identifier"/></div>
+          <form onSubmit={submitStudentLink} className="mt-6 space-y-5 rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-5 shadow-lg shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] sm:p-7">
+            <div><label htmlFor="student-school-slug" className="mb-1.5 block text-sm font-semibold">School identifier</label><input id="student-school-slug" required maxLength={120} autoComplete="off" value={linkForm.school_slug} onChange={(event) => setLinkForm((current) => ({...current, school_slug: event.target.value}))} className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100" placeholder="School public slug or school code"/></div>
+            <div><label htmlFor="student-school-id" className="mb-1.5 block text-sm font-semibold">Admission / student identifier</label><input id="student-school-id" required maxLength={120} autoComplete="off" value={linkForm.student_identifier} onChange={(event) => setLinkForm((current) => ({...current, student_identifier: event.target.value}))} className="w-full rounded-xl border border-slate-300/90 bg-white/90 px-3.5 py-3.5 text-sm shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-emerald-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100" placeholder="Your official student identifier"/></div>
             <button type="submit" disabled={submittingLink || authRequired} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{submittingLink ? <RefreshCw size={16} className="animate-spin"/> : <ArrowRight size={16}/>} {submittingLink ? "Submitting request…" : "Request school verification"}</button>
             <p className="text-xs leading-5 text-slate-500">An identifier does not grant access by itself. The school must approve this account-to-student link first.</p>
           </form>
@@ -600,11 +600,11 @@ export default function ElimuStudentPortal({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 text-slate-900">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white shadow-md shadow-emerald-950/15 ring-1 ring-emerald-950/10">
               <GraduationCap size={24} />
             </div>
 
@@ -704,7 +704,7 @@ export default function ElimuStudentPortal({
         )}
 
         {/* Student welcome banner */}
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white sm:p-8 lg:p-10">
+        <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white shadow-2xl shadow-emerald-950/20 ring-1 ring-emerald-950/10 sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-100">
@@ -734,7 +734,7 @@ export default function ElimuStudentPortal({
               </div>
             </div>
 
-            <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/15 bg-white/10 text-3xl font-extrabold text-white shadow-lg sm:h-28 sm:w-28">
+            <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/20 bg-white/10 text-3xl font-extrabold text-white shadow-xl shadow-slate-950/20 ring-1 ring-white/10 backdrop-blur sm:h-28 sm:w-28">
               {getInitials(studentName) || <User size={36} />}
             </div>
           </div>
@@ -752,10 +752,10 @@ export default function ElimuStudentPortal({
               onClick={() =>
                 id === "overview" ? returnToOverview() : loadSection(id)
               }
-              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
                 activeSection === id
-                  ? "bg-emerald-700 text-white shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-800"
+                  ? "border-emerald-700 bg-gradient-to-r from-emerald-700 to-emerald-800 text-white shadow-md shadow-emerald-950/15"
+                  : "border-slate-200 bg-white/90 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
               }`}
             >
               <Icon size={17} />
@@ -835,7 +835,7 @@ export default function ElimuStudentPortal({
                   <button
                     type="button"
                     onClick={() => loadSection("assignments")}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+                    className="group inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 transition hover:gap-2.5 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                   >
                     All assignments
                     <ChevronRight size={17} />
@@ -849,7 +849,7 @@ export default function ElimuStudentPortal({
                     {[1, 2].map((item) => (
                       <div
                         key={item}
-                        className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5"
+                        className="animate-pulse rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm ring-1 ring-slate-950/[0.025]"
                       >
                         <div className="h-4 w-40 rounded bg-slate-200" />
                         <div className="mt-4 h-3 w-24 rounded bg-slate-100" />
@@ -887,7 +887,7 @@ export default function ElimuStudentPortal({
                     <button
                       type="button"
                       onClick={() => loadSection("timetable")}
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-800"
+                      className="group inline-flex items-center gap-1 text-sm font-semibold text-emerald-800 transition hover:gap-2 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                     >
                       View timetable
                       <ChevronRight size={17} />
@@ -903,7 +903,7 @@ export default function ElimuStudentPortal({
                       {timetable.slice(0, 4).map((entry, index) => (
                         <div
                           key={entry.id || entry._id || index}
-                          className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+                          className="group flex items-start gap-3 rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-4 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
                         >
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800">
                             <Clock size={19} />
@@ -949,7 +949,7 @@ export default function ElimuStudentPortal({
                     <button
                       type="button"
                       onClick={() => loadSection("attendance")}
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-800"
+                      className="group inline-flex items-center gap-1 text-sm font-semibold text-emerald-800 transition hover:gap-2 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                     >
                       View attendance
                       <ChevronRight size={17} />
@@ -957,7 +957,7 @@ export default function ElimuStudentPortal({
                   }
                 />
 
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <div className="mt-5 rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-5 shadow-lg shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] sm:p-6">
                   {loading ? (
                     <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
                   ) : attendance ? (
@@ -1020,7 +1020,7 @@ export default function ElimuStudentPortal({
                   <button
                     type="button"
                     onClick={() => loadSection("assessments")}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+                    className="group inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 transition hover:gap-2.5 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                   >
                     All assessments
                     <ChevronRight size={17} />
@@ -1066,7 +1066,7 @@ export default function ElimuStudentPortal({
                   <button
                     type="button"
                     onClick={() => loadSection("documents")}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+                    className="group inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 transition hover:gap-2.5 hover:text-emerald-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
                   >
                     View documents
                     <ChevronRight size={17} />
@@ -1082,7 +1082,7 @@ export default function ElimuStudentPortal({
                     {documents.slice(0, 4).map((document, index) => (
                       <div
                         key={document.id || document._id || index}
-                        className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+                        className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:border-emerald-300 hover:shadow-md"
                       >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                           <FileText size={19} />
@@ -1114,7 +1114,7 @@ export default function ElimuStudentPortal({
             </section>
           </>
         ) : (
-          <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7">
+          <section className="mt-8 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-lg shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] backdrop-blur-sm sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">

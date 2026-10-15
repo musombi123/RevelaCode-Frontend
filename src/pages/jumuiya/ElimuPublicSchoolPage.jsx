@@ -322,6 +322,26 @@ function MediaCard({ item, onOpen }) {
   );
 }
 
+function FeatureLink({ href, icon: Icon, title, description }) {
+  return (
+    <Link
+      to={href}
+      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
+        <Icon size={21} strokeWidth={1.8} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</span>
+        <span className="mt-1.5 block text-sm leading-6 text-slate-600">{description}</span>
+        <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
+          Explore section <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) {
   const cleanDetails = details.filter(Boolean);
   const cleanTags = (Array.isArray(tags) ? tags : String(tags || "").split(/[,;]+/))
