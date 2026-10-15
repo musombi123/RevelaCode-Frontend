@@ -278,7 +278,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   );
 }
 
-function MediaCard({ item }) {
+function MediaCard({ item, onOpen }) {
   const url = text(item, ["url", "secure_url", "media_url", "file_url"]);
   const title = text(item, ["title", "caption", "alt_text", "name"], "School photo or video");
   const format = text(item, ["format", "resource_type", "kind", "media_type"]).toLowerCase();
@@ -286,19 +286,34 @@ function MediaCard({ item }) {
   if (!url) return null;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="aspect-[4/3] bg-slate-100">
+    <article className="public-media-card group min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         {isVideo ? (
           <video className="h-full w-full object-cover" src={url} controls preload="metadata" aria-label={title} />
         ) : (
-          <a href={url} target="_blank" rel="noreferrer" className="block h-full w-full" aria-label={`Open ${title}`}>
-            <img src={url} alt={text(item, ["alt_text", "caption", "title"], title)} loading="lazy" className="h-full w-full object-cover transition duration-300 hover:scale-[1.02]" />
-          </a>
+          <button
+            type="button"
+            onClick={() => typeof onOpen === "function" && onOpen(item)}
+            className="group/photo relative block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[var(--school-primary)]"
+            aria-label={`View photo: ${title}`}
+          >
+            <img
+              src={url}
+              alt={text(item, ["alt_text", "caption", "title"], title)}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition duration-500 group-hover/photo:scale-[1.04]"
+              onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+            />
+            <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-bold text-white opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
+              <span>View photo</span><ImageIcon size={15} />
+            </span>
+          </button>
         )}
       </div>
-      <div className="p-4">
-        <h2 className="break-words text-sm font-extrabold text-slate-900">{title}</h2>
-        {text(item, ["caption", "description"]) && <p className="mt-1 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
+      <div className="p-4 sm:p-5">
+        <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
+        {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
     </article>
   );
@@ -306,12 +321,19 @@ function MediaCard({ item }) {
 
 function FeatureLink({ href, icon: Icon, title, description }) {
   return (
-    <Link to={href} className="group flex h-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-emerald-200 hover:shadow-md">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={20} /></span>
+    <Link
+      to={href}
+      className="public-feature-link group flex h-full min-w-0 items-start gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-5 transition duration-300 hover:-translate-y-1 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 transition duration-300 group-hover:scale-105">
+        <Icon size={21} strokeWidth={1.8} />
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-extrabold text-slate-900">{title}</span>
-        <span className="mt-1 block text-sm leading-6 text-slate-500">{description}</span>
-        <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-emerald-700">Explore <ArrowRight size={13} className="transition group-hover:translate-x-0.5" /></span>
+        <span className="block text-base font-extrabold tracking-tight text-slate-900">{title}</span>
+        <span className="mt-1.5 block text-sm leading-6 text-slate-600">{description}</span>
+        <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
+          Explore section <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+        </span>
       </span>
     </Link>
   );
@@ -357,6 +379,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
   const [downloadError, setDownloadError] = useState("");
   const [downloadingId, setDownloadingId] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [inquiryForm, setInquiryForm] = useState({ name: "", email: "", phone: "", topic: "general", message: "", website_confirmation: "" });
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
   const [inquiryFeedback, setInquiryFeedback] = useState(null);
@@ -501,6 +524,20 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     }
     setMobileMenuOpen(false);
   }, [canonicalPage, homeUrl, navigate, validPages]);
+
+  useEffect(() => {
+    if (!selectedMedia) return undefined;
+    const previousOverflow = window.document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSelectedMedia(null);
+    };
+    window.document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedMedia]);
 
   useEffect(() => {
     const title = school
@@ -765,18 +802,29 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       text(item, ["category", "media_category"]).toLowerCase() === "hero" &&
       text(item, ["kind", "resource_type", "media_type"]).toLowerCase() !== "video"
   );
-  const coverUrl =
-    text(school, ["cover_image_url", "hero_image_url", "banner_url"]) ||
-    text(cover, ["url", "secure_url", "media_url", "file_url"]);
-  const heroStyle = coverUrl
-    ? {
-        backgroundImage: "linear-gradient(90deg, " + rgbaFromHex(websiteTheme.secondary, 0.92) + ", " + rgbaFromHex(websiteTheme.primary, 0.62) + '), url("' + coverUrl.replace(/"/g, "%22") + '")',
-        backgroundPosition: "center",
-        backgroundSize: "cover",
-      }
-    : {
-        backgroundImage: "linear-gradient(120deg, " + websiteTheme.secondary + ", " + websiteTheme.primary + ")",
-      };
+  const savedCoverUrl = text(school, ["cover_image_url", "hero_image_url", "banner_url"]);
+  const isVideoMedia = (item) => {
+    const format = text(item, ["format", "resource_type", "kind", "media_type"]).toLowerCase();
+    const url = text(item, ["url", "secure_url", "media_url", "file_url"]);
+    return format.includes("video") || ["mp4", "mov", "m4v", "webm"].includes(format) || /\.(mp4|mov|m4v|webm)(\?|$)/i.test(url);
+  };
+  const featuredPublicMedia = media.find((item) =>
+    !isVideoMedia(item) && Boolean(text(item, ["url", "secure_url", "media_url", "file_url"]))
+  );
+  const heroImageUrl =
+    savedCoverUrl ||
+    text(cover, ["url", "secure_url", "media_url", "file_url"]) ||
+    text(featuredPublicMedia, ["url", "secure_url", "media_url", "file_url"]);
+  const heroImageAlt = text(
+    school,
+    ["cover_image_alt", "homepage_image_alt"],
+    text(featuredPublicMedia, ["alt_text", "caption", "title"], `Photo of ${schoolName}`)
+  );
+  const schoolType = text(school, ["school_type", "type"]);
+  const establishedYear = text(school, ["established_year"]);
+  const academicYear = text(school, ["academic_year"]);
+  const actualLocation = text(school, ["physical_address", "address", "location"]) ||
+    [text(school, ["town", "city"]), text(school, ["county", "region"])].filter(Boolean).join(", ");
   const pageTitle = NAV_ITEMS.find((item) => item.path === canonicalPage)?.label || "Home";
 
   let pageContent;
@@ -837,7 +885,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       );
       break;
     case "media":
-      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
+      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
       break;
     case "documents":
       pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
@@ -900,26 +948,168 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       const visibleEvents = events.slice(0, 3);
       const visibleProjects = projects.slice(0, 3);
       const visibleMedia = media.slice(0, 3);
-      pageContent = <>
-        <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-emerald-950 to-emerald-800 text-white" style={heroStyle}>
-          <div className="pointer-events-none absolute -right-20 -top-28 -z-10 h-96 w-96 rounded-full border border-white/10 shadow-[0_0_0_40px_rgba(255,255,255,0.025),0_0_0_90px_rgba(255,255,255,0.02)]" />
-          <div className="grid gap-10 px-6 py-12 sm:px-9 sm:py-16 lg:grid-cols-[1fr_.58fr] lg:items-center lg:px-12 lg:py-20">
-            <div><div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-emerald-100"><ShieldCheck size={15} />Official school website</div><h1 className="mt-6 max-w-3xl break-words text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">{text(school, ["homepage_title"], schoolName)}</h1><p className="mt-5 max-w-2xl whitespace-pre-line text-sm leading-8 text-emerald-50/90 sm:text-base">{about}</p>{motto && <p className="mt-4 text-sm font-bold italic text-emerald-100">“{motto}”</p>}<div className="mt-8 flex flex-wrap gap-3"><Link to={pageUrl("about")} className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-950 hover:bg-emerald-50">Discover our school <ArrowRight size={16} /></Link><Link to={pageUrl("documents")} className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15"><ArrowDownToLine size={16} />Public documents</Link></div></div>
-            <aside className="rounded-3xl border border-white/15 bg-white/[0.08] p-6 backdrop-blur"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-emerald-100"><GraduationCap size={26} /></div><h2 className="mt-5 text-xl font-extrabold">Welcome to our school</h2><p className="mt-3 text-sm leading-7 text-emerald-50/85">Find school information, published announcements, academic highlights, photos and official resources in one place.</p><div className="mt-6 flex items-center gap-2 text-xs font-bold text-emerald-100"><ShieldCheck size={15} />Powered by Jumuiya Elimu</div></aside>
-          </div>
-        </section>
-        <section className="mt-10"><PageHeading icon={School} eyebrow="Explore the school" title="Everything you need to know" description="Use the school website sections to explore the school, follow its activities and access published resources."/><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><FeatureLink href={pageUrl("about")} icon={School} title="About our school" description="Our story, mission, vision and school leadership."/><FeatureLink href={pageUrl("events")} icon={CalendarDays} title="News and events" description="School activities and public announcements."/><FeatureLink href={pageUrl("academics")} icon={BookOpen} title="Academics" description="Learning highlights and published CBC projects."/><FeatureLink href={pageUrl("media")} icon={ImageIcon} title="Photos and videos" description="View approved school photos and videos."/><FeatureLink href={pageUrl("documents")} icon={FileText} title="Public documents" description="Find approved forms, notices and school resources."/><FeatureLink href={pageUrl("contact")} icon={Mail} title="Contact us" description="Official phone, email and location information."/></div></section>
-        {visibleEvents.length > 0 && <section className="mt-14"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">What’s happening</p><h2 className="mt-2 text-2xl font-black text-slate-950">Latest news and events</h2></div><Link to={pageUrl("events")} className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700">All events <ArrowRight size={15}/></Link></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleEvents.map((item, index) => <ResourceCard key={recordId(item) || `home-event-${index}`} item={item} kind="event" />)}</div></section>}
-        {visibleProjects.length > 0 && <section className="mt-14"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">Learning and achievement</p><h2 className="mt-2 text-2xl font-black text-slate-950">Academic highlights</h2></div><Link to={pageUrl("academics")} className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700">All highlights <ArrowRight size={15}/></Link></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleProjects.map((item, index) => <ResourceCard key={recordId(item) || `home-project-${index}`} item={item} kind="project" />)}</div></section>}
-        {visibleMedia.length > 0 && <section className="mt-14"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">School gallery</p><h2 className="mt-2 text-2xl font-black text-slate-950">A glimpse of school life</h2></div><Link to={pageUrl("media")} className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700">Open gallery <ArrowRight size={15}/></Link></div><div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || `home-media-${index}`} item={item} />)}</div></section>}
-        <section className="mt-14 rounded-3xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-extrabold text-emerald-950">Need to reach the school?</h2><p className="mt-2 text-sm leading-6 text-emerald-900/80">Find the school's official contact details and location.</p></div><Link to={pageUrl("contact")} className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-900">Contact the school <ArrowRight size={16}/></Link></div></section>
-      </>;
+      const schoolDetails = [
+        { icon: MapPin, label: "Location", value: actualLocation },
+        { icon: School, label: "School type", value: schoolType },
+        { icon: CalendarDays, label: "Established", value: establishedYear },
+        { icon: BookOpen, label: "Academic year", value: academicYear },
+      ].filter((item) => item.value);
+
+      pageContent = (
+        <>
+          <section
+            className="public-home-hero relative isolate overflow-hidden rounded-[1.65rem] shadow-2xl shadow-slate-900/10 sm:rounded-[2rem]"
+            style={{ backgroundImage: `linear-gradient(135deg, ${websiteTheme.secondary} 0%, ${websiteTheme.primary} 100%)` }}
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-50"
+              style={{
+                backgroundImage: `radial-gradient(circle at 12% 18%, ${rgbaFromHex(websiteTheme.accent, 0.32)} 0, transparent 31%), radial-gradient(circle at 82% 0%, ${rgbaFromHex("#ffffff", 0.12)} 0, transparent 32%)`,
+              }}
+            />
+            <div className="relative grid min-h-[470px] lg:min-h-[520px] lg:grid-cols-[1.08fr_.92fr]">
+              <div className="relative z-10 flex min-w-0 flex-col items-start justify-center px-6 py-10 text-white sm:px-9 sm:py-14 lg:px-12 lg:py-16">
+                <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/95 backdrop-blur">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: websiteTheme.accent }} />
+                  School information & updates
+                  {schoolType && <><span className="opacity-60">/</span><span className="normal-case tracking-normal">{schoolType}</span></>}
+                </div>
+                <h1 className="mt-6 max-w-3xl break-words text-[2.1rem] font-black leading-[1.08] tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.35rem] xl:text-[3.7rem]">
+                  {text(school, ["homepage_title"], schoolName)}
+                </h1>
+                <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-white/85 sm:text-base sm:leading-8">
+                  {text(school, ["public_description", "description", "about", "about_school"], "Explore official school information, learning programmes and published updates from our school community.")}
+                </p>
+                {motto && (
+                  <p className="mt-4 max-w-xl border-l-2 pl-4 text-sm font-semibold italic leading-6 text-white/90" style={{ borderColor: websiteTheme.accent }}>
+                    “{motto}”
+                  </p>
+                )}
+                <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                  <Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold shadow-lg shadow-black/10 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent" style={{ backgroundColor: websiteTheme.surface, color: websiteTheme.primary }}>
+                    Admissions & enquiries <ArrowRight size={16} />
+                  </Link>
+                  <Link to={pageUrl("about")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
+                    Discover our school
+                  </Link>
+                </div>
+                {actualLocation && (
+                  <div className="mt-7 flex max-w-full items-start gap-2.5 text-sm leading-6 text-white/80">
+                    <MapPin size={17} className="mt-1 shrink-0" /><span className="break-words">{actualLocation}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative min-h-[280px] px-4 pb-4 sm:min-h-[340px] sm:px-6 sm:pb-6 lg:min-h-full lg:px-5 lg:py-5 lg:pl-0">
+                <div className="public-hero-visual relative h-full min-h-[270px] overflow-hidden rounded-[1.35rem] border border-white/20 bg-white/10 shadow-xl shadow-slate-950/20 sm:rounded-[1.6rem] lg:min-h-[470px]" style={{ backgroundColor: rgbaFromHex(websiteTheme.surface, 0.08) }}>
+                  {heroImageUrl ? (
+                    <>
+                      <img src={heroImageUrl} alt={heroImageAlt} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+                        <div className="mb-3 h-1 w-12 rounded-full" style={{ backgroundColor: websiteTheme.accent }} />
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/75">School profile</p>
+                        <p className="mt-1 break-words text-xl font-extrabold leading-tight text-white sm:text-2xl">{schoolName}</p>
+                        {(actualLocation || schoolType) && <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/80">{actualLocation && <span className="inline-flex items-center gap-1.5"><MapPin size={14} />{actualLocation}</span>}{schoolType && <span>{schoolType}</span>}</p>}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-6 sm:p-9" style={{ backgroundImage: `linear-gradient(145deg, ${websiteTheme.primary} 0%, ${websiteTheme.secondary} 100%)` }}>
+                      <div aria-hidden="true" className="absolute -right-20 -top-16 h-64 w-64 rounded-full border border-white/15 shadow-[0_0_0_24px_rgba(255,255,255,0.025),0_0_0_52px_rgba(255,255,255,0.02)]" />
+                      <div aria-hidden="true" className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full border border-white/15" />
+                      <div className="relative w-full max-w-xs text-center">
+                        <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.8rem] border border-white/25 bg-white/10 p-3 shadow-2xl shadow-black/10 backdrop-blur">
+                          {logo ? <img src={logo} alt={`${schoolName} logo`} loading="lazy" className="h-full w-full object-contain" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : <School size={48} strokeWidth={1.2} className="text-white" />}
+                        </div>
+                        <p className="mt-6 text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/65">A school community</p>
+                        <h2 className="mt-2 break-words text-2xl font-black leading-tight text-white sm:text-3xl">{schoolName}</h2>
+                        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/75">Explore the school, its published learning information and school activities.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {schoolDetails.length > 0 && (
+            <section aria-label="School information" className="public-school-facts mt-5 grid gap-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:grid-cols-2 lg:grid-cols-4">
+              {schoolDetails.map(({ icon: Icon, label, value }, index) => (
+                <div key={label} className={`flex min-w-0 items-start gap-3 px-5 py-4 sm:px-6 ${index ? "border-t border-slate-100 sm:border-t-0 sm:border-l" : ""} ${index === 2 ? "lg:border-l" : ""}`}>
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={17} /></span>
+                  <span className="min-w-0"><span className="block text-[10px] font-extrabold uppercase tracking-[0.13em] text-slate-500">{label}</span><span className="mt-1 block break-words text-sm font-bold leading-5 text-slate-900">{value}</span></span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          <section className="public-home-intro mt-14 grid gap-8 lg:mt-20 lg:grid-cols-[.9fr_1.1fr] lg:items-start lg:gap-14">
+            <div className="min-w-0">
+              <p className="public-section-kicker inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700"><span className="h-px w-7" style={{ backgroundColor: websiteTheme.accent }} /> Get to know us</p>
+              <h2 className="mt-4 max-w-xl break-words text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl">About {schoolName}</h2>
+              <p className="mt-5 whitespace-pre-line text-[15px] leading-7 text-slate-600 sm:text-base sm:leading-8">{about}</p>
+              <Link to={pageUrl("about")} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold text-white transition hover:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2" style={{ backgroundColor: websiteTheme.primary }}>
+                Read about the school <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {mission && <article className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><BookOpen size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{mission}</p></article>}
+              {vision && <article className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><GraduationCap size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{vision}</p></article>}
+              {!mission && !vision && <aside className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:col-span-2 sm:p-7"><p className="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-700">Explore further</p><h3 className="mt-3 text-xl font-extrabold text-slate-950">Find the information you need</h3><p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">Browse published academic information, school activities, announcements and official resources.</p><div className="mt-5 flex flex-wrap gap-2"><Link to={pageUrl("academics")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Academics</Link><Link to={pageUrl("activities")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">School life</Link><Link to={pageUrl("contact")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Contact</Link></div></aside>}
+            </div>
+          </section>
+
+          <section className="mt-16 border-t border-slate-200/80 pt-12 sm:mt-20 sm:pt-16">
+            <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="public-section-kicker text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700">Explore the school</p><h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Information for families and visitors</h2></div><p className="max-w-xl text-sm leading-7 text-slate-600">Explore the school's published information, events and public resources.</p></div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <FeatureLink href={pageUrl("academics")} icon={BookOpen} title="Academics" description="Learning pathways, departments and published academic projects." />
+              <FeatureLink href={pageUrl("activities")} icon={CalendarDays} title="School life" description="Clubs, activities and opportunities published by the school." />
+              <FeatureLink href={pageUrl("events")} icon={CalendarDays} title="News and events" description="Announcements and public events from the school community." />
+              <FeatureLink href={pageUrl("media")} icon={ImageIcon} title="Photos and videos" description="View photographs and videos approved for public viewing." />
+              <FeatureLink href={pageUrl("documents")} icon={FileText} title="Public documents" description="Access school forms, notices and resources released for families." />
+              <FeatureLink href={pageUrl("contact")} icon={Mail} title="Contact the school" description="Find the published contact details and send an inquiry." />
+            </div>
+          </section>
+
+          {visibleEvents.length > 0 && (
+            <section className="mt-16 sm:mt-20">
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="public-section-kicker text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700">From the school calendar</p><h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Latest news and events</h2></div><Link to={pageUrl("events")} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-extrabold text-emerald-700 hover:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">View all events <ArrowRight size={15} /></Link></div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleEvents.map((item, index) => <ResourceCard key={recordId(item) || `home-event-${index}`} item={item} kind="event" />)}</div>
+            </section>
+          )}
+
+          {visibleProjects.length > 0 && (
+            <section className="mt-16 sm:mt-20">
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="public-section-kicker text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700">Learning and achievement</p><h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Academic highlights</h2></div><Link to={pageUrl("academics")} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-extrabold text-emerald-700 hover:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">Explore academics <ArrowRight size={15} /></Link></div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleProjects.map((item, index) => <ResourceCard key={recordId(item) || `home-project-${index}`} item={item} kind="project" />)}</div>
+            </section>
+          )}
+
+          {visibleMedia.length > 0 && (
+            <section className="mt-16 sm:mt-20">
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="public-section-kicker text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700">School gallery</p><h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">A glimpse of school life</h2></div><Link to={pageUrl("media")} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-extrabold text-emerald-700 hover:gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">Open gallery <ArrowRight size={15} /></Link></div>
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || `home-media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div>
+            </section>
+          )}
+
+          <section className="public-contact-cta relative mt-16 overflow-hidden rounded-[1.6rem] p-6 sm:mt-20 sm:p-9 lg:p-10" style={{ backgroundImage: `linear-gradient(125deg, ${websiteTheme.secondary} 0%, ${websiteTheme.primary} 100%)` }}>
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border border-white/15 shadow-[0_0_0_32px_rgba(255,255,255,0.025),0_0_0_64px_rgba(255,255,255,0.02)]" />
+            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-2xl"><p className="text-xs font-extrabold uppercase tracking-[0.17em] text-white/70">Connect with us</p><h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">Questions about {schoolName}?</h2><p className="mt-3 text-sm leading-7 text-white/80">Use the school's published contact details or send an inquiry to the administration.</p>
+                {(phone || email) && <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-white">{phone && <a className="inline-flex items-center gap-2 hover:underline" href={`tel:${phone}`}><Phone size={15} />{phone}</a>}{email && <a className="inline-flex items-center gap-2 break-all hover:underline" href={`mailto:${email}`}><Mail size={15} />{email}</a>}</div>}
+              </div>
+              <Link to={pageUrl("contact")} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold shadow-lg shadow-black/10 transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" style={{ backgroundColor: websiteTheme.surface, color: websiteTheme.primary }}>Contact the school <ArrowRight size={16} /></Link>
+            </div>
+          </section>
+        </>
+      );
     }
   }
 
   return (
-    <div data-school-website="true" className={"min-h-screen text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
-      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,white)!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,white)!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:var(--school-primary)!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,white)!important;color:var(--school-primary)!important; } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
+    <div data-school-website="true" className={"public-school-site min-h-screen text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
+      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,white)!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,white)!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:var(--school-primary)!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,white)!important;color:var(--school-primary)!important; } [data-school-website=true] .public-home-hero { isolation:isolate; } [data-school-website=true] .public-hero-visual { min-width:0; } [data-school-website=true] .public-school-facts > div { min-width:0; } [data-school-website=true] .public-school-facts > div:first-child { border-left:0; } [data-school-website=true] .public-feature-link { min-height:150px; } [data-school-website=true] .public-media-card img { will-change:transform; } [data-school-website=true] a, [data-school-website=true] button { -webkit-tap-highlight-color:transparent; } [data-school-website=true] :is(a,button,input,select,textarea):focus-visible { outline-color:var(--school-primary); } @media (max-width: 639px) { [data-school-website=true] .public-home-hero { border-radius:1.25rem; } [data-school-website=true] .public-feature-link { min-height:0; } [data-school-website=true] .public-school-facts > div { border-left:0; } } @media (min-width: 640px) { [data-school-website=true] .public-home-intro { scroll-margin-top:7rem; } } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
       <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
@@ -1027,7 +1217,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         )}
       </header>
 
-      <main id="main-content" className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+      <main id="main-content" className="public-site-main mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
         {resourceWarning && <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><XCircle size={18} className="mt-0.5 shrink-0"/><p>{resourceWarning}</p><button type="button" className="ml-auto shrink-0 font-bold underline" disabled={refreshing} onClick={() => void loadPage({ silent: true })}>Retry</button></div>}
         {pageContent}
       </main>
@@ -1039,6 +1229,37 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
           <p className="text-xs text-slate-500">Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
         </div>
       </footer>
+
+      {selectedMedia && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="school-media-dialog-title"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-3 backdrop-blur-sm sm:p-6"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedMedia(null);
+          }}
+        >
+          <div className="relative flex max-h-full w-full max-w-6xl flex-col items-center">
+            <div className="mb-3 flex w-full items-center justify-between gap-4 px-1 text-white">
+              <p id="school-media-dialog-title" className="min-w-0 break-words text-sm font-bold sm:text-base">
+                {text(selectedMedia, ["title", "caption", "alt_text", "name"], "School photo")}
+              </p>
+              <button type="button" autoFocus onClick={() => setSelectedMedia(null)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Close photo viewer">
+                <X size={21} />
+              </button>
+            </div>
+            <img
+              src={text(selectedMedia, ["url", "secure_url", "media_url", "file_url"])}
+              alt={text(selectedMedia, ["alt_text", "caption", "title", "name"], "School photo")}
+              className="max-h-[78vh] max-w-full rounded-xl object-contain shadow-2xl"
+            />
+            {text(selectedMedia, ["caption", "description"]) && (
+              <p className="mt-3 max-w-3xl text-center text-sm leading-6 text-white/80">{text(selectedMedia, ["caption", "description"])}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
