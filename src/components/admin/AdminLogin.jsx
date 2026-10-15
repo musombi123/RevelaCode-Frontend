@@ -284,7 +284,7 @@ export default function AdminLogin() {
           >
             {loading ? (
               <>
-                <LoaderCircle
+                <Loader
                   size={18}
                   className="animate-spin"
                 />
