@@ -102,9 +102,9 @@ function metricSet(dashboard) {
 
 function Metric({ label, value, helper }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-xl font-bold text-slate-900">{value}</p>
+    <div className="rounded-[1.25rem] border border-white bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm ring-1 ring-slate-100">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{value}</p>
       {helper ? <p className="mt-1 text-xs text-slate-500">{helper}</p> : null}
     </div>
   );
@@ -120,7 +120,7 @@ function Field({ label, value, onChange, type = "text", required = false, placeh
         required={required}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
       />
     </label>
   );
@@ -367,28 +367,30 @@ export default function BiasharaInternalWorkspace({
   }, [completeness, pendingOrders, lowStock, business]);
 
   return (
-    <div className="min-h-full bg-slate-50 p-4 sm:p-6">
-      <div className="mx-auto max-w-7xl space-y-5">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-h-full bg-[#f4f7fb] p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6">
+        <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Icon size={23} /></div>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-blue-100 ring-1 ring-white/15"><Icon size={23} /></div>
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">Biashara Hub</p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{config[0]}</h1>
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{config[1]}</p>
-                <p className="mt-2 truncate text-xs text-slate-400">{business?.name || business?.business_name || "Your business"}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-300">Biashara OS <span className="mx-1 text-slate-500">/</span> Management workspace</p>
+                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">{config[0]}</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{config[1]}</p>
+                <p className="mt-3 inline-flex max-w-full items-center gap-2 truncate rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-200 ring-1 ring-white/10"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />{business?.name || business?.business_name || "Your business"}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onBack} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ArrowLeft size={16} /> Overview</button>
-              <button type="button" onClick={reload} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh</button>
+              <button type="button" onClick={onBack} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"><ArrowLeft size={16} /> Overview</button>
+              <button type="button" onClick={reload} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh</button>
             </div>
           </div>
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/5 p-1.5 pb-1.5 ring-1 ring-white/10">
             {ROUTES.map((item) => {
               const TabIcon = item.icon;
-              return <button key={item.key} type="button" onClick={() => onNavigate?.(item.key)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${route === item.key ? "bg-blue-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}><TabIcon size={15} />{item.label}</button>;
+              return <button key={item.key} type="button" onClick={() => onNavigate?.(item.key)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${route === item.key ? "bg-white text-slate-950 shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><TabIcon size={15} />{item.label}</button>;
             })}
           </div>
         </section>
@@ -401,7 +403,7 @@ export default function BiasharaInternalWorkspace({
         ) : null}
 
         {route === "business-profile" ? (
-          <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
             <div className="mb-5"><h2 className="text-lg font-bold text-slate-900">Business identity details</h2><p className="mt-1 text-sm text-slate-500">Fields marked with an asterisk are required by this form.</p></div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Business name" required value={profileForm.name} onChange={(v) => updateProfileField("name", v)} />
@@ -419,7 +421,7 @@ export default function BiasharaInternalWorkspace({
 
         {route === "products" ? (
           <>
-            <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">Add a product</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <Field label="Product name" required value={form.name} onChange={(v) => updateField("name", v)} />
@@ -438,7 +440,7 @@ export default function BiasharaInternalWorkspace({
 
         {route === "customers" ? (
           <>
-            <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">Add a customer</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-3"><Field label="Full name" required value={form.name} onChange={(v) => updateField("name", v)} /><Field label="Phone" value={form.phone} onChange={(v) => updateField("phone", v)} /><Field label="Email" type="email" value={form.email} onChange={(v) => updateField("email", v)} /></div>
               <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><Users size={16} />{saving ? "Saving…" : "Save customer"}</button>
@@ -463,7 +465,7 @@ export default function BiasharaInternalWorkspace({
 
         {route === "sales" ? (
           <>
-            <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">Sale details</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-3"><Field label={`Amount (${currency})`} type="number" required value={form.amount} onChange={(v) => updateField("amount", v)} /><label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Payment method</span><select value={form.payment_method} onChange={(e) => updateField("payment_method", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="mobile_money">Mobile money</option><option value="bank">Bank</option><option value="card">Card</option><option value="other">Other</option></select></label><Field label="Reference (optional)" value={form.reference} onChange={(v) => updateField("reference", v)} /></div>
               <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><CircleDollarSign size={16} />{saving ? "Recording…" : "Record sale"}</button>
@@ -477,7 +479,7 @@ export default function BiasharaInternalWorkspace({
         {route === "biashara-analytics" ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Total sales" value={money(totalSales, currency)} /><Metric label="Expenses" value={money(totalExpenses, currency)} /><Metric label="Net estimate" value={money(net, currency)} helper="Calculated from available sales and expense totals" /><Metric label="Orders" value={number(totalOrders)} helper={`${number(pendingOrders)} pending or active`} /><Metric label="Customers" value={number(customersCount)} /><Metric label="Products" value={number(productsCount)} /><Metric label="Low-stock items" value={number(lowStock.length)} /><Metric label="Profile completion" value={`${completeness.percentage}%`} helper={`${completeness.completed}/${completeness.total} profile fields`} /></div>
-            <section className="rounded-3xl border border-slate-200 bg-white p-5"><h2 className="font-bold text-slate-900">Data quality note</h2><p className="mt-2 text-sm leading-6 text-slate-500">These figures use the values currently returned by the Biashara dashboard endpoint. Missing backend metrics are displayed as zero; verify the API response before using these figures for financial reporting.</p></section>
+            <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80"><h2 className="font-bold text-slate-900">Data quality note</h2><p className="mt-2 text-sm leading-6 text-slate-500">These figures use the values currently returned by the Biashara dashboard endpoint. Missing backend metrics are displayed as zero; verify the API response before using these figures for financial reporting.</p></section>
           </>
         ) : null}
 
@@ -485,12 +487,12 @@ export default function BiasharaInternalWorkspace({
           <>
             <section className="rounded-3xl bg-slate-900 p-5 text-white sm:p-6"><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300"><Sparkles size={22} /></div><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-300">RevelaAI · Biashara</p><h2 className="mt-1 text-xl font-bold">Operational signals from your business data</h2><p className="mt-2 text-sm leading-6 text-slate-300">This panel reports only signals that can be derived from the currently loaded business profile and dashboard response.</p></div></div></section>
             <div className="grid gap-3 sm:grid-cols-2"><Metric label="Sales returned by API" value={money(totalSales, currency)} /><Metric label="Orders requiring review" value={number(pendingOrders)} /><Metric label="Low-stock product records" value={number(lowStock.length)} /><Metric label="Business profile completeness" value={`${completeness.percentage}%`} /></div>
-            <section className="rounded-3xl border border-slate-200 bg-white p-5"><h2 className="font-bold text-slate-900">Recommended next steps</h2><div className="mt-3 space-y-3">{lowStock.length ? <Notice tone="amber">Review {lowStock.length} low-stock product record(s) and replenish stock where appropriate.</Notice> : <Notice tone="green">No low-stock product records were returned in the current dashboard response.</Notice>}{pendingOrders ? <Notice tone="blue">Review {number(pendingOrders)} pending or active order(s).</Notice> : null}{completeness.percentage < 100 ? <Notice tone="amber">Complete the business profile to improve identity consistency.</Notice> : null}</div><button type="button" onClick={() => onNavigate?.("ai")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700"><Sparkles size={16} />Open RevelaAI assistant<ChevronRight size={16} /></button></section>
+            <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80"><h2 className="font-bold text-slate-900">Recommended next steps</h2><div className="mt-3 space-y-3">{lowStock.length ? <Notice tone="amber">Review {lowStock.length} low-stock product record(s) and replenish stock where appropriate.</Notice> : <Notice tone="green">No low-stock product records were returned in the current dashboard response.</Notice>}{pendingOrders ? <Notice tone="blue">Review {number(pendingOrders)} pending or active order(s).</Notice> : null}{completeness.percentage < 100 ? <Notice tone="amber">Complete the business profile to improve identity consistency.</Notice> : null}</div><button type="button" onClick={() => onNavigate?.("ai")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700"><Sparkles size={16} />Open RevelaAI assistant<ChevronRight size={16} /></button></section>
           </>
         ) : null}
 
         {route === "notifications" ? (
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-lg font-bold text-slate-900">Current business alerts</h2><p className="mt-1 text-sm text-slate-500">This list is generated from current profile and dashboard fields; it is not a historical notification feed.</p><div className="mt-4 space-y-3">{alertItems.length ? alertItems.map((item, index) => <Notice key={`${item.title}-${index}`} tone={item.tone}><p className="font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5">{item.text}</p></Notice>) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center"><CheckCircle2 className="mx-auto text-emerald-600" size={25} /><p className="mt-2 text-sm font-semibold text-slate-800">No active alerts detected</p><p className="mt-1 text-xs text-slate-500">No alerts were found in the profile and dashboard data currently available.</p></div>}</div></section>
+          <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6"><h2 className="text-lg font-bold text-slate-900">Current business alerts</h2><p className="mt-1 text-sm text-slate-500">This list is generated from current profile and dashboard fields; it is not a historical notification feed.</p><div className="mt-4 space-y-3">{alertItems.length ? alertItems.map((item, index) => <Notice key={`${item.title}-${index}`} tone={item.tone}><p className="font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5">{item.text}</p></Notice>) : <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center"><CheckCircle2 className="mx-auto text-emerald-600" size={25} /><p className="mt-2 text-sm font-semibold text-slate-800">No active alerts detected</p><p className="mt-1 text-xs text-slate-500">No alerts were found in the profile and dashboard data currently available.</p></div>}</div></section>
         ) : null}
       </div>
     </div>
@@ -499,7 +501,7 @@ export default function BiasharaInternalWorkspace({
 
 function ListPanel({ title, rows, loading, empty, children, onSearch, query }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-bold text-slate-900">{title}</h2><p className="mt-1 text-xs text-slate-500">{rows.length} record(s)</p></div><label className="relative block w-full sm:max-w-xs"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><input value={query} onChange={(event) => onSearch(event.target.value)} placeholder="Search records…" className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-blue-500" /></label></div>
       {loading ? <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500"><Loader2 size={18} className="animate-spin" />Loading records…</div> : rows.length ? <div className="mt-4 divide-y divide-slate-100">{rows.map((row, index) => <div key={idOf(row) || row.reference || row.name || `${title}-${index}`} className="py-4">{children(row)}</div>)}</div> : <div className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center"><p className="text-sm font-semibold text-slate-800">Nothing to show yet</p><p className="mt-1 text-xs text-slate-500">{empty}</p></div>}
     </section>
