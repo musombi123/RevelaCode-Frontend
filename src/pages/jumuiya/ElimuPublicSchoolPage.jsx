@@ -906,7 +906,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         <div className="school-home-page">
           <section className="school-home-hero relative isolate overflow-hidden" style={{ backgroundColor: websiteTheme.secondary }}>
             <div className="school-home-hero-glow" aria-hidden="true" />
-            <div className="grid min-h-[470px] lg:min-h-[540px] lg:grid-cols-[1.03fr_.97fr]">
+            <div className="relative z-10 grid min-h-[470px] lg:min-h-[540px] lg:grid-cols-[1.03fr_.97fr]">
               <div className="relative z-10 flex flex-col justify-center px-6 py-12 text-white sm:px-9 sm:py-16 lg:px-12 lg:py-16 xl:px-16">
                 <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold tracking-wide text-white/90"><ShieldCheck size={15} /> Official school website</div>
                 <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: websiteTheme.accent }}>Welcome to</p>
@@ -985,7 +985,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       <style>{`
         [data-school-website="true"] .school-home-page { color:var(--school-body); }
         [data-school-website="true"] .school-home-hero { border-radius:1.75rem; overflow:hidden; box-shadow:0 28px 70px rgba(15,23,42,.14); }
-        [data-school-website="true"] .school-home-hero-glow { position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 12% 15%, color-mix(in srgb,var(--school-primary) 70%,transparent),transparent 48%); opacity:.65; }
+        [data-school-website="true"] .school-home-hero-glow { position:absolute; z-index:0; inset:0; pointer-events:none; background:radial-gradient(circle at 12% 15%, color-mix(in srgb,var(--school-primary) 70%,transparent),transparent 48%); opacity:.65; }
         [data-school-website="true"] .school-home-visual img { transition:transform .8s cubic-bezier(.2,.7,.2,1); }
         [data-school-website="true"] .school-home-visual:hover img { transform:scale(1.025); }
         [data-school-website="true"] .school-section-kicker { color:var(--school-primary); font-size:.72rem; font-weight:800; letter-spacing:.16em; line-height:1.4; text-transform:uppercase; }
