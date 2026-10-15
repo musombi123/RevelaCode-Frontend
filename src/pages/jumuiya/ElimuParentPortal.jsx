@@ -197,8 +197,8 @@ function SectionTitle({ eyebrow, title, description, action }) {
 
 function EmptyPanel({ icon: Icon = Users, title, description, action }) {
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-9 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
+    <div className="flex min-h-52 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300/90 bg-gradient-to-br from-white to-emerald-50/40 px-6 py-10 text-center shadow-sm ring-1 ring-slate-950/[0.025]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-md ring-1 ring-emerald-700/10">
         <Icon size={22} />
       </div>
 
@@ -220,14 +220,14 @@ function StudentCard({ student, selected, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(student)}
-      className={`w-full rounded-2xl border p-4 text-left transition sm:p-5 ${
+      className={`group w-full rounded-3xl border p-4 text-left shadow-sm transition duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:p-5 ${
         selected
-          ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-100"
-          : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm"
+          ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-white shadow-lg shadow-emerald-900/10 ring-2 ring-emerald-100"
+          : "border-slate-200/90 bg-white hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl hover:shadow-slate-900/[0.07]"
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-800 ring-1 ring-emerald-800/10 transition duration-300 group-hover:scale-105">
           <GraduationCap size={23} />
         </div>
 
@@ -269,7 +269,7 @@ function DetailCard({ icon: Icon, title, description, onClick, disabled }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-full items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 sm:p-5"
+      className="group flex w-full items-start gap-4 rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white to-emerald-50/30 p-4 text-left shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl hover:shadow-slate-900/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:p-5"
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
         <Icon size={21} />
@@ -546,11 +546,11 @@ export default function ElimuParentPortal({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 text-slate-900">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white shadow-md shadow-emerald-950/15 ring-1 ring-emerald-950/10">
               <School size={23} />
             </div>
 
@@ -594,7 +594,7 @@ export default function ElimuParentPortal({
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {/* Intro */}
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white sm:p-8 lg:p-10">
+        <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white shadow-2xl shadow-emerald-950/20 ring-1 ring-emerald-950/10 sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-100">
@@ -614,7 +614,7 @@ export default function ElimuParentPortal({
             </div>
 
             <div className="grid grid-cols-2 gap-3 lg:min-w-[300px]">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+              <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 shadow-lg shadow-slate-950/10 backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white/[0.12]">
                 <Users size={20} className="text-emerald-200" />
                 <p className="mt-4 text-2xl font-extrabold">
                   {loadingChildren ? "â€”" : children.length}
@@ -624,7 +624,7 @@ export default function ElimuParentPortal({
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+              <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 shadow-lg shadow-slate-950/10 backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white/[0.12]">
                 <CheckCircle2 size={20} className="text-emerald-200" />
                 <p className="mt-4 text-2xl font-extrabold">
                   {loadingChildren ? "â€”" : verifiedChildren.length}
@@ -742,7 +742,7 @@ export default function ElimuParentPortal({
             {showLinkForm && (
               <form
                 onSubmit={submitChildLink}
-                className="mt-6 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6"
+                className="mt-6 rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/30 p-5 shadow-lg shadow-emerald-950/[0.04] ring-1 ring-emerald-950/[0.025] sm:p-6"
               >
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
@@ -1006,7 +1006,7 @@ export default function ElimuParentPortal({
                 />
               </div>
             ) : !isVerified(selectedChild) ? (
-              <div className="mt-6 rounded-2xl border border-amber-200 bg-white p-6 sm:p-8">
+              <div className="mt-6 rounded-3xl border border-amber-200/80 bg-gradient-to-br from-white to-amber-50/50 p-6 shadow-lg shadow-amber-950/[0.04] sm:p-8">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
                   <Clock size={24} />
                 </div>
@@ -1038,7 +1038,7 @@ export default function ElimuParentPortal({
               </div>
             ) : selectedSection === "overview" ? (
               <div className="mt-6 space-y-4">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 sm:p-6">
+                <div className="rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-5 shadow-sm ring-1 ring-emerald-950/[0.025] sm:p-6">
                   <div className="flex items-start gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">
                       <ShieldCheck size={22} />
@@ -1082,7 +1082,7 @@ export default function ElimuParentPortal({
                   onClick={() => openChildSection("finance")}
                 />
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-slate-950/[0.02]">
                   <p className="flex items-start gap-2 text-xs leading-5 text-slate-500">
                     <LockKeyhole size={15} className="mt-0.5 shrink-0 text-emerald-700" />
                     Every private-data request must be authorized by the
@@ -1092,7 +1092,7 @@ export default function ElimuParentPortal({
                 </div>
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+              <div className="mt-6 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-lg shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] backdrop-blur-sm sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700">
@@ -1209,7 +1209,7 @@ function PrivateSection({ section, data }) {
           return (
             <div
               key={document.id || document._id || index}
-              className="flex items-start gap-3 rounded-xl border border-slate-200 p-4"
+              className="group flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition duration-200 hover:border-emerald-300 hover:shadow-md"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                 <FileText size={19} />
@@ -1355,7 +1355,7 @@ function PrivateSection({ section, data }) {
       {fields.map(([label, value]) => (
         <div
           key={label}
-          className="flex flex-col gap-1 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+          className="flex flex-col gap-1 rounded-2xl border border-slate-200/80 bg-white px-4 py-4 shadow-sm transition hover:border-emerald-200 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
         >
           <span className="text-sm text-slate-500">{label}</span>
           <span className="break-words text-sm font-semibold text-slate-900">
