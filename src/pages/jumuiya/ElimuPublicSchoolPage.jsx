@@ -277,7 +277,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   );
 }
 
-function MediaCard({ item }) {
+function MediaCard({ item, onOpen }) {
   const url = text(item, ["url", "secure_url", "media_url", "file_url"]);
   const title = text(item, ["title", "caption", "alt_text", "name"], "School photo or video");
   const format = text(item, ["format", "resource_type", "kind", "media_type"]).toLowerCase();
@@ -285,19 +285,34 @@ function MediaCard({ item }) {
   if (!url) return null;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="aspect-[4/3] bg-slate-100">
+    <article className="public-media-card group min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         {isVideo ? (
           <video className="h-full w-full object-cover" src={url} controls preload="metadata" aria-label={title} />
         ) : (
-          <a href={url} target="_blank" rel="noreferrer" className="block h-full w-full" aria-label={`Open ${title}`}>
-            <img src={url} alt={text(item, ["alt_text", "caption", "title"], title)} loading="lazy" className="h-full w-full object-cover transition duration-300 hover:scale-[1.02]" />
-          </a>
+          <button
+            type="button"
+            onClick={() => typeof onOpen === "function" && onOpen(item)}
+            className="group/photo relative block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[var(--school-primary)]"
+            aria-label={`View photo: ${title}`}
+          >
+            <img
+              src={url}
+              alt={text(item, ["alt_text", "caption", "title"], title)}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition duration-500 group-hover/photo:scale-[1.04]"
+              onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+            />
+            <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-bold text-white opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
+              <span>View photo</span><ImageIcon size={15} />
+            </span>
+          </button>
         )}
       </div>
-      <div className="p-4">
-        <h2 className="break-words text-sm font-extrabold text-slate-900">{title}</h2>
-        {text(item, ["caption", "description"]) && <p className="mt-1 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
+      <div className="p-4 sm:p-5">
+        <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
+        {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
     </article>
   );
@@ -343,6 +358,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
   const [downloadError, setDownloadError] = useState("");
   const [downloadingId, setDownloadingId] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [inquiryForm, setInquiryForm] = useState({ name: "", email: "", phone: "", topic: "general", message: "", website_confirmation: "" });
   const [inquirySubmitting, setInquirySubmitting] = useState(false);
   const [inquiryFeedback, setInquiryFeedback] = useState(null);
@@ -487,6 +503,20 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     }
     setMobileMenuOpen(false);
   }, [canonicalPage, homeUrl, navigate, validPages]);
+
+  useEffect(() => {
+    if (!selectedMedia) return undefined;
+    const previousOverflow = window.document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSelectedMedia(null);
+    };
+    window.document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedMedia]);
 
   useEffect(() => {
     const title = school
@@ -814,7 +844,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       );
       break;
     case "media":
-      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
+      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
       break;
     case "documents":
       pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
@@ -978,8 +1008,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         @media(prefers-reduced-motion:reduce) { [data-school-website="true"] .school-home-visual img { transition:none; } }
       `}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
-      <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+      <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl supports-[backdrop-filter]:bg-white/90">
+        <div className="mx-auto flex max-w-[88rem] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
             <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
               <School size={23} />
@@ -1090,12 +1120,43 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       </main>
 
       <footer style={{ backgroundColor: websiteTheme.footer }} className="mt-8 border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-[88rem] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div><p className="text-sm font-extrabold text-slate-900">{schoolName}</p><p className="mt-1 text-xs text-slate-500">Official public school website</p></div>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="text-xs font-semibold text-slate-600 hover:text-emerald-700">{item.label}</Link>)}</nav>
           <p className="text-xs text-slate-500">Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
         </div>
       </footer>
+
+      {selectedMedia && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="school-media-dialog-title"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-3 backdrop-blur-sm sm:p-6"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedMedia(null);
+          }}
+        >
+          <div className="relative flex max-h-full w-full max-w-6xl flex-col items-center">
+            <div className="mb-3 flex w-full items-center justify-between gap-4 px-1 text-white">
+              <p id="school-media-dialog-title" className="min-w-0 break-words text-sm font-bold sm:text-base">
+                {text(selectedMedia, ["title", "caption", "alt_text", "name"], "School photo")}
+              </p>
+              <button type="button" autoFocus onClick={() => setSelectedMedia(null)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Close photo viewer">
+                <X size={21} />
+              </button>
+            </div>
+            <img
+              src={text(selectedMedia, ["url", "secure_url", "media_url", "file_url"])}
+              alt={text(selectedMedia, ["alt_text", "caption", "title", "name"], "School photo")}
+              className="max-h-[78vh] max-w-full rounded-xl object-contain shadow-2xl"
+            />
+            {text(selectedMedia, ["caption", "description"]) && (
+              <p className="mt-3 max-w-3xl text-center text-sm leading-6 text-white/80">{text(selectedMedia, ["caption", "description"])}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
