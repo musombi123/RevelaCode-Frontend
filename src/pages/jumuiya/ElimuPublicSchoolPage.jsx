@@ -33,7 +33,6 @@ import {
   Users,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
-import "./ElimuPublicSchoolPage.css";
 
 const NAV_ITEMS = [
   { path: "", label: "Home", icon: School },
@@ -959,7 +958,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       pageContent = (
         <>
           <section
-            className="public-home-hero relative isolate overflow-hidden rounded-[1.65rem] shadow-2xl shadow-slate-900/10 sm:rounded-[2rem]"
+            className="public-home-hero relative isolate overflow-hidden rounded-[1.25rem] border border-white/15 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-950/5 sm:rounded-[1.75rem] lg:rounded-[2rem]"
             style={{ backgroundImage: `linear-gradient(135deg, ${websiteTheme.secondary} 0%, ${websiteTheme.primary} 100%)` }}
           >
             <div
@@ -969,14 +968,14 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                 backgroundImage: `radial-gradient(circle at 12% 18%, ${rgbaFromHex(websiteTheme.accent, 0.32)} 0, transparent 31%), radial-gradient(circle at 82% 0%, ${rgbaFromHex("#ffffff", 0.12)} 0, transparent 32%)`,
               }}
             />
-            <div className="relative grid min-h-[470px] lg:min-h-[520px] lg:grid-cols-[1.08fr_.92fr]">
-              <div className="relative z-10 flex min-w-0 flex-col items-start justify-center px-6 py-10 text-white sm:px-9 sm:py-14 lg:px-12 lg:py-16">
+            <div className="relative grid min-h-0 lg:min-h-[36rem] lg:grid-cols-[1.08fr_.92fr]">
+              <div className="relative z-10 flex min-w-0 flex-col items-start justify-center px-5 py-9 text-white sm:px-9 sm:py-14 lg:px-12 lg:py-16 xl:px-14">
                 <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/95 backdrop-blur">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: websiteTheme.accent }} />
                   School information & updates
                   {schoolType && <><span className="opacity-60">/</span><span className="normal-case tracking-normal">{schoolType}</span></>}
                 </div>
-                <h1 className="mt-6 max-w-3xl break-words text-[2.1rem] font-black leading-[1.08] tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.35rem] xl:text-[3.7rem]">
+                <h1 className="mt-6 max-w-[13ch] break-words text-[2.1rem] font-black leading-[1.04] tracking-[-0.045em] text-white [text-wrap:balance] sm:text-5xl lg:text-[3.35rem] xl:text-[3.8rem]">
                   {text(school, ["homepage_title"], schoolName)}
                 </h1>
                 <p className="mt-5 max-w-2xl whitespace-pre-line text-[15px] leading-7 text-white/85 sm:text-base sm:leading-8">
@@ -1003,7 +1002,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
               </div>
 
               <div className="relative min-h-[280px] px-4 pb-4 sm:min-h-[340px] sm:px-6 sm:pb-6 lg:min-h-full lg:px-5 lg:py-5 lg:pl-0">
-                <div className="public-hero-visual relative h-full min-h-[270px] overflow-hidden rounded-[1.35rem] border border-white/20 bg-white/10 shadow-xl shadow-slate-950/20 sm:rounded-[1.6rem] lg:min-h-[470px]" style={{ backgroundColor: rgbaFromHex(websiteTheme.surface, 0.08) }}>
+                <div className="public-hero-visual relative h-full min-h-[260px] min-w-0 overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-xl shadow-slate-950/20 sm:min-h-[340px] sm:rounded-[1.6rem] lg:min-h-[31rem]" style={{ backgroundColor: rgbaFromHex(websiteTheme.surface, 0.08) }}>
                   {heroImageUrl ? (
                     <>
                       <img src={heroImageUrl} alt={heroImageAlt} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
@@ -1035,7 +1034,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
           </section>
 
           {schoolDetails.length > 0 && (
-            <section aria-label="School information" className="public-school-facts mt-5 grid gap-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:grid-cols-2 lg:grid-cols-4">
+            <section aria-label="School information" className="public-school-facts mt-5 grid gap-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm sm:grid-cols-2 lg:grid-cols-4">
               {schoolDetails.map(({ icon: Icon, label, value }, index) => (
                 <div key={label} className={`flex min-w-0 items-start gap-3 px-5 py-4 sm:px-6 ${index ? "border-t border-slate-100 sm:border-t-0 sm:border-l" : ""} ${index === 2 ? "lg:border-l" : ""}`}>
                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={17} /></span>
@@ -1045,7 +1044,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             </section>
           )}
 
-          <section className="public-home-intro mt-14 grid gap-8 lg:mt-20 lg:grid-cols-[.9fr_1.1fr] lg:items-start lg:gap-14">
+          <section className="public-home-intro mt-12 scroll-mt-28 grid gap-7 sm:mt-16 lg:mt-20 lg:grid-cols-[.9fr_1.1fr] lg:items-start lg:gap-14">
             <div className="min-w-0">
               <p className="public-section-kicker inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.17em] text-emerald-700"><span className="h-px w-7" style={{ backgroundColor: websiteTheme.accent }} /> Get to know us</p>
               <h2 className="mt-4 max-w-xl break-words text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl">About {schoolName}</h2>
@@ -1094,7 +1093,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             </section>
           )}
 
-          <section className="public-contact-cta relative mt-16 overflow-hidden rounded-[1.6rem] p-6 sm:mt-20 sm:p-9 lg:p-10" style={{ backgroundImage: `linear-gradient(125deg, ${websiteTheme.secondary} 0%, ${websiteTheme.primary} 100%)` }}>
+          <section className="public-contact-cta relative mt-14 overflow-hidden rounded-2xl p-5 shadow-2xl shadow-slate-950/10 sm:mt-20 sm:rounded-[1.6rem] sm:p-9 lg:p-10" style={{ backgroundImage: `linear-gradient(125deg, ${websiteTheme.secondary} 0%, ${websiteTheme.primary} 100%)` }}>
             <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border border-white/15 shadow-[0_0_0_32px_rgba(255,255,255,0.025),0_0_0_64px_rgba(255,255,255,0.02)]" />
             <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-2xl"><p className="text-xs font-extrabold uppercase tracking-[0.17em] text-white/70">Connect with us</p><h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">Questions about {schoolName}?</h2><p className="mt-3 text-sm leading-7 text-white/80">Use the school's published contact details or send an inquiry to the administration.</p>
@@ -1112,8 +1111,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
     <div data-school-website="true" className={"public-school-site min-h-screen text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
       <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,white)!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,white)!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:var(--school-primary)!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,white)!important;color:var(--school-primary)!important; } [data-school-website=true] .public-home-hero { isolation:isolate; } [data-school-website=true] .public-hero-visual { min-width:0; } [data-school-website=true] .public-school-facts > div { min-width:0; } [data-school-website=true] .public-school-facts > div:first-child { border-left:0; } [data-school-website=true] .public-feature-link { min-height:150px; } [data-school-website=true] .public-media-card img { will-change:transform; } [data-school-website=true] a, [data-school-website=true] button { -webkit-tap-highlight-color:transparent; } [data-school-website=true] :is(a,button,input,select,textarea):focus-visible { outline-color:var(--school-primary); } @media (max-width: 639px) { [data-school-website=true] .public-home-hero { border-radius:1.25rem; } [data-school-website=true] .public-feature-link { min-height:0; } [data-school-website=true] .public-school-facts > div { border-left:0; } } @media (min-width: 640px) { [data-school-website=true] .public-home-intro { scroll-margin-top:7rem; } } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
-      <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+      <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl supports-[backdrop-filter]:bg-white/90">
+        <div className="mx-auto flex max-w-[88rem] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
             <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
               <School size={23} />
@@ -1218,13 +1217,13 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         )}
       </header>
 
-      <main id="main-content" className="public-site-main mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+      <main id="main-content" className="mx-auto w-full max-w-[88rem] px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-14 2xl:px-10">
         {resourceWarning && <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><XCircle size={18} className="mt-0.5 shrink-0"/><p>{resourceWarning}</p><button type="button" className="ml-auto shrink-0 font-bold underline" disabled={refreshing} onClick={() => void loadPage({ silent: true })}>Retry</button></div>}
         {pageContent}
       </main>
 
       <footer style={{ backgroundColor: websiteTheme.footer }} className="mt-8 border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-7 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-[88rem] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div><p className="text-sm font-extrabold text-slate-900">{schoolName}</p><p className="mt-1 text-xs text-slate-500">Official public school website</p></div>
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="text-xs font-semibold text-slate-600 hover:text-emerald-700">{item.label}</Link>)}</nav>
           <p className="text-xs text-slate-500">Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
