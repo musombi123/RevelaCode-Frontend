@@ -18,6 +18,7 @@ import {
   Clock3,
   DollarSign,
   FileCheck2,
+  Globe,
   Package,
   RefreshCw,
   ShieldCheck,
@@ -406,10 +407,10 @@ function MetricCard({
   iconClassName = "bg-slate-100 text-slate-700",
 }) {
   return (
-    <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
+    <div className="group rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/70 sm:p-6>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-500">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
             {label}
           </p>
 
@@ -425,7 +426,7 @@ function MetricCard({
         </div>
 
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${iconClassName}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ring-black/5 ${iconClassName}`}
         >
           <Icon size={20} />
         </div>
@@ -551,9 +552,9 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-blue-200 hover:bg-blue-50/40"
+      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-blue-950/5"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-blue-100 group-hover:text-blue-600">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-slate-200/70 transition group-hover:bg-blue-600 group-hover:text-white group-hover:ring-blue-600">
         <Icon size={18} />
       </div>
 
@@ -1392,17 +1393,19 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   return (
-    <div className="min-h-full bg-slate-50">
-      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 sm:p-5 lg:p-6">
+    <div className="min-h-full bg-[#f4f7fb]">
+      <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8>
 
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-xl shadow-slate-900/10">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="relative z-10 flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between>
             <div className="flex min-w-0 items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50 text-blue-600">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-blue-100 ring-1 ring-white/15 backdrop-blur-sm">
                 {business?.logo_url ? (
                   <img
                     src={business.logo_url}
@@ -1425,23 +1428,23 @@ export default function BiasharaDashboard({
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
                     Biashara Hub
                   </span>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-100 ring-1 ring-emerald-300/20">
                     <CheckCircle2 size={12} />
                     Active
                   </span>
                 </div>
 
-                <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
                   {business?.name ||
                     business?.business_name ||
                     "Your Business"}
                 </h1>
 
-                <p className="mt-1 truncate text-sm text-slate-500">
+                <p className="mt-2 truncate text-sm text-slate-300">
                   {business?.category ||
                     "Business workspace"}
 
@@ -1461,7 +1464,7 @@ export default function BiasharaDashboard({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="mr-auto flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-500 lg:mr-0">
+              <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 text-xs text-slate-300 ring-1 ring-white/10 lg:mr-0">
                 <Clock3 size={14} />
 
                 <span>
@@ -1479,7 +1482,7 @@ export default function BiasharaDashboard({
                 onClick={
                   openBusinessProfile
                 }
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 <Briefcase size={16} />
                 Profile
@@ -1489,7 +1492,7 @@ export default function BiasharaDashboard({
                 type="button"
                 onClick={loadDashboard}
                 disabled={loadingDashboard}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw
                   size={16}
@@ -1508,7 +1511,7 @@ export default function BiasharaDashboard({
                 onClick={() =>
                   navigate("notifications")
                 }
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 text-slate-600 transition hover:bg-slate-50"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 p-2.5 text-white transition hover:bg-white/10"
                 aria-label="Notifications"
               >
                 <Bell size={18} />
@@ -1556,13 +1559,13 @@ export default function BiasharaDashboard({
             QUICK ACCESS
         ================================================= */}
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
           <SectionHeader
             eyebrow="Quick access"
             title="Run your business"
           />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             <QuickAction
               icon={Package}
               label="Products"
@@ -1588,6 +1591,13 @@ export default function BiasharaDashboard({
               onClick={() =>
                 navigate("customers")
               }
+            />
+
+            <QuickAction
+              icon={Globe}
+              label="Website Studio"
+              description="Publish storefront"
+              onClick={() => navigate("website")}
             />
 
             <QuickAction
@@ -1702,7 +1712,7 @@ export default function BiasharaDashboard({
         ================================================= */}
 
         <section className="grid gap-5 lg:grid-cols-3">
-          <div className="rounded-3xl bg-slate-900 p-5 text-white shadow-sm sm:p-6 lg:col-span-2">
+          <div className="rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-lg shadow-slate-900/10 sm:p-7 lg:col-span-2">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">
@@ -1774,7 +1784,7 @@ export default function BiasharaDashboard({
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
             <SectionHeader
               eyebrow="Operations"
               title="Stock health"
@@ -1904,7 +1914,7 @@ export default function BiasharaDashboard({
             TOP PRODUCTS
         ================================================= */}
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
           <SectionHeader
             eyebrow="Performance"
             title="Top products"
@@ -1992,7 +2002,7 @@ export default function BiasharaDashboard({
         ================================================= */}
 
         <section className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
             <SectionHeader
               eyebrow="Orders"
               title="Recent orders"
@@ -2079,7 +2089,7 @@ export default function BiasharaDashboard({
             )}
           </div>
 
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
             <SectionHeader
               eyebrow="Sales"
               title="Recent sales"
@@ -2168,7 +2178,7 @@ export default function BiasharaDashboard({
             PROFILE SNAPSHOT
         ================================================= */}
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
           <SectionHeader
             eyebrow="Business identity"
             title="Workspace snapshot"
