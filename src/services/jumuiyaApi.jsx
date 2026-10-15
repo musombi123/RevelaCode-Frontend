@@ -539,6 +539,19 @@ export function useJumuiyaApi() {
         postData("/biashara/business", data),
 
       // ===================================================
+      // BIASHARA — BUSINESS WEBSITE
+      // ===================================================
+
+      getBiasharaWebsiteSettings: () =>
+        getData("/biashara/website"),
+
+      saveBiasharaWebsiteSettings: (data) =>
+        putData("/biashara/website", data),
+
+      getBiasharaWebsiteInquiries: ({ limit = 30 } = {}) =>
+        getData(withQuery("/biashara/website/inquiries", { limit })),
+
+      // ===================================================
       // BIASHARA — PRODUCTS
       // ===================================================
 
