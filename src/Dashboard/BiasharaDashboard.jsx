@@ -407,7 +407,7 @@ function MetricCard({
   iconClassName = "bg-slate-100 text-slate-700",
 }) {
   return (
-    <div className="group rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/70 sm:p-6>
+    <div className="group rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/70 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
