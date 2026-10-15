@@ -220,23 +220,27 @@ function absoluteSchoolUrl(slug, page = "") {
 
 function PageHeading({ icon: Icon, eyebrow, title, description }) {
   return (
-    <div className="mb-7">
-      <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">
-        <Icon size={15} />
-        {eyebrow}
+    <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/80 p-5 shadow-sm ring-1 ring-slate-950/[0.03] sm:mb-10 sm:p-8">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border border-emerald-100/80 shadow-[0_0_0_18px_rgba(16,185,129,0.025),0_0_0_38px_rgba(16,185,129,0.02)]" />
+      <div className="relative flex min-w-0 items-start gap-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10 sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.17em] text-emerald-700 sm:text-xs"><span className="h-px w-5 bg-emerald-500" />{eyebrow}</div>
+          <h1 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 [text-wrap:balance] sm:text-4xl lg:text-[2.65rem]">{title}</h1>
+          {description && <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">{description}</p>}
+        </div>
       </div>
-      <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
-      {description && <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">{description}</p>}
-    </div>
+    </header>
   );
 }
 
 function EmptyState({ icon: Icon, title, description }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Icon size={23} /></div>
-      <h2 className="mt-4 font-extrabold text-slate-900">{title}</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">{description}</p>
+    <div className="relative overflow-hidden rounded-3xl border border-dashed border-slate-300/90 bg-gradient-to-br from-white to-slate-50 p-8 text-center shadow-sm ring-1 ring-slate-950/[0.025] sm:p-12">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10"><Icon size={25} strokeWidth={1.7} /></div>
+      <h2 className="mt-5 text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</h2>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-slate-500">{description}</p>
     </div>
   );
 }
@@ -251,14 +255,14 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   const Icon = kind === "event" ? CalendarDays : kind === "project" ? BookOpen : FileText;
 
   return (
-    <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
+    <article className="group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon size={21} /></div>
-        <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
+        <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 tracking-tight text-slate-900 sm:text-base">{title}</h2>
       </div>
       <p className="mt-4 flex-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>
       {(date || category) && (
-        <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100/90 pt-4 text-xs text-slate-500">
           {date && <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} />{formatDate(date) || date}</span>}
           {category && <span className="capitalize">{category.replace(/[_-]+/g, " ")}</span>}
         </div>
@@ -268,7 +272,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
           type="button"
           disabled={!id || Boolean(downloadingId)}
           onClick={() => onDownload(item)}
-          className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {downloading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
           {downloading ? "Preparing download…" : "Download document"}
@@ -286,8 +290,8 @@ function MediaCard({ item, onOpen }) {
   if (!url) return null;
 
   return (
-    <article className="public-media-card group min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10">
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+    <article className="public-media-card group min-w-0 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 motion-safe:hover:shadow-2xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
         {isVideo ? (
           <video className="h-full w-full object-cover" src={url} controls preload="metadata" aria-label={title} />
         ) : (
@@ -302,7 +306,7 @@ function MediaCard({ item, onOpen }) {
               alt={text(item, ["alt_text", "caption", "title"], title)}
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover transition duration-500 group-hover/photo:scale-[1.04]"
+              className="h-full w-full object-cover transition duration-700 ease-out motion-safe:group-hover/photo:scale-[1.06]"
               onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
             />
             <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-bold text-white opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
@@ -311,7 +315,7 @@ function MediaCard({ item, onOpen }) {
           </button>
         )}
       </div>
-      <div className="p-4 sm:p-5">
+      <div className="border-t border-slate-100/90 bg-gradient-to-br from-white to-emerald-50/30 p-4 sm:p-5">
         <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
         {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
@@ -323,13 +327,13 @@ function FeatureLink({ href, icon: Icon, title, description }) {
   return (
     <Link
       to={href}
-      className="public-feature-link group flex h-full min-w-0 items-start gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-5 transition duration-300 hover:-translate-y-1 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
+      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 transition duration-300 group-hover:scale-105">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
         <Icon size={21} strokeWidth={1.8} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-base font-extrabold tracking-tight text-slate-900">{title}</span>
+        <span className="block text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</span>
         <span className="mt-1.5 block text-sm leading-6 text-slate-600">{description}</span>
         <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
           Explore section <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
@@ -345,19 +349,19 @@ function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) 
     .map((item) => String(item || "").trim())
     .filter(Boolean);
   return (
-    <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md">
-      {eyebrow && <p className="text-xs font-extrabold uppercase tracking-[0.13em] text-emerald-700">{eyebrow}</p>}
-      <h3 className="mt-2 break-words text-lg font-extrabold text-slate-950">{title}</h3>
+    <article className="group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-[var(--school-primary)] sm:p-6">
+      {eyebrow && <p className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-emerald-700 sm:text-xs"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{eyebrow}</p>}
+      <h3 className="mt-3 break-words text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">{title}</h3>
       {description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>}
       {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{tag}</span>)}</div>}
-      {cleanDetails.length > 0 && <dl className="mt-4 space-y-2 border-t border-slate-100 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="text-xs leading-5 text-slate-500">{detail}</div>)}</dl>}
+      {cleanDetails.length > 0 && <dl className="mt-5 space-y-2.5 border-t border-slate-100/90 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="flex items-start gap-2 text-xs leading-6 text-slate-500"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/70" />{detail}</div>)}</dl>}
     </article>
   );
 }
 
 function PublicOfferingGrid({ items, emptyTitle, emptyDescription, icon: Icon = BookOpen, renderItem }) {
   if (!items.length) return <EmptyState icon={Icon} title={emptyTitle} description={emptyDescription} />;
-  return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item, index) => renderItem(item, index))}</div>;
+  return <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map((item, index) => renderItem(item, index))}</div>;
 }
 
 export default function ElimuPublicSchoolPage({ customDomainMode = false } = {}) {
@@ -834,14 +838,14 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         <>
           <PageHeading icon={School} eyebrow="Our story" title="About our school" description="Learn about our purpose, leadership and the values that guide our school community." />
           <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-            <article className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+            <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-lg font-extrabold text-slate-950">Who we are</h2>
               <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600">{about}</p>
               {motto && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our motto</h3><p className="mt-2 text-sm leading-6 text-slate-600">{motto}</p></div>}
               {mission && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{mission}</p></div>}
               {vision && <div className="mt-6 border-t border-slate-100 pt-5"><h3 className="font-extrabold text-slate-900">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">{vision}</p></div>}
             </article>
-            <aside className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"><h2 className="text-lg font-extrabold text-slate-950">School at a glance</h2><dl className="mt-5 space-y-4 text-sm">{principal && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School leadership</dt><dd className="mt-1 font-semibold text-slate-900">{principal}</dd></div>}<div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School type</dt><dd className="mt-1 font-semibold capitalize text-slate-900">{text(school, ["school_type", "type"], "School")}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</dt><dd className="mt-1 font-semibold text-slate-900">{locationText}</dd></div>{text(school, ["academic_year"]) && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Academic year</dt><dd className="mt-1 font-semibold text-slate-900">{text(school, ["academic_year"])}</dd></div>}</dl></aside>
+            <aside className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/60 p-6 shadow-sm ring-1 ring-slate-950/[0.025] sm:p-8"><div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10"><School size={20} /></div><h2 className="text-lg font-extrabold tracking-tight text-slate-950">School at a glance</h2><dl className="mt-5 space-y-4 text-sm">{principal && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School leadership</dt><dd className="mt-1 font-semibold text-slate-900">{principal}</dd></div>}<div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School type</dt><dd className="mt-1 font-semibold capitalize text-slate-900">{text(school, ["school_type", "type"], "School")}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</dt><dd className="mt-1 font-semibold text-slate-900">{locationText}</dd></div>{text(school, ["academic_year"]) && <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Academic year</dt><dd className="mt-1 font-semibold text-slate-900">{text(school, ["academic_year"])}</dd></div>}</dl></aside>
           </div>
         </>
       );
@@ -853,15 +857,15 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       pageContent = (
         <>
           <PageHeading icon={BookOpen} eyebrow="Learning and achievement" title="Courses, programs and departments" description="Explore the learning pathways and academic departments offered by this school, alongside its published CBC projects." />
-          <section className="mb-10 space-y-4">
+          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
             <div><h2 className="text-xl font-extrabold text-slate-950">Courses and programs</h2><p className="mt-1 text-sm leading-6 text-slate-500">School-published courses, programs, duration and entry information.</p></div>
             <PublicOfferingGrid items={courses} icon={BookOpen} emptyTitle="Courses will be listed here" emptyDescription="The school has not published course or program details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `course-${index}`} title={text(item, ["name", "title"], "Course / program")} eyebrow={text(item, ["level"], "Course / program")} description={text(item, ["description"])} details={[item.duration ? `Duration: ${item.duration}` : "", item.requirements ? `Entry requirements: ${item.requirements}` : ""]} />} />
           </section>
-          <section className="mb-10 space-y-4">
+          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
             <div><h2 className="text-xl font-extrabold text-slate-950">Academic departments</h2><p className="mt-1 text-sm leading-6 text-slate-500">Departments and the subjects or learning areas they support.</p></div>
             <PublicOfferingGrid items={departments} icon={School} emptyTitle="Departments will be listed here" emptyDescription="The school has not published department details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `department-${index}`} title={text(item, ["name", "title"], "Department")} eyebrow="Academic department" description={text(item, ["description"])} tags={item.subjects || []} />} />
           </section>
-          <section className="space-y-4">
+          <section className="space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
             <div><h2 className="text-xl font-extrabold text-slate-950">CBC projects and academic highlights</h2><p className="mt-1 text-sm leading-6 text-slate-500">Learning projects and highlights approved for public viewing.</p></div>
             {projects.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map((item, index) => <ResourceCard key={recordId(item) || `project-${index}`} item={item} kind="project" />)}</div> : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm leading-6 text-slate-500">Published academic projects and learning highlights will appear here when available.</p>}
           </section>
@@ -895,7 +899,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         <>
           <PageHeading icon={Mail} eyebrow="Get in touch" title="Contact the school" description="Use the official contact details or send an inquiry to the school administration." />
           <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-lg font-extrabold text-slate-950">Official contact details</h2>
               <div className="mt-6 space-y-5">
                 <div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationText)} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>
@@ -904,37 +908,37 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                 {website && <div className="flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={website.startsWith("http://") || website.startsWith("https://") ? website : "https://" + website} target="_blank" rel="noreferrer">{website}</a></div></div>}
               </div>
             </section>
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
               <h2 className="text-xl font-extrabold text-slate-950">Send a school inquiry</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">For admissions, fees, or general questions, send a message for the school administration to review.</p>
               {inquiryFeedback && <div role={inquiryFeedback.type === "error" ? "alert" : "status"} className={"mt-4 rounded-xl border p-3 text-sm leading-6 " + (inquiryFeedback.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900")}>{inquiryFeedback.message}</div>}
-              <form className="mt-5 space-y-4" onSubmit={submitInquiry}>
+              <form className="mt-5 space-y-5" onSubmit={submitInquiry}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-semibold text-slate-700">Your name
-                    <input required minLength={2} maxLength={100} autoComplete="name" value={inquiryForm.name} onChange={(event) => setInquiryForm((current) => ({ ...current, name: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                    <input required minLength={2} maxLength={100} autoComplete="name" value={inquiryForm.name} onChange={(event) => setInquiryForm((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10 />
                   </label>
                   <label className="block text-sm font-semibold text-slate-700">Email address
-                    <input required type="email" maxLength={254} autoComplete="email" value={inquiryForm.email} onChange={(event) => setInquiryForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                    <input required type="email" maxLength={254} autoComplete="email" value={inquiryForm.email} onChange={(event) => setInquiryForm((current) => ({ ...current, email: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10 />
                   </label>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-semibold text-slate-700">Phone (optional)
-                    <input type="tel" maxLength={40} autoComplete="tel" value={inquiryForm.phone} onChange={(event) => setInquiryForm((current) => ({ ...current, phone: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                    <input type="tel" maxLength={40} autoComplete="tel" value={inquiryForm.phone} onChange={(event) => setInquiryForm((current) => ({ ...current, phone: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10 />
                   </label>
                   <label className="block text-sm font-semibold text-slate-700">Inquiry topic
-                    <select value={inquiryForm.topic} onChange={(event) => setInquiryForm((current) => ({ ...current, topic: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                    <select value={inquiryForm.topic} onChange={(event) => setInquiryForm((current) => ({ ...current, topic: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10>
                       <option value="admissions">Admissions</option><option value="fees">Fees</option><option value="general">General inquiry</option><option value="other">Other</option>
                     </select>
                   </label>
                 </div>
                 <label className="block text-sm font-semibold text-slate-700">Message
-                  <textarea required minLength={15} maxLength={4000} rows={5} value={inquiryForm.message} onChange={(event) => setInquiryForm((current) => ({ ...current, message: event.target.value }))} placeholder="Tell the school what you would like to know..." className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                  <textarea required minLength={15} maxLength={4000} rows={5} value={inquiryForm.message} onChange={(event) => setInquiryForm((current) => ({ ...current, message: event.target.value }))} placeholder="Tell the school what you would like to know..." className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm leading-6 text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10 />
                 </label>
                 <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
                   <label htmlFor="school-website-confirmation">Leave this field empty</label>
                   <input id="school-website-confirmation" type="text" tabIndex={-1} autoComplete="off" value={inquiryForm.website_confirmation} onChange={(event) => setInquiryForm((current) => ({ ...current, website_confirmation: event.target.value }))} />
                 </div>
-                <button type="submit" disabled={inquirySubmitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                <button type="submit" disabled={inquirySubmitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white shadow-md shadow-emerald-950/15 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto">
                   {inquirySubmitting ? <><RefreshCw size={16} className="animate-spin" />Submitting...</> : <>Submit inquiry <ArrowRight size={16} /></>}
                 </button>
                 <p className="text-xs leading-5 text-slate-500">Your message is saved for the school administration to review. This form does not send email automatically. Please do not include student ID numbers, passwords, or sensitive documents.</p>
@@ -1054,8 +1058,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {mission && <article className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><BookOpen size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{mission}</p></article>}
-              {vision && <article className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><GraduationCap size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{vision}</p></article>}
+              {mission && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><BookOpen size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our mission</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{mission}</p></article>}
+              {vision && <article className="group/story relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/50 p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><GraduationCap size={20} /></span><h3 className="mt-4 text-lg font-extrabold text-slate-950">Our vision</h3><p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{vision}</p></article>}
               {!mission && !vision && <aside className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:col-span-2 sm:p-7"><p className="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-700">Explore further</p><h3 className="mt-3 text-xl font-extrabold text-slate-950">Find the information you need</h3><p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">Browse published academic information, school activities, announcements and official resources.</p><div className="mt-5 flex flex-wrap gap-2"><Link to={pageUrl("academics")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Academics</Link><Link to={pageUrl("activities")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">School life</Link><Link to={pageUrl("contact")} className="rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:border-emerald-300">Contact</Link></div></aside>}
             </div>
           </section>
