@@ -23,7 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { answerLocally, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import { analyzeImageFileEnhanced } from "@/ai/freeVisionEngine";
-import { requestHubReply } from "@/ai/hubApi";
+import { answerWithLocalHubRules, requestHubReply } from "@/ai/hubApi";
 
 /* =========================================================
    CONSTANTS
@@ -881,7 +881,7 @@ export default function AIAssistantDashboard({
                 visionData = result;
                 visionDescription = result.visionDescription || result.summary || "";
               }
-              localText = answerLocally(requestMessage || "What do you see?", context + "\n\nLOCAL CAMERA MEASUREMENTS: " + visionDescription);
+              localText = answerWithLocalHubRules({ message: requestMessage || "What do you see?", hub: selectedAssistantHub, visionDescription }) || answerLocally(requestMessage || "What do you see?", context + "\n\nLOCAL CAMERA MEASUREMENTS: " + visionDescription);
               localType = "local-vision";
             } else if (attachedFile.type.startsWith("video/")) {
               const result = await analyzeVideoFile(attachedFile);
@@ -893,7 +893,7 @@ export default function AIAssistantDashboard({
               localType = "local-document";
             }
           } else {
-            localText = answerLocally(requestMessage, context);
+            localText = answerWithLocalHubRules({ message: requestMessage, hub: selectedAssistantHub }) || answerLocally(requestMessage, context);
           }
 
           // This configured backend endpoint uses regex personas and local JSON memory only.
