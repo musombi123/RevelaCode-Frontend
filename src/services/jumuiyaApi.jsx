@@ -1131,6 +1131,20 @@ export function useJumuiyaApi() {
         ),
 
       // ===================================================
+      // USER-SCOPED NOTIFICATIONS
+      // ===================================================
+
+      getJumuiyaNotifications: ({ limit = 30 } = {}) =>
+        getData(
+          withQuery("/notifications", { limit }),
+        ),
+
+      markJumuiyaNotificationRead: (notificationId) =>
+        putData(
+          `/notifications/${encodeId(notificationId, "Notification ID")}/read`,
+        ),
+
+      // ===================================================
       // COMMUNITY — WHATSAPP PREFERENCES
       // ===================================================
 
