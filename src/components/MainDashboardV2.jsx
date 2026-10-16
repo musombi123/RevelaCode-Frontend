@@ -17,6 +17,9 @@ import {
   LogOut,
   Menu,
   X,
+  Minus,
+  Maximize2,
+  Sparkles,
 } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
@@ -267,6 +270,9 @@ export default function MainDashboardV2() {
   const [aiFullscreenOpen, setAIFullscreenOpen] =
     useState(false);
 
+  const [aiWidgetOpen, setAIWidgetOpen] = useState(false);
+  const [aiWidgetMinimized, setAIWidgetMinimized] = useState(false);
+
   const [showStartModal, setShowStartModal] =
     useState(false);
 
@@ -420,6 +426,25 @@ export default function MainDashboardV2() {
         dashboard.key === "ai"
     )?.element;
 
+  const activeHubKey = activeView;
+  const activeHubTitle = activeDashboard?.title || "RevelaCode";
+
+  const openAIWidget = useCallback(() => {
+    setAIWidgetOpen(true);
+    setAIWidgetMinimized(false);
+  }, []);
+
+  const closeAIWidget = useCallback(() => {
+    setAIWidgetOpen(false);
+    setAIWidgetMinimized(false);
+  }, []);
+
+  const maximizeAIWidget = useCallback(() => {
+    setAIWidgetOpen(false);
+    setAIWidgetMinimized(false);
+    setAIFullscreenOpen(true);
+  }, []);
+
   /* =========================================================
      Navigation Entries
   ========================================================= */
@@ -492,11 +517,11 @@ const BIASHARA_SECTION_KEYS = new Set(
 
       <FullscreenAIAssistant
         open={aiFullscreenOpen}
-        onClose={() =>
-          setAIFullscreenOpen(false)
-        }
+        onClose={() => setAIFullscreenOpen(false)}
         aiElement={
           aiDashboardElement
+            ? React.cloneElement(aiDashboardElement, { activeHub: activeHubKey })
+            : null
         }
       />
 
@@ -1277,26 +1302,74 @@ const BIASHARA_SECTION_KEYS = new Set(
             </Suspense>
           </section>
 
-          {/* =================================================
-              AI FAB
-          ================================================= */}
+          {/* Context-aware floating RevelaAI widget */}
+          <AnimatePresence>
+            {aiWidgetOpen && (
+              <motion.section
+                key="revela-ai-floating-widget"
+                initial={{ opacity: 0, y: 18, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                aria-label="RevelaAI floating assistant"
+                className={[
+                  "fixed right-3 z-[9997] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-gray-700 dark:bg-gray-950 dark:shadow-black/40 sm:right-6",
+                  aiWidgetMinimized
+                    ? "bottom-[5.25rem] w-[min(20rem,calc(100vw-1.5rem))]"
+                    : "bottom-[5.25rem] h-[min(42rem,calc(100dvh-7rem))] w-[min(27rem,calc(100vw-1.5rem))] sm:bottom-24 sm:h-[min(42rem,calc(100dvh-8rem))]",
+                ].join(" ")}
+              >
+                <header className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-3 dark:border-gray-800 dark:bg-gray-900 sm:px-4">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      <RevelaAIIcon size={25} />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-sm font-extrabold text-gray-950 dark:text-white">RevelaAI</h2>
+                      <p className="flex min-w-0 items-center gap-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                        <span className="truncate">Workspace: {activeHubTitle}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" onClick={() => setAIWidgetMinimized((value) => !value)} className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white" title={aiWidgetMinimized ? "Restore assistant" : "Minimize assistant"} aria-label={aiWidgetMinimized ? "Restore assistant" : "Minimize assistant"}>
+                      {aiWidgetMinimized ? <Maximize2 size={16} /> : <Minus size={16} />}
+                    </button>
+                    {!aiWidgetMinimized && (
+                      <button type="button" onClick={maximizeAIWidget} className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white" title="Maximize assistant" aria-label="Maximize assistant">
+                        <Maximize2 size={16} />
+                      </button>
+                    )}
+                    <button type="button" onClick={closeAIWidget} className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-gray-400 dark:hover:bg-red-950/50 dark:hover:text-red-300" title="Close assistant" aria-label="Close assistant">
+                      <X size={17} />
+                    </button>
+                  </div>
+                </header>
+                {!aiWidgetMinimized && (
+                  <div className="min-h-0 flex-1 overflow-hidden bg-white dark:bg-gray-950">
+                    <Suspense fallback={<Loading />}>
+                      <ErrorBoundary>
+                        {aiDashboardElement
+                          ? React.cloneElement(aiDashboardElement, { activeHub: activeHubKey, compactMode: true })
+                          : <div className="p-5 text-sm text-gray-600 dark:text-gray-300">RevelaAI is unavailable right now.</div>}
+                      </ErrorBoundary>
+                    </Suspense>
+                  </div>
+                )}
+              </motion.section>
+            )}
+          </AnimatePresence>
 
           <button
             type="button"
-            onClick={() => setAIFullscreenOpen(true)}
-            className="
-              fixed bottom-4 right-4 z-40
-              flex h-14 w-14 items-center justify-center
-              rounded-2xl border border-gray-200 bg-white
-              shadow-xl transition
-              hover:-translate-y-1 hover:shadow-2xl active:scale-95
-              dark:border-gray-700 dark:bg-gray-900
-              sm:bottom-6 sm:right-6
-            "
-            title="RevelaAI Assistant (Ctrl + K)"
-            aria-label="Open RevelaAI Assistant"
+            onClick={openAIWidget}
+            className="fixed bottom-4 right-4 z-[9996] flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-xl shadow-slate-950/15 transition hover:-translate-y-1 hover:shadow-2xl active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:bg-gray-900 dark:focus-visible:ring-offset-gray-950 sm:bottom-6 sm:right-6"
+            title={"RevelaAI Assistant — " + activeHubTitle + " (Ctrl + K)"}
+            aria-label={"Open RevelaAI Assistant for " + activeHubTitle}
           >
             <RevelaAIIcon size={34} />
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
           </button>
         </main>
       </div>
