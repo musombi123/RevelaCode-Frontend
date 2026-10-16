@@ -1629,7 +1629,7 @@ function HomeDashboard({
             return (
               <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group min-w-0 rounded-2xl border " + hub.borderTone + " " + hub.surface + " p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:p-4"} aria-label={"Open " + hub.title}>
                 <div className="flex items-start justify-between gap-1"><span className={"flex h-9 w-9 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}><Icon size={19} strokeWidth={2} /></span>{uses > 0 && index === 0 ? <span className="rounded-full bg-white/80 px-1.5 py-1 text-[9px] font-extrabold text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">TOP</span> : null}</div>
-                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{hub.shortTitle}</span>
+                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
                 <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + (language === "sw" ? " ziara" : language === "fr" ? " visites" : " visits") : t("Open workspace")}</span>
               </button>
             );
