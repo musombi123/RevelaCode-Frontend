@@ -13,6 +13,7 @@ import {
   X,
   FileText,
   Camera,
+  Eye,
 } from "lucide-react";
 
 /* =========================================================
@@ -27,6 +28,8 @@ import {
 export default function InputBar({
   onSend,
   onMic,
+  onLiveVision,
+  liveVisionEnabled = false,
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
 }) {
@@ -310,7 +313,7 @@ export default function InputBar({
             <Camera size={18} />
           </button>
 
-          {/* Attach photo, video, or document */}
+          {/* Live Vision: permission-gated, no full-screen camera */}\n          {onLiveVision && (\n            <button type="button" onClick={onLiveVision} disabled={disabled} className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:opacity-40 ${liveVisionEnabled ? "text-emerald-400" : "text-gray-400 hover:text-white"}`} aria-label={liveVisionEnabled ? "Turn off Live Vision" : "Enable Live Vision"} title={liveVisionEnabled ? "Live Vision on — tap to turn off" : "Enable on-device Live Vision"}>\n              <Eye size={18} />\n              {liveVisionEnabled && <span className="absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full bg-green-500 ring-2 ring-revela-card" />}\n            </button>\n          )}\n\n          {/* Attach photo, video, or document */}
 
           <button
             type="button"
