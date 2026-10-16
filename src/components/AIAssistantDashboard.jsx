@@ -19,7 +19,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";\nimport useLiveVision from "@/ai/useLiveVision";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
@@ -1476,7 +1476,7 @@ export default function AIAssistantDashboard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">\n            {liveVision.enabled && (\n              <button type="button" onClick={liveVision.stop} title="Camera on — tap to turn off" className="inline-flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-green-400">\n                <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" /> Live Vision · On-device\n              </button>\n            )}
             <div
               className="
                 hidden
@@ -1690,7 +1690,7 @@ export default function AIAssistantDashboard({
         />
       )}
 
-      {onOpenAI && (
+      {liveVision.notice && (\n        <div role="status" className="fixed bottom-24 left-1/2 z-50 max-w-sm -translate-x-1/2 rounded-xl border border-amber-500/30 bg-revela-card px-4 py-3 text-xs text-amber-200 shadow-xl">\n          {liveVision.notice}\n        </div>\n      )}\n\n      {onOpenAI && (
         <span className="sr-only">
           RevelaAI workspace active
         </span>
