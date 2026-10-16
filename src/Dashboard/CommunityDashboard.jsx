@@ -517,6 +517,9 @@ export default function CommunityDashboard({
   const [marketplaceListings, setMarketplaceListings] = useState([]);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceError, setMarketplaceError] = useState("");
+  const [isOnline, setIsOnline] = useState(
+    () => typeof navigator === "undefined" || navigator.onLine,
+  );
 
   const requestId = useRef(0);
 
@@ -734,6 +737,47 @@ export default function CommunityDashboard({
   ]);
 
   // ----------------------------------------------------------
+  // Live updates while Community is open
+  // ----------------------------------------------------------
+
+  useEffect(() => {
+    if (workspacePage !== "home") return undefined;
+
+    const refreshVisibleCommunity = () => {
+      if (
+        document.visibilityState !== "hidden" &&
+        (typeof navigator === "undefined" || navigator.onLine)
+      ) {
+        setReloadToken((value) => value + 1);
+      }
+    };
+
+    const updateConnection = () => {
+      const online = typeof navigator === "undefined" || navigator.onLine;
+      setIsOnline(online);
+      if (online) refreshVisibleCommunity();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshVisibleCommunity();
+      }
+    };
+
+    const interval = window.setInterval(refreshVisibleCommunity, 45000);
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [workspacePage]);
+
+  // ----------------------------------------------------------
   // Refresh
   // ----------------------------------------------------------
 
@@ -906,9 +950,19 @@ export default function CommunityDashboard({
 
           <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
-                <Sparkles size={13} />
-                Jumuiya Community
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
+                  <Sparkles size={13} />
+                  Jumuiya Community
+                </div>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold ${isOnline ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-amber-300/20 bg-amber-300/10 text-amber-100"}`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "animate-pulse bg-emerald-300" : "bg-amber-300"}`} />
+                  {isOnline ? "Live · auto-refresh on" : "Offline · waiting to reconnect"}
+                </div>
               </div>
 
               <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
