@@ -21,7 +21,6 @@ import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
 import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
@@ -1496,7 +1495,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              AI READY
+              LOCAL BRAIN READY
             </div>
 
             <button
@@ -1569,18 +1568,10 @@ export default function AIAssistantDashboard({
                 "
               >
                 <WelcomeScreen
-                  onSuggestion={
-                    sendTextMessage
-                  }
+                  onSuggestion={sendTextMessage}
+                  activeBrainHub={activeBrainHub}
+                  onHubChange={setActiveBrainHub}
                 />
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <HubRevenueOffers hub="smart_ai" compact />
-                </div>
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <LivingHubSelector value={activeBrainHub} onChange={setActiveBrainHub} />
-                </div>
 
                 <div
                   className="
