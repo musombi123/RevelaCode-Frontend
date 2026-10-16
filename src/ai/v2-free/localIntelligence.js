@@ -75,3 +75,15 @@ export function loadMemory(){try{return JSON.parse(localStorage.getItem(KEY)||'{
 export function searchMemory(query){const words=String(query).toLowerCase().split(/\W+/).filter(x=>x.length>2);return loadMemory().notes.map(n=>Object.assign({},n,{score:words.filter(w=>n.text.toLowerCase().includes(w)).length})).filter(n=>n.score>0).sort((a,b)=>b.score-a.score).slice(0,5);}
 export function typewriter(text,onUpdate,delay=12){let i=0,cancelled=false,timer;const tick=()=>{if(cancelled)return;i=Math.min(text.length,i+3);onUpdate(text.slice(0,i));if(i<text.length)timer=setTimeout(tick,delay);};tick();return()=>{cancelled=true;clearTimeout(timer);};}
 console.log("RevelaAI v2.0 FREE - Zero Cost - No Paid API");
+export function answerLocally(question, context=""){
+ const q=String(question||"").trim(),t=q.toLowerCase(),emotion=assessEmotion(q);
+ if(!q)return "Tell me what you want to work through.";
+ if(/\b(hi|hello|hey|habari|jambo)\b/.test(t))return "Hey! I'm RevelaAI Free, running local-first tools on this device. I can help structure a decision, work through a plan, analyze supported files and calculate business figures. What are we building today?";
+ if(/\b(pray|prayer|pray for|maombi)\b/.test(t))return "I can help you compose a prayer. A simple structure is: gratitude, honest reflection, request for wisdom and strength, and commitment to a practical next step. Would you like a prayer focused on wisdom, work, family or encouragement?";
+ if(/\b(bible|scripture|jesus|god|prophecy|verse|biblical)\b/.test(t))return "Faith-study approach: (1) identify the exact passage, (2) read its surrounding chapter, (3) check historical and literary context, (4) compare related passages, and (5) distinguish the text from interpretation. This offline rule engine does not contain a complete Bible search or verified prophecy-news feed; provide the passage or verse you want to examine.";
+ if(/\b(business|sales|profit|revenue|margin|cost|biashara|price|deal|negotia|contract)\b/.test(t))return localMode(/\b(negotia|deal|contract|price)\b/.test(t)?"Negotiator":"Business strategist",q);
+ if(/\b(explain|teach|learn|what is|how does|meaning of)\b/.test(t))return "Let's break it down. First, define the core concept in one sentence. Next, identify its inputs, process and output. Then test it with a real example and check assumptions. This offline build uses templates rather than a language model, so for a precise explanation include the topic, your current level and an example.";
+ if(/\b(create|write|draft|sermon|post|plan|caption)\b/.test(t))return localMode("Creator",q);
+ const checks=reasonLocally(q);
+ return emotion.opening+"\n\nLOCAL REASONING CHECKLIST\n"+checks.summary+"\n\nI am running without a language model or network request, so I cannot reliably invent a detailed factual answer. Add source material, data, or a narrower question and I can help structure it with local rules and calculations.";
+}
