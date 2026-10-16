@@ -280,6 +280,7 @@ export default function InputBar({
           handleFileChange
         }
         accept="
+          image/*,
           .pdf,
           .docx,
           .txt,
