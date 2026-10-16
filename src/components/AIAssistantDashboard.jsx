@@ -890,8 +890,14 @@ export default function AIAssistantDashboard({
           // The local brain is retained strictly as a resilience fallback.
           if (isAuthenticated && !isGuest && typeof authFetch === "function") {
             try {
-              const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
-              const memoryContext = formatSmartMemoryContext(memory);
+              let memoryContext = "";
+              try {
+                const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
+                memoryContext = formatSmartMemoryContext(memory);
+              } catch (memoryError) {
+                // Memory service misconfiguration must not disable hosted AI providers.
+                await recordLocalDiagnostic("memory-read-fallback", memoryError);
+              }
               if (memoryContext) context = [context, memoryContext].filter(Boolean).join("\n\n");
               normalized = await sendRevelaAIMessage({
                 authFetch,
@@ -1317,8 +1323,13 @@ export default function AIAssistantDashboard({
         let normalized = null;
         if (isAuthenticated && !isGuest && typeof authFetch === "function") {
           try {
-            const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
-            const memoryContext = formatSmartMemoryContext(memory);
+            let memoryContext = "";
+            try {
+              const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
+              memoryContext = formatSmartMemoryContext(memory);
+            } catch (memoryError) {
+              await recordLocalDiagnostic("regenerate-memory-read-fallback", memoryError);
+            }
             const remote = await sendRevelaAIMessage({
               authFetch,
               message: enrichPrompt(userMessage.text),
