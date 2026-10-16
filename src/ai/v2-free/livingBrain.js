@@ -45,7 +45,7 @@ export function routeLivingHub(message, preferredHub = "auto", workspace = "") {
 }
 
 function greeting(text) {
-  return /\b(hi|hello|hey|habari|jambo|mambo|good morning|good evening)\b/i.test(text);
+  return /^\s*(hi|hello|hey|habari|jambo|mambo|good morning|good evening)[!,.?\s]*$/i.test(text);
 }
 
 function currentDataRequest(text) {
@@ -84,10 +84,16 @@ export function composeLivingResponse(message, preferredHub = "auto", workspace 
   const route = routeLivingHub(text, preferredHub, workspace);
   const hub = LIVING_HUBS.find((item) => item.id === route.hub) || LIVING_HUBS[LIVING_HUBS.length - 1];
   let reply;
+  const identityQuestion = /\b(who are you|what are you|what is revelaai|introduce yourself|your identity)\b/i.test(text);
+  const capabilityQuestion = /\b(what can you do|what are you capable of|your capabilities|how can you help|what can you help me with)\b/i.test(text);
   if (!text) {
     reply = "Tell me the goal, what you have tried so far, and any constraints I should respect.";
+  } else if (identityQuestion) {
+    reply = "I'm RevelaAI, the local-first assistant in the RevelaCode ecosystem. I route requests across five specialist hubs: Mkulima (agriculture), Biashara (business), Elimu (education), Mahubiri (Scripture and theology), and General (technical and everyday problem-solving). In this mode I use transparent local rules and browser tools—not a hosted generative model—so I can structure plans, explain concepts, reason from information you provide, and help debug code, but I can make mistakes and won't pretend to know facts I cannot verify.";
+  } else if (capabilityQuestion) {
+    reply = "I can help plan and debug software, explain technical concepts, structure business strategies and budgets, work through farming questions, develop lessons and study plans, and analyze Scripture in context. In this chat I can also use supported local image/video analysis, device speech, and browser-local memory. Limits: this version is a rule-based local assistant, not a human or a general-purpose generative AGI; live facts need a current source, and image pixel measurements do not by themselves identify objects. Tell me the outcome you want and the constraints, and I'll propose a concrete next step.";
   } else if (greeting(text)) {
-    reply = "Hey — I'm here with you. We can work through a practical problem, challenge assumptions, create a plan, or build an idea. What matters most right now?";
+    reply = "Hello! I'm RevelaAI. I can help you build, learn, plan, troubleshoot, or explore an idea. What would you like to work on?";
   } else if (currentDataRequest(text)) {
     reply = "I don't have a live data feed in this local-only mode, so I won't invent a current answer. Share a trusted source or the figures you have and I'll help analyze them; verify time-sensitive decisions against a current primary source.";
   } else {
@@ -109,7 +115,7 @@ export function composeLivingResponse(message, preferredHub = "auto", workspace 
     reply += "\n\nPersonalization applied from your local memory: " + profile.preference + ".";
   }
   const opening = emotion?.opening || "Let's work through this clearly and practically.";
-  if (!greeting(text) && text && !memoryQuestion) {
+  if (!greeting(text) && text && !memoryQuestion && !identityQuestion && !capabilityQuestion) {
     reply = opening + "\n\n" + reply;
   }
   return {
@@ -118,7 +124,7 @@ export function composeLivingResponse(message, preferredHub = "auto", workspace 
     hubLabel: hub.label,
     routeReason: route.reason,
     emotionEstimate: emotion?.emotion || "neutral",
-    intent: currentDataRequest(text) ? "current_information_needs_source" : "local_guidance",
+    intent: identityQuestion ? "identity" : capabilityQuestion ? "capabilities" : currentDataRequest(text) ? "current_information_needs_source" : "local_guidance",
     engine: "revelaai-local-global-brain-v2",
     networkUsed: false,
     confidence: "heuristic",
