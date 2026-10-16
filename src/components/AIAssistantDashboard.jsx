@@ -1010,7 +1010,6 @@ export default function AIAssistantDashboard({
         activeChatId,
         ensureActiveChat,
         updateChat,
-        callRevelaAI,
         hubContext,
       ]
     );
@@ -1173,14 +1172,17 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const data = await callRevelaAI({
-          message: enrichPrompt(userMessage.text),
-          context: [hubContext, buildContext(history)].filter(Boolean).join("\n\n"),
-          sessionId: chatId,
-          signal: controller.signal,
-        });
-
-        const normalized = normalizeAIResponse(data);
+        const localText = answerLocally(
+          enrichPrompt(userMessage.text),
+          [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
+        );
+        const normalized = {
+          text: localText,
+          imageUrls: [],
+          sources: [],
+          metadata: { engine: "local-free-rules", network: false },
+          type: "text",
+        };
 
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
@@ -1218,7 +1220,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, callRevelaAI, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext]
   );
 
   /* =======================================================
