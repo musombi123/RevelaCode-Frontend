@@ -12,6 +12,7 @@ import {
   Paperclip,
   X,
   FileText,
+  Camera,
 } from "lucide-react";
 
 /* =========================================================
@@ -39,6 +40,9 @@ export default function InputBar({
     useRef(null);
 
   const fileInputRef =
+    useRef(null);
+
+  const cameraInputRef =
     useRef(null);
 
   /* =======================================================
@@ -177,24 +181,16 @@ export default function InputBar({
         ref={fileInputRef}
         type="file"
         className="hidden"
-        onChange={
-          handleFileChange
-        }
-        accept="
-          .pdf,
-          .docx,
-          .txt,
-          .md,
-          .csv,
-          .json,
-          .py,
-          .js,
-          .jsx,
-          .ts,
-          .tsx,
-          .html,
-          .css
-        "
+        onChange={handleFileChange}
+        accept="image/*,video/*,.pdf,.docx,.txt,.md,.csv,.json,.py,.js,.jsx,.ts,.tsx,.html,.css"
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        className="hidden"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
       />
 
       {/* Attachment preview */}
@@ -301,7 +297,20 @@ export default function InputBar({
         "
       >
         <div className="flex items-end gap-2">
-          {/* Attach */}
+          {/* Camera capture */}
+
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={disabled}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Take a photo"
+            title="Take a photo"
+          >
+            <Camera size={18} />
+          </button>
+
+          {/* Attach photo, video, or document */}
 
           <button
             type="button"
