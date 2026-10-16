@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useNotifications } from "@/components/hooks/useNotifications.jsx";
 
 // ============================================================
 // FILTERS
@@ -48,93 +49,7 @@ const NOTIFICATION_FILTERS = [
   },
 ];
 
-// ============================================================
-// DEMO / FALLBACK NOTIFICATIONS
-// ============================================================
-// This is intentionally frontend-ready.
-// Later we can replace this with the real Community
-// notifications API without redesigning the component.
-// ============================================================
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: "notification-001",
-    type: "reaction",
-    title: "Someone reacted to your post",
-    message:
-      "Your Community post received a new reaction.",
-    actor: "Community member",
-    time: "Just now",
-    read: false,
-    category: "social",
-    link: "community-feed",
-  },
-
-  {
-    id: "notification-002",
-    type: "comment",
-    title: "New comment on your post",
-    message:
-      "Someone joined the conversation on your post.",
-    actor: "Community member",
-    time: "18 min ago",
-    read: false,
-    category: "social",
-    link: "community-feed",
-  },
-
-  {
-    id: "notification-003",
-    type: "mention",
-    title: "You were mentioned",
-    message:
-      "A member mentioned you in a Community conversation.",
-    actor: "Community member",
-    time: "1 hour ago",
-    read: false,
-    category: "mentions",
-    link: "community-feed",
-  },
-
-  {
-    id: "notification-004",
-    type: "group",
-    title: "New activity in your group",
-    message:
-      "There is new activity in one of your joined communities.",
-    actor: "Community group",
-    time: "3 hours ago",
-    read: true,
-    category: "groups",
-    link: "community-groups",
-  },
-
-  {
-    id: "notification-005",
-    type: "follow",
-    title: "New connection",
-    message:
-      "A Community member started following your activity.",
-    actor: "Community member",
-    time: "Yesterday",
-    read: true,
-    category: "social",
-    link: "community-discover",
-  },
-
-  {
-    id: "notification-006",
-    type: "activity",
-    title: "Community is growing",
-    message:
-      "New people are joining conversations across Jumuiya.",
-    actor: "Jumuiya Community",
-    time: "Yesterday",
-    read: true,
-    category: "social",
-    link: "community",
-  },
-];
 
 // ============================================================
 // HELPERS
@@ -165,6 +80,69 @@ function getInitials(name) {
   return `${parts[0].charAt(0)}${parts[
     parts.length - 1
   ].charAt(0)}`.toUpperCase();
+}
+
+function notificationTime(value) {
+  if (!value) return "Recently";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently";
+  const elapsed = Math.max(0, Date.now() - date.getTime());
+  const minutes = Math.floor(elapsed / 60000);
+  const hours = Math.floor(elapsed / 3600000);
+  const days = Math.floor(elapsed / 86400000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString("en-KE", { day: "numeric", month: "short" });
+}
+
+function normalizeCommunityNotification(notification, index = 0) {
+  const source = notification && typeof notification === "object" ? notification : {};
+  const rawType = String(source.type || source.event_type || source.kind || "activity").toLowerCase();
+  const type = /reaction|like/.test(rawType)
+    ? "reaction"
+    : /comment|reply/.test(rawType)
+      ? "comment"
+      : /mention/.test(rawType)
+        ? "mention"
+        : /group/.test(rawType)
+          ? "group"
+          : /follow|connection|member/.test(rawType)
+            ? "follow"
+            : "activity";
+  const category = type === "mention"
+    ? "mentions"
+    : type === "group"
+      ? "groups"
+      : "social";
+  const rawTimestamp = source.timestamp || source.created_at || source.createdAt || source.published_at || null;
+  const id = source.id ?? source._id ?? source.notification_id ?? `notification-${index}`;
+  const message = String(source.message || source.text || source.body || source.description || "New activity from your Jumuiya network.");
+  const typeTitles = {
+    reaction: "A member reacted to your activity",
+    comment: "New comment or reply",
+    mention: "You were mentioned",
+    group: "Group activity",
+    follow: "New community connection",
+    activity: "Community update",
+  };
+  const title = String(source.title || source.subject || source.heading || typeTitles[type]);
+  const actor = String(source.actor_name || source.actor || source.sender_name || source.user_name || source.user?.name || source.from || "Community member");
+  const defaultLink = type === "group" ? "community-groups" : "community-feed";
+  return {
+    ...source,
+    id: String(id),
+    type,
+    title,
+    message,
+    actor,
+    time: String(source.time || notificationTime(rawTimestamp)),
+    timestamp: rawTimestamp,
+    category,
+    link: source.link || source.route || defaultLink,
+    read: Boolean(source.read ?? source.is_read ?? false),
+  };
 }
 
 // ============================================================
@@ -232,20 +210,27 @@ export default function CommunityNotifications({
   onNavigate,
 }) {
   const { user } = useAuth();
+  const {
+    notifications: serverNotifications,
+    loading,
+    refreshing,
+    error: notificationError,
+    fetchNotifications,
+    markAsRead: markNotificationRead,
+    markAllRead,
+  } = useNotifications(30000);
 
-  const [notifications, setNotifications] =
-    useState(
-      INITIAL_NOTIFICATIONS
-    );
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dismissedIds, setDismissedIds] = useState([]);
+  const [actionError, setActionError] = useState("");
 
-  const [activeFilter, setActiveFilter] =
-    useState("all");
-
-  const [searchTerm, setSearchTerm] =
-    useState("");
-
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const notifications = useMemo(
+    () => serverNotifications
+      .map(normalizeCommunityNotification)
+      .filter((notification) => !dismissedIds.includes(String(notification.id))),
+    [serverNotifications, dismissedIds],
+  );
 
   const displayName = useMemo(
     () => getDisplayName(user),
@@ -257,123 +242,56 @@ export default function CommunityNotifications({
     [displayName]
   );
 
-  // ==========================================================
-  // NAVIGATION
-  // ==========================================================
-
   const navigate = (destination) => {
     if (typeof onNavigate === "function") {
       onNavigate(destination);
       return;
     }
 
-    console.warn(
-      "Community navigation requested:",
-      destination
-    );
+    console.warn("Community navigation requested:", destination);
   };
 
-  // ==========================================================
-  // COUNTS
-  // ==========================================================
-
   const unreadCount = useMemo(
-    () =>
-      notifications.filter(
-        (notification) =>
-          !notification.read
-      ).length,
+    () => notifications.filter((notification) => !notification.read).length,
     [notifications]
   );
 
   const mentionCount = useMemo(
-    () =>
-      notifications.filter(
-        (notification) =>
-          notification.category ===
-          "mentions"
-      ).length,
+    () => notifications.filter((notification) => notification.category === "mentions").length,
     [notifications]
   );
 
   const groupCount = useMemo(
-    () =>
-      notifications.filter(
-        (notification) =>
-          notification.category ===
-          "groups"
-      ).length,
+    () => notifications.filter((notification) => notification.category === "groups").length,
     [notifications]
   );
 
-  // ==========================================================
-  // MARK ONE READ
-  // ==========================================================
-
-  const markAsRead = (id) => {
-    setNotifications((current) =>
-      current.map(
-        (notification) =>
-          notification.id === id
-            ? {
-                ...notification,
-                read: true,
-              }
-            : notification
-      )
-    );
+  const markAsRead = async (id) => {
+    setActionError("");
+    const succeeded = await markNotificationRead(id);
+    if (!succeeded) {
+      setActionError("We couldn't update this notification. Refresh and try again.");
+    }
   };
 
-  // ==========================================================
-  // MARK ALL READ
-  // ==========================================================
-
-  const markAllAsRead = () => {
-    setNotifications((current) =>
-      current.map(
-        (notification) => ({
-          ...notification,
-          read: true,
-        })
-      )
-    );
+  const markAllAsRead = async () => {
+    setActionError("");
+    const succeeded = await markAllRead();
+    if (!succeeded) {
+      setActionError("We couldn't mark all notifications as read. Please try again.");
+    }
   };
 
-  // ==========================================================
-  // REMOVE NOTIFICATION
-  // ==========================================================
-
-  const removeNotification = (
-    id
-  ) => {
-    setNotifications((current) =>
-      current.filter(
-        (notification) =>
-          notification.id !== id
-      )
-    );
+  const removeNotification = (id) => {
+    setDismissedIds((current) => (
+      current.includes(String(id)) ? current : [...current, String(id)]
+    ));
   };
 
-  // ==========================================================
-  // REFRESH
-  // ==========================================================
-
-  const refreshNotifications =
-    async () => {
-      try {
-        setRefreshing(true);
-
-        // Reserved for the real notifications
-        // endpoint.
-
-        await new Promise(
-          (resolve) =>
-            setTimeout(resolve, 500)
-        );
-      } finally {
-        setRefreshing(false);
-      }
-    };
+  const refreshNotifications = async () => {
+    setActionError("");
+    await fetchNotifications({ silent: true });
+  };
 
   // ==========================================================
   // FILTER
@@ -694,9 +612,19 @@ export default function CommunityNotifications({
           </div>
         </section>
 
+        {(notificationError || actionError) ? (
+          <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+            <p className="font-black">{actionError ? "Notification action needs attention" : "Notifications could not be loaded"}</p>
+            <p className="mt-1">{actionError || notificationError}</p>
+            <button type="button" onClick={refreshNotifications} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-bold text-amber-800 dark:bg-slate-900 dark:text-amber-200">
+              <RefreshCw size={12} /> Try again
+            </button>
+          </div>
+        ) : null}
+
         {/* ====================================================
             SUMMARY CARDS
-        ==================================================== */}
+        ==================================================== */
 
         <section
           className="
@@ -1157,7 +1085,12 @@ export default function CommunityNotifications({
             </span>
           </div>
 
-          {filteredNotifications.length ===
+          {loading ? (
+            <div className="flex min-h-[280px] items-center justify-center gap-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <RefreshCw size={16} className="animate-spin" />
+              Loading your notifications…
+            </div>
+          ) : filteredNotifications.length ===
           0 ? (
             <div
               className="
