@@ -23,6 +23,7 @@ import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { useAuth } from "@/context/AuthContext";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import MultimodalStudio from "@/ai/v2/MultimodalStudio";
+import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 
 /* =========================================================
    CONSTANTS
@@ -972,23 +973,37 @@ export default function AIAssistantDashboard({
               );
 
         try {
-          const data =
-            await callRevelaAI({
-              message:
-                requestMessage,
-              context,
-              file:
-                attachedFile,
-              sessionId:
-                chatId,
-              signal:
-                controller.signal,
-            });
-
-          const normalized =
-            normalizeAIResponse(
-              data
-            );
+          /*
+           * FREE EDITION: keep the main RevelaAI conversation local-only.
+           * No fetch, backend request, API key, or remote model is used here.
+           * Existing BibleDashboard and Biashara code paths are untouched.
+           */
+          let localText = "";
+          let localType = "text";
+          if (attachedFile) {
+            if (attachedFile.type.startsWith("image/")) {
+              const result = await analyzeImageFile(attachedFile);
+              localText = result.summary;
+              localType = "local-vision";
+            } else if (attachedFile.type.startsWith("video/")) {
+              const result = await analyzeVideoFile(attachedFile);
+              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map(frame => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
+              localType = "local-video";
+            } else {
+              const result = await readLocalDocument(attachedFile);
+              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map(item => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
+              localType = "local-document";
+            }
+          } else {
+            localText = answerLocally(requestMessage, context);
+          }
+          const normalized = {
+            text: localText,
+            imageUrls: [],
+            sources: [],
+            metadata: { engine: "local-free-rules", network: false },
+            type: localType,
+          };
 
           const assistantMessage =
             {
