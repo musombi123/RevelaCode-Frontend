@@ -20,6 +20,7 @@ import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
+import { sendRevelaAIMessage, saveSmartMemoryTurn, loadSmartMemory, formatSmartMemoryContext } from "@/ai/revelaAIClient";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
@@ -350,6 +351,8 @@ export default function AIAssistantDashboard({
     user,
     isGuest,
     isReady,
+    isAuthenticated,
+    authFetch,
   } = useAuth();
 
   /*
@@ -860,7 +863,7 @@ export default function AIAssistantDashboard({
         controllerRef.current =
           controller;
 
-        const context = [
+        let context = [
           hubContext,
           buildContext(currentMessages),
         ].filter(Boolean).join("\n\n");
@@ -877,6 +880,39 @@ export default function AIAssistantDashboard({
            * Local-first global brain: specialist routing, memory and visual math
            * stay on-device. Model / asset failures degrade to pixel math or text.
            */
+          let normalized = null;
+
+          // Use the existing provider pipeline first for authenticated users.
+          // The local brain is retained strictly as a resilience fallback.
+          if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+            try {
+              const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
+              const memoryContext = formatSmartMemoryContext(memory);
+              if (memoryContext) context = [context, memoryContext].filter(Boolean).join("\n\n");
+              normalized = await sendRevelaAIMessage({
+                authFetch,
+                message: requestMessage,
+                context,
+                file: attachedFile,
+                sessionId: chatId,
+                hub: activeBrainHub,
+                signal: controller.signal,
+              });
+              normalized.metadata = {
+                ...(normalized.metadata || {}),
+                hub: normalized.metadata?.domain || activeBrainHub || "general",
+                network: true,
+                networkUsed: true,
+                memory: "server-smart-memory",
+              };
+            } catch (providerError) {
+              if (providerError?.name === "AbortError") throw providerError;
+              console.warn("RevelaAI provider request failed; using local fallback:", providerError);
+              await recordLocalDiagnostic("provider-fallback", providerError);
+            }
+          }
+
+          if (!normalized) {
           let localText = "";
           let localType = "text";
           let brainMetadata = {};
@@ -943,7 +979,7 @@ export default function AIAssistantDashboard({
             localType = "text";
           }
 
-          const normalized = {
+          normalized = {
             text: localText || "I couldn't complete that local analysis, but the chat is still available. Try again or provide the key details as text.",
             imageUrls: [],
             sources: [],
@@ -956,6 +992,7 @@ export default function AIAssistantDashboard({
             },
             type: localType,
           };
+          }
 
           // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
           const streamText = normalized.text || "RevelaAI returned an empty response.";
@@ -981,6 +1018,17 @@ export default function AIAssistantDashboard({
             hub: normalized.metadata?.hub || activeBrainHub || "general",
             emotion: normalized.metadata?.emotionEstimate || "neutral",
           }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
+
+          if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+            void saveSmartMemoryTurn({
+              authFetch,
+              userId: user?.id || user?.user_id || user?.userId,
+              userMessage: userDisplayText,
+              aiResponse: normalized.text,
+              hub: normalized.metadata?.hub || activeBrainHub || "general",
+              sessionId: chatId,
+            }).catch((memoryError) => recordLocalDiagnostic("server-smart-memory", memoryError));
+          }
 
           const assistantMessage =
             {
@@ -1262,17 +1310,41 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const localText = answerLocally(
-          enrichPrompt(userMessage.text),
-          [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
-        );
-        const normalized = {
-          text: localText,
-          imageUrls: [],
-          sources: [],
-          metadata: { engine: "local-free-rules", network: false },
-          type: "text",
-        };
+        let normalized = null;
+        if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+          try {
+            const memory = await loadSmartMemory({ authFetch, userId: user?.id || user?.user_id || user?.userId });
+            const memoryContext = formatSmartMemoryContext(memory);
+            const remote = await sendRevelaAIMessage({
+              authFetch,
+              message: enrichPrompt(userMessage.text),
+              context: [hubContext, buildContext(history), memoryContext].filter(Boolean).join("\n\n"),
+              sessionId: chatId,
+              hub: activeBrainHub,
+              signal: controller.signal,
+            });
+            normalized = {
+              ...remote,
+              metadata: { ...(remote.metadata || {}), network: true, networkUsed: true, memory: "server-smart-memory" },
+            };
+          } catch (providerError) {
+            if (providerError?.name === "AbortError") throw providerError;
+            await recordLocalDiagnostic("regenerate-provider-fallback", providerError);
+          }
+        }
+        if (!normalized) {
+          const localText = answerLocally(
+            enrichPrompt(userMessage.text),
+            [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
+          );
+          normalized = {
+            text: localText,
+            imageUrls: [],
+            sources: [],
+            metadata: { engine: "local-free-rules", network: false, networkUsed: false, fallback: true },
+            type: "text",
+          };
+        }
 
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
@@ -1291,6 +1363,16 @@ export default function AIAssistantDashboard({
 
         setMessages(updated);
         updateChat(chatId, updated);
+        if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+          void saveSmartMemoryTurn({
+            authFetch,
+            userId: user?.id || user?.user_id || user?.userId,
+            userMessage: userMessage.text,
+            aiResponse: normalized.text,
+            hub: normalized.metadata?.hub || activeBrainHub || "general",
+            sessionId: chatId,
+          }).catch((memoryError) => recordLocalDiagnostic("regenerate-smart-memory", memoryError));
+        }
       } catch (error) {
         if (error?.name === "AbortError") return;
 
@@ -1310,7 +1392,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, activeBrainHub, isAuthenticated, isGuest, authFetch, user, userScope]
   );
 
   /* =======================================================
