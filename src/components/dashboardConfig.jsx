@@ -1691,7 +1691,8 @@ function HomeDashboard({
               </button>
             );
           })}
-        </div>      </section>
+        </div>
+      </section>
 
       {/* ==================================================
           LIVE ECOSYSTEM OVERVIEW
@@ -1775,7 +1776,11 @@ function HomeDashboard({
               "
             />
 
-            Live data
+            {isGuest
+              ? "Explore mode"
+              : ecosystemLoading || notificationsLoading
+                ? "Syncing data"
+                : "Connected services"}
           </span>
         </div>
 
