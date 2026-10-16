@@ -375,7 +375,7 @@ function MarketplaceListingCard({ listing }) {
   const location = listing?.location || "";
 
   return (
-    <article className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900 sm:p-6">
+    <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900 sm:rounded-[24px] sm:p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
           <ShoppingBag size={19} />
@@ -864,7 +864,7 @@ export default function CommunityDashboard({
             HERO
         ==================================================== */}
 
-        <section className="relative overflow-hidden rounded-[28px] bg-slate-950 p-5 text-white shadow-xl sm:p-7">
+        <section className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 text-white shadow-lg sm:rounded-[28px] sm:p-6">
           <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full bg-emerald-500/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
 
@@ -960,7 +960,7 @@ export default function CommunityDashboard({
             SURFACE HEADER
         ==================================================== */}
 
-        <section className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
