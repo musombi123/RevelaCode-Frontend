@@ -6,6 +6,7 @@ const ASSETS = [
   ["tf.min.js", "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"],
   ["coco-ssd.min.js", "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"],
   ["opencv.js", "https://docs.opencv.org/4.9.0/opencv.js"],
+  ["opencv_js.wasm", "https://docs.opencv.org/4.9.0/opencv_js.wasm"],
   ["tesseract.min.js", "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"],
   ["tesseract/worker.min.js", "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js"],
   ["tesseract/tesseract-core.wasm.js", "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core.wasm.js"],
