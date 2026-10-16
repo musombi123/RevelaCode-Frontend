@@ -259,6 +259,33 @@ export default function CommunityComposer({
     const location =
       postLocation.trim();
 
+    let action = {};
+
+    if (externalLink.trim()) {
+      let candidate = externalLink.trim();
+
+      if (!/^[a-z][a-z\\d+.-]*:/i.test(candidate)) {
+        candidate = `https://${candidate}`;
+      }
+
+      try {
+        const parsed = new URL(candidate);
+
+        if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname) {
+          throw new Error("Only standard web links are supported.");
+        }
+
+        action = {
+          type: "external_link",
+          label: "Open link",
+          target: parsed.toString(),
+        };
+      } catch {
+        setError("Enter a valid website link beginning with https:// or http://.");
+        return;
+      }
+    }
+
     if (!title) {
       setError(
         "Please add a title to your post."
@@ -319,6 +346,7 @@ export default function CommunityComposer({
             : postHub || "community",
         location,
         attachments,
+        action,
       });
 
       setSuccess(
