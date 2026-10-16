@@ -78,7 +78,7 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
           engine: remote.metadata?.engine || "revelaai-coordinated-ai",
           network: true,
           networkUsed: true,
-          hub: activeHub || remote.metadata?.hub || "general",
+          hub: remote.metadata?.domain || remote.metadata?.hub || (activeHub !== "auto" ? activeHub : "general"),
           sessionId: String(sessionId || ""),
           fallback: false,
         };
