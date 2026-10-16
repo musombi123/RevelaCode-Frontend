@@ -885,10 +885,13 @@ export default function AIAssistantDashboard({
            * stay on-device. Model / asset failures degrade to pixel math or text.
            */
           let normalized = null;
+          const backendSupportsAttachment = !attachedFile ||
+            /\.(pdf|docx|txt|md|csv|json|py|js|jsx|ts|tsx|html|css)$/i.test(attachedFile.name || "");
 
-          // Use the existing provider pipeline first for authenticated users.
-          // The local brain is retained strictly as a resilience fallback.
-          if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+          // Text and supported documents use the coordinated provider pipeline.
+          // Image/video analysis keeps the existing device-side path because the
+          // current /ai upload contract does not accept raw image/video bytes.
+          if (isAuthenticated && !isGuest && typeof authFetch === "function" && backendSupportsAttachment) {
             try {
               let memoryContext = "";
               try {
