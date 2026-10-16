@@ -554,6 +554,12 @@ export default function CommunityDashboard({
             params.set("mode", mode);
             break;
 
+          case "threads":
+            endpoint = "/community/feed";
+            params.set("surface", "threads");
+            params.set("mode", "recent");
+            break;
+
           case "discovery":
             endpoint = "/community/discovery";
 
