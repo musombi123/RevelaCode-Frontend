@@ -1152,6 +1152,10 @@ export default function AIAssistantDashboard({
         activeBrainHub,
         activeHub,
         userScope,
+        isAuthenticated,
+        isGuest,
+        authFetch,
+        user,
       ]
     );
 
