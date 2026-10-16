@@ -22,6 +22,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import { sendRevelaAIMessage, saveSmartMemoryTurn, loadSmartMemory, formatSmartMemoryContext } from "@/ai/revelaAIClient";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
+import SmartMemoryPanel from "@/ai/SmartMemoryPanel";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
 import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
@@ -412,6 +413,9 @@ export default function AIAssistantDashboard({
     useState(null);
 
   const [voiceActive, setVoiceActive] =
+    useState(false);
+
+  const [memoryPanelOpen, setMemoryPanelOpen] =
     useState(false);
 
   // Auto-routing is the default; users can pin a specialist hub per conversation.
@@ -1582,6 +1586,30 @@ export default function AIAssistantDashboard({
 
             <button
               type="button"
+              onClick={() => setMemoryPanelOpen(true)}
+              className="
+                inline-flex
+                items-center
+                gap-2
+                rounded-xl
+                border
+                border-emerald-400/20
+                bg-emerald-400/10
+                px-3
+                py-2
+                text-xs
+                font-bold
+                text-emerald-200
+                transition
+                hover:bg-emerald-400/15
+              "
+              aria-label="Open smart memory for this account"
+            >
+              Memory
+            </button>
+
+            <button
+              type="button"
               onClick={
                 startNewChat
               }
@@ -1755,6 +1783,14 @@ export default function AIAssistantDashboard({
       {/* ===================================================
           VOICE CHAT
       =================================================== */}
+
+      <SmartMemoryPanel
+        open={memoryPanelOpen}
+        onClose={() => setMemoryPanelOpen(false)}
+        userId={user?.id || user?.user_id || user?.userId}
+        authFetch={authFetch}
+        isAuthenticated={Boolean(isAuthenticated && !isGuest)}
+      />
 
       {voiceActive && (
         <RevelaAIVoiceChat
