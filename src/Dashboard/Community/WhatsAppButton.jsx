@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { ExternalLink, LoaderCircle, MessageCircle } from "lucide-react";
+import { ExternalLink, MessageCircle, RefreshCw } from "lucide-react";
 
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
@@ -70,7 +70,7 @@ export default function WhatsAppButton({ memberId, postId, compact = false }) {
           disabled={loading}
           className={`inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-extrabold text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-wait disabled:opacity-60 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50 ${compact ? "w-full sm:w-auto" : ""}`}
         >
-          {loading ? <LoaderCircle size={14} className="animate-spin" /> : <MessageCircle size={14} />}
+          {loading ? <RefreshCw size={14} className="animate-spin" /> : <MessageCircle size={14} />}
           {loading ? "Checking contact…" : "Ask to chat on WhatsApp"}
         </button>
       ) : (
