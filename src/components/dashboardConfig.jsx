@@ -381,6 +381,7 @@ function safeLocalStorage(
 }
 
 function buildRecentActivities({
+  history = [],
   walletTransactions = [],
   biashara = {},
   communityPosts = [],
