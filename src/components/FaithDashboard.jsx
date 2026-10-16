@@ -1202,7 +1202,7 @@ export default function FaithDashboard({
           border
           border-gray-200/70
           bg-white
-          p-4
+          p-3
           shadow-sm
           dark:border-gray-800
           dark:bg-gray-900
@@ -1344,7 +1344,7 @@ export default function FaithDashboard({
           border
           border-gray-200/70
           bg-white
-          p-4
+          p-3
           shadow-sm
           dark:border-gray-800
           dark:bg-gray-900
@@ -1575,7 +1575,7 @@ export default function FaithDashboard({
           border
           border-gray-200/70
           bg-white
-          p-4
+          p-3
           shadow-sm
           dark:border-gray-800
           dark:bg-gray-900
@@ -1746,7 +1746,7 @@ export default function FaithDashboard({
             border
             border-gray-200/70
             bg-white
-            p-5
+            p-3.5
             shadow-sm
             dark:border-gray-800
             dark:bg-gray-900
@@ -1816,7 +1816,7 @@ export default function FaithDashboard({
             border
             border-gray-200/70
             bg-white
-            p-5
+            p-3.5
             shadow-sm
             dark:border-gray-800
             dark:bg-gray-900
@@ -1884,7 +1884,7 @@ export default function FaithDashboard({
             border
             border-gray-200/70
             bg-white
-            p-5
+            p-3.5
             shadow-sm
             dark:border-gray-800
             dark:bg-gray-900
