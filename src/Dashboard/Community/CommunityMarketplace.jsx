@@ -384,6 +384,29 @@ export default function CommunityMarketplace({ onNavigate }) {
     loadListings();
   }, [loadListings]);
 
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (
+        document.visibilityState !== "hidden" &&
+        (typeof navigator === "undefined" || navigator.onLine)
+      ) {
+        loadListings({ quiet: true });
+      }
+    };
+
+    const onOnline = () => refreshWhenVisible();
+    const interval = window.setInterval(refreshWhenVisible, 60000);
+
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadListings]);
+
   const ownUserIds = useMemo(() => (
     [
       user?.id,
@@ -606,7 +629,15 @@ export default function CommunityMarketplace({ onNavigate }) {
           <div>
             <h2 className="text-base font-black text-slate-950 dark:text-white">Made useful by the community</h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {loading ? "Looking for active listings…" : `${filteredListings.length} ${filteredListings.length === 1 ? "listing" : "listings"} to explore`}
+              {loading
+                ? "Looking for active listings…"
+                : `${filteredListings.length} ${filteredListings.length === 1 ? "listing" : "listings"} to explore`}
+              {!loading ? (
+                <span className="ml-2 inline-flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                  Live inventory
+                </span>
+              ) : null}
             </p>
           </div>
           <button type="button" onClick={openCreateForm} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
