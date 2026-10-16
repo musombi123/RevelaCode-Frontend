@@ -1,8 +1,8 @@
 import React from "react";
-import { BookOpen, BriefcaseBusiness, GraduationCap, Sprout, Sparkles } from "lucide-react";
+import { BookOpen, Briefcase, GraduationCap, Sprout, Sparkles } from "lucide-react";
 import { LIVING_HUBS } from "./livingBrain";
 
-const ICONS = { Sprout, BriefcaseBusiness, GraduationCap, BookOpen, Sparkles };
+const ICONS = { Sprout, Briefcase, GraduationCap, BookOpen, Sparkles };
 
 export default function LivingHubSelector({ value = "auto", onChange, compact = false, className = "" }) {
   const options = [{ id: "auto", label: "Auto", subtitle: "Global brain", icon: "Sparkles" }, ...LIVING_HUBS];
