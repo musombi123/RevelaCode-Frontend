@@ -17,6 +17,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
 
 const CATEGORIES = [
   { value: "", label: "Everything" },
@@ -144,6 +145,13 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
         ) : null}
         <span>{formatListingDate(listing?.created_at || listing?.createdAt)}</span>
       </div>
+
+      {!isOwner && (listing?.seller_user_id || listing?.sellerId || listing?.owner_user_id) ? (
+        <WhatsAppButton
+          memberId={listing?.seller_user_id ?? listing?.sellerId ?? listing?.owner_user_id}
+          compact
+        />
+      ) : null}
 
       {isOwner ? (
         <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
