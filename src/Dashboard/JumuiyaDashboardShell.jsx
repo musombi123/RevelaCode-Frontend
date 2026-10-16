@@ -225,7 +225,7 @@ export default function JumuiyaDashboardShell({
 
       <header
         className="
-          rounded-[28px]
+          rounded-2xl
           border
           border-slate-200
           bg-white
@@ -453,7 +453,7 @@ export default function JumuiyaDashboardShell({
           className="
             overflow-x-auto
             scrollbar-none
-            rounded-[24px]
+            rounded-2xl
             border
             border-slate-200
             bg-white
