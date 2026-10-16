@@ -39,6 +39,7 @@ import {
   useNotifications,
 } from "./hooks/useNotifications.jsx";
 import usePreferences from "./hooks/usePreferences.jsx";
+import { useHistory } from "@/context/HistoryContext.jsx";
 
 /* ======================================================
    HARDENED SAFE LAZY LOADING
@@ -380,7 +381,7 @@ function safeLocalStorage(
 }
 
 function buildRecentActivities({
-  notifications = [],
+  history = [],
   walletTransactions = [],
   biashara = {},
   communityPosts = [],
@@ -388,52 +389,43 @@ function buildRecentActivities({
   const activities = [];
 
   /* ====================================================
-     NOTIFICATIONS
+     USER HISTORY — actions, studies and saved work only.
+     Notifications are deliberately excluded from this timeline.
   ==================================================== */
 
-  notifications
-    .slice(0, 8)
-    .forEach(
-      (
-        notification,
-        index,
-      ) => {
-        const timestamp =
-          notification.timestamp ||
-          notification.created_at ||
-          notification.createdAt ||
-          null;
+  history.slice(0, 20).forEach((entry, index) => {
+    const type = String(entry?.type || entry?.action || "activity").toLowerCase();
+    const extra = entry?.extra && typeof entry.extra === "object" ? entry.extra : {};
+    const hub = String(entry?.hub || extra.hub || extra.workspace || "").toLowerCase();
+    const timestamp = entry?.timestamp || entry?.created_at || entry?.createdAt || null;
+    const rawTitle = entry?.title || entry?.action_label || entry?.label || entry?.input || entry?.prompt || entry?.question || extra.title || extra.action || "";
+    const title = String(rawTitle || "Saved activity").replace(/\s+/g, " ").trim();
+    const route = entry?.route || extra.route || ({
+      faith: "faith", scripture: "faith", bible: "bible", study: "faith",
+      elimu: "education", education: "education", school: "education",
+      shamba: "shamba", farm: "shamba", biashara: "biashara", business: "biashara",
+      community: "community", payments: "payments", wallet: "payments",
+    }[hub] || null);
+    const iconSource = hub + " " + type;
+    const Icon = /community|post|comment|group/.test(iconSource) ? MessageSquare
+      : /shamba|farm|crop/.test(iconSource) ? Leaf
+      : /elimu|education|school|student|lesson|assignment/.test(iconSource) ? GraduationCap
+      : /biashara|business|product|order|sale/.test(iconSource) ? ShoppingCart
+      : /wallet|payment|transaction/.test(iconSource) ? WalletCards
+      : /faith|bible|scripture|study|verse/.test(iconSource) ? BookOpen
+      : History;
 
-        activities.push({
-          id:
-            notification.id ||
-            notification._id ||
-            `notification-${index}`,
-
-          title:
-            notification.text ||
-            notification.message ||
-            notification.body ||
-            "Notification",
-
-          time:
-            formatDateTime(
-              timestamp,
-            ),
-
-          value: "",
-
-          positive: false,
-
-          icon: Bell,
-
-          timestamp:
-            timestampOf(
-              notification,
-            ),
-        });
-      },
-    );
+    activities.push({
+      id: entry?.id || entry?._id || ("history-" + index + "-" + (timestamp || type)),
+      title: title.length > 110 ? title.slice(0, 107) + "…" : title,
+      time: formatDateTime(timestamp),
+      value: "",
+      positive: false,
+      icon: Icon,
+      route,
+      timestamp: timestampOf(entry),
+    });
+  });
 
   /* ====================================================
      WALLET TRANSACTIONS
@@ -690,6 +682,7 @@ function buildRecentActivities({
     )
     .slice(0, 10);
 }
+
 
 /* ======================================================
    EXISTING REVELACODE / FAITH DASHBOARDS
@@ -1088,6 +1081,7 @@ function HomeDashboard({
   user,
 }) {
   const { language, t } = usePreferences();
+  const { history: userHistory = [] } = useHistory();
 
   const {
     getWalletLedger,
@@ -1566,13 +1560,13 @@ function HomeDashboard({
     useMemo(
       () =>
         buildRecentActivities({
-          notifications,
+          history: userHistory,
           walletTransactions,
           biashara,
           communityPosts,
         }),
       [
-        notifications,
+        userHistory,
         walletTransactions,
         biashara,
         communityPosts,
@@ -1590,7 +1584,8 @@ function HomeDashboard({
         mx-auto
         w-full
         max-w-[1500px]
-        space-y-5
+        space-y-4
+        sm:space-y-5
       "
     >
       {/* ==================================================
@@ -1622,7 +1617,7 @@ function HomeDashboard({
 
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{language === "sw" ? (hasHubHistory ? "Vituo unavyotumia zaidi huwekwa mbele kiotomatiki." : t("Your hubs are ready when you are.")) : language === "fr" ? (hasHubHistory ? "Vos espaces les plus utilisés passent automatiquement en premier." : t("Your hubs are ready when you are.")) : (hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are.")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
           {frequentHubs.map((hub, index) => {
             const Icon = hub.icon;
             const uses = Number(hubUsage[hub.key]?.count) || 0;
@@ -1976,8 +1971,7 @@ function HomeDashboard({
               dark:text-gray-400
             "
           >
-            Recent events collected from
-            connected ecosystem services.
+            Your actions across RevelaCode — not notifications.
           </p>
         </div>
 

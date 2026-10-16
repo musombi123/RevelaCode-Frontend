@@ -20,6 +20,12 @@ import {
   Minus,
   Maximize2,
   Sparkles,
+  Home,
+  BookOpen,
+  GraduationCap,
+  Leaf,
+  ShoppingCart,
+  Users,
 } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
@@ -429,6 +435,18 @@ export default function MainDashboardV2() {
   const activeHubKey = activeView;
   const activeHubTitle = activeDashboard?.title || "RevelaCode";
 
+  // Hub dashboards own their workspace headers. Keep the shell header
+  // for Home and utility/section screens to avoid stacked header bars.
+  const hubViewsWithOwnHeader = new Set([
+    "faith",
+    "education",
+    "shamba",
+    "biashara",
+    "community",
+    "payments",
+  ]);
+  const showShellHeader = !hubViewsWithOwnHeader.has(activeView);
+
   const openAIWidget = useCallback(() => {
     setAIWidgetOpen(true);
     setAIWidgetMinimized(false);
@@ -533,7 +551,8 @@ const BIASHARA_SECTION_KEYS = new Set(
         className="
           relative
           flex
-          h-screen
+          h-[100dvh]
+          min-h-0
           min-w-0
           overflow-hidden
           bg-gray-100
@@ -912,7 +931,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                       >
                         {(
                           user?.fullName ||
-                          ser?.full_name ||
+                          user?.full_name ||
                           user?.name ||
                           user?.display_name ||
                           user?.contact ||
@@ -1056,6 +1075,7 @@ const BIASHARA_SECTION_KEYS = new Set(
               HEADER
           ================================================= */}
 
+          {showShellHeader && (
           <header
             className="
               sticky
@@ -1225,6 +1245,19 @@ const BIASHARA_SECTION_KEYS = new Set(
               </div>
             </div>
           </header>
+          )}
+
+          {!showShellHeader && !sidebarOpen && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open workspace navigation"
+              title="Open workspace navigation"
+              className="fixed bottom-6 left-4 z-[90] hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-lg backdrop-blur transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-slate-800 lg:inline-flex"
+            >
+              <Menu size={19} />
+            </button>
+          )}
 
           {/* =================================================
               DASHBOARD CONTENT
@@ -1238,12 +1271,14 @@ const BIASHARA_SECTION_KEYS = new Set(
               overscroll-contain
               bg-gray-100
               px-3
-              py-3
+              pt-3
+              pb-24
               dark:bg-gray-950
               sm:px-4
               sm:py-4
               lg:px-6
               lg:py-6
+              lg:pb-6
             "
           >
             <Suspense fallback={<Loading />}>
@@ -1301,6 +1336,49 @@ const BIASHARA_SECTION_KEYS = new Set(
               </ErrorBoundary>
             </Suspense>
           </section>
+
+          {/* Mobile-first shell footer navigation */}
+          {!sidebarOpen && (
+            <nav
+              aria-label="Main workspace navigation"
+              className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+            >
+              <div className="mx-auto grid max-w-xl grid-cols-7 gap-0.5">
+                {[
+                  { key: "home", label: "Home", Icon: Home },
+                  { key: "faith", label: "Faith", Icon: BookOpen },
+                  { key: "education", label: "Elimu", Icon: GraduationCap },
+                  { key: "shamba", label: "Shamba", Icon: Leaf },
+                  { key: "biashara", label: "Biashara", Icon: ShoppingCart },
+                  { key: "community", label: "Community", Icon: Users },
+                ].map(({ key, label, Icon }) => {
+                  const active = activeView === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleNavigate(key)}
+                      aria-current={active ? "page" : undefined}
+                      aria-label={`Open ${label}`}
+                      className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold transition active:scale-95 sm:text-[10px] ${active ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}
+                    >
+                      <Icon size={19} strokeWidth={active ? 2.5 : 2} />
+                      <span className="max-w-full truncate">{label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open all navigation options"
+                  className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold text-slate-500 transition active:scale-95 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900 sm:text-[10px]"
+                >
+                  <Menu size={19} />
+                  <span className="truncate">More</span>
+                </button>
+              </div>
+            </nav>
+          )}
 
           {/* Context-aware floating RevelaAI widget */}
           <AnimatePresence>
@@ -1364,7 +1442,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           <button
             type="button"
             onClick={openAIWidget}
-            className="fixed bottom-4 right-4 z-[9996] flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-xl shadow-slate-950/15 transition hover:-translate-y-1 hover:shadow-2xl active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:bg-gray-900 dark:focus-visible:ring-offset-gray-950 sm:bottom-6 sm:right-6"
+            className="fixed bottom-20 right-3 z-[9996] flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-xl shadow-slate-950/15 transition hover:-translate-y-1 hover:shadow-2xl active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:bg-gray-900 dark:focus-visible:ring-offset-gray-950 sm:bottom-20 sm:right-6 lg:bottom-6"
             title={"RevelaAI Assistant — " + activeHubTitle + " (Ctrl + K)"}
             aria-label={"Open RevelaAI Assistant for " + activeHubTitle}
           >
