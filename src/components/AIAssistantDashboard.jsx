@@ -20,7 +20,6 @@ import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import { useAuth } from "@/context/AuthContext";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import MultimodalStudio from "@/ai/v2/MultimodalStudio";
 import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
@@ -28,12 +27,6 @@ import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } 
 /* =========================================================
    CONSTANTS
 ========================================================= */
-
-const REVELAAI_URL = (
-  import.meta.env.VITE_REVELAAI_URL || ""
-)
-  .trim()
-  .replace(/\/+$/, "");
 
 const LEGACY_STORAGE_KEY = "revela_chats";
 
@@ -356,7 +349,6 @@ export default function AIAssistantDashboard({
     user,
     isGuest,
     isReady,
-    authFetch,
   } = useAuth();
 
   /*
@@ -747,104 +739,8 @@ export default function AIAssistantDashboard({
     );
 
   /* =======================================================
-     AI REQUEST
+     LOCAL FREE RESPONSE ENGINE
   ======================================================= */
-
-  const callRevelaAI =
-    useCallback(
-      async ({
-        message,
-        context,
-        file = null,
-        sessionId,
-        signal,
-      }) => {
-        if (!REVELAAI_URL) {
-          throw new Error(
-            "VITE_REVELAAI_URL is not configured."
-          );
-        }
-
-        const headers = {
-          "X-Session-ID":
-            sessionId || "",
-        };
-
-        let body;
-
-        /*
-         * FILE UPLOAD
-         *
-         * Do NOT set Content-Type manually.
-         * Browser must generate the multipart boundary.
-         */
-        if (file) {
-          const formData =
-            new FormData();
-
-          formData.append(
-            "file",
-            file,
-            file.name
-          );
-
-          if (message) {
-            formData.append(
-              "message",
-              message
-            );
-          }
-
-          if (context) {
-            formData.append(
-              "context",
-              context
-            );
-          }
-
-          body =
-            formData;
-        } else {
-          headers[
-            "Content-Type"
-          ] =
-            "application/json";
-
-          body =
-            JSON.stringify({
-              message,
-              context,
-            });
-        }
-
-        const response =
-          await authFetch(
-            `${REVELAAI_URL}/ai`,
-            {
-              method: "POST",
-              headers,
-              body,
-              signal,
-            }
-          );
-
-        const data =
-          await response
-            .json()
-            .catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error?.message ||
-              data?.message ||
-              `AI request failed (HTTP ${response.status}).`
-          );
-        }
-
-        return data;
-      },
-      [authFetch]
-    );
 
   /* =======================================================
      SEND TEXT / FILE
