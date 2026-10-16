@@ -381,7 +381,6 @@ function safeLocalStorage(
 }
 
 function buildRecentActivities({
-  history = [],
   walletTransactions = [],
   biashara = {},
   communityPosts = [],
@@ -426,6 +425,263 @@ function buildRecentActivities({
       timestamp: timestampOf(entry),
     });
   });
+
+  /* ====================================================
+     WALLET TRANSACTIONS
+  ==================================================== */
+
+  walletTransactions
+    .slice(0, 8)
+    .forEach(
+      (
+        transaction,
+        index,
+      ) => {
+        const direction =
+          String(
+            transaction.direction ||
+              "",
+          ).toLowerCase();
+
+        const amount =
+          Number(
+            transaction.amount,
+          );
+
+        const currency =
+          transaction.currency ||
+          "KES";
+
+        activities.push({
+          id:
+            transaction.id ||
+            transaction._id ||
+            `wallet-${index}`,
+
+          title:
+            transaction.type ||
+            "Wallet transaction",
+
+          time:
+            formatDateTime(
+              transaction.created_at ||
+                transaction.createdAt,
+            ),
+
+          value:
+            Number.isFinite(
+              amount,
+            )
+              ? `${
+                  direction ===
+                  "credit"
+                    ? "+ "
+                    : "- "
+                }${formatMoney(
+                  amount,
+                  currency,
+                )}`
+              : "",
+
+          positive:
+            direction ===
+            "credit",
+
+          icon:
+            WalletCards,
+
+          timestamp:
+            timestampOf(
+              transaction,
+            ),
+        });
+      },
+    );
+
+  /* ====================================================
+     BIASHARA ORDERS
+  ==================================================== */
+
+  const recentOrders =
+    extractArray(
+      biashara?.recent_orders,
+    );
+
+  recentOrders
+    .slice(0, 6)
+    .forEach(
+      (
+        order,
+        index,
+      ) => {
+        const amount =
+          order?.total ??
+          order?.amount ??
+          order?.grand_total ??
+          order?.total_amount ??
+          null;
+
+        activities.push({
+          id:
+            order?.id ||
+            order?._id ||
+            `order-${index}`,
+
+          title:
+            order?.order_number ||
+            order?.reference ||
+            order?.number ||
+            "Business order",
+
+          time:
+            formatDateTime(
+              order?.created_at ||
+                order?.updated_at ||
+                order?.ordered_at,
+            ),
+
+          value:
+            amount !== null &&
+            Number.isFinite(
+              Number(amount),
+            )
+              ? formatMoney(
+                  amount,
+                  biashara?.currency ||
+                    "KES",
+                )
+              : "",
+
+          positive: false,
+
+          icon:
+            ShoppingCart,
+
+          timestamp:
+            timestampOf(
+              order,
+            ),
+        });
+      },
+    );
+
+  /* ====================================================
+     BIASHARA SALES
+  ==================================================== */
+
+  const recentSales =
+    extractArray(
+      biashara?.recent_sales,
+    );
+
+  recentSales
+    .slice(0, 6)
+    .forEach(
+      (
+        sale,
+        index,
+      ) => {
+        const amount =
+          sale?.amount ??
+          sale?.total ??
+          sale?.total_amount ??
+          null;
+
+        activities.push({
+          id:
+            sale?.id ||
+            sale?._id ||
+            `sale-${index}`,
+
+          title:
+            sale?.reference ||
+            sale?.sale_number ||
+            "Business sale",
+
+          time:
+            formatDateTime(
+              sale?.created_at ||
+                sale?.sold_at,
+            ),
+
+          value:
+            amount !== null &&
+            Number.isFinite(
+              Number(amount),
+            )
+              ? `+ ${formatMoney(
+                  amount,
+                  biashara?.currency ||
+                    "KES",
+                )}`
+              : "",
+
+          positive: true,
+
+          icon:
+            DollarSign,
+
+          timestamp:
+            timestampOf(
+              sale,
+            ),
+        });
+      },
+    );
+
+  /* ====================================================
+     COMMUNITY ACTIVITY
+  ==================================================== */
+
+  communityPosts
+    .slice(0, 6)
+    .forEach(
+      (
+        post,
+        index,
+      ) => {
+        activities.push({
+          id:
+            post?.id ||
+            post?._id ||
+            `community-${index}`,
+
+          title:
+            post?.title ||
+            post?.body ||
+            post?.content ||
+            "Community post",
+
+          time:
+            formatDateTime(
+              post?.created_at ||
+                post?.createdAt,
+            ),
+
+          value: "",
+
+          positive: false,
+
+          icon:
+            MessageSquare,
+
+          timestamp:
+            timestampOf(
+              post,
+            ),
+        });
+      },
+    );
+
+  return activities
+    .sort(
+      (a, b) =>
+        b.timestamp -
+        a.timestamp,
+    )
+    .slice(0, 10);
+}
+
 
 /* ======================================================
    EXISTING REVELACODE / FAITH DASHBOARDS
