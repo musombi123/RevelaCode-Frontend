@@ -6,7 +6,7 @@ import React, {
 import {
   ArrowLeft,
   CheckCircle2,
-  LoaderCircle,
+  RefreshCw,
   MessageCircle,
   ShieldCheck,
   Smartphone,
@@ -173,7 +173,7 @@ export default function CommunityContactSettings({ onBack }) {
 
         {loading ? (
           <div className="flex items-center gap-2 py-12 text-sm font-semibold text-slate-500 dark:text-slate-400">
-            <LoaderCircle size={17} className="animate-spin" />
+            <RefreshCw size={17} className="animate-spin" />
             Loading your saved preferences…
           </div>
         ) : (
@@ -269,7 +269,7 @@ export default function CommunityContactSettings({ onBack }) {
                 disabled={saving}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
               >
-                {saving ? <LoaderCircle size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                {saving ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
                 {saving ? "Saving preferences…" : "Save contact preferences"}
               </button>
             </div>

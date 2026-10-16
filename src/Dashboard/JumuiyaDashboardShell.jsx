@@ -10,7 +10,6 @@ import {
   Menu,
   ShoppingCart,
   Users,
-  WalletCards,
 } from "lucide-react";
 
 /* =========================================================
@@ -48,11 +47,6 @@ const HUBS = [
     key: "community",
     label: "Community",
     icon: Users,
-  },
-  {
-    key: "payments",
-    label: "Payments",
-    icon: WalletCards,
   },
 ];
 
@@ -156,16 +150,6 @@ function getHubTheme(activeHub) {
         badge:
           "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
         accent: "text-emerald-600 dark:text-emerald-400",
-      };
-
-    case "payments":
-      return {
-        icon: WalletCards,
-        iconWrapper:
-          "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
-        badge:
-          "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300",
-        accent: "text-indigo-600 dark:text-indigo-400",
       };
 
     default:

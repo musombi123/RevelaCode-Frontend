@@ -18,6 +18,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings2,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -34,6 +35,8 @@ import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
+import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
+import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -46,6 +49,13 @@ const PILLARS = [
     subtitle: "Useful now",
     description: "What is useful to me right now?",
     icon: Sparkles,
+  },
+  {
+    key: "marketplace",
+    label: "Marketplace",
+    subtitle: "Trade value",
+    description: "Discover useful goods, skills and local services.",
+    icon: ShoppingBag,
   },
   {
     key: "discovery",
@@ -442,6 +452,15 @@ export default function CommunityDashboard({
           setWorkspacePage("notifications");
           return;
 
+        case "community-marketplace":
+        case "marketplace":
+          setWorkspacePage("marketplace");
+          return;
+
+        case "community-contact-settings":
+          setWorkspacePage("contact-settings");
+          return;
+
         case "community-groups":
           setWorkspacePage("groups");
           setActiveSurface("groups");
@@ -498,6 +517,9 @@ export default function CommunityDashboard({
   const [marketplaceListings, setMarketplaceListings] = useState([]);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceError, setMarketplaceError] = useState("");
+  const [isOnline, setIsOnline] = useState(
+    () => typeof navigator === "undefined" || navigator.onLine,
+  );
 
   const requestId = useRef(0);
 
@@ -533,6 +555,12 @@ export default function CommunityDashboard({
           case "pulse":
             endpoint = "/community/pulse";
             params.set("mode", mode);
+            break;
+
+          case "threads":
+            endpoint = "/community/feed";
+            params.set("surface", "threads");
+            params.set("mode", "recent");
             break;
 
           case "discovery":
@@ -671,10 +699,9 @@ export default function CommunityDashboard({
       return undefined;
     }
 
-    const surface =
-      activeSurface === "threads"
-        ? "pulse"
-        : activeSurface;
+    // Each Community pillar maps to its own server surface.
+    // Threads must not silently fall back to Pulse.
+    const surface = activeSurface;
 
     const mode =
       activeSurface === "pulse"
@@ -708,6 +735,47 @@ export default function CommunityDashboard({
     reloadToken,
     loadSurface,
   ]);
+
+  // ----------------------------------------------------------
+  // Live updates while Community is open
+  // ----------------------------------------------------------
+
+  useEffect(() => {
+    if (workspacePage !== "home") return undefined;
+
+    const refreshVisibleCommunity = () => {
+      if (
+        document.visibilityState !== "hidden" &&
+        (typeof navigator === "undefined" || navigator.onLine)
+      ) {
+        setReloadToken((value) => value + 1);
+      }
+    };
+
+    const updateConnection = () => {
+      const online = typeof navigator === "undefined" || navigator.onLine;
+      setIsOnline(online);
+      if (online) refreshVisibleCommunity();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshVisibleCommunity();
+      }
+    };
+
+    const interval = window.setInterval(refreshVisibleCommunity, 45000);
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [workspacePage]);
 
   // ----------------------------------------------------------
   // Refresh
@@ -804,6 +872,10 @@ export default function CommunityDashboard({
         [
           "discussion",
           "question",
+          "knowledge",
+          "help",
+          "request",
+          "service_needed",
           "help_request",
           "insight",
           "project",
@@ -852,6 +924,18 @@ export default function CommunityDashboard({
     return <CommunityGroups onNavigate={navigate} />;
   }
 
+  if (workspacePage === "marketplace") {
+    return <CommunityMarketplace onNavigate={navigate} />;
+  }
+
+  if (workspacePage === "contact-settings") {
+    return (
+      <CommunityContactSettings
+        onBack={() => navigate("community")}
+      />
+    );
+  }
+
   // ==========================================================
   // RENDER
   // ==========================================================
@@ -870,9 +954,19 @@ export default function CommunityDashboard({
 
           <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
-                <Sparkles size={13} />
-                Jumuiya Community
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
+                  <Sparkles size={13} />
+                  Jumuiya Community
+                </div>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold ${isOnline ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-amber-300/20 bg-amber-300/10 text-amber-100"}`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "animate-pulse bg-emerald-300" : "bg-amber-300"}`} />
+                  {isOnline ? "Live · auto-refresh on" : "Offline · waiting to reconnect"}
+                </div>
               </div>
 
               <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
@@ -901,14 +995,32 @@ export default function CommunityDashboard({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={openComposer}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
-            >
-              <Plus size={16} />
-              Start something
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row xl:flex-col 2xl:flex-row">
+              <button
+                type="button"
+                onClick={openComposer}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
+              >
+                <Plus size={16} />
+                Start something
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("community-marketplace")}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                <ShoppingBag size={15} />
+                Explore marketplace
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("community-contact-settings")}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                <Settings2 size={15} />
+                Contact settings
+              </button>
+            </div>
           </div>
 
           <p className="relative mt-5 border-t border-white/10 pt-4 text-xs font-semibold text-white/50">
@@ -928,7 +1040,7 @@ export default function CommunityDashboard({
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
-                Six ways to turn connection into value.
+                Seven ways to turn connection into value.
               </p>
             </div>
           </div>
@@ -941,6 +1053,11 @@ export default function CommunityDashboard({
                 active={activeSurface === pillar.key}
                 onClick={() => {
                   setError("");
+
+                  if (pillar.key === "marketplace") {
+                    setWorkspacePage("marketplace");
+                    return;
+                  }
 
                   if (pillar.key === "groups") {
                     setActiveSurface("groups");
@@ -1145,7 +1262,7 @@ export default function CommunityDashboard({
             onAction={openComposer}
             actionLabel="Start a Community conversation"
           />
-        ) : loading || (activeSurface === "pulse" && marketplaceLoading) ? (
+        ) : loading || (activeSurface === "pulse" && marketplaceLoading && posts.length === 0) ? (
           <LoadingState />
         ) : activeSurface === "threads" && threadPosts.length === 0 ? (
           <EmptyState

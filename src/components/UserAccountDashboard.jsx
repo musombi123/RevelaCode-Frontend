@@ -20,6 +20,7 @@ import {
   ChevronRight,
   UserCircle2,
   LockKeyhole,
+  WalletCards,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
@@ -83,6 +84,12 @@ const accountMenu = [
     label: "Preferences",
     description: "Customize your experience",
     icon: Settings,
+  },
+  {
+    key: "payments",
+    label: "Payments & Wallet",
+    description: "Balance, transfers and transaction history",
+    icon: WalletCards,
   },
   {
     key: "accounts",
@@ -300,6 +307,7 @@ async function getResponseError(response, fallback) {
 
 export default function UserAccountDashboard({
   onLogout,
+  onNavigate,
 }) {
   const {
     user: authUser,
@@ -705,6 +713,11 @@ export default function UserAccountDashboard({
   ======================================================= */
 
   const changeView = (view) => {
+    if (view === "payments") {
+      onNavigate?.("payments");
+      return;
+    }
+
     setActiveView(view);
     setMessage("");
     setError("");
