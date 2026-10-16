@@ -1392,19 +1392,12 @@ function HomeDashboard({
           helper:
             isGuest
               ? "Sign in to view"
-              : `${formatNumber(
-                  walletTransactions.length,
-                )} recorded transaction${
-                  walletTransactions.length ===
-                  1
-                    ? ""
-                    : "s"
-                }`,
+              : "Manage payments and transactions in your User Hub",
           icon: WalletCards,
           className:
             "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
           clickable: true,
-          route: "payments",
+          route: "profile",
         },
 
         {
@@ -2405,6 +2398,7 @@ export const DASHBOARDS = [
     title: "Payments",
     label: "Payments",
     icon: WalletCards,
+    hidden: true,
     element: (
       <PaymentsDashboard />
     ),
