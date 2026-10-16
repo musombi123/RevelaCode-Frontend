@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Film, Link2, LoaderCircle, Upload, X } from "lucide-react";
+import { Film, Link2, Loader2, Upload, X } from "lucide-react";
 
 export default function VideoAnalyzer({ onAnalyze, onClose, busy = false }) {
   const [file, setFile] = useState(null);
@@ -27,7 +27,7 @@ export default function VideoAnalyzer({ onAnalyze, onClose, busy = false }) {
       <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3"><Link2 size={16} className="shrink-0 text-slate-400"/><input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://youtu.be/…" className="min-w-0 flex-1 bg-transparent py-3 text-sm outline-none"/></div>
       <label className="mt-3 block text-xs font-medium text-slate-300">Analysis instructions</label><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={2} className="mt-1 w-full resize-y rounded-xl border border-white/10 bg-white/5 p-3 text-sm outline-none focus:border-cyan-300/50"/>
       {error && <p role="status" className="mt-2 text-xs text-amber-300">{error}</p>}
-      <button type="button" disabled={busy || (!file && !url.trim())} onClick={submit} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <LoaderCircle size={17} className="animate-spin"/> : <Film size={17}/>} {busy ? "Analyzing video…" : "Analyze video"}</button>
+      <button type="button" disabled={busy || (!file && !url.trim())} onClick={submit} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">{busy ? <Loader2 size={17} className="animate-spin"/> : <Film size={17}/>} {busy ? "Analyzing video…" : "Analyze video"}</button>
       <p className="mt-2 text-[10px] leading-4 text-slate-500">Video understanding depends on the configured backend's media support. This panel does not claim live-feed or emotion-detection support unless the service actually provides it.</p>
     </section>
   );
