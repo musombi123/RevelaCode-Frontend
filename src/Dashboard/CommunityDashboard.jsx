@@ -18,6 +18,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings2,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -947,6 +948,14 @@ export default function CommunityDashboard({
               >
                 <ShoppingBag size={15} />
                 Explore marketplace
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("community-contact-settings")}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                <Settings2 size={15} />
+                Contact settings
               </button>
             </div>
           </div>
