@@ -8,9 +8,12 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
+import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
 
 export default function WelcomeScreen({
   onSuggestion,
+  activeBrainHub = "auto",
+  onHubChange,
 }) {
   const suggestions = [
     {
@@ -117,44 +120,14 @@ export default function WelcomeScreen({
       </p>
 
       {/* =================================================
-          CAPABILITY BADGES
+          FIVE-HUB GLOBAL BRAIN
       ================================================= */}
 
-      <div
-        className="
-          mt-5
-          flex
-          flex-wrap
-          justify-center
-          gap-2
-        "
-      >
-        {[
-          "Scripture",
-          "Prophecy",
-          "Programming",
-          "Education",
-          "Business",
-          "Agriculture",
-        ].map((item) => (
-          <span
-            key={item}
-            className="
-              rounded-full
-              border
-              border-white/10
-              bg-white/5
-              px-3
-              py-1.5
-              text-[10px]
-              font-bold
-              text-gray-400
-              sm:text-xs
-            "
-          >
-            {item}
-          </span>
-        ))}
+      <div className="mx-auto mt-6 w-full max-w-3xl">
+        <LivingHubSelector
+          value={activeBrainHub}
+          onChange={onHubChange}
+        />
       </div>
 
       {/* =================================================
@@ -274,7 +247,7 @@ export default function WelcomeScreen({
         <Wand2 size={12} />
 
         <span>
-          Powered by RevelaAI • MVI Engine
+          RevelaAI · Local-first five-hub brain
         </span>
       </div>
     </div>
