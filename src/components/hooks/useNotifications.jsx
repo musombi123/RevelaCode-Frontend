@@ -6,6 +6,7 @@ import {
   useMemo,
   useCallback,
 } from "react";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 // ============================================================
 // API BASE URL
@@ -102,6 +103,7 @@ function extractNotifications(data) {
 
 export function useNotifications(refreshInterval = 12000) {
   const baseUrl = getBaseUrl();
+  const { authFetch } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,7 +125,7 @@ export function useNotifications(refreshInterval = 12000) {
 
         setError(null);
 
-        const response = await fetch(
+        const response = await authFetch(
           `${baseUrl}/api/notifications`,
           {
             method: "GET",
@@ -184,7 +186,7 @@ export function useNotifications(refreshInterval = 12000) {
         setRefreshing(false);
       }
     },
-    [baseUrl]
+    [authFetch, baseUrl]
   );
 
   // ==========================================================
@@ -234,7 +236,7 @@ export function useNotifications(refreshInterval = 12000) {
       }
 
       try {
-        const response = await fetch(
+        const response = await authFetch(
           `${baseUrl}/api/notifications/${notificationId}`,
           {
             method: "PUT",
@@ -274,7 +276,7 @@ export function useNotifications(refreshInterval = 12000) {
         return false;
       }
     },
-    [baseUrl]
+    [authFetch, baseUrl]
   );
 
   // ==========================================================
@@ -283,7 +285,7 @@ export function useNotifications(refreshInterval = 12000) {
 
   const markAllRead = useCallback(async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseUrl}/api/notifications/read-all`,
         {
           method: "PUT",
