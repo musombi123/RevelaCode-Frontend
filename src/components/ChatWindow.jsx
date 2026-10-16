@@ -5,12 +5,14 @@ import React, { useEffect, useMemo, useRef } from "react";
 import Message from "./Message";
 import ThinkingStages from "./ThinkingStages";
 import MessageActions from "./MessageActions";
+import { Volume2 } from "lucide-react";
 
 export default function ChatWindow({
   messages = [],
   regenerableId = null,
   onRegenerate,
   onFeedback,
+  onSpeak,
 }) {
   const endRef = useRef(null);
 
@@ -81,13 +83,9 @@ export default function ChatWindow({
               <Message message={message} />
 
               {showActions && (
-                <div className="px-1">
-                  <MessageActions
-                    message={message}
-                    regenerableId={regenerableId}
-                    onRegenerate={onRegenerate}
-                    onFeedback={onFeedback}
-                  />
+                <div className="flex items-center gap-2 px-1">
+                  <MessageActions message={message} regenerableId={regenerableId} onRegenerate={onRegenerate} onFeedback={onFeedback} />
+                  {onSpeak && <button type="button" onClick={() => onSpeak(message.text)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-gray-500 transition hover:bg-white/5 hover:text-emerald-300" aria-label="Read answer aloud" title="Read answer aloud"><Volume2 size={14} /> Listen</button>}
                 </div>
               )}
             </div>
