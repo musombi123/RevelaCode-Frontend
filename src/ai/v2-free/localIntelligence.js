@@ -30,7 +30,9 @@ export async function analyzeVideoFile(file,onProgress){
   if(!v.duration||!v.videoWidth)throw new Error("Video metadata unavailable.");
   const c=document.createElement("canvas"),scale=Math.min(1,512/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*scale);c.height=Math.round(v.videoHeight*scale);const ctx=c.getContext("2d",{willReadFrequently:true}),count=Math.min(8,Math.max(2,Math.ceil(v.duration/2))),frames=[];let previous=null,totalMotion=0;
   for(let i=0;i<count;i++){
-   const t=v.duration*i/(count-1);v.currentTime=t;await new Promise((ok,no)=>{const timer=setTimeout(()=>no(new Error("Video frame decode timed out.")),8000);v.onseeked=()=>{clearTimeout(timer);ok();};});
+   const t=v.duration*i/(count-1);
+   if(t>0.01){await new Promise((ok,no)=>{const timer=setTimeout(()=>no(new Error("Video frame decode timed out.")),8000);v.onseeked=()=>{clearTimeout(timer);ok();};v.currentTime=t;});}
+   else await new Promise(ok=>requestAnimationFrame(()=>ok()));
    ctx.drawImage(v,0,0,c.width,c.height);const p=ctx.getImageData(0,0,c.width,c.height),math=analyzePixels(p);let motion=null;
    if(previous){let diff=0,n=0,step=Math.max(4,Math.floor(p.data.length/5000/4)*4);for(let j=0;j<p.data.length;j+=step){diff+=Math.abs(p.data[j]-previous.data[j])+Math.abs(p.data[j+1]-previous.data[j+1])+Math.abs(p.data[j+2]-previous.data[j+2]);n++;}motion=Math.round(diff/Math.max(1,n*3));totalMotion+=motion;}
    frames.push({time:+t.toFixed(1),brightness:math.averageBrightness,edgeActivity:math.edgeActivity,motionDifference:motion});previous=p;onProgress&&onProgress(i+1,count);
