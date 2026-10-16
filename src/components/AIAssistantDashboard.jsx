@@ -19,6 +19,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
+import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import MultimodalStudio from "@/ai/v2/MultimodalStudio";
