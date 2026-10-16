@@ -1253,7 +1253,7 @@ const BIASHARA_SECTION_KEYS = new Set(
               onClick={() => setSidebarOpen(true)}
               aria-label="Open workspace navigation"
               title="Open workspace navigation"
-              className="fixed left-4 top-4 z-[90] hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-lg backdrop-blur transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-slate-800 lg:inline-flex"
+              className="fixed bottom-6 left-4 z-[90] hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-lg backdrop-blur transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:bg-slate-800 lg:inline-flex"
             >
               <Menu size={19} />
             </button>
