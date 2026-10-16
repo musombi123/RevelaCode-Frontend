@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { PhoneOff, Sparkles, Volume2 } from "lucide-react";
 import VoiceOrbFree from "@/ai/v2-free/VoiceOrbFree";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
-import { composeLivingResponse } from "@/ai/v2-free/livingBrain";
+import { composeLivingResponse, getLocalBrainMemory } from "@/ai/v2-free/livingBrain";
 
 /**
  * Device voice chat. Speech recognition and speech synthesis are browser
  * capabilities; availability and offline behaviour vary by device/browser.
  * No audio is uploaded and no paid/model API is called by this component.
  */
-export default function RevelaAIVoiceChat({ sessionId, hub = "auto", onVoiceResult, onClose }) {
+export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope = "guest", onVoiceResult, onClose }) {
   const [reply, setReply] = useState("");
   const [activeHub, setActiveHub] = useState(hub || "auto");
   const [speaking, setSpeaking] = useState(false);
@@ -27,11 +27,11 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", onVoiceResu
     };
   }, []);
 
-  const handleTranscript = (heard) => {
+  const handleTranscript = async (heard) => {
     const question = String(heard || "").trim();
     if (!question) return;
 
-    const result = composeLivingResponse(question, activeHub);
+    const memory = await getLocalBrainMemory(memoryScope);\n    const result = composeLivingResponse(question, activeHub, "", memory);
     const response = result.reply;
     setReply(response);
 
