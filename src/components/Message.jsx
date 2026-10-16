@@ -67,6 +67,68 @@ const EMOTION_STYLES = {
 
 const ERROR_STYLE = "bg-red-950/30 border-red-500/30 text-white";
 
+/* Copy-ready cards for clearly structured assistant deliverables. */
+function detectSpecialOutput(text) {
+  const value = String(text || "").trim();
+  if (!value) return null;
+
+  if (/^\s*```/m.test(value) || /\n```/.test(value)) {
+    const match = value.match(/^\s*```\s*([\w+#.-]*)/);
+    const language = match?.[1]?.toLowerCase();
+    const label = language
+      ? ({ js: "Code", jsx: "Code", ts: "Code", tsx: "Code", py: "Code", python: "Code", html: "Code", css: "Code", json: "Code", bash: "Code", sh: "Code", sql: "Code" }[language] || "Code")
+      : "Code";
+    return { label };
+  }
+  if (/^\s*\|.+\|\s*$/m.test(value) || /\n\s*\|?\s*:?-{3,}/.test(value)) {
+    return { label: "Table" };
+  }
+
+  const headings = [
+    [/\b(sermon|homily|preaching outline|sermon outline)\b/i, "Sermon"],
+    [/\b(prayer|closing prayer|opening prayer)\b/i, "Prayer"],
+    [/\b(scripture list|bible verses|key verses|scripture references|bible study)\b/i, "Scripture"],
+    [/\b(business plan|business strategy|marketing plan|market strategy)\b/i, "Business Plan"],
+    [/\b(prophecy explanation|prophetic meaning|prophecy analysis)\b/i, "Prophecy"],
+    [/\b(step-by-step plan|implementation plan|project plan|action plan)\b/i, "Plan"],
+  ];
+  for (const [pattern, label] of headings) {
+    if (pattern.test(value)) return { label };
+  }
+
+  const lines = value.split("\n").filter((line) => line.trim());
+  const listLines = lines.filter((line) => /^\s*(?:[-*•]|\d+[.)])\s+/.test(line));
+  if (listLines.length >= 3 && listLines.length / Math.max(lines.length, 1) >= 0.45) {
+    return { label: "List" };
+  }
+  return null;
+}
+
+async function copyTextToClipboard(value) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Use the compatibility path below.
+  }
+  try {
+    const area = document.createElement("textarea");
+    area.value = value;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const copied = document.execCommand("copy");
+    area.remove();
+    return copied;
+  } catch {
+    return false;
+  }
+}
+
 /* =========================================================
    ANSWER REVEAL
    -------------------------------------------------------
@@ -422,20 +484,35 @@ function Message({ message, onEdit, onReveal }) {
     ? ERROR_STYLE
     : EMOTION_STYLES[emotion] || EMOTION_STYLES.neutral;
 
-  const widthClass = editing
-    ? "w-full max-w-[95%] sm:max-w-[80%]"
-    : isUser
-    ? "max-w-[85%] sm:max-w-[75%]"
-    : "max-w-[95%] sm:max-w-[90%]";
+  const widthClass = isUser
+    ? (editing ? "w-full max-w-[95%] sm:max-w-[80%]" : "max-w-[85%] sm:max-w-[75%]")
+    : "w-full max-w-full";
+
+  const specialOutput = !isUser && !isError && !isThinking
+    ? detectSpecialOutput(fullText)
+    : null;
+
+  const handleSpecialCopy = useCallback(async () => {
+    const success = await copyTextToClipboard(fullText);
+    if (!success) return;
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }, [fullText]);
 
   return (
     <div
-      className={`flex w-full animate-fade-in ${
-        isUser ? "justify-end pb-7 pt-3" : "justify-start pt-3"
+      className={`flex w-full min-w-0 animate-fade-in ${
+        isUser ? "justify-end pb-7 pt-3" : "justify-start px-3 pt-3 sm:px-4"
       }`}
     >
       <div
-        className={`group relative min-w-0 rounded-2xl border px-4 py-3 text-sm leading-relaxed transition-all duration-300 ${widthClass} ${bubbleStyle}`}
+        className={`group relative min-w-0 transition-all duration-300 ${widthClass} ${
+          isUser
+            ? `rounded-2xl border px-4 py-3 text-sm leading-relaxed ${bubbleStyle}`
+            : isError
+              ? "rounded-xl border px-3 py-3 " + ERROR_STYLE
+              : "border-0 bg-transparent px-0 py-2 text-base leading-[1.7] text-gray-200 shadow-none"
+        }`}
       >
         {/* ---------------- THINKING (fallback) ---------------- */}
         {isThinking && <ThinkingStages />}
@@ -492,8 +569,28 @@ function Message({ message, onEdit, onReveal }) {
 
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isError && (
-          <div className="break-words">
-            {visible && <MarkdownBody text={visible} />}
+          <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
+            {visible && specialOutput && !revealing ? (
+              <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
+                <header className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-700 bg-slate-800/90 px-3 py-2 sm:px-4">
+                  <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-slate-300">{specialOutput.label}</span>
+                  <button
+                    type="button"
+                    onClick={handleSpecialCopy}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                    aria-label={copied ? "Copied special output" : `Copy ${specialOutput.label}`}
+                  >
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </header>
+                <div className="w-full min-w-0 overflow-x-auto px-3 py-4 text-sm leading-relaxed text-slate-100 sm:px-4">
+                  <MarkdownBody text={visible} />
+                </div>
+              </section>
+            ) : visible ? (
+              <MarkdownBody text={visible} />
+            ) : null}
 
             {revealing && (
               <button
