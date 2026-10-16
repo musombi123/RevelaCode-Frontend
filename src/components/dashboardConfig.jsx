@@ -38,6 +38,7 @@ import {
 import {
   useNotifications,
 } from "./hooks/useNotifications.jsx";
+import usePreferences from "./hooks/usePreferences.jsx";
 
 /* ======================================================
    HARDENED SAFE LAZY LOADING
@@ -1086,6 +1087,8 @@ function HomeDashboard({
   onOpenAI,
   user,
 }) {
+  const { language, t } = usePreferences();
+
   const {
     getWalletLedger,
     getBiasharaDashboard,
@@ -1600,25 +1603,25 @@ function HomeDashboard({
         <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.72fr)] lg:items-center">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" /> RevelaCode ecosystem</div>
-            <h1 className="mt-4 text-2xl font-black tracking-[-0.04em] text-slate-950 dark:text-white sm:text-3xl lg:text-4xl">Welcome back, <span className="text-blue-700 dark:text-blue-300">{displayName}</span></h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base sm:leading-7">One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.</p>
+            <h1 className="mt-4 text-2xl font-black tracking-[-0.04em] text-slate-950 dark:text-white sm:text-3xl lg:text-4xl">{t("Welcome back,")} <span className="text-blue-700 dark:text-blue-300">{displayName}</span></h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base sm:leading-7">{t("One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.")}</p>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Layers size={14} /> Five connected hubs</span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Sparkles size={14} /> Intelligence built in</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Layers size={14} /> {t("Five connected hubs")}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Sparkles size={14} /> {t("Intelligence built in")}</span>
             </div>
           </div>
           <button type="button" onClick={() => onOpenAI?.()} className="group relative w-full overflow-hidden rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-4 text-left text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-slate-800 dark:via-blue-950 dark:to-indigo-950 dark:shadow-black/20 dark:focus-visible:ring-offset-slate-900 sm:p-5" aria-label="Open RevelaAI assistant">
             <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl transition group-hover:bg-white/15" />
             <div className="relative flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/15 shadow-inner backdrop-blur"><Sparkles size={22} /></div><span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> AI assistant</span></div>
-            <h2 className="relative mt-4 text-lg font-extrabold tracking-tight sm:text-xl">Think with RevelaAI</h2>
-            <p className="relative mt-1.5 max-w-sm text-sm leading-5 text-blue-50/90 dark:text-slate-200">Get help across your connected RevelaCode workspaces.</p>
-            <div className="relative mt-4 flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-sm font-bold backdrop-blur-sm">Start a conversation <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></div>
+            <h2 className="relative mt-4 text-lg font-extrabold tracking-tight sm:text-xl">{t("Think with RevelaAI")}</h2>
+            <p className="relative mt-1.5 max-w-sm text-sm leading-5 text-blue-50/90 dark:text-slate-200">{language === "sw" ? "Pata msaada katika vituo vyako vya RevelaCode." : language === "fr" ? "Obtenez de l’aide dans vos espaces RevelaCode connectés." : "Get help across your connected RevelaCode workspaces."}</p>
+            <div className="relative mt-4 flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-sm font-bold backdrop-blur-sm">{t("Start a conversation")} <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></div>
           </button>
         </div>
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{hasHubHistory ? "Your quick access" : "Quick access"}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are."}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">Personalized</span></div>
+        <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{language === "sw" ? (hasHubHistory ? "Vituo unavyotumia zaidi huwekwa mbele kiotomatiki." : t("Your hubs are ready when you are.")) : language === "fr" ? (hasHubHistory ? "Vos espaces les plus utilisés passent automatiquement en premier." : t("Your hubs are ready when you are.")) : (hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are.")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
           {frequentHubs.map((hub, index) => {
             const Icon = hub.icon;
@@ -1626,8 +1629,8 @@ function HomeDashboard({
             return (
               <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group min-w-0 rounded-2xl border " + hub.borderTone + " " + hub.surface + " p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:p-4"} aria-label={"Open " + hub.title}>
                 <div className="flex items-start justify-between gap-1"><span className={"flex h-9 w-9 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}><Icon size={19} strokeWidth={2} /></span>{uses > 0 && index === 0 ? <span className="rounded-full bg-white/80 px-1.5 py-1 text-[9px] font-extrabold text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">TOP</span> : null}</div>
-                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{hub.shortTitle}</span>
-                <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + " visits" : "Open workspace"}</span>
+                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
+                <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + (language === "sw" ? " ziara" : language === "fr" ? " visites" : " visits") : t("Open workspace")}</span>
               </button>
             );
           })}
@@ -1662,7 +1665,7 @@ function HomeDashboard({
               dark:text-white
             "
           >
-            Your Hubs
+            {t("Your Hubs")}
           </h2>
 
           <p
@@ -1673,8 +1676,7 @@ function HomeDashboard({
               dark:text-gray-400
             "
           >
-            Access the platforms that
-            power your world.
+            {t("Access the platforms that power your world.")}
           </p>
         </div>
 
@@ -1686,7 +1688,7 @@ function HomeDashboard({
             return (
               <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group relative flex min-h-[132px] items-center gap-4 overflow-hidden rounded-2xl border " + hub.borderTone + " bg-white p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-900 dark:hover:border-slate-700 dark:focus-visible:ring-offset-slate-950 sm:p-5"} aria-label={"Open " + hub.title}>
                 <span className={"flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl " + hub.iconBg + " " + hub.iconTone + " transition-transform group-hover:scale-105"}><Icon size={24} strokeWidth={1.9} /></span>
-                <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{hub.title}</span>{isMostUsed ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">Most used</span> : null}</span><span className="mt-1.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">{hub.description}</span><span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300">Open workspace <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" /></span></span>
+                <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{t(hub.title)}</span>{isMostUsed ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">{t("Most used")}</span> : null}</span><span className="mt-1.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">{t(hub.description)}</span><span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300">{t("Open workspace")} <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" /></span></span>
                 {uses > 0 ? <span className="hidden shrink-0 text-[10px] font-semibold text-slate-400 sm:block">{formatNumber(uses)} visits</span> : null}
               </button>
             );
@@ -1730,7 +1732,7 @@ function HomeDashboard({
                 dark:text-white
               "
             >
-              Ecosystem Overview
+              {t("Ecosystem Overview")}
             </h2>
 
             <p
@@ -1741,9 +1743,7 @@ function HomeDashboard({
                 dark:text-gray-400
               "
             >
-              Live information returned by
-              your connected RevelaCode
-              services.
+              {t("Live information returned by your connected RevelaCode services.")}
             </p>
           </div>
 
