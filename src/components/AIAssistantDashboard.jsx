@@ -24,7 +24,7 @@ import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
-import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
+import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 /* =========================================================
    CONSTANTS
@@ -882,7 +882,8 @@ export default function AIAssistantDashboard({
           let localType = "text";
           let brainMetadata = {};
           const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
-          const routed = composeLivingResponse(fallbackPrompt, activeBrainHub, activeHub);
+          const localMemory = await getLocalBrainMemory(userScope);
+          const routed = composeLivingResponse(fallbackPrompt, activeBrainHub, activeHub, localMemory);
           brainMetadata = {
             hub: routed.hub,
             hubLabel: routed.hubLabel,
@@ -1688,6 +1689,7 @@ export default function AIAssistantDashboard({
             activeChatId
           }
           hub={activeBrainHub}
+          memoryScope={userScope}
           onVoiceResult={
             handleVoiceResult
           }
