@@ -750,7 +750,8 @@ export default function AIAssistantDashboard({
     useCallback(
       async (
         text,
-        attachedFile = null
+        attachedFile = null,
+        sendOptions = {}
       ) => {
         const cleaned =
           String(text || "")
@@ -869,37 +870,52 @@ export default function AIAssistantDashboard({
               );
 
         try {
-          /*
-           * FREE EDITION: keep the main RevelaAI conversation local-only.
-           * No fetch, backend request, API key, or remote model is used here.
-           * Existing BibleDashboard and Biashara code paths are untouched.
-           */
+          let visionData = sendOptions?.vision || null;
+          let visionDescription = String(sendOptions?.visionDescription || "");
           let localText = "";
           let localType = "text";
+
           if (attachedFile) {
             if (attachedFile.type.startsWith("image/")) {
-              const result = await analyzeImageFile(attachedFile);
-              localText = result.summary;
+              if (!visionData) {
+                const result = await analyzeImageFileEnhanced(attachedFile);
+                visionData = result;
+                visionDescription = result.visionDescription || result.summary || "";
+              }
+              localText = answerLocally(requestMessage || "What do you see?", context + "\n\nLOCAL CAMERA MEASUREMENTS: " + visionDescription);
               localType = "local-vision";
             } else if (attachedFile.type.startsWith("video/")) {
               const result = await analyzeVideoFile(attachedFile);
-              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map(frame => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
+              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map((frame) => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
               localType = "local-video";
             } else {
               const result = await readLocalDocument(attachedFile);
-              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map(item => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
+              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map((item) => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
               localType = "local-document";
             }
           } else {
             localText = answerLocally(requestMessage, context);
           }
-          const normalized = {
-            text: localText,
-            imageUrls: [],
-            sources: [],
-            metadata: { engine: "local-free-rules", network: false },
-            type: localType,
-          };
+
+          // This configured backend endpoint uses regex personas and local JSON memory only.
+          // If it is not configured or unreachable, the browser rule engine remains available.
+          let apiResult = null;
+          if (!attachedFile || attachedFile.type.startsWith("image/") || visionData) {
+            try {
+              apiResult = await requestHubReply({
+                message: requestMessage || userDisplayText || "What do you see?",
+                hub: selectedAssistantHub, userId: userScope, sessionId: chatId,
+                vision: visionData, visionDescription, signal: controller.signal,
+              });
+            } catch (apiError) {
+              if (apiError?.name === "AbortError") throw apiError;
+              console.warn("RevelaAI local hub endpoint unavailable; using browser rules.", apiError);
+            }
+          }
+
+          const normalized = apiResult
+            ? { text: apiResult.text, imageUrls: [], sources: [], metadata: apiResult.metadata, type: localType }
+            : { text: localText, imageUrls: [], sources: [], metadata: { engine: "local-free-rules", network: false, hub: selectedAssistantHub, visionUsed: Boolean(visionData) }, type: localType };
 
           // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
           const streamText = normalized.text || "RevelaAI returned an empty response.";
@@ -918,57 +934,18 @@ export default function AIAssistantDashboard({
             tick();
           });
 
-          const assistantMessage =
-            {
-              id: loadingId,
+          const assistantMessage = {
+            id: loadingId, role: "assistant",
+            text: normalized.text || "RevelaAI returned an empty response.",
+            status: "done", imageUrls: normalized.imageUrls, sources: normalized.sources,
+            metadata: normalized.metadata, contentType: normalized.type, createdAt: Date.now(),
+          };
 
-              role: "assistant",
-
-              text:
-                normalized.text ||
-                "RevelaAI returned an empty response.",
-
-              status:
-                "done",
-
-              imageUrls:
-                normalized.imageUrls,
-
-              sources:
-                normalized.sources,
-
-              metadata:
-                normalized.metadata,
-
-              contentType:
-                normalized.type,
-
-              createdAt:
-                Date.now(),
-            };
-
-          setMessages(
-            (previous) => {
-              const updated =
-                previous.map(
-                  (
-                    message
-                  ) =>
-                    message.id ===
-                    loadingId
-                      ? assistantMessage
-                      : message
-                );
-
-              updateChat(
-                chatId,
-                updated
-              );
-
-              return updated;
-            }
-          );
-        } catch (error) {
+          setMessages((previous) => {
+            const updated = previous.map((message) => message.id === loadingId ? assistantMessage : message);
+            updateChat(chatId, updated);
+            return updated;
+          });        } catch (error) {
           if (
             error?.name ===
             "AbortError"
@@ -1022,11 +999,8 @@ export default function AIAssistantDashboard({
         }
       },
       [
-        messages,
-        activeChatId,
-        ensureActiveChat,
-        updateChat,
-        hubContext,
+        messages, activeChatId, ensureActiveChat, updateChat, hubContext,
+        selectedAssistantHub, userScope,
       ]
     );
 
