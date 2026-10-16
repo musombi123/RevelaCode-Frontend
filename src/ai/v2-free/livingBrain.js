@@ -11,7 +11,7 @@ export const LIVING_BRAIN_LOG = "RevelaAI v2.0 - Living AGI - 5 Hubs - Self-Heal
 
 export const LIVING_HUBS = [
   { id: "mkulima", label: "Mkulima", subtitle: "Agriculture", icon: "Sprout", terms: /\b(farm|farmer|farming|crop|maize|corn|beans|soil|irrigat|harvest|livestock|poultry|dairy|pest|fertili[sz]er|shamba|mkulima|rainfall|seedlings?)\b/i },
-  { id: "biashara", label: "Biashara", subtitle: "Business", icon: "BriefcaseBusiness", terms: /\b(business|biashara|sales|revenue|profit|margin|customer|marketing|price|pricing|negotia|contract|cash flow|inventory|startup|tender|invoice|costs?)\b/i },
+  { id: "biashara", label: "Biashara", subtitle: "Business", icon: "Briefcase", terms: /\b(business|biashara|sales|revenue|profit|margin|customer|marketing|price|pricing|negotia|contract|cash flow|inventory|startup|tender|invoice|costs?)\b/i },
   { id: "elimu", label: "Elimu", subtitle: "Education", icon: "GraduationCap", terms: /\b(teach|teacher|student|school|classroom|learn|lesson|exam|curriculum|cbc|elimu|timetable|assessment|homework|education|study plan)\b/i },
   { id: "mahubiri", label: "Mahubiri", subtitle: "Scripture", icon: "BookOpen", terms: /\b(bible|biblical|scripture|verse|jesus|christ|god|sermon|preach|theolog|mahubiri|prayer|sabbath|prophecy|kjv|niv|psalm|gospel|church|faith)\b/i },
   { id: "general", label: "General", subtitle: "Everyday + technical", icon: "Sparkles", terms: /$^/ },
@@ -78,7 +78,7 @@ function answerForHub(text, hub) {
   return "I can help organize evidence, test assumptions, compare alternatives and plan a practical next step. This is a transparent on-device rule engine rather than a generative language model, so I won't invent detailed facts. Share source text, data, options or a narrower question and I can work with that.\n\n" + HUB_METHODS.general;
 }
 
-export function composeLivingResponse(message, preferredHub = "auto", workspace = "") {
+export function composeLivingResponse(message, preferredHub = "auto", workspace = "", memory = null) {
   const text = String(message || "").trim();
   const emotion = assessEmotion(text);
   const route = routeLivingHub(text, preferredHub, workspace);
@@ -93,8 +93,25 @@ export function composeLivingResponse(message, preferredHub = "auto", workspace 
   } else {
     reply = answerForHub(text, route.hub);
   }
+  const profile = memory?.profile && typeof memory.profile === "object" ? memory.profile : {};
+  const memoryQuestion = /\b(what do you remember|what do you know about me|what is my name|do you remember me)\b/i.test(text);
+  if (memoryQuestion) {
+    const saved = [];
+    if (profile.name) saved.push("name: " + profile.name);
+    if (profile.project) saved.push("project: " + profile.project);
+    if (profile.preference) saved.push("preference: " + profile.preference);
+    reply = saved.length
+      ? "Here is what your browser has saved locally: " + saved.join("; ") + ". These details stay in this browser profile."
+      : "I don't have any explicit profile notes saved for this browser profile yet. I do keep a limited local conversation journal when browser storage is available.";
+  } else if (/\b(my project|the project i mentioned|my current project)\b/i.test(text) && profile.project) {
+    reply += "\n\nLocal memory: you previously told me your project is " + profile.project + ".";
+  } else if (/\b(explain|teach|answer|help me understand)\b/i.test(text) && profile.preference) {
+    reply += "\n\nPersonalization applied from your local memory: " + profile.preference + ".";
+  }
   const opening = emotion?.opening || "Let's work through this clearly and practically.";
-  if (!greeting(text) && text) reply = opening + "\n\n" + reply;
+  if (!greeting(text) && text && !memoryQuestion) {
+    reply = opening + "\n\n" + reply;
+  }
   return {
     reply,
     hub: route.hub,
@@ -182,14 +199,22 @@ export async function recordConversationTurn({ scope, userText, assistantText, h
     const all = await getAllFromStore(STORE_TURNS);
     const owned = all.filter((item) => item.scope === normalizedScope).sort((a, b) => a.createdAt - b.createdAt);
     // Keep memory bounded on lower-end Android devices.
-    for (const stale of owned.slice(0, Math.max(0, owned.length - 500))) {
+    const staleIds = owned.slice(0, Math.max(0, owned.length - 500)).map((item) => item.id);
+    if (staleIds.length) {
       const db = await openMemoryDatabase();
       await new Promise((resolve) => {
-        const tx = db.transaction(STORE_TURNS, "readwrite");
-        tx.objectStore(STORE_TURNS).delete(stale.id);
-        tx.oncomplete = resolve; tx.onerror = resolve; tx.onabort = resolve;
+        try {
+          const tx = db.transaction(STORE_TURNS, "readwrite");
+          const store = tx.objectStore(STORE_TURNS);
+          staleIds.forEach((id) => store.delete(id));
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); resolve(); };
+          tx.onabort = () => { db.close(); resolve(); };
+        } catch {
+          db.close();
+          resolve();
+        }
       });
-      db.close();
     }
     try {
       const summaryKey = "revelaai.living.memory.v2:" + encodeURIComponent(normalizedScope);
