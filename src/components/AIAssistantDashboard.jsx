@@ -1213,6 +1213,24 @@ export default function AIAssistantDashboard({
     [activeChatId, regenerableId, messages, updateChat, hubContext]
   );
 
+  const speakReply = useCallback((text) => {
+    if (typeof window === "undefined" || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    const content = String(text || "").trim();
+    if (!content) return;
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(content);
+    const swahili = /\b(habari|asante|tafadhali|tufanye|shamba|mazao|udongo|karibu|kwa kiswahili|nimeangalia)\b/i.test(content);
+    const low = content.toLowerCase();
+    utterance.lang = swahili ? "sw-KE" : "en-KE";
+    utterance.pitch = /\b(amazing|great news|well done|congratulations|furaha)\b/i.test(low) ? 1.12 : /\b(sorry|difficult|pain|pole|grief)\b/i.test(low) ? 0.92 : 1;
+    utterance.rate = /\b(step by step|carefully|prayer|pray|pole)\b/i.test(low) ? 0.92 : 1;
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  useEffect(() => () => {
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel?.();
+  }, []);
+
   /* =======================================================
      CONVERSATION STATE
   ======================================================= */
@@ -1267,6 +1285,8 @@ export default function AIAssistantDashboard({
         onSelectChat={
           selectChat
         }
+        selectedHub={selectedAssistantHub}
+        onSelectHub={(hub) => setSelectedAssistantHub(hub)}
       />
 
       {/* ===================================================
@@ -1433,60 +1453,22 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         {!hasConversation ? (
-          <section
-            className="
-              relative
-              min-h-0
-              flex-1
-              overflow-y-auto
-              overscroll-contain
-            "
-          >
-            <div
-              className="
-                flex
-                min-h-full
-                w-full
-                items-center
-                justify-center
-                px-4
-                py-8
-                sm:px-6
-                sm:py-10
-              "
-            >
-              <div
-                className="
-                  flex
-                  w-full
-                  max-w-3xl
-                  flex-col
-                  items-center
-                  justify-center
-                "
-              >
-                <WelcomeScreen
-                  onSuggestion={
-                    sendTextMessage
-                  }
-                />
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <HubRevenueOffers hub="smart_ai" compact />
-                </div>
-
-                <div className="mt-6 w-full max-w-3xl">
-<div className="mt-3">
-                <InputBar
-                  onSend={
-                    sendMessage
-                  }
-                  onMic={
-                    openVoice
-                  }
-                />
-                </div>
+          <section className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="flex min-h-full w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+              <div className="flex w-full max-w-3xl flex-col items-center justify-center">
+                <WelcomeScreen onSuggestion={sendTextMessage} />
+                <div className="mt-6 w-full max-w-3xl"><HubRevenueOffers hub="smart_ai" compact /></div>
+                <div className="mt-6 w-full max-w-3xl"><InputBar onSend={sendMessage} /></div>
               </div>
+            </div>
+          </section>
+        ) : (
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <ChatWindow messages={messages} regenerableId={regenerableId} onRegenerate={regenerateResponse} onFeedback={handleFeedback} onSpeak={speakReply} />
+            </div>
+            <div className="shrink-0 border-t border-gray-200 bg-white/95 px-3 pb-3 pt-3 backdrop-blur-lg dark:border-white/10 dark:bg-revela-dark/95 sm:px-4 sm:pb-4">
+              <div className="mx-auto w-full max-w-4xl"><InputBar onSend={sendMessage} /></div>
             </div>
           </section>
         )}
