@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Eye, Flashlight, ScanEye, ShieldCheck, Square, X, Zap } from "lucide-react";
+import { Camera, Eye, Flashlight, Scan, ShieldCheck, Square, X, Zap } from "lucide-react";
 import { answerWhatDoISee, loadLocalVisionAssets, scanCanvas } from "./freeVisionEngine";
 
 export function useFreeVision() {
