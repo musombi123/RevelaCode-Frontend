@@ -55,11 +55,16 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
     // synthesis remains available even when the provider is offline.
     if (isAuthenticated && !isGuest && typeof authFetch === "function") {
       try {
-        const savedMemory = await loadSmartMemory({
-          authFetch,
-          userId: user?.id || user?.user_id || user?.userId,
-        });
-        const memoryContext = formatSmartMemoryContext(savedMemory);
+        let memoryContext = "";
+        try {
+          const savedMemory = await loadSmartMemory({
+            authFetch,
+            userId: user?.id || user?.user_id || user?.userId,
+          });
+          memoryContext = formatSmartMemoryContext(savedMemory);
+        } catch (memoryError) {
+          console.warn("Smart memory is unavailable; continuing voice chat without saved context:", memoryError);
+        }
         const remote = await sendRevelaAIMessage({
           authFetch,
           message: question,
