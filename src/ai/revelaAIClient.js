@@ -106,7 +106,9 @@ export async function sendRevelaAIMessage({
 
   const response = await authFetch(`${API_BASE}/ai`, {
     method: "POST",
-    headers: file ? {} : { "Content-Type": "application/json" },
+    headers: file
+      ? { "X-Session-ID": String(sessionId || "") }
+      : { "Content-Type": "application/json", "X-Session-ID": String(sessionId || "") },
     body,
     signal,
   });
