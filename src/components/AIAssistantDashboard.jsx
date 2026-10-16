@@ -21,9 +21,9 @@ import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import MultimodalStudio from "@/ai/v2/MultimodalStudio";
-import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
+import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 /* =========================================================
    CONSTANTS
@@ -410,6 +410,9 @@ export default function AIAssistantDashboard({
 
   const [voiceActive, setVoiceActive] =
     useState(false);
+
+  // Auto-routing is the default; users can pin a specialist hub per conversation.
+  const [activeBrainHub, setActiveBrainHub] = useState("auto");
 
   const [
     storageReady,
@@ -871,34 +874,86 @@ export default function AIAssistantDashboard({
 
         try {
           /*
-           * FREE EDITION: keep the main RevelaAI conversation local-only.
-           * No fetch, backend request, API key, or remote model is used here.
-           * Existing BibleDashboard and Biashara code paths are untouched.
+           * Local-first global brain: specialist routing, memory and visual math
+           * stay on-device. Model / asset failures degrade to pixel math or text.
            */
           let localText = "";
           let localType = "text";
+          let brainMetadata = {};
+          const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
+          const localMemory = await getLocalBrainMemory(userScope);
+          const routed = composeLivingResponse(fallbackPrompt, activeBrainHub, activeHub, localMemory);
+          brainMetadata = {
+            hub: routed.hub,
+            hubLabel: routed.hubLabel,
+            routeReason: routed.routeReason,
+            emotionEstimate: routed.emotionEstimate,
+            intent: routed.intent,
+            engine: routed.engine,
+            network: false,
+            networkUsed: false,
+          };
+
           if (attachedFile) {
-            if (attachedFile.type.startsWith("image/")) {
-              const result = await analyzeImageFile(attachedFile);
-              localText = result.summary;
+            if (attachedFile.type?.startsWith("image/")) {
+              const result = await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
+              const objectLine = result.objects?.length
+                ? "Local object labels: " + result.objects.map((item) => item.class + (item.score ? " (" + Math.round(item.score * 100) + "%)" : "")).join(", ")
+                : "";
+              const textLine = result.text ? "Text read on device: " + result.text : "";
+              localText = [
+                cleaned ? "Your question: " + cleaned : "Image analysis (on-device)",
+                result.summary || result.description || "Basic pixel analysis completed.",
+                objectLine,
+                textLine,
+                result.fallback ? "Fallback used: advanced local vision assets were unavailable; basic image math still ran." : "",
+                "Note: brightness and edge measurements alone cannot prove object identity or scene meaning."
+              ].filter(Boolean).join("\n\n");
               localType = "local-vision";
-            } else if (attachedFile.type.startsWith("video/")) {
-              const result = await analyzeVideoFile(attachedFile);
-              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map(frame => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
+              brainMetadata = { ...brainMetadata, engine: result.engine || "pixel-math-fallback", visionFallback: Boolean(result.fallback) };
+            } else if (attachedFile.type?.startsWith("video/")) {
+              const result = await analyzeLocalVideoForChat(attachedFile);
+              localText = [
+                cleaned ? "Your question: " + cleaned : "Video frame analysis (on-device)",
+                result.summary,
+                result.frames?.length ? "Sampled frame timeline:\n" + result.frames.map((frame) =>
+                  frame.time + "s — brightness " + frame.brightness +
+                  ", edge activity " + frame.edgeActivity +
+                  ", pixel change " + (frame.motionDifference ?? "n/a")
+                ).join("\n") : "",
+                "Note: this free fallback measures sampled frame changes; it does not claim semantic scene understanding or speech transcription."
+              ].filter(Boolean).join("\n\n");
               localType = "local-video";
+              brainMetadata = { ...brainMetadata, engine: result.engine || "local-video-frame-math", visionFallback: Boolean(result.fallback) };
             } else {
-              const result = await readLocalDocument(attachedFile);
-              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map(item => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
-              localType = "local-document";
+              try {
+                const result = await readLocalDocument(attachedFile);
+                localText = result.summary + "\n\nFrequent terms: " +
+                  (result.keyTerms || []).map((item) => item[0] + " (" + item[1] + ")").join(", ") +
+                  "\n\nExcerpt:\n" + (result.excerpt || "");
+                localType = "local-document";
+              } catch (fileError) {
+                localText = "I couldn't parse this file format fully offline (" + attachedFile.name + "). Chat is still working. Paste the relevant text or export it as TXT, MD, CSV or JSON for local analysis.\n\nFile detail: " + String(fileError?.message || "Unsupported local parser");
+                localType = "local-document-fallback";
+                await recordLocalDiagnostic("document-analysis", fileError);
+              }
             }
           } else {
-            localText = answerLocally(requestMessage, context);
+            localText = routed.reply;
+            localType = "text";
           }
+
           const normalized = {
-            text: localText,
+            text: localText || "I couldn't complete that local analysis, but the chat is still available. Try again or provide the key details as text.",
             imageUrls: [],
             sources: [],
-            metadata: { engine: "local-free-rules", network: false },
+            metadata: {
+              ...brainMetadata,
+              network: false,
+              networkUsed: false,
+              memory: "local-only",
+              version: "2.0",
+            },
             type: localType,
           };
 
@@ -918,6 +973,14 @@ export default function AIAssistantDashboard({
             };
             tick();
           });
+
+          void recordConversationTurn({
+            scope: userScope,
+            userText: userDisplayText,
+            assistantText: normalized.text,
+            hub: normalized.metadata?.hub || activeBrainHub || "general",
+            emotion: normalized.metadata?.emotionEstimate || "neutral",
+          }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
 
           const assistantMessage =
             {
@@ -1028,6 +1091,9 @@ export default function AIAssistantDashboard({
         ensureActiveChat,
         updateChat,
         hubContext,
+        activeBrainHub,
+        activeHub,
+        userScope,
       ]
     );
 
@@ -1114,9 +1180,16 @@ export default function AIAssistantDashboard({
     setMessages(updated);
 
     updateChat(chatId, updated, (heard || "Voice Conversation").slice(0, 45));
+    void recordConversationTurn({
+      scope: userScope,
+      userText: heard || "Voice message",
+      assistantText: response,
+      hub: result.meta?.hub || activeBrainHub || "general",
+      emotion: result.meta?.emotionEstimate || "neutral",
+    }).catch((memoryError) => recordLocalDiagnostic("voice-memory", memoryError));
     // The voice session stays open for the next turn.
   },
-  [activeChatId, messages, ensureActiveChat, updateChat]
+  [activeChatId, messages, ensureActiveChat, updateChat, userScope, activeBrainHub]
 );
     /* =======================================================
      REGENERABLE ANSWER
@@ -1288,6 +1361,8 @@ export default function AIAssistantDashboard({
         activeChatId={
           activeChatId
         }
+        activeBrainHub={activeBrainHub}
+        onBrainHubChange={setActiveBrainHub}
         onNewChat={
           startNewChat
         }
@@ -1420,7 +1495,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              AI READY
+              LOCAL BRAIN READY
             </div>
 
             <button
@@ -1493,22 +1568,10 @@ export default function AIAssistantDashboard({
                 "
               >
                 <WelcomeScreen
-                  onSuggestion={
-                    sendTextMessage
-                  }
+                  onSuggestion={sendTextMessage}
+                  activeBrainHub={activeBrainHub}
+                  onHubChange={setActiveBrainHub}
                 />
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <HubRevenueOffers hub="smart_ai" compact />
-                </div>
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <MultimodalStudio
-                    onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                    onVoiceTranscript={sendTextMessage}
-                    onOpenFullVoice={openVoice}
-                  />
-                </div>
 
                 <div
                   className="
@@ -1590,11 +1653,7 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
-                <MultimodalStudio
-                  onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                  onVoiceTranscript={sendTextMessage}
-                  onOpenFullVoice={openVoice}
-                />
+                <LivingHubSelector value={activeBrainHub} onChange={setActiveBrainHub} compact />
                 <div className="mt-3">
                 <InputBar
                   onSend={
@@ -1620,6 +1679,8 @@ export default function AIAssistantDashboard({
           sessionId={
             activeChatId
           }
+          hub={activeBrainHub}
+          memoryScope={userScope}
           onVoiceResult={
             handleVoiceResult
           }
