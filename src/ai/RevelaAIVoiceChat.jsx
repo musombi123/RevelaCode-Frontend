@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { sendRevelaAIMessage, saveSmartMemoryTurn, loadSmartMemory, formatSmartMemoryContext } from "@/ai/revelaAIClient";
 import { PhoneOff, Sparkles, Volume2 } from "lucide-react";
 import VoiceOrbFree from "@/ai/v2-free/VoiceOrbFree";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
@@ -10,6 +12,7 @@ import { composeLivingResponse, getLocalBrainMemory } from "@/ai/v2-free/livingB
  * No audio is uploaded and no paid/model API is called by this component.
  */
 export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope = "guest", onVoiceResult, onClose }) {
+  const { user, isGuest, isAuthenticated, authFetch } = useAuth();
   const [reply, setReply] = useState("");
   const [activeHub, setActiveHub] = useState(hub || "auto");
   const [speaking, setSpeaking] = useState(false);
@@ -32,23 +35,67 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
     if (!question) return;
 
     const memory = await getLocalBrainMemory(memoryScope);
-    const result = composeLivingResponse(question, activeHub, "", memory);
-    const response = result.reply;
+    const localResult = composeLivingResponse(question, activeHub, "", memory);
+    let response = localResult.reply;
+    let metadata = {
+      engine: localResult.engine,
+      network: false,
+      networkUsed: false,
+      hub: localResult.hub,
+      hubLabel: localResult.hubLabel,
+      routeReason: localResult.routeReason,
+      emotionEstimate: localResult.emotionEstimate,
+      intent: localResult.intent,
+      sessionId: String(sessionId || ""),
+      fallback: true,
+    };
+
+    // Browser speech recognition stays on-device. The transcript uses the
+    // same authenticated backend provider team as typed chat; local speech
+    // synthesis remains available even when the provider is offline.
+    if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+      try {
+        const savedMemory = await loadSmartMemory({
+          authFetch,
+          userId: user?.id || user?.user_id || user?.userId,
+        });
+        const memoryContext = formatSmartMemoryContext(savedMemory);
+        const remote = await sendRevelaAIMessage({
+          authFetch,
+          message: question,
+          context: memoryContext,
+          sessionId: String(sessionId || "voice"),
+          hub: activeHub,
+        });
+        response = remote.text || response;
+        metadata = {
+          ...(remote.metadata || {}),
+          engine: remote.metadata?.engine || "revelaai-coordinated-ai",
+          network: true,
+          networkUsed: true,
+          hub: activeHub || remote.metadata?.hub || "general",
+          sessionId: String(sessionId || ""),
+          fallback: false,
+        };
+        void saveSmartMemoryTurn({
+          authFetch,
+          userId: user?.id || user?.user_id || user?.userId,
+          userMessage: question,
+          aiResponse: response,
+          hub: metadata.hub,
+          sessionId: String(sessionId || "voice"),
+        }).catch((error) => console.warn("Voice smart memory unavailable:", error));
+      } catch (error) {
+        console.warn("RevelaAI voice provider unavailable; using device fallback:", error);
+      }
+    }
+
     setReply(response);
 
     onVoiceResult?.({
       heard: question,
       response,
-      meta: {
-        engine: result.engine,
-        network: false,
-        hub: result.hub,
-        hubLabel: result.hubLabel,
-        routeReason: result.routeReason,
-        emotionEstimate: result.emotionEstimate,
-        intent: result.intent,
-        sessionId: String(sessionId || ""),
-      },
+      meta: metadata,
       streamed: false,
     });
 
