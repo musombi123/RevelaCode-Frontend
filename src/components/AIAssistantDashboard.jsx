@@ -22,6 +22,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { useAuth } from "@/context/AuthContext";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import MultimodalStudio from "@/ai/v2/MultimodalStudio";
 
 /* =========================================================
    CONSTANTS
@@ -1570,6 +1571,14 @@ export default function AIAssistantDashboard({
                   <HubRevenueOffers hub="smart_ai" compact />
                 </div>
 
+                <div className="mt-6 w-full max-w-3xl">
+                  <MultimodalStudio
+                    onAnalyze={(file, prompt) => sendMessage(prompt, file)}
+                    onVoiceTranscript={sendTextMessage}
+                    onOpenFullVoice={openVoice}
+                  />
+                </div>
+
                 <div
                   className="
                     mt-8
@@ -1650,6 +1659,12 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
+                <MultimodalStudio
+                  onAnalyze={(file, prompt) => sendMessage(prompt, file)}
+                  onVoiceTranscript={sendTextMessage}
+                  onOpenFullVoice={openVoice}
+                />
+                <div className="mt-3">
                 <InputBar
                   onSend={
                     sendMessage
@@ -1658,6 +1673,7 @@ export default function AIAssistantDashboard({
                     openVoice
                   }
                 />
+                </div>
               </div>
             </div>
           </section>
