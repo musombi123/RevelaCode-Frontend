@@ -872,6 +872,10 @@ export default function CommunityDashboard({
         [
           "discussion",
           "question",
+          "knowledge",
+          "help",
+          "request",
+          "service_needed",
           "help_request",
           "insight",
           "project",
@@ -1036,7 +1040,7 @@ export default function CommunityDashboard({
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
-                Six ways to turn connection into value.
+                Seven ways to turn connection into value.
               </p>
             </div>
           </div>
@@ -1258,7 +1262,7 @@ export default function CommunityDashboard({
             onAction={openComposer}
             actionLabel="Start a Community conversation"
           />
-        ) : loading || (activeSurface === "pulse" && marketplaceLoading) ? (
+        ) : loading || (activeSurface === "pulse" && marketplaceLoading && posts.length === 0) ? (
           <LoadingState />
         ) : activeSurface === "threads" && threadPosts.length === 0 ? (
           <EmptyState
