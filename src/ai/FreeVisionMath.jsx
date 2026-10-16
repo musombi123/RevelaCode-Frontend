@@ -75,16 +75,21 @@ export function useFreeVision() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
       }
-      assetsRef.current = await assetsPromise;
-      setAssetsReady({
-        detector: Boolean(assetsRef.current.detector),
-        cv: Boolean(assetsRef.current.cv),
-        ocr: Boolean(assetsRef.current.ocrAvailable),
-      });
+      // Start cheap pixel math immediately; never block the camera preview on model downloads/initialization.
       setStatus("scanning");
       await new Promise((resolve) => requestAnimationFrame(resolve));
       await scan();
       timerRef.current = window.setInterval(() => { void scan(); }, 1500);
+      assetsPromise.then((assets) => {
+        if (streamRef.current !== stream) return;
+        assetsRef.current = assets;
+        setAssetsReady({
+          detector: Boolean(assets.detector),
+          cv: Boolean(assets.cv),
+          ocr: Boolean(assets.ocrAvailable),
+        });
+        void scan();
+      });
     } catch (e) {
       setStatus("idle");
       setError(e?.name === "NotAllowedError" ? "Camera permission was denied. Allow camera access in browser settings." : e?.message || "Could not start the camera.");
