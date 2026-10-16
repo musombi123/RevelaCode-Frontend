@@ -15,7 +15,7 @@ import {
   Moon,
   Sun,
   Type,
-  {t("Language")}s,
+  Languages,
   ExternalLink,
   ChevronRight,
   Settings2,
@@ -28,7 +28,7 @@ import {
 import { toast } from "react-hot-toast";
 
 import usePreferences from "./hooks/usePreferences.jsx";
-import { use{t("Theme")} } from "./hooks/useTheme.jsx";
+import { useTheme } from "./hooks/useTheme.jsx";
 
 /* =========================================================
    Constants
@@ -218,7 +218,7 @@ export default function PreferencesDashboard({
   }, [fontSize]);
 
   /* =======================================================
-     {t("Reading size")} handlers
+     Reading size handlers
   ======================================================= */
 
   const changeReadingSize =
@@ -657,7 +657,7 @@ export default function PreferencesDashboard({
 
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Language
+                  {t("Language")}
                 </h3>
 
                 <p className="mt-0.5 text-xs text-slate-400">
@@ -714,8 +714,7 @@ export default function PreferencesDashboard({
             </div>
 
             <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2.5 text-[11px] leading-5 text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-300">
-              Language preference is saved locally and
-              exposed to RevelaCode components through the
+              {language === "sw" ? "Chaguo la lugha limehifadhiwa kwenye kifaa na hutumwa kwa sehemu za RevelaCode zinazotumia tafsiri." : language === "fr" ? "La langue choisie est enregistrée localement et transmise aux composants RevelaCode compatibles." : "Language preference is saved locally and exposed to RevelaCode components through the"}
               <code className="mx-1 rounded bg-blue-100 px-1 py-0.5 dark:bg-blue-900/50">
                 revelacode:languagechange
               </code>
