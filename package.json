@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vision:assets": "node scripts/fetch-free-vision-assets.mjs"
   },
   "engines": {
     "node": "20.x"
