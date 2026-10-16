@@ -16,7 +16,7 @@ import {
   Flashlight,
   Loader2,
 } from "lucide-react";
-import { analyzeCanvas } from "@/ai/freeVisionEngine";
+import { analyzeCanvas, loadLocalVisionAssets } from "@/ai/freeVisionEngine";
 
 /* =========================================================
    INPUT BAR
@@ -75,6 +75,8 @@ export default function InputBar({
 
   const openCamera = async () => {
     setCameraError("");
+    // Warm local model assets while the live preview opens; no model API is called.
+    void loadLocalVisionAssets().catch(() => {});
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError("Camera access is unavailable. Open RevelaCode over HTTPS and allow camera permission.");
       setCameraOpen(true);
