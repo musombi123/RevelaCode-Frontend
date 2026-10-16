@@ -67,6 +67,8 @@ export default function PreferencesDashboard({
   const {
     fontSize,
     setFontSize,
+    language,
+    setLanguage,
   } = usePreferences();
 
   const {
@@ -76,19 +78,6 @@ export default function PreferencesDashboard({
 
   const [copied, setCopied] =
     useState(false);
-
-  const [language, setLanguage] =
-    useState(() => {
-      try {
-        return (
-          localStorage.getItem(
-            LANGUAGE_STORAGE_KEY
-          ) || "en"
-        );
-      } catch {
-        return "en";
-      }
-    });
 
   /*
    * Keep an explicit reading-scale state so the preference
@@ -153,47 +142,6 @@ export default function PreferencesDashboard({
       )}`,
     [username]
   );
-
-  /* =======================================================
-     Language persistence
-  ======================================================= */
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        LANGUAGE_STORAGE_KEY,
-        language
-      );
-
-      /*
-       * Expose the selected language to the rest of the
-       * application through the root HTML element.
-       */
-      document.documentElement.lang =
-        language;
-
-      /*
-       * Dispatch an event so components that implement
-       * translations can react immediately without a full
-       * page reload.
-       */
-      window.dispatchEvent(
-        new CustomEvent(
-          "revelacode:languagechange",
-          {
-            detail: {
-              language,
-            },
-          }
-        )
-      );
-    } catch (error) {
-      console.error(
-        "Failed to save language preference:",
-        error
-      );
-    }
-  }, [language]);
 
   /* =======================================================
      Reading scale persistence
