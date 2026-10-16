@@ -477,7 +477,7 @@ export default function PreferencesDashboard({
             <div className="p-5 sm:p-6">
               <div className="mb-4">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Theme
+                  {t("Theme")}
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-400">
@@ -531,7 +531,7 @@ export default function PreferencesDashboard({
                     <Type className="h-4 w-4 text-slate-400" />
 
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      Reading size
+                      {t("Reading size")}
                     </p>
                   </div>
 
@@ -714,11 +714,7 @@ export default function PreferencesDashboard({
             </div>
 
             <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2.5 text-[11px] leading-5 text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-300">
-              {language === "sw" ? "Chaguo la lugha limehifadhiwa kwenye kifaa na hutumwa kwa sehemu za RevelaCode zinazotumia tafsiri." : language === "fr" ? "La langue choisie est enregistrée localement et transmise aux composants RevelaCode compatibles." : "Language preference is saved locally and exposed to RevelaCode components through the"}
-              <code className="mx-1 rounded bg-blue-100 px-1 py-0.5 dark:bg-blue-900/50">
-                revelacode:languagechange
-              </code>
-              event.
+              {language === "sw" ? "Lugha unayochagua huhifadhiwa na kutumika kwenye sehemu za RevelaCode zinazotafsiriwa." : language === "fr" ? "La langue choisie est enregistrée et appliquée aux sections RevelaCode traduites." : "Your selected language is saved and applied to translated RevelaCode sections."}
             </p>
           </div>
         </section>
