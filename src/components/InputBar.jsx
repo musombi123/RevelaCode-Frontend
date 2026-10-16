@@ -299,7 +299,7 @@ export default function InputBar({
         "
       />
 
-      {cameraOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Camera vision"><section className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950 text-white shadow-2xl"><header className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><h2 className="text-sm font-bold">RevelaAI Camera</h2><p className="mt-1 text-[11px] text-slate-400">Capture a frame to analyze it in this chat</p></div><button type="button" onClick={stopCamera} className="rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Close camera"><X size={18}/></button></header>{cameraStreamRef.current && <video ref={cameraVideoRef} autoPlay muted playsInline className="max-h-[60vh] w-full bg-black object-contain" />}{cameraError && <p role="status" className="px-4 pt-3 text-xs text-amber-300">{cameraError}</p>}<div className="flex gap-2 p-3"><button type="button" onClick={captureFrame} disabled={cameraBusy || !cameraStreamRef.current} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-3 text-sm font-bold text-slate-950 disabled:opacity-40">{cameraBusy ? <Loader2 size={16} className="animate-spin"/> : <Camera size={16}/>} {cameraBusy ? "Analyzing…" : "Capture and send to chat"}</button><button type="button" onClick={toggleTorch} disabled={!cameraStreamRef.current} className="rounded-xl border border-white/15 px-3 text-xs disabled:opacity-40"><Flashlight size={16} className="mx-auto mb-1"/>{torchOn ? "Torch on" : "Torch"}</button><button type="button" onClick={stopCamera} className="rounded-xl border border-white/15 px-3 text-xs">Cancel</button></div><p className="px-4 pb-3 text-[10px] leading-4 text-slate-500">Pixel brightness and image statistics run locally. Object labels require a locally bundled detection model.</p></section></div>}
+      {cameraOpen && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-3" role="dialog" aria-modal="true" aria-label="Camera vision"><section className="w-full max-w-xl overflow-hidden rounded-t-2xl border border-white/15 bg-slate-950 text-white shadow-2xl sm:rounded-2xl"><header className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><h2 className="text-sm font-bold">RevelaAI Camera</h2><p className="mt-1 text-[11px] text-slate-400">Local scan · no paid vision API</p></div><button type="button" onClick={stopCamera} className="rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Close camera"><X size={18}/></button></header>{cameraStreamRef.current && <video ref={cameraVideoRef} autoPlay muted playsInline className="max-h-[60vh] w-full bg-black object-contain" />}{cameraError && <p role="status" className="px-4 pt-3 text-xs text-amber-300">{cameraError}</p>}<div className="flex gap-2 p-3"><button type="button" onClick={captureFrame} disabled={cameraBusy || !cameraStreamRef.current} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-3 text-sm font-bold text-slate-950 disabled:opacity-40">{cameraBusy ? <Loader2 size={16} className="animate-spin"/> : <Camera size={16}/>} {cameraBusy ? "Analyzing…" : "Capture and send to chat"}</button><button type="button" onClick={toggleTorch} disabled={!cameraStreamRef.current} className="rounded-xl border border-white/15 px-3 text-xs disabled:opacity-40"><Flashlight size={16} className="mx-auto mb-1"/>{torchOn ? "Torch on" : "Torch"}</button><button type="button" onClick={stopCamera} className="rounded-xl border border-white/15 px-3 text-xs">Cancel</button></div><p className="px-4 pb-3 text-[10px] leading-4 text-slate-500">Pixel math runs on-device. Object labels and OCR need bundled local assets.</p></section></div>}
 
       {/* Attachment preview */}
 
@@ -434,6 +434,10 @@ export default function InputBar({
             <Upload size={18} />
           </button>
 
+          {/* Live camera capture */}
+
+          <button type="button" onClick={openCamera} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-emerald-300 disabled:opacity-40" aria-label="Open camera" title="Scan with camera"><Camera size={18} /></button>
+
           {/* Textarea */}
 
           <textarea
@@ -481,9 +485,7 @@ export default function InputBar({
 
           <button
             type="button"
-            onClick={
-              onMic
-            }
+            onClick={startSpeechRecognition}
             disabled={disabled}
             className="
               flex
