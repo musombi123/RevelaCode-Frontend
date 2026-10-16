@@ -11,6 +11,11 @@ import {
   Trash2,
   Check,
   X,
+  Leaf,
+  Briefcase,
+  GraduationCap,
+  BookOpen,
+  Compass,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -23,6 +28,8 @@ export default function Sidebar({
   onSelectChat,
   onDeleteChat,
   activeChatId = null,
+  selectedHub = "general",
+  onSelectHub,
 }) {
   /* =========================================================
      DELETE CONFIRMATION
@@ -234,6 +241,29 @@ export default function Sidebar({
             <Plus size={18} />
             New Chat
           </Button>
+        </div>
+
+        {/* ===================================================
+            FIVE HUBS — capabilities live in the sidebar
+        =================================================== */}
+        <div className="shrink-0 px-3 pb-3">
+          <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-500">Choose your hub</p>
+          <div className="space-y-1">
+            {[
+              { id: "mkulima", label: "Mkulima", detail: "Farming · crops · soil", Icon: Leaf },
+              { id: "biashara", label: "Biashara", detail: "Business · sales · strategy", Icon: Briefcase },
+              { id: "elimu", label: "Elimu / Teacher", detail: "Learning · coding · teaching", Icon: GraduationCap },
+              { id: "mahubiri", label: "Mahubiri / Theology", detail: "Bible · sermons · prophecy", Icon: BookOpen },
+              { id: "general", label: "General Mentor", detail: "Life · reasoning · all hubs", Icon: Compass },
+            ].map(({ id, label, detail, Icon }) => (
+              <button key={id} type="button" onClick={() => onSelectHub?.(id)} aria-pressed={selectedHub === id}
+                className={"flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition " + (selectedHub === id ? "border-emerald-400/30 bg-emerald-500/10 text-white" : "border-transparent text-gray-300 hover:border-white/10 hover:bg-white/5")}>
+                <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg " + (selectedHub === id ? "bg-emerald-500/15 text-emerald-300" : "bg-white/5 text-gray-400")}><Icon size={17} /></span>
+                <span className="min-w-0 flex-1"><span className="block text-xs font-bold">{label}</span><span className="mt-0.5 block text-[10px] text-gray-500">{detail}</span></span>
+                {selectedHub === id && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-label="Selected hub" /> }
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ===================================================
