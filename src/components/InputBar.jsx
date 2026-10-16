@@ -62,9 +62,16 @@ export default function InputBar({
   const stopCamera = () => {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
+    if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
     setCameraOpen(false);
     setTorchOn(false);
   };
+
+  useEffect(() => {
+    if (!cameraOpen || !cameraVideoRef.current || !cameraStreamRef.current) return;
+    cameraVideoRef.current.srcObject = cameraStreamRef.current;
+    cameraVideoRef.current.play?.().catch(() => {});
+  }, [cameraOpen]);
 
   const openCamera = async () => {
     setCameraError("");
@@ -546,7 +553,13 @@ export default function InputBar({
           </button>
         </div>
 
-        {listening && <div className="flex items-center gap-1 px-3 pt-2 text-xs text-emerald-300" role="status"><span className="inline-flex h-4 items-center gap-0.5">{[3,6,10,5,8,4,9].map((height, i) => <span key={i} className="w-1 animate-pulse rounded-full bg-emerald-400" style={{ height: `${height}px`, animationDelay: `${i * 70}ms` }} />)}</span> Listening… speak naturally</div>}\n        {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}\n\n        {/* Footer */}
+        <div className="flex items-center justify-between gap-2 px-3 pt-2">
+        {listening ? <span className="flex items-center gap-2 text-xs text-emerald-300" role="status"><span className="inline-flex items-center gap-1">{[3,6,10,5,8,4,9].map((height, i) => <span key={i} className="w-1 animate-pulse rounded-full bg-emerald-400" style={{ height: height + "px", animationDelay: (i * 70) + "ms" }} />)}</span> Listening…</span> : <span className="text-[10px] text-gray-500">Voice language</span>}
+        <select aria-label="Voice recognition language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-[10px] text-gray-300">
+          <option value="en-KE">English</option><option value="sw-KE">Kiswahili</option>
+        </select>
+      </div>
+      {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}\n\n        {/* Footer */}
 
         <div
           className="
