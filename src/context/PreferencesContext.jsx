@@ -19,6 +19,106 @@ const FONT_SCALE = {
   lg: 1.12,
 };
 
+const TRANSLATIONS = {
+  en: {},
+  sw: {
+    "Preferences & Experience": "Mapendeleo na Uzoefu",
+    "Appearance": "Muonekano",
+    "Theme": "Mandhari",
+    "Light": "Mwangaza",
+    "Dark": "Giza",
+    "System": "Mfumo",
+    "Reading size": "Ukubwa wa maandishi",
+    "Decrease reading size": "Punguza maandishi",
+    "Increase reading size": "Ongeza maandishi",
+    "Small": "Ndogo",
+    "Medium": "Wastani",
+    "Large": "Kubwa",
+    "Reading preview": "Mfano wa maandishi",
+    "Language": "Lugha",
+    "Set your preferred display language.": "Chagua lugha unayopendelea kutumia.",
+    "Interface language": "Lugha ya kiolesura",
+    "English interface": "Kiolesura cha Kiingereza",
+    "Kiolesura cha Kiswahili": "Kiolesura cha Kiswahili",
+    "Interface française": "Kiolesura cha Kifaransa",
+    "Your Hubs": "Vituo Vyako",
+    "Access the platforms that power your world.": "Fikia majukwaa yanayokuwezesha.",
+    "Ecosystem Overview": "Muhtasari wa Mfumo",
+    "Live information returned by your connected RevelaCode services.": "Taarifa za moja kwa moja kutoka huduma zako za RevelaCode.",
+    "Notifications": "Arifa",
+    "Wallet Balance": "Salio la Pochi",
+    "Biashara Orders": "Maagizo ya Biashara",
+    "Biashara Products": "Bidhaa za Biashara",
+    "Shamba Farms": "Mashamba",
+    "Active Crops": "Mazao Yanayokua",
+    "Education Assignments": "Kazi za Elimu",
+    "Community Activity": "Shughuli za Jamii",
+    "Open workspace": "Fungua eneo la kazi",
+    "Open Hub": "Fungua Kituo",
+    "Most used": "Kinachotumika zaidi",
+    "Quick access": "Ufikiaji wa haraka",
+    "Your quick access": "Ufikiaji wako wa haraka",
+    "Your hubs are ready when you are.": "Vituo vyako viko tayari.",
+    "Personalized": "Imebinafsishwa",
+    "Think with RevelaAI": "Fikiri pamoja na RevelaAI",
+    "Start a conversation": "Anza mazungumzo",
+    "Five connected hubs": "Vituo vitano vilivyounganishwa",
+    "Intelligence built in": "Akili bandia imejumuishwa",
+    "Welcome back,": "Karibu tena,",
+    "One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.": "Mahali pamoja pa kujifunza, kujenga, kukua na kuungana. Endelea ulipoishia au nenda moja kwa moja kwenye kituo chako.",
+  },
+  fr: {
+    "Preferences & Experience": "Préférences et expérience",
+    "Appearance": "Apparence",
+    "Theme": "Thème",
+    "Light": "Clair",
+    "Dark": "Sombre",
+    "System": "Système",
+    "Reading size": "Taille du texte",
+    "Decrease reading size": "Réduire le texte",
+    "Increase reading size": "Agrandir le texte",
+    "Small": "Petit",
+    "Medium": "Moyen",
+    "Large": "Grand",
+    "Reading preview": "Aperçu du texte",
+    "Language": "Langue",
+    "Set your preferred display language.": "Choisissez votre langue d’affichage préférée.",
+    "Interface language": "Langue de l’interface",
+    "English interface": "Interface anglaise",
+    "Kiolesura cha Kiswahili": "Interface en swahili",
+    "Interface française": "Interface française",
+    "Your Hubs": "Vos espaces",
+    "Access the platforms that power your world.": "Accédez aux plateformes qui vous accompagnent.",
+    "Ecosystem Overview": "Vue d’ensemble de l’écosystème",
+    "Live information returned by your connected RevelaCode services.": "Informations en direct de vos services RevelaCode connectés.",
+    "Notifications": "Notifications",
+    "Wallet Balance": "Solde du portefeuille",
+    "Biashara Orders": "Commandes Biashara",
+    "Biashara Products": "Produits Biashara",
+    "Shamba Farms": "Exploitations Shamba",
+    "Active Crops": "Cultures actives",
+    "Education Assignments": "Devoirs éducatifs",
+    "Community Activity": "Activité communautaire",
+    "Open workspace": "Ouvrir l’espace",
+    "Open Hub": "Ouvrir l’espace",
+    "Most used": "Le plus utilisé",
+    "Quick access": "Accès rapide",
+    "Your quick access": "Votre accès rapide",
+    "Your hubs are ready when you are.": "Vos espaces sont prêts.",
+    "Personalized": "Personnalisé",
+    "Think with RevelaAI": "Réfléchir avec RevelaAI",
+    "Start a conversation": "Commencer une conversation",
+    "Five connected hubs": "Cinq espaces connectés",
+    "Intelligence built in": "Intelligence intégrée",
+    "Welcome back,": "Bon retour,",
+    "One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.": "Un espace connecté pour apprendre, créer, progresser et échanger. Reprenez là où vous en étiez ou accédez directement à votre espace.",
+  },
+};
+
+function translate(language, value) {
+  return TRANSLATIONS[language]?.[value] || value;
+}
+
 function readStoredPreferences() {
   try {
     const saved = localStorage.getItem(PREFERENCES_STORAGE_KEY);
@@ -141,6 +241,11 @@ export function PreferencesProvider({ children }) {
     }
   }, []);
 
+  const t = useCallback(
+    (value) => translate(language, value),
+    [language]
+  );
+
   const value = useMemo(
     () => ({
       preferences,
@@ -150,6 +255,7 @@ export function PreferencesProvider({ children }) {
       setFontSize,
       language,
       setLanguage,
+      t,
     }),
     [
       preferences,
@@ -159,6 +265,7 @@ export function PreferencesProvider({ children }) {
       setFontSize,
       language,
       setLanguage,
+      t,
     ]
   );
 
