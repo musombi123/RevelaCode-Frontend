@@ -347,6 +347,8 @@ const normalizeAIResponse = (
 
 export default function AIAssistantDashboard({
   onOpenAI,
+  activeHub = "home",
+  compactMode = false,
 }) {
   const {
     user,
@@ -360,6 +362,29 @@ export default function AIAssistantDashboard({
    * Contact is only a browser-storage fallback for older
    * login payloads that did not yet expose an ID.
    */
+  const hubLabels = {
+    home: "the RevelaCode home workspace",
+    faith: "Faith & Scripture",
+    bible: "Bible study",
+    study: "study and learning",
+    prophecy: "prophecy exploration",
+    events: "faith events",
+    referential: "reference resources",
+    education: "Elimu education and school management",
+    shamba: "Shamba farming and agriculture",
+    biashara: "Biashara business operations",
+    community: "Community, groups and opportunities",
+    payments: "payments and wallet services",
+    profile: "your account profile",
+    settings: "preferences and settings",
+  };
+  const activeHubLabel =
+    hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const hubContext = [
+    "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
+    "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
+  ].join(" ");
+
   const userScope =
     user?.id ||
     user?.user_id ||
@@ -380,7 +405,7 @@ export default function AIAssistantDashboard({
     useState([]);
 
   const [sidebarOpen, setSidebarOpen] =
-    useState(true);
+    useState(!compactMode);
 
   const [chats, setChats] =
     useState([]);
@@ -933,10 +958,10 @@ export default function AIAssistantDashboard({
         controllerRef.current =
           controller;
 
-        const context =
-          buildContext(
-            currentMessages
-          );
+        const context = [
+          hubContext,
+          buildContext(currentMessages),
+        ].filter(Boolean).join("\n\n");
 
         const requestMessage =
           attachedFile
@@ -1073,6 +1098,7 @@ export default function AIAssistantDashboard({
         ensureActiveChat,
         updateChat,
         callRevelaAI,
+        hubContext,
       ]
     );
 
@@ -1236,7 +1262,7 @@ export default function AIAssistantDashboard({
       try {
         const data = await callRevelaAI({
           message: enrichPrompt(userMessage.text),
-          context: buildContext(history),
+          context: [hubContext, buildContext(history)].filter(Boolean).join("\n\n"),
           sessionId: chatId,
           signal: controller.signal,
         });
@@ -1279,7 +1305,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, callRevelaAI]
+    [activeChatId, regenerableId, messages, updateChat, callRevelaAI, hubContext]
   );
 
   /* =======================================================
@@ -1313,8 +1339,10 @@ export default function AIAssistantDashboard({
         min-h-0
         min-w-0
         overflow-hidden
-        bg-revela-dark
-        text-white
+        bg-white
+        text-gray-900
+        dark:bg-revela-dark
+        dark:text-white
       "
     >
       {/* ===================================================
@@ -1363,10 +1391,12 @@ export default function AIAssistantDashboard({
             justify-between
             gap-3
             border-b
-            border-white/10
-            bg-revela-dark/95
+            border-gray-200
+            bg-white/95
             px-3
             backdrop-blur-lg
+            dark:border-white/10
+            dark:bg-revela-dark/95
             sm:px-4
           "
         >
@@ -1428,10 +1458,13 @@ export default function AIAssistantDashboard({
                   truncate
                   text-[10px]
                   text-gray-500
+                  dark:text-gray-500
                   sm:block
                 "
               >
-                RevelaCode intelligent assistant
+                {compactMode
+                  ? "Personalized for " + activeHubLabel
+                  : "RevelaCode intelligent assistant"}
               </p>
             </div>
           </div>
@@ -1604,12 +1637,14 @@ export default function AIAssistantDashboard({
               className="
                 shrink-0
                 border-t
-                border-white/10
-                bg-revela-dark/95
+                border-gray-200
+                bg-white/95
                 px-3
                 pb-3
                 pt-3
                 backdrop-blur-lg
+                dark:border-white/10
+                dark:bg-revela-dark/95
                 sm:px-4
                 sm:pb-4
               "
