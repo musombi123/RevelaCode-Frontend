@@ -1559,7 +1559,7 @@ export default function BiasharaDashboard({
             QUICK ACCESS
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Quick access"
             title="Run your business"
@@ -1784,7 +1784,7 @@ export default function BiasharaDashboard({
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Operations"
               title="Stock health"
@@ -1914,7 +1914,7 @@ export default function BiasharaDashboard({
             TOP PRODUCTS
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Performance"
             title="Top products"
@@ -2002,7 +2002,7 @@ export default function BiasharaDashboard({
         ================================================= */}
 
         <section className="grid gap-3 sm:gap-5 lg:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Orders"
               title="Recent orders"
@@ -2089,7 +2089,7 @@ export default function BiasharaDashboard({
             )}
           </div>
 
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Sales"
               title="Recent sales"
@@ -2178,7 +2178,7 @@ export default function BiasharaDashboard({
             PROFILE SNAPSHOT
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Business identity"
             title="Workspace snapshot"
