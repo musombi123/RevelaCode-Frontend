@@ -903,7 +903,7 @@ export default function AIAssistantDashboard({
             try {
               apiResult = await requestHubReply({
                 message: requestMessage || userDisplayText || "What do you see?",
-                hub: selectedAssistantHub, userId: userScope, sessionId: chatId,
+                hub: selectedAssistantHub, userId: user?.id || user?.user_id || user?.contact || chatId, sessionId: chatId,
                 vision: visionData, visionDescription, signal: controller.signal,
               });
             } catch (apiError) {
