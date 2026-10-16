@@ -289,3 +289,12 @@ Like any meaningful project, it is being shaped step by step through:
 * collaboration
 
 The goal is not just to build software, but to explore how **technology can help people understand knowledge more deeply**.
+
+ 
+## RevelaAI coordinated AI and smart memory
+
+The chat UI sends authenticated text and supported file requests to the existing RevelaAI `/ai` endpoint. It retains the local brain and browser speech synthesis as fallbacks; a memory-service failure must not disable provider routing.
+
+Set the frontend build variable `VITE_REVELAAI_API_URL=https://revelaai.onrender.com` (or your actual RevelaAI service URL). The browser uses the existing RevelaCode Bearer JWT; do not add model keys to frontend environment variables.
+
+The chat's **Memory** panel reads the authenticated user's bestThings and deduplicated ideas from `/api/memory`. RevelaCode-Backend and RevelaAI must both have their service-verification secrets configured before server memory can be read or written. Browser-local history remains separate.
