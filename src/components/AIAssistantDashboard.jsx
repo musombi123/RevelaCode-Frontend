@@ -902,6 +902,23 @@ export default function AIAssistantDashboard({
             type: localType,
           };
 
+          // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
+          const streamText = normalized.text || "RevelaAI returned an empty response.";
+          await new Promise((resolve) => {
+            let cursor = 0;
+            const tick = () => {
+              cursor = Math.min(streamText.length, cursor + 6);
+              setMessages((previous) => previous.map((message) =>
+                message.id === loadingId
+                  ? { ...message, text: streamText.slice(0, cursor), status: cursor >= streamText.length ? "done" : "loading" }
+                  : message
+              ));
+              if (cursor < streamText.length) window.setTimeout(tick, 10);
+              else resolve();
+            };
+            tick();
+          });
+
           const assistantMessage =
             {
               id: loadingId,
