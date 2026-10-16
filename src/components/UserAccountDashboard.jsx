@@ -20,6 +20,7 @@ import {
   ChevronRight,
   UserCircle2,
   LockKeyhole,
+  WalletCards,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
