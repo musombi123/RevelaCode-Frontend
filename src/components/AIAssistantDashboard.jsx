@@ -21,9 +21,9 @@ import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import MultimodalStudio from "@/ai/v2/MultimodalStudio";
-import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { answerLocally, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { analyzeImageFileEnhanced } from "@/ai/freeVisionEngine";
+import { answerWithLocalHubRules, requestHubReply } from "@/ai/hubApi";
 
 /* =========================================================
    CONSTANTS
@@ -346,11 +346,16 @@ export default function AIAssistantDashboard({
   activeHub = "home",
   compactMode = false,
 }) {
-  const {
-    user,
-    isGuest,
-    isReady,
-  } = useAuth();
+  const { user, isGuest, isReady } = useAuth();
+  const [selectedAssistantHub, setSelectedAssistantHub] = useState(() => ({
+    shamba: "mkulima", biashara: "biashara", education: "elimu",
+    faith: "mahubiri", bible: "mahubiri", prophecy: "mahubiri",
+  }[activeHub] || "general"));
+
+  useEffect(() => {
+    const mapping = { shamba: "mkulima", biashara: "biashara", education: "elimu", faith: "mahubiri", bible: "mahubiri", prophecy: "mahubiri" };
+    if (mapping[activeHub]) setSelectedAssistantHub(mapping[activeHub]);
+  }, [activeHub]);
 
   /*
    * Prefer the authoritative Mongo/RevelaCode user ID.
@@ -358,28 +363,21 @@ export default function AIAssistantDashboard({
    * login payloads that did not yet expose an ID.
    */
   const hubLabels = {
-    home: "the RevelaCode home workspace",
-    faith: "Faith & Scripture",
-    bible: "Bible study",
-    study: "study and learning",
-    prophecy: "prophecy exploration",
-    events: "faith events",
-    referential: "reference resources",
-    education: "Elimu education and school management",
-    shamba: "Shamba farming and agriculture",
-    biashara: "Biashara business operations",
-    community: "Community, groups and opportunities",
-    payments: "payments and wallet services",
-    profile: "your account profile",
-    settings: "preferences and settings",
+    home: "the RevelaCode home workspace", faith: "Faith & Scripture", bible: "Bible study",
+    study: "study and learning", prophecy: "prophecy exploration", events: "faith events",
+    referential: "reference resources", education: "Elimu education and school management",
+    shamba: "Shamba farming and agriculture", biashara: "Biashara business operations",
+    community: "Community, groups and opportunities", payments: "payments and wallet services",
+    profile: "your account profile", settings: "preferences and settings",
   };
-  const activeHubLabel =
-    hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const activeHubLabel = hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const assistantHubLabels = { mkulima: "Mkulima — farming, crops and soil", biashara: "Biashara — business, sales and negotiation", elimu: "Elimu / Teacher — learning and programming", mahubiri: "Mahubiri / Theology — Bible, sermons and prophecy", general: "General Mentor — cross-hub guidance" };
+  const selectedAssistantHubLabel = assistantHubLabels[selectedAssistantHub] || assistantHubLabels.general;
   const hubContext = [
+    "ACTIVE ASSISTANT HUB: " + selectedAssistantHubLabel + ".",
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
-    "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
+    "PERSONALIZATION RULE: Answer in the selected hub persona when relevant; if the user asks an unrelated question, answer it normally. Be warm, candid, practical, and willing to disagree respectfully when evidence supports it. Do not claim access to private workspace records unless they are actually provided.",
   ].join(" ");
-
   const userScope =
     user?.id ||
     user?.user_id ||
@@ -751,7 +749,8 @@ export default function AIAssistantDashboard({
     useCallback(
       async (
         text,
-        attachedFile = null
+        attachedFile = null,
+        sendOptions = {}
       ) => {
         const cleaned =
           String(text || "")
@@ -870,37 +869,52 @@ export default function AIAssistantDashboard({
               );
 
         try {
-          /*
-           * FREE EDITION: keep the main RevelaAI conversation local-only.
-           * No fetch, backend request, API key, or remote model is used here.
-           * Existing BibleDashboard and Biashara code paths are untouched.
-           */
+          let visionData = sendOptions?.vision || null;
+          let visionDescription = String(sendOptions?.visionDescription || "");
           let localText = "";
           let localType = "text";
+
           if (attachedFile) {
             if (attachedFile.type.startsWith("image/")) {
-              const result = await analyzeImageFile(attachedFile);
-              localText = result.summary;
+              if (!visionData) {
+                const result = await analyzeImageFileEnhanced(attachedFile);
+                visionData = result;
+                visionDescription = result.visionDescription || result.summary || "";
+              }
+              localText = answerWithLocalHubRules({ message: requestMessage || "What do you see?", hub: selectedAssistantHub, visionDescription }) || answerLocally(requestMessage || "What do you see?", context + "\n\nLOCAL CAMERA MEASUREMENTS: " + visionDescription);
               localType = "local-vision";
             } else if (attachedFile.type.startsWith("video/")) {
               const result = await analyzeVideoFile(attachedFile);
-              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map(frame => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
+              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map((frame) => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
               localType = "local-video";
             } else {
               const result = await readLocalDocument(attachedFile);
-              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map(item => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
+              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map((item) => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
               localType = "local-document";
             }
           } else {
-            localText = answerLocally(requestMessage, context);
+            localText = answerWithLocalHubRules({ message: requestMessage, hub: selectedAssistantHub }) || answerLocally(requestMessage, context);
           }
-          const normalized = {
-            text: localText,
-            imageUrls: [],
-            sources: [],
-            metadata: { engine: "local-free-rules", network: false },
-            type: localType,
-          };
+
+          // This configured backend endpoint uses regex personas and local JSON memory only.
+          // If it is not configured or unreachable, the browser rule engine remains available.
+          let apiResult = null;
+          if (!attachedFile || attachedFile.type.startsWith("image/") || visionData) {
+            try {
+              apiResult = await requestHubReply({
+                message: requestMessage || userDisplayText || "What do you see?",
+                hub: selectedAssistantHub, userId: user?.id || user?.user_id || user?.contact || chatId, sessionId: chatId,
+                vision: visionData, visionDescription, signal: controller.signal,
+              });
+            } catch (apiError) {
+              if (apiError?.name === "AbortError") throw apiError;
+              console.warn("RevelaAI local hub endpoint unavailable; using browser rules.", apiError);
+            }
+          }
+
+          const normalized = apiResult
+            ? { text: apiResult.text, imageUrls: [], sources: [], metadata: apiResult.metadata, type: localType }
+            : { text: localText, imageUrls: [], sources: [], metadata: { engine: "local-free-rules", network: false, hub: selectedAssistantHub, visionUsed: Boolean(visionData) }, type: localType };
 
           // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
           const streamText = normalized.text || "RevelaAI returned an empty response.";
@@ -919,57 +933,18 @@ export default function AIAssistantDashboard({
             tick();
           });
 
-          const assistantMessage =
-            {
-              id: loadingId,
+          const assistantMessage = {
+            id: loadingId, role: "assistant",
+            text: normalized.text || "RevelaAI returned an empty response.",
+            status: "done", imageUrls: normalized.imageUrls, sources: normalized.sources,
+            metadata: normalized.metadata, contentType: normalized.type, createdAt: Date.now(),
+          };
 
-              role: "assistant",
-
-              text:
-                normalized.text ||
-                "RevelaAI returned an empty response.",
-
-              status:
-                "done",
-
-              imageUrls:
-                normalized.imageUrls,
-
-              sources:
-                normalized.sources,
-
-              metadata:
-                normalized.metadata,
-
-              contentType:
-                normalized.type,
-
-              createdAt:
-                Date.now(),
-            };
-
-          setMessages(
-            (previous) => {
-              const updated =
-                previous.map(
-                  (
-                    message
-                  ) =>
-                    message.id ===
-                    loadingId
-                      ? assistantMessage
-                      : message
-                );
-
-              updateChat(
-                chatId,
-                updated
-              );
-
-              return updated;
-            }
-          );
-        } catch (error) {
+          setMessages((previous) => {
+            const updated = previous.map((message) => message.id === loadingId ? assistantMessage : message);
+            updateChat(chatId, updated);
+            return updated;
+          });        } catch (error) {
           if (
             error?.name ===
             "AbortError"
@@ -1023,11 +998,8 @@ export default function AIAssistantDashboard({
         }
       },
       [
-        messages,
-        activeChatId,
-        ensureActiveChat,
-        updateChat,
-        hubContext,
+        messages, activeChatId, ensureActiveChat, updateChat, hubContext,
+        selectedAssistantHub, userScope,
       ]
     );
 
@@ -1240,6 +1212,24 @@ export default function AIAssistantDashboard({
     [activeChatId, regenerableId, messages, updateChat, hubContext]
   );
 
+  const speakReply = useCallback((text) => {
+    if (typeof window === "undefined" || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    const content = String(text || "").trim();
+    if (!content) return;
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(content);
+    const swahili = /\b(habari|asante|tafadhali|tufanye|shamba|mazao|udongo|karibu|kwa kiswahili|nimeangalia)\b/i.test(content);
+    const low = content.toLowerCase();
+    utterance.lang = swahili ? "sw-KE" : "en-KE";
+    utterance.pitch = /\b(amazing|great news|well done|congratulations|furaha)\b/i.test(low) ? 1.12 : /\b(sorry|difficult|pain|pole|grief)\b/i.test(low) ? 0.92 : 1;
+    utterance.rate = /\b(step by step|carefully|prayer|pray|pole)\b/i.test(low) ? 0.92 : 1;
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  useEffect(() => () => {
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel?.();
+  }, []);
+
   /* =======================================================
      CONVERSATION STATE
   ======================================================= */
@@ -1294,6 +1284,8 @@ export default function AIAssistantDashboard({
         onSelectChat={
           selectChat
         }
+        selectedHub={selectedAssistantHub}
+        onSelectHub={(hub) => setSelectedAssistantHub(hub)}
       />
 
       {/* ===================================================
@@ -1396,7 +1388,7 @@ export default function AIAssistantDashboard({
               >
                 {compactMode
                   ? "Personalized for " + activeHubLabel
-                  : "RevelaCode intelligent assistant"}
+                  : selectedAssistantHubLabel}
               </p>
             </div>
           </div>
@@ -1460,152 +1452,21 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         {!hasConversation ? (
-          <section
-            className="
-              relative
-              min-h-0
-              flex-1
-              overflow-y-auto
-              overscroll-contain
-            "
-          >
-            <div
-              className="
-                flex
-                min-h-full
-                w-full
-                items-center
-                justify-center
-                px-4
-                py-8
-                sm:px-6
-                sm:py-10
-              "
-            >
-              <div
-                className="
-                  flex
-                  w-full
-                  max-w-3xl
-                  flex-col
-                  items-center
-                  justify-center
-                "
-              >
-                <WelcomeScreen
-                  onSuggestion={
-                    sendTextMessage
-                  }
-                />
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <HubRevenueOffers hub="smart_ai" compact />
-                </div>
-
-                <div className="mt-6 w-full max-w-3xl">
-                  <MultimodalStudio
-                    onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                    onVoiceTranscript={sendTextMessage}
-                    onOpenFullVoice={openVoice}
-                  />
-                </div>
-
-                <div
-                  className="
-                    mt-8
-                    w-full
-                    max-w-3xl
-                  "
-                >
-                  <InputBar
-                    centered
-                    onSend={
-                      sendMessage
-                    }
-                    onMic={
-                      openVoice
-                    }
-                  />
-                </div>
-
-                <p
-                  className="
-                    mt-4
-                    text-center
-                    text-[10px]
-                    leading-5
-                    text-gray-500
-                    sm:text-xs
-                  "
-                >
-                  Ask about Scripture,
-                  prophecy, coding,
-                  education, business,
-                  agriculture, documents,
-                  images, or general knowledge.
-                </p>
+          <section className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="flex min-h-full w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+              <div className="flex w-full max-w-3xl flex-col items-center justify-center">
+                <WelcomeScreen onSuggestion={sendTextMessage} />
+                <div className="mt-6 w-full max-w-3xl"><InputBar onSend={sendMessage} /></div>
               </div>
             </div>
           </section>
         ) : (
-          <section
-            className="
-              flex
-              min-h-0
-              flex-1
-              flex-col
-              overflow-hidden
-            "
-          >
-            <div
-              className="
-                min-h-0
-                flex-1
-                overflow-y-auto
-                overscroll-contain
-              "
-            >
-              <ChatWindow
-                messages={messages}
-                regenerableId={regenerableId}
-                onRegenerate={regenerateResponse}
-                onFeedback={handleFeedback}
-              />
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <ChatWindow messages={messages} regenerableId={regenerableId} onRegenerate={regenerateResponse} onFeedback={handleFeedback} onSpeak={speakReply} />
             </div>
-
-            <div
-              className="
-                shrink-0
-                border-t
-                border-gray-200
-                bg-white/95
-                px-3
-                pb-3
-                pt-3
-                backdrop-blur-lg
-                dark:border-white/10
-                dark:bg-revela-dark/95
-                sm:px-4
-                sm:pb-4
-              "
-            >
-              <div className="mx-auto w-full max-w-4xl">
-                <MultimodalStudio
-                  onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                  onVoiceTranscript={sendTextMessage}
-                  onOpenFullVoice={openVoice}
-                />
-                <div className="mt-3">
-                <InputBar
-                  onSend={
-                    sendMessage
-                  }
-                  onMic={
-                    openVoice
-                  }
-                />
-                </div>
-              </div>
+            <div className="shrink-0 border-t border-gray-200 bg-white/95 px-3 pb-3 pt-3 backdrop-blur-lg dark:border-white/10 dark:bg-revela-dark/95 sm:px-4 sm:pb-4">
+              <div className="mx-auto w-full max-w-4xl"><InputBar onSend={sendMessage} /></div>
             </div>
           </section>
         )}
