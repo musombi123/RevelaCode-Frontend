@@ -407,7 +407,7 @@ function MetricCard({
   iconClassName = "bg-slate-100 text-slate-700",
 }) {
   return (
-    <div className="group rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/70 sm:p-6">
+    <div className="group rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/70 sm:rounded-[1.5rem] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
@@ -689,7 +689,7 @@ function BusinessProfileNotice({
 
   return (
     <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 text-white sm:p-6">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-4 text-white sm:p-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
@@ -744,7 +744,7 @@ function BusinessProfileNotice({
         </div>
       </div>
 
-      <div className="p-5 sm:p-6">
+      <div className="p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-4">
@@ -813,7 +813,7 @@ function CreateBusinessState({
   return (
     <div className="min-h-full bg-slate-50">
       <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-800 p-6 text-white shadow-sm sm:p-8">
+        <div className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-700 to-indigo-800 p-4 text-white shadow-sm sm:mb-6 sm:rounded-3xl sm:p-7">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
               <Store size={27} />
@@ -1394,16 +1394,16 @@ export default function BiasharaDashboard({
 
   return (
     <div className="min-h-full bg-[#f4f7fb]">
-      <div className="mx-auto w-full max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-3 sm:space-y-6 sm:p-6 lg:p-8">
 
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-xl shadow-slate-900/10">
+        <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-lg shadow-slate-900/10 sm:rounded-[2rem] sm:shadow-xl">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="relative z-10 flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative z-10 flex flex-col gap-4 p-4 sm:gap-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-blue-100 ring-1 ring-white/15 backdrop-blur-sm">
                 {business?.logo_url ? (
@@ -1559,7 +1559,7 @@ export default function BiasharaDashboard({
             QUICK ACCESS
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Quick access"
             title="Run your business"
@@ -1711,8 +1711,8 @@ export default function BiasharaDashboard({
             TODAY + STOCK
         ================================================= */}
 
-        <section className="grid gap-5 lg:grid-cols-3">
-          <div className="rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-lg shadow-slate-900/10 sm:p-7 lg:col-span-2">
+        <section className="grid gap-3 sm:gap-5 lg:grid-cols-3">
+          <div className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 text-white shadow-md shadow-slate-900/10 sm:rounded-[1.75rem] sm:p-6 lg:col-span-2">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">
@@ -1784,7 +1784,7 @@ export default function BiasharaDashboard({
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Operations"
               title="Stock health"
@@ -1870,7 +1870,7 @@ export default function BiasharaDashboard({
             INTELLIGENCE CTA
         ================================================= */}
 
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-5 text-white shadow-sm sm:p-6">
+        <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-4 text-white shadow-sm sm:rounded-3xl sm:p-5">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
@@ -1914,7 +1914,7 @@ export default function BiasharaDashboard({
             TOP PRODUCTS
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Performance"
             title="Top products"
@@ -2001,8 +2001,8 @@ export default function BiasharaDashboard({
             RECENT ORDERS + SALES
         ================================================= */}
 
-        <section className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="grid gap-3 sm:gap-5 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Orders"
               title="Recent orders"
@@ -2089,7 +2089,7 @@ export default function BiasharaDashboard({
             )}
           </div>
 
-          <div className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
             <SectionHeader
               eyebrow="Sales"
               title="Recent sales"
@@ -2178,7 +2178,7 @@ export default function BiasharaDashboard({
             PROFILE SNAPSHOT
         ================================================= */}
 
-        <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
+        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
           <SectionHeader
             eyebrow="Business identity"
             title="Workspace snapshot"
