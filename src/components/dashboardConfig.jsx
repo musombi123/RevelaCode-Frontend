@@ -1039,12 +1039,51 @@ export function ComingSoonDashboard({
 }
 
 /* ======================================================
+   CENTRAL HOME HUB CONFIGURATION
+   Keep home hub identity, destinations, accents and copy here.
+====================================================== */
+
+const HOME_HUBS = Object.freeze([
+  { key: "faith", title: "Faith & Scripture", shortTitle: "Faith", description: "Bible study, prophecy and SDA lessons", icon: BookOpen, surface: "bg-violet-50 dark:bg-violet-950/25", iconTone: "text-violet-700 dark:text-violet-300", borderTone: "border-violet-100 dark:border-violet-900/50", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
+  { key: "education", title: "Elimu", shortTitle: "Elimu", description: "Schools, classes and learning", icon: GraduationCap, surface: "bg-emerald-50 dark:bg-emerald-950/25", iconTone: "text-emerald-700 dark:text-emerald-300", borderTone: "border-emerald-100 dark:border-emerald-900/50", iconBg: "bg-emerald-100 dark:bg-emerald-900/50" },
+  { key: "shamba", title: "Shamba", shortTitle: "Shamba", description: "Farms, crops and market insights", icon: Leaf, surface: "bg-amber-50 dark:bg-amber-950/25", iconTone: "text-amber-700 dark:text-amber-300", borderTone: "border-amber-100 dark:border-amber-900/50", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
+  { key: "biashara", title: "Biashara", shortTitle: "Biashara", description: "Products, sales and business growth", icon: ShoppingCart, surface: "bg-blue-50 dark:bg-blue-950/25", iconTone: "text-blue-700 dark:text-blue-300", borderTone: "border-blue-100 dark:border-blue-900/50", iconBg: "bg-blue-100 dark:bg-blue-900/50" },
+  { key: "community", title: "Community", shortTitle: "Community", description: "People, groups and opportunities", icon: Users, surface: "bg-cyan-50 dark:bg-cyan-950/25", iconTone: "text-cyan-700 dark:text-cyan-300", borderTone: "border-cyan-100 dark:border-cyan-900/50", iconBg: "bg-cyan-100 dark:bg-cyan-900/50" },
+]);
+
+const HOME_HUB_USAGE_KEY = "revelacode_home_hub_usage_v1";
+
+function readHomeHubUsage() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HOME_HUB_USAGE_KEY) || "{}");
+    return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function recordHomeHubUsage(key) {
+  try {
+    const current = readHomeHubUsage();
+    current[key] = {
+      count: Math.max(0, Number(current[key]?.count) || 0) + 1,
+      lastUsedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(HOME_HUB_USAGE_KEY, JSON.stringify(current));
+    return current;
+  } catch {
+    return readHomeHubUsage();
+  }
+}
+
+/* ======================================================
    HOME DASHBOARD
    REAL SYSTEM DATA ONLY
 ====================================================== */
 
 function HomeDashboard({
   onNavigate,
+  onOpenAI,
   user,
 }) {
   const {
@@ -1082,6 +1121,36 @@ function HomeDashboard({
 
   const isGuest =
     user?.role === "guest";
+
+  const [hubUsage, setHubUsage] = useState(() => readHomeHubUsage());
+
+  useEffect(() => {
+    const refreshUsage = () => setHubUsage(readHomeHubUsage());
+    window.addEventListener("storage", refreshUsage);
+    return () => window.removeEventListener("storage", refreshUsage);
+  }, []);
+
+  const handleHubOpen = (key) => {
+    const nextUsage = recordHomeHubUsage(key);
+    setHubUsage(nextUsage);
+    onNavigate?.(key);
+  };
+
+  const sortedHubs = useMemo(() => {
+    return [...HOME_HUBS].sort((a, b) => {
+      const countA = Number(hubUsage[a.key]?.count) || 0;
+      const countB = Number(hubUsage[b.key]?.count) || 0;
+      if (countA !== countB) return countB - countA;
+      return HOME_HUBS.findIndex((hub) => hub.key === a.key) -
+        HOME_HUBS.findIndex((hub) => hub.key === b.key);
+    });
+  }, [hubUsage]);
+
+  const hasHubHistory = HOME_HUBS.some(
+    (hub) => (Number(hubUsage[hub.key]?.count) || 0) > 0,
+  );
+
+  const frequentHubs = sortedHubs.slice(0, 3);
 
   /* ====================================================
      LOCAL ACTIVITY
@@ -1509,50 +1578,8 @@ function HomeDashboard({
 
   /* ====================================================
      HUBS
+     Defined centrally in HOME_HUBS above.
   ==================================================== */
-
-  const hubs = [
-    {
-      key: "faith",
-      title:
-        "Faith & Scripture",
-      description:
-        "Bible, Prophecy, SDA Lessons & more",
-      icon: BookOpen,
-      gradient:
-        "from-indigo-600 via-purple-600 to-violet-700",
-    },
-
-    {
-      key: "education",
-      title: "Education",
-      description:
-        "Schools, Classes, Fees, Projects & more",
-      icon: GraduationCap,
-      gradient:
-        "from-emerald-600 to-green-700",
-    },
-
-    {
-      key: "shamba",
-      title: "Shamba",
-      description:
-        "Farming, crop planning, seasons, markets & agricultural insights",
-      icon: Leaf,
-      gradient:
-        "from-orange-500 via-amber-500 to-yellow-500",
-    },
-
-    {
-      key: "biashara",
-      title: "Biashara",
-      description:
-        "Products, Sales, Customers, Expenses & more",
-      icon: ShoppingCart,
-      gradient:
-        "from-blue-600 to-cyan-600",
-    },
-  ];
 
   return (
     <div
@@ -1567,64 +1594,49 @@ function HomeDashboard({
           WELCOME
       ================================================== */}
 
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-5
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-6
-        "
-      >
-        <div>
-          <p
-            className="
-              text-xs
-              font-bold
-              uppercase
-              tracking-[0.16em]
-              text-indigo-600
-              dark:text-indigo-400
-            "
-          >
-            RevelaCode Ecosystem
-          </p>
+      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-400/10" />
+        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.72fr)] lg:items-center">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" /> RevelaCode ecosystem</div>
+            <h1 className="mt-4 text-2xl font-black tracking-[-0.04em] text-slate-950 dark:text-white sm:text-3xl lg:text-4xl">Welcome back, <span className="text-blue-700 dark:text-blue-300">{displayName}</span></h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base sm:leading-7">One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.</p>
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Layers size={14} /> Five connected hubs</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Sparkles size={14} /> Intelligence built in</span>
+            </div>
+          </div>
+          <button type="button" onClick={() => onOpenAI?.()} className="group relative w-full overflow-hidden rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-4 text-left text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-slate-800 dark:via-blue-950 dark:to-indigo-950 dark:shadow-black/20 dark:focus-visible:ring-offset-slate-900 sm:p-5" aria-label="Open RevelaAI assistant">
+            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl transition group-hover:bg-white/15" />
+            <div className="relative flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/15 shadow-inner backdrop-blur"><Sparkles size={22} /></div><span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> AI assistant</span></div>
+            <h2 className="relative mt-4 text-lg font-extrabold tracking-tight sm:text-xl">Think with RevelaAI</h2>
+            <p className="relative mt-1.5 max-w-sm text-sm leading-5 text-blue-50/90 dark:text-slate-200">Get help across your connected RevelaCode workspaces.</p>
+            <div className="relative mt-4 flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-sm font-bold backdrop-blur-sm">Start a conversation <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></div>
+          </button>
+        </div>
+      </section>
 
-          <h1
-            className="
-              mt-2
-              text-2xl
-              font-black
-              tracking-tight
-              text-gray-900
-              dark:text-white
-              sm:text-3xl
-            "
-          >
-            Welcome, {displayName} 👋
-          </h1>
-
-          <p
-            className="
-              mt-2
-              text-sm
-              text-gray-600
-              dark:text-gray-400
-            "
-          >
-            Explore your ecosystem of
-            tools, services,
-            intelligence and
-            opportunities.
-          </p>
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{hasHubHistory ? "Your quick access" : "Quick access"}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are."}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">Personalized</span></div>
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+          {frequentHubs.map((hub, index) => {
+            const Icon = hub.icon;
+            const uses = Number(hubUsage[hub.key]?.count) || 0;
+            return (
+              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group min-w-0 rounded-2xl border " + hub.borderTone + " " + hub.surface + " p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:p-4"} aria-label={"Open " + hub.title}>
+                <div className="flex items-start justify-between gap-1"><span className={"flex h-9 w-9 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}><Icon size={19} strokeWidth={2} /></span>{uses > 0 && index === 0 ? <span className="rounded-full bg-white/80 px-1.5 py-1 text-[9px] font-extrabold text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">TOP</span> : null}</div>
+                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{hub.shortTitle}</span>
+                <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + " visits" : "Open workspace"}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {/* ==================================================
+          YOUR HUBS
+      ================================================== */}      {/* ==================================================
           YOUR HUBS
       ================================================== */}
 
@@ -1666,143 +1678,20 @@ function HomeDashboard({
           </p>
         </div>
 
-        <div
-          className="
-            mt-5
-            grid
-            grid-cols-1
-            gap-4
-            sm:grid-cols-2
-            lg:grid-cols-4
-          "
-        >
-          {hubs.map(
-            (hub) => {
-              const Icon =
-                hub.icon;
-
-              return (
-                <button
-                  key={hub.key}
-                  type="button"
-                  onClick={() =>
-                    onNavigate?.(
-                      hub.key,
-                    )
-                  }
-                  className={`
-                    group
-                    relative
-                    min-h-[210px]
-                    overflow-hidden
-                    rounded-2xl
-                    bg-gradient-to-br
-                    ${hub.gradient}
-                    p-5
-                    text-left
-                    text-white
-                    shadow-lg
-                    transition-all
-                    duration-200
-                    hover:-translate-y-1
-                    hover:shadow-xl
-                    active:scale-[0.99]
-                  `}
-                >
-                  <div
-                    className="
-                      pointer-events-none
-                      absolute
-                      -right-10
-                      -top-10
-                      h-32
-                      w-32
-                      rounded-full
-                      bg-white/10
-                      blur-2xl
-                    "
-                  />
-
-                  <div
-                    className="
-                      relative
-                      z-10
-                      flex
-                      h-full
-                      flex-col
-                      justify-between
-                    "
-                  >
-                    <div>
-                      <Icon
-                        size={42}
-                        strokeWidth={
-                          1.8
-                        }
-                      />
-
-                      <h3
-                        className="
-                          mt-5
-                          text-xl
-                          font-black
-                        "
-                      >
-                        {hub.title}
-                      </h3>
-
-                      <p
-                        className="
-                          mt-2
-                          max-w-sm
-                          text-sm
-                          leading-6
-                          text-white/85
-                        "
-                      >
-                        {
-                          hub.description
-                        }
-                      </p>
-                    </div>
-
-                    <div
-                      className="
-                        mt-5
-                        flex
-                        items-center
-                        justify-between
-                        rounded-xl
-                        bg-white/15
-                        px-4
-                        py-3
-                        backdrop-blur-sm
-                      "
-                    >
-                      <span
-                        className="
-                          text-sm
-                          font-bold
-                        "
-                      >
-                        Open Hub
-                      </span>
-
-                      <ArrowRight
-                        size={18}
-                        className="
-                          transition-transform
-                          group-hover:translate-x-1
-                        "
-                      />
-                    </div>
-                  </div>
-                </button>
-              );
-            },
-          )}
-        </div>
-      </section>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {sortedHubs.map((hub, index) => {
+            const Icon = hub.icon;
+            const uses = Number(hubUsage[hub.key]?.count) || 0;
+            const isMostUsed = hasHubHistory && index === 0 && uses > 0;
+            return (
+              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group relative flex min-h-[132px] items-center gap-4 overflow-hidden rounded-2xl border " + hub.borderTone + " bg-white p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-900 dark:hover:border-slate-700 dark:focus-visible:ring-offset-slate-950 sm:p-5"} aria-label={"Open " + hub.title}>
+                <span className={"flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl " + hub.iconBg + " " + hub.iconTone + " transition-transform group-hover:scale-105"}><Icon size={24} strokeWidth={1.9} /></span>
+                <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{hub.title}</span>{isMostUsed ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">Most used</span> : null}</span><span className="mt-1.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">{hub.description}</span><span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300">Open workspace <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" /></span></span>
+                {uses > 0 ? <span className="hidden shrink-0 text-[10px] font-semibold text-slate-400 sm:block">{formatNumber(uses)} visits</span> : null}
+              </button>
+            );
+          })}
+        </div>      </section>
 
       {/* ==================================================
           LIVE ECOSYSTEM OVERVIEW
