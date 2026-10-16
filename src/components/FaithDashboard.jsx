@@ -1171,7 +1171,7 @@ export default function FaithDashboard({
         </button>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 p-5 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-gray-900 dark:to-violet-950/20 sm:p-6">
+      <section className="overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 p-3.5 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-gray-900 dark:to-violet-950/20 sm:rounded-2xl sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
@@ -1435,7 +1435,7 @@ export default function FaithDashboard({
                   border
                   border-gray-200
                   bg-gray-50
-                  p-5
+                  p-3.5
                   text-left
                   transition-all
                   duration-200
@@ -1959,7 +1959,7 @@ export default function FaithDashboard({
           from-indigo-50
           via-white
           to-purple-50
-          p-5
+          p-3.5
           shadow-sm
           dark:border-indigo-900/40
           dark:from-indigo-950/20
@@ -2111,7 +2111,7 @@ export default function FaithDashboard({
             border
             border-yellow-200
             bg-yellow-50
-            p-5
+            p-3.5
             dark:border-yellow-900/40
             dark:bg-yellow-950/20
           "
