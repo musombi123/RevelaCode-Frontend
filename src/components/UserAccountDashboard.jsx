@@ -20,7 +20,6 @@ import {
   ChevronRight,
   UserCircle2,
   LockKeyhole,
-  WalletCards,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
@@ -55,10 +54,6 @@ const LegalDocs = React.lazy(
 
 const Notifications = React.lazy(
   () => import("./Notifications.jsx")
-);
-
-const PaymentsDashboard = React.lazy(
-  () => import("@/Dashboard/PaymentsDashboard.jsx")
 );
 
 /* =========================================================
@@ -717,6 +712,11 @@ export default function UserAccountDashboard({
   ======================================================= */
 
   const changeView = (view) => {
+    if (view === "payments") {
+      onNavigate?.("payments");
+      return;
+    }
+
     setActiveView(view);
     setMessage("");
     setError("");
@@ -886,13 +886,6 @@ export default function UserAccountDashboard({
               confirmResetPassword
             }
           />
-        );
-
-      case "payments":
-        return (
-          <Suspense fallback={<Loading />}>
-            <PaymentsDashboard onNavigate={onNavigate} />
-          </Suspense>
         );
 
       case "notifications":
