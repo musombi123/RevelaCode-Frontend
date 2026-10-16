@@ -9,14 +9,14 @@ import React, {
 import {
   Send,
   Mic,
-  Paperclip,
+  Upload,
   X,
   FileText,
   Camera,
   Flashlight,
   Loader2,
 } from "lucide-react";
-import { analyzeImageFile } from "@/ai/v2-free/localIntelligence";
+import { analyzeCanvas } from "@/ai/freeVisionEngine";
 
 /* =========================================================
    INPUT BAR
@@ -43,6 +43,7 @@ export default function InputBar({
   const [torchOn, setTorchOn] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-KE");
   const cameraVideoRef = useRef(null);
   const cameraStreamRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -104,6 +105,7 @@ export default function InputBar({
     const video = cameraVideoRef.current;
     if (!video?.videoWidth) { setCameraError("Camera is still starting. Try again in a moment."); return; }
     setCameraBusy(true);
+    setCameraError("");
     try {
       const canvas = document.createElement("canvas");
       const scale = Math.min(1, 1024 / Math.max(video.videoWidth, video.videoHeight));
@@ -111,14 +113,14 @@ export default function InputBar({
       canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const math = await analyzeImageFile(await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(new File([blob], "camera-frame.jpg", { type: "image/jpeg" })) : reject(new Error("Could not capture the frame.")), "image/jpeg", 0.88)));
-      const prompt = `[User shared a camera frame: ${math.summary}] Please help me understand what is visible in this image.`;
-      const frame = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(new File([blob], "camera-frame.jpg", { type: "image/jpeg" })) : reject(new Error("Could not capture the frame.")), "image/jpeg", 0.88));
+      const vision = await analyzeCanvas(canvas);
+      const frame = await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(new File([blob], "revela-camera-frame.jpg", { type: "image/jpeg" })) : reject(new Error("Could not capture the camera frame.")), "image/jpeg", 0.88);
+      });
       stopCamera();
-      onSend?.(prompt, frame);
-    } catch (error) {
-      setCameraError(error?.message || "Could not analyze this camera frame.");
-    } finally { setCameraBusy(false); }
+      onSend?.("What do you see? Please describe only what the local camera scan can support.", frame, { vision, visionDescription: vision.visionDescription });
+    } catch (error) { setCameraError(error?.message || "Could not analyze this camera frame."); }
+    finally { setCameraBusy(false); }
   };
 
   const startSpeechRecognition = () => {
@@ -127,7 +129,7 @@ export default function InputBar({
     if (listening) { recognitionRef.current?.stop?.(); setListening(false); return; }
     const recognition = new Recognition();
     recognitionRef.current = recognition;
-    recognition.lang = navigator.language || "en-KE";
+    recognition.lang = voiceLanguage;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.onstart = () => setListening(true);
@@ -426,10 +428,10 @@ export default function InputBar({
               disabled:cursor-not-allowed
               disabled:opacity-40
             "
-            aria-label="Attach document"
-            title="Attach document"
+            aria-label="Upload a file"
+            title="Upload a file"
           >
-            <Paperclip size={18} />
+            <Upload size={18} />
           </button>
 
           {/* Textarea */}
