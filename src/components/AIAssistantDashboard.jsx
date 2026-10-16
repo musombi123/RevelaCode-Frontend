@@ -22,7 +22,9 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { answerLocally, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { analyzeImageFileEnhanced } from "@/ai/freeVisionEngine";
+import { requestHubReply } from "@/ai/hubApi";
 
 /* =========================================================
    CONSTANTS
@@ -345,11 +347,16 @@ export default function AIAssistantDashboard({
   activeHub = "home",
   compactMode = false,
 }) {
-  const {
-    user,
-    isGuest,
-    isReady,
-  } = useAuth();
+  const { user, isGuest, isReady } = useAuth();
+  const [selectedAssistantHub, setSelectedAssistantHub] = useState(() => ({
+    shamba: "mkulima", biashara: "biashara", education: "elimu",
+    faith: "mahubiri", bible: "mahubiri", prophecy: "mahubiri",
+  }[activeHub] || "general"));
+
+  useEffect(() => {
+    const mapping = { shamba: "mkulima", biashara: "biashara", education: "elimu", faith: "mahubiri", bible: "mahubiri", prophecy: "mahubiri" };
+    if (mapping[activeHub]) setSelectedAssistantHub(mapping[activeHub]);
+  }, [activeHub]);
 
   /*
    * Prefer the authoritative Mongo/RevelaCode user ID.
@@ -357,28 +364,21 @@ export default function AIAssistantDashboard({
    * login payloads that did not yet expose an ID.
    */
   const hubLabels = {
-    home: "the RevelaCode home workspace",
-    faith: "Faith & Scripture",
-    bible: "Bible study",
-    study: "study and learning",
-    prophecy: "prophecy exploration",
-    events: "faith events",
-    referential: "reference resources",
-    education: "Elimu education and school management",
-    shamba: "Shamba farming and agriculture",
-    biashara: "Biashara business operations",
-    community: "Community, groups and opportunities",
-    payments: "payments and wallet services",
-    profile: "your account profile",
-    settings: "preferences and settings",
+    home: "the RevelaCode home workspace", faith: "Faith & Scripture", bible: "Bible study",
+    study: "study and learning", prophecy: "prophecy exploration", events: "faith events",
+    referential: "reference resources", education: "Elimu education and school management",
+    shamba: "Shamba farming and agriculture", biashara: "Biashara business operations",
+    community: "Community, groups and opportunities", payments: "payments and wallet services",
+    profile: "your account profile", settings: "preferences and settings",
   };
-  const activeHubLabel =
-    hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const activeHubLabel = hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const assistantHubLabels = { mkulima: "Mkulima — farming, crops and soil", biashara: "Biashara — business, sales and negotiation", elimu: "Elimu / Teacher — learning and programming", mahubiri: "Mahubiri / Theology — Bible, sermons and prophecy", general: "General Mentor — cross-hub guidance" };
+  const selectedAssistantHubLabel = assistantHubLabels[selectedAssistantHub] || assistantHubLabels.general;
   const hubContext = [
+    "ACTIVE ASSISTANT HUB: " + selectedAssistantHubLabel + ".",
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
-    "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
+    "PERSONALIZATION RULE: Answer in the selected hub persona when relevant; if the user asks an unrelated question, answer it normally. Be warm, candid, practical, and willing to disagree respectfully when evidence supports it. Do not claim access to private workspace records unless they are actually provided.",
   ].join(" ");
-
   const userScope =
     user?.id ||
     user?.user_id ||
