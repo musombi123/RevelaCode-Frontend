@@ -34,6 +34,8 @@ import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
+import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
+import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -46,6 +48,13 @@ const PILLARS = [
     subtitle: "Useful now",
     description: "What is useful to me right now?",
     icon: Sparkles,
+  },
+  {
+    key: "marketplace",
+    label: "Marketplace",
+    subtitle: "Trade value",
+    description: "Discover useful goods, skills and local services.",
+    icon: ShoppingBag,
   },
   {
     key: "discovery",
@@ -440,6 +449,15 @@ export default function CommunityDashboard({
 
         case "community-notifications":
           setWorkspacePage("notifications");
+          return;
+
+        case "community-marketplace":
+        case "marketplace":
+          setWorkspacePage("marketplace");
+          return;
+
+        case "community-contact-settings":
+          setWorkspacePage("contact-settings");
           return;
 
         case "community-groups":
@@ -852,6 +870,18 @@ export default function CommunityDashboard({
     return <CommunityGroups onNavigate={navigate} />;
   }
 
+  if (workspacePage === "marketplace") {
+    return <CommunityMarketplace onNavigate={navigate} />;
+  }
+
+  if (workspacePage === "contact-settings") {
+    return (
+      <CommunityContactSettings
+        onBack={() => navigate("community")}
+      />
+    );
+  }
+
   // ==========================================================
   // RENDER
   // ==========================================================
@@ -901,14 +931,24 @@ export default function CommunityDashboard({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={openComposer}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
-            >
-              <Plus size={16} />
-              Start something
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row xl:flex-col 2xl:flex-row">
+              <button
+                type="button"
+                onClick={openComposer}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
+              >
+                <Plus size={16} />
+                Start something
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("community-marketplace")}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
+              >
+                <ShoppingBag size={15} />
+                Explore marketplace
+              </button>
+            </div>
           </div>
 
           <p className="relative mt-5 border-t border-white/10 pt-4 text-xs font-semibold text-white/50">
@@ -941,6 +981,11 @@ export default function CommunityDashboard({
                 active={activeSurface === pillar.key}
                 onClick={() => {
                   setError("");
+
+                  if (pillar.key === "marketplace") {
+                    setWorkspacePage("marketplace");
+                    return;
+                  }
 
                   if (pillar.key === "groups") {
                     setActiveSurface("groups");
