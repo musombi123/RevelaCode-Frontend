@@ -51,9 +51,8 @@ export default function ChatWindow({
   return (
     <div
       className="
-        mx-auto
         w-full
-        max-w-4xl
+        min-w-0
         px-3
         py-5
         sm:px-5
