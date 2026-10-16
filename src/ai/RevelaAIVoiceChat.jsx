@@ -31,7 +31,8 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
     const question = String(heard || "").trim();
     if (!question) return;
 
-    const memory = await getLocalBrainMemory(memoryScope);\n    const result = composeLivingResponse(question, activeHub, "", memory);
+    const memory = await getLocalBrainMemory(memoryScope);
+    const result = composeLivingResponse(question, activeHub, "", memory);
     const response = result.reply;
     setReply(response);
 
