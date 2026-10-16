@@ -20,6 +20,7 @@ import {
   ChevronRight,
   UserCircle2,
   LockKeyhole,
+  WalletCards,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
@@ -56,6 +57,10 @@ const Notifications = React.lazy(
   () => import("./Notifications.jsx")
 );
 
+const PaymentsDashboard = React.lazy(
+  () => import("@/Dashboard/PaymentsDashboard.jsx")
+);
+
 /* =========================================================
    API BASE
 ========================================================= */
@@ -83,6 +88,12 @@ const accountMenu = [
     label: "Preferences",
     description: "Customize your experience",
     icon: Settings,
+  },
+  {
+    key: "payments",
+    label: "Payments & Wallet",
+    description: "Balance, transfers and transaction history",
+    icon: WalletCards,
   },
   {
     key: "accounts",
@@ -300,6 +311,7 @@ async function getResponseError(response, fallback) {
 
 export default function UserAccountDashboard({
   onLogout,
+  onNavigate,
 }) {
   const {
     user: authUser,
@@ -874,6 +886,13 @@ export default function UserAccountDashboard({
               confirmResetPassword
             }
           />
+        );
+
+      case "payments":
+        return (
+          <Suspense fallback={<Loading />}>
+            <PaymentsDashboard onNavigate={onNavigate} />
+          </Suspense>
         );
 
       case "notifications":
