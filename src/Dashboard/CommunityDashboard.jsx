@@ -1217,7 +1217,7 @@ export default function CommunityDashboard({
             </div>
 
             <aside className="hidden space-y-4 xl:block">
-              <section className="rounded-[22px] border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+              <section className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
                 <div className="flex items-center gap-2">
                   <Sparkles
                     size={16}
@@ -1255,7 +1255,7 @@ export default function CommunityDashboard({
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+              <section className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
                   Connected hubs
                 </h3>
