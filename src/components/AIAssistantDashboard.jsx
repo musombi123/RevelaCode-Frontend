@@ -19,19 +19,15 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
-import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { useAuth } from "@/context/AuthContext";
+import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import MultimodalStudio from "@/ai/v2/MultimodalStudio";
+import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 
 /* =========================================================
    CONSTANTS
 ========================================================= */
-
-const REVELAAI_URL = (
-  import.meta.env.VITE_REVELAAI_URL || ""
-)
-  .trim()
-  .replace(/\/+$/, "");
 
 const LEGACY_STORAGE_KEY = "revela_chats";
 
@@ -354,7 +350,6 @@ export default function AIAssistantDashboard({
     user,
     isGuest,
     isReady,
-    authFetch,
   } = useAuth();
 
   /*
@@ -745,104 +740,8 @@ export default function AIAssistantDashboard({
     );
 
   /* =======================================================
-     AI REQUEST
+     LOCAL FREE RESPONSE ENGINE
   ======================================================= */
-
-  const callRevelaAI =
-    useCallback(
-      async ({
-        message,
-        context,
-        file = null,
-        sessionId,
-        signal,
-      }) => {
-        if (!REVELAAI_URL) {
-          throw new Error(
-            "VITE_REVELAAI_URL is not configured."
-          );
-        }
-
-        const headers = {
-          "X-Session-ID":
-            sessionId || "",
-        };
-
-        let body;
-
-        /*
-         * FILE UPLOAD
-         *
-         * Do NOT set Content-Type manually.
-         * Browser must generate the multipart boundary.
-         */
-        if (file) {
-          const formData =
-            new FormData();
-
-          formData.append(
-            "file",
-            file,
-            file.name
-          );
-
-          if (message) {
-            formData.append(
-              "message",
-              message
-            );
-          }
-
-          if (context) {
-            formData.append(
-              "context",
-              context
-            );
-          }
-
-          body =
-            formData;
-        } else {
-          headers[
-            "Content-Type"
-          ] =
-            "application/json";
-
-          body =
-            JSON.stringify({
-              message,
-              context,
-            });
-        }
-
-        const response =
-          await authFetch(
-            `${REVELAAI_URL}/ai`,
-            {
-              method: "POST",
-              headers,
-              body,
-              signal,
-            }
-          );
-
-        const data =
-          await response
-            .json()
-            .catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error?.message ||
-              data?.message ||
-              `AI request failed (HTTP ${response.status}).`
-          );
-        }
-
-        return data;
-      },
-      [authFetch]
-    );
 
   /* =======================================================
      SEND TEXT / FILE
@@ -971,23 +870,54 @@ export default function AIAssistantDashboard({
               );
 
         try {
-          const data =
-            await callRevelaAI({
-              message:
-                requestMessage,
-              context,
-              file:
-                attachedFile,
-              sessionId:
-                chatId,
-              signal:
-                controller.signal,
-            });
+          /*
+           * FREE EDITION: keep the main RevelaAI conversation local-only.
+           * No fetch, backend request, API key, or remote model is used here.
+           * Existing BibleDashboard and Biashara code paths are untouched.
+           */
+          let localText = "";
+          let localType = "text";
+          if (attachedFile) {
+            if (attachedFile.type.startsWith("image/")) {
+              const result = await analyzeImageFile(attachedFile);
+              localText = result.summary;
+              localType = "local-vision";
+            } else if (attachedFile.type.startsWith("video/")) {
+              const result = await analyzeVideoFile(attachedFile);
+              localText = result.summary + "\n\nFrame timeline:\n" + result.frames.map(frame => frame.time + "s: brightness " + frame.brightness + ", edge activity " + frame.edgeActivity + ", pixel difference " + (frame.motionDifference ?? "n/a")).join("\n");
+              localType = "local-video";
+            } else {
+              const result = await readLocalDocument(attachedFile);
+              localText = result.summary + "\n\nFrequent terms: " + result.keyTerms.map(item => item[0] + " (" + item[1] + ")").join(", ") + "\n\nExcerpt:\n" + result.excerpt;
+              localType = "local-document";
+            }
+          } else {
+            localText = answerLocally(requestMessage, context);
+          }
+          const normalized = {
+            text: localText,
+            imageUrls: [],
+            sources: [],
+            metadata: { engine: "local-free-rules", network: false },
+            type: localType,
+          };
 
-          const normalized =
-            normalizeAIResponse(
-              data
-            );
+          // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
+          const streamText = normalized.text || "RevelaAI returned an empty response.";
+          await new Promise((resolve) => {
+            let cursor = 0;
+            const tick = () => {
+              cursor = Math.min(streamText.length, cursor + 6);
+              setMessages((previous) => previous.map((message) =>
+                message.id === loadingId
+                  ? { ...message, text: streamText.slice(0, cursor), status: cursor >= streamText.length ? "done" : "loading" }
+                  : message
+              ));
+              if (cursor < streamText.length) window.setTimeout(tick, 10);
+              else resolve();
+            };
+            tick();
+          });
 
           const assistantMessage =
             {
@@ -1097,7 +1027,6 @@ export default function AIAssistantDashboard({
         activeChatId,
         ensureActiveChat,
         updateChat,
-        callRevelaAI,
         hubContext,
       ]
     );
@@ -1260,14 +1189,17 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const data = await callRevelaAI({
-          message: enrichPrompt(userMessage.text),
-          context: [hubContext, buildContext(history)].filter(Boolean).join("\n\n"),
-          sessionId: chatId,
-          signal: controller.signal,
-        });
-
-        const normalized = normalizeAIResponse(data);
+        const localText = answerLocally(
+          enrichPrompt(userMessage.text),
+          [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
+        );
+        const normalized = {
+          text: localText,
+          imageUrls: [],
+          sources: [],
+          metadata: { engine: "local-free-rules", network: false },
+          type: "text",
+        };
 
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
@@ -1305,7 +1237,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, callRevelaAI, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext]
   );
 
   /* =======================================================
@@ -1570,6 +1502,14 @@ export default function AIAssistantDashboard({
                   <HubRevenueOffers hub="smart_ai" compact />
                 </div>
 
+                <div className="mt-6 w-full max-w-3xl">
+                  <MultimodalStudio
+                    onAnalyze={(file, prompt) => sendMessage(prompt, file)}
+                    onVoiceTranscript={sendTextMessage}
+                    onOpenFullVoice={openVoice}
+                  />
+                </div>
+
                 <div
                   className="
                     mt-8
@@ -1650,6 +1590,12 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
+                <MultimodalStudio
+                  onAnalyze={(file, prompt) => sendMessage(prompt, file)}
+                  onVoiceTranscript={sendTextMessage}
+                  onOpenFullVoice={openVoice}
+                />
+                <div className="mt-3">
                 <InputBar
                   onSend={
                     sendMessage
@@ -1658,6 +1604,7 @@ export default function AIAssistantDashboard({
                     openVoice
                   }
                 />
+                </div>
               </div>
             </div>
           </section>

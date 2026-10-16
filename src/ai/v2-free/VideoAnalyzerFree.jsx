@@ -1,0 +1,14 @@
+import React,{useState} from "react";
+import {Film,Loader2,Upload,X} from "lucide-react";
+import {analyzeVideoFile} from "./localIntelligence";
+export default function VideoAnalyzerFree({onClose}){
+ const [file,setFile]=useState(null),[result,setResult]=useState(null),[busy,setBusy]=useState(false),[progress,setProgress]=useState([0,1]),[error,setError]=useState("");
+ const run=async()=>{setBusy(true);setError("");setResult(null);try{setResult(await analyzeVideoFile(file,(a,b)=>setProgress([a,b])));}catch(e){setError(e.message||"Video scan failed.");}finally{setBusy(false);}};
+ return <section className="rounded-2xl border border-cyan-400/20 bg-slate-950 p-4 text-white"><div className="flex justify-between"><div><h3 className="text-sm font-bold">Free Video · Frame Diff</h3><p className="mt-1 text-xs text-slate-400">Local frame sampling and pixel-change timeline</p></div><button onClick={onClose} aria-label="Close video"><X size={16}/></button></div>
+ <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 p-4 text-sm"><Upload size={17}/>{file?file.name:"Choose video (max 20 MB)"}<input hidden type="file" accept="video/*" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>20*1024*1024){setError("Video must be 20 MB or smaller.");return;}setFile(f||null);setResult(null);setError("");e.target.value="";}}/></label>
+ <button disabled={!file||busy} onClick={run} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 p-3 text-sm font-bold text-slate-950 disabled:opacity-40">{busy?<Loader2 size={17} className="animate-spin"/>:<Film size={17}/>} {busy?"Sampling frames…":"Analyze video offline"}</button>
+ {busy&&<div className="mt-3"><div className="h-1.5 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300" style={{width:(progress[0]/progress[1]*100)+"%"}}/></div><p className="mt-1 text-xs text-slate-400">Frame {progress[0]} of {progress[1]}</p></div>}
+ {error&&<p role="status" className="mt-2 text-xs text-amber-300">{error}</p>}
+ {result&&<div className="mt-3 rounded-xl border border-white/10 p-3"><p className="text-sm font-semibold">Frame timeline · {result.duration}s</p><p className="mt-1 text-xs text-slate-300">{result.summary}</p><div className="mt-3 space-y-2">{result.frames.map((f,i)=><div key={i} className="grid grid-cols-[45px_1fr_55px] items-center gap-2 text-[10px]"><span className="text-slate-400">{f.time}s</span><div className="h-2 rounded bg-white/10"><div className="h-2 rounded bg-cyan-400" style={{width:Math.min(100,f.motionDifference||0)+"%"}}/></div><span className="text-right text-slate-400">Δ {f.motionDifference??"—"}</span></div>)}</div></div>}
+ <p className="mt-3 text-[10px] leading-4 text-slate-500">Video stays on device. This measures frame changes, not object identity, emotion, scene meaning or speech transcription.</p></section>;
+}
