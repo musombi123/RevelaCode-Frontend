@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
 
 import {
   Bookmark,
@@ -476,23 +477,34 @@ export default function CommunityPostCard({
     post?._id ||
     post?.post_id;
 
+  const authorId =
+    post?.author_user_id ??
+    post?.author_id ??
+    post?.user_id ??
+    post?.author?.id ??
+    post?.author?._id ??
+    post?.user?.id ??
+    post?.user?._id ??
+    null;
+
+  const currentUserId =
+    currentUser?.id ??
+    currentUser?._id ??
+    currentUser?.user_id ??
+    currentUser?.userId ??
+    currentUser?.sub ??
+    null;
+
   const attachments = useMemo(
     () => normalizeCommunityAttachments(post),
     [post],
   );
 
-  const isOwnPost =
-    Boolean(
-      currentUser &&
-        (
-          post?.author?.id ===
-            currentUser?.id ||
-          post?.author_id ===
-            currentUser?.id ||
-          post?.user_id ===
-            currentUser?.id
-        )
-    );
+  const isOwnPost = Boolean(
+    authorId !== null &&
+    currentUserId !== null &&
+    String(authorId) === String(currentUserId)
+  );
 
   const shouldTruncate =
     body.length > 360;
@@ -908,7 +920,7 @@ export default function CommunityPostCard({
                   dark:bg-slate-900
                 "
               >
-                {!isOwnPost && (
+                {!isOwnPost && typeof onFollow === "function" && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1014,6 +1026,14 @@ export default function CommunityPostCard({
           )}
         </div>
       </div>
+
+      {!isOwnPost && authorId ? (
+        <WhatsAppButton
+          memberId={authorId}
+          postId={postId}
+          compact
+        />
+      ) : null}
 
       {/* ======================================================
           CATEGORY / HUB
