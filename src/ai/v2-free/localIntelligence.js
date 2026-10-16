@@ -70,7 +70,17 @@ export function assessEmotion(text){
  return {emotion:best,opening:openings[best]};
 }
 const KEY="revelaai.free.memory.v2";
-export function saveMemory(text){const m=loadMemory();m.notes.push({text:String(text).slice(0,2000),at:Date.now()});m.notes=m.notes.slice(-100);localStorage.setItem(KEY,JSON.stringify(m));return m;}
+export function saveMemory(text){
+ const m=loadMemory();m.notes.push({text:String(text).slice(0,2000),at:Date.now()});m.notes=m.notes.slice(-100);
+ localStorage.setItem(KEY,JSON.stringify(m));
+ // Best-effort IndexedDB mirror; this remains local to the current browser profile.
+ if(typeof indexedDB!=="undefined")try{
+  const request=indexedDB.open("revelaai-free-v2",1);
+  request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("memories"))request.result.createObjectStore("memories");};
+  request.onsuccess=()=>{const db=request.result;try{const tx=db.transaction("memories","readwrite");tx.objectStore("memories").put(m,"snapshot");tx.oncomplete=()=>db.close();tx.onerror=()=>db.close();}catch{db.close();}};
+ }catch{}
+ return m;
+}
 export function loadMemory(){try{return JSON.parse(localStorage.getItem(KEY)||'{"notes":[]}');}catch{return {notes:[]};}}
 export function searchMemory(query){const words=String(query).toLowerCase().split(/\W+/).filter(x=>x.length>2);return loadMemory().notes.map(n=>Object.assign({},n,{score:words.filter(w=>n.text.toLowerCase().includes(w)).length})).filter(n=>n.score>0).sort((a,b)=>b.score-a.score).slice(0,5);}
 export function typewriter(text,onUpdate,delay=12){let i=0,cancelled=false,timer;const tick=()=>{if(cancelled)return;i=Math.min(text.length,i+3);onUpdate(text.slice(0,i));if(i<text.length)timer=setTimeout(tick,delay);};tick();return()=>{cancelled=true;clearTimeout(timer);};}
