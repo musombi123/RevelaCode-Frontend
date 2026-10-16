@@ -21,7 +21,6 @@ import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import { answerLocally, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import { analyzeImageFileEnhanced } from "@/ai/freeVisionEngine";
 import { requestHubReply } from "@/ai/hubApi";
@@ -1389,7 +1388,7 @@ export default function AIAssistantDashboard({
               >
                 {compactMode
                   ? "Personalized for " + activeHubLabel
-                  : "RevelaCode intelligent assistant"}
+                  : selectedAssistantHubLabel}
               </p>
             </div>
           </div>
@@ -1457,7 +1456,6 @@ export default function AIAssistantDashboard({
             <div className="flex min-h-full w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
               <div className="flex w-full max-w-3xl flex-col items-center justify-center">
                 <WelcomeScreen onSuggestion={sendTextMessage} />
-                <div className="mt-6 w-full max-w-3xl"><HubRevenueOffers hub="smart_ai" compact /></div>
                 <div className="mt-6 w-full max-w-3xl"><InputBar onSend={sendMessage} /></div>
               </div>
             </div>
