@@ -48,7 +48,6 @@ export async function loadLocalVisionAssets() {
       console.warn("Local COCO-SSD weights unavailable; using pixel math.", error);
     }
   }
-
   const cvScript = await loadLocalScript(`${ASSET}/opencv.js`, () => Boolean(window.cv));
   const cvReady = cvScript ? await waitForOpenCv(window.cv) : false;
   const ocrScript = await loadLocalScript(`${ASSET}/tesseract.min.js`, () => Boolean(window.Tesseract));
@@ -69,15 +68,12 @@ export function scanPixelMath(imageData) {
     gray[p] = y;
   }
   const brightness = Math.round(luminance / total);
-  // A lightweight gradient estimate is retained as a fallback when OpenCV isn't bundled.
   let edgePixels = 0, gradientSum = 0, blurVariance = 0, gradientN = 0, gradientMean = 0;
   const gradients = [];
   for (let y = 1; y < height - 1; y += 2) {
     for (let x = 1; x < width - 1; x += 2) {
       const i = y * width + x;
-      const gx = Math.abs(gray[i + 1] - gray[i - 1]);
-      const gy = Math.abs(gray[i + width] - gray[i - width]);
-      const grad = gx + gy;
+      const grad = Math.abs(gray[i + 1] - gray[i - 1]) + Math.abs(gray[i + width] - gray[i - width]);
       gradients.push(grad); gradientSum += grad; gradientMean += grad; gradientN++;
       if (grad > 70) edgePixels++;
     }
@@ -90,8 +86,7 @@ export function scanPixelMath(imageData) {
   return {
     width, height, brightness, averageRGB, contrast,
     light: brightness < 50 ? "dark" : brightness > 200 ? "bright" : "balanced",
-    edgeCount: edgePixels,
-    edgeActivity: Math.round(gradientSum / Math.max(1, gradientN)),
+    edgeCount: edgePixels, edgeActivity: Math.round(gradientSum / Math.max(1, gradientN)),
     blurScore: Math.round(blurVariance),
     focus: blurVariance < 120 ? "possibly blurry" : "reasonably sharp",
     dominantColor: ["red", "green", "blue"][averageRGB.indexOf(Math.max(...averageRGB))],
@@ -100,35 +95,29 @@ export function scanPixelMath(imageData) {
 
 function scanOpenCv(canvas, cv) {
   if (!cv?.Mat) return null;
-  let src, gray, edges, laplacian, contours, hierarchy;
+  let src, gray, edges, laplacian, contours, hierarchy, meanMat, stdMat;
   try {
-    src = cv.imread(canvas);
-    gray = new cv.Mat();
-    edges = new cv.Mat();
-    laplacian = new cv.Mat();
-    contours = new cv.MatVector();
-    hierarchy = new cv.Mat();
+    src = cv.imread(canvas); gray = new cv.Mat(); edges = new cv.Mat();
+    laplacian = new cv.Mat(); contours = new cv.MatVector(); hierarchy = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.Canny(gray, edges, 70, 150);
     cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
     cv.Laplacian(gray, laplacian, cv.CV_64F);
-    const mean = cv.mean(gray)[0];
-    const meanMat = new cv.Mat();
-    const stdMat = new cv.Mat();
+    meanMat = new cv.Mat(); stdMat = new cv.Mat();
     cv.meanStdDev(laplacian, meanMat, stdMat);
     const blurScore = Math.round(stdMat.data64F[0] ** 2);
-    meanMat.delete(); stdMat.delete();
     let contourCount = 0;
     for (let i = 0; i < contours.size(); i++) {
-      const area = cv.contourArea(contours.get(i));
-      if (area >= 90) contourCount++;
+      const contour = contours.get(i);
+      if (cv.contourArea(contour) >= 90) contourCount++;
+      contour.delete?.();
     }
-    return { cvBrightness: Math.round(mean), contourCount, blurScore, edgePixels: cv.countNonZero(edges) };
+    return { cvBrightness: Math.round(cv.mean(gray)[0]), contourCount, blurScore, edgePixels: cv.countNonZero(edges) };
   } catch (error) {
     console.warn("OpenCV local math failed; using pixel gradient fallback.", error);
     return null;
   } finally {
-    [src, gray, edges, laplacian, contours, hierarchy].forEach((mat) => mat?.delete?.());
+    [src, gray, edges, laplacian, contours, hierarchy, meanMat, stdMat].forEach((mat) => mat?.delete?.());
   }
 }
 
@@ -152,11 +141,10 @@ async function readLocalText(canvas) {
   }
 }
 
-export async function scanCanvas(canvas, assets = {}) {
+export async function scanCanvas(canvas, assets = {}, options = {}) {
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Canvas pixel access is unavailable.");
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const math = scanPixelMath(pixels);
+  const math = scanPixelMath(ctx.getImageData(0, 0, canvas.width, canvas.height));
   const cvStats = scanOpenCv(canvas, assets.cv || window.cv);
   let predictions = [];
   if (assets.detector) {
@@ -168,19 +156,19 @@ export async function scanCanvas(canvas, assets = {}) {
       console.warn("Local object detector failed.", error);
     }
   }
-  const text = assets.ocrAvailable ? await readLocalText(canvas) : "";
-  const objects = predictions.map((item) => item.class);
-  const contours = cvStats?.contourCount ?? math.edgeCount;
-  const blurScore = cvStats?.blurScore ?? math.blurScore;
+  const text = options.readText && assets.ocrAvailable ? await readLocalText(canvas) : "";
   const brightness = cvStats?.cvBrightness ?? math.brightness;
   const result = {
-    ...math, brightness, objects: predictions, objectNames: objects,
-    contourCount: contours, blurScore, text,
+    ...math, brightness, objects: predictions, objectNames: predictions.map((item) => item.class),
+    contourCount: cvStats?.contourCount ?? math.edgeCount,
+    blurScore: cvStats?.blurScore ?? math.blurScore, text,
     objectModelReady: Boolean(assets.detector),
     openCvReady: Boolean(assets.cv || window.cv?.Mat),
-    ocrReady: Boolean(assets.ocrAvailable && text),
+    ocrReady: Boolean(assets.ocrAvailable),
     scannedAt: new Date().toISOString(),
   };
+  result.light = brightness < 50 ? "dark" : brightness > 200 ? "bright" : "balanced";
+  result.focus = result.blurScore < 120 ? "possibly blurry" : "reasonably sharp";
   result.description = describeVision(result);
   return result;
 }
