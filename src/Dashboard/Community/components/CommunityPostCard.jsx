@@ -4,6 +4,7 @@ import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
 import {
   Bookmark,
   Check,
+  ExternalLink,
   ChevronDown,
   ChevronUp,
   Heart,
@@ -539,6 +540,29 @@ export default function CommunityPostCard({
     () => normalizeCommunityAttachments(post),
     [post],
   );
+
+  const actionUrl = useMemo(() => {
+    const target = String(post?.action?.target || "").trim();
+    if (!target) return "";
+    if (
+      String(post?.action?.type || "").toLowerCase() === "external_link" &&
+      !/^https?:\/\//i.test(target)
+    ) {
+      return "";
+    }
+
+    try {
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://revelacode.local";
+      const parsed = new URL(target, origin);
+      if (!["http:", "https:"].includes(parsed.protocol)) return "";
+      return parsed.toString();
+    } catch {
+      return "";
+    }
+  }, [post?.action]);
 
   const isOwnPost = Boolean(
     authorId !== null &&
@@ -1211,6 +1235,18 @@ export default function CommunityPostCard({
           </div>
         )}
       </button>
+
+      {actionUrl ? (
+        <a
+          href={actionUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+        >
+          {post?.action?.label || "Open resource"}
+          <ExternalLink size={13} />
+        </a>
+      ) : null}
 
       {/* COMMUNITY MEDIA ATTACHMENTS */}
       {attachments.length > 0 && (
