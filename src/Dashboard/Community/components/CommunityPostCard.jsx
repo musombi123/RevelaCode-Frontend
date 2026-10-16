@@ -21,6 +21,35 @@ import {
 // HELPERS
 // ============================================================
 
+const SAVED_POSTS_STORAGE_KEY = "revelacode.community.savedPostIds.v1";
+
+function readSavedPostIds() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const value = JSON.parse(
+      window.localStorage.getItem(SAVED_POSTS_STORAGE_KEY) || "[]",
+    );
+    return Array.isArray(value) ? value.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedPostId(postId, shouldSave) {
+  const id = postId === undefined || postId === null ? "" : String(postId);
+  if (!id || typeof window === "undefined") return;
+
+  const savedIds = new Set(readSavedPostIds());
+  if (shouldSave) savedIds.add(id);
+  else savedIds.delete(id);
+
+  window.localStorage.setItem(
+    SAVED_POSTS_STORAGE_KEY,
+    JSON.stringify([...savedIds]),
+  );
+}
+
 function getAuthorName(post) {
   return (
     post?.author?.name ||
@@ -372,13 +401,21 @@ export default function CommunityPostCard({
     );
 
   const [saved, setSaved] =
-    useState(
-      Boolean(
+    useState(() => {
+      const initialPostId =
+        post?.id ??
+        post?._id ??
+        post?.post_id ??
+        null;
+
+      return Boolean(
         post?.saved ||
-          post?.is_saved ||
-          post?.bookmarked
-      )
-    );
+        post?.is_saved ||
+        post?.bookmarked ||
+        (initialPostId !== null &&
+          readSavedPostIds().includes(String(initialPostId)))
+      );
+    });
 
   const [following, setFollowing] =
     useState(
@@ -393,6 +430,9 @@ export default function CommunityPostCard({
 
   const [expanded, setExpanded] =
     useState(false);
+
+  const [shareFeedback, setShareFeedback] =
+    useState("");
 
   const [localLikes, setLocalLikes] =
     useState(
@@ -567,23 +607,24 @@ export default function CommunityPostCard({
 
   const handleSave = async () => {
     const nextSaved = !saved;
-
     setSaved(nextSaved);
 
     if (typeof onSave === "function") {
       try {
-        await onSave(
-          post,
-          nextSaved
-        );
+        await onSave(post, nextSaved);
       } catch (error) {
         setSaved(!nextSaved);
-
-        console.error(
-          "Community post save failed:",
-          error
-        );
+        console.error("Community post save failed:", error);
       }
+      return;
+    }
+
+    try {
+      persistSavedPostId(postId, nextSaved);
+    } catch (error) {
+      setSaved(!nextSaved);
+      setShareFeedback("This post could not be saved on this device.");
+      console.error("Community post bookmark could not be stored:", error);
     }
   };
 
@@ -632,28 +673,47 @@ export default function CommunityPostCard({
   };
 
   const handleShare = async () => {
-    if (
-      typeof onShare ===
-      "function"
-    ) {
-      await onShare(post);
-      return;
-    }
+    setShareFeedback("");
+
+    const shareUrl =
+      typeof window !== "undefined"
+        ? window.location.href
+        : "";
 
     try {
-      if (
-        navigator?.clipboard &&
-        postId
-      ) {
-        await navigator.clipboard.writeText(
-          `${window.location.origin}/community/post/${postId}`
-        );
+      if (typeof onShare === "function") {
+        await onShare(post);
+        setShareFeedback("Post shared.");
+        return;
       }
+
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({
+          title,
+          text: body.slice(0, 600),
+          url: shareUrl,
+        });
+        setShareFeedback("Share sheet opened.");
+        return;
+      }
+
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function" &&
+        shareUrl
+      ) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareFeedback("Community link copied. Share it with someone who may find this useful.");
+        return;
+      }
+
+      setShareFeedback("Sharing is not available in this browser. Copy the page address to share this post.");
     } catch (error) {
-      console.warn(
-        "Unable to copy post link:",
-        error
-      );
+      if (error?.name !== "AbortError") {
+        setShareFeedback("Unable to share right now. Please try again.");
+        console.warn("Community post share failed:", error);
+      }
     }
   };
 
@@ -1515,6 +1575,15 @@ export default function CommunityPostCard({
           </span>
         </button>
       </div>
+
+      {shareFeedback ? (
+        <p
+          role="status"
+          className="mt-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400"
+        >
+          {shareFeedback}
+        </p>
+      ) : null}
 
       {/* ======================================================
           FOLLOWING INDICATOR
