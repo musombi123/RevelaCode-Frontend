@@ -696,10 +696,9 @@ export default function CommunityDashboard({
       return undefined;
     }
 
-    const surface =
-      activeSurface === "threads"
-        ? "pulse"
-        : activeSurface;
+    // Each Community pillar maps to its own server surface.
+    // Threads must not silently fall back to Pulse.
+    const surface = activeSurface;
 
     const mode =
       activeSurface === "pulse"
