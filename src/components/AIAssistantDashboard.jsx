@@ -22,7 +22,6 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import MultimodalStudio from "@/ai/v2/MultimodalStudio";
 import { answerLocally, analyzeImageFile, analyzeVideoFile, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 
 /* =========================================================
@@ -1503,99 +1502,7 @@ export default function AIAssistantDashboard({
                 </div>
 
                 <div className="mt-6 w-full max-w-3xl">
-                  <MultimodalStudio
-                    onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                    onVoiceTranscript={sendTextMessage}
-                    onOpenFullVoice={openVoice}
-                  />
-                </div>
-
-                <div
-                  className="
-                    mt-8
-                    w-full
-                    max-w-3xl
-                  "
-                >
-                  <InputBar
-                    centered
-                    onSend={
-                      sendMessage
-                    }
-                    onMic={
-                      openVoice
-                    }
-                  />
-                </div>
-
-                <p
-                  className="
-                    mt-4
-                    text-center
-                    text-[10px]
-                    leading-5
-                    text-gray-500
-                    sm:text-xs
-                  "
-                >
-                  Ask about Scripture,
-                  prophecy, coding,
-                  education, business,
-                  agriculture, documents,
-                  images, or general knowledge.
-                </p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section
-            className="
-              flex
-              min-h-0
-              flex-1
-              flex-col
-              overflow-hidden
-            "
-          >
-            <div
-              className="
-                min-h-0
-                flex-1
-                overflow-y-auto
-                overscroll-contain
-              "
-            >
-              <ChatWindow
-                messages={messages}
-                regenerableId={regenerableId}
-                onRegenerate={regenerateResponse}
-                onFeedback={handleFeedback}
-              />
-            </div>
-
-            <div
-              className="
-                shrink-0
-                border-t
-                border-gray-200
-                bg-white/95
-                px-3
-                pb-3
-                pt-3
-                backdrop-blur-lg
-                dark:border-white/10
-                dark:bg-revela-dark/95
-                sm:px-4
-                sm:pb-4
-              "
-            >
-              <div className="mx-auto w-full max-w-4xl">
-                <MultimodalStudio
-                  onAnalyze={(file, prompt) => sendMessage(prompt, file)}
-                  onVoiceTranscript={sendTextMessage}
-                  onOpenFullVoice={openVoice}
-                />
-                <div className="mt-3">
+<div className="mt-3">
                 <InputBar
                   onSend={
                     sendMessage
