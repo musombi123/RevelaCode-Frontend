@@ -318,7 +318,7 @@ function SchoolRegistrationForm({
   if (success) {
     return (
       <main className="min-h-[60vh] bg-slate-50 px-4 py-8 dark:bg-slate-950 sm:px-6">
-        <section className="mx-auto max-w-2xl rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900 sm:p-9">
+        <section className="mx-auto max-w-2xl rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900 sm:rounded-3xl sm:p-7">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
             <CheckCircle2 size={28} />
           </span>
@@ -367,7 +367,7 @@ function SchoolRegistrationForm({
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 dark:bg-slate-950 sm:px-6 sm:py-8">
       <section className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-slate-950 p-6 text-white sm:p-8">
+        <div className="bg-slate-950 p-4 text-white sm:p-6">
           <button
             type="button"
             onClick={onBack}
@@ -402,7 +402,7 @@ function SchoolRegistrationForm({
 
         <form
           onSubmit={submitApplication}
-          className="space-y-7 p-5 sm:p-8"
+          className="space-y-5 p-4 sm:space-y-6 sm:p-6"
         >
           {error && (
             <div
@@ -959,7 +959,7 @@ export default function ElimuDashboard({
               ElimuSchoolAccess.jsx has not been modified. */}
           <section className="overflow-hidden rounded-3xl border border-violet-200 bg-white shadow-sm dark:border-violet-900/50 dark:bg-slate-950">
             <div className="grid gap-0 md:grid-cols-[1fr_auto]">
-              <div className="p-6 sm:p-8">
+              <div className="p-4 sm:p-6">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300">
                   <Sparkles size={25} />
                 </div>
@@ -991,7 +991,7 @@ export default function ElimuDashboard({
                 </div>
               </div>
 
-              <div className="flex flex-col justify-center gap-3 border-t border-violet-100 bg-violet-50/60 p-6 dark:border-violet-900/40 dark:bg-violet-950/20 md:w-64 md:border-l md:border-t-0">
+              <div className="flex flex-col justify-center gap-2 border-t border-violet-100 bg-violet-50/60 p-4 dark:border-violet-900/40 dark:bg-violet-950/20 sm:p-5 md:w-64 md:border-l md:border-t-0">
                 <button
                   type="button"
                   onClick={handleCreateDemo}
