@@ -1262,15 +1262,28 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const localText = answerLocally(
+        const memory = await getLocalBrainMemory(userScope);
+        const routed = composeLivingResponse(
           enrichPrompt(userMessage.text),
-          [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
+          activeBrainHub,
+          activeHub,
+          memory
         );
+        const localText = routed.reply;
         const normalized = {
           text: localText,
           imageUrls: [],
           sources: [],
-          metadata: { engine: "local-free-rules", network: false },
+          metadata: {
+            engine: routed.engine,
+            network: false,
+            networkUsed: false,
+            hub: routed.hub,
+            hubLabel: routed.hubLabel,
+            routeReason: routed.routeReason,
+            emotionEstimate: routed.emotionEstimate,
+            intent: routed.intent,
+          },
           type: "text",
         };
 
@@ -1310,7 +1323,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub, activeHub]
   );
 
   /* =======================================================
