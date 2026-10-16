@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
-import { useNotifications } from "@/components/hooks/useNotifications.jsx";
+import { useCommunityNotifications } from "@/Dashboard/Community/useCommunityNotifications.jsx";
 
 // ============================================================
 // FILTERS
@@ -218,7 +218,7 @@ export default function CommunityNotifications({
     fetchNotifications,
     markAsRead: markNotificationRead,
     markAllRead,
-  } = useNotifications(30000);
+  } = useCommunityNotifications(30000);
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
