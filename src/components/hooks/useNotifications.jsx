@@ -93,29 +93,19 @@ export function useNotifications(refreshInterval = 12000) {
   );
 
   useEffect(() => {
-    let active = true;
+    fetchNotifications();
 
-    const load = async (options) => {
-      // The request itself is handled by fetchNotifications. The active
-      // guard prevents a completed request from updating an unmounted view.
-      if (active) await fetchNotifications(options);
-    };
-
-    load();
     if (!refreshInterval || refreshInterval <= 0) {
-      return () => { active = false; };
+      return undefined;
     }
 
     const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        load({ silent: true });
+      if (document.visibilityState !== "hidden") {
+        fetchNotifications({ silent: true });
       }
     }, refreshInterval);
 
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
+    return () => window.clearInterval(interval);
   }, [fetchNotifications, refreshInterval]);
 
   const unreadCount = useMemo(
