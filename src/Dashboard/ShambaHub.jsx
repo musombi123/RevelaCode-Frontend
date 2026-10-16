@@ -766,7 +766,7 @@ function MoreDrawer({
                     onNavigate(key);
                     onClose();
                   }}
-                  className={`flex items-center gap-4 rounded-2xl border p-4 text-left transition ${
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition sm:gap-4 sm:rounded-2xl sm:p-4 ${
                     active
                       ? "border-emerald-200 bg-emerald-50"
                       : "border-[#DCE5E1] hover:border-emerald-100 hover:bg-slate-50"
@@ -950,7 +950,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[244px] shrink-0 border-r border-[#DCE5E1] bg-white lg:block">
           <div className="flex h-full flex-col p-4">
             {/* Brand */}
-            <div className="mb-5 rounded-2xl border border-[#DCE5E1] bg-[#F0FAF5] p-4">
+            <div className="mb-4 rounded-xl border border-[#DCE5E1] bg-[#F0FAF5] p-3 sm:rounded-2xl sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087F5B] text-white shadow-sm">
                   <Leaf size={19} />
@@ -1193,7 +1193,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                 type="button"
                 onClick={detectLocation}
                 disabled={locationStatus === "detecting"}
-                className="flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-5 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md disabled:cursor-wait disabled:opacity-80"
+                className="flex w-full items-center gap-3 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-3.5 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md disabled:cursor-wait disabled:opacity-80 sm:gap-4 sm:rounded-2xl sm:p-4"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#087F5B] text-white">
                   <LocateFixed
