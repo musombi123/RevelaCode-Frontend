@@ -15,7 +15,7 @@ import {
   Moon,
   Sun,
   Type,
-  Languages,
+  {t("Language")}s,
   ExternalLink,
   ChevronRight,
   Settings2,
@@ -28,7 +28,7 @@ import {
 import { toast } from "react-hot-toast";
 
 import usePreferences from "./hooks/usePreferences.jsx";
-import { useTheme } from "./hooks/useTheme.jsx";
+import { use{t("Theme")} } from "./hooks/useTheme.jsx";
 
 /* =========================================================
    Constants
@@ -69,6 +69,7 @@ export default function PreferencesDashboard({
     setFontSize,
     language,
     setLanguage,
+    t,
   } = usePreferences();
 
   const {
@@ -217,7 +218,7 @@ export default function PreferencesDashboard({
   }, [fontSize]);
 
   /* =======================================================
-     Reading size handlers
+     {t("Reading size")} handlers
   ======================================================= */
 
   const changeReadingSize =
@@ -399,7 +400,7 @@ export default function PreferencesDashboard({
         </div>
 
         <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-          Preferences & Experience
+          {t("Preferences & Experience")}
         </h2>
 
         <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -441,7 +442,7 @@ export default function PreferencesDashboard({
 
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Preferences synced
+               {language === "sw" ? "Mapendeleo yamesawazishwa" : language === "fr" ? "Préférences synchronisées" : "Preferences synced"} 
             </div>
           </div>
         </section>
@@ -459,7 +460,7 @@ export default function PreferencesDashboard({
 
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Appearance
+                  {t("Appearance")}
                 </h3>
 
                 <p className="mt-0.5 text-xs text-slate-400">
@@ -488,7 +489,7 @@ export default function PreferencesDashboard({
               <div className="grid grid-cols-2 gap-3 sm:max-w-xl sm:grid-cols-3">
                 <ThemeOption
                   icon={Sun}
-                  label="Light"
+                  label={t("Light")}
                   active={
                     theme === "light"
                   }
@@ -499,7 +500,7 @@ export default function PreferencesDashboard({
 
                 <ThemeOption
                   icon={Moon}
-                  label="Dark"
+                  label={t("Dark")}
                   active={
                     theme === "dark"
                   }
@@ -510,7 +511,7 @@ export default function PreferencesDashboard({
 
                 <ThemeOption
                   icon={Settings2}
-                  label="System"
+                  label={t("System")}
                   active={
                     theme === "system"
                   }
@@ -543,7 +544,7 @@ export default function PreferencesDashboard({
                 <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-950">
                   <button
                     type="button"
-                    aria-label="Decrease reading size"
+                    aria-label={t("Decrease reading size")}
                     onClick={
                       decreaseReadingSize
                     }
@@ -563,7 +564,7 @@ export default function PreferencesDashboard({
 
                   <button
                     type="button"
-                    aria-label="Increase reading size"
+                    aria-label={t("Increase reading size")}
                     onClick={
                       increaseReadingSize
                     }
@@ -580,7 +581,7 @@ export default function PreferencesDashboard({
               <div className="grid grid-cols-3 gap-2 sm:max-w-xl">
                 <FontOption
                   value="sm"
-                  label="Small"
+                  label={t("Small")}
                   preview="Aa"
                   active={
                     fontSize === "sm"
@@ -594,7 +595,7 @@ export default function PreferencesDashboard({
 
                 <FontOption
                   value="md"
-                  label="Medium"
+                  label={t("Medium")}
                   preview="Aa"
                   active={
                     fontSize === "md"
@@ -608,7 +609,7 @@ export default function PreferencesDashboard({
 
                 <FontOption
                   value="lg"
-                  label="Large"
+                  label={t("Large")}
                   preview="Aa"
                   active={
                     fontSize === "lg"
@@ -628,7 +629,7 @@ export default function PreferencesDashboard({
                   <BookOpen className="h-4 w-4 text-slate-400" />
 
                   <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                    Reading preview
+                    {t("Reading preview")}
                   </span>
                 </div>
 
@@ -660,7 +661,7 @@ export default function PreferencesDashboard({
                 </h3>
 
                 <p className="mt-0.5 text-xs text-slate-400">
-                  Set your preferred display language.
+                  {t("Set your preferred display language.")}
                 </p>
               </div>
             </div>
@@ -671,7 +672,7 @@ export default function PreferencesDashboard({
               htmlFor="language"
               className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400"
             >
-              Interface language
+              {t("Interface language")}
             </label>
 
             <div className="relative max-w-xl">
@@ -703,11 +704,11 @@ export default function PreferencesDashboard({
 
               <span>
                 {
-                  LANGUAGE_OPTIONS.find(
-                    (item) =>
-                      item.value ===
-                      language
-                  )?.description
+                  t(
+                    LANGUAGE_OPTIONS.find(
+                      (item) => item.value === language
+                    )?.description || ""
+                  )
                 }
               </span>
             </div>
