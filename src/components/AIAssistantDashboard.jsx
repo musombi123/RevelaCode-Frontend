@@ -1007,7 +1007,6 @@ export default function AIAssistantDashboard({
           let localImageUrls = [];
           let localSources = [];
           let brainMetadata = {};
-          const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
           const routed = { hub: "general", hubLabel: "General" };
           brainMetadata = {
             hub: "general",
@@ -1287,7 +1286,7 @@ export default function AIAssistantDashboard({
               hub: brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub || "general",
               hubRequested: brainMetadata.hub_requested || brainMetadata.hubRequested || "auto",
               hubDetected: brainMetadata.hub_detected || brainMetadata.hubDetected || brainMetadata.hub_used || brainMetadata.hub || routed.hub || "general",
-              hubLabel: brainMetadata.hubLabel || brainHubLabels[brainMetadata.hub_used || brainMetadata.hub || routed.hub] || "General",
+              hubLabel: brainMetadata.hubLabel || "General",
               network: Boolean(brainMetadata.networkUsed),
               networkUsed: Boolean(brainMetadata.networkUsed),
               memory: brainMetadata.memory || "local-only",
@@ -1922,7 +1921,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              LOCAL BRAIN READY
+              AUTO ROUTING ACTIVE
             </div>
 
             <button
