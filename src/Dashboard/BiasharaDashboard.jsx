@@ -716,7 +716,7 @@ function BusinessProfileNotice({
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-blue-50">
                     <Briefcase size={12} />
-                    Profile active
+                    Profile status unavailable
                   </span>
                 )}
               </div>
@@ -1441,9 +1441,9 @@ export default function BiasharaDashboard({
                     Biashara Hub
                   </span>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-100 ring-1 ring-emerald-300/20">
-                    <CheckCircle2 size={12} />
-                    Active
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-slate-200 ring-1 ring-white/10">
+                    <Store size={12} />
+                    Business workspace
                   </span>
                 </div>
 
