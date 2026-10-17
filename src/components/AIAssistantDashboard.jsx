@@ -857,7 +857,8 @@ export default function AIAssistantDashboard({
     useCallback(
       async (
         text,
-        attachedFile = null
+        attachedFile = null,
+        inputMeta = null
       ) => {
         const cleaned =
           String(text || "")
@@ -1020,13 +1021,15 @@ export default function AIAssistantDashboard({
 
           if (attachedFile) {
             if (attachedFile.type?.startsWith("image/")) {
-              const result = await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
+              const result = inputMeta?.vision || await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
               const objectLine = result.objects?.length
                 ? "Local object labels: " + result.objects.map((item) => item.class + (item.score ? " (" + Math.round(item.score * 100) + "%)" : "")).join(", ")
                 : "";
               const textLine = result.text ? "Text read on device: " + result.text : "";
+              const visionDescription = String(inputMeta?.visionDescription || result.visionDescription || "").trim();
               localText = [
                 cleaned ? "Your question: " + cleaned : "Image analysis (on-device)",
+                visionDescription,
                 result.summary || result.description || "Basic pixel analysis completed.",
                 objectLine,
                 textLine,
