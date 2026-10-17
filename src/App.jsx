@@ -221,6 +221,8 @@ export default function App() {
 
               <Route path="/meta-engineer" element={<PlatformDashboardRoute requiredRole="admin" initialAdminTab="metaEngineer" />} />
 
+              <Route path="/sci-core" element={<PlatformDashboardRoute requiredRole="admin" initialAdminTab="sciCore" />} />
+
               {/* Support routes */}
               <Route
                 path="/support"
