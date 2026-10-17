@@ -71,6 +71,7 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
           context: memoryContext,
           sessionId: String(sessionId || "voice"),
           hub: activeHub,
+          userId: user?.id || user?.user_id || user?.userId || "",
         });
         response = remote.text || response;
         metadata = {
