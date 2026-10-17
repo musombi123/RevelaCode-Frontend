@@ -34,7 +34,7 @@ function ActionButton({
       aria-pressed={active || undefined}
       className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
         active ? activeClass : danger ? "text-red-400 hover:text-red-300" : "text-gray-500 hover:text-white"
-      }`}}
+      }`}
     >
       {children}
     </button>
