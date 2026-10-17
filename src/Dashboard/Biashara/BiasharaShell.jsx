@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import {
-  Banknote, Bell, Briefcase, ChevronDown, ClipboardList, Globe,
-  LayoutDashboard, Lightbulb, LockKeyhole, Menu, MoreHorizontal, Package,
-  RefreshCw, Settings, Sparkles, Store, Users, Workflow, X,
+  DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe,
+  LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
+  RefreshCw, Settings, Sparkles, Store, Users, Zap, X,
 } from "lucide-react";
 
 const PRIMARY_NAV = [
@@ -11,8 +11,8 @@ const PRIMARY_NAV = [
   { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
-  { key: "finance", label: "Finance", icon: Banknote, available: false, reason: "A verified finance contract for invoicing, payment allocation and reconciliation is not available yet." },
-  { key: "automations", label: "Automations", icon: Workflow, available: false, reason: "A verified Biashara automation contract is not available yet." },
+  { key: "finance", label: "Finance", icon: DollarSign, available: false, reason: "A verified finance contract for invoicing, payment allocation and reconciliation is not available yet." },
+  { key: "automations", label: "Automations", icon: Zap, available: false, reason: "A verified Biashara automation contract is not available yet." },
   { key: "sync", label: "Sync Centre", icon: RefreshCw, available: false, reason: "A verified Biashara synchronization contract is not available yet." },
   { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
   { key: "team", label: "Team", icon: Users, available: false, reason: "Business memberships, invitations and permission roles are not exposed by the audited API." },
@@ -20,7 +20,7 @@ const PRIMARY_NAV = [
 ];
 
 const MORE_TOOLS = [
-  { key: "sales", label: "Sales entry", route: "sales", icon: Banknote },
+  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign },
   { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles },
   { key: "notifications", label: "Alerts", route: "notifications", icon: Bell },
 ];
@@ -55,7 +55,7 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
       >
         <Icon aria-hidden="true" size={18} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
-        {!item.available ? <LockKeyhole aria-hidden="true" size={15} className="shrink-0" /> : null}
+        {!item.available ? <Lock aria-hidden="true" size={15} className="shrink-0" /> : null}
       </button>
       {!item.available ? (
         <p className={"px-3 pb-2 pt-1 text-[11px] leading-4 text-slate-500 " + (compact ? "pl-10" : "")}>{item.reason}</p>
