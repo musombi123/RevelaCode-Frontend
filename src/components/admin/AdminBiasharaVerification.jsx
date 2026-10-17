@@ -193,7 +193,6 @@ export default function AdminBiasharaVerification() {
     setNotes("");
     setChecks({ ...EMPTY_CHECKS });
     setReviewError("");
-    setNotice(null);
   }, [selectedId]);
 
   const filteredApplications = useMemo(() => {
@@ -383,7 +382,10 @@ export default function AdminBiasharaVerification() {
                 <button
                   type="button"
                   key={id}
-                  onClick={() => setSelectedId(id)}
+                  onClick={() => {
+                    setNotice(null);
+                    setSelectedId(id);
+                  }}
                   aria-pressed={isSelected}
                   className={`block min-h-11 w-full rounded-xl border p-3.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                     isSelected
