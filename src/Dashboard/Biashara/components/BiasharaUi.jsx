@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, ChevronLeft,
-  ChevronRight, CircleDashed, Clock3, Info, LoaderCircle, LockKeyhole, Search, X,
+  ChevronRight, Circle, Clock3, Info, Loader2, Lock, Search, X,
 } from "lucide-react";
 
 const STATUS_STYLES = {
   success: { className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-200", icon: CheckCircle2 },
   warning: { className: "border-amber-400/20 bg-amber-400/10 text-amber-200", icon: Clock3 },
   danger: { className: "border-red-400/20 bg-red-400/10 text-red-200", icon: AlertCircle },
-  pending: { className: "border-sky-400/20 bg-sky-400/10 text-sky-200", icon: LoaderCircle },
-  locked: { className: "border-slate-400/20 bg-white/5 text-slate-300", icon: LockKeyhole },
-  neutral: { className: "border-white/10 bg-white/5 text-slate-300", icon: CircleDashed },
+  pending: { className: "border-sky-400/20 bg-sky-400/10 text-sky-200", icon: Loader2 },
+  locked: { className: "border-slate-400/20 bg-white/5 text-slate-300", icon: Lock },
+  neutral: { className: "border-white/10 bg-white/5 text-slate-300", icon: Circle },
 };
 
 export function StatusBadge({ label, status, variant = "neutral", className = "" }) {
@@ -51,7 +51,7 @@ export function ErrorState({ title = "Unable to load this section", message = "T
           <p className="mt-1 text-sm leading-6 text-slate-300">{message}</p>
           {onRetry ? (
             <button type="button" onClick={onRetry} disabled={retrying} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
-              {retrying ? <LoaderCircle aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : <ArrowDown aria-hidden="true" size={16} className="rotate-180" />}
+              {retrying ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : <ArrowDown aria-hidden="true" size={16} className="rotate-180" />}
               {retrying ? "Retrying" : "Try again"}
             </button>
           ) : null}
@@ -296,7 +296,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel = "Confir
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" onClick={() => onOpenChange?.(false)} disabled={isBusy} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-50">{cancelLabel}</button>
           <button type="button" onClick={handleConfirm} disabled={isBusy} className={"inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 " + (destructive ? "bg-red-600 text-white hover:bg-red-500" : "bg-emerald-500 text-slate-950 hover:bg-emerald-400")}>
-            {isBusy ? <LoaderCircle aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}
+            {isBusy ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}
             {isBusy ? "Working" : confirmLabel}
           </button>
         </div>
@@ -309,7 +309,7 @@ export function LockedFeature({ title, reason, requiredPlan, onLearnMore }) {
   return (
     <section className="rounded-2xl border border-white/10 bg-revela-card p-5 sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-slate-300"><LockKeyhole aria-hidden="true" size={20} /></span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-slate-300"><Lock aria-hidden="true" size={20} /></span>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-white">{title || "Feature unavailable"}</h2>
           <p className="mt-1 text-sm leading-6 text-slate-300">{reason || "Availability details have not been returned by the backend."}</p>
