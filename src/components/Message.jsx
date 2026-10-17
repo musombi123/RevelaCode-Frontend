@@ -580,15 +580,6 @@ function Message({ message, onEdit, onReveal }) {
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isSystem && !isError && (
           <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
-            {(() => {
-              const hub = message.metadata?.hub_used || message.metadata?.hubUsed || message.metadata?.hubDetected || message.metadata?.hub;
-              const requested = message.metadata?.hub_requested || message.metadata?.hubRequested;
-              const labels = { auto: "Auto", mkulima: "Mkulima", biashara: "Biashara", elimu: "Elimu", mahubiri: "Mahubiri", general: "General" };
-              const label = labels[hub] || message.metadata?.hubLabel;
-              if (!label) return null;
-              const text = String(requested || "").toLowerCase() === "auto" && hub !== "auto" ? "Auto → " + label : label;
-              return <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-200">RevelaAI • {text}</div>;
-            })()}
             {visible && specialOutput && !revealing ? (
               <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
                 <header className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-700 bg-slate-800/90 px-3 py-2 sm:px-4">
