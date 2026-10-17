@@ -1073,7 +1073,11 @@ export default function AIAssistantDashboard({
             try {
               response = await fetch(`${apiBase}/ai`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+                headers: {
+                  "Content-Type": "application/json",
+                  ...getRevelaCodeAuthHeaders(),
+                  ...( /^[a-f\\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
@@ -1157,7 +1161,11 @@ export default function AIAssistantDashboard({
             try {
               const visionResponse = await fetch(`${apiBase}/ai`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+                headers: {
+                  "Content-Type": "application/json",
+                  ...getRevelaCodeAuthHeaders(),
+                  ...( /^[a-f\\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: cleaned || "Analyze the attached media using the available observations.",
