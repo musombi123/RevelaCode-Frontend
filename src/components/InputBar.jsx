@@ -413,146 +413,89 @@ export default function InputBar({
           focus-within:ring-white/10
         "
       >
-        <div className="flex flex-wrap items-end gap-1 sm:flex-nowrap sm:gap-2">
-          {/* Attach */}
-
-          <button
-            type="button"
-            onClick={() =>
-              fileInputRef.current?.click()
-            }
-            disabled={disabled}
-            className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              text-gray-400
-              transition
-              hover:bg-white/10
-              hover:text-white
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-            "
-            aria-label="Upload a file"
-            title="Upload a file"
-          >
-            <Upload size={18} />
-          </button>
-
-          {/* Live camera capture */}
-
-          <button type="button" onClick={openCamera} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-emerald-300 disabled:opacity-40" aria-label="Open camera" title="Scan with camera"><Camera size={18} /></button>
-
-          {/* Textarea */}
-
+        <div className="flex min-w-0 flex-col gap-2">
+          {/* Text entry occupies its own row so action buttons never squeeze it on mobile. */}
           <textarea
             ref={textareaRef}
             rows={1}
             value={text}
             disabled={disabled}
-            placeholder={
-              placeholder
-            }
-            onChange={(
-              event
-            ) =>
-              setText(
-                event.target.value
-              )
-            }
-            onKeyDown={
-              handleKeyDown
-            }
+            placeholder={placeholder}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={handleKeyDown}
             className="
-              min-h-[44px]
+              block
+              min-h-[48px]
               max-h-[180px]
-              min-w-[96px]
-              flex-1
+              w-full
+              min-w-0
               resize-none
               overflow-y-auto
+              rounded-xl
               bg-transparent
-              px-1.5
-              py-2.5 sm:px-2
+              px-3
+              py-3
               text-sm
               leading-6
               text-white
               outline-none
               placeholder:text-gray-500
+              focus-visible:ring-2
+              focus-visible:ring-emerald-500/40
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
-            aria-label={
-              placeholder
-            }
+            aria-label={placeholder}
           />
 
-          {/* Voice */}
+          {/* Keep media tools left and the primary actions right on every viewport. */}
+          <div className="flex min-w-0 items-center justify-between gap-2 px-1">
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Upload a file"
+                title="Upload a file"
+              >
+                <Upload size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={openCamera}
+                disabled={disabled}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-emerald-300 disabled:opacity-40"
+                aria-label="Open camera"
+                title="Scan with camera"
+              >
+                <Camera size={18} />
+              </button>
+            </div>
 
-          <button
-            type="button"
-            onClick={startSpeechRecognition}
-            disabled={disabled}
-            className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              text-gray-400
-              transition
-              hover:bg-white/10
-              hover:text-white
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-            "
-            aria-label="Use voice input"
-            title={listening ? "Stop listening" : "Speak to type"}
-          >
-            <Mic size={18} className={listening ? "animate-pulse text-emerald-400" : ""} />
-          </button>
-
-          {/* Send */}
-
-          <button
-            type="button"
-            onClick={
-              submit
-            }
-            disabled={
-              disabled ||
-              (
-                !text.trim() &&
-                !attachedFile
-              )
-            }
-            className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-revela-secondary
-              text-white
-              shadow-sm
-              transition
-              hover:opacity-90
-              active:scale-95
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-            "
-            aria-label="Send message"
-            title="Send message"
-          >
-            <Send size={18} />
-          </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={startSpeechRecognition}
+                disabled={disabled}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Use voice input"
+                title={listening ? "Stop listening" : "Speak to type"}
+              >
+                <Mic size={18} className={listening ? "animate-pulse text-emerald-400" : ""} />
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={disabled || (!text.trim() && !attachedFile)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-revela-secondary text-white shadow-sm transition hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Send message"
+                title="Send message"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2 sm:px-3">
