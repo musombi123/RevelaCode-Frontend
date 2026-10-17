@@ -8,6 +8,7 @@ import {
   Loader2,
   RefreshCw,
   Share2,
+  Trash2,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
@@ -44,6 +45,7 @@ export default function MessageActions({
   regenerableId,
   onRegenerate,
   onFeedback,
+  onDelete,
 }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -55,6 +57,15 @@ export default function MessageActions({
   const outputFormat = inferOutputFormat(message.sourcePrompt || "", text);
   const canShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const isChartOutput =
+    /(?:\x60\x60\x60\s*(?:mermaid|chart|vega|vegalite)|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart)\b|\b(?:chart|graph|plot|visualization)\b.{0,50}\b(?:data|series|axis|trend|bar|line|pie)\b)/i.test(text) ||
+    /chart|graph|visualization/i.test(String(message.contentType || message.metadata?.outputType || ""));
+  const handleDelete = useCallback(() => {
+    if (!isChartOutput || typeof onDelete !== "function") return;
+    if (typeof window !== "undefined" && window.confirm("Delete this chart and its assistant response from this conversation?")) {
+      onDelete(message.id);
+    }
+  }, [isChartOutput, onDelete, message.id]);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -155,6 +166,16 @@ export default function MessageActions({
             <ThumbsDown size={14} />
           </ActionButton>
         </>
+      )}
+
+      {isChartOutput && (
+        <ActionButton
+          label="Delete chart"
+          onClick={handleDelete}
+          activeClass="text-red-400"
+        >
+          <Trash2 size={14} />
+        </ActionButton>
       )}
 
       {regenerableId === message.id && (
