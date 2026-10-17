@@ -43,6 +43,12 @@ export const ADMIN_ROUTES = Object.freeze({
     `/api/jumuiya/elimu/verification/applications/${encodeURIComponent(
       String(applicationId),
     )}/review`,
+
+  businessApplications: "/api/jumuiya/admin/businesses",
+  reviewBusinessApplication: (businessId) =>
+    `/api/jumuiya/admin/businesses/${encodeURIComponent(
+      String(businessId),
+    )}/verification`,
 });
 
 // =========================================================
@@ -347,6 +353,13 @@ export function createAdminApiClient({
       body,
     });
 
+  const patch = (path, body, options = {}) =>
+    request(path, {
+      ...options,
+      method: "PATCH",
+      body,
+    });
+
   // =======================================================
   // SCHOOL VERIFICATION â€” JWT AUTHENTICATED
   // =======================================================
@@ -414,6 +427,48 @@ export function createAdminApiClient({
         options,
       );
     },
+    },
+
+    /**
+     * Load Biashara business applications from the platform-admin directory.
+     * Defaults to pending applications while preserving page/limit filters.
+     */
+    getBusinessApplications: (params = {}, options = {}) =>
+      get(
+        ADMIN_ROUTES.businessApplications,
+        {
+          page: 1,
+          limit: 100,
+          status: "pending",
+          ...params,
+        },
+        options,
+      ),
+
+    /**
+     * Apply a platform-admin decision to a business application.
+     */
+    reviewBusinessApplication: (businessId, data, options = {}) => {
+      const id = validateId(businessId, "Business ID");
+
+      if (!data || typeof data !== "object" || Array.isArray(data)) {
+        throw new Error("Review data must be an object.");
+      }
+
+      if (typeof data.decision !== "string" || !data.decision.trim()) {
+        throw new Error("A review decision is required.");
+      }
+
+      return patch(
+        ADMIN_ROUTES.reviewBusinessApplication(id),
+        {
+          decision: data.decision.trim(),
+          notes: data.notes ?? "",
+          checks: data.checks ?? {},
+        },
+        options,
+      );
+    },
   };
 
   // =======================================================
@@ -470,6 +525,10 @@ export function createAdminApiClient({
 
   return {
     request,
+    get,
+    post,
+    put,
+    patch,
     verification,
     platform,
     routes: ADMIN_ROUTES,
