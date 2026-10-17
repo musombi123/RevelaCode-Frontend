@@ -1325,6 +1325,12 @@ export default function AIAssistantDashboard({
               contentType:
                 normalized.type,
 
+              // Keep the originating request with the answer so export format
+              // can be selected from the user's intent instead of guessing from
+              // the answer alone.
+              sourcePrompt:
+                userDisplayText,
+
               createdAt:
                 Date.now(),
             };
