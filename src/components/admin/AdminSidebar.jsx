@@ -16,6 +16,7 @@ import {
   X,
   ChevronRight,
   Database,
+  Brain,
 } from "lucide-react";
 
 // =========================================================
@@ -23,6 +24,13 @@ import {
 // =========================================================
 
 const tabs = [
+  {
+    key: "metaEngineer",
+    label: "Meta-Engineer Lab",
+    description: "Self-build proposals and safety oversight",
+    icon: Brain,
+    live: true,
+  },
   {
     key: "overview",
     label: "Dashboard",
@@ -247,6 +255,7 @@ export default function AdminSidebar({
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">
                     {tab.label}
+                    {tab.live && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-emerald-400"><span className="h-1 w-1 animate-pulse rounded-full bg-emerald-400" />Live</span>}
                   </span>
 
                   <span
