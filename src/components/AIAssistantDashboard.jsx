@@ -478,7 +478,7 @@ export default function AIAssistantDashboard({
     if (!token) return undefined;
 
     const controller = new AbortController();
-    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\\/$/, "");
+    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
     const identity = String(user?.user_id || user?.userId || userScope);
 
     fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history`, {
@@ -1029,7 +1029,7 @@ export default function AIAssistantDashboard({
           } else {
             // Normal text chat must use the server-side generative model.
             // Never substitute the local rule engine when the service is unavailable.
-            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\\/$/, "");
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             let response;
             try {
               response = await fetch(`${apiBase}/ai`, {
