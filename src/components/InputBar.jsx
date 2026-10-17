@@ -413,7 +413,7 @@ export default function InputBar({
           focus-within:ring-white/10
         "
       >
-        <div className="flex flex-wrap items-end gap-1 sm:flex-nowrap sm:gap-2">
+        <div className="flex min-w-0 flex-nowrap items-end gap-1 sm:gap-2">
           {/* Attach */}
 
           <button
@@ -424,8 +424,8 @@ export default function InputBar({
             disabled={disabled}
             className="
               flex
-              h-10
-              w-10
+              h-9
+              w-9
               shrink-0
               items-center
               justify-center
@@ -436,6 +436,7 @@ export default function InputBar({
               hover:text-white
               disabled:cursor-not-allowed
               disabled:opacity-40
+              sm:h-10 sm:w-10
             "
             aria-label="Upload a file"
             title="Upload a file"
@@ -445,7 +446,7 @@ export default function InputBar({
 
           {/* Live camera capture */}
 
-          <button type="button" onClick={openCamera} disabled={disabled} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-emerald-300 disabled:opacity-40" aria-label="Open camera" title="Scan with camera"><Camera size={18} /></button>
+          <button type="button" onClick={openCamera} disabled={disabled} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-emerald-300 disabled:opacity-40 sm:h-10 sm:w-10" aria-label="Open camera" title="Scan with camera"><Camera size={18} /></button>
 
           {/* Textarea */}
 
@@ -470,7 +471,7 @@ export default function InputBar({
             className="
               min-h-[44px]
               max-h-[180px]
-              min-w-[96px]
+              min-w-0
               flex-1
               resize-none
               overflow-y-auto
@@ -498,8 +499,8 @@ export default function InputBar({
             disabled={disabled}
             className="
               flex
-              h-10
-              w-10
+              h-9
+              w-9
               shrink-0
               items-center
               justify-center
@@ -510,6 +511,7 @@ export default function InputBar({
               hover:text-white
               disabled:cursor-not-allowed
               disabled:opacity-40
+              sm:h-10 sm:w-10
             "
             aria-label="Use voice input"
             title={listening ? "Stop listening" : "Speak to type"}
@@ -533,8 +535,8 @@ export default function InputBar({
             }
             className="
               flex
-              h-10
-              w-10
+              h-9
+              w-9
               shrink-0
               items-center
               justify-center
@@ -547,6 +549,7 @@ export default function InputBar({
               active:scale-95
               disabled:cursor-not-allowed
               disabled:opacity-40
+              sm:h-10 sm:w-10
             "
             aria-label="Send message"
             title="Send message"
@@ -561,7 +564,9 @@ export default function InputBar({
           <option value="en-KE">English</option><option value="sw-KE">Kiswahili</option>
         </select>
       </div>
-      {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}\n\n        {/* Footer */}
+      {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}
+
+        {/* Footer */}
 
         <div
           className="
