@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Database,
   Brain,
+  Building2,
 } from "lucide-react";
 
 // =========================================================
@@ -55,6 +56,12 @@ const tabs = [
     label: "School Verification",
     description: "Review school applications",
     icon: ClipboardCheck,
+  },
+  {
+    key: "biasharaVerification",
+    label: "Business Verification",
+    description: "Approve Biashara applications",
+    icon: Building2,
   },
   {
     key: "revenue",
