@@ -58,6 +58,19 @@ export default function MessageActions({
   const outputFormat = inferOutputFormat(message.sourcePrompt || "", text);
   const canShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const sourcePrompt = String(message.sourcePrompt || "");
+  const outputType = String(message.contentType || message.metadata?.outputType || message.metadata?.renderType || "");
+  const explicitChartMarkup =
+    /(?:\x60\x60\x60\s*(?:mermaid|chart|vega|vegalite)|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart)\b|\b(?:chart|graph|plot|visualization)\b.{0,70}\b(?:data|series|axis|trend|bar|line|pie|values)\b)/i.test(text);
+  const chartIntent = /\b(?:chart|graph|plot|visuali[sz]ation|data dashboard)\b/i.test(sourcePrompt);
+  const isChartOutput =
+    explicitChartMarkup ||
+    /\b(?:chart|graph|plot|visuali[sz]ation|mermaid|vega)\b/i.test(outputType) ||
+    (chartIntent && (
+      (Array.isArray(message.imageUrls) && message.imageUrls.length > 0) ||
+      /\b(?:image|visual|graphic)\b/i.test(outputType) ||
+      /\b(?:chart|graph|plot|visuali[sz]ation)\b/i.test(text)
+    ));
   const chartTypeHint = [
     message.contentType,
     message.metadata?.outputType,
