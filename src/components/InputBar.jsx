@@ -504,7 +504,9 @@ export default function InputBar({
           <option value="en-KE">English</option><option value="sw-KE">Kiswahili</option>
         </select>
       </div>
-      {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}\n\n        {/* Footer */}
+      {!voiceSupported && <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">Speech recognition is not supported in this browser. Try Chrome on Android.</p>}
+
+        {/* Footer */}
 
         <div
           className="
