@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   CircleDollarSign,
   Database,
+  Brain,
 } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
@@ -26,12 +27,20 @@ import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
+import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 
 // =========================================================
 // ADMIN PAGES
 // =========================================================
 
 const adminPages = {
+  metaEngineer: {
+    title: "Meta-Engineer Lab",
+    description: "Inspect RevelaAI self-engineering proposals, sandbox evidence, changelogs, and human approvals.",
+    icon: Brain,
+    component: MetaEngineerLab,
+  },
+
   overview: {
     title: "Dashboard Overview",
     description:
@@ -107,8 +116,8 @@ const adminPages = {
 // MAIN DASHBOARD
 // =========================================================
 
-export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+export default function AdminDashboard({ initialTab = "overview" }) {
+  const [activeTab, setActiveTab] = useState(() => adminPages[initialTab] ? initialTab : "overview");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const activePage =
