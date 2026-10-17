@@ -34,6 +34,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
 import BiasharaInternalWorkspace from "@/Dashboard/Biashara/BiasharaInternalWorkspace.jsx";
+import BiasharaShell from "@/Dashboard/Biashara/BiasharaShell.jsx";
 
 /* =========================================================
    HELPERS
@@ -1368,15 +1369,22 @@ export default function BiasharaDashboard({
 
   if (business && activeSection !== "overview") {
     return (
-      <BiasharaInternalWorkspace
-        route={activeSection}
+      <BiasharaShell
         business={business}
-        dashboard={dashboard}
-        onBack={() => setActiveSection("overview")}
+        activeSection={activeSection}
         onNavigate={navigate}
-        onBusinessUpdated={handleBusinessCreated}
         onRefresh={loadDashboard}
-      />
+      >
+        <BiasharaInternalWorkspace
+          route={activeSection}
+          business={business}
+          dashboard={dashboard}
+          onBack={() => setActiveSection("overview")}
+          onNavigate={navigate}
+          onBusinessUpdated={handleBusinessCreated}
+          onRefresh={loadDashboard}
+        />
+      </BiasharaShell>
     );
   }
 
@@ -1393,6 +1401,7 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   return (
+    <BiasharaShell business={business} activeSection={activeSection} onNavigate={navigate} onRefresh={loadDashboard}>
     <div className="min-h-full bg-[#f4f7fb]">
       <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-3 sm:space-y-6 sm:p-6 lg:p-8">
 
@@ -2277,6 +2286,7 @@ export default function BiasharaDashboard({
         </section>
       </div>
     </div>
+    </BiasharaShell>
   );
 }
 
