@@ -186,7 +186,7 @@ export default function BiasharaBusinessOnboarding({
               </p>
 
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                {resubmitting ? "Update your business application" : "Create your business account"}
+                {resubmitting ? "Update your business application" : "Submit your business application"}
               </h1>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
