@@ -8,17 +8,19 @@ import {
   Loader2,
   RefreshCw,
   Share2,
+  Trash2,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
 
-import { downloadAsPdf } from "@/components/utils/exportPdf";
+import { downloadSmartOutput, inferOutputFormat } from "@/components/utils/smartExport";
 
 function ActionButton({
   label,
   onClick,
   active = false,
   activeClass = "text-emerald-400",
+  danger = false,
   disabled = false,
   children,
 }) {
@@ -30,8 +32,8 @@ function ActionButton({
       title={label}
       aria-label={label}
       aria-pressed={active || undefined}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
-        active ? activeClass : "text-gray-500 hover:text-white"
+      className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
+        active ? activeClass : danger ? "text-red-400 hover:text-red-300" : "text-gray-500 hover:text-white"
       }`}
     >
       {children}
@@ -44,21 +46,40 @@ export default function MessageActions({
   regenerableId,
   onRegenerate,
   onFeedback,
+  onDelete,
 }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadFailed, setDownloadFailed] = useState(false);
+  const [downloadLabel, setDownloadLabel] = useState("");
 
   const text = message.text || "";
   const isError = message.status === "error";
+  const outputFormat = inferOutputFormat(message.sourcePrompt || "", text);
   const canShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const chartTypeHint = [
+    message.contentType,
+    message.metadata?.outputType,
+    message.metadata?.visualizationType,
+    message.metadata?.chartType,
+    message.metadata?.renderAs,
+  ].filter(Boolean).join(" ");
+  const isChartOutput =
+    /(?:```\s*(?:mermaid|chart|vega|vegalite|echarts|plotly|graphviz)\b|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart|data visualization)\b|\b(?:chart|graph|plot|visualization)\b.{0,80}\b(?:data|series|axis|trend|bar|line|pie|render|display|show)\b)/i.test(text) ||
+    /\b(?:chart|graph|visualization|plot)\b/i.test(chartTypeHint) ||
+    Boolean(message.chart || message.visualization || message.metadata?.chart || message.metadata?.visualization);
+  const handleDelete = useCallback(() => {
+    if (!isChartOutput || typeof onDelete !== "function") return;
+    if (typeof window !== "undefined" && window.confirm("Delete this chart and its assistant response from this conversation?")) {
+      onDelete(message.id);
+    }
+  }, [isChartOutput, onDelete, message.id]);
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Fallback for older browsers / non-secure contexts
       const area = document.createElement("textarea");
       area.value = text;
       area.style.position = "fixed";
@@ -75,28 +96,35 @@ export default function MessageActions({
 
   const handleDownload = useCallback(async () => {
     if (downloading) return;
-
     setDownloading(true);
     setDownloadFailed(false);
 
     try {
-      await downloadAsPdf(text);
+      const result = await downloadSmartOutput({
+        prompt: message.sourcePrompt || "",
+        answer: text,
+      });
+      setDownloadLabel(result.label);
     } catch (error) {
-      console.error("❌ PDF export failed:", error);
+      console.error("RevelaAI smart export failed:", error);
       setDownloadFailed(true);
       setTimeout(() => setDownloadFailed(false), 2500);
     } finally {
       setDownloading(false);
     }
-  }, [text, downloading]);
+  }, [text, downloading, message.sourcePrompt]);
 
   const handleShare = useCallback(async () => {
     try {
       await navigator.share({ title: "RevelaAI", text });
     } catch {
-      // User cancelled the share sheet
+      // The user may cancel the native share sheet.
     }
   }, [text]);
+
+  const downloadTitle = downloadFailed
+    ? "Download failed, try again"
+    : `Download as ${outputFormat.label}`;
 
   return (
     <div className="mt-1.5 flex items-center gap-0.5">
@@ -107,7 +135,7 @@ export default function MessageActions({
           </ActionButton>
 
           <ActionButton
-            label={downloadFailed ? "Download failed, try again" : "Download PDF"}
+            label={downloadTitle}
             onClick={handleDownload}
             disabled={downloading}
             active={downloadFailed}
@@ -119,6 +147,10 @@ export default function MessageActions({
               <Download size={14} />
             )}
           </ActionButton>
+
+          <span className="sr-only" aria-live="polite">
+            {downloadLabel ? `Last export format: ${downloadLabel}` : `Suggested export format: ${outputFormat.label}`}
+          </span>
 
           {canShare && (
             <ActionButton label="Share" onClick={handleShare}>
@@ -143,6 +175,17 @@ export default function MessageActions({
             <ThumbsDown size={14} />
           </ActionButton>
         </>
+      )}
+
+      {isChartOutput && (
+        <ActionButton
+          label="Delete chart"
+          onClick={handleDelete}
+          activeClass="text-red-400"
+          danger
+        >
+          <Trash2 size={14} />
+        </ActionButton>
       )}
 
       {regenerableId === message.id && (

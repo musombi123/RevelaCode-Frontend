@@ -1,4 +1,4 @@
-﻿// src/ai/AIAssistantDashboard.jsx
+// src/ai/AIAssistantDashboard.jsx
 
 import React, {
   useCallback,
@@ -22,8 +22,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
-import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
-import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
+import { analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 // Reuse the existing RevelaCode session token for authenticated AI requests.
 // No token is ever copied into chat content or logged.
@@ -51,6 +50,23 @@ const LEGACY_STORAGE_KEY = "revela_chats";
 /* =========================================================
    MESSAGE FACTORY
 ========================================================= */
+
+// Remove internal routing traces if a provider accidentally includes them in prose.
+const cleanAssistantAnswer = (value) =>
+  String(value || "")
+    // Strip internal router prefixes, including "Auto → General] ...", without
+    // accidentally deleting ordinary prose that begins with "General".
+    .replace(/^\s*(?:\[\s*)?auto\s*(?:→|->|›)\s*(?:general|faith|scripture|study|prophecy|elimu|education|shamba|mkulima|biashara|business|community|coding|code)\s*\]?\s*(?:[:—–-]\s*)?/i, "")
+    .replace(/^\s*RevelaAI\s*[•|:]\s*(?:Auto\s*(?:→|->|›)\s*)?(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community|Coding|Code)\s*\]?\s*/i, "")
+    .replace(/^\s*\[\s*(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community|Coding|Code)\s*\]\s*/i, "")
+    .trim();
+
+const ANSWER_STYLE_INSTRUCTION = [
+  "Respond directly to the user's request in natural, helpful language.",
+  "Do not prefix answers with routing labels such as 'Auto → General', hub names, or internal status tags.",
+  "Do not use a generic greeting unless the user greeted you or the conversation calls for one.",
+  "Use clear structure when useful; avoid filler and answer the actual question first.",
+].join(" ");
 
 const createMessage = (
   role,
@@ -178,109 +194,6 @@ const normalizeChat = (
       chat.updatedAt ||
       Date.now(),
   };
-};
-
-/* =========================================================
-   CONTEXT BUILDER
-========================================================= */
-
-const buildContext = (
-  messages
-) => {
-  return messages
-    .slice(-12)
-    .map((message) => {
-      const role =
-        message.role === "user"
-          ? "User"
-          : "Assistant";
-
-      let content =
-        message.text || "";
-
-      if (
-        message.attachmentName
-      ) {
-        content =
-          `[Attachment: ${message.attachmentName}] ` +
-          content;
-      }
-
-      return `${role}: ${content}`;
-    })
-    .join("\n");
-};
-
-/* =========================================================
-   OPTIONAL PROMPT ENRICHMENT
-   ---------------------------------------------------------
-   Keep this light. The backend owns canonical intent
-   detection. We only preserve lightweight context markers
-   for compatibility with the current ecosystem.
-========================================================= */
-
-const enrichPrompt = (
-  text
-) => {
-  const lower =
-    String(text || "")
-      .toLowerCase();
-
-  if (
-    lower.includes("bible") ||
-    lower.includes("verse") ||
-    lower.includes("scripture")
-  ) {
-    return `[BIBLE MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("prophecy") ||
-    lower.includes("beast") ||
-    lower.includes("666")
-  ) {
-    return `[PROPHECY MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("code") ||
-    lower.includes("programming") ||
-    lower.includes("error") ||
-    lower.includes("react") ||
-    lower.includes("python")
-  ) {
-    return `[DEVELOPER MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("farm") ||
-    lower.includes("agriculture") ||
-    lower.includes("crop") ||
-    lower.includes("shamba")
-  ) {
-    return `[AGRICULTURE MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("business") ||
-    lower.includes("businesses") ||
-    lower.includes("sales") ||
-    lower.includes("marketing") ||
-    lower.includes("biashara")
-  ) {
-    return `[BUSINESS MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("school") ||
-    lower.includes("education") ||
-    lower.includes("student") ||
-    lower.includes("learning")
-  ) {
-    return `[EDUCATION MODE] ${text}`;
-  }
-
-  return text;
 };
 
 /* =========================================================
@@ -428,8 +341,10 @@ export default function AIAssistantDashboard({
   const [voiceActive, setVoiceActive] =
     useState(false);
 
-  // Auto-routing is the default; users can pin a specialist hub per conversation.
-  const [activeBrainHub, setActiveBrainHub] = useState("auto");
+  // The backend owns specialist routing. The UI never pins a conversation to one hub.
+  const activeBrainHub = "auto";
+  const activeBrainHubLabel = "Adaptive intelligence";
+  const hubInputPlaceholder = "Message RevelaAI…";
 
   const [
     storageReady,
@@ -500,7 +415,7 @@ export default function AIAssistantDashboard({
     const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
     const identity = String(user?.user_id || user?.userId || userScope);
 
-    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history`, {
+    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history?hub=${encodeURIComponent(activeBrainHub)}`, {
       method: "GET",
       headers: {
         Authorization: `${localStorage.getItem("revelacode_token_type") || "Bearer"} ${token}`,
@@ -556,7 +471,7 @@ export default function AIAssistantDashboard({
       });
 
     return () => controller.abort();
-  }, [isReady, isGuest, userScope, user?.user_id, user?.userId]);
+  }, [isReady, isGuest, userScope, user?.user_id, user?.userId, activeBrainHub]);
 
   /* =======================================================
      PERSIST USER-SCOPED CHATS
@@ -969,11 +884,6 @@ export default function AIAssistantDashboard({
         controllerRef.current =
           controller;
 
-        const context = [
-          hubContext,
-          buildContext(currentMessages),
-        ].filter(Boolean).join("\n\n");
-
         const lastAssistantText = [...currentMessages]
           .reverse()
           .find((item) => item.role === "assistant")?.text || "";
@@ -986,14 +896,11 @@ export default function AIAssistantDashboard({
         const imageDescriptionFollowup =
           !attachedFile && Boolean(cleaned) && assistantAwaitingImage && priorImageRequest;
 
-        const requestMessage =
-          attachedFile
-            ? cleaned
-            : enrichPrompt(
-                imageDescriptionFollowup
-                  ? `Generate an image of: ${cleaned}`
-                  : cleaned
-              );
+        // Intent classification and specialist selection belong to the backend.
+        // The frontend only preserves the explicit image-generation follow-up.
+        const requestMessage = imageDescriptionFollowup
+          ? `Generate an image of: ${cleaned}`
+          : cleaned;
 
         try {
           /*
@@ -1005,16 +912,11 @@ export default function AIAssistantDashboard({
           let localImageUrls = [];
           let localSources = [];
           let brainMetadata = {};
-          const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
-          const localMemory = await getLocalBrainMemory(userScope);
-          const routed = composeLivingResponse(fallbackPrompt, activeBrainHub, activeHub, localMemory);
+          const routed = { hub: "general", hubLabel: "General" };
           brainMetadata = {
-            hub: routed.hub,
-            hubLabel: routed.hubLabel,
-            routeReason: routed.routeReason,
-            emotionEstimate: routed.emotionEstimate,
-            intent: routed.intent,
-            engine: routed.engine,
+            hub: "general",
+            hubLabel: "Adaptive intelligence",
+            engine: "awaiting-revelaai-server",
             network: false,
             networkUsed: false,
           };
@@ -1065,7 +967,57 @@ export default function AIAssistantDashboard({
                 await recordLocalDiagnostic("document-analysis", fileError);
               }
             }
-          } else {
+          }
+
+          // Interpret free on-device perception with the existing text provider.
+          // The image itself is not uploaded to a paid vision provider.
+          if (attachedFile && localText && !attachedFile.type?.startsWith("video/")) {
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const tokenHeaders = getRevelaCodeAuthHeaders();
+            if (Object.keys(tokenHeaders).length) {
+              try {
+                const perceptionResponse = await fetch(`${apiBase}/ai`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...tokenHeaders },
+                  signal: controller.signal,
+                  body: JSON.stringify({
+                    message: cleaned || (attachedFile.type?.startsWith("image/")
+                      ? "Interpret the image using only the local perception findings below. State limitations clearly."
+                      : "Analyze the document using only the extracted content below."),
+                    user_id: String(user?.id || user?.user_id || user?.userId || ""),
+                    userId: String(user?.id || user?.user_id || user?.userId || ""),
+                    hub: "auto",
+                    sessionId: String(chatId || activeChatId || ""),
+                    conversationId: String(chatId || activeChatId || ""),
+                    visionDescription: attachedFile.type?.startsWith("image/") ? localText : null,
+                    context: [
+                      { role: "system", content: "These are free on-device perception findings, not direct model vision. Treat them as incomplete. Never claim to have seen details not present in the findings." },
+                      { role: "user", content: localText },
+                    ],
+                  }),
+                });
+                const perceptionPayload = await perceptionResponse.json().catch(() => null);
+                const perceptionData = perceptionPayload?.data || perceptionPayload || {};
+                const interpreted = perceptionData.response || perceptionData.content || perceptionData.answer || perceptionData.text || perceptionPayload?.response || perceptionPayload?.answer;
+                if (perceptionResponse.ok && typeof interpreted === "string" && interpreted.trim()) {
+                  localText = interpreted.trim();
+                  localType = "text";
+                  localSources = Array.isArray(perceptionPayload?.sources) ? perceptionPayload.sources : [];
+                  brainMetadata = {
+                    ...brainMetadata,
+                    ...(perceptionPayload?.meta || {}),
+                    engine: perceptionPayload?.meta?.model || perceptionPayload?.meta?.provider || "revelaai-text-over-local-perception",
+                    network: true,
+                    networkUsed: true,
+                    memory: "server",
+                  };
+                }
+              } catch (perceptionError) {
+                if (perceptionError?.name === "AbortError") throw perceptionError;
+                await recordLocalDiagnostic("perception-text-interpretation", perceptionError);
+              }
+            }
+          } else if (!attachedFile) {
             // Normal text chat must use the server-side generative model.
             // Never substitute the local rule engine when the service is unavailable.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -1078,17 +1030,26 @@ export default function AIAssistantDashboard({
                   ...getRevelaCodeAuthHeaders(),
                   ...( /^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
                 },
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || activeHub || "general"),
+                  hub: "auto",
+                  sessionId: String(chatId || activeChatId || ""),
+                  conversationId: String(chatId || activeChatId || ""),
                   visionDescription: null,
-                  context: currentMessages.slice(-12).map((item) => ({
-                    role: item.role === "assistant" ? "assistant" : "user",
-                    content: item.text || "",
-                  })),
+                  context: [
+                    { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+                    ...currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
+                      role: item.role === "assistant" ? "assistant" : "user",
+                      content: item.text || "",
+                    })),
+                  ],
                 }),
               });
             } catch (networkError) {
@@ -1127,14 +1088,14 @@ export default function AIAssistantDashboard({
 
             if (remoteImageUrls.length) {
               localImageUrls = remoteImageUrls;
-              localText = String(remoteText || "Image generated successfully.").trim();
+              localText = cleanAssistantAnswer(remoteText || "Image generated successfully.");
               localType = "image";
               localSources = Array.isArray(payload?.sources) ? payload.sources : [];
             } else {
               if (typeof remoteText !== "string" || !remoteText.trim()) {
                 throw new Error("RevelaAI is waking up, please wait 20 seconds...");
               }
-              localText = remoteText.trim();
+              localText = cleanAssistantAnswer(remoteText);
               localType = "text";
               localSources = Array.isArray(payload?.sources) ? payload.sources : [];
             }
@@ -1142,7 +1103,15 @@ export default function AIAssistantDashboard({
             brainMetadata = {
               ...brainMetadata,
               ...(payload?.meta || {}),
-              engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+              // The /ai endpoint returns hub routing fields inside data, not
+              // consistently inside meta. Preserve the server's decision so
+              // the response badge reflects the brain that actually answered.
+              hub: imagePayload?.hub_used || imagePayload?.hub || imagePayload?.domain || payload?.meta?.hub || brainMetadata.hub,
+              hub_used: imagePayload?.hub_used || imagePayload?.hubUsed || payload?.meta?.hub_used,
+              hub_requested: imagePayload?.hub_requested || imagePayload?.hubRequested || payload?.meta?.hub_requested,
+              hub_detected: imagePayload?.hub_detected || imagePayload?.hubDetected || payload?.meta?.hub_detected,
+              hubLabel: imagePayload?.hubLabel || payload?.meta?.hubLabel,
+              engine: imagePayload?.model || imagePayload?.provider || payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
               network: true,
               networkUsed: true,
               memory: "server",
@@ -1162,21 +1131,26 @@ export default function AIAssistantDashboard({
               const visionResponse = await fetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
-                  ...getRevelaCodeAuthHeaders(),
-                  ...( /^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
-                },
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: cleaned || "Analyze the attached media using the available observations.",
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || activeHub || "general"),
+                  hub: "auto",
+                  sessionId: String(chatId || activeChatId || ""),
+                  conversationId: String(chatId || activeChatId || ""),
                   visionDescription: observations.slice(0, 7000),
-                  context: currentMessages.slice(-10).map((item) => ({
-                    role: item.role === "assistant" ? "assistant" : "user",
-                    content: item.text || "",
-                  })),
+                  context: [
+                    { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+                    ...currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-10).map((item) => ({
+                      role: item.role === "assistant" ? "assistant" : "user",
+                      content: item.text || "",
+                    })),
+                  ],
                 }),
               });
               const visionPayload = await visionResponse.json().catch(() => null);
@@ -1190,6 +1164,11 @@ export default function AIAssistantDashboard({
               brainMetadata = {
                 ...brainMetadata,
                 ...(visionPayload?.meta || {}),
+                hub: visionData?.hub_used || visionData?.hub || visionData?.domain || visionPayload?.meta?.hub || brainMetadata.hub,
+                hub_used: visionData?.hub_used || visionData?.hubUsed || visionPayload?.meta?.hub_used,
+                hub_requested: visionData?.hub_requested || visionData?.hubRequested || visionPayload?.meta?.hub_requested,
+                hub_detected: visionData?.hub_detected || visionData?.hubDetected || visionPayload?.meta?.hub_detected,
+                hubLabel: visionData?.hubLabel || visionPayload?.meta?.hubLabel,
                 engine: visionData?.model || visionData?.provider || "revelaai-vision-context-adapter",
                 network: true,
                 networkUsed: true,
@@ -1214,11 +1193,15 @@ export default function AIAssistantDashboard({
           }
 
           const normalized = {
-            text: localText || "I couldn't complete that analysis. Please try again.",
+            text: cleanAssistantAnswer(localText) || "I couldn't complete that analysis. Please try again.",
             imageUrls: localImageUrls,
             sources: localSources,
             metadata: {
               ...brainMetadata,
+              hub: brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub || "general",
+              hubRequested: brainMetadata.hub_requested || brainMetadata.hubRequested || "auto",
+              hubDetected: brainMetadata.hub_detected || brainMetadata.hubDetected || brainMetadata.hub_used || brainMetadata.hub || routed.hub || "general",
+              hubLabel: brainMetadata.hubLabel || "General",
               network: Boolean(brainMetadata.networkUsed),
               networkUsed: Boolean(brainMetadata.networkUsed),
               memory: brainMetadata.memory || "local-only",
@@ -1248,7 +1231,7 @@ export default function AIAssistantDashboard({
             scope: userScope,
             userText: userDisplayText,
             assistantText: normalized.text,
-            hub: normalized.metadata?.hub || activeBrainHub || "general",
+            hub: normalized.metadata?.hub || "auto",
             emotion: normalized.metadata?.emotionEstimate || "neutral",
           }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
 
@@ -1276,6 +1259,12 @@ export default function AIAssistantDashboard({
 
               contentType:
                 normalized.type,
+
+              // Keep the originating request with the answer so export format
+              // can be selected from the user's intent instead of guessing from
+              // the answer alone.
+              sourcePrompt:
+                userDisplayText,
 
               createdAt:
                 Date.now(),
@@ -1370,6 +1359,7 @@ export default function AIAssistantDashboard({
         activeBrainHub,
         activeHub,
         userScope,
+        user,
       ]
     );
 
@@ -1460,14 +1450,24 @@ export default function AIAssistantDashboard({
       scope: userScope,
       userText: heard || "Voice message",
       assistantText: response,
-      hub: result.meta?.hub || activeBrainHub || "general",
+      hub: result.meta?.hub || "auto",
       emotion: result.meta?.emotionEstimate || "neutral",
     }).catch((memoryError) => recordLocalDiagnostic("voice-memory", memoryError));
     // The voice session stays open for the next turn.
   },
   [activeChatId, messages, ensureActiveChat, updateChat, userScope, activeBrainHub]
 );
-    /* =======================================================
+    const handleDeleteMessage = useCallback(
+    (messageId) => {
+      if (!messageId || !activeChatId) return;
+      const updated = messages.filter((message) => message.id !== messageId);
+      setMessages(updated);
+      updateChat(activeChatId, updated);
+    },
+    [activeChatId, messages, updateChat]
+  );
+
+  /* =======================================================
      REGENERABLE ANSWER
      Only the latest typed answer can be refreshed. Files and
      voice are excluded because they can't be resent.
@@ -1555,15 +1555,26 @@ export default function AIAssistantDashboard({
         const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
         const response = await fetch(`${apiBase}/ai`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+          headers: {
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
           signal: controller.signal,
           body: JSON.stringify({
             message: regenerateMessage,
             user_id: String(userScope || ""),
-            context: history.slice(-12).map((item) => ({
-              role: item.role === "assistant" ? "assistant" : "user",
-              content: item.text || "",
-            })),
+            userId: String(userScope || ""),
+            hub: "auto",
+            sessionId: String(chatId || activeChatId || ""),
+            conversationId: String(chatId || activeChatId || ""),
+            context: [
+              { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+              ...history.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
+                role: item.role === "assistant" ? "assistant" : "user",
+                content: item.text || "",
+              })),
+            ],
           }),
         });
 
@@ -1596,12 +1607,17 @@ export default function AIAssistantDashboard({
         }
 
         const normalized = {
-          text: String(responseText || (imageUrls.length ? "Image generated successfully." : "")).trim(),
+          text: cleanAssistantAnswer(responseText || (imageUrls.length ? "Image generated successfully." : "")),
           imageUrls,
           sources: Array.isArray(payload?.sources) ? payload.sources : [],
           metadata: {
             ...(payload?.meta || {}),
-            engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+            hub: resultData?.hub_used || resultData?.hub || resultData?.domain || payload?.meta?.hub,
+            hub_used: resultData?.hub_used || resultData?.hubUsed || payload?.meta?.hub_used,
+            hub_requested: resultData?.hub_requested || resultData?.hubRequested || payload?.meta?.hub_requested,
+            hub_detected: resultData?.hub_detected || resultData?.hubDetected || payload?.meta?.hub_detected,
+            hubLabel: resultData?.hubLabel || payload?.meta?.hubLabel,
+            engine: resultData?.model || resultData?.provider || payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
             network: true,
             networkUsed: true,
             memory: "server",
@@ -1652,7 +1668,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub]
   );
 
   /* =======================================================
@@ -1703,8 +1719,6 @@ export default function AIAssistantDashboard({
         activeChatId={
           activeChatId
         }
-        activeBrainHub={activeBrainHub}
-        onBrainHubChange={setActiveBrainHub}
         onNewChat={
           startNewChat
         }
@@ -1803,7 +1817,6 @@ export default function AIAssistantDashboard({
 
               <p
                 className="
-                  hidden
                   truncate
                   text-[10px]
                   text-gray-500
@@ -1811,9 +1824,8 @@ export default function AIAssistantDashboard({
                   sm:block
                 "
               >
-                {compactMode
-                  ? "Personalized for " + activeHubLabel
-                  : "RevelaCode intelligent assistant"}
+                {activeBrainHubLabel}
+                {compactMode ? " · Personalized for " + activeHubLabel : " · RevelaCode assistant"}
               </p>
             </div>
           </div>
@@ -1837,7 +1849,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              LOCAL BRAIN READY
+              AUTO ROUTING ACTIVE
             </div>
 
             <button
@@ -1909,11 +1921,7 @@ export default function AIAssistantDashboard({
                   justify-center
                 "
               >
-                <WelcomeScreen
-                  onSuggestion={sendTextMessage}
-                  activeBrainHub={activeBrainHub}
-                  onHubChange={setActiveBrainHub}
-                />
+                <WelcomeScreen onSuggestion={sendTextMessage} />
 
                 <div
                   className="
@@ -1923,13 +1931,9 @@ export default function AIAssistantDashboard({
                   "
                 >
                   <InputBar
-                    centered
-                    onSend={
-                      sendMessage
-                    }
-                    onMic={
-                      openVoice
-                    }
+                    placeholder={hubInputPlaceholder}
+                    onSend={sendMessage}
+                    onMic={openVoice}
                   />
                 </div>
 
@@ -1975,6 +1979,7 @@ export default function AIAssistantDashboard({
                 regenerableId={regenerableId}
                 onRegenerate={regenerateResponse}
                 onFeedback={handleFeedback}
+                onDeleteMessage={handleDeleteMessage}
               />
             </div>
 
@@ -1995,15 +2000,11 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
-                <LivingHubSelector value={activeBrainHub} onChange={setActiveBrainHub} compact />
                 <div className="mt-3">
                 <InputBar
-                  onSend={
-                    sendMessage
-                  }
-                  onMic={
-                    openVoice
-                  }
+                  placeholder={hubInputPlaceholder}
+                  onSend={sendMessage}
+                  onMic={openVoice}
                 />
                 </div>
               </div>
@@ -2021,7 +2022,7 @@ export default function AIAssistantDashboard({
           sessionId={
             activeChatId
           }
-          hub={activeBrainHub}
+          hub="auto"
           memoryScope={userScope}
           onVoiceResult={
             handleVoiceResult

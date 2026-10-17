@@ -424,6 +424,7 @@ function Message({ message, onEdit, onReveal }) {
 
   const emotion = getMessageEmotion(message);
   const isUser = message.role === "user";
+  const isSystem = message.role === "system";
   const isError = message.status === "error";
   const isThinking = emotion === "thinking" || message.status === "loading";
   const isVoice = message.inputType === "voice";
@@ -434,6 +435,7 @@ function Message({ message, onEdit, onReveal }) {
   const [fresh] = useState(
     () =>
       !isUser &&
+      !isSystem &&
       !isError &&
       !isThinking &&
       Date.now() - Number(message.createdAt || 0) < FRESH_MS
@@ -488,7 +490,7 @@ function Message({ message, onEdit, onReveal }) {
     ? (editing ? "w-full max-w-[95%] sm:max-w-[80%]" : "max-w-[85%] sm:max-w-[75%]")
     : "w-full max-w-full";
 
-  const specialOutput = !isUser && !isError && !isThinking
+  const specialOutput = !isUser && !isSystem && !isError && !isThinking
     ? detectSpecialOutput(fullText)
     : null;
 
@@ -498,6 +500,14 @@ function Message({ message, onEdit, onReveal }) {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }, [fullText]);
+
+  if (isSystem) {
+    return (
+      <div role="status" className="mx-auto max-w-2xl rounded-full border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-center text-xs font-medium text-emerald-200">
+        {fullText}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -568,7 +578,7 @@ function Message({ message, onEdit, onReveal }) {
         )}
 
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
-        {!isThinking && !isUser && !isError && (
+        {!isThinking && !isUser && !isSystem && !isError && (
           <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
             {visible && specialOutput && !revealing ? (
               <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">

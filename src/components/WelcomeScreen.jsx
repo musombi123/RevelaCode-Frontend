@@ -8,13 +8,8 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
 
-export default function WelcomeScreen({
-  onSuggestion,
-  activeBrainHub = "auto",
-  onHubChange,
-}) {
+export default function WelcomeScreen({ onSuggestion }) {
   const suggestions = [
     {
       label: "Explain a Bible verse",
@@ -118,17 +113,6 @@ export default function WelcomeScreen({
         programming, education, agriculture,
         business, or anything you want to explore.
       </p>
-
-      {/* =================================================
-          FIVE-HUB GLOBAL BRAIN
-      ================================================= */}
-
-      <div className="mx-auto mt-6 w-full max-w-3xl">
-        <LivingHubSelector
-          value={activeBrainHub}
-          onChange={onHubChange}
-        />
-      </div>
 
       {/* =================================================
           STARTER PROMPTS
@@ -247,7 +231,7 @@ export default function WelcomeScreen({
         <Wand2 size={12} />
 
         <span>
-          RevelaAI · Local-first five-hub brain
+          RevelaAI · Adaptive intelligence
         </span>
       </div>
     </div>
