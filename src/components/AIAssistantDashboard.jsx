@@ -441,7 +441,9 @@ export default function AIAssistantDashboard({
         storageKey
       )
         .map(normalizeChat)
-        .filter(Boolean);
+        .filter(Boolean)
+        // Discard the stale synthetic conversation created by the old network-error UI.
+        .filter((chat) => !/^failed to fetch$/i.test(String(chat.title || "").trim()));
 
     setChats(restored);
 
@@ -510,6 +512,7 @@ export default function AIAssistantDashboard({
           if (!normalizedMessages.length) return null;
           const firstUser = normalizedMessages.find((item) => item.role === "user");
           const title = String(record?.title || firstUser?.text || "Conversation").trim();
+          if (/^failed to fetch$/i.test(title)) return null;
           return normalizeChat({
             id: String(record?.id || record?._id || ""),
             title: title.slice(0, 35),
@@ -1221,6 +1224,13 @@ export default function AIAssistantDashboard({
             error
           );
 
+          const isNetworkFailure =
+            error instanceof TypeError ||
+            /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
+          const visibleError = isNetworkFailure
+            ? "RevelaAI is waking up, please wait 20 seconds..."
+            : (error?.message || "Request failed. Please try again.");
+
           setMessages(
             (previous) => {
               const updated =
@@ -1233,9 +1243,7 @@ export default function AIAssistantDashboard({
                       ? {
                           ...message,
 
-                          text:
-                            error?.message ||
-                            "Request failed. Please try again.",
+                          text: visibleError,
 
                           status:
                             "error",
@@ -1516,11 +1524,18 @@ export default function AIAssistantDashboard({
       } catch (error) {
         if (error?.name === "AbortError") return;
 
+        const isNetworkFailure =
+          error instanceof TypeError ||
+          /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
+        const visibleError = isNetworkFailure
+          ? "RevelaAI is waking up, please wait 20 seconds..."
+          : (error?.message || "Request failed. Please try again.");
+
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
             ? {
                 ...message,
-                text: error?.message || "Request failed. Please try again.",
+                text: visibleError,
                 status: "error",
               }
             : message
