@@ -954,14 +954,11 @@ function CreateBusinessState({
               </p>
 
               <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-                Create your legal business profile
+                Submit your business for verification
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
-                Before you can manage products, sales, orders
-                and business analytics, create your business
-                profile. This becomes the official business
-                identity used throughout your Jumuiya workspace.
+                Start by submitting your business details. This creates a verification application, not an active business profile. The full Biashara workspace unlocks after a platform administrator approves it.
               </p>
             </div>
           </div>
