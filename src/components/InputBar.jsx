@@ -164,7 +164,6 @@ export default function InputBar({
     setLiveVisionActive(false);
     visionRequestRef.current?.abort?.();
     visionRequestRef.current = null;
-    setTorchOn(false);
     setCameraError("");
   }, []);
 
@@ -259,7 +258,7 @@ export default function InputBar({
       import.meta.env.VITE_REVELAAI_API_URL ||
       import.meta.env.VITE_REVELAAI_API_BASE ||
       "https://revelaai.onrender.com"
-    ).replace(/\\/+$/, "");
+    ).replace(/\/+$/, "");
     const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
     const response = await fetch(`${apiBase}/api/vision/analyze`, {
       method: "POST",
@@ -330,6 +329,7 @@ export default function InputBar({
 
     let cancelled = false;
     let timer = null;
+    let effectController = null;
 
     const analyzeNextFrame = async () => {
       if (cancelled) return;
@@ -341,6 +341,7 @@ export default function InputBar({
       const controller = new AbortController();
       visionRequestRef.current?.abort?.();
       visionRequestRef.current = controller;
+      effectController = controller;
 
       try {
         const prompt = liveVisionPrompt.trim() ||
@@ -358,6 +359,7 @@ export default function InputBar({
       } finally {
         liveVisionInFlightRef.current = false;
         if (visionRequestRef.current === controller) visionRequestRef.current = null;
+        if (effectController === controller) effectController = null;
         if (!cancelled) timer = window.setTimeout(analyzeNextFrame, 5000);
       }
     };
@@ -366,8 +368,8 @@ export default function InputBar({
     return () => {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
-      if (visionRequestRef.current) {
-        visionRequestRef.current.abort?.();
+      if (effectController && visionRequestRef.current === effectController) {
+        effectController.abort?.();
         visionRequestRef.current = null;
       }
     };
