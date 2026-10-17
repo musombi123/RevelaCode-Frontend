@@ -138,8 +138,14 @@ function formatDate(value) {
 }
 
 function readStatus(item, resource) {
-  if (resource === "schools" || resource === "businesses") {
+  if (resource === "schools") {
     return item?.verification_status || item?.status || "pending";
+  }
+
+  if (resource === "businesses") {
+    if (item?.verification_status) return item.verification_status;
+    if (String(item?.status || "").toLowerCase() === "active") return "pending";
+    return item?.status || "pending";
   }
 
   return item?.status || "unknown";
