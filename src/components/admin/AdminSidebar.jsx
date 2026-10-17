@@ -32,6 +32,13 @@ const tabs = [
     live: true,
   },
   {
+    key: "sciCore",
+    label: "Sci-Core Defensive Core",
+    description: "Research, security scans and disaster readiness",
+    icon: Shield,
+    live: true,
+  },
+  {
     key: "overview",
     label: "Dashboard",
     description: "Platform overview",
