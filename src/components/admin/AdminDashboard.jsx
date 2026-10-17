@@ -28,6 +28,7 @@ import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
+import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
 
 // =========================================================
 // ADMIN PAGES
@@ -39,6 +40,13 @@ const adminPages = {
     description: "Inspect RevelaAI self-engineering proposals, sandbox evidence, changelogs, and human approvals.",
     icon: Brain,
     component: MetaEngineerLab,
+  },
+
+  sciCore: {
+    title: "Sci-Core Defensive Core",
+    description: "Oversee live civilian research, defensive security scans, disaster simulations, and safe prototype generation.",
+    icon: ShieldCheck,
+    component: SciCoreDashboard,
   },
 
   overview: {
