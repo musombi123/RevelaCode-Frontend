@@ -1,22 +1,5 @@
 ﻿// src/ai/AIAssistantDashboard.jsx
 
-// Reuse the existing RevelaCode session token for authenticated AI requests.
-// No token is ever copied into chat content or logged.
-const getRevelaCodeAuthHeaders = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    if (!token) return {};
-    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
-    return { Authorization: `${tokenType} ${token}` };
-  } catch {
-    return {};
-  }
-};
-
 import React, {
   useCallback,
   useEffect,
@@ -41,6 +24,23 @@ import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
 import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
+
+// Reuse the existing RevelaCode session token for authenticated AI requests.
+// No token is ever copied into chat content or logged.
+const getRevelaCodeAuthHeaders = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const token =
+      localStorage.getItem("revelacode_access_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
+    if (!token) return {};
+    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
+    return { Authorization: `${tokenType} ${token}` };
+  } catch {
+    return {};
+  }
+};
 
 /* =========================================================
    CONSTANTS
