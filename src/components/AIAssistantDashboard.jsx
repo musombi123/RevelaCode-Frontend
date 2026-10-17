@@ -939,8 +939,67 @@ export default function AIAssistantDashboard({
               }
             }
           } else {
-            localText = routed.reply;
+            // Normal text chat must use the server-side generative model.
+            // Never substitute the local rule engine when the service is unavailable.
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\\/$/, "");
+            let response;
+            try {
+              response = await fetch(`${apiBase}/ai`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  message: requestMessage || cleaned,
+                  user_id: String(userScope || ""),
+                  context: currentMessages.slice(-12).map((item) => ({
+                    role: item.role === "assistant" ? "assistant" : "user",
+                    content: item.text || "",
+                  })),
+                }),
+              });
+            } catch (networkError) {
+              if (networkError?.name === "AbortError") throw networkError;
+              throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+            }
+
+            let payload;
+            try {
+              payload = await response.json();
+            } catch {
+              payload = null;
+            }
+
+            if (!response.ok) {
+              throw new Error(
+                response.status === 502 || response.status === 503 || response.status === 504
+                  ? "RevelaAI is waking up, please wait 20 seconds..."
+                  : (payload?.message || payload?.error?.message || "RevelaAI could not complete the request. Please try again.")
+              );
+            }
+
+            const remoteText =
+              payload?.data?.response ||
+              payload?.data?.content ||
+              payload?.data?.answer ||
+              payload?.data?.text ||
+              payload?.response ||
+              payload?.answer ||
+              payload?.content ||
+              payload?.message;
+
+            if (typeof remoteText !== "string" || !remoteText.trim()) {
+              throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+            }
+
+            localText = remoteText.trim();
             localType = "text";
+            brainMetadata = {
+              ...brainMetadata,
+              engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+              network: true,
+              networkUsed: true,
+              memory: "server",
+            };
           }
 
           const normalized = {
