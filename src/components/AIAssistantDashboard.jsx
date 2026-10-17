@@ -422,6 +422,9 @@ export default function AIAssistantDashboard({
   const controllerRef =
     useRef(null);
 
+  // Prevent rapid repeated submissions from creating duplicate user/assistant turns.
+  const sendLockRef = useRef(false);
+
   /* =======================================================
      LOAD USER-SCOPED CHATS
   ======================================================= */
@@ -769,6 +772,11 @@ export default function AIAssistantDashboard({
         ) {
           return;
         }
+
+        if (sendLockRef.current) {
+          return;
+        }
+        sendLockRef.current = true;
 
         const currentMessages =
           messages;
@@ -1135,6 +1143,7 @@ export default function AIAssistantDashboard({
             }
           );
         } finally {
+          sendLockRef.current = false;
           if (
             controllerRef.current ===
             controller
