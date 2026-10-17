@@ -25,6 +25,7 @@ import AdminStudyManagement from "./AdminStudyManagement.jsx";
 import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
+import AdminBiasharaVerification from "./AdminBiasharaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
@@ -71,6 +72,14 @@ const adminPages = {
       "Review school registrations, inspect evidence, and manage verification decisions.",
     icon: ClipboardCheck,
     component: AdminSchoolVerification,
+  },
+
+  biasharaVerification: {
+    title: "Business Verification",
+    description:
+      "Review business applications and unlock workspace access after approval.",
+    icon: ClipboardCheck,
+    component: AdminBiasharaVerification,
   },
 
   revenue: {

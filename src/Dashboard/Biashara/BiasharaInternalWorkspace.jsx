@@ -387,12 +387,7 @@ export default function BiasharaInternalWorkspace({
               <button type="button" onClick={reload} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh</button>
             </div>
           </div>
-          <div className="mt-6 flex gap-2 overflow-x-auto rounded-2xl bg-white/5 p-1.5 pb-1.5 ring-1 ring-white/10">
-            {ROUTES.map((item) => {
-              const TabIcon = item.icon;
-              return <button key={item.key} type="button" onClick={() => onNavigate?.(item.key)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${route === item.key ? "bg-white text-slate-950 shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}><TabIcon size={15} />{item.label}</button>;
-            })}
-          </div>
+
         </section>
 
         {notice ? <Notice tone="green">{notice}</Notice> : null}

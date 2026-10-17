@@ -52,10 +52,11 @@ const FILTER_OPTIONS = {
     { value: "inactive", label: "Inactive" },
   ],
   businesses: [
-    { value: "active", label: "Active" },
-    { value: "pending", label: "Pending" },
+    { value: "pending", label: "Pending verification" },
+    { value: "verified", label: "Verified" },
+    { value: "needs_information", label: "Needs information" },
+    { value: "rejected", label: "Rejected" },
     { value: "suspended", label: "Suspended" },
-    { value: "inactive", label: "Inactive" },
   ],
   schools: [
     { value: "pending", label: "Pending verification" },
@@ -137,7 +138,13 @@ function formatDate(value) {
 
 function readStatus(item, resource) {
   if (resource === "schools") {
-    return item?.verification_status || item?.status || "unknown";
+    return item?.verification_status || item?.status || "pending";
+  }
+
+  if (resource === "businesses") {
+    if (item?.verification_status) return item.verification_status;
+    if (String(item?.status || "").toLowerCase() === "active") return "pending";
+    return item?.status || "pending";
   }
 
   return item?.status || "unknown";

@@ -41,21 +41,23 @@ const BUSINESS_TYPES = [
 
 export default function BiasharaBusinessOnboarding({
   onCreated,
+  initialBusiness = null,
+  resubmitting = false,
 }) {
   const {
     createBiasharaBusiness,
   } = useJumuiyaApi();
 
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    business_type: "",
-    phone: "",
-    email: "",
-    county: "",
-    location: "",
-    description: "",
-  });
+  const [form, setForm] = useState(() => ({
+    name: initialBusiness?.name || initialBusiness?.business_name || "",
+    category: initialBusiness?.category || "",
+    business_type: initialBusiness?.business_type || "",
+    phone: initialBusiness?.phone || "",
+    email: initialBusiness?.email || "",
+    county: initialBusiness?.county || "",
+    location: initialBusiness?.location || initialBusiness?.address || "",
+    description: initialBusiness?.description || "",
+  }));
 
   const [loading, setLoading] =
     useState(false);
@@ -140,7 +142,7 @@ export default function BiasharaBusinessOnboarding({
         });
 
       setSuccess(
-        "Your business account has been created successfully.",
+        "Your application has been submitted. A platform administrator must verify it before the business workspace is unlocked.",
       );
 
       if (onCreated) {
@@ -184,13 +186,11 @@ export default function BiasharaBusinessOnboarding({
               </p>
 
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                Create your business account
+                {resubmitting ? "Update your business application" : "Submit your business application"}
               </h1>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
-                Set up your business once and manage
-                products, customers, orders, sales,
-                inventory and growth from one place.
+                Submit your business details for platform review. After an administrator verifies your application, your Biashara workspace will be unlocked.
               </p>
             </div>
 
@@ -217,6 +217,14 @@ export default function BiasharaBusinessOnboarding({
         </div>
 
 
+        {resubmitting && initialBusiness?.review_notes ? (
+          <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900" role="status">
+            <p className="font-bold">Platform administrator review notes</p>
+            <p className="mt-1 whitespace-pre-wrap leading-6">{initialBusiness.review_notes}</p>
+            <p className="mt-2 text-xs text-amber-800">Use these notes to correct your application before resubmitting.</p>
+          </div>
+        ) : null}
+
         {/* ==================================================
             FORM
         ================================================== */}
@@ -235,8 +243,7 @@ export default function BiasharaBusinessOnboarding({
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Tell us a little about your business.
-              You can update these details later.
+              Tell us about your business. Your submitted details will be reviewed by a platform administrator before your workspace is activated.
             </p>
 
           </div>
@@ -546,12 +553,11 @@ export default function BiasharaBusinessOnboarding({
 
               <div>
                 <p className="text-sm font-medium text-slate-900">
-                  Ready to launch your business?
+                  {resubmitting ? "Ready to resubmit your application?" : "Ready to submit your business?"}
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500">
-                  You can complete or update your profile
-                  later.
+                  {resubmitting ? "Saving updated details will return the application to pending review." : "Your business workspace unlocks only after verification approval."}
                 </p>
               </div>
 
@@ -567,11 +573,11 @@ export default function BiasharaBusinessOnboarding({
                 {loading ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Creating account...
+                    {resubmitting ? "Resubmitting..." : "Submitting..."}
                   </>
                 ) : (
                   <>
-                    Create Business Account
+                    {resubmitting ? "Resubmit for verification" : "Submit for verification"}
                     <ArrowRight
                       size={17}
                     />
