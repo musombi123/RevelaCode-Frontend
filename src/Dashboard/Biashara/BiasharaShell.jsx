@@ -172,16 +172,16 @@ export default function BiasharaShell({ business, activeSection = "overview", on
       </nav>
 
       {mobileMenuOpen ? (
-        <div id="biashara-mobile-more" role="dialog" aria-label="More Biashara sections" className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[72vh] overflow-y-auto rounded-2xl border border-white/10 bg-revela-card p-3 shadow-2xl lg:hidden">
+        <div id="biashara-mobile-more" role="region" aria-label="More Biashara sections" className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[72vh] overflow-y-auto rounded-2xl border border-white/10 bg-revela-card p-3 shadow-2xl lg:hidden">
           <div className="mb-2 flex items-center justify-between px-2">
             <h2 className="text-sm font-semibold text-white">More sections</h2>
-            <button type="button" onClick={() => { setMoreOpen(false); setMobileMenuOpen(false); }} aria-label="Close more sections" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><X aria-hidden="true" size={17} /></button>
+            <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close more sections" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><X aria-hidden="true" size={17} /></button>
           </div>
           <div className="space-y-1">
             {moreItems.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
           </div>
           <div className="my-3 border-t border-white/10" />
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">MORE TOOLS</p>
+          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
           <div className="space-y-1">
             {MORE_TOOLS.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
           </div>
