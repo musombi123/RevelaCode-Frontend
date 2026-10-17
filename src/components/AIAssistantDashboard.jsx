@@ -441,7 +441,9 @@ export default function AIAssistantDashboard({
         storageKey
       )
         .map(normalizeChat)
-        .filter(Boolean);
+        .filter(Boolean)
+        // Discard the stale synthetic conversation created by the old network-error UI.
+        .filter((chat) => !/^failed to fetch$/i.test(String(chat.title || "").trim()));
 
     setChats(restored);
 
@@ -510,6 +512,7 @@ export default function AIAssistantDashboard({
           if (!normalizedMessages.length) return null;
           const firstUser = normalizedMessages.find((item) => item.role === "user");
           const title = String(record?.title || firstUser?.text || "Conversation").trim();
+          if (/^failed to fetch$/i.test(title)) return null;
           return normalizeChat({
             id: String(record?.id || record?._id || ""),
             title: title.slice(0, 35),
@@ -953,11 +956,25 @@ export default function AIAssistantDashboard({
           buildContext(currentMessages),
         ].filter(Boolean).join("\n\n");
 
+        const lastAssistantText = [...currentMessages]
+          .reverse()
+          .find((item) => item.role === "assistant")?.text || "";
+        const priorImageRequest = currentMessages
+          .slice(-8)
+          .some((item) => item.role === "user" &&
+            /(?:generate|create|make|draw|show).{0,40}image|image.{0,40}(?:generate|create|draw)|describe.{0,25}image/i.test(item.text || ""));
+        const assistantAwaitingImage =
+          /what (?:kind|type) of image.*(?:generate|create)|describe.*image.*(?:generate|create)|what would you like.*image/i.test(lastAssistantText);
+        const imageDescriptionFollowup =
+          !attachedFile && Boolean(cleaned) && assistantAwaitingImage && priorImageRequest;
+
         const requestMessage =
           attachedFile
             ? cleaned
             : enrichPrompt(
-                cleaned
+                imageDescriptionFollowup
+                  ? `Generate an image of: ${cleaned}`
+                  : cleaned
               );
 
         try {
@@ -967,6 +984,8 @@ export default function AIAssistantDashboard({
            */
           let localText = "";
           let localType = "text";
+          let localImageUrls = [];
+          let localSources = [];
           let brainMetadata = {};
           const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
           const localMemory = await getLocalBrainMemory(userScope);
@@ -1065,24 +1084,37 @@ export default function AIAssistantDashboard({
               );
             }
 
+            const imagePayload = payload?.data || payload || {};
+            const remoteImageUrls = Array.isArray(imagePayload?.urls)
+              ? imagePayload.urls.filter((url) => /^https?:\/\//i.test(String(url || "")))
+              : [];
             const remoteText =
-              payload?.data?.response ||
-              payload?.data?.content ||
-              payload?.data?.answer ||
-              payload?.data?.text ||
+              imagePayload?.response ||
+              imagePayload?.content ||
+              imagePayload?.answer ||
+              imagePayload?.text ||
               payload?.response ||
               payload?.answer ||
               payload?.content ||
               payload?.message;
 
-            if (typeof remoteText !== "string" || !remoteText.trim()) {
-              throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+            if (remoteImageUrls.length) {
+              localImageUrls = remoteImageUrls;
+              localText = String(remoteText || "Image generated successfully.").trim();
+              localType = "image";
+              localSources = Array.isArray(payload?.sources) ? payload.sources : [];
+            } else {
+              if (typeof remoteText !== "string" || !remoteText.trim()) {
+                throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+              }
+              localText = remoteText.trim();
+              localType = "text";
+              localSources = Array.isArray(payload?.sources) ? payload.sources : [];
             }
 
-            localText = remoteText.trim();
-            localType = "text";
             brainMetadata = {
               ...brainMetadata,
+              ...(payload?.meta || {}),
               engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
               network: true,
               networkUsed: true,
@@ -1091,14 +1123,14 @@ export default function AIAssistantDashboard({
           }
 
           const normalized = {
-            text: localText || "I couldn't complete that local analysis, but the chat is still available. Try again or provide the key details as text.",
-            imageUrls: [],
-            sources: [],
+            text: localText || "I couldn't complete that analysis. Please try again.",
+            imageUrls: localImageUrls,
+            sources: localSources,
             metadata: {
               ...brainMetadata,
-              network: false,
-              networkUsed: false,
-              memory: "local-only",
+              network: Boolean(brainMetadata.networkUsed),
+              networkUsed: Boolean(brainMetadata.networkUsed),
+              memory: brainMetadata.memory || "local-only",
               version: "2.0",
             },
             type: localType,
@@ -1192,6 +1224,13 @@ export default function AIAssistantDashboard({
             error
           );
 
+          const isNetworkFailure =
+            error instanceof TypeError ||
+            /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
+          const visibleError = isNetworkFailure
+            ? "RevelaAI is waking up, please wait 20 seconds..."
+            : (error?.message || "Request failed. Please try again.");
+
           setMessages(
             (previous) => {
               const updated =
@@ -1204,9 +1243,7 @@ export default function AIAssistantDashboard({
                       ? {
                           ...message,
 
-                          text:
-                            error?.message ||
-                            "Request failed. Please try again.",
+                          text: visibleError,
 
                           status:
                             "error",
@@ -1410,16 +1447,75 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const localText = answerLocally(
-          enrichPrompt(userMessage.text),
-          [hubContext, buildContext(history)].filter(Boolean).join("\n\n")
-        );
+        const priorAssistantText = [...history]
+          .reverse()
+          .find((item) => item.role === "assistant")?.text || "";
+        const priorImageRequest = history
+          .slice(-8)
+          .some((item) => item.role === "user" &&
+            /(?:generate|create|make|draw|show).{0,40}image|image.{0,40}(?:generate|create|draw)|describe.{0,25}image/i.test(item.text || ""));
+        const isImageFollowup =
+          /what (?:kind|type) of image.*(?:generate|create)|describe.*image.*(?:generate|create)|what would you like.*image/i.test(priorAssistantText) &&
+          priorImageRequest;
+        const regenerateMessage = isImageFollowup
+          ? `Generate an image of: ${userMessage.text}`
+          : userMessage.text;
+
+        const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+        const response = await fetch(`${apiBase}/ai`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: regenerateMessage,
+            user_id: String(userScope || ""),
+            context: history.slice(-12).map((item) => ({
+              role: item.role === "assistant" ? "assistant" : "user",
+              content: item.text || "",
+            })),
+          }),
+        });
+
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            response.status === 502 || response.status === 503 || response.status === 504
+              ? "RevelaAI is waking up, please wait 20 seconds..."
+              : (payload?.message || payload?.error?.message || "RevelaAI could not regenerate the response. Please try again.")
+          );
+        }
+
+        const resultData = payload?.data || payload || {};
+        const imageUrls = Array.isArray(resultData?.urls)
+          ? resultData.urls.filter((url) => /^https?:\/\//i.test(String(url || "")))
+          : [];
+        const responseText =
+          resultData?.response || resultData?.content || resultData?.answer ||
+          resultData?.text || payload?.response || payload?.answer ||
+          payload?.content || payload?.message;
+
+        if (!imageUrls.length && (typeof responseText !== "string" || !responseText.trim())) {
+          throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+        }
+
         const normalized = {
-          text: localText,
-          imageUrls: [],
-          sources: [],
-          metadata: { engine: "local-free-rules", network: false },
-          type: "text",
+          text: String(responseText || (imageUrls.length ? "Image generated successfully." : "")).trim(),
+          imageUrls,
+          sources: Array.isArray(payload?.sources) ? payload.sources : [],
+          metadata: {
+            ...(payload?.meta || {}),
+            engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+            network: true,
+            networkUsed: true,
+            memory: "server",
+          },
+          type: imageUrls.length ? "image" : "text",
         };
 
         const updated = loadingMessages.map((message) =>
@@ -1442,11 +1538,18 @@ export default function AIAssistantDashboard({
       } catch (error) {
         if (error?.name === "AbortError") return;
 
+        const isNetworkFailure =
+          error instanceof TypeError ||
+          /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
+        const visibleError = isNetworkFailure
+          ? "RevelaAI is waking up, please wait 20 seconds..."
+          : (error?.message || "Request failed. Please try again.");
+
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
             ? {
                 ...message,
-                text: error?.message || "Request failed. Please try again.",
+                text: visibleError,
                 status: "error",
               }
             : message
@@ -1458,7 +1561,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope]
   );
 
   /* =======================================================
