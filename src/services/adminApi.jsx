@@ -427,7 +427,6 @@ export function createAdminApiClient({
         options,
       );
     },
-    },
 
     /**
      * Load Biashara business applications from the platform-admin directory.
