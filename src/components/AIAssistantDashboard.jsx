@@ -1244,7 +1244,15 @@ export default function AIAssistantDashboard({
             brainMetadata = {
               ...brainMetadata,
               ...(payload?.meta || {}),
-              engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+              // The /ai endpoint returns hub routing fields inside data, not
+              // consistently inside meta. Preserve the server's decision so
+              // the response badge reflects the brain that actually answered.
+              hub: imagePayload?.hub_used || imagePayload?.hub || imagePayload?.domain || payload?.meta?.hub || brainMetadata.hub,
+              hub_used: imagePayload?.hub_used || imagePayload?.hubUsed || payload?.meta?.hub_used,
+              hub_requested: imagePayload?.hub_requested || imagePayload?.hubRequested || payload?.meta?.hub_requested,
+              hub_detected: imagePayload?.hub_detected || imagePayload?.hubDetected || payload?.meta?.hub_detected,
+              hubLabel: imagePayload?.hubLabel || payload?.meta?.hubLabel,
+              engine: imagePayload?.model || imagePayload?.provider || payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
               network: true,
               networkUsed: true,
               memory: "server",
@@ -1294,6 +1302,11 @@ export default function AIAssistantDashboard({
               brainMetadata = {
                 ...brainMetadata,
                 ...(visionPayload?.meta || {}),
+                hub: visionData?.hub_used || visionData?.hub || visionData?.domain || visionPayload?.meta?.hub || brainMetadata.hub,
+                hub_used: visionData?.hub_used || visionData?.hubUsed || visionPayload?.meta?.hub_used,
+                hub_requested: visionData?.hub_requested || visionData?.hubRequested || visionPayload?.meta?.hub_requested,
+                hub_detected: visionData?.hub_detected || visionData?.hubDetected || visionPayload?.meta?.hub_detected,
+                hubLabel: visionData?.hubLabel || visionPayload?.meta?.hubLabel,
                 engine: visionData?.model || visionData?.provider || "revelaai-vision-context-adapter",
                 network: true,
                 networkUsed: true,
@@ -1724,7 +1737,12 @@ export default function AIAssistantDashboard({
           sources: Array.isArray(payload?.sources) ? payload.sources : [],
           metadata: {
             ...(payload?.meta || {}),
-            engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+            hub: resultData?.hub_used || resultData?.hub || resultData?.domain || payload?.meta?.hub,
+            hub_used: resultData?.hub_used || resultData?.hubUsed || payload?.meta?.hub_used,
+            hub_requested: resultData?.hub_requested || resultData?.hubRequested || payload?.meta?.hub_requested,
+            hub_detected: resultData?.hub_detected || resultData?.hubDetected || payload?.meta?.hub_detected,
+            hubLabel: resultData?.hubLabel || payload?.meta?.hubLabel,
+            engine: resultData?.model || resultData?.provider || payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
             network: true,
             networkUsed: true,
             memory: "server",
