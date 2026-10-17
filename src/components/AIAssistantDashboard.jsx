@@ -1,5 +1,22 @@
 ﻿// src/ai/AIAssistantDashboard.jsx
 
+// Reuse the existing RevelaCode session token for authenticated AI requests.
+// No token is ever copied into chat content or logged.
+const getRevelaCodeAuthHeaders = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const token =
+      localStorage.getItem("revelacode_access_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
+    if (!token) return {};
+    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
+    return { Authorization: `${tokenType} ${token}` };
+  } catch {
+    return {};
+  }
+};
+
 import React, {
   useCallback,
   useEffect,
@@ -1053,7 +1070,7 @@ export default function AIAssistantDashboard({
             try {
               response = await fetch(`${apiBase}/ai`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
@@ -1464,7 +1481,7 @@ export default function AIAssistantDashboard({
         const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
         const response = await fetch(`${apiBase}/ai`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
           signal: controller.signal,
           body: JSON.stringify({
             message: regenerateMessage,
