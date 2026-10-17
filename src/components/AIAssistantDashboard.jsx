@@ -1300,27 +1300,6 @@ export default function AIAssistantDashboard({
             emotion: normalized.metadata?.emotionEstimate || "neutral",
           }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
 
-          // Persist this turn in RevelaAI's separate memory database. Identity is
-          // authenticated by the existing RevelaCode JWT; userId is a consistency check.
-          const canonicalUserId = String(user?.id || user?.user_id || user?.userId || "");
-          const apiBaseForMemory = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-          const authHeadersForMemory = getRevelaCodeAuthHeaders();
-          if (canonicalUserId && Object.keys(authHeadersForMemory).length) {
-            void fetch(`${apiBaseForMemory}/api/memory/chat`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...authHeadersForMemory },
-              body: JSON.stringify({
-                userId: canonicalUserId,
-                userMessage: userDisplayText,
-                aiResponse: normalized.text,
-                hub: String(activeBrainHub || activeHub || "general"),
-                sessionId: String(chatId || "default"),
-              }),
-            }).then(async (response) => {
-              if (!response.ok) throw new Error("Smart memory persistence failed (HTTP " + response.status + ")");
-            }).catch((memoryError) => recordLocalDiagnostic("server-smart-memory", memoryError));
-          }
-
           const assistantMessage =
             {
               id: loadingId,
