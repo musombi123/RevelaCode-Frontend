@@ -11,7 +11,7 @@ import {
   Search,
   ShieldCheck,
   Store,
-  UserRound,
+  Users,
   XCircle,
 } from "lucide-react";
 
@@ -434,7 +434,7 @@ export default function AdminBiasharaVerification() {
                 <FieldSummary icon={Phone} label="Phone" value={selected.phone} />
                 <FieldSummary icon={Mail} label="Email" value={selected.email} />
                 <FieldSummary icon={MapPin} label="County and location" value={[selected.location, selected.county].filter(Boolean).join(", ")} />
-                <FieldSummary icon={UserRound} label="Owner account ID" value={getBusinessOwnerId(selected)} />
+                <FieldSummary icon={Users} label="Owner account ID" value={getBusinessOwnerId(selected)} />
                 <div className="sm:col-span-2">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Description</p>
                   <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-300">{selected.description || "No description supplied."}</p>
