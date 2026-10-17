@@ -1026,6 +1026,10 @@ export default function AIAssistantDashboard({
               response = await fetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
+                  "Content-Type": "application/json",
+                  ...getRevelaCodeAuthHeaders(),
+                  ...( /^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                },
                 "Content-Type": "application/json",
                 ...getRevelaCodeAuthHeaders(),
                 ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
