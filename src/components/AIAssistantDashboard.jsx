@@ -1428,6 +1428,7 @@ export default function AIAssistantDashboard({
         activeBrainHub,
         activeHub,
         userScope,
+        user,
       ]
     );
 
