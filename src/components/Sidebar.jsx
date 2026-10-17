@@ -13,8 +13,6 @@ import {
   X,
 } from "lucide-react";
 
-import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
-
 import { Button } from "@/components/ui/Button";
 
 export default function Sidebar({
@@ -25,8 +23,6 @@ export default function Sidebar({
   onSelectChat,
   onDeleteChat,
   activeChatId = null,
-  activeBrainHub = "auto",
-  onBrainHubChange,
 }) {
   /* =========================================================
      DELETE CONFIRMATION
@@ -180,7 +176,7 @@ export default function Sidebar({
               </p>
 
               <p className="truncate text-[10px] text-gray-400">
-                Intelligent Assistant
+                Adaptive Intelligence
               </p>
             </div>
           </div>
@@ -202,25 +198,6 @@ export default function Sidebar({
           >
             <PanelLeftClose size={18} />
           </Button>
-        </div>
-
-        {/* ===================================================
-            GLOBAL BRAIN HUBS
-        =================================================== */}
-
-        <div className="shrink-0 border-b border-white/10 px-3 py-3">
-          <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
-            Global brain · 5 hubs
-          </p>
-          <LivingHubSelector
-            value={activeBrainHub}
-            onChange={onBrainHubChange}
-            compact
-            className="justify-start"
-          />
-          <p className="mt-2 px-1 text-[10px] leading-4 text-gray-500">
-            Auto connects the five specialist hubs when your message calls for them.
-          </p>
         </div>
 
         {/* ===================================================
