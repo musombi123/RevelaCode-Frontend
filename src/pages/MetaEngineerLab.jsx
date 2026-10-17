@@ -69,7 +69,12 @@ export default function MetaEngineerLab() {
     const raw = await response.text();
     let data = {};
     try { data = raw ? JSON.parse(raw) : {}; } catch { data = { detail: raw }; }
-    if (!response.ok) throw new Error(first(data?.detail, data?.message, data?.error, `Request failed (${response.status})`));
+    if (!response.ok) {
+      const error = new Error(first(data?.detail, data?.message, data?.error, data?.code, `Request failed (${response.status})`));
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
     return data;
   }, [token]);
 
@@ -79,7 +84,7 @@ export default function MetaEngineerLab() {
       ? result
       : [
           ...(Array.isArray(result?.ideas) ? result.ideas : []),
-          ...(Array.isArray(result?.audit) ? result.audit : []),
+          ...(Array.isArray(result?.audit) ? result.audit.map((item) => ({ ...item, ideaId: first(item?.ideaId, item?.idea_id, item?.extra?.ideaId) })) : []),
         ];
     setAudit(items);
     setLastUpdated(new Date());
@@ -126,7 +131,17 @@ export default function MetaEngineerLab() {
       setNotice("Proposal submitted. The UI will display only progress and artifacts returned by the API; it will not fabricate test results.");
       await refreshAudit().catch(() => {});
     } catch (e) {
-      setError(`Proposal failed: ${e.message}. No generated code or passing tests are assumed unless the API returns them.`);
+      if (e?.data?.ideaId) {
+        setSelected({
+          ideaId: e.data.ideaId,
+          status: first(e.data.idea_status, e.data.status, "failed_test"),
+          test_logs: first(e.data.test_logs, e.data.message, ""),
+          code_path: e.data.code_path,
+          test_result: { status: "failed", logs: first(e.data.test_logs, e.data.message, "") },
+        });
+        setActiveTab("tests");
+      }
+      setError(`Proposal failed: ${e.message}. Any returned failure evidence is shown in Test Logs; no passing result is assumed.`);
     } finally { setBusy(false); }
   };
 
