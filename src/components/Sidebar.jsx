@@ -218,6 +218,9 @@ export default function Sidebar({
             compact
             className="justify-start"
           />
+          <p className="mt-2 px-1 text-[10px] leading-4 text-gray-500">
+            Auto connects the five specialist hubs when your message calls for them.
+          </p>
         </div>
 
         {/* ===================================================
@@ -254,21 +257,6 @@ export default function Sidebar({
             <Plus size={18} />
             New Chat
           </Button>
-        </div>
-
-        <div className="shrink-0 border-b border-white/10 px-3 py-3">
-          <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-500">
-            Choose an AI hub
-          </p>
-          <LivingHubSelector
-            value={activeBrainHub}
-            onChange={onBrainHubChange}
-            compact
-            className="justify-start"
-          />
-          <p className="mt-2 px-1 text-[10px] leading-4 text-gray-500">
-            Auto connects the five specialist hubs when your message calls for them.
-          </p>
         </div>
 
         {/* ===================================================
