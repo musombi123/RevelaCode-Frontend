@@ -231,7 +231,7 @@ export default function MetaEngineerLab() {
             </div>
             <form onSubmit={startBuild} className="space-y-4">
               <label className="block text-xs font-semibold text-slate-300">Feature specification
-                <textarea value={spec} onChange={(e) => setSpec(e.target.value)} rows={6} maxLength={12000} placeholder="e.g. Add a Bible verse search API for the Mahubiri hub. Include endpoints, access rules, tests, and failure behavior…" className="mt-2 w-full resize-y rounded-xl border border-slate-700 bg-[#070c15] px-3 py-3 text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10" />
+                <textarea value={spec} onChange={(e) => setSpec(e.target.value)} rows={6} maxLength={1000} placeholder="e.g. Add a Bible verse search API for the Mahubiri hub. Include endpoints, access rules, tests, and failure behavior…" className="mt-2 w-full resize-y rounded-xl border border-slate-700 bg-[#070c15] px-3 py-3 text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10" />
               </label>
               <label className="block text-xs font-semibold text-slate-300">Target surface
                 <select value={target} onChange={(e) => setTarget(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-[#070c15] px-3 py-3 text-sm text-slate-100 outline-none focus:border-cyan-400/70">
