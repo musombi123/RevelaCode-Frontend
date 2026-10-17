@@ -393,19 +393,6 @@ export default function AIAssistantDashboard({
   };
   const activeHubLabel =
     hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
-  const brainHubLabels = {
-    auto: "Auto", mkulima: "Mkulima", biashara: "Biashara",
-    elimu: "Elimu", mahubiri: "Mahubiri", general: "General",
-  };
-  const activeBrainHubLabel = brainHubLabels[activeBrainHub] || "Auto";
-  const hubInputPlaceholder = {
-    auto: "Auto — RevelaAI will connect the best hub...",
-    mkulima: "Ask Mkulima about farming, crops, soil...",
-    biashara: "Ask Biashara about business, sales...",
-    elimu: "Ask Elimu about learning...",
-    mahubiri: "Ask Mahubiri about Scripture, prophecy...",
-    general: "Ask RevelaAI anything...",
-  }[activeBrainHub] || "Ask RevelaAI anything...";
   const hubContext = [
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
@@ -452,6 +439,20 @@ export default function AIAssistantDashboard({
       return "auto";
     }
   });
+
+  const brainHubLabels = {
+    auto: "Auto", mkulima: "Mkulima", biashara: "Biashara",
+    elimu: "Elimu", mahubiri: "Mahubiri", general: "General",
+  };
+  const activeBrainHubLabel = brainHubLabels[activeBrainHub] || "Auto";
+  const hubInputPlaceholder = {
+    auto: "Auto — RevelaAI will connect the best hub...",
+    mkulima: "Ask Mkulima about farming, crops, soil...",
+    biashara: "Ask Biashara about business, sales...",
+    elimu: "Ask Elimu about learning...",
+    mahubiri: "Ask Mahubiri about Scripture, prophecy...",
+    general: "Ask RevelaAI anything...",
+  }[activeBrainHub] || "Ask RevelaAI anything...";
 
   const handleBrainHubChange = useCallback((value) => {
     const nextHub = ["auto", "mkulima", "biashara", "elimu", "mahubiri", "general"].includes(String(value))
@@ -1276,7 +1277,7 @@ export default function AIAssistantDashboard({
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
                   visionDescription: observations.slice(0, 7000),
-                  context: currentMessages.slice(-10).map((item) => ({
+                  context: currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-10).map((item) => ({
                     role: item.role === "assistant" ? "assistant" : "user",
                     content: item.text || "",
                   })),
