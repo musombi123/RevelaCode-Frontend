@@ -1,4 +1,4 @@
-﻿// src/ai/AIAssistantDashboard.jsx
+// src/ai/AIAssistantDashboard.jsx
 
 import React, {
   useCallback,
@@ -22,8 +22,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
-import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
-import { composeLivingResponse, analyzeLocalImageForChat, analyzeLocalVideoForChat, getLocalBrainMemory, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
+import { analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 // Reuse the existing RevelaCode session token for authenticated AI requests.
 // No token is ever copied into chat content or logged.
@@ -429,57 +428,10 @@ export default function AIAssistantDashboard({
   const [voiceActive, setVoiceActive] =
     useState(false);
 
-  // Auto-routing is the default; users can pin a specialist hub per conversation.
-  const [activeBrainHub, setActiveBrainHub] = useState(() => {
-    if (typeof window === "undefined") return "auto";
-    try {
-      const saved = window.localStorage.getItem("revelai_hub");
-      return ["auto", "mkulima", "biashara", "elimu", "mahubiri", "general"].includes(saved) ? saved : "auto";
-    } catch {
-      return "auto";
-    }
-  });
-
-  const brainHubLabels = {
-    auto: "Auto", mkulima: "Mkulima", biashara: "Biashara",
-    elimu: "Elimu", mahubiri: "Mahubiri", general: "General",
-  };
-  const activeBrainHubLabel = brainHubLabels[activeBrainHub] || "Auto";
-  const hubInputPlaceholder = {
-    auto: "Auto — RevelaAI will connect the best hub...",
-    mkulima: "Ask Mkulima about farming, crops, soil...",
-    biashara: "Ask Biashara about business, sales...",
-    elimu: "Ask Elimu about learning...",
-    mahubiri: "Ask Mahubiri about Scripture, prophecy...",
-    general: "Ask RevelaAI anything...",
-  }[activeBrainHub] || "Ask RevelaAI anything...";
-
-  const handleBrainHubChange = useCallback((value) => {
-    const nextHub = ["auto", "mkulima", "biashara", "elimu", "mahubiri", "general"].includes(String(value))
-      ? String(value)
-      : "auto";
-    setActiveBrainHub(nextHub);
-    try {
-      window.localStorage.setItem("revelai_hub", nextHub);
-    } catch {
-      // Chat remains usable when browser storage is unavailable.
-    }
-    if (nextHub === activeBrainHub || !activeChatId) return;
-    const labels = { auto: "Auto", mkulima: "Mkulima", biashara: "Biashara", elimu: "Elimu", mahubiri: "Mahubiri", general: "General" };
-    const label = labels[nextHub];
-    const eventMessage = {
-      id: "hub-switch-" + Date.now(),
-      role: "system",
-      text: "Switched to " + label + " Hub — your " + label.toLowerCase() + " intelligence is now active.",
-      status: "done",
-      createdAt: Date.now(),
-      metadata: { eventType: "hub-switch", hub: nextHub, hubLabel: label },
-    };
-    setMessages((previous) => [...previous, eventMessage]);
-    setChats((previous) => previous.map((chat) => chat.id === activeChatId
-      ? { ...chat, messages: [...(chat.messages || []), eventMessage], updatedAt: Date.now() }
-      : chat));
-  }, [activeBrainHub, activeChatId]);
+  // The backend owns specialist routing. The UI never pins a conversation to one hub.
+  const activeBrainHub = "auto";
+  const activeBrainHubLabel = "Adaptive intelligence";
+  const hubInputPlaceholder = "Ask RevelaAI anything — it will choose the right expertise...";
 
   const [
     storageReady,
@@ -1056,15 +1008,11 @@ export default function AIAssistantDashboard({
           let localSources = [];
           let brainMetadata = {};
           const fallbackPrompt = cleaned || (attachedFile ? "Analyze " + attachedFile.name : "");
-          const localMemory = await getLocalBrainMemory(userScope);
-          const routed = composeLivingResponse(fallbackPrompt, activeBrainHub, activeHub, localMemory);
+          const routed = { hub: "general", hubLabel: "General" };
           brainMetadata = {
-            hub: routed.hub,
-            hubLabel: routed.hubLabel,
-            routeReason: routed.routeReason,
-            emotionEstimate: routed.emotionEstimate,
-            intent: routed.intent,
-            engine: routed.engine,
+            hub: "general",
+            hubLabel: "Adaptive intelligence",
+            engine: "awaiting-revelaai-server",
             network: false,
             networkUsed: false,
           };
@@ -1134,7 +1082,7 @@ export default function AIAssistantDashboard({
                       : "Analyze the document using only the extracted content below."),
                     user_id: String(user?.id || user?.user_id || user?.userId || ""),
                     userId: String(user?.id || user?.user_id || user?.userId || ""),
-                    hub: String(activeBrainHub || "auto"),
+                    hub: "auto",
                     sessionId: String(chatId || activeChatId || ""),
                     conversationId: String(chatId || activeChatId || ""),
                     visionDescription: attachedFile.type?.startsWith("image/") ? localText : null,
@@ -1183,7 +1131,7 @@ export default function AIAssistantDashboard({
                   message: requestMessage || cleaned,
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || "auto"),
+                  hub: "auto",
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
                   visionDescription: null,
@@ -1281,7 +1229,7 @@ export default function AIAssistantDashboard({
                   message: cleaned || "Analyze the attached media using the available observations.",
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || "auto"),
+                  hub: "auto",
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
                   visionDescription: observations.slice(0, 7000),
@@ -1337,9 +1285,9 @@ export default function AIAssistantDashboard({
             metadata: {
               ...brainMetadata,
               hub: brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub || "general",
-              hubRequested: brainMetadata.hub_requested || brainMetadata.hubRequested || activeBrainHub || "auto",
+              hubRequested: brainMetadata.hub_requested || brainMetadata.hubRequested || "auto",
               hubDetected: brainMetadata.hub_detected || brainMetadata.hubDetected || brainMetadata.hub_used || brainMetadata.hub || routed.hub || "general",
-              hubLabel: brainMetadata.hubLabel || brainHubLabels[brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub] || "General",
+              hubLabel: brainMetadata.hubLabel || brainHubLabels[brainMetadata.hub_used || brainMetadata.hub || routed.hub] || "General",
               network: Boolean(brainMetadata.networkUsed),
               networkUsed: Boolean(brainMetadata.networkUsed),
               memory: brainMetadata.memory || "local-only",
@@ -1369,7 +1317,7 @@ export default function AIAssistantDashboard({
             scope: userScope,
             userText: userDisplayText,
             assistantText: normalized.text,
-            hub: normalized.metadata?.hub || activeBrainHub || "general",
+            hub: normalized.metadata?.hub || "auto",
             emotion: normalized.metadata?.emotionEstimate || "neutral",
           }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
 
@@ -1693,7 +1641,7 @@ export default function AIAssistantDashboard({
             message: regenerateMessage,
             user_id: String(userScope || ""),
             userId: String(userScope || ""),
-            hub: String(activeBrainHub || "auto"),
+            hub: "auto",
             sessionId: String(chatId || activeChatId || ""),
             conversationId: String(chatId || activeChatId || ""),
             context: history.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
@@ -1844,8 +1792,6 @@ export default function AIAssistantDashboard({
         activeChatId={
           activeChatId
         }
-        activeBrainHub={activeBrainHub}
-        onBrainHubChange={handleBrainHubChange}
         onNewChat={
           startNewChat
         }
@@ -1951,7 +1897,7 @@ export default function AIAssistantDashboard({
                   sm:block
                 "
               >
-                {activeBrainHubLabel} Hub intelligence
+                {activeBrainHubLabel}
                 {compactMode ? " · Personalized for " + activeHubLabel : " · RevelaCode assistant"}
               </p>
             </div>
@@ -2048,11 +1994,7 @@ export default function AIAssistantDashboard({
                   justify-center
                 "
               >
-                <WelcomeScreen
-                  onSuggestion={sendTextMessage}
-                  activeBrainHub={activeBrainHub}
-                  onHubChange={handleBrainHubChange}
-                />
+                <WelcomeScreen onSuggestion={sendTextMessage} />
 
                 <div
                   className="
@@ -2131,7 +2073,6 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
-                <LivingHubSelector value={activeBrainHub} onChange={handleBrainHubChange} compact />
                 <div className="mt-3">
                 <InputBar
                   placeholder={hubInputPlaceholder}
@@ -2154,7 +2095,7 @@ export default function AIAssistantDashboard({
           sessionId={
             activeChatId
           }
-          hub={activeBrainHub}
+          hub="auto"
           memoryScope={userScope}
           onVoiceResult={
             handleVoiceResult
