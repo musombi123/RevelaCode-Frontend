@@ -217,6 +217,14 @@ export default function BiasharaBusinessOnboarding({
         </div>
 
 
+        {resubmitting && initialBusiness?.review_notes ? (
+          <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900" role="status">
+            <p className="font-bold">Platform administrator review notes</p>
+            <p className="mt-1 whitespace-pre-wrap leading-6">{initialBusiness.review_notes}</p>
+            <p className="mt-2 text-xs text-amber-800">Use these notes to correct your application before resubmitting.</p>
+          </div>
+        ) : null}
+
         {/* ==================================================
             FORM
         ================================================== */}
