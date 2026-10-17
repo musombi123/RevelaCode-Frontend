@@ -1,0 +1,21 @@
+name: RevelaCode frontend build verification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - feat/revelaai-v2-five-hubs
+      - feat/revelaai-memory-v2-ui-wiring
+
+jobs:
+  production-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
