@@ -180,110 +180,6 @@ const normalizeChat = (
 };
 
 /* =========================================================
-   CONTEXT BUILDER
-========================================================= */
-
-const buildContext = (
-  messages
-) => {
-  return messages
-    .filter((message) => message.role === "user" || message.role === "assistant")
-    .slice(-12)
-    .map((message) => {
-      const role =
-        message.role === "user"
-          ? "User"
-          : "Assistant";
-
-      let content =
-        message.text || "";
-
-      if (
-        message.attachmentName
-      ) {
-        content =
-          `[Attachment: ${message.attachmentName}] ` +
-          content;
-      }
-
-      return `${role}: ${content}`;
-    })
-    .join("\n");
-};
-
-/* =========================================================
-   OPTIONAL PROMPT ENRICHMENT
-   ---------------------------------------------------------
-   Keep this light. The backend owns canonical intent
-   detection. We only preserve lightweight context markers
-   for compatibility with the current ecosystem.
-========================================================= */
-
-const enrichPrompt = (
-  text
-) => {
-  const lower =
-    String(text || "")
-      .toLowerCase();
-
-  if (
-    lower.includes("bible") ||
-    lower.includes("verse") ||
-    lower.includes("scripture")
-  ) {
-    return `[BIBLE MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("prophecy") ||
-    lower.includes("beast") ||
-    lower.includes("666")
-  ) {
-    return `[PROPHECY MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("code") ||
-    lower.includes("programming") ||
-    lower.includes("error") ||
-    lower.includes("react") ||
-    lower.includes("python")
-  ) {
-    return `[DEVELOPER MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("farm") ||
-    lower.includes("agriculture") ||
-    lower.includes("crop") ||
-    lower.includes("shamba")
-  ) {
-    return `[AGRICULTURE MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("business") ||
-    lower.includes("businesses") ||
-    lower.includes("sales") ||
-    lower.includes("marketing") ||
-    lower.includes("biashara")
-  ) {
-    return `[BUSINESS MODE] ${text}`;
-  }
-
-  if (
-    lower.includes("school") ||
-    lower.includes("education") ||
-    lower.includes("student") ||
-    lower.includes("learning")
-  ) {
-    return `[EDUCATION MODE] ${text}`;
-  }
-
-  return text;
-};
-
-/* =========================================================
    SAFE URL
 ========================================================= */
 
@@ -970,11 +866,6 @@ export default function AIAssistantDashboard({
 
         controllerRef.current =
           controller;
-
-        const context = [
-          hubContext,
-          buildContext(currentMessages),
-        ].filter(Boolean).join("\n\n");
 
         const lastAssistantText = [...currentMessages]
           .reverse()
