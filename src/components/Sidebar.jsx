@@ -334,7 +334,7 @@ export default function Sidebar({
                 const displayTitle = rawTitle.length > 35
                   ? rawTitle.slice(0, 35).trimEnd() + "..."
                   : rawTitle;
-                const hubName = String(chat.hub || chat.activeBrainHub || activeBrainHub || "auto").toLowerCase();
+                const hubName = String(chat.hub || chat.activeBrainHub || "auto").toLowerCase();
                 const HubIcon = hubName.includes("shamba") || hubName.includes("mkulima")
                   ? Sparkles
                   : hubName.includes("biashara")
