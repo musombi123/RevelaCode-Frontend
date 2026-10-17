@@ -1406,7 +1406,7 @@ export default function AIAssistantDashboard({
     if (!result) return;
 
     const heard = String(result.heard || "").trim();
-    const response = String(result.response || "").trim();
+    const response = cleanAssistantAnswer(result.response || "");
 
     if (!heard && !response && !result.streamed) return;
 
@@ -1996,13 +1996,11 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
-                <div className="mt-3">
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
                   onMic={openVoice}
                 />
-                </div>
               </div>
             </div>
           </section>
