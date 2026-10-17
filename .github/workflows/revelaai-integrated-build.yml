@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches:
+      - main
       - feat/revelaai-v2-memory-perception-integration
 
 jobs:
