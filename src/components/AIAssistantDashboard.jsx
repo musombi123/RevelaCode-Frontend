@@ -51,6 +51,22 @@ const LEGACY_STORAGE_KEY = "revela_chats";
    MESSAGE FACTORY
 ========================================================= */
 
+// Remove internal routing traces if a provider accidentally includes them in prose.
+const cleanAssistantAnswer = (value) =>
+  String(value || "")
+    .replace(/^\s*(?:\[\s*)?(?:auto\s*(?:→|->|›)\s*)?(?:general|faith|scripture|study|prophecy|elimu|education|shamba|mkulima|biashara|business|community|coding|code)(?:\s*\])?\s*[:—-]?\s*/i, (prefix) =>
+      /→|->|›|\[/.test(prefix) ? "" : prefix
+    )
+    .replace(/^\s*RevelaAI\s*[•|:]\s*(?:Auto\s*(?:→|->|›)\s*)?(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community)\s*\]?\s*/i, "")
+    .trim();
+
+const ANSWER_STYLE_INSTRUCTION = [
+  "Respond directly to the user's request in natural, helpful language.",
+  "Do not prefix answers with routing labels such as 'Auto → General', hub names, or internal status tags.",
+  "Do not use a generic greeting unless the user greeted you or the conversation calls for one.",
+  "Use clear structure when useful; avoid filler and answer the actual question first.",
+].join(" ");
+
 const createMessage = (
   role,
   text,
@@ -327,7 +343,7 @@ export default function AIAssistantDashboard({
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
   const activeBrainHubLabel = "Adaptive intelligence";
-  const hubInputPlaceholder = "Ask RevelaAI anything — it will choose the right expertise...";
+  const hubInputPlaceholder = "Message RevelaAI…";
 
   const [
     storageReady,
@@ -1022,10 +1038,13 @@ export default function AIAssistantDashboard({
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
                   visionDescription: null,
-                  context: currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
-                    role: item.role === "assistant" ? "assistant" : "user",
-                    content: item.text || "",
-                  })),
+                  context: [
+                    { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+                    ...currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
+                      role: item.role === "assistant" ? "assistant" : "user",
+                      content: item.text || "",
+                    })),
+                  ],
                 }),
               });
             } catch (networkError) {
@@ -1064,14 +1083,14 @@ export default function AIAssistantDashboard({
 
             if (remoteImageUrls.length) {
               localImageUrls = remoteImageUrls;
-              localText = String(remoteText || "Image generated successfully.").trim();
+              localText = cleanAssistantAnswer(remoteText || "Image generated successfully.");
               localType = "image";
               localSources = Array.isArray(payload?.sources) ? payload.sources : [];
             } else {
               if (typeof remoteText !== "string" || !remoteText.trim()) {
                 throw new Error("RevelaAI is waking up, please wait 20 seconds...");
               }
-              localText = remoteText.trim();
+              localText = cleanAssistantAnswer(remoteText);
               localType = "text";
               localSources = Array.isArray(payload?.sources) ? payload.sources : [];
             }
@@ -1120,10 +1139,13 @@ export default function AIAssistantDashboard({
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
                   visionDescription: observations.slice(0, 7000),
-                  context: currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-10).map((item) => ({
-                    role: item.role === "assistant" ? "assistant" : "user",
-                    content: item.text || "",
-                  })),
+                  context: [
+                    { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+                    ...currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-10).map((item) => ({
+                      role: item.role === "assistant" ? "assistant" : "user",
+                      content: item.text || "",
+                    })),
+                  ],
                 }),
               });
               const visionPayload = await visionResponse.json().catch(() => null);
@@ -1166,7 +1188,7 @@ export default function AIAssistantDashboard({
           }
 
           const normalized = {
-            text: localText || "I couldn't complete that analysis. Please try again.",
+            text: cleanAssistantAnswer(localText) || "I couldn't complete that analysis. Please try again.",
             imageUrls: localImageUrls,
             sources: localSources,
             metadata: {
@@ -1430,7 +1452,17 @@ export default function AIAssistantDashboard({
   },
   [activeChatId, messages, ensureActiveChat, updateChat, userScope, activeBrainHub]
 );
-    /* =======================================================
+    const handleDeleteMessage = useCallback(
+    (messageId) => {
+      if (!messageId || !activeChatId) return;
+      const updated = messages.filter((message) => message.id !== messageId);
+      setMessages(updated);
+      updateChat(activeChatId, updated);
+    },
+    [activeChatId, messages, updateChat]
+  );
+
+  /* =======================================================
      REGENERABLE ANSWER
      Only the latest typed answer can be refreshed. Files and
      voice are excluded because they can't be resent.
@@ -1531,10 +1563,13 @@ export default function AIAssistantDashboard({
             hub: "auto",
             sessionId: String(chatId || activeChatId || ""),
             conversationId: String(chatId || activeChatId || ""),
-            context: history.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
-              role: item.role === "assistant" ? "assistant" : "user",
-              content: item.text || "",
-            })),
+            context: [
+              { role: "system", content: ANSWER_STYLE_INSTRUCTION },
+              ...history.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
+                role: item.role === "assistant" ? "assistant" : "user",
+                content: item.text || "",
+              })),
+            ],
           }),
         });
 
@@ -1567,7 +1602,7 @@ export default function AIAssistantDashboard({
         }
 
         const normalized = {
-          text: String(responseText || (imageUrls.length ? "Image generated successfully." : "")).trim(),
+          text: cleanAssistantAnswer(responseText || (imageUrls.length ? "Image generated successfully." : "")),
           imageUrls,
           sources: Array.isArray(payload?.sources) ? payload.sources : [],
           metadata: {
@@ -1940,6 +1975,7 @@ export default function AIAssistantDashboard({
                 regenerableId={regenerableId}
                 onRegenerate={regenerateResponse}
                 onFeedback={handleFeedback}
+                onDeleteMessage={handleDeleteMessage}
               />
             </div>
 
