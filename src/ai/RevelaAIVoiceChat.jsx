@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { sendRevelaAIMessage, saveSmartMemoryTurn, loadSmartMemory, formatSmartMemoryContext } from "@/ai/revelaAIClient";
+import { sendRevelaAIMessage, loadSmartMemory, formatSmartMemoryContext } from "@/ai/revelaAIClient";
 import { PhoneOff, Sparkles, Volume2 } from "lucide-react";
 import VoiceOrbFree from "@/ai/v2-free/VoiceOrbFree";
 import LivingHubSelector from "@/ai/v2-free/LivingHubSelector";
@@ -83,14 +83,7 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
           sessionId: String(sessionId || ""),
           fallback: false,
         };
-        void saveSmartMemoryTurn({
-          authFetch,
-          userId: user?.id || user?.user_id || user?.userId,
-          userMessage: question,
-          aiResponse: response,
-          hub: metadata.hub,
-          sessionId: String(sessionId || "voice"),
-        }).catch((error) => console.warn("Voice smart memory unavailable:", error));
+
       } catch (error) {
         console.warn("RevelaAI voice provider unavailable; using device fallback:", error);
       }
