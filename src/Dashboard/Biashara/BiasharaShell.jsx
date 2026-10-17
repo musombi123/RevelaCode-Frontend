@@ -57,22 +57,20 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {!item.available ? <LockKeyhole aria-hidden="true" size={15} className="shrink-0" /> : null}
       </button>
-      {!item.available && !compact ? (
-        <p className="px-3 pb-2 pt-1 text-[11px] leading-4 text-slate-500">{item.reason}</p>
+      {!item.available ? (
+        <p className={"px-3 pb-2 pt-1 text-[11px] leading-4 text-slate-500 " + (compact ? "pl-10" : "")}>{item.reason}</p>
       ) : null}
     </div>
   );
 }
 
 export default function BiasharaShell({ business, activeSection = "overview", onNavigate, onRefresh, children }) {
-  const [moreOpen, setMoreOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const businessName = business?.name || business?.business_name || "Current business";
   const activeLabel = PRIMARY_NAV.find((item) => isActive(item, activeSection))?.label ||
     MORE_TOOLS.find((item) => item.route === activeSection)?.label || "Biashara";
 
   const navigateTo = (route) => {
-    setMoreOpen(false);
     setMobileMenuOpen(false);
     if (route && typeof onNavigate === "function") onNavigate(route);
   };
@@ -97,7 +95,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
 
         <div className="border-b border-white/10 px-4 py-4">
           <label className="block">
-            <span className="mb-1.5 block text-[11px] font-semibold text-slate-400">CURRENT BUSINESS</span>
+            <span className="mb-1.5 block text-[11px] font-semibold text-slate-400">Current business</span>
             <span className="relative block">
               <Briefcase aria-hidden="true" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
               <select
@@ -115,10 +113,10 @@ export default function BiasharaShell({ business, activeSection = "overview", on
         </div>
 
         <nav aria-label="Biashara primary navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">WORKSPACE</p>
+          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">Workspace</p>
           {PRIMARY_NAV.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
           <div className="my-4 border-t border-white/10" />
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">MORE TOOLS</p>
+          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
           {MORE_TOOLS.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
         </nav>
 
@@ -167,13 +165,13 @@ export default function BiasharaShell({ business, activeSection = "overview", on
             </button>
           );
         })}
-        <button type="button" onClick={() => { setMoreOpen((open) => !open); setMobileMenuOpen((open) => !open); }} aria-expanded={moreOpen || mobileMenuOpen} aria-label="More Biashara sections" className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + ((moreOpen || mobileMenuOpen) ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
+        <button type="button" onClick={() => { setMobileMenuOpen((open) => !open); }} aria-expanded={mobileMenuOpen} aria-label="More Biashara sections" className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (mobileMenuOpen ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
           <MoreHorizontal aria-hidden="true" size={19} />
           <span>More</span>
         </button>
       </nav>
 
-      {(moreOpen || mobileMenuOpen) ? (
+      {mobileMenuOpen ? (
         <div id="biashara-mobile-more" role="dialog" aria-label="More Biashara sections" className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[72vh] overflow-y-auto rounded-2xl border border-white/10 bg-revela-card p-3 shadow-2xl lg:hidden">
           <div className="mb-2 flex items-center justify-between px-2">
             <h2 className="text-sm font-semibold text-white">More sections</h2>
