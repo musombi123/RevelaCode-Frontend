@@ -1,7 +1,7 @@
 /**
- * RevelaAI v2.0 Living Brain — client-side, local-first brain adapter.
- * Hub routing is heuristic, emotion is only a text estimate, and answers are
- * transparent scaffolds. No hidden model, network request, or API key is used.
+ * RevelaAI v2.0 client-side routing and local-memory utilities.
+ * This module supplies routing metadata and local attachment analysis only.
+ * Generative chat and image requests must use the RevelaAI server API.
  */
 import { assessEmotion, analyzeImageFile, analyzeVideoFile } from "./localIntelligence";
 import { loadLocalVisionAssets, scanCanvas } from "../freeVisionEngine";
@@ -16,14 +16,6 @@ export const LIVING_HUBS = [
   { id: "mahubiri", label: "Mahubiri", subtitle: "Scripture", icon: "BookOpen", terms: /\b(bible|biblical|scripture|verse|jesus|christ|god|sermon|preach|theolog|mahubiri|prayer|sabbath|prophecy|kjv|niv|psalm|gospel|church|faith)\b/i },
   { id: "general", label: "General", subtitle: "Everyday + technical", icon: "Sparkles", terms: /$^/ },
 ];
-
-const HUB_METHODS = {
-  mkulima: "Check crop or livestock, growth stage, location, weather, soil/water conditions and exact symptoms. Diagnose before spending on inputs; verify chemical labels and local extension advice.",
-  biashara: "Start with the paying customer, urgent problem, price, variable cost, fixed cost, collection time, repeat sales and risk. Set a target and walk-away threshold before negotiating.",
-  elimu: "State the learning objective, teach the core concept, show one worked example, ask a short practice question, then correct the learner's misconception.",
-  mahubiri: "Read the passage in context, identify genre and historical setting, compare related Scripture, distinguish explicit text from interpretation, and derive a practical application.",
-  general: "Clarify goal, constraints, evidence, options and trade-offs; choose a small reversible test and define how success will be measured.",
-};
 
 export function routeLivingHub(message, preferredHub = "auto", workspace = "") {
   const text = String(message || "");
@@ -44,82 +36,36 @@ export function routeLivingHub(message, preferredHub = "auto", workspace = "") {
   return { hub: "general", reason: "no specialist keyword match" };
 }
 
-function greeting(text) {
-  return /\b(hi|hello|hey|habari|jambo|mambo|good morning|good evening)\b/i.test(text);
-}
-
 function currentDataRequest(text) {
-  return /\b(latest|today|right now|current price|current news|weather today|live score|current exchange rate)\b/i.test(text);
+  return /\b(latest|today|right now|current price|current news|weather today|live score|current exchange rate)\b/i.test(String(text || ""));
 }
 
-function answerForHub(text, hub) {
-  const lower = text.toLowerCase();
-  if (hub === "mkulima") {
-    return "Mkulima approach\n1. Identify crop/livestock and growth stage.\n2. Record location, recent weather, water/soil conditions and exact symptoms.\n3. Rule out basic causes before spending on inputs; verify local extension and product-label advice before applying chemicals.\n4. Compare input cost with expected yield and market-price risk.\n\n" + HUB_METHODS.mkulima + "\n\nNext step: share the crop, county/area, growth stage and symptoms.";
-  }
-  if (hub === "biashara") {
-    return "Biashara strategy\n1. Name the paying customer and the problem they need solved.\n2. Calculate contribution per sale = price − variable cost.\n3. Track fixed costs, cash collection time, repeat purchases and stock risk.\n4. Negotiate measurable value, set a target and walk-away point, and document terms.\n\n" + HUB_METHODS.biashara + "\n\nNext step: share price, unit cost, fixed costs and expected sales (include currency) for a transparent calculation.";
-  }
-  if (hub === "elimu") {
-    return "Elimu teaching method\n1. Set the learning outcome.\n2. Explain the core idea in plain language.\n3. Demonstrate a worked example.\n4. Give one practice question.\n5. Use the learner's answer to decide what to explain next.\n\n" + HUB_METHODS.elimu + "\n\nNext step: tell me the subject, topic, learner level and time available.";
-  }
-  if (hub === "mahubiri") {
-    return "Mahubiri / Scripture study\n1. Start from the exact passage and surrounding chapter.\n2. Identify genre, speaker, audience and historical setting.\n3. Compare related passages.\n4. Distinguish biblical text from interpretation and state alternative readings fairly.\n5. Build a clear main point, supporting outline and practical application.\n\n" + HUB_METHODS.mahubiri + "\n\nNext step: share the passage, audience and desired sermon length.";
-  }
-  if (/\b(code|debug|python|javascript|react|api|function|error|build|program|circuit|electric|device|engineering)\b/i.test(lower)) {
-    return "Engineering workflow\n1. Define expected behavior and exact inputs/outputs.\n2. Reproduce the issue with the smallest case.\n3. Inspect the error/log and isolate one variable at a time.\n4. Make the smallest reversible change and test success + failure paths.\n5. Keep secrets out of source control.\n\n" + HUB_METHODS.general + "\n\nShare the relevant code, full error and expected behavior for a targeted review.";
-  }
-  if (/\b(decide|decision|should i|which option|choose|strategy|plan)\b/i.test(lower)) {
-    return "Decision frame\n1. Define the outcome and deadline.\n2. List realistic options, constraints and evidence.\n3. Compare upside, downside, reversibility and worst credible case.\n4. Choose a small test with a measurable threshold.\n5. Set a review date and change course when evidence changes.\n\nI will challenge weak assumptions rather than agree automatically. Share your options and constraints for a concrete comparison.";
-  }
-  if (/\b(create|write|draft|design|idea|invent|innovate|sermon|plan)\b/i.test(lower)) {
-    return "Let's develop this as a working concept rather than a vague idea. Define the audience, problem, intended outcome, constraints, resources and one measurable test. I can help structure a draft or design brief, but this local rules engine will not pretend to produce expert facts without evidence.\n\n" + HUB_METHODS.general;
-  }
-  return "I can help organize evidence, test assumptions, compare alternatives and plan a practical next step. This is a transparent on-device rule engine rather than a generative language model, so I won't invent detailed facts. Share source text, data, options or a narrower question and I can work with that.\n\n" + HUB_METHODS.general;
-}
-
+/**
+ * Routing and local memory metadata only.
+ *
+ * This module deliberately does not generate user-facing answers. Normal chat
+ * and image generation must be handled by RevelaAI's server-side model/API.
+ * Returning an empty reply prevents this heuristic router from masquerading as
+ * a generative model when the API is unavailable.
+ */
 export function composeLivingResponse(message, preferredHub = "auto", workspace = "", memory = null) {
   const text = String(message || "").trim();
   const emotion = assessEmotion(text);
   const route = routeLivingHub(text, preferredHub, workspace);
   const hub = LIVING_HUBS.find((item) => item.id === route.hub) || LIVING_HUBS[LIVING_HUBS.length - 1];
-  let reply;
-  if (!text) {
-    reply = "Tell me the goal, what you have tried so far, and any constraints I should respect.";
-  } else if (greeting(text)) {
-    reply = "Hey — I'm here with you. We can work through a practical problem, challenge assumptions, create a plan, or build an idea. What matters most right now?";
-  } else if (currentDataRequest(text)) {
-    reply = "I don't have a live data feed in this local-only mode, so I won't invent a current answer. Share a trusted source or the figures you have and I'll help analyze them; verify time-sensitive decisions against a current primary source.";
-  } else {
-    reply = answerForHub(text, route.hub);
-  }
-  const profile = memory?.profile && typeof memory.profile === "object" ? memory.profile : {};
-  const memoryQuestion = /\b(what do you remember|what do you know about me|what is my name|do you remember me)\b/i.test(text);
-  if (memoryQuestion) {
-    const saved = [];
-    if (profile.name) saved.push("name: " + profile.name);
-    if (profile.project) saved.push("project: " + profile.project);
-    if (profile.preference) saved.push("preference: " + profile.preference);
-    reply = saved.length
-      ? "Here is what your browser has saved locally: " + saved.join("; ") + ". These details stay in this browser profile."
-      : "I don't have any explicit profile notes saved for this browser profile yet. I do keep a limited local conversation journal when browser storage is available.";
-  } else if (/\b(my project|the project i mentioned|my current project)\b/i.test(text) && profile.project) {
-    reply += "\n\nLocal memory: you previously told me your project is " + profile.project + ".";
-  } else if (/\b(explain|teach|answer|help me understand)\b/i.test(text) && profile.preference) {
-    reply += "\n\nPersonalization applied from your local memory: " + profile.preference + ".";
-  }
-  const opening = emotion?.opening || "Let's work through this clearly and practically.";
-  if (!greeting(text) && text && !memoryQuestion) {
-    reply = opening + "\n\n" + reply;
-  }
+
   return {
-    reply,
+    reply: "",
     hub: route.hub,
     hubLabel: hub.label,
     routeReason: route.reason,
     emotionEstimate: emotion?.emotion || "neutral",
-    intent: currentDataRequest(text) ? "current_information_needs_source" : "local_guidance",
-    engine: "revelaai-local-global-brain-v2",
+    intent: !text
+      ? "empty"
+      : currentDataRequest(text)
+        ? "current_information_needs_source"
+        : "routed_to_generative_ai",
+    engine: "local-intent-router",
     networkUsed: false,
     confidence: "heuristic",
   };
