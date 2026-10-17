@@ -96,12 +96,14 @@ export async function sendRevelaAIMessage({
     body.append("context", String(context || ""));
     body.append("sessionId", String(sessionId || ""));
     body.append("hub", String(hub || "auto"));
+    if (isMongoUserId(userId)) body.append("userId", String(userId));
   } else {
     body = JSON.stringify({
       message: String(message || ""),
       context: String(context || ""),
       sessionId: String(sessionId || ""),
       hub: String(hub || "auto"),
+      ...(isMongoUserId(userId) ? { userId: String(userId), user_id: String(userId) } : {}),
     });
   }
 
