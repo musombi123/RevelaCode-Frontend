@@ -205,6 +205,15 @@ export async function analyzeCanvas(canvas, { readText = true, crop = null } = {
   return result;
 }
 
+// Backwards-compatible adapter for the existing livingBrain.js contract.
+export async function scanCanvas(canvas, _loadedAssets = null, options = {}) {
+  const result = await analyzeCanvas(canvas, options);
+  return {
+    ...result,
+    description: result.summary || result.visionDescription || "",
+  };
+}
+
 export async function analyzeImageFileEnhanced(file) {
   if (!file || !String(file.type || "").startsWith("image/")) throw new Error("Choose an image file.");
   const bitmap = await createImageBitmap(file);
