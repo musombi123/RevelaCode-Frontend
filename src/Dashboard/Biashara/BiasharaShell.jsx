@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Banknote, Bell, BriefcaseBusiness, ChevronDown, ClipboardList, Globe,
+  Banknote, Bell, Briefcase, ChevronDown, ClipboardList, Globe,
   LayoutDashboard, Lightbulb, LockKeyhole, Menu, MoreHorizontal, Package,
   RefreshCw, Settings, Sparkles, Store, Users, Workflow, X,
 } from "lucide-react";
@@ -99,7 +99,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-semibold text-slate-400">CURRENT BUSINESS</span>
             <span className="relative block">
-              <BriefcaseBusiness aria-hidden="true" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
+              <Briefcase aria-hidden="true" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
               <select
                 aria-label="Current business"
                 value="current"
