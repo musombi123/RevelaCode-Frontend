@@ -6,7 +6,7 @@ import SupportLogin from "@/components/support/SupportLogin.jsx";
 import AdminDashboard from "@/components/admin/AdminDashboard.jsx";
 import SupportDashboard from "@/components/support/SupportDashboard.jsx";
 
-export default function PagesLoader() {
+export default function PagesLoader({ initialAdminTab = "overview" }) {
   const { user, loading } = useAuth();
 
   if (loading) return <div className="p-6">Booting secure session…</div>;
@@ -23,7 +23,7 @@ export default function PagesLoader() {
 
   // ADMIN FLOW
   if (user.role === "admin") {
-    return <AdminDashboard />;
+    return <AdminDashboard initialTab={initialAdminTab} />;
   }
 
   // SUPPORT FLOW (ONLY IF ADMIN APPROVED)
