@@ -81,6 +81,7 @@ export async function sendRevelaAIMessage({
   file = null,
   sessionId = "",
   hub = "auto",
+  userId = "",
   signal,
 }) {
   if (typeof authFetch !== "function") {
@@ -95,20 +96,23 @@ export async function sendRevelaAIMessage({
     body.append("context", String(context || ""));
     body.append("sessionId", String(sessionId || ""));
     body.append("hub", String(hub || "auto"));
+    if (isMongoUserId(userId)) body.append("userId", String(userId));
   } else {
     body = JSON.stringify({
       message: String(message || ""),
       context: String(context || ""),
       sessionId: String(sessionId || ""),
       hub: String(hub || "auto"),
+      ...(isMongoUserId(userId) ? { userId: String(userId), user_id: String(userId) } : {}),
     });
   }
 
+  const identityHeader = isMongoUserId(userId) ? { userId: String(userId) } : {};
   const response = await authFetch(`${API_BASE}/ai`, {
     method: "POST",
     headers: file
-      ? { "X-Session-ID": String(sessionId || "") }
-      : { "Content-Type": "application/json", "X-Session-ID": String(sessionId || "") },
+      ? { ...identityHeader, "X-Session-ID": String(sessionId || "") }
+      : { "Content-Type": "application/json", ...identityHeader, "X-Session-ID": String(sessionId || "") },
     body,
     signal,
   });
@@ -138,7 +142,10 @@ export async function saveSmartMemoryTurn({
 
   const response = await authFetch(`${API_BASE}/api/memory/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(isMongoUserId(userId) ? { userId: String(userId) } : {}),
+    },
     body: JSON.stringify(payload),
   });
   return readJsonResponse(response);
@@ -148,7 +155,10 @@ export async function loadSmartMemory({ authFetch, userId }) {
   if (typeof authFetch !== "function" || !isMongoUserId(userId)) return null;
   const response = await authFetch(
     `${API_BASE}/api/memory/${encodeURIComponent(String(userId))}`,
-    { method: "GET" }
+    {
+      method: "GET",
+      headers: { userId: String(userId) },
+    }
   );
   const payload = await readJsonResponse(response);
   return payload?.data || null;
@@ -158,7 +168,10 @@ export async function loadSmartIdeas({ authFetch, userId }) {
   if (typeof authFetch !== "function" || !isMongoUserId(userId)) return [];
   const response = await authFetch(
     `${API_BASE}/api/memory/ideas/${encodeURIComponent(String(userId))}`,
-    { method: "GET" }
+    {
+      method: "GET",
+      headers: { userId: String(userId) },
+    }
   );
   const payload = await readJsonResponse(response);
   return Array.isArray(payload?.data) ? payload.data : [];

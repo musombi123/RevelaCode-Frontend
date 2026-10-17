@@ -857,7 +857,8 @@ export default function AIAssistantDashboard({
     useCallback(
       async (
         text,
-        attachedFile = null
+        attachedFile = null,
+        inputMeta = null
       ) => {
         const cleaned =
           String(text || "")
@@ -1020,13 +1021,15 @@ export default function AIAssistantDashboard({
 
           if (attachedFile) {
             if (attachedFile.type?.startsWith("image/")) {
-              const result = await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
+              const result = inputMeta?.vision || await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
               const objectLine = result.objects?.length
                 ? "Local object labels: " + result.objects.map((item) => item.class + (item.score ? " (" + Math.round(item.score * 100) + "%)" : "")).join(", ")
                 : "";
               const textLine = result.text ? "Text read on device: " + result.text : "";
+              const visionDescription = String(inputMeta?.visionDescription || result.visionDescription || "").trim();
               localText = [
                 cleaned ? "Your question: " + cleaned : "Image analysis (on-device)",
+                visionDescription,
                 result.summary || result.description || "Basic pixel analysis completed.",
                 objectLine,
                 textLine,
@@ -1062,7 +1065,55 @@ export default function AIAssistantDashboard({
                 await recordLocalDiagnostic("document-analysis", fileError);
               }
             }
-          } else {
+          }
+
+          // Interpret free on-device perception with the existing text provider.
+          // The image itself is not uploaded to a paid vision provider.
+          if (attachedFile && localText && !attachedFile.type?.startsWith("video/")) {
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const tokenHeaders = getRevelaCodeAuthHeaders();
+            if (Object.keys(tokenHeaders).length) {
+              try {
+                const perceptionResponse = await fetch(`${apiBase}/ai`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...tokenHeaders },
+                  signal: controller.signal,
+                  body: JSON.stringify({
+                    message: cleaned || (attachedFile.type?.startsWith("image/")
+                      ? "Interpret the image using only the local perception findings below. State limitations clearly."
+                      : "Analyze the document using only the extracted content below."),
+                    user_id: String(user?.id || user?.user_id || user?.userId || ""),
+                    userId: String(user?.id || user?.user_id || user?.userId || ""),
+                    hub: String(activeBrainHub || activeHub || "general"),
+                    visionDescription: attachedFile.type?.startsWith("image/") ? localText : null,
+                    context: [
+                      { role: "system", content: "These are free on-device perception findings, not direct model vision. Treat them as incomplete. Never claim to have seen details not present in the findings." },
+                      { role: "user", content: localText },
+                    ],
+                  }),
+                });
+                const perceptionPayload = await perceptionResponse.json().catch(() => null);
+                const perceptionData = perceptionPayload?.data || perceptionPayload || {};
+                const interpreted = perceptionData.response || perceptionData.content || perceptionData.answer || perceptionData.text || perceptionPayload?.response || perceptionPayload?.answer;
+                if (perceptionResponse.ok && typeof interpreted === "string" && interpreted.trim()) {
+                  localText = interpreted.trim();
+                  localType = "text";
+                  localSources = Array.isArray(perceptionPayload?.sources) ? perceptionPayload.sources : [];
+                  brainMetadata = {
+                    ...brainMetadata,
+                    ...(perceptionPayload?.meta || {}),
+                    engine: perceptionPayload?.meta?.model || perceptionPayload?.meta?.provider || "revelaai-text-over-local-perception",
+                    network: true,
+                    networkUsed: true,
+                    memory: "server",
+                  };
+                }
+              } catch (perceptionError) {
+                if (perceptionError?.name === "AbortError") throw perceptionError;
+                await recordLocalDiagnostic("perception-text-interpretation", perceptionError);
+              }
+            }
+          } else if (!attachedFile) {
             // Normal text chat must use the server-side generative model.
             // Never substitute the local rule engine when the service is unavailable.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -1070,7 +1121,11 @@ export default function AIAssistantDashboard({
             try {
               response = await fetch(`${apiBase}/ai`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+                headers: {
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
@@ -1154,7 +1209,11 @@ export default function AIAssistantDashboard({
             try {
               const visionResponse = await fetch(`${apiBase}/ai`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+                headers: {
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: cleaned || "Analyze the attached media using the available observations.",
@@ -1359,6 +1418,7 @@ export default function AIAssistantDashboard({
         activeBrainHub,
         activeHub,
         userScope,
+        user,
       ]
     );
 
@@ -1544,7 +1604,11 @@ export default function AIAssistantDashboard({
         const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
         const response = await fetch(`${apiBase}/ai`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+          headers: {
+                "Content-Type": "application/json",
+                ...getRevelaCodeAuthHeaders(),
+                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+              },
           signal: controller.signal,
           body: JSON.stringify({
             message: regenerateMessage,
