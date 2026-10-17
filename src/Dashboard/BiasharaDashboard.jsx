@@ -283,6 +283,13 @@ function extractBusiness(payload) {
   return null;
 }
 
+function isVerifiedBusiness(business) {
+  return (
+    String(business?.verification_status || "").trim().toLowerCase() === "verified" &&
+    String(business?.status || "").trim().toLowerCase() === "active"
+  );
+}
+
 function extractDashboard(payload) {
   if (!payload) {
     return null;
@@ -805,6 +812,126 @@ function BusinessProfileNotice({
 }
 
 /* =========================================================
+   BUSINESS VERIFICATION STATE
+========================================================= */
+
+function BusinessVerificationState({
+  business,
+  onRefresh,
+  onResubmit,
+}) {
+  const verificationStatus = String(
+    business?.verification_status ||
+      (business?.status === "active" ? "pending" : business?.status) ||
+      "pending",
+  ).trim().toLowerCase();
+
+  const rejected = verificationStatus === "rejected" || business?.status === "rejected";
+  const needsInformation = verificationStatus === "needs_information";
+  const suspended = business?.status === "suspended";
+  const isPending = !rejected && !needsInformation && !suspended;
+
+  const title = suspended
+    ? "Business access is suspended"
+    : rejected
+      ? "Business application not approved"
+      : needsInformation
+        ? "More information is required"
+        : "Your business is awaiting verification";
+
+  const description = suspended
+    ? "This business workspace is currently suspended. Contact platform support for next steps."
+    : rejected
+      ? "The platform administrator did not approve this application. Review the notes below and update the application before resubmitting."
+      : needsInformation
+        ? "A platform administrator needs additional information before making a decision. Review the request and update your application."
+        : "Your details have been submitted. A platform administrator must review and verify the application before your business profile and workspace become available.";
+
+  return (
+    <div className="min-h-[70vh] bg-revela-dark px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-3xl">
+        <section className="overflow-hidden rounded-3xl border border-white/10 bg-revela-card shadow-2xl shadow-black/20">
+          <div className="border-b border-white/10 bg-gradient-to-br from-emerald-500/10 via-revela-card to-revela-dark px-5 py-7 sm:px-8 sm:py-9">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300">
+              {suspended ? <AlertCircle size={26} /> : rejected ? <AlertCircle size={26} /> : needsInformation ? <FileCheck2 size={26} /> : <Clock3 size={26} />}
+            </div>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Biashara verification</p>
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                rejected || suspended
+                  ? "border-red-300/20 bg-red-400/10 text-red-200"
+                  : needsInformation
+                    ? "border-amber-300/20 bg-amber-400/10 text-amber-200"
+                    : "border-emerald-300/20 bg-emerald-400/10 text-emerald-200"
+              }`}>
+                {suspended ? "Suspended" : rejected ? "Rejected" : needsInformation ? "Needs information" : "Pending review"}
+              </span>
+            </div>
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{description}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={onRefresh}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              >
+                <RefreshCw size={16} />
+                Refresh application status
+              </button>
+              {(rejected || needsInformation) ? (
+                <button
+                  type="button"
+                  onClick={onResubmit}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                >
+                  Update and resubmit
+                  <ChevronRight size={16} />
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-8">
+            <div className="rounded-2xl border border-white/10 bg-revela-dark/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Submitted business</p>
+              <p className="mt-2 break-words text-lg font-bold text-white">{business?.name || business?.business_name || "Business application"}</p>
+              <p className="mt-1 text-sm text-slate-400">{[business?.category, business?.business_type].filter(Boolean).join(" · ") || "Business details submitted"}</p>
+              <p className="mt-3 text-xs text-slate-500">Submitted {formatDateTime(business?.submitted_at || business?.created_at)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-revela-dark/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">What happens next?</p>
+              <ol className="mt-3 space-y-3 text-sm">
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-300" />
+                  <span className="text-slate-200">Your business details are saved for review.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  {rejected ? <XCircle size={17} className="mt-0.5 shrink-0 text-red-300" /> : needsInformation ? <AlertCircle size={17} className="mt-0.5 shrink-0 text-amber-300" /> : <Clock3 size={17} className="mt-0.5 shrink-0 text-slate-400" />}
+                  <span className="text-slate-200">{rejected ? "Update the required information and resubmit." : needsInformation ? "Provide the requested corrections and resubmit." : suspended ? "Contact platform support for assistance." : "A platform administrator checks the application."}</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <ShieldCheck size={17} className={`mt-0.5 shrink-0 ${isPending ? "text-slate-500" : "text-emerald-300"}`} />
+                  <span className="text-slate-200">After approval, your business profile and workspace unlock.</span>
+                </li>
+              </ol>
+            </div>
+            {business?.review_notes ? (
+              <div className="sm:col-span-2 rounded-2xl border border-amber-300/20 bg-amber-400/5 p-4">
+                <p className="text-sm font-bold text-amber-200">Platform administrator notes</p>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{business.review_notes}</p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+        <p role="status" aria-live="polite" className="mt-4 text-center text-xs leading-5 text-slate-500">
+          The application status is returned by the backend. This page does not grant or simulate approval.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
    NO BUSINESS STATE
 ========================================================= */
 
@@ -871,7 +998,7 @@ function CreateBusinessState({
               </p>
 
               <p className="mt-1 text-xs leading-5 text-blue-100">
-                Verification will be introduced soon.
+                Your application will be reviewed by a platform administrator. The workspace unlocks after approval.
               </p>
             </div>
           </div>
@@ -915,6 +1042,7 @@ export default function BiasharaDashboard({
     useState(null);
 
   const [activeSection, setActiveSection] = useState("overview");
+  const [editingApplication, setEditingApplication] = useState(false);
 
   const businessRequestRef = useRef(0);
   const dashboardRequestRef = useRef(0);
@@ -1104,7 +1232,7 @@ export default function BiasharaDashboard({
   useEffect(() => {
     if (
       !hasCheckedBusiness ||
-      !business
+      !isVerifiedBusiness(business)
     ) {
       return;
     }
@@ -1300,6 +1428,8 @@ export default function BiasharaDashboard({
         setDashboard(null);
         setError("");
         setLastUpdated(null);
+        setEditingApplication(false);
+        setActiveSection("overview");
 
         setHasCheckedBusiness(true);
       },
@@ -1353,6 +1483,33 @@ export default function BiasharaDashboard({
     return (
       <CreateBusinessState
         onCreated={handleBusinessCreated}
+      />
+    );
+  }
+
+  if (business && !isVerifiedBusiness(business)) {
+    const status = String(
+      business?.verification_status ||
+        (business?.status === "active" ? "pending" : business?.status) ||
+        "pending",
+    ).trim().toLowerCase();
+    const canResubmit = status === "rejected" || status === "needs_information";
+
+    if (editingApplication && canResubmit) {
+      return (
+        <BiasharaBusinessOnboarding
+          initialBusiness={business}
+          resubmitting
+          onCreated={handleBusinessCreated}
+        />
+      );
+    }
+
+    return (
+      <BusinessVerificationState
+        business={business}
+        onRefresh={handleRetryBusiness}
+        onResubmit={() => setEditingApplication(true)}
       />
     );
   }
