@@ -37,7 +37,7 @@ export function routeLivingHub(message, preferredHub = "auto", workspace = "") {
 }
 
 function currentDataRequest(text) {
-  return /\\b(latest|today|right now|current price|current news|weather today|live score|current exchange rate)\\b/i.test(String(text || ""));
+  return /\b(latest|today|right now|current price|current news|weather today|live score|current exchange rate)\b/i.test(String(text || ""));
 }
 
 /**
