@@ -921,7 +921,22 @@ export default function AIAssistantDashboard({
             networkUsed: false,
           };
 
-          if (attachedFile) {
+          if (!attachedFile && inputMeta?.visionResult && String(inputMeta.visionResult).trim()) {
+            // The configured vision model has already analyzed an explicitly shared camera frame.
+            // Use its grounded response directly; never re-label pixel math as semantic vision.
+            localText = String(inputMeta.visionResult).trim();
+            localType = "vision-chat";
+            brainMetadata = {
+              ...brainMetadata,
+              engine: inputMeta.visionProvider ? String(inputMeta.visionProvider) + "-vision" : "revelaai-vision",
+              provider: inputMeta.visionProvider || "gemini",
+              network: true,
+              networkUsed: true,
+              visionUsed: true,
+              mediaRetained: false,
+              memory: "server",
+            };
+          } else if (attachedFile) {
             if (attachedFile.type?.startsWith("image/")) {
               const result = inputMeta?.vision || await analyzeLocalImageForChat(attachedFile, cleaned || "Describe this image");
               const objectLine = result.objects?.length
@@ -1017,7 +1032,7 @@ export default function AIAssistantDashboard({
                 await recordLocalDiagnostic("perception-text-interpretation", perceptionError);
               }
             }
-          } else if (!attachedFile) {
+          } else if (!attachedFile && !inputMeta?.visionResult) {
             // Normal text chat must use the server-side generative model.
             // Never substitute the local rule engine when the service is unavailable.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
