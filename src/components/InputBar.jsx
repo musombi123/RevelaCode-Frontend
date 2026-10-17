@@ -11,7 +11,6 @@ import {
   Flashlight,
   Loader2,
 } from "lucide-react";
-import { analyzeCanvas, loadLocalVisionAssets } from "@/ai/freeVisionEngine";
 
 /* =========================================================
    INPUT BAR
@@ -95,6 +94,14 @@ export default function InputBar({
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [torchOn, setTorchOn] = useState(false);
+  const [liveVisionActive, setLiveVisionActive] = useState(false);
+  const [liveVisionPrompt, setLiveVisionPrompt] = useState(
+    "Describe the visible surroundings, objects, readable text, layout, and notable hazards. State uncertainty."
+  );
+  const [liveVisionResult, setLiveVisionResult] = useState("");
+  const [liveVisionUpdatedAt, setLiveVisionUpdatedAt] = useState("");
+  const liveVisionInFlightRef = useRef(false);
+  const visionRequestRef = useRef(null);
 
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
@@ -154,6 +161,10 @@ export default function InputBar({
     });
     setCameraOpen(false);
     setTorchOn(false);
+    setLiveVisionActive(false);
+    visionRequestRef.current?.abort?.();
+    visionRequestRef.current = null;
+    setTorchOn(false);
     setCameraError("");
   }, []);
 
@@ -177,8 +188,8 @@ export default function InputBar({
 
   const openCamera = async () => {
     setCameraError("");
-    // Warm local model assets while the live preview opens; no model API is called.
-    void loadLocalVisionAssets().catch(() => {});
+    setLiveVisionResult("");
+    setLiveVisionUpdatedAt("");
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError(
@@ -221,46 +232,146 @@ export default function InputBar({
     }
   };
 
-  const captureFrame = async () => {
+  const analyzeCurrentFrame = useCallback(async (prompt, signal) => {
     const video = cameraVideoRef.current;
-    if (!video?.videoWidth) {
-      setCameraError("Camera is still starting. Try again in a moment.");
-      return;
+    if (!video?.videoWidth || !video?.videoHeight) {
+      throw new Error("Camera is still starting. Try again in a moment.");
     }
+
+    const token =
+      localStorage.getItem("revelacode_access_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Sign in to RevelaCode to use model-based Live Vision.");
+    }
+
+    const canvas = document.createElement("canvas");
+    const scale = Math.min(1, 768 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("This browser could not prepare the camera frame.");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const image = canvas.toDataURL("image/jpeg", 0.72);
+
+    const apiBase = (
+      import.meta.env.VITE_REVELAAI_API_URL ||
+      import.meta.env.VITE_REVELAAI_API_BASE ||
+      "https://revelaai.onrender.com"
+    ).replace(/\\/+$/, "");
+    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
+    const response = await fetch(`${apiBase}/api/vision/analyze`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${tokenType} ${token}`,
+      },
+      signal,
+      body: JSON.stringify({
+        image,
+        mimeType: "image/jpeg",
+        prompt: String(prompt || "").trim() ||
+          "Describe the visible surroundings, objects, readable text, layout, and notable hazards. State uncertainty.",
+      }),
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      const error = new Error(
+        payload?.message ||
+          (response.status === 401 || response.status === 403
+            ? "Your session cannot access Live Vision. Sign in again and retry."
+            : "RevelaAI could not analyze this camera frame. Try again.")
+      );
+      error.status = response.status;
+      throw error;
+    }
+
+    const reply = payload?.data?.reply || payload?.data?.response;
+    if (typeof reply !== "string" || !reply.trim()) {
+      throw new Error("RevelaAI returned no usable description for this frame.");
+    }
+    return reply.trim();
+  }, []);
+
+  const stopLiveVision = useCallback(() => {
+    setLiveVisionActive(false);
+    visionRequestRef.current?.abort?.();
+    visionRequestRef.current = null;
+  }, []);
+
+  const captureFrame = async () => {
     setCameraBusy(true);
     setCameraError("");
+    const prompt = liveVisionPrompt.trim() ||
+      "Describe the visible surroundings, objects, readable text, layout, and notable hazards.";
+    const controller = new AbortController();
+    visionRequestRef.current?.abort?.();
+    visionRequestRef.current = controller;
     try {
-      const canvas = document.createElement("canvas");
-      const scale = Math.min(1, 1024 / Math.max(video.videoWidth, video.videoHeight));
-      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
-      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const vision = await analyzeCanvas(canvas);
-      const frame = await new Promise((resolve, reject) => {
-        canvas.toBlob(
-          (blob) =>
-            blob
-              ? resolve(new File([blob], "revela-camera-frame.jpg", { type: "image/jpeg" }))
-              : reject(new Error("Could not capture the camera frame.")),
-          "image/jpeg",
-          0.88
-        );
-      });
-
+      const reply = await analyzeCurrentFrame(prompt, controller.signal);
+      setLiveVisionResult(reply);
+      setLiveVisionUpdatedAt(new Date().toLocaleTimeString());
       stopCamera();
-      onSend?.(
-        "What do you see? Please describe only what the local camera scan can support.",
-        frame,
-        { vision, visionDescription: vision.visionDescription }
-      );
+      onSend?.(prompt, null, { visionResult: reply, visionProvider: "gemini", liveVision: false });
     } catch (error) {
-      setCameraError(error?.message || "Could not analyze this camera frame.");
+      if (error?.name !== "AbortError") {
+        setCameraError(error?.message || "Could not analyze this camera frame.");
+      }
     } finally {
+      if (visionRequestRef.current === controller) visionRequestRef.current = null;
       setCameraBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (!cameraOpen || !cameraStream || !liveVisionActive || cameraBusy) return undefined;
+
+    let cancelled = false;
+    let timer = null;
+
+    const analyzeNextFrame = async () => {
+      if (cancelled) return;
+      if (liveVisionInFlightRef.current) {
+        timer = window.setTimeout(analyzeNextFrame, 1000);
+        return;
+      }
+      liveVisionInFlightRef.current = true;
+      const controller = new AbortController();
+      visionRequestRef.current?.abort?.();
+      visionRequestRef.current = controller;
+
+      try {
+        const prompt = liveVisionPrompt.trim() ||
+          "Describe the visible surroundings, objects, readable text, layout, and notable hazards. State uncertainty.";
+        const reply = await analyzeCurrentFrame(prompt, controller.signal);
+        if (cancelled) return;
+        setLiveVisionResult(reply);
+        setLiveVisionUpdatedAt(new Date().toLocaleTimeString());
+        setCameraError("");
+      } catch (error) {
+        if (!cancelled && error?.name !== "AbortError") {
+          setCameraError(error?.message || "Live Vision could not analyze the latest frame.");
+          if (error?.status === 401 || error?.status === 403) setLiveVisionActive(false);
+        }
+      } finally {
+        liveVisionInFlightRef.current = false;
+        if (visionRequestRef.current === controller) visionRequestRef.current = null;
+        if (!cancelled) timer = window.setTimeout(analyzeNextFrame, 5000);
+      }
+    };
+
+    analyzeNextFrame();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+      if (visionRequestRef.current) {
+        visionRequestRef.current.abort?.();
+        visionRequestRef.current = null;
+      }
+    };
+  }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame]);
 
   /* =======================================================
      VOICE
@@ -423,7 +534,7 @@ export default function InputBar({
               <div>
                 <h2 className="text-sm font-semibold tracking-tight">RevelaAI Camera</h2>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  Scans on your device. No paid vision API.
+                  Live Vision analyzes camera frames with RevelaAI while you enable it.
                 </p>
               </div>
               <button
@@ -458,6 +569,83 @@ export default function InputBar({
                 </div>
               )}
             </div>
+
+            {cameraStream && (
+              <div className="space-y-3 px-4 pt-3">
+                <div className="flex items-center gap-2 text-xs" role="status" aria-live="polite">
+                  <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-slate-500"} />
+                  <span className={liveVisionActive ? "text-emerald-300" : "text-slate-400"}>
+                    {liveVisionActive
+                      ? "LIVE VISION ON · checking a frame about every 5 seconds"
+                      : "Preview only · AI frame analysis is off"}
+                  </span>
+                  {liveVisionUpdatedAt && <span className="ml-auto text-slate-500">Updated {liveVisionUpdatedAt}</span>}
+                </div>
+                <label htmlFor="revela-live-vision-prompt" className="block text-xs font-medium text-slate-300">
+                  What should RevelaAI look for?
+                </label>
+                <textarea
+                  id="revela-live-vision-prompt"
+                  value={liveVisionPrompt}
+                  onChange={(event) => setLiveVisionPrompt(event.target.value)}
+                  maxLength={1200}
+                  rows={2}
+                  className="w-full resize-y rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-400/50"
+                  placeholder="Describe the surroundings, read a sign, identify visible objects..."
+                />
+                {liveVisionResult && (
+                  <div className="max-h-36 overflow-y-auto rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                      Latest frame understanding
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm leading-5 text-slate-100">{liveVisionResult}</p>
+                  </div>
+                )}
+                <p className="text-[11px] leading-4 text-slate-500">
+                  While enabled, selected frames are sent to the configured vision model. This app endpoint does not store the camera images. Stop Live Vision to stop further frame requests.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {!liveVisionActive ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCameraError("");
+                        setLiveVisionResult("");
+                        setLiveVisionUpdatedAt("");
+                        setLiveVisionActive(true);
+                      }}
+                      disabled={!cameraStream || cameraBusy}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-40"
+                    >
+                      <Camera size={16} />
+                      Start Live Vision
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopLiveVision}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-2.5 text-sm font-semibold text-amber-100 hover:bg-amber-300/15"
+                    >
+                      Stop Live Vision
+                    </button>
+                  )}
+                  {liveVisionResult && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const prompt = liveVisionPrompt.trim() || "Describe my surroundings.";
+                        const result = liveVisionResult;
+                        stopCamera();
+                        onSend?.(prompt, null, { visionResult: result, visionProvider: "gemini", liveVision: true });
+                      }}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/5"
+                    >
+                      Send analysis to chat
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {cameraError && (
               <p role="status" className="px-5 pt-3 text-xs leading-5 text-amber-300">
@@ -500,8 +688,7 @@ export default function InputBar({
             </div>
 
             <p className="px-5 pb-4 text-[11px] leading-4 text-slate-500">
-              Pixel analysis runs on-device. Object labels and text recognition need the bundled
-              local assets.
+              Camera permission is controlled by your browser. Live model analysis starts only after you select Start Live Vision and stops when you stop it or close this dialog.
             </p>
           </section>
         </div>
