@@ -57,7 +57,6 @@ const FILTER_OPTIONS = {
     { value: "needs_information", label: "Needs information" },
     { value: "rejected", label: "Rejected" },
     { value: "suspended", label: "Suspended" },
-    { value: "all", label: "All statuses" },
   ],
   schools: [
     { value: "pending", label: "Pending verification" },
