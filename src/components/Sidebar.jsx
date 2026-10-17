@@ -205,6 +205,22 @@ export default function Sidebar({
         </div>
 
         {/* ===================================================
+            GLOBAL BRAIN HUBS
+        =================================================== */}
+
+        <div className="shrink-0 border-b border-white/10 px-3 py-3">
+          <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+            Global brain · 5 hubs
+          </p>
+          <LivingHubSelector
+            value={activeBrainHub}
+            onChange={onBrainHubChange}
+            compact
+            className="justify-start"
+          />
+        </div>
+
+        {/* ===================================================
             NEW CHAT
         =================================================== */}
 
