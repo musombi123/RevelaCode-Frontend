@@ -1086,7 +1086,7 @@ export default function AIAssistantDashboard({
 
             const imagePayload = payload?.data || payload || {};
             const remoteImageUrls = Array.isArray(imagePayload?.urls)
-              ? imagePayload.urls.filter((url) => /^https?:\/\//i.test(String(url || ""))
+              ? imagePayload.urls.filter((url) => /^https?:\/\//i.test(String(url || "")))
               : [];
             const remoteText =
               imagePayload?.response ||
@@ -1479,7 +1479,7 @@ export default function AIAssistantDashboard({
 
         const resultData = payload?.data || payload || {};
         const imageUrls = Array.isArray(resultData?.urls)
-          ? resultData.urls.filter((url) => /^https?:\/\//i.test(String(url || ""))
+          ? resultData.urls.filter((url) => /^https?:\/\//i.test(String(url || "")))
           : [];
         const responseText =
           resultData?.response || resultData?.content || resultData?.answer ||
