@@ -1062,7 +1062,55 @@ export default function AIAssistantDashboard({
                 await recordLocalDiagnostic("document-analysis", fileError);
               }
             }
-          } else {
+          }
+
+          // Interpret free on-device perception with the existing text provider.
+          // The image itself is not uploaded to a paid vision provider.
+          if (attachedFile && localText && !attachedFile.type?.startsWith("video/")) {
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            const tokenHeaders = getRevelaCodeAuthHeaders();
+            if (Object.keys(tokenHeaders).length) {
+              try {
+                const perceptionResponse = await fetch(`${apiBase}/ai`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", ...tokenHeaders },
+                  signal: controller.signal,
+                  body: JSON.stringify({
+                    message: cleaned || (attachedFile.type?.startsWith("image/")
+                      ? "Interpret the image using only the local perception findings below. State limitations clearly."
+                      : "Analyze the document using only the extracted content below."),
+                    user_id: String(user?.id || user?.user_id || user?.userId || ""),
+                    userId: String(user?.id || user?.user_id || user?.userId || ""),
+                    hub: String(activeBrainHub || activeHub || "general"),
+                    visionDescription: attachedFile.type?.startsWith("image/") ? localText : null,
+                    context: [
+                      { role: "system", content: "These are free on-device perception findings, not direct model vision. Treat them as incomplete. Never claim to have seen details not present in the findings." },
+                      { role: "user", content: localText },
+                    ],
+                  }),
+                });
+                const perceptionPayload = await perceptionResponse.json().catch(() => null);
+                const perceptionData = perceptionPayload?.data || perceptionPayload || {};
+                const interpreted = perceptionData.response || perceptionData.content || perceptionData.answer || perceptionData.text || perceptionPayload?.response || perceptionPayload?.answer;
+                if (perceptionResponse.ok && typeof interpreted === "string" && interpreted.trim()) {
+                  localText = interpreted.trim();
+                  localType = "text";
+                  localSources = Array.isArray(perceptionPayload?.sources) ? perceptionPayload.sources : [];
+                  brainMetadata = {
+                    ...brainMetadata,
+                    ...(perceptionPayload?.meta || {}),
+                    engine: perceptionPayload?.meta?.model || perceptionPayload?.meta?.provider || "revelaai-text-over-local-perception",
+                    network: true,
+                    networkUsed: true,
+                    memory: "server",
+                  };
+                }
+              } catch (perceptionError) {
+                if (perceptionError?.name === "AbortError") throw perceptionError;
+                await recordLocalDiagnostic("perception-text-interpretation", perceptionError);
+              }
+            }
+          } else if (!attachedFile) {
             // Normal text chat must use the server-side generative model.
             // Never substitute the local rule engine when the service is unavailable.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -1240,6 +1288,27 @@ export default function AIAssistantDashboard({
             hub: normalized.metadata?.hub || activeBrainHub || "general",
             emotion: normalized.metadata?.emotionEstimate || "neutral",
           }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
+
+          // Persist this turn in RevelaAI's separate memory database. Identity is
+          // authenticated by the existing RevelaCode JWT; userId is a consistency check.
+          const canonicalUserId = String(user?.id || user?.user_id || user?.userId || "");
+          const apiBaseForMemory = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+          const authHeadersForMemory = getRevelaCodeAuthHeaders();
+          if (canonicalUserId && Object.keys(authHeadersForMemory).length) {
+            void fetch(`${apiBaseForMemory}/api/memory/chat`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...authHeadersForMemory },
+              body: JSON.stringify({
+                userId: canonicalUserId,
+                userMessage: userDisplayText,
+                aiResponse: normalized.text,
+                hub: String(activeBrainHub || activeHub || "general"),
+                sessionId: String(chatId || "default"),
+              }),
+            }).then(async (response) => {
+              if (!response.ok) throw new Error("Smart memory persistence failed (HTTP " + response.status + ")");
+            }).catch((memoryError) => recordLocalDiagnostic("server-smart-memory", memoryError));
+          }
 
           const assistantMessage =
             {
