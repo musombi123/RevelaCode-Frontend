@@ -60,7 +60,7 @@ function InternalDashboard() {
  * Pages already selects AdminDashboard or SupportDashboard
  * according to the authenticated user's role.
  */
-function PlatformDashboardRoute({ requiredRole }) {
+function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -82,7 +82,7 @@ function PlatformDashboardRoute({ requiredRole }) {
 
   return (
     <Layout>
-      <Pages />
+      <Pages initialAdminTab={initialAdminTab} />
     </Layout>
   );
 }
@@ -218,6 +218,8 @@ export default function App() {
                 path="/admin/*"
                 element={<Navigate to="/admin/dashboard" replace />}
               />
+
+              <Route path="/meta-engineer" element={<PlatformDashboardRoute requiredRole="admin" initialAdminTab="metaEngineer" />} />
 
               {/* Support routes */}
               <Route
