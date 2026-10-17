@@ -1447,13 +1447,27 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
+        const priorAssistantText = [...history]
+          .reverse()
+          .find((item) => item.role === "assistant")?.text || "";
+        const priorImageRequest = history
+          .slice(-8)
+          .some((item) => item.role === "user" &&
+            /(?:generate|create|make|draw|show).{0,40}image|image.{0,40}(?:generate|create|draw)|describe.{0,25}image/i.test(item.text || ""));
+        const isImageFollowup =
+          /what (?:kind|type) of image.*(?:generate|create)|describe.*image.*(?:generate|create)|what would you like.*image/i.test(priorAssistantText) &&
+          priorImageRequest;
+        const regenerateMessage = isImageFollowup
+          ? `Generate an image of: ${userMessage.text}`
+          : userMessage.text;
+
         const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
         const response = await fetch(`${apiBase}/ai`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
           body: JSON.stringify({
-            message: userMessage.text,
+            message: regenerateMessage,
             user_id: String(userScope || ""),
             context: history.slice(-12).map((item) => ({
               role: item.role === "assistant" ? "assistant" : "user",
@@ -1547,7 +1561,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope]
   );
 
   /* =======================================================
