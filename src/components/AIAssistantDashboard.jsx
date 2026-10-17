@@ -1075,6 +1075,9 @@ export default function AIAssistantDashboard({
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
                   user_id: String(userScope || ""),
+                  userId: String(userScope || ""),
+                  hub: String(activeBrainHub || activeHub || "general"),
+                  visionDescription: null,
                   context: currentMessages.slice(-12).map((item) => ({
                     role: item.role === "assistant" ? "assistant" : "user",
                     content: item.text || "",
@@ -1137,6 +1140,66 @@ export default function AIAssistantDashboard({
               networkUsed: true,
               memory: "server",
             };
+          }
+
+          // Let the existing text model reason over on-device image/video observations.
+          // Raw camera media stays on-device; only the derived observation text is sent.
+          if (
+            attachedFile &&
+            (attachedFile.type?.startsWith("image/") || attachedFile.type?.startsWith("video/")) &&
+            localText
+          ) {
+            const observations = localText;
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            try {
+              const visionResponse = await fetch(`${apiBase}/ai`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...getRevelaCodeAuthHeaders() },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  message: cleaned || "Analyze the attached media using the available observations.",
+                  user_id: String(userScope || ""),
+                  userId: String(userScope || ""),
+                  hub: String(activeBrainHub || activeHub || "general"),
+                  visionDescription: observations.slice(0, 7000),
+                  context: currentMessages.slice(-10).map((item) => ({
+                    role: item.role === "assistant" ? "assistant" : "user",
+                    content: item.text || "",
+                  })),
+                }),
+              });
+              const visionPayload = await visionResponse.json().catch(() => null);
+              const visionData = visionPayload?.data || visionPayload || {};
+              const visionReply = visionData?.response || visionData?.content || visionData?.answer || visionData?.text || visionPayload?.message;
+              if (!visionResponse.ok || typeof visionReply !== "string" || !visionReply.trim()) {
+                throw new Error("Vision reasoning service returned no usable answer.");
+              }
+              localText = visionReply.trim() + "\n\nOn-device observations:\n" + observations;
+              localType = "vision-chat";
+              brainMetadata = {
+                ...brainMetadata,
+                ...(visionPayload?.meta || {}),
+                engine: visionData?.model || visionData?.provider || "revelaai-vision-context-adapter",
+                network: true,
+                networkUsed: true,
+                visionUsed: true,
+                selfHealed: false,
+                memory: "server",
+              };
+            } catch (visionError) {
+              if (visionError?.name === "AbortError") throw visionError;
+              // Self-heal: retain the local result instead of failing the whole chat.
+              brainMetadata = {
+                ...brainMetadata,
+                network: false,
+                networkUsed: false,
+                visionUsed: true,
+                selfHealed: true,
+                visionFallback: true,
+              };
+              localText = observations + "\n\nThe text reasoning service was unavailable, so I kept the on-device analysis rather than failing this turn.";
+              await recordLocalDiagnostic("vision-text-reasoning", visionError);
+            }
           }
 
           const normalized = {
