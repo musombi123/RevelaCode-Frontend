@@ -413,7 +413,7 @@ export default function InputBar({
           focus-within:ring-white/10
         "
       >
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-1 sm:flex-nowrap sm:gap-2">
           {/* Attach */}
 
           <button
@@ -470,13 +470,13 @@ export default function InputBar({
             className="
               min-h-[44px]
               max-h-[180px]
-              min-w-0
+              min-w-[96px]
               flex-1
               resize-none
               overflow-y-auto
               bg-transparent
-              px-2
-              py-2.5
+              px-1.5
+              py-2.5 sm:px-2
               text-sm
               leading-6
               text-white
@@ -555,7 +555,7 @@ export default function InputBar({
           </button>
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-3 pt-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2 sm:px-3">
         {listening ? <span className="flex items-center gap-2 text-xs text-emerald-300" role="status"><span className="inline-flex items-center gap-1">{[3,6,10,5,8,4,9].map((height, i) => <span key={i} className="w-1 animate-pulse rounded-full bg-emerald-400" style={{ height: height + "px", animationDelay: (i * 70) + "ms" }} />)}</span> Listening…</span> : <span className="text-[10px] text-gray-500">Voice language</span>}
         <select aria-label="Voice recognition language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-[10px] text-gray-300">
           <option value="en-KE">English</option><option value="sw-KE">Kiswahili</option>
