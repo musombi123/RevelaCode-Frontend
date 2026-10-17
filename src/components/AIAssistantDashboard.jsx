@@ -1076,7 +1076,7 @@ export default function AIAssistantDashboard({
                 headers: {
                   "Content-Type": "application/json",
                   ...getRevelaCodeAuthHeaders(),
-                  ...( /^[a-f\\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                  ...( /^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
                 },
                 signal: controller.signal,
                 body: JSON.stringify({
@@ -1164,7 +1164,7 @@ export default function AIAssistantDashboard({
                 headers: {
                   "Content-Type": "application/json",
                   ...getRevelaCodeAuthHeaders(),
-                  ...( /^[a-f\\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                  ...( /^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
                 },
                 signal: controller.signal,
                 body: JSON.stringify({
