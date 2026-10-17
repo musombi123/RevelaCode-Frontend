@@ -75,8 +75,13 @@ export default function MetaEngineerLab() {
 
   const refreshAudit = useCallback(async () => {
     const result = await request("/api/meta-engineer/audit");
-    const items = Array.isArray(result) ? result : first(result?.ideas, result?.audit, result?.logs, result?.items, []);
-    setAudit(Array.isArray(items) ? items : []);
+    const items = Array.isArray(result)
+      ? result
+      : [
+          ...(Array.isArray(result?.ideas) ? result.ideas : []),
+          ...(Array.isArray(result?.audit) ? result.audit : []),
+        ];
+    setAudit(items);
     setLastUpdated(new Date());
     return items;
   }, [request]);
@@ -108,7 +113,15 @@ export default function MetaEngineerLab() {
         body: JSON.stringify({ spec: spec.trim(), target, userId: user?.id || user?._id || user?.user_id || user?.userId }),
       });
       const idea = result?.idea || result?.proposal || result?.data || result;
-      setSelected(idea);
+      setSelected({
+        ...idea,
+        ideaId: first(idea?.ideaId, idea?.idea_id, idea?.id, idea?._id, result?.ideaId),
+        status: first(result?.idea_status, idea?.status, result?.status),
+        generated_code: first(idea?.generated_code, result?.generated_code),
+        code_path: first(idea?.code_path, result?.code_path),
+        test_logs: first(idea?.test_logs, result?.test_logs),
+        changelog: first(idea?.changelog, result?.changelog),
+      });
       setActiveTab("code");
       setNotice("Proposal submitted. The UI will display only progress and artifacts returned by the API; it will not fabricate test results.");
       await refreshAudit().catch(() => {});
@@ -173,7 +186,7 @@ export default function MetaEngineerLab() {
   const code = first(current?.generated_code, current?.code, current?.artifact?.content, current?.files?.[0]?.content, "");
   const testLogs = first(current?.test_logs, current?.test_output, current?.logs, current?.test_result, "No sandbox test output has been returned yet.");
   const changelog = first(current?.changelog_content, current?.changelog, current?.changelog_path, "No changelog artifact has been returned yet.");
-  const architecture = first(scan?.modules, scan?.architecture_map, scan?.files, scan?.tree, scan);
+  const architecture = first(scan?.architecture, scan?.architecture_map, scan?.modules, scan?.files, scan?.tree, scan);
   const scanMetrics = scan?.metrics || scan?.summary || scan || {};
   const freeSlots = first(scanMetrics?.free_slots, scanMetrics?.freeSlots, scanMetrics?.capacity?.free_slots);
   const modules = first(scanMetrics?.module_count, scanMetrics?.modules_count, Array.isArray(scan?.modules) ? scan.modules.length : undefined);
