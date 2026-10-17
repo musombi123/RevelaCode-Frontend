@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import { resolveChatTitle } from "@/utils/chatTitle";
+import { resolveChatTitle } from "@/components/utils/chatTitle";
 
 const MAX_RENAME_LENGTH = 60;
 
