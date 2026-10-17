@@ -57,9 +57,19 @@ export default function MessageActions({
   const outputFormat = inferOutputFormat(message.sourcePrompt || "", text);
   const canShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const sourcePrompt = String(message.sourcePrompt || "");
+  const outputType = String(message.contentType || message.metadata?.outputType || message.metadata?.renderType || "");
+  const explicitChartMarkup =
+    /(?:\x60\x60\x60\s*(?:mermaid|chart|vega|vegalite)|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart)\b|\b(?:chart|graph|plot|visualization)\b.{0,70}\b(?:data|series|axis|trend|bar|line|pie|values)\b)/i.test(text);
+  const chartIntent = /\b(?:chart|graph|plot|visuali[sz]ation|data dashboard)\b/i.test(sourcePrompt);
   const isChartOutput =
-    /(?:\x60\x60\x60\s*(?:mermaid|chart|vega|vegalite)|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart)\b|\b(?:chart|graph|plot|visualization)\b.{0,50}\b(?:data|series|axis|trend|bar|line|pie)\b)/i.test(text) ||
-    /chart|graph|visualization/i.test(String(message.contentType || message.metadata?.outputType || ""));
+    explicitChartMarkup ||
+    /\b(?:chart|graph|plot|visuali[sz]ation|mermaid|vega)\b/i.test(outputType) ||
+    (chartIntent && (
+      (Array.isArray(message.imageUrls) && message.imageUrls.length > 0) ||
+      /\b(?:image|visual|graphic)\b/i.test(outputType) ||
+      /\b(?:chart|graph|plot|visuali[sz]ation)\b/i.test(text)
+    ));
   const handleDelete = useCallback(() => {
     if (!isChartOutput || typeof onDelete !== "function") return;
     if (typeof window !== "undefined" && window.confirm("Delete this chart and its assistant response from this conversation?")) {
