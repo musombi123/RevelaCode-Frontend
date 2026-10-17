@@ -105,11 +105,12 @@ export async function downloadSmartOutput({ prompt = "", answer = "" } = {}) {
     const rows = parseMarkdownTable(text);
     if (rows) output = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
     else if (fence?.language === "csv") output = fence.code;
+    else output = String(text).split(/\r?\n/).map((line) => csvEscape(line)).join("\r\n");
     mime = "text/csv;charset=utf-8";
   } else if (format.extension === "json") {
     const candidate = fence?.language === "json" ? fence.code : text;
     try { output = JSON.stringify(JSON.parse(candidate), null, 2); }
-    catch { output = candidate; }
+    catch { output = JSON.stringify({ content: candidate }, null, 2); }
     mime = "application/json;charset=utf-8";
   } else if (LANG_EXTENSIONS[format.extension] && fence) {
     output = fence.code;
