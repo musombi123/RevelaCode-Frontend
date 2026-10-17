@@ -988,14 +988,11 @@ export default function AIAssistantDashboard({
         const imageDescriptionFollowup =
           !attachedFile && Boolean(cleaned) && assistantAwaitingImage && priorImageRequest;
 
-        const requestMessage =
-          attachedFile
-            ? cleaned
-            : enrichPrompt(
-                imageDescriptionFollowup
-                  ? `Generate an image of: ${cleaned}`
-                  : cleaned
-              );
+        // Intent classification and specialist selection belong to the backend.
+        // The frontend only preserves the explicit image-generation follow-up.
+        const requestMessage = imageDescriptionFollowup
+          ? `Generate an image of: ${cleaned}`
+          : cleaned;
 
         try {
           /*
@@ -1535,7 +1532,7 @@ export default function AIAssistantDashboard({
       scope: userScope,
       userText: heard || "Voice message",
       assistantText: response,
-      hub: result.meta?.hub || activeBrainHub || "general",
+      hub: result.meta?.hub || "auto",
       emotion: result.meta?.emotionEstimate || "neutral",
     }).catch((memoryError) => recordLocalDiagnostic("voice-memory", memoryError));
     // The voice session stays open for the next turn.
