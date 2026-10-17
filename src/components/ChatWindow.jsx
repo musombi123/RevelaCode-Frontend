@@ -11,6 +11,7 @@ export default function ChatWindow({
   regenerableId = null,
   onRegenerate,
   onFeedback,
+  onDeleteMessage,
 }) {
   const endRef = useRef(null);
 
@@ -86,6 +87,7 @@ export default function ChatWindow({
                     regenerableId={regenerableId}
                     onRegenerate={onRegenerate}
                     onFeedback={onFeedback}
+                    onDelete={onDeleteMessage}
                   />
                 </div>
               )}
