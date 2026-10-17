@@ -648,5 +648,6 @@ export default function InputBar({
         </div>
       </div>
     </div>
+    </div>
   );
 }
