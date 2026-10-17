@@ -1083,7 +1083,7 @@ export default function AIAssistantDashboard({
 
             const imagePayload = payload?.data || payload || {};
             const remoteImageUrls = Array.isArray(imagePayload?.urls)
-              ? imagePayload.urls.filter((url) => /^https?:\\/\\//i.test(String(url || "")))
+              ? imagePayload.urls.filter((url) => /^https?:\/\//i.test(String(url || ""))
               : [];
             const remoteText =
               imagePayload?.response ||
@@ -1439,7 +1439,7 @@ export default function AIAssistantDashboard({
       controllerRef.current = controller;
 
       try {
-        const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\\/$/, "");
+        const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
         const response = await fetch(`${apiBase}/ai`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1471,7 +1471,7 @@ export default function AIAssistantDashboard({
 
         const resultData = payload?.data || payload || {};
         const imageUrls = Array.isArray(resultData?.urls)
-          ? resultData.urls.filter((url) => /^https?:\\/\\//i.test(String(url || "")))
+          ? resultData.urls.filter((url) => /^https?:\/\//i.test(String(url || ""))
           : [];
         const responseText =
           resultData?.response || resultData?.content || resultData?.answer ||
