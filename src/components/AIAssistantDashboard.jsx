@@ -188,6 +188,7 @@ const buildContext = (
   messages
 ) => {
   return messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
     .slice(-12)
     .map((message) => {
       const role =
@@ -392,6 +393,19 @@ export default function AIAssistantDashboard({
   };
   const activeHubLabel =
     hubLabels[activeHub] || "the " + String(activeHub) + " workspace";
+  const brainHubLabels = {
+    auto: "Auto", mkulima: "Mkulima", biashara: "Biashara",
+    elimu: "Elimu", mahubiri: "Mahubiri", general: "General",
+  };
+  const activeBrainHubLabel = brainHubLabels[activeBrainHub] || "Auto";
+  const hubInputPlaceholder = {
+    auto: "Auto — RevelaAI will connect the best hub...",
+    mkulima: "Ask Mkulima about farming, crops, soil...",
+    biashara: "Ask Biashara about business, sales...",
+    elimu: "Ask Elimu about learning...",
+    mahubiri: "Ask Mahubiri about Scripture, prophecy...",
+    general: "Ask RevelaAI anything...",
+  }[activeBrainHub] || "Ask RevelaAI anything...";
   const hubContext = [
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
@@ -429,7 +443,42 @@ export default function AIAssistantDashboard({
     useState(false);
 
   // Auto-routing is the default; users can pin a specialist hub per conversation.
-  const [activeBrainHub, setActiveBrainHub] = useState("auto");
+  const [activeBrainHub, setActiveBrainHub] = useState(() => {
+    if (typeof window === "undefined") return "auto";
+    try {
+      const saved = window.localStorage.getItem("revelai_hub");
+      return ["auto", "mkulima", "biashara", "elimu", "mahubiri", "general"].includes(saved) ? saved : "auto";
+    } catch {
+      return "auto";
+    }
+  });
+
+  const handleBrainHubChange = useCallback((value) => {
+    const nextHub = ["auto", "mkulima", "biashara", "elimu", "mahubiri", "general"].includes(String(value))
+      ? String(value)
+      : "auto";
+    setActiveBrainHub(nextHub);
+    try {
+      window.localStorage.setItem("revelai_hub", nextHub);
+    } catch {
+      // Chat remains usable when browser storage is unavailable.
+    }
+    if (nextHub === activeBrainHub || !activeChatId) return;
+    const labels = { auto: "Auto", mkulima: "Mkulima", biashara: "Biashara", elimu: "Elimu", mahubiri: "Mahubiri", general: "General" };
+    const label = labels[nextHub];
+    const eventMessage = {
+      id: "hub-switch-" + Date.now(),
+      role: "system",
+      text: "Switched to " + label + " Hub — your " + label.toLowerCase() + " intelligence is now active.",
+      status: "done",
+      createdAt: Date.now(),
+      metadata: { eventType: "hub-switch", hub: nextHub, hubLabel: label },
+    };
+    setMessages((previous) => [...previous, eventMessage]);
+    setChats((previous) => previous.map((chat) => chat.id === activeChatId
+      ? { ...chat, messages: [...(chat.messages || []), eventMessage], updatedAt: Date.now() }
+      : chat));
+  }, [activeBrainHub, activeChatId]);
 
   const [
     storageReady,
@@ -500,7 +549,7 @@ export default function AIAssistantDashboard({
     const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
     const identity = String(user?.user_id || user?.userId || userScope);
 
-    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history`, {
+    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history?hub=${encodeURIComponent(activeBrainHub)}`, {
       method: "GET",
       headers: {
         Authorization: `${localStorage.getItem("revelacode_token_type") || "Bearer"} ${token}`,
@@ -556,7 +605,7 @@ export default function AIAssistantDashboard({
       });
 
     return () => controller.abort();
-  }, [isReady, isGuest, userScope, user?.user_id, user?.userId]);
+  }, [isReady, isGuest, userScope, user?.user_id, user?.userId, activeBrainHub]);
 
   /* =======================================================
      PERSIST USER-SCOPED CHATS
@@ -1084,7 +1133,9 @@ export default function AIAssistantDashboard({
                       : "Analyze the document using only the extracted content below."),
                     user_id: String(user?.id || user?.user_id || user?.userId || ""),
                     userId: String(user?.id || user?.user_id || user?.userId || ""),
-                    hub: String(activeBrainHub || activeHub || "general"),
+                    hub: String(activeBrainHub || "auto"),
+                    sessionId: String(chatId || activeChatId || ""),
+                    conversationId: String(chatId || activeChatId || ""),
                     visionDescription: attachedFile.type?.startsWith("image/") ? localText : null,
                     context: [
                       { role: "system", content: "These are free on-device perception findings, not direct model vision. Treat them as incomplete. Never claim to have seen details not present in the findings." },
@@ -1131,9 +1182,11 @@ export default function AIAssistantDashboard({
                   message: requestMessage || cleaned,
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || activeHub || "general"),
+                  hub: String(activeBrainHub || "auto"),
+                  sessionId: String(chatId || activeChatId || ""),
+                  conversationId: String(chatId || activeChatId || ""),
                   visionDescription: null,
-                  context: currentMessages.slice(-12).map((item) => ({
+                  context: currentMessages.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
                     role: item.role === "assistant" ? "assistant" : "user",
                     content: item.text || "",
                   })),
@@ -1219,7 +1272,9 @@ export default function AIAssistantDashboard({
                   message: cleaned || "Analyze the attached media using the available observations.",
                   user_id: String(userScope || ""),
                   userId: String(userScope || ""),
-                  hub: String(activeBrainHub || activeHub || "general"),
+                  hub: String(activeBrainHub || "auto"),
+                  sessionId: String(chatId || activeChatId || ""),
+                  conversationId: String(chatId || activeChatId || ""),
                   visionDescription: observations.slice(0, 7000),
                   context: currentMessages.slice(-10).map((item) => ({
                     role: item.role === "assistant" ? "assistant" : "user",
@@ -1267,6 +1322,10 @@ export default function AIAssistantDashboard({
             sources: localSources,
             metadata: {
               ...brainMetadata,
+              hub: brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub || "general",
+              hubRequested: brainMetadata.hub_requested || brainMetadata.hubRequested || activeBrainHub || "auto",
+              hubDetected: brainMetadata.hub_detected || brainMetadata.hubDetected || brainMetadata.hub_used || brainMetadata.hub || routed.hub || "general",
+              hubLabel: brainMetadata.hubLabel || brainHubLabels[brainMetadata.hub_used || brainMetadata.hub || routed.hub || activeBrainHub] || "General",
               network: Boolean(brainMetadata.networkUsed),
               networkUsed: Boolean(brainMetadata.networkUsed),
               memory: brainMetadata.memory || "local-only",
@@ -1619,7 +1678,11 @@ export default function AIAssistantDashboard({
           body: JSON.stringify({
             message: regenerateMessage,
             user_id: String(userScope || ""),
-            context: history.slice(-12).map((item) => ({
+            userId: String(userScope || ""),
+            hub: String(activeBrainHub || "auto"),
+            sessionId: String(chatId || activeChatId || ""),
+            conversationId: String(chatId || activeChatId || ""),
+            context: history.filter((item) => item.role === "user" || item.role === "assistant").slice(-12).map((item) => ({
               role: item.role === "assistant" ? "assistant" : "user",
               content: item.text || "",
             })),
@@ -1711,7 +1774,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub]
   );
 
   /* =======================================================
@@ -1763,7 +1826,7 @@ export default function AIAssistantDashboard({
           activeChatId
         }
         activeBrainHub={activeBrainHub}
-        onBrainHubChange={setActiveBrainHub}
+        onBrainHubChange={handleBrainHubChange}
         onNewChat={
           startNewChat
         }
@@ -1862,7 +1925,6 @@ export default function AIAssistantDashboard({
 
               <p
                 className="
-                  hidden
                   truncate
                   text-[10px]
                   text-gray-500
@@ -1870,9 +1932,8 @@ export default function AIAssistantDashboard({
                   sm:block
                 "
               >
-                {compactMode
-                  ? "Personalized for " + activeHubLabel
-                  : "RevelaCode intelligent assistant"}
+                {activeBrainHubLabel} Hub intelligence
+                {compactMode ? " · Personalized for " + activeHubLabel : " · RevelaCode assistant"}
               </p>
             </div>
           </div>
@@ -1971,7 +2032,7 @@ export default function AIAssistantDashboard({
                 <WelcomeScreen
                   onSuggestion={sendTextMessage}
                   activeBrainHub={activeBrainHub}
-                  onHubChange={setActiveBrainHub}
+                  onHubChange={handleBrainHubChange}
                 />
 
                 <div
@@ -1983,12 +2044,9 @@ export default function AIAssistantDashboard({
                 >
                   <InputBar
                     centered
-                    onSend={
-                      sendMessage
-                    }
-                    onMic={
-                      openVoice
-                    }
+                    placeholder={hubInputPlaceholder}
+                    onSend={sendMessage}
+                    onMic={openVoice}
                   />
                 </div>
 
@@ -2054,15 +2112,12 @@ export default function AIAssistantDashboard({
               "
             >
               <div className="mx-auto w-full max-w-4xl">
-                <LivingHubSelector value={activeBrainHub} onChange={setActiveBrainHub} compact />
+                <LivingHubSelector value={activeBrainHub} onChange={handleBrainHubChange} compact />
                 <div className="mt-3">
                 <InputBar
-                  onSend={
-                    sendMessage
-                  }
-                  onMic={
-                    openVoice
-                  }
+                  placeholder={hubInputPlaceholder}
+                  onSend={sendMessage}
+                  onMic={openVoice}
                 />
                 </div>
               </div>

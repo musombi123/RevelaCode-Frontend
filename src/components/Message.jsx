@@ -424,6 +424,7 @@ function Message({ message, onEdit, onReveal }) {
 
   const emotion = getMessageEmotion(message);
   const isUser = message.role === "user";
+  const isSystem = message.role === "system";
   const isError = message.status === "error";
   const isThinking = emotion === "thinking" || message.status === "loading";
   const isVoice = message.inputType === "voice";
@@ -434,6 +435,7 @@ function Message({ message, onEdit, onReveal }) {
   const [fresh] = useState(
     () =>
       !isUser &&
+      !isSystem &&
       !isError &&
       !isThinking &&
       Date.now() - Number(message.createdAt || 0) < FRESH_MS
@@ -488,7 +490,7 @@ function Message({ message, onEdit, onReveal }) {
     ? (editing ? "w-full max-w-[95%] sm:max-w-[80%]" : "max-w-[85%] sm:max-w-[75%]")
     : "w-full max-w-full";
 
-  const specialOutput = !isUser && !isError && !isThinking
+  const specialOutput = !isUser && !isSystem && !isError && !isThinking
     ? detectSpecialOutput(fullText)
     : null;
 
@@ -498,6 +500,14 @@ function Message({ message, onEdit, onReveal }) {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }, [fullText]);
+
+  if (isSystem) {
+    return (
+      <div role="status" className="mx-auto max-w-2xl rounded-full border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-center text-xs font-medium text-emerald-200">
+        {fullText}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -568,8 +578,17 @@ function Message({ message, onEdit, onReveal }) {
         )}
 
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
-        {!isThinking && !isUser && !isError && (
+        {!isThinking && !isUser && !isSystem && !isError && (
           <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
+            {(() => {
+              const hub = message.metadata?.hub_used || message.metadata?.hubUsed || message.metadata?.hubDetected || message.metadata?.hub;
+              const requested = message.metadata?.hub_requested || message.metadata?.hubRequested;
+              const labels = { auto: "Auto", mkulima: "Mkulima", biashara: "Biashara", elimu: "Elimu", mahubiri: "Mahubiri", general: "General" };
+              const label = labels[hub] || message.metadata?.hubLabel;
+              if (!label) return null;
+              const text = String(requested || "").toLowerCase() === "auto" && hub !== "auto" ? "Auto → " + label : label;
+              return <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-200">RevelaAI • {text}</div>;
+            })()}
             {visible && specialOutput && !revealing ? (
               <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
                 <header className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-700 bg-slate-800/90 px-3 py-2 sm:px-4">
