@@ -41,9 +41,19 @@ function applicationId(item) {
 }
 
 function statusOf(item) {
-  return String(item?.verification_status || item?.status || "pending")
+  const verificationStatus = String(item?.verification_status || "")
     .trim()
     .toLowerCase();
+
+  if (verificationStatus) return verificationStatus;
+
+  // Legacy records marked active before verification was introduced must
+  // still pass through the admin review queue; status alone is not approval.
+  if (String(item?.status || "").trim().toLowerCase() === "active") {
+    return "pending";
+  }
+
+  return String(item?.status || "pending").trim().toLowerCase();
 }
 
 function statusLabel(item) {
