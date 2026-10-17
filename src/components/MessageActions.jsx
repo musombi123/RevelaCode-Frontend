@@ -20,6 +20,7 @@ function ActionButton({
   onClick,
   active = false,
   activeClass = "text-emerald-400",
+  danger = false,
   disabled = false,
   children,
 }) {
@@ -31,8 +32,8 @@ function ActionButton({
       title={label}
       aria-label={label}
       aria-pressed={active || undefined}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
-        active ? activeClass : "text-gray-500 hover:text-white"
+      className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
+        active ? activeClass : danger ? "text-red-400 hover:text-red-300" : "text-gray-500 hover:text-white"
       }`}
     >
       {children}
@@ -70,6 +71,17 @@ export default function MessageActions({
       /\b(?:image|visual|graphic)\b/i.test(outputType) ||
       /\b(?:chart|graph|plot|visuali[sz]ation)\b/i.test(text)
     ));
+  const chartTypeHint = [
+    message.contentType,
+    message.metadata?.outputType,
+    message.metadata?.visualizationType,
+    message.metadata?.chartType,
+    message.metadata?.renderAs,
+  ].filter(Boolean).join(" ");
+  const isChartOutput =
+    /(?:```\s*(?:mermaid|chart|vega|vegalite|echarts|plotly|graphviz)\b|\b(?:bar chart|line chart|pie chart|scatter plot|flowchart|data visualization)\b|\b(?:chart|graph|plot|visualization)\b.{0,80}\b(?:data|series|axis|trend|bar|line|pie|render|display|show)\b)/i.test(text) ||
+    /\b(?:chart|graph|visualization|plot)\b/i.test(chartTypeHint) ||
+    Boolean(message.chart || message.visualization || message.metadata?.chart || message.metadata?.visualization);
   const handleDelete = useCallback(() => {
     if (!isChartOutput || typeof onDelete !== "function") return;
     if (typeof window !== "undefined" && window.confirm("Delete this chart and its assistant response from this conversation?")) {
@@ -183,6 +195,7 @@ export default function MessageActions({
           label="Delete chart"
           onClick={handleDelete}
           activeClass="text-red-400"
+          danger
         >
           <Trash2 size={14} />
         </ActionButton>

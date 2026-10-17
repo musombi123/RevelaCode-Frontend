@@ -54,10 +54,11 @@ const LEGACY_STORAGE_KEY = "revela_chats";
 // Remove internal routing traces if a provider accidentally includes them in prose.
 const cleanAssistantAnswer = (value) =>
   String(value || "")
-    .replace(/^\s*(?:\[\s*)?(?:auto\s*(?:→|->|›)\s*)?(?:general|faith|scripture|study|prophecy|elimu|education|shamba|mkulima|biashara|business|community|coding|code)(?:\s*\])?\s*[:—-]?\s*/i, (prefix) =>
-      /→|->|›|\[/.test(prefix) ? "" : prefix
-    )
-    .replace(/^\s*RevelaAI\s*[•|:]\s*(?:Auto\s*(?:→|->|›)\s*)?(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community)\s*\]?\s*/i, "")
+    // Strip internal router prefixes, including "Auto → General] ...", without
+    // accidentally deleting ordinary prose that begins with "General".
+    .replace(/^\s*(?:\[\s*)?auto\s*(?:→|->|›)\s*(?:general|faith|scripture|study|prophecy|elimu|education|shamba|mkulima|biashara|business|community|coding|code)\s*\]?\s*(?:[:—–-]\s*)?/i, "")
+    .replace(/^\s*RevelaAI\s*[•|:]\s*(?:Auto\s*(?:→|->|›)\s*)?(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community|Coding|Code)\s*\]?\s*/i, "")
+    .replace(/^\s*\[\s*(?:General|Faith|Scripture|Study|Prophecy|Elimu|Education|Shamba|Mkulima|Biashara|Business|Community|Coding|Code)\s*\]\s*/i, "")
     .trim();
 
 const ANSWER_STYLE_INSTRUCTION = [
@@ -1926,7 +1927,6 @@ export default function AIAssistantDashboard({
                   "
                 >
                   <InputBar
-                    centered
                     placeholder={hubInputPlaceholder}
                     onSend={sendMessage}
                     onMic={openVoice}
