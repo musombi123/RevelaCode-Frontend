@@ -349,6 +349,20 @@ export default function Sidebar({
                 const active =
                   activeChatId ===
                   chat.id;
+                const rawTitle = String(chat.title || "Untitled Chat");
+                const displayTitle = rawTitle.length > 35
+                  ? rawTitle.slice(0, 35).trimEnd() + "..."
+                  : rawTitle;
+                const hubName = String(chat.hub || chat.activeBrainHub || activeBrainHub || "auto").toLowerCase();
+                const HubIcon = hubName.includes("shamba") || hubName.includes("mkulima")
+                  ? Sparkles
+                  : hubName.includes("biashara")
+                    ? MessageCircle
+                    : hubName.includes("elimu")
+                      ? Check
+                      : hubName.includes("mahubiri") || hubName.includes("faith") || hubName.includes("scripture")
+                        ? MessageCircle
+                        : MessageSquare;
 
                 const confirming =
                   confirmId ===
@@ -419,8 +433,9 @@ export default function Sidebar({
                           }
                         `}
                       >
-                        <MessageSquare
+                        <HubIcon
                           size={16}
+                          aria-hidden="true"
                         />
                       </span>
 
@@ -439,8 +454,7 @@ export default function Sidebar({
                             }
                           `}
                         >
-                          {chat.title ||
-                            "Untitled Chat"}
+                          {displayTitle}
                         </span>
 
                         {chat.messages

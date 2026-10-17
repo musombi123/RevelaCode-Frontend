@@ -422,6 +422,9 @@ export default function AIAssistantDashboard({
   const controllerRef =
     useRef(null);
 
+  // Prevent rapid repeated submissions from creating duplicate user/assistant turns.
+  const sendLockRef = useRef(false);
+
   /* =======================================================
      LOAD USER-SCOPED CHATS
   ======================================================= */
@@ -454,6 +457,86 @@ export default function AIAssistantDashboard({
     isReady,
     storageKey,
   ]);
+
+  /* =======================================================
+     LOAD DURABLE REVELAAI CONVERSATION HISTORY
+     -------------------------------------------------------
+     The authoritative conversation store belongs to RevelaAI.
+     A history outage must never create a fake conversation or
+     replace the locally saved chats with an error row.
+  ======================================================= */
+
+  useEffect(() => {
+    if (!isReady || isGuest || !userScope || userScope === "anonymous" || typeof window === "undefined") {
+      return undefined;
+    }
+
+    const token =
+      localStorage.getItem("revelacode_access_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
+    if (!token) return undefined;
+
+    const controller = new AbortController();
+    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+    const identity = String(user?.user_id || user?.userId || userScope);
+
+    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history`, {
+      method: "GET",
+      headers: {
+        Authorization: `${localStorage.getItem("revelacode_token_type") || "Bearer"} ${token}`,
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((payload) => {
+        const records = Array.isArray(payload?.data) ? payload.data : [];
+        if (!records.length) return;
+
+        const remoteChats = records.map((record) => {
+          const rawMessages = Array.isArray(record?.messages) ? record.messages : [];
+          const normalizedMessages = rawMessages.map((item, index) => ({
+            id: String(item?.id || item?._id || `${record?._id || "remote"}-${index}`),
+            role: item?.role === "assistant" ? "assistant" : "user",
+            text: String(item?.content || item?.text || ""),
+            status: "done",
+            createdAt: item?.createdAt || item?.created_at || record?.updatedAt || Date.now(),
+          })).filter((item) => item.text.trim());
+
+          if (!normalizedMessages.length) return null;
+          const firstUser = normalizedMessages.find((item) => item.role === "user");
+          const title = String(record?.title || firstUser?.text || "Conversation").trim();
+          return normalizeChat({
+            id: String(record?.id || record?._id || ""),
+            title: title.slice(0, 35),
+            messages: normalizedMessages,
+            createdAt: record?.createdAt || record?.created_at || Date.now(),
+            updatedAt: record?.updatedAt || record?.updated_at || Date.now(),
+          });
+        }).filter(Boolean);
+
+        if (!remoteChats.length) return;
+        setChats((current) => {
+          const byId = new Map(current.map((chat) => [chat.id, chat]));
+          for (const remoteChat of remoteChats) {
+            if (!byId.has(remoteChat.id)) byId.set(remoteChat.id, remoteChat);
+          }
+          return Array.from(byId.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        });
+      })
+      .catch((error) => {
+        if (error?.name !== "AbortError") {
+          // Keep local history visible; never show "Failed to fetch" as a conversation.
+          console.warn("RevelaAI conversation history unavailable; using local history.");
+        }
+      });
+
+    return () => controller.abort();
+  }, [isReady, isGuest, userScope, user?.user_id, user?.userId]);
 
   /* =======================================================
      PERSIST USER-SCOPED CHATS
@@ -770,6 +853,11 @@ export default function AIAssistantDashboard({
           return;
         }
 
+        if (sendLockRef.current) {
+          return;
+        }
+        sendLockRef.current = true;
+
         const currentMessages =
           messages;
 
@@ -939,8 +1027,67 @@ export default function AIAssistantDashboard({
               }
             }
           } else {
-            localText = routed.reply;
+            // Normal text chat must use the server-side generative model.
+            // Never substitute the local rule engine when the service is unavailable.
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            let response;
+            try {
+              response = await fetch(`${apiBase}/ai`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
+                body: JSON.stringify({
+                  message: requestMessage || cleaned,
+                  user_id: String(userScope || ""),
+                  context: currentMessages.slice(-12).map((item) => ({
+                    role: item.role === "assistant" ? "assistant" : "user",
+                    content: item.text || "",
+                  })),
+                }),
+              });
+            } catch (networkError) {
+              if (networkError?.name === "AbortError") throw networkError;
+              throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+            }
+
+            let payload;
+            try {
+              payload = await response.json();
+            } catch {
+              payload = null;
+            }
+
+            if (!response.ok) {
+              throw new Error(
+                response.status === 502 || response.status === 503 || response.status === 504
+                  ? "RevelaAI is waking up, please wait 20 seconds..."
+                  : (payload?.message || payload?.error?.message || "RevelaAI could not complete the request. Please try again.")
+              );
+            }
+
+            const remoteText =
+              payload?.data?.response ||
+              payload?.data?.content ||
+              payload?.data?.answer ||
+              payload?.data?.text ||
+              payload?.response ||
+              payload?.answer ||
+              payload?.content ||
+              payload?.message;
+
+            if (typeof remoteText !== "string" || !remoteText.trim()) {
+              throw new Error("RevelaAI is waking up, please wait 20 seconds...");
+            }
+
+            localText = remoteText.trim();
             localType = "text";
+            brainMetadata = {
+              ...brainMetadata,
+              engine: payload?.meta?.model || payload?.meta?.provider || "revelaai-server",
+              network: true,
+              networkUsed: true,
+              memory: "server",
+            };
           }
 
           const normalized = {
@@ -1076,6 +1223,7 @@ export default function AIAssistantDashboard({
             }
           );
         } finally {
+          sendLockRef.current = false;
           if (
             controllerRef.current ===
             controller
