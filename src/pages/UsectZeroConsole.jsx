@@ -120,6 +120,7 @@ export default function UsectZeroConsole() {
     if (!response.ok) {
       const error = new Error(data?.message || data?.error || data?.detail || data?.code || ("Request failed (" + response.status + ")"));
       error.status = response.status;
+      error.payload = data;
       throw error;
     }
     return data;
@@ -136,7 +137,7 @@ export default function UsectZeroConsole() {
 
     const nextErrors = {};
     if (results[0].status === "fulfilled") setHealth(results[0].value);
-    else { setHealth(null); nextErrors.health = results[0].reason?.message || "Health endpoint unavailable"; }
+    else { setHealth(results[0].reason?.payload || null); nextErrors.health = results[0].reason?.message || "Health endpoint unavailable"; }
 
     if (results[1].status === "fulfilled") {
       setPendingRequests(rowsFrom(results[1].value, ["requests", "items", "key_requests", "keyRequests"]));
