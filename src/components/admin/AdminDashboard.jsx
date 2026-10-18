@@ -32,12 +32,20 @@ import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
 import UsectZeroConsole from "@/pages/UsectZeroConsole.jsx";
+import CoreMeshDashboard from "@/pages/CoreMeshDashboard.jsx";
 
 // =========================================================
 // ADMIN PAGES
 // =========================================================
 
 const adminPages = {
+  coreMesh: {
+    title: "USECT Core Mesh",
+    description: "Monitor and operate the integrated ZERO, Genesis (Core-One), and Infinite Mind (Core-Two) stack.",
+    icon: Cpu,
+    component: CoreMeshDashboard,
+  },
+
   usectZero: {
     title: "USECT-ZERO Core",
     description: "Monitor core health, review scoped developer-key requests, and inspect recent engineering-tool outcomes.",
