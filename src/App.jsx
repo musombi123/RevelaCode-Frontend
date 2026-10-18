@@ -75,8 +75,12 @@ function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) 
   }
 
   const role = String(user?.role || "").trim().toLowerCase();
+  const platformAdminRoles = ["admin", "platform_admin", "super_admin", "revelacode_admin"];
+  const roleAllowed = requiredRole === "admin"
+    ? platformAdminRoles.includes(role)
+    : role === requiredRole;
 
-  if (!user || role !== requiredRole) {
+  if (!user || !roleAllowed) {
     return <Navigate to="/pages" replace />;
   }
 
