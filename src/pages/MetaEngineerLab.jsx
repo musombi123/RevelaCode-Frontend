@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
 const TARGETS = [
-  { value: "backend", label: "Backend FastAPI Router" },
+  { value: "backend", label: "Backend Flask Blueprint" },
   { value: "frontend", label: "Frontend Component" },
   { value: "database", label: "MongoDB Model" },
   { value: "fullstack", label: "Full Stack" },
