@@ -1632,6 +1632,7 @@ export default function AIAssistantDashboard({
             network: true,
             networkUsed: true,
             memory: "server",
+            usect_zero_tool: payload?.meta?.usect_zero_tool || payload?.meta?.usectZeroTool || null,
           },
           type: imageUrls.length ? "image" : "text",
         };

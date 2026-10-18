@@ -14,6 +14,7 @@ import {
   CircleDollarSign,
   Database,
   Brain,
+  Cpu,
 } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
@@ -30,12 +31,20 @@ import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
+import UsectZeroConsole from "@/pages/UsectZeroConsole.jsx";
 
 // =========================================================
 // ADMIN PAGES
 // =========================================================
 
 const adminPages = {
+  usectZero: {
+    title: "USECT-ZERO Core",
+    description: "Monitor core health, review scoped developer-key requests, and inspect recent engineering-tool outcomes.",
+    icon: Cpu,
+    component: UsectZeroConsole,
+  },
+
   metaEngineer: {
     title: "Meta-Engineer Lab",
     description: "Inspect RevelaAI self-engineering proposals, sandbox evidence, changelogs, and human approvals.",

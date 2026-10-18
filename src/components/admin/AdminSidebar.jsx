@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Database,
   Brain,
+  Cpu,
   Building2,
 } from "lucide-react";
 
@@ -25,6 +26,13 @@ import {
 // =========================================================
 
 const tabs = [
+  {
+    key: "usectZero",
+    label: "USECT-ZERO Core",
+    description: "Tool activity, core health and developer-key approvals",
+    icon: Cpu,
+    live: true,
+  },
   {
     key: "metaEngineer",
     label: "Meta-Engineer Lab",
