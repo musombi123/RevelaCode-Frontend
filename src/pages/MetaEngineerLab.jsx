@@ -34,6 +34,19 @@ function statusTone(status = "") {
 function statusLabel(value) {
   return String(value || "unknown").replace(/[_-]/g, " ");
 }
+function describeApiFailure(error, operation) {
+  const message = String(error?.message || "request failed");
+  if (message === "admin_required" || error?.status === 403) {
+    return operation + ": RevelaCode denied administrator access. The signed-in account must have the current admin role in the backend user record; browser role flags cannot grant access.";
+  }
+  if (error?.status === 503) {
+    return operation + ": the server-side administrator verification service is unavailable. Check the RevelaCode backend deployment and its connection to the user store.";
+  }
+  if (error?.status === 401) {
+    return operation + ": authentication was rejected. Sign in again and retry.";
+  }
+  return operation + ": " + message + ". Confirm that the RevelaAI API is reachable at " + API_BASE + ".";
+}
 
 export default function MetaEngineerLab() {
   const auth = useAuth();
@@ -43,6 +56,8 @@ export default function MetaEngineerLab() {
   const [activeTab, setActiveTab] = useState("code");
   const [scan, setScan] = useState(null);
   const [audit, setAudit] = useState([]);
+  const [auditLoadState, setAuditLoadState] = useState("loading");
+  const [scanLoadState, setScanLoadState] = useState("loading");
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -79,33 +94,50 @@ export default function MetaEngineerLab() {
   }, [token]);
 
   const refreshAudit = useCallback(async () => {
-    const result = await request("/api/meta-engineer/audit");
-    const items = Array.isArray(result)
-      ? result
-      : [
-          ...(Array.isArray(result?.ideas) ? result.ideas : []),
-          ...(Array.isArray(result?.audit) ? result.audit.map((item) => ({ ...item, ideaId: first(item?.ideaId, item?.idea_id, item?.extra?.ideaId) })) : []),
-        ];
-    setAudit(items);
-    setLastUpdated(new Date());
-    return items;
+    setAuditLoadState("loading");
+    try {
+      const result = await request("/api/meta-engineer/audit");
+      const items = Array.isArray(result)
+        ? result
+        : [
+            ...(Array.isArray(result?.ideas) ? result.ideas : []),
+            ...(Array.isArray(result?.audit) ? result.audit.map((item) => ({ ...item, ideaId: first(item?.ideaId, item?.idea_id, item?.extra?.ideaId) })) : []),
+          ];
+      setAudit(items);
+      setAuditLoadState("loaded");
+      setLastUpdated(new Date());
+      return items;
+    } catch (error) {
+      setAuditLoadState("failed");
+      throw error;
+    }
   }, [request]);
 
   const rescan = useCallback(async () => {
-    setScanning(true); setError(""); setNotice("");
+    setScanning(true); setError(""); setNotice(""); setScanLoadState("loading");
     try {
       const result = await request("/api/meta-engineer/scan");
       setScan(result?.architecture || result?.scan || result);
+      setScanLoadState("loaded");
       setNotice("Architecture scan completed and the returned map has been refreshed.");
       await refreshAudit().catch(() => {});
     } catch (e) {
-      setError(`Architecture scan unavailable: ${e.message}. Confirm the RevelaAI API base and that GET /api/meta-engineer/scan is deployed.`);
+      setScanLoadState("failed");
+      setError(describeApiFailure(e, "Architecture scan unavailable"));
     } finally { setScanning(false); }
   }, [request, refreshAudit]);
 
   useEffect(() => {
-    refreshAudit().catch((e) => setError(`Could not load the audit feed: ${e.message}. Configure VITE_REVELAAI_API_BASE if RevelaAI is hosted separately.`));
-    request("/api/meta-engineer/scan").then((result) => setScan(result?.architecture || result?.scan || result)).catch(() => {});
+    refreshAudit().catch((e) => setError(describeApiFailure(e, "Could not load the audit feed")));
+    request("/api/meta-engineer/scan")
+      .then((result) => {
+        setScan(result?.architecture || result?.scan || result);
+        setScanLoadState("loaded");
+      })
+      .catch((e) => {
+        setScanLoadState("failed");
+        setError(describeApiFailure(e, "Architecture map unavailable"));
+      });
   }, [refreshAudit, request]);
 
   const startBuild = async (event) => {
@@ -207,6 +239,7 @@ export default function MetaEngineerLab() {
   const modules = first(scanMetrics?.module_count, scanMetrics?.modules_count, Array.isArray(scan?.modules) ? scan.modules.length : undefined);
   const lastScan = first(scanMetrics?.last_scan, scanMetrics?.scanned_at, scanMetrics?.timestamp);
   const pending = audit.filter((item) => /pending|awaiting|proposed/i.test(String(item?.status || item?.state || ""))).length;
+  const pendingLabel = auditLoadState === "loaded" ? String(pending) + " pending review" : auditLoadState === "loading" ? "Loading review queue" : "Review queue unavailable";
 
   return (
     <div className="min-h-[calc(100vh-8rem)] overflow-hidden rounded-3xl border border-slate-800 bg-[#080d17] text-slate-100 shadow-2xl">
@@ -223,7 +256,7 @@ export default function MetaEngineerLab() {
           <div className="w-full rounded-2xl border border-emerald-400/20 bg-slate-950/70 p-4 xl:max-w-[360px]">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-bold"><span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" /></span>Introspector</div>
-              <span className={cn("rounded-full border px-2 py-1 text-[10px] font-bold uppercase", scan ? statusTone("active") : statusTone("unconfigured"))}>{scan ? "Scan data loaded" : "Awaiting API"}</span>
+              <span className={cn("rounded-full border px-2 py-1 text-[10px] font-bold uppercase", scan ? statusTone("active") : statusTone("unconfigured"))}>{scan ? "Scan data loaded" : scanLoadState === "failed" ? "Access unavailable" : "Awaiting API"}</span>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
               <Metric label="Last scan" value={lastScan ? (Number.isFinite(Date.parse(lastScan)) ? new Date(lastScan).toLocaleString() : String(lastScan)) : "—"} />
@@ -302,11 +335,11 @@ export default function MetaEngineerLab() {
           </section>
 
           <section className="rounded-2xl border border-slate-800 bg-[#0d1422] p-4 sm:p-5">
-            <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-300" /><h2 className="text-sm font-bold">System oversight</h2></div><span className="text-[10px] text-slate-500">{pending} pending review</span></div>
+            <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-300" /><h2 className="text-sm font-bold">System oversight</h2></div><span className="text-[10px] text-slate-500">{pendingLabel}</span></div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <SmallStat icon={Cpu} label="Architecture map" value={modules ?? "Not reported"} />
-              <SmallStat icon={FlaskConical} label="Sandbox result" value={first(current?.test_status, current?.test_result?.status, current?.tests?.status, "Not reported")} />
-              <SmallStat icon={Clock} label="Last refresh" value={lastUpdated ? lastUpdated.toLocaleTimeString() : "Not synced"} />
+              <SmallStat icon={Cpu} label="Architecture map" value={modules ?? (scanLoadState === "failed" ? "Unavailable" : "Not reported")} />
+              <SmallStat icon={FlaskConical} label="Sandbox result" value={first(current?.test_status, current?.test_result?.status, current?.tests?.status, auditLoadState === "failed" ? "Unavailable" : "Not reported")} />
+              <SmallStat icon={Clock} label="Last refresh" value={lastUpdated ? lastUpdated.toLocaleTimeString() : auditLoadState === "failed" ? "Unavailable" : "Not synced"} />
             </div>
             {(error || notice) && <div className={cn("mt-4 rounded-xl border px-3 py-3 text-xs leading-5", error ? "border-rose-500/30 bg-rose-500/10 text-rose-200" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200")}>{error || notice}</div>}
             <p className="mt-4 text-[10px] leading-5 text-slate-600">API base: {API_BASE || "(not configured — set VITE_REVELAAI_API_BASE)"}. Browser-side role checks are not a security boundary; all endpoints must enforce admin authorization server-side.</p>
