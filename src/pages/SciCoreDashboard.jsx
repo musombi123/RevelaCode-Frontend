@@ -100,7 +100,7 @@ export default function SciCoreDashboard() {
     let data = {};
     try { data = raw ? JSON.parse(raw) : {}; } catch { data = { detail: raw }; }
     if (!response.ok) {
-      const message = data?.error || data?.detail || data?.message || `Request failed (${response.status})`;
+      const message = data?.error || data?.detail || data?.message || data?.code || `Request failed (${response.status})`;
       const err = new Error(message);
       err.status = response.status;
       throw err;
