@@ -55,6 +55,8 @@ export default function MetaEngineerLab() {
   const [target, setTarget] = useState("fullstack");
   const [activeTab, setActiveTab] = useState("code");
   const [scan, setScan] = useState(null);
+  const [coreHealth, setCoreHealth] = useState(null);
+  const [healthLoadState, setHealthLoadState] = useState("loading");
   const [audit, setAudit] = useState([]);
   const [auditLoadState, setAuditLoadState] = useState("loading");
   const [scanLoadState, setScanLoadState] = useState("loading");
@@ -114,8 +116,21 @@ export default function MetaEngineerLab() {
     }
   }, [request]);
 
+  const refreshHealth = useCallback(async () => {
+    try {
+      const result = await request("/api/meta-engineer/health");
+      setCoreHealth(result);
+      setHealthLoadState("loaded");
+      return result;
+    } catch (e) {
+      setHealthLoadState("failed");
+      throw e;
+    }
+  }, [request]);
+
   const rescan = useCallback(async () => {
     setScanning(true); setError(""); setNotice(""); setScanLoadState("loading");
+    await refreshHealth().catch(() => {});
     try {
       const result = await request("/api/meta-engineer/scan");
       setScan(result?.architecture || result?.scan || result);
@@ -126,9 +141,10 @@ export default function MetaEngineerLab() {
       setScanLoadState("failed");
       setError(describeApiFailure(e, "Architecture scan unavailable"));
     } finally { setScanning(false); }
-  }, [request, refreshAudit]);
+  }, [request, refreshAudit, refreshHealth]);
 
   useEffect(() => {
+    refreshHealth().catch(() => {});
     refreshAudit().catch((e) => setError(describeApiFailure(e, "Could not load the audit feed")));
     request("/api/meta-engineer/scan")
       .then((result) => {
@@ -139,7 +155,7 @@ export default function MetaEngineerLab() {
         setScanLoadState("failed");
         setError(describeApiFailure(e, "Architecture map unavailable"));
       });
-  }, [refreshAudit, request]);
+  }, [refreshAudit, refreshHealth, request]);
 
   const startBuild = async (event) => {
     event.preventDefault();
@@ -270,6 +286,23 @@ export default function MetaEngineerLab() {
               <Metric label="Last scan" value={lastScan ? (Number.isFinite(Date.parse(lastScan)) ? new Date(lastScan).toLocaleString() : String(lastScan)) : "—"} />
               <Metric label="Modules mapped" value={modules ?? "—"} />
               <Metric label="Free slots" value={freeSlots ?? "—"} />
+            </div>
+            <div className="mt-3 rounded-xl border border-slate-800 bg-[#080d17] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-200">Core readiness</span>
+                <span className={cn("rounded-full border px-2 py-1 text-[9px] font-bold uppercase", statusTone(healthLoadState === "loaded" ? coreHealth?.status : healthLoadState === "failed" ? "failed" : "pending"))}>
+                  {healthLoadState === "loading" ? "checking" : healthLoadState === "failed" ? "unavailable" : statusLabel(coreHealth?.status || "unknown")}
+                </span>
+              </div>
+              {coreHealth?.checks && <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {Object.entries(coreHealth.checks).map(([name, value]) => <div key={name} className="flex items-center justify-between gap-2 rounded-lg border border-slate-800/80 px-2.5 py-2">
+                  <span className="text-[10px] text-slate-400">{name.replace(/_/g, " ")}</span>
+                  <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] uppercase", statusTone(String(value)))}>{String(value)}</span>
+                </div>)}
+              </div>}
+              {healthLoadState === "loaded" && coreHealth?.status !== "ok" && <p className="mt-2 text-[10px] leading-4 text-amber-200/80">At least one server prerequisite is unavailable. The checks above distinguish missing sandbox tooling from audit-storage connectivity.</p>}
+              {healthLoadState === "failed" && <p className="mt-2 text-[10px] leading-4 text-rose-200/80">Could not read Meta-Engineer health. Check API reachability and deployment before retrying the build.</p>}
+              {coreHealth?.candidate_execution === false && <p className="mt-2 text-[10px] leading-4 text-slate-500">Safe mode: generated code is not executed or automatically deployed.</p>}
             </div>
             <button onClick={rescan} disabled={scanning} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2.5 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/20 disabled:cursor-wait disabled:opacity-60">
               {scanning ? <Loader className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Rescan Architecture
