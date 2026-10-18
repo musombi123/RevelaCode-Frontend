@@ -59,6 +59,7 @@ export default function MetaEngineerLab() {
   const [auditLoadState, setAuditLoadState] = useState("loading");
   const [scanLoadState, setScanLoadState] = useState("loading");
   const [selected, setSelected] = useState(null);
+  const [activeArtifactPath, setActiveArtifactPath] = useState("");
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
@@ -150,8 +151,11 @@ export default function MetaEngineerLab() {
         body: JSON.stringify({ spec: spec.trim(), target, userId: user?.id || user?._id || user?.user_id || user?.userId }),
       });
       const idea = result?.idea || result?.proposal || result?.data || result;
+      const files = Array.isArray(result?.generated_files) ? result.generated_files : Array.isArray(idea?.generated_files) ? idea.generated_files : [];
+      setActiveArtifactPath(String(files[0]?.path || ""));
       setSelected({
         ...idea,
+        generated_files: files,
         ideaId: first(idea?.ideaId, idea?.idea_id, idea?.id, idea?._id, result?.ideaId),
         status: first(result?.idea_status, idea?.status, result?.status),
         generated_code: first(idea?.generated_code, result?.generated_code),
@@ -160,7 +164,7 @@ export default function MetaEngineerLab() {
         changelog: first(idea?.changelog, result?.changelog),
       });
       setActiveTab("code");
-      setNotice("Proposal submitted. The UI will display only progress and artifacts returned by the API; it will not fabricate test results.");
+      setNotice("Build pipeline returned " + String(files.length || 1) + " artifact(s). Static sandbox checks do not execute candidate code; review every file before integration.");
       await refreshAudit().catch(() => {});
     } catch (e) {
       if (e?.data?.ideaId) {
@@ -230,7 +234,11 @@ export default function MetaEngineerLab() {
     return labels.map(([label, detail], i) => ({ label, detail, status: failed && i === stageIndex ? "failed" : i < stageIndex ? "completed" : i === stageIndex ? "running" : "queued" }));
   }, [current, ideaStatus]);
 
-  const code = first(current?.generated_code, current?.code, current?.artifact?.content, current?.files?.[0]?.content, "");
+  const generatedFiles = Array.isArray(current?.generated_files)
+    ? current.generated_files
+    : Array.isArray(current?.files) ? current.files : [];
+  const activeGeneratedFile = generatedFiles.find((item) => item?.path === activeArtifactPath) || generatedFiles[0] || null;
+  const code = first(activeGeneratedFile?.content, current?.generated_code, current?.code, current?.artifact?.content, "");
   const testLogs = first(current?.test_logs, current?.test_output, current?.logs, current?.test_result, "No sandbox test output has been returned yet.");
   const changelog = first(current?.changelog_content, current?.changelog, current?.changelog_path, "No changelog artifact has been returned yet.");
   const architecture = first(scan?.architecture, scan?.architecture_map, scan?.modules, scan?.files, scan?.tree, scan);
@@ -325,12 +333,20 @@ export default function MetaEngineerLab() {
               {TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-semibold transition", activeTab === tab.id ? "border-cyan-300 bg-cyan-300/[0.06] text-cyan-100" : "border-transparent text-slate-500 hover:text-slate-200")}><Icon className="h-3.5 w-3.5" />{tab.label}</button>; })}
             </div>
             <div className="min-h-[320px] p-4 sm:p-5">
-              {activeTab === "code" && <ArtifactPanel icon={FileCode} title="Generated code" value={code} empty="No generated code received. Code will appear here when the backend returns a generated artifact." />}
+              {activeTab === "code" && <div className="space-y-3">
+                {generatedFiles.length > 1 && <label className="block max-w-2xl text-xs font-semibold text-slate-300">Generated artifacts
+                  <select value={activeGeneratedFile?.path || ""} onChange={(event) => setActiveArtifactPath(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-[#070c15] px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-cyan-400/70">
+                    {generatedFiles.map((file) => <option key={file.path} value={file.path}>{file.path} · {file.role || file.language || "artifact"}</option>)}
+                  </select>
+                </label>}
+                {activeGeneratedFile?.path && <p className="text-[11px] text-slate-500">Artifact path: <code>{activeGeneratedFile.path}</code>. Generated files remain proposals until separately reviewed and integrated.</p>}
+                <ArtifactPanel icon={FileCode} title={activeGeneratedFile?.path || "Generated code"} value={code} empty="No generated code received. Code will appear here when the backend returns a generated artifact." />
+              </div>}
               {activeTab === "tests" && <ArtifactPanel icon={Terminal} title="Sandbox test output" value={pretty(testLogs)} empty="No sandbox test output has been returned. Do not treat an empty test log as a passing test." />}
               {activeTab === "changelog" && <ArtifactPanel icon={FileText} title="Changelog artifact" value={pretty(changelog)} empty="No changelog has been returned for this proposal yet." />}
               {activeTab === "architecture" && <ArtifactPanel icon={GitBranch} title="Architecture scan response" value={pretty(architecture)} empty="Run Rescan Architecture after configuring the API. This panel shows returned scan data, not a simulated map." />}
               {activeTab === "audit" && <div><div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-bold">Recent ideas & audit events</h3><p className="mt-1 text-xs text-slate-500">{lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : "Not synced"}</p></div><button onClick={() => refreshAudit().catch((e) => setError(e.message))} className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:bg-white/5" aria-label="Refresh audit"><RefreshCw className="h-4 w-4" /></button></div>
-                {audit.length ? <div className="space-y-2">{audit.map((item, index) => <button key={first(item?.ideaId, item?.idea_id, item?.id, item?._id, index)} onClick={() => { setSelected(item); setActiveTab("code"); }} className="flex w-full items-start gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-left transition hover:border-cyan-500/30"><div className="rounded-lg bg-slate-800 p-2 text-cyan-300"><FileText className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="line-clamp-2 text-xs font-bold text-slate-200">{first(item?.spec, item?.title, item?.name, "Untitled proposal")}</p><span className={cn("rounded-full border px-2 py-0.5 text-[9px] uppercase", statusTone(item?.status || item?.state))}>{statusLabel(item?.status || item?.state)}</span></div><p className="mt-1 truncate text-[10px] text-slate-500">{first(item?.code_path, item?.created_at, item?.timestamp, "No path or timestamp returned")}</p></div><ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-600" /></button>)}</div> : <EmptyState title="Audit feed is empty" body="When the API is available, proposals and audit events from the backend will appear here." />}</div>}
+                {audit.length ? <div className="space-y-2">{audit.map((item, index) => <button key={first(item?.ideaId, item?.idea_id, item?.id, item?._id, index)} onClick={() => { setSelected(item); setActiveArtifactPath(""); setActiveTab("code"); }} className="flex w-full items-start gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-left transition hover:border-cyan-500/30"><div className="rounded-lg bg-slate-800 p-2 text-cyan-300"><FileText className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="line-clamp-2 text-xs font-bold text-slate-200">{first(item?.spec, item?.title, item?.name, "Untitled proposal")}</p><span className={cn("rounded-full border px-2 py-0.5 text-[9px] uppercase", statusTone(item?.status || item?.state))}>{statusLabel(item?.status || item?.state)}</span></div><p className="mt-1 truncate text-[10px] text-slate-500">{first(item?.code_path, item?.created_at, item?.timestamp, "No path or timestamp returned")}</p></div><ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-600" /></button>)}</div> : <EmptyState title="Audit feed is empty" body="When the API is available, proposals and audit events from the backend will appear here." />}</div>}
             </div>
           </section>
 
