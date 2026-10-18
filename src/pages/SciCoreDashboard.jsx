@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "").replace(/\/+$/, "");
+const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
 const cn = (...parts) => parts.filter(Boolean).join(" ");
 const pretty = (value) => typeof value === "string" ? value : JSON.stringify(value ?? {}, null, 2);
 
@@ -85,14 +85,14 @@ export default function SciCoreDashboard() {
   }, [auth, user]);
 
   const request = useCallback(async (path, options = {}) => {
-    if (!API_BASE) throw new Error("VITE_REVELAAI_API_BASE is not configured for the frontend deployment.");
+    if (!API_BASE) throw new Error("RevelaAI API base is unavailable. Set VITE_REVELAAI_API_BASE to override the default service URL.");
     const accessToken = await getToken();
     const response = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: {
         Accept: "application/json",
         ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...(accessToken ? { Authorization: `Bearer ${String(accessToken).replace(/^Bearer\\s+/i, "")}` } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${String(accessToken).replace(/^Bearer\s+/i, "")}` } : {}),
         ...(options.headers || {}),
       },
     });
@@ -250,7 +250,7 @@ export default function SciCoreDashboard() {
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-[#0b1220] p-4 sm:p-5">
-        <div className="flex items-start gap-3"><TerminalSquare className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" /><div><h3 className="text-sm font-bold text-white">Operations boundary</h3><p className="mt-1 text-xs leading-5 text-slate-500">All controls require the backend's administrator authorization. If requests return 401/403, check the signed-in account, server-side <code>META_ENGINEER_ADMIN_USER_IDS</code> allowlist, CORS, and <code>VITE_REVELAAI_API_BASE</code>. Sci-Core is designed for defensive monitoring and civilian research; no automatic firewall changes, code execution, or deployment are performed here.</p></div></div>
+        <div className="flex items-start gap-3"><TerminalSquare className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" /><div><h3 className="text-sm font-bold text-white">Operations boundary</h3><p className="mt-1 text-xs leading-5 text-slate-500">All controls require the backend's administrator authorization. If requests return 401/403, check that the signed-in account has the current admin role in RevelaCode, then verify CORS and <code>VITE_REVELAAI_API_BASE</code>. Sci-Core is designed for defensive monitoring and civilian research; no automatic firewall changes, code execution, or deployment are performed here.</p></div></div>
       </div>
     </div>
   );
