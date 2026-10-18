@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
+const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
 
 const cn = (...parts) => parts.filter(Boolean).join(" ");
 const first = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
@@ -90,6 +90,8 @@ export default function UsectZeroConsole() {
   const user = auth?.user;
   const [health, setHealth] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [issuedKeys, setIssuedKeys] = useState([]);
+  const [issuedKeySecret, setIssuedKeySecret] = useState("");
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -132,6 +134,7 @@ export default function UsectZeroConsole() {
     const results = await Promise.allSettled([
       request("/api/usect-zero/health"),
       request("/api/usect-zero/keys/requests?status=pending_approval"),
+      request("/api/usect-zero/keys/issued?status=active"),
       request("/api/usect-zero/activity"),
     ]);
 
@@ -147,13 +150,17 @@ export default function UsectZeroConsole() {
     }
 
     if (results[2].status === "fulfilled") {
-      setActivity(rowsFrom(results[2].value, ["items", "activity", "events"]));
-      if (results[2].value?.persistent === false) {
-        // Displayed in the panel footer: the API explicitly reports its retention boundary.
-      }
+      setIssuedKeys(rowsFrom(results[2].value, ["keys", "items", "issued_keys", "issuedKeys"]));
+    } else {
+      setIssuedKeys([]);
+      nextErrors.issued = results[2].reason?.message || "Issued-key endpoint unavailable";
+    }
+
+    if (results[3].status === "fulfilled") {
+      setActivity(rowsFrom(results[3].value, ["items", "activity", "events"]));
     } else {
       setActivity([]);
-      nextErrors.activity = results[2].reason?.message || "Activity endpoint unavailable";
+      nextErrors.activity = results[3].reason?.message || "Activity endpoint unavailable";
     }
 
     setErrors(nextErrors);
@@ -166,6 +173,7 @@ export default function UsectZeroConsole() {
 
   const healthStatus = first(health?.status, health?.enabled === false ? "disabled" : "unknown");
   const pendingCount = pendingRequests.length;
+  const issuedKeyCount = issuedKeys.length;
   const activityCount = activity.length;
   const recentActivity = useMemo(() => activity.slice(0, 25), [activity]);
 
@@ -180,16 +188,60 @@ export default function UsectZeroConsole() {
     setErrors((old) => ({ ...old, keys: "" }));
     setNotice("");
     try {
-      await request("/api/usect-zero/keys/requests/" + encodeURIComponent(String(id)) + "/approve", {
+      const result = await request("/api/usect-zero/keys/requests/" + encodeURIComponent(String(id)) + "/approve", {
         method: "POST",
-        body: "{}",
+        body: JSON.stringify({ confirmation: "ISSUE_KEY", ttl_days: 90 }),
       });
-      setNotice("Approval request processed by the server. Refreshing the pending queue.");
+      if (typeof result?.api_key === "string" && result.api_key.trim()) {
+        // The issued credential is kept only in component memory and is never persisted.
+        setIssuedKeySecret(result.api_key);
+        setNotice("A developer key was issued once. Copy and store it securely; it cannot be retrieved later.");
+      } else {
+        setNotice("The server processed the approval. Refresh the pending queue and inspect the returned status.");
+      }
       await refresh(true);
     } catch (error) {
       setErrors((old) => ({ ...old, keys: error?.message || "Approval failed." }));
     } finally {
       setBusyId("");
+    }
+  };
+
+  const revokeIssuedKey = async (row) => {
+    const id = first(row?.id, row?.key_id, row?.keyId);
+    if (!id) {
+      setErrors((old) => ({ ...old, issued: "This key has no readable identifier, so it cannot be revoked here." }));
+      return;
+    }
+    if (!window.confirm("Revoke this active USECT-ZERO key? Applications using it will lose access immediately.")) return;
+
+    const busyKey = "revoke:" + String(id);
+    setBusyId(busyKey);
+    setErrors((old) => ({ ...old, issued: "" }));
+    setNotice("");
+    try {
+      await request("/api/usect-zero/keys/issued/" + encodeURIComponent(String(id)) + "/revoke", {
+        method: "POST",
+        body: JSON.stringify({ confirmation: "REVOKE_KEY" }),
+      });
+      setNotice("The key was revoked by the core. Refreshing the active-key list.");
+      await refresh(true);
+    } catch (error) {
+      setErrors((old) => ({ ...old, issued: error?.message || "Key revocation failed." }));
+    } finally {
+      setBusyId("");
+    }
+  };
+
+  const copyIssuedKey = async () => {
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+        throw new Error("Clipboard is unavailable");
+      }
+      await navigator.clipboard.writeText(issuedKeySecret);
+      setNotice("Key copied. Store it in a secret manager; it will not be shown again after you hide this panel.");
+    } catch {
+      setNotice("Automatic copying is unavailable. Select and copy the key manually before hiding this panel.");
     }
   };
 
@@ -212,22 +264,41 @@ export default function UsectZeroConsole() {
 
       {notice && <div role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-xs text-emerald-200">{notice}</div>}
 
-      {(errors.health || errors.keys || errors.activity) && (
+      {(errors.health || errors.keys || errors.issued || errors.activity) && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs leading-5 text-amber-100">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
           <div className="min-w-0 space-y-1">
             <p className="font-bold">Some live admin data is unavailable.</p>
             {errors.health && <p>Core health: {errors.health}</p>}
             {errors.keys && <p>Key requests: {errors.keys}</p>}
+            {errors.issued && <p>Issued keys: {errors.issued}</p>}
             {errors.activity && <p>Tool activity: {errors.activity}</p>}
           </div>
         </div>
+      )}
+
+      {issuedKeySecret && (
+        <section role="alert" className="rounded-2xl border border-amber-300/30 bg-amber-300/[0.07] p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <KeyRound className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black text-amber-100">Developer key — shown once</h3>
+              <p className="mt-1 text-xs leading-5 text-amber-100/70">This secret is held only in this page's current memory. Copy it to your trusted secret manager now. USECT-ZERO stores only a hash and cannot return this value later.</p>
+              <code className="mt-3 block select-all break-all rounded-xl border border-amber-200/15 bg-slate-950 p-3 font-mono text-xs text-slate-100">{issuedKeySecret}</code>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={copyIssuedKey} className="rounded-lg bg-amber-200 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-amber-100">Copy key</button>
+                <button type="button" onClick={() => setIssuedKeySecret("")} className="rounded-lg border border-amber-200/20 px-3 py-2 text-xs font-bold text-amber-100 transition hover:bg-amber-200/10">Hide secret</button>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Core status" value={statusText(healthStatus)} detail={health?.enabled ? "Configured through the server gateway" : "Check server-side feature flag and service URL"} icon={Wifi} tone={health?.enabled ? "green" : "amber"} />
         <Metric label="Execution policy" value={statusText(health?.execution_policy || "unknown")} detail="Reported by the USECT-ZERO core" icon={ShieldCheck} tone="cyan" />
         <Metric label="Pending key requests" value={pendingCount} detail="Requests awaiting administrator review" icon={KeyRound} tone={pendingCount ? "amber" : "green"} />
+        <Metric label="Active developer keys" value={issuedKeyCount} detail="Scoped keys currently listed as active" icon={KeyRound} tone={issuedKeyCount ? "green" : "cyan"} />
         <Metric label="Recent tool outcomes" value={activityCount} detail="In-process history returned by this backend instance" icon={Activity} tone="violet" />
       </div>
 
@@ -287,6 +358,44 @@ export default function UsectZeroConsole() {
           )}
         </Panel>
       </div>
+
+      <Panel title="Active developer keys" subtitle="Revoke access using the key identifier. The console never displays raw keys or stored hashes." icon={KeyRound}>
+        {issuedKeys.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-800 px-4 py-7 text-center">
+            <KeyRound className="mx-auto h-6 w-6 text-slate-500" />
+            <p className="mt-2 text-sm font-semibold text-white">No active keys returned</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">This can mean there are no active keys, or that the administrator-only key endpoint is unavailable.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {issuedKeys.map((row, index) => {
+              const id = first(row?.id, row?.key_id, row?.keyId);
+              const scopes = Array.isArray(row?.scopes) ? row.scopes : [];
+              const busyKey = "revoke:" + String(id || "");
+              return (
+                <article key={String(id || index)} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="break-all font-mono text-xs font-bold text-slate-200">{String(id || "unknown key")}</p>
+                        <span className={cn("rounded-full border px-2 py-1 text-[10px] font-bold uppercase", statusTone(row?.status || "active"))}>{statusText(row?.status || "active")}</span>
+                      </div>
+                      <p className="mt-1 text-[10px] text-slate-500">Issued {formatTime(first(row?.created_at, row?.createdAt))} · Expires {formatTime(first(row?.expires_at, row?.expiresAt))}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {scopes.length ? scopes.map((scope, scopeIndex) => <span key={String(scope) + scopeIndex} className="rounded-md border border-cyan-400/15 bg-cyan-400/5 px-2 py-1 font-mono text-[10px] text-cyan-200">{String(scope)}</span>) : <span className="text-[10px] text-amber-200">No scope metadata returned</span>}
+                      </div>
+                    </div>
+                    <button type="button" disabled={!id || (row?.status && row.status !== "active") || busyId === busyKey} onClick={() => revokeIssuedKey(row)} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-rose-400/20 bg-rose-400/5 px-3 py-2 text-xs font-bold text-rose-200 transition hover:bg-rose-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                      {busyId === busyKey ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
+                      {busyId === busyKey ? "Revoking…" : "Revoke key"}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
 
       <Panel title="Recent tool activity" subtitle="A compact server-side execution receipt stream; it is deliberately bounded and excludes prompts and raw file inventories." icon={Activity}>
         {recentActivity.length === 0 ? (
