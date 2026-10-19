@@ -848,6 +848,11 @@ const completeLogin = (data = {}) => {
       if (
         mode === "register"
       ) {
+        if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(contact.trim())) {
+          setError("Enter a valid email address so we can send your activation code.");
+          return;
+        }
+
         if (!fullName.trim()) {
           setError(
             "Enter your full name."
@@ -978,7 +983,8 @@ const completeLogin = (data = {}) => {
             await requestVerificationCode();
 
           setMessage(
-            `🛠 DEV MODE: Verification code = ${data.debug_code}`
+            data.message ||
+              "Activation code sent to your email address. Check your inbox and spam folder."
           );
 
           setVerificationCode(
@@ -1010,7 +1016,8 @@ const completeLogin = (data = {}) => {
               await requestResetCode();
 
             setMessage(
-              `🛠 DEV MODE: Reset code = ${data.debug_code}`
+              data.message ||
+                "Password reset code sent to your email address. Check your inbox and spam folder."
             );
 
             setVerificationCode(
@@ -1780,7 +1787,7 @@ const completeLogin = (data = {}) => {
                             font-medium
                           "
                         >
-                          Email or contact
+                          {mode === "register" ? "Email address" : "Email or contact"}
                         </span>
 
                         <div className="relative">
