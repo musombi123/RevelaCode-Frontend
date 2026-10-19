@@ -19,6 +19,7 @@ import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
+import SEOManager from "./components/SEOManager.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -178,6 +179,7 @@ export default function App() {
       <AuthProvider>
         <HistoryProvider>
           <BrowserRouter>
+            <SEOManager />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
 
