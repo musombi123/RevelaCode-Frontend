@@ -39,7 +39,7 @@ export default function SEOManager() {
   const location = useLocation();
 
   useEffect(() => {
-    const path = location.pathname.replace(/\\/+$/, "") || "/";
+    const path = location.pathname.replace(/\/+$/, "") || "/";
     const parts = path.split("/").filter(Boolean);
     const first = parts[0] || "";
     const isPrivate = PRIVATE_PREFIXES.some(
