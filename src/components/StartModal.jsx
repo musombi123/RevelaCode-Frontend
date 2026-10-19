@@ -848,7 +848,7 @@ const completeLogin = (data = {}) => {
       if (
         mode === "register"
       ) {
-        if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(contact.trim())) {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.trim())) {
           setError("Enter a valid email address so we can send your activation code.");
           return;
         }
