@@ -100,6 +100,8 @@ function isPlatformHostname() {
   return (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
+    hostname === "revelacode.co.ke" ||
+    hostname === "www.revelacode.co.ke" ||
     hostname.endsWith(".onrender.com") ||
     configured.includes(hostname)
   );
