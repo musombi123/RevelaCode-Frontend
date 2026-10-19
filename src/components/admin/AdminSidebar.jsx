@@ -27,6 +27,13 @@ import {
 
 const tabs = [
   {
+    key: "coreMesh",
+    label: "Core Mesh · ZERO / ONE / TWO",
+    description: "Genesis and Infinite Mind integration",
+    icon: Cpu,
+    live: true,
+  },
+  {
     key: "usectZero",
     label: "USECT-ZERO Core",
     description: "Tool activity, core health and developer-key approvals",

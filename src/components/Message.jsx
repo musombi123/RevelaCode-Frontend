@@ -425,6 +425,22 @@ function Message({ message, onEdit, onReveal }) {
   const [toolDetailsExpanded, setToolDetailsExpanded] = useState(false);
 
   const usectTool = message.metadata?.usect_zero_tool || message.metadata?.usectZeroTool || null;
+  const coreMesh = message.metadata?.core_mesh || message.metadata?.coreMesh || null;
+  const coreMeshCores = coreMesh && typeof coreMesh.cores === "object" ? coreMesh.cores : {};
+  const coreRouteNames = {
+    "core-zero": "USECT-ZERO",
+    "core-one": "Genesis · Core-One",
+    "core-two": "Infinite Mind · Core-Two",
+    orchestrator: "RevelaAI Orchestrator",
+  };
+  const coreRouteKey = String(coreMesh?.selected_core || "orchestrator").toLowerCase();
+  const coreRouteLabel = coreRouteNames[coreRouteKey] || "RevelaAI Orchestrator";
+  const coreStatusLabel = (core) => {
+    if (core?.reachable === true) return "Reachable";
+    if (core?.reachable === false) return "Unavailable";
+    const status = String(core?.status || "").replace(/[_-]+/g, " ").trim();
+    return !status || status === "not probed" || status === "unknown" ? "Not probed" : status;
+  };
   const toolStatus = String(usectTool?.status || "unknown").toLowerCase();
   const toolSucceeded = toolStatus === "success" || toolStatus === "completed";
   const toolBlocked = ["blocked", "unavailable", "failed", "error"].includes(toolStatus);
@@ -590,6 +606,56 @@ function Message({ message, onEdit, onReveal }) {
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isSystem && !isError && (
           <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
+            {coreMesh && typeof coreMesh === "object" && (
+              <section
+                aria-label="Core Mesh routing status"
+                className="mb-4 overflow-hidden rounded-xl border border-indigo-400/20 bg-slate-950/60 text-sm leading-normal"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-400/10 text-indigo-200">
+                      <Cpu size={15} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-200">USECT Core Mesh</p>
+                      <p className="truncate text-xs font-semibold text-slate-100">Advisory route · {coreRouteLabel}</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-indigo-400/20 bg-indigo-400/10 px-2.5 py-1 text-[10px] font-bold text-indigo-200">
+                    {String(coreMesh.mesh_status || "not probed").replace(/[_-]+/g, " ")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 border-t border-white/5 px-3 py-2.5 sm:px-4">
+                  {[
+                    ["zero", "USECT-ZERO"],
+                    ["one", "Genesis · ONE"],
+                    ["two", "Infinite Mind · TWO"],
+                  ].map(([key, label]) => {
+                    const core = coreMeshCores[key] || {};
+                    const reachable = core.reachable === true;
+                    const unavailable = core.reachable === false;
+                    const stateClass = reachable
+                      ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-200"
+                      : unavailable
+                        ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
+                        : "border-slate-700 bg-slate-900/60 text-slate-400";
+                    return (
+                      <span
+                        key={key}
+                        className={"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold " + stateClass}
+                      >
+                        <span className={"h-1.5 w-1.5 rounded-full " + (reachable ? "bg-emerald-400" : unavailable ? "bg-amber-400" : "bg-slate-500")} />
+                        {label}: {coreStatusLabel(core)}
+                      </span>
+                    );
+                  })}
+                </div>
+                <p className="px-3 pb-3 text-[10px] leading-4 text-slate-500 sm:px-4">
+                  Route selection is advisory only. This indicator does not mean a core operation, invention, recovery, or evolution was executed.
+                </p>
+              </section>
+            )}
+
             {usectTool && (
               <section className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-slate-950/70 text-sm leading-normal">
                 <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
