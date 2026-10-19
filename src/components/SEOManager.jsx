@@ -84,8 +84,8 @@ export default function SEOManager() {
     setMeta("og:url", SITE + path, "property");
     setMeta("og:type", "website", "property");
     setMeta("og:site_name", "RevelaCode", "property");
-    setCanonical(SITE + path + location.search);
-  }, [location.pathname, location.search]);
+    setCanonical(SITE + path);
+  }, [location.pathname]);
 
   return null;
 }
