@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = String(
-  import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com",
+  import.meta.env.VITE_REVELAAI_API_URL || import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com",
 ).trim().replace(/\/+$/, "");
 
 function readAuthHeaders(jsonBody = false) {
