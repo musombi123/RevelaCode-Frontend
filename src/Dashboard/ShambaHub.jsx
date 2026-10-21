@@ -142,6 +142,11 @@ const ShambaFarmerVerificationDashboard = safeLazy(
   "Farmer verification",
 );
 
+const ShambaTrustDashboard = safeLazy(
+  () => import("@/Dashboard/ShambaTrustDashboard.jsx"),
+  "Trust & Safety",
+);
+
 function hasFarmerReviewAccess(user) {
   const rawRoles = [
     user?.role,
@@ -247,6 +252,14 @@ const SHAMBA_SECTIONS = {
     primary: false,
   },
 
+  trust: {
+    label: "Trust & Safety",
+    shortLabel: "Trust",
+    icon: ShieldCheck,
+    component: ShambaTrustDashboard,
+    primary: false,
+  },
+
   "farmer-review": {
     label: "Farmer verification",
     shortLabel: "Review",
@@ -312,6 +325,11 @@ function normalizeSection(target) {
     activity: "activities",
     activities: "activities",
     "shamba/activities": "activities",
+
+    trust: "trust",
+    "trust-safety": "trust",
+    "shamba/trust": "trust",
+    "shamba/trust-safety": "trust",
 
     "farmer-review": "farmer-review",
     "shamba/farmer-review": "farmer-review",
