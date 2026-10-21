@@ -439,14 +439,16 @@ function AddFarmModal({
                 />
               </Field>
 
-              <Field label="Irrigation">
-                <input
-                  type="text"
+              <Field label="Irrigation availability">
+                <select
                   value={form.irrigation}
                   onChange={(event) => update("irrigation", event.target.value)}
                   className={INPUT_CLASS}
-                  placeholder="Rain-fed / Drip"
-                />
+                >
+                  <option value="">Not specified</option>
+                  <option value="true">Irrigation available</option>
+                  <option value="false">No irrigation available</option>
+                </select>
               </Field>
             </div>
 
@@ -696,7 +698,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               : Number(form.size),
           size_unit: form.size_unit || "acres",
           soil_type: String(form.soil_type || "").trim(),
-          irrigation: String(form.irrigation || "").trim(),
+          irrigation: form.irrigation === "true",
           description: String(form.description || "").trim(),
         };
 
