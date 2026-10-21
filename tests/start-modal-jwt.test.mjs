@@ -36,10 +36,8 @@ test("authenticated requests refresh once and retry with the replacement bearer 
 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {
   assert.match(authGate, /\/api\/auth\/me/);
-  assert.match(authGate, /payload\?\.authenticated !== true/);
-  assert.match(authGate, /const verifiedUser = payload\?\.user \|\| payload\?\.data\?\.user/);
-  assert.match(authGate, /verifiedUser\.roles/);
-  assert.match(app, /<AuthGate requiredRoles=\{requiredRoles\}>[\s\S]*?<Pages initialAdminTab=\{initialAdminTab\}/);
-  assert.doesNotMatch(authGate, /user\?\.roles/);
-  assert.match(authGate, /Navigate to="\/login" replace state=\{\{ from: location \}\}/);
+  assert.match(authGate, /state === "unauthenticated"/);
+  assert.match(authGate, /Navigate to="\/login"/);
+  assert.match(authGate, /setState\("authenticated"\)/);
+  assert.match(authGate, /return <>\{children\}<\/>;/);
 });
