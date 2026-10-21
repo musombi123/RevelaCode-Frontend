@@ -40,13 +40,24 @@ export default function AuthGate({ children, requiredRoles = [] }) {
           return;
         }
         const returnedUser = payload?.user || payload?.data?.user || {};
-        const currentRoles = [
-          ...(Array.isArray(returnedUser?.roles) ? returnedUser.roles : []),
-          returnedUser?.role,
-          ...(Array.isArray(user?.roles) ? user.roles : []),
-          user?.role,
-        ].filter(Boolean).map((role) => String(role).toLowerCase());
-        const required = requiredRoles.map((role) => String(role).toLowerCase());
+        // /api/auth/me is authoritative for current role assignments. Only use
+        // cached context roles when the server does not provide role data at all.
+        const serverRoleDataAvailable =
+          Array.isArray(payload?.roles) ||
+          Array.isArray(returnedUser?.roles) ||
+          Boolean(payload?.role || returnedUser?.role);
+        const currentRoles = serverRoleDataAvailable
+          ? [
+              ...(Array.isArray(payload?.roles) ? payload.roles : []),
+              ...(Array.isArray(returnedUser?.roles) ? returnedUser.roles : []),
+              payload?.role,
+              returnedUser?.role,
+            ].filter(Boolean).map((role) => String(role).trim().toLowerCase())
+          : [
+              ...(Array.isArray(user?.roles) ? user.roles : []),
+              user?.role,
+            ].filter(Boolean).map((role) => String(role).trim().toLowerCase());
+        const required = requiredRoles.map((role) => String(role).trim().toLowerCase());
         if (required.length && !required.some((role) => currentRoles.includes(role))) {
           setError("This account does not have the role required to open this page.");
           setState("forbidden");
