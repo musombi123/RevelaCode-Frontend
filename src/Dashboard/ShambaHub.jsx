@@ -838,7 +838,7 @@ function MoreDrawer({
                   </div>
 
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-slate-900">
+                    <div className="text-sm font-black text-white">
                       {item.label}
                     </div>
 
@@ -1003,12 +1003,12 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             DESKTOP SIDEBAR
         ================================================== */}
 
-        <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[244px] shrink-0 border-r border-[#DCE5E1] bg-white lg:block">
+        <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[244px] shrink-0 border-r border-[#244638] bg-[#123D2F] text-white min-[1200px]:block">
           <div className="flex h-full flex-col p-4">
             {/* Brand */}
-            <div className="mb-4 rounded-xl border border-[#DCE5E1] bg-[#F0FAF5] p-3 sm:rounded-2xl sm:p-4">
+            <div className="mb-4 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087F5B] text-white shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C8EF79] text-[#123D2F] shadow-sm">
                   <Leaf size={19} />
                 </div>
 
@@ -1017,7 +1017,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                     Shamba
                   </div>
 
-                  <div className="text-[13px] font-bold text-[#075E46]">
+                  <div className="text-[13px] font-bold text-[#B5D2C0]">
                     Farm intelligence
                   </div>
                 </div>
@@ -1026,7 +1026,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
 
             {/* Main navigation */}
             <div className="space-y-1">
-              <div className="mb-2 px-3 text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
+              <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#91B7A2]">
                 Workspace
               </div>
 
@@ -1041,7 +1041,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             </div>
 
             {/* More */}
-            <div className="mt-6 border-t border-[#DCE5E1] pt-5">
+            <div className="mt-6 border-t border-white/15 pt-5">
               <div className="mb-2 px-3 text-[13px] font-black uppercase tracking-[0.16em] text-slate-400">
                 Operations
               </div>
@@ -1049,11 +1049,11 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               <button
                 type="button"
                 onClick={() => openMore("desktop")}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-[#075E46]"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[#D3E5D9] transition hover:bg-white/10 hover:text-white"
               >
                 <MoreHorizontal
                   size={18}
-                  className="text-slate-400"
+                  className="text-[#A9C8B5]"
                 />
 
                 More tools
@@ -1065,9 +1065,9 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               <button
                 type="button"
                 onClick={() => onOpenAI?.()}
-                className="w-full rounded-2xl bg-slate-900 p-4 text-left text-white shadow-lg transition hover:bg-slate-800"
+                className="w-full rounded-2xl border border-white/15 bg-white/[0.07] p-4 text-left text-white shadow-lg transition hover:bg-white/[0.12]"
               >
-                <div className="text-[13px] font-black uppercase tracking-wider text-emerald-400">
+                <div className="text-[10px] font-black uppercase tracking-wider text-[#C8EF79]">
                   RevelaAI
                 </div>
 
@@ -1075,7 +1075,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                   Ask about your farm
                 </div>
 
-                <div className="mt-1 text-[13px] leading-4 text-slate-400">
+                <div className="mt-1 text-[13px] leading-5 text-[#C2DACF]">
                   Crops, weather, markets and farm decisions.
                 </div>
               </button>
@@ -1087,7 +1087,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             MAIN CONTENT
         ================================================== */}
 
-        <main className="min-w-0 flex-1 bg-[#F3F6F5] pb-[calc(5.5rem+env(safe-area-inset-bottom))] min-[1200px]:pb-8">
+        <main className="min-w-0 flex-1 bg-[#F5F8F4] pb-[calc(5.5rem+env(safe-area-inset-bottom))] min-[1200px]:pb-8">
           {/* ==================================================
               COMMAND HEADER
           ================================================== */}
@@ -1232,7 +1232,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               LOCATION ERROR
           ================================================== */}
 
-          <div className="px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="px-4 pt-4 sm:px-6 min-[1200px]:px-8">
             <LocationError
               message={locationError}
               onRetry={detectLocation}
@@ -1270,9 +1270,9 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                   </h3>
 
                   <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                    Shamba uses your device location to improve farm weather,
-                    regional recommendations, crop intelligence and local
-                    market information.
+                    Optional: share your device location to improve regional weather,
+                    recommendations and local market information. Manual county
+                    and town details remain sufficient for a farmer profile.
                   </p>
                 </div>
               </button>
@@ -1283,7 +1283,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               ACTIVE DASHBOARD
           ================================================== */}
 
-          <div className="px-4 pt-5 sm:px-6 lg:px-8 lg:pt-6">
+          <div className="px-4 pt-5 sm:px-6 min-[1200px]:px-8 min-[1200px]:pt-6">
             <Suspense
               fallback={
                 <div className="rounded-2xl border border-[#DCE5E1] bg-white p-8 shadow-sm">
