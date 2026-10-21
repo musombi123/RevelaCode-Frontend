@@ -36,7 +36,7 @@ test("authenticated requests refresh once and retry with the replacement bearer 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {
   assert.match(authGate, /\/api\/auth\/me/);
   assert.match(authGate, /payload\?\.authenticated !== true/);
-  assert.match(authGate, /const verifiedUser = payload\?\.user/);
+  assert.match(authGate, /const verifiedUser = payload\?\.user \|\| payload\?\.data\?\.user/);
   assert.match(authGate, /verifiedUser\?\.roles/);
   assert.doesNotMatch(authGate, /user\?\.roles/);
   assert.match(authGate, /Navigate to="\/login" replace state=\{\{ from: location \}\}/);
