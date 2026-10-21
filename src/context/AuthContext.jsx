@@ -1008,9 +1008,14 @@ export function AuthProvider({
         }
 
         const requestUrl = String(url);
+        const isAuthEntryRequest = /\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:[?#]|$)/i.test(requestUrl);
         let response = await fetch(url, { ...options, headers });
 
-        if (response.status === 401 && !requestUrl.includes("/api/auth/refresh")) {
+        if (
+          response.status === 401 &&
+          !requestUrl.includes("/api/auth/refresh") &&
+          !isAuthEntryRequest
+        ) {
           const refreshToken = readRefreshToken();
 
           if (refreshToken) {
