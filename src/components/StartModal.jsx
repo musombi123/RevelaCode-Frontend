@@ -33,10 +33,7 @@ export default function StartModal() {
   } = useAuth();
 
   const baseUrl =
-    import.meta.env.VITE_REVELACODE_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_URL ||
-    "";
+    String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
   // =======================================================
   // STATE
