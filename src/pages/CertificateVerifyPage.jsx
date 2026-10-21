@@ -27,7 +27,9 @@ export default function CertificateVerifyPage() {
           setState("invalid");
           setError(payload?.reason === "signature_invalid"
             ? "The stored record does not match its server-side integrity signature."
-            : "No matching issued certificate was found.");
+            : payload?.reason === "certificate_revoked"
+              ? "This certificate has been revoked by RevelaCode and is no longer valid."
+              : "No matching issued certificate was found.");
         } else {
           setState("error");
           setError(payload?.detail?.message || payload?.message || `Verification service returned HTTP ${response.status}.`);
