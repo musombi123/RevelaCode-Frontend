@@ -20,6 +20,10 @@ import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
 import SEOManager from "./components/SEOManager.jsx";
+import AuthGate from "./components/AuthGate.jsx";
+import ElimuHub from "./pages/ElimuHub.jsx";
+import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
+import UserAccountDashboard from "./components/UserAccountDashboard.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -182,6 +186,29 @@ export default function App() {
             <SEOManager />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
+              <Route path="/login" element={<StartModal />} />
+              <Route
+                path="/accounts"
+                element={
+                  <AuthGate>
+                    <Layout>
+                      <UserAccountDashboard />
+                    </Layout>
+                  </AuthGate>
+                }
+              />
+              <Route
+                path="/elimu"
+                element={
+                  <AuthGate>
+                    <ElimuHub />
+                  </AuthGate>
+                }
+              />
+              <Route
+                path="/verify/certificate/:certId"
+                element={<CertificateVerifyPage />}
+              />
 
               <Route
                 path="/pages"
