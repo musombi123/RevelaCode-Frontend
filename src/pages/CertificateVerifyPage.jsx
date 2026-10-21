@@ -15,21 +15,39 @@ export default function CertificateVerifyPage() {
     setState("loading");
     setRecord(null);
     setError("");
+
+    if (!API_BASE) {
+      setState("error");
+      setError("Certificate verification API is not configured. Set VITE_API_URL to the deployed FastAPI origin.");
+      return () => { active = false; };
+    }
+
     const url = `${API_BASE}/api/verify/certificate/${encodeURIComponent(certId)}`;
     fetch(url, { method: "GET", headers: { Accept: "application/json" } })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
         if (!active) return;
-        setRecord(payload);
-        if (response.ok && payload?.valid === true) {
+
+        const candidate = payload?.certificate || payload?.data?.certificate || payload?.data || payload;
+        const validity = payload?.valid ?? candidate?.valid;
+        const returnedId = payload?.certificate_id || payload?.cert_id ||
+          candidate?.certificate_id || candidate?.cert_id || candidate?.id;
+
+        if (response.ok && validity === true && String(returnedId || "") === String(certId)) {
+          setRecord(candidate);
           setState("valid");
-        } else if (payload?.valid === false) {
+        } else if (validity === false || (validity === true && String(returnedId || "") !== String(certId))) {
+          setRecord(candidate);
           setState("invalid");
-          setError(payload?.reason === "signature_invalid"
-            ? "The stored record does not match its server-side integrity signature."
-            : payload?.reason === "certificate_revoked"
-              ? "This certificate has been revoked by RevelaCode and is no longer valid."
-              : "No matching issued certificate was found.");
+          setError(
+            validity === true && String(returnedId || "") !== String(certId)
+              ? "The verification service returned a different certificate ID than the one requested."
+              : payload?.reason === "signature_invalid"
+                ? "The stored record does not match its server-side integrity signature."
+                : payload?.reason === "certificate_revoked"
+                  ? "This certificate has been revoked by RevelaCode and is no longer valid."
+                  : "No matching active issued certificate was found."
+          );
         } else {
           setState("error");
           setError(payload?.detail?.message || payload?.message || `Verification service returned HTTP ${response.status}.`);
@@ -40,6 +58,7 @@ export default function CertificateVerifyPage() {
         setState("error");
         setError(requestError?.message || "Certificate verification is unavailable.");
       });
+
     return () => { active = false; };
   }, [certId]);
 
@@ -58,11 +77,14 @@ export default function CertificateVerifyPage() {
               <div className="flex items-start gap-3"><CheckCircle2 className="h-8 w-8 shrink-0 text-emerald-600" /><div><h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-300">Valid RevelaCode certificate</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">The issued record matches its server-side integrity signature.</p></div></div>
               <dl className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Learner</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.user?.name || "Not recorded"}</dd><dd className="mt-1 text-xs text-slate-500">Roles: {(record.user?.roles || []).join(", ") || "Not recorded"}</dd></div>
-                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Learning hub</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.hub?.name || "Not recorded"}</dd><dd className="mt-1 text-xs text-slate-500">{record.hub?.completed_lessons || 0} of {record.hub?.total_lessons || 0} lessons</dd></div>
-                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Certification authority</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.certified_by || "RevelaCode"}</dd><dd className="mt-1 text-xs text-slate-500">{record.issuer_role || "RevelaCode Certification Authority"}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Verified hub affiliation</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.hub?.name || (Array.isArray(record.hubs) ? record.hubs.map((hub) => typeof hub === "string" ? hub : hub?.name).filter(Boolean).join(", ") : "") || "Not recorded"}</dd><dd className="mt-1 text-xs text-slate-500">{record.hub?.completed_lessons != null && record.hub?.total_lessons != null ? `${record.hub.completed_lessons} of ${record.hub.total_lessons} lessons` : "Participation details are shown only when returned by the issuer."}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Certification authority</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.certified_by || "Not reported"}</dd><dd className="mt-1 text-xs text-slate-500">{record.issuer_role || "Not reported"}</dd></div>
                 <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Issued</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.issued_at ? new Date(record.issued_at).toLocaleDateString() : "Not recorded"}</dd><dd className="mt-1 text-xs text-slate-500">Signature algorithm: {record.signature_algorithm || "Not reported"}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Certificate category</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.category || record.certificate_category || record.type || "Not reported"}</dd></div>
+                <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Scope and purpose</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.scope || record.purpose || "Not reported"}</dd></div>
               </dl>
-              <div className="mt-5"><h3 className="font-semibold text-slate-900 dark:text-slate-100">Certified roles</h3><div className="mt-2 flex flex-wrap gap-2">{(record.roles || []).map((role) => <span key={role} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">{role}</span>)}</div></div>
+              <div className="mt-5"><h3 className="font-semibold text-slate-900 dark:text-slate-100">Certified roles</h3><div className="mt-2 flex flex-wrap gap-2">{(record.roles || record.user?.roles || []).map((role) => <span key={role} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">{role}</span>)}</div></div>
+              <p className="mt-5 text-xs text-slate-500">This public result verifies the stored RevelaCode-issued record only. It does not imply government accreditation, an academic qualification, a professional licence, or endorsement by another institution.</p>
               {Array.isArray(record.hub?.hubs) && record.hub.hubs.length > 0 && (
                 <div className="mt-5">
                   <h3 className="font-semibold text-slate-900 dark:text-slate-100">Recorded hub affiliations</h3>
