@@ -13,6 +13,7 @@ import {
   Compass,
   GraduationCap,
   Leaf,
+  Megaphone,
   MapPin,
   MessageCircle,
   Plus,
@@ -24,6 +25,8 @@ import {
   Sparkles,
   Target,
   Users,
+  User,
+  UserPlus,
   X,
 } from "lucide-react";
 
@@ -37,6 +40,8 @@ import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCar
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
+import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirectory.jsx";
+import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -171,6 +176,11 @@ function getPostId(post) {
     post?.postId ||
     null
   );
+}
+
+function isCommunityPromotion(post) {
+  const category = String(post?.category || post?.type || post?.post_type || "").toLowerCase();
+  return post?.is_sponsored === true || post?.sponsored === true || post?.ad_status === "active" || ["advertisement", "promotion", "sponsored"].includes(category);
 }
 
 function getPostType(post) {
@@ -459,6 +469,16 @@ export default function CommunityDashboard({
 
         case "community-contact-settings":
           setWorkspacePage("contact-settings");
+          return;
+
+        case "community-people":
+        case "community-directory":
+          setWorkspacePage("people");
+          return;
+
+        case "community-invite-members":
+        case "community-invite":
+          setWorkspacePage("invite");
           return;
 
         case "community-groups":
@@ -884,6 +904,11 @@ export default function CommunityDashboard({
     [posts],
   );
 
+  const promotionPosts = useMemo(
+    () => posts.filter(isCommunityPromotion).slice(0, 3),
+    [posts],
+  );
+
   const actionPosts = useMemo(
     () =>
       posts.filter((post) => {
@@ -934,6 +959,14 @@ export default function CommunityDashboard({
         onBack={() => navigate("community")}
       />
     );
+  }
+
+  if (workspacePage === "people") {
+    return <CommunityPeopleDirectory onBack={() => navigate("community")} onInvite={() => navigate("community-invite-members")} />;
+  }
+
+  if (workspacePage === "invite") {
+    return <CommunityInviteMembers onBack={() => navigate("community")} />;
   }
 
   // ==========================================================
@@ -1012,6 +1045,12 @@ export default function CommunityDashboard({
                 <ShoppingBag size={15} />
                 Explore marketplace
               </button>
+              <button type="button" onClick={() => navigate("community-people")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10">
+                <User size={15} /> Member directory
+              </button>
+              <button type="button" onClick={() => navigate("community-invite-members")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-400/15 px-4 py-3 text-xs font-black text-emerald-100 transition hover:bg-emerald-400/25">
+                <UserPlus size={15} /> Invite members
+              </button>
               <button
                 type="button"
                 onClick={() => navigate("community-contact-settings")}
@@ -1026,6 +1065,18 @@ export default function CommunityDashboard({
           <p className="relative mt-5 border-t border-white/10 pt-4 text-xs font-semibold text-white/50">
             Welcome back, {displayName}.
           </p>
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <button type="button" onClick={() => navigate("community-people")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><User size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Member directory</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Find the people contributing to Community.</span></span><ArrowRight size={15} className="text-slate-400"/>
+          </button>
+          <button type="button" onClick={() => navigate("community-invite-members")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"><UserPlus size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Invite members</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Bring someone new into the circle.</span></span><ArrowRight size={15} className="text-slate-400"/>
+          </button>
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/20 dark:to-orange-950/20">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm dark:bg-slate-900 dark:text-amber-300"><Megaphone size={19}/></span><span className="min-w-0"><span className="block text-xs font-black text-slate-900 dark:text-white">Community promotions</span><span className="mt-1 block text-[11px] leading-4 text-slate-600 dark:text-slate-400">Clearly marked member ads and offers.</span></span>
+          </div>
         </section>
 
         {/* ====================================================
@@ -1250,6 +1301,15 @@ export default function CommunityDashboard({
           </p>
         ) : null}
 
+        {activeSurface === "pulse" && promotionPosts.length ? (
+          <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/20 dark:via-slate-900 dark:to-orange-950/10 xl:hidden">
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"><Megaphone size={16}/></span><div><h3 className="text-sm font-black text-slate-900 dark:text-white">Community promotions</h3><p className="text-[10px] text-slate-500 dark:text-slate-400">Member offers and sponsored posts</p></div></div><span className="rounded-full border border-amber-200 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-amber-800 dark:border-amber-500/20 dark:text-amber-200">Promoted</span></div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {promotionPosts.slice(0, 2).map((ad, adIndex) => <button key={getPostId(ad) || `mobile-promotion-${adIndex}`} type="button" onClick={() => openPost(ad)} className="rounded-xl border border-amber-200/80 bg-white p-3 text-left transition hover:border-amber-300 dark:border-amber-500/20 dark:bg-slate-900"><span className="text-[9px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">{ad?.is_sponsored === true || ad?.sponsored === true || ad?.ad_status === "active" ? "Sponsored" : "Member promotion"}</span><span className="mt-1 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{ad?.title || ad?.headline || ad?.body || ad?.content || "Community offer"}</span><span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{ad?.author?.name || ad?.author_name || "Community member"}</span></button>)}
+            </div>
+          </section>
+        ) : null}
+
         {/* ====================================================
             SURFACE CONTENT
         ==================================================== */}
@@ -1371,6 +1431,22 @@ export default function CommunityDashboard({
                   ))}
                 </div>
               </section>
+
+              {promotionPosts.length ? (
+                <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3.5 dark:border-amber-500/20 dark:from-amber-950/20 dark:to-slate-900 sm:rounded-[22px] sm:p-4">
+                  <div className="flex items-center gap-2"><Megaphone size={15} className="text-amber-700 dark:text-amber-300"/><h3 className="text-sm font-black text-slate-900 dark:text-white">Community promotions</h3></div>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Member-submitted promotions from the live feed.</p>
+                  <div className="mt-3 space-y-2">
+                    {promotionPosts.map((ad, adIndex) => (
+                      <button key={getPostId(ad) || `promotion-${adIndex}`} type="button" onClick={() => openPost(ad)} className="w-full rounded-xl border border-amber-200/70 bg-white p-3 text-left transition hover:border-amber-300 hover:shadow-sm dark:border-amber-500/20 dark:bg-slate-900">
+                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{ad?.is_sponsored === true || ad?.sponsored === true || ad?.ad_status === "active" ? "Sponsored" : "Member promotion"}</span>
+                        <span className="mt-2 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{ad?.title || ad?.headline || ad?.body || ad?.content || "Community offer"}</span>
+                        <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{ad?.author?.name || ad?.author_name || "Community member"}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
               <section className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
