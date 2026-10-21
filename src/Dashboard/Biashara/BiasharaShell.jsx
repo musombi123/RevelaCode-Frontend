@@ -21,9 +21,9 @@ const PRIMARY_NAV = [
 ];
 
 const MORE_TOOLS = [
-  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign },
-  { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles },
-  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell },
+  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign, available: true },
+  { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles, available: true },
+  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell, available: true },
 ];
 
 const MOBILE_NAV_KEYS = ["overview", "orders", "products", "website"];
