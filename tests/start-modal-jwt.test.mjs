@@ -29,5 +29,6 @@ test("AuthGate verifies the session through /api/auth/me before rendering protec
   assert.match(authGate, /\/api\/auth\/me/);
   assert.match(authGate, /state === "unauthenticated"/);
   assert.match(authGate, /Navigate to="\/login"/);
-  assert.match(authGate, /state === "authenticated"/);
+  assert.match(authGate, /setState\("authenticated"\)/);
+  assert.match(authGate, /return <>\{children\}<\/>;/);
 });
