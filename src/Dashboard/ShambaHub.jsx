@@ -27,6 +27,7 @@ import {
   ShoppingCart,
   Sprout,
   Tractor,
+  ShieldCheck,
   TrendingUp,
   Users,
   Wheat,
@@ -136,6 +137,31 @@ const ShambaActivitiesDashboard = safeLazy(
   "Activities",
 );
 
+const ShambaFarmerVerificationDashboard = safeLazy(
+  () => import("@/Dashboard/ShambaFarmerVerificationDashboard.jsx"),
+  "Farmer verification",
+);
+
+function hasFarmerReviewAccess(user) {
+  const rawRoles = [
+    user?.role,
+    user?.user_role,
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+    ...(Array.isArray(user?.permissions) ? user.permissions : []),
+  ];
+  const roles = rawRoles.map((entry) =>
+    String(typeof entry === "object" ? entry?.name || entry?.role || "" : entry)
+      .trim()
+      .toLowerCase()
+      .replace(/[ -]+/g, "_"),
+  );
+  return Boolean(
+    user?.is_admin ||
+    user?.is_super_admin ||
+    roles.some((role) => ["admin", "super_admin", "superadmin"].includes(role)),
+  );
+}
+
 // ============================================================
 // NAVIGATION MODEL
 // ============================================================
@@ -220,6 +246,15 @@ const SHAMBA_SECTIONS = {
     component: ShambaActivitiesDashboard,
     primary: false,
   },
+
+  "farmer-review": {
+    label: "Farmer verification",
+    shortLabel: "Review",
+    icon: ShieldCheck,
+    component: ShambaFarmerVerificationDashboard,
+    primary: false,
+    adminOnly: true,
+  },
 };
 
 // ============================================================
@@ -277,6 +312,9 @@ function normalizeSection(target) {
     activity: "activities",
     activities: "activities",
     "shamba/activities": "activities",
+
+    "farmer-review": "farmer-review",
+    "shamba/farmer-review": "farmer-review",
   };
 
   return aliases[value] || "home";
@@ -688,6 +726,7 @@ function MoreDrawer({
   activeSection,
   onNavigate,
   mode = "desktop",
+  canReviewFarmers = false,
 }) {
   useEffect(() => {
     if (!open || typeof window === "undefined") {
@@ -714,7 +753,9 @@ function MoreDrawer({
     return null;
   }
 
-  const entries = Object.entries(SHAMBA_SECTIONS);
+  const entries = Object.entries(SHAMBA_SECTIONS).filter(
+    ([, item]) => !item.adminOnly || canReviewFarmers,
+  );
 
   const visibleKeys =
     mode === "mobile"
@@ -838,6 +879,7 @@ function LocationError({ message, onRetry }) {
 
 export default function ShambaHub({ onNavigate, onOpenAI }) {
   const { user } = useAuth();
+  const canReviewFarmers = hasFarmerReviewAccess(user);
 
   const [activeSection, setActiveSection] = useState("home");
   const [moreOpen, setMoreOpen] = useState(false);
@@ -1295,6 +1337,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         activeSection={activeSection}
         onNavigate={handleShambaNavigate}
         mode={moreMode}
+        canReviewFarmers={canReviewFarmers}
       />
     </div>
   );
