@@ -16,6 +16,9 @@ import {
   Ruler,
   Sprout,
   Tractor,
+  ShieldCheck,
+  Clock,
+  User,
   X,
 } from "lucide-react";
 
@@ -35,6 +38,24 @@ const EMPTY_FORM = {
   size_unit: "acres",
   soil_type: "",
   irrigation: "",
+  description: "",
+};
+
+const EMPTY_PROFILE_FORM = {
+  farmer_name: "",
+  phone: "",
+  county: "",
+  town: "",
+  location: "",
+  farming_type: "mixed",
+  experience_years: "0",
+  primary_crops: "",
+  livestock: "",
+  soil_type: "",
+  water_source: "",
+  irrigation_available: false,
+  primary_goal: "food_and_income",
+  target_market: "",
   description: "",
 };
 
@@ -144,6 +165,16 @@ function Field({ label, children, required = false }) {
 function FarmCard({ farm }) {
   const farmSize = formatSize(farm);
   const isActive = farm?.status !== "deleted";
+  const rightsStatus = String(farm?.legal_verification_status || "not_submitted").toLowerCase();
+  const rightsLabel = rightsStatus === "verified"
+    ? "Farm rights reviewed"
+    : rightsStatus === "pending"
+      ? "Rights review pending"
+      : rightsStatus === "more_info"
+        ? "More details requested"
+        : rightsStatus === "rejected"
+          ? "Rights review rejected"
+          : "Rights review not submitted";
 
   return (
     <article
@@ -184,6 +215,18 @@ function FarmCard({ farm }) {
             </span>
           </div>
 
+          <div className="mt-2">
+            <span className={`inline-flex rounded-lg px-2 py-1 text-[11px] font-black ${
+              rightsStatus === "verified"
+                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                : rightsStatus === "rejected"
+                  ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                  : "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+            }`}>
+              {rightsLabel}
+            </span>
+          </div>
+
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {farmSize && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
@@ -201,7 +244,7 @@ function FarmCard({ farm }) {
 
             {farm?.irrigation && (
               <span className="rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                {farm.irrigation}
+                Irrigation available
               </span>
             )}
           </div>
@@ -396,14 +439,16 @@ function AddFarmModal({
                 />
               </Field>
 
-              <Field label="Irrigation">
-                <input
-                  type="text"
+              <Field label="Irrigation availability">
+                <select
                   value={form.irrigation}
                   onChange={(event) => update("irrigation", event.target.value)}
                   className={INPUT_CLASS}
-                  placeholder="Rain-fed / Drip"
-                />
+                >
+                  <option value="">Not specified</option>
+                  <option value="true">Irrigation available</option>
+                  <option value="false">No irrigation available</option>
+                </select>
               </Field>
             </div>
 
@@ -449,15 +494,69 @@ function AddFarmModal({
 
 export default function ShambaFarmsDashboard({ onNavigate }) {
   const { user } = useAuth();
-  const { getFarms, createFarm } = useJumuiyaApi();
+  const { getFarmer, saveFarmer, getFarms, createFarm } = useJumuiyaApi();
 
   const [farms, setFarms] = useState([]);
+  const [farmerProfile, setFarmerProfile] = useState(null);
+  const [farmerLoading, setFarmerLoading] = useState(true);
+  const [profileForm, setProfileForm] = useState({ ...EMPTY_PROFILE_FORM });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  // =======================================================
+  // LOAD FARMER PROFILE
+  // =======================================================
+
+  const loadFarmer = useCallback(async () => {
+    try {
+      setFarmerLoading(true);
+      setProfileError("");
+      const result = await getFarmer();
+      const profile = result?.farmer || result?.profile || result || null;
+      setFarmerProfile(profile && typeof profile === "object" ? profile : null);
+
+      if (profile && typeof profile === "object") {
+        setProfileForm({
+          ...EMPTY_PROFILE_FORM,
+          farmer_name: profile.farmer_name || "",
+          phone: profile.phone || "",
+          county: profile.county || "",
+          town: profile.town || "",
+          location: profile.location || "",
+          farming_type: profile.farming_type || "mixed",
+          experience_years: String(profile.experience_years ?? 0),
+          primary_crops: Array.isArray(profile.primary_crops) ? profile.primary_crops.join(", ") : "",
+          livestock: Array.isArray(profile.livestock) ? profile.livestock.join(", ") : "",
+          soil_type: profile.soil_type || "",
+          water_source: profile.water_source || "",
+          irrigation_available: Boolean(profile.irrigation_available),
+          primary_goal: profile.primary_goal || "food_and_income",
+          target_market: profile.target_market || "",
+          description: profile.description || "",
+        });
+      } else {
+        const accountName = getFarmerName(user);
+        setProfileForm({
+          ...EMPTY_PROFILE_FORM,
+          farmer_name: accountName === "Farmer" ? "" : accountName,
+          phone: user?.phone || user?.phone_number || "",
+          county: user?.county || "",
+          town: user?.town || "",
+        });
+      }
+    } catch (err) {
+      setProfileError(err?.message || "Unable to load your farmer profile.");
+    } finally {
+      setFarmerLoading(false);
+    }
+  }, [getFarmer, user]);
 
   // =======================================================
   // LOAD FARMS
@@ -498,6 +597,72 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
     loadFarms();
   }, [loadFarms]);
 
+  useEffect(() => {
+    loadFarmer();
+  }, [loadFarmer]);
+
+  const verificationStatus = farmerProfile?.verification_status || "not_submitted";
+  const profileApproved = verificationStatus === "approved";
+  const profileCanEdit = !farmerProfile ||
+    ["not_submitted", "rejected", "more_info"].includes(verificationStatus);
+
+  const updateProfileField = useCallback((field, value) => {
+    setProfileForm((current) => ({ ...current, [field]: value }));
+    setProfileError("");
+    setProfileMessage("");
+  }, []);
+
+  const handleProfileSubmit = useCallback(async (event) => {
+    event.preventDefault();
+    if (!profileForm.farmer_name.trim() || !profileForm.phone.trim() ||
+        !profileForm.county.trim() || !profileForm.town.trim() ||
+        !profileForm.farming_type.trim()) {
+      setProfileError("Complete your name, phone, county, town and farming type before submitting.");
+      return;
+    }
+
+    const years = Number(profileForm.experience_years || 0);
+    if (!Number.isInteger(years) || years < 0 || years > 80) {
+      setProfileError("Farming experience must be a whole number between 0 and 80.");
+      return;
+    }
+
+    try {
+      setProfileSaving(true);
+      setProfileError("");
+      setProfileMessage("");
+      const result = await saveFarmer({
+        farmer_name: profileForm.farmer_name.trim(),
+        phone: profileForm.phone.trim(),
+        county: profileForm.county.trim(),
+        town: profileForm.town.trim(),
+        location: profileForm.location.trim(),
+        farming_type: profileForm.farming_type,
+        experience_years: years,
+        primary_crops: profileForm.primary_crops.split(",").map((item) => item.trim()).filter(Boolean),
+        livestock: profileForm.livestock.split(",").map((item) => item.trim()).filter(Boolean),
+        soil_type: profileForm.soil_type.trim(),
+        water_source: profileForm.water_source.trim(),
+        irrigation_available: Boolean(profileForm.irrigation_available),
+        primary_goal: profileForm.primary_goal,
+        target_market: profileForm.target_market.trim(),
+        description: profileForm.description.trim(),
+      });
+
+      const submitted = result?.farmer || result?.profile || result;
+      if (submitted && typeof submitted === "object" && submitted.verification_status) {
+        setFarmerProfile(submitted);
+      } else {
+        await loadFarmer();
+      }
+      setProfileMessage("Your farmer profile has been submitted. Farm registration unlocks after admin approval.");
+    } catch (err) {
+      setProfileError(err?.message || "Unable to submit your farmer profile.");
+    } finally {
+      setProfileSaving(false);
+    }
+  }, [loadFarmer, profileForm, saveFarmer]);
+
   // =======================================================
   // CREATE FARM
   // =======================================================
@@ -533,7 +698,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               : Number(form.size),
           size_unit: form.size_unit || "acres",
           soil_type: String(form.soil_type || "").trim(),
-          irrigation: String(form.irrigation || "").trim(),
+          irrigation: form.irrigation === "true",
           description: String(form.description || "").trim(),
         };
 
@@ -565,10 +730,14 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
   // =======================================================
 
   const openAddFarm = useCallback(() => {
+    if (!profileApproved) {
+      setError("Submit your Shamba farmer profile and wait for administrator approval before adding a farm.");
+      return;
+    }
     setError("");
     setForm({ ...EMPTY_FORM });
     setModalOpen(true);
-  }, []);
+  }, [profileApproved]);
 
   const closeAddFarm = useCallback(() => {
     if (saving) return;
@@ -632,12 +801,175 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             <button
               type="button"
               onClick={openAddFarm}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.98]"
+              disabled={!profileApproved || farmerLoading}
+              title={!profileApproved ? "Farmer profile approval is required" : "Add a farm"}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white shadow-sm transition hover:bg-[#075E46] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={15} />
               Add Farm
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ==================================================
+          FARMER PROFILE VERIFICATION
+      ================================================== */}
+
+      <section className="mb-5 overflow-hidden rounded-2xl border border-[#DCE5E1] bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex items-start gap-3 border-b border-[#DCE5E1] bg-gradient-to-r from-emerald-50 to-white px-4 py-4 dark:border-slate-800 dark:from-emerald-950/30 dark:to-slate-950 sm:px-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087F5B] text-white">
+            {profileApproved ? <ShieldCheck size={19} /> : verificationStatus === "pending" ? <Clock size={19} /> : <User size={19} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-black text-slate-900 dark:text-white">Farmer identity & verification</h2>
+            <p className="mt-0.5 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+              Shamba farm registration unlocks only after an administrator approves your farmer profile.
+            </p>
+          </div>
+          {!farmerLoading && (
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${
+              profileApproved ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300" :
+              verificationStatus === "pending" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" :
+              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            }`}>
+              {profileApproved ? "Approved" : verificationStatus === "pending" ? "Under review" : verificationStatus === "rejected" ? "Changes required" : verificationStatus === "more_info" ? "More info needed" : "Not submitted"}
+            </span>
+          )}
+        </div>
+
+        <div className="p-4 sm:p-5">
+          {farmerLoading ? (
+            <div className="h-20 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+          ) : profileApproved ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold text-slate-900 dark:text-white">{farmerProfile?.farmer_name}</p>
+                <p className="mt-1 text-[13px] text-slate-500">{farmerProfile?.town}, {farmerProfile?.county} · {farmerProfile?.farming_type}</p>
+                <p className="mt-2 text-[13px] leading-5 text-emerald-800 dark:text-emerald-300">
+                  Your farmer profile is approved. Each farm still needs its own farm-rights review for protected operations.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 text-[13px] font-black text-emerald-700 dark:text-emerald-300">
+                <ShieldCheck size={16} /> Verified profile
+              </span>
+            </div>
+          ) : verificationStatus === "pending" ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <p className="font-black text-amber-900 dark:text-amber-200">Your profile is in the review queue</p>
+              <p className="mt-1 text-[13px] leading-5 text-amber-800 dark:text-amber-300">
+                You can continue viewing Shamba, but adding a farm is locked until an administrator makes a decision.
+              </p>
+              {farmerProfile?.verification_review_notes && (
+                <p className="mt-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">Admin note: {farmerProfile.verification_review_notes}</p>
+              )}
+              {profileMessage && (
+                <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px] leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">{profileMessage}</p>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleProfileSubmit} className="space-y-4">
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-[13px] leading-5 text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-200">
+                {verificationStatus === "rejected"
+                  ? "Your previous submission was not approved. Review the administrator's note, correct the details and resubmit."
+                  : verificationStatus === "more_info"
+                    ? "The administrator needs additional information. Update your profile below and resubmit."
+                    : "Complete the required fields below. Shamba will submit your details for manual review; this does not verify land ownership."}
+                {farmerProfile?.verification_review_notes && (
+                  <p className="mt-2 font-semibold">Admin note: {farmerProfile.verification_review_notes}</p>
+                )}
+              </div>
+
+              {profileError && (
+                <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">{profileError}</p>
+              )}
+              {profileMessage && (
+                <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">{profileMessage}</p>
+              )}
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Full name" required>
+                  <input value={profileForm.farmer_name} onChange={(e) => updateProfileField("farmer_name", e.target.value)} className={INPUT_CLASS} autoComplete="name" required />
+                </Field>
+                <Field label="Phone number" required>
+                  <input value={profileForm.phone} onChange={(e) => updateProfileField("phone", e.target.value)} className={INPUT_CLASS} type="tel" autoComplete="tel" placeholder="+254…" required />
+                </Field>
+                <Field label="County" required>
+                  <input value={profileForm.county} onChange={(e) => updateProfileField("county", e.target.value)} className={INPUT_CLASS} autoComplete="address-level1" required />
+                </Field>
+                <Field label="Town / nearest centre" required>
+                  <input value={profileForm.town} onChange={(e) => updateProfileField("town", e.target.value)} className={INPUT_CLASS} required />
+                </Field>
+                <Field label="Village / area">
+                  <input value={profileForm.location} onChange={(e) => updateProfileField("location", e.target.value)} className={INPUT_CLASS} />
+                </Field>
+                <Field label="Farming type" required>
+                  <select value={profileForm.farming_type} onChange={(e) => updateProfileField("farming_type", e.target.value)} className={INPUT_CLASS} required>
+                    <option value="mixed">Mixed farming</option>
+                    <option value="crop">Crop farming</option>
+                    <option value="livestock">Livestock</option>
+                    <option value="horticulture">Horticulture</option>
+                    <option value="aquaculture">Aquaculture</option>
+                    <option value="agribusiness">Agribusiness</option>
+                    <option value="other">Other</option>
+                  </select>
+                </Field>
+                <Field label="Years of experience">
+                  <input type="number" min="0" max="80" step="1" value={profileForm.experience_years} onChange={(e) => updateProfileField("experience_years", e.target.value)} className={INPUT_CLASS} />
+                </Field>
+                <Field label="Main crops (comma-separated)">
+                  <input value={profileForm.primary_crops} onChange={(e) => updateProfileField("primary_crops", e.target.value)} className={INPUT_CLASS} placeholder="Maize, beans, tomatoes" />
+                </Field>
+                <Field label="Livestock (comma-separated)">
+                  <input value={profileForm.livestock} onChange={(e) => updateProfileField("livestock", e.target.value)} className={INPUT_CLASS} placeholder="Dairy cattle, poultry" />
+                </Field>
+                <Field label="Soil type">
+                  <input value={profileForm.soil_type} onChange={(e) => updateProfileField("soil_type", e.target.value)} className={INPUT_CLASS} />
+                </Field>
+                <Field label="Main water source">
+                  <select value={profileForm.water_source} onChange={(e) => updateProfileField("water_source", e.target.value)} className={INPUT_CLASS}>
+                    <option value="">Select water source</option>
+                    <option value="rainfall">Rainfall</option>
+                    <option value="borehole">Borehole</option>
+                    <option value="river">River</option>
+                    <option value="dam">Dam / reservoir</option>
+                    <option value="piped">Piped water</option>
+                    <option value="other">Other</option>
+                  </select>
+                </Field>
+                <Field label="Primary goal">
+                  <select value={profileForm.primary_goal} onChange={(e) => updateProfileField("primary_goal", e.target.value)} className={INPUT_CLASS}>
+                    <option value="food_and_income">Food and income</option>
+                    <option value="commercial">Commercial production</option>
+                    <option value="subsistence">Household food</option>
+                    <option value="livestock">Livestock production</option>
+                    <option value="export">Export market</option>
+                    <option value="agribusiness">Agribusiness</option>
+                  </select>
+                </Field>
+                <Field label="Target market">
+                  <input value={profileForm.target_market} onChange={(e) => updateProfileField("target_market", e.target.value)} className={INPUT_CLASS} placeholder="Local market, cooperative…" />
+                </Field>
+                <div className="flex items-center rounded-xl border border-[#DCE5E1] px-3 py-2.5 dark:border-slate-700">
+                  <input id="shamba-irrigation-available" type="checkbox" checked={profileForm.irrigation_available} onChange={(e) => updateProfileField("irrigation_available", e.target.checked)} className="h-4 w-4 accent-emerald-700" />
+                  <label htmlFor="shamba-irrigation-available" className="ml-2 text-sm font-semibold text-slate-700 dark:text-slate-200">I have irrigation access</label>
+                </div>
+              </div>
+              <Field label="About your farming operation">
+                <textarea value={profileForm.description} onChange={(e) => updateProfileField("description", e.target.value)} rows={3} maxLength={1000} className={`${INPUT_CLASS} resize-y`} placeholder="Briefly describe what you farm and your goals." />
+              </Field>
+
+              <div className="flex flex-col gap-2 border-t border-[#DCE5E1] pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                <p className="max-w-xl text-[12px] leading-5 text-slate-500">Only collect details needed to operate Shamba. Do not enter national ID or passport numbers here.</p>
+                <button type="submit" disabled={profileSaving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#087F5B] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#075E46] disabled:cursor-not-allowed disabled:opacity-60">
+                  <ShieldCheck size={16} /> {profileSaving ? "Submitting…" : "Submit for verification"}
+                </button>
+              </div>
+            </form>
+          )}
+          {!profileCanEdit && verificationStatus !== "pending" && !profileApproved && !profileError && (
+            <p className="mt-2 text-xs text-slate-500">Refresh this page if the review status has recently changed.</p>
+          )}
         </div>
       </section>
 
@@ -741,7 +1073,8 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             <button
               type="button"
               onClick={openAddFarm}
-              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98]"
+              disabled={!profileApproved || farmerLoading}
+              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={15} />
               Add Your First Farm

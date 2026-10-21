@@ -477,6 +477,7 @@ export default function ShambaDashboard({
 
   const {
     getShambaDashboard,
+    getFarmer,
     getFarms,
     getFarmActivities,
 
@@ -492,6 +493,7 @@ export default function ShambaDashboard({
 
   const [dashboard, setDashboard] = useState(null);
   const [farms, setFarms] = useState([]);
+  const [farmerProfile, setFarmerProfile] = useState(null);
   const [activities, setActivities] = useState([]);
 
   const [commandCenter, setCommandCenter] =
@@ -541,13 +543,21 @@ export default function ShambaDashboard({
         const [
           dashboardResult,
           farmsResult,
+          farmerResult,
         ] = await Promise.all([
           getShambaDashboard(),
           getFarms(),
+          getFarmer(),
         ]);
 
         setDashboard(
           dashboardResult || null,
+        );
+
+        setFarmerProfile(
+          farmerResult && typeof farmerResult === "object"
+            ? farmerResult
+            : null,
         );
 
         setFarms(
@@ -566,6 +576,7 @@ export default function ShambaDashboard({
     },
     [
       getShambaDashboard,
+      getFarmer,
       getFarms,
     ],
   );
@@ -867,9 +878,15 @@ export default function ShambaDashboard({
     {};
 
   const farmer =
+    farmerProfile ||
     dashboard?.farmer ||
     commandCenter?.farmer ||
     null;
+
+  const profileVerificationStatus =
+    farmerProfile?.verification_status || "not_submitted";
+  const farmerProfileApproved =
+    profileVerificationStatus === "approved";
 
   const commandFarm =
     commandCenter?.farm ||
@@ -1181,6 +1198,57 @@ export default function ShambaDashboard({
         </section>
 
         {/* ==================================================
+            FARMER PROFILE VERIFICATION
+        ================================================== */}
+
+        {!loading && !farmerProfileApproved && (
+          <section className="mb-5 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm dark:border-amber-900/50 dark:bg-gray-900">
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                  profileVerificationStatus === "pending"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                    : "bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300"
+                }`}>
+                  {profileVerificationStatus === "pending" ? <AlertTriangle size={20} /> : <Sprout size={20} />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-black text-slate-900 dark:text-white">
+                      {profileVerificationStatus === "pending"
+                        ? "Farmer profile under review"
+                        : profileVerificationStatus === "rejected"
+                          ? "Update your farmer profile"
+                          : profileVerificationStatus === "more_info"
+                            ? "More information required"
+                            : "Complete your farmer profile"}
+                    </h2>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${
+                      profileVerificationStatus === "pending"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    }`}>
+                      {profileVerificationStatus === "pending" ? "Pending review" : profileVerificationStatus.replace("_", " ")}
+                    </span>
+                  </div>
+                  <p className="mt-1 max-w-2xl text-[13px] leading-5 text-slate-600 dark:text-gray-300">
+                    {profileVerificationStatus === "pending"
+                      ? "An administrator must review your farmer details before you can register additional farms."
+                      : farmerProfile?.verification_review_notes
+                        ? farmerProfile.verification_review_notes
+                        : "Submit your farmer details for manual administrator approval. Your profile approval and each farm’s rights review are separate steps."}
+                  </p>
+                </div>
+              </div>
+              <button type="button" onClick={() => onNavigate?.("shamba/farms")} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46]">
+                {profileVerificationStatus === "pending" ? "View status" : "Complete profile"}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* ==================================================
             ERROR
         ================================================== */}
 
@@ -1247,12 +1315,13 @@ export default function ShambaDashboard({
             </div>
 
             <h2 className="mt-3 font-black text-slate-900 text-xl leading-snug tracking-tight text-[#172B25]">
-              Set up your first farm
+              {farmerProfileApproved ? "Set up your first farm" : "Complete your farmer profile first"}
             </h2>
 
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600">
-              Add your farm details to unlock relevant crop, weather, productivity and market insights.
-              You can start with the farm name and location, then add more details as you go.
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-gray-300">
+              {farmerProfileApproved
+                ? "Add your farm details to unlock relevant crop, weather, productivity and market insights."
+                : "Shamba requires a complete farmer profile and administrator approval before a farm can be registered. Submit your details and track the review from My Farms."}
             </p>
 
             <button
@@ -1277,7 +1346,7 @@ export default function ShambaDashboard({
                 hover:bg-[#075E46]
               "
             >
-              Create Your First Farm
+              {farmerProfileApproved ? "Create Your First Farm" : "Complete Farmer Profile"}
               <ArrowRight size={16} />
             </button>
           </section>

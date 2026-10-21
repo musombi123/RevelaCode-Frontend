@@ -799,6 +799,50 @@ export function useJumuiyaApi() {
       saveFarmer: (data) =>
         postData("/shamba/farmer", data),
 
+      getFarmerVerificationQueue: () =>
+        getData("/shamba/farmer/verification-queue"),
+
+      reviewFarmerProfile: (farmerId, data) =>
+        postData(
+          `/shamba/farmer/${encodeId(farmerId, "Farmer ID")}/review`,
+          data,
+        ),
+
+      // ===================================================
+      // SHAMBA — TRUST, FARM RIGHTS, AND SAFETY
+      // Uses existing authenticated Shamba trust routes only.
+      // ===================================================
+
+      getShambaTrustOverview: () =>
+        getData("/shamba/trust/overview"),
+
+      submitFarmRightsVerification: (farmId, data) =>
+        postData(
+          `/shamba/trust/farms/${encodeId(farmId, "Farm ID")}/verification`,
+          data,
+        ),
+
+      getFarmRightsVerificationQueue: () =>
+        getData("/shamba/trust/verification-queue"),
+
+      reviewFarmRightsVerification: (farmId, data) =>
+        postData(
+          `/shamba/trust/farms/${encodeId(farmId, "Farm ID")}/verification/review`,
+          data,
+        ),
+
+      createShambaSafetyReport: (data) =>
+        postData("/shamba/trust/safety-reports", data),
+
+      getShambaSafetyReports: () =>
+        getData("/shamba/trust/safety-reports"),
+
+      reviewShambaSafetyReport: (reportId, data) =>
+        postData(
+          `/shamba/trust/safety-reports/${encodeId(reportId, "Report ID")}/review`,
+          data,
+        ),
+
       // ===================================================
       // SHAMBA — FARMS
       // ===================================================
