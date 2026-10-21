@@ -41,6 +41,40 @@ const LEGACY_TOKEN_KEY =
 const LEGACY_TOKEN_ALIAS =
   "token";
 
+const SENSITIVE_SESSION_KEYS = new Set([
+  "accesstoken",
+  "access_token",
+  "refreshtoken",
+  "refresh_token",
+  "token",
+  "jwt",
+  "authorization",
+  "password",
+  "password_hash",
+  "apikey",
+  "api_key",
+  "secret",
+  "privatekey",
+  "private_key",
+]);
+
+function sanitizeSessionIdentity(value) {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeSessionIdentity);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const safe = {};
+  for (const [key, nestedValue] of Object.entries(value)) {
+    const normalizedKey = key.replace(/[-\s]/g, "").toLowerCase();
+    if (SENSITIVE_SESSION_KEYS.has(normalizedKey)) continue;
+    safe[key] = sanitizeSessionIdentity(nestedValue);
+  }
+  return safe;
+}
+
 
 /* =========================================================
    PROVIDER
@@ -131,7 +165,7 @@ export function AuthProvider({
             parsed?.user
           ) {
             setUser(
-              parsed.user
+              sanitizeSessionIdentity(parsed.user)
             );
           }
 
@@ -645,10 +679,8 @@ export function AuthProvider({
          * a token.
          */
         if (!accessToken) {
-          console.error(
-            "Login payload received without access token:",
-            payload
-          );
+          // Never log the authentication payload; it may contain credentials.
+          console.error("Login payload did not include an access token.");
 
           throw new Error(
             "Login succeeded but no access token was returned by the backend."
@@ -659,8 +691,8 @@ export function AuthProvider({
          * Normalize user identity.
          */
         const normalizedUser =
-          normalizeUser(
-            userData
+          sanitizeSessionIdentity(
+            normalizeUser(userData)
           );
 
         /*
@@ -674,11 +706,7 @@ export function AuthProvider({
           !normalizedUser.id
         ) {
           console.warn(
-            "Authenticated token received but no user identity was found.",
-            {
-              payload,
-              userData,
-            }
+            "Authenticated token received without a complete user identity."
           );
         }
 
@@ -1096,8 +1124,9 @@ export function AuthProvider({
         }
 
         if (response.status === 401) {
-          // Keep token storage intact. Protected routes can redirect to login,
-          // but only the explicit logout action deletes persisted credentials.
+          // A 401 after the one permitted refresh/retry means the session is
+          // no longer accepted. Clear stale credentials, not just React state.
+          clearToken();
           try {
             localStorage.removeItem(STORAGE_KEY);
           } catch {
@@ -1113,6 +1142,7 @@ export function AuthProvider({
         getAccessToken,
         getTokenType,
         persistToken,
+        clearToken,
       ]
     );
 
