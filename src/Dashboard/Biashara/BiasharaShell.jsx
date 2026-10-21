@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe,
+  DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe, ArrowLeftRight,
   LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
   RefreshCw, Settings, Sparkles, Store, Users, Zap, X,
 } from "lucide-react";
@@ -11,18 +11,19 @@ const PRIMARY_NAV = [
   { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
-  { key: "finance", label: "Finance", icon: DollarSign, available: false, reason: "A verified finance contract for invoicing, payment allocation and reconciliation is not available yet." },
-  { key: "automations", label: "Automations", icon: Zap, available: false, reason: "A verified Biashara automation contract is not available yet." },
-  { key: "sync", label: "Sync Centre", icon: RefreshCw, available: false, reason: "A verified Biashara synchronization contract is not available yet." },
+  { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
+  { key: "automations", label: "Automations", route: "automations", icon: Zap, available: true },
+  { key: "sync", label: "Sync Centre", route: "sync", icon: RefreshCw, available: true },
   { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
-  { key: "team", label: "Team", icon: Users, available: false, reason: "Business memberships, invitations and permission roles are not exposed by the audited API." },
+  { key: "team", label: "Team", route: "team", icon: Users, available: true },
   { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },
+  { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight, available: true },
 ];
 
 const MORE_TOOLS = [
-  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign },
-  { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles },
-  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell },
+  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign, available: true },
+  { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles, available: true },
+  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell, available: true },
 ];
 
 const MOBILE_NAV_KEYS = ["overview", "orders", "products", "website"];
@@ -123,7 +124,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
         <div className="border-t border-white/10 p-4">
           <div className="rounded-xl border border-white/10 bg-revela-dark/70 p-3">
             <p className="text-xs font-semibold text-slate-200">Access and plans</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-500">Role and plan access will appear when the backend returns verified membership and entitlement data.</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">Owner-scoped workspace contracts are available. Team invitations remain pending until delivery and acceptance are implemented.</p>
           </div>
         </div>
       </aside>

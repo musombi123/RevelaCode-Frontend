@@ -787,6 +787,34 @@ export function useJumuiyaApi() {
         getData("/biashara/dashboard"),
 
       // ===================================================
+      // BIASHARA — WORKSPACE CONTRACTS
+      // ===================================================
+
+      getBiasharaInvoices: () => getData("/biashara/finance/invoices"),
+      createBiasharaInvoice: (data) => postData("/biashara/finance/invoices", data),
+      allocateBiasharaInvoicePayment: (invoiceId, data) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, data),
+      getBiasharaInvoiceAllocations: (invoiceId) =>
+        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`),
+
+      getBiasharaAutomationRules: () => getData("/biashara/automations/rules"),
+      createBiasharaAutomationRule: (data) => postData("/biashara/automations/rules", data),
+      updateBiasharaAutomationRule: (ruleId, data) =>
+        patchData(`/biashara/automations/rules/${encodeId(ruleId, "Automation rule ID")}`, data),
+
+      getBiasharaSyncJobs: () => getData("/biashara/sync/jobs"),
+      createBiasharaSyncJob: (data) => postData("/biashara/sync/jobs", data),
+
+      getBiasharaTeam: () => getData("/biashara/team"),
+      inviteBiasharaTeamMember: (data) => postData("/biashara/team/invitations", data),
+      removeBiasharaTeamMember: (memberId) =>
+        deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`),
+
+      getBiasharaBusinesses: () => getData("/biashara/businesses"),
+      setActiveBiasharaBusiness: (businessId) =>
+        postData("/biashara/businesses/active", { business_id: businessId }),
+
+      // ===================================================
       // SHAMBA — HEALTH AND FARMER
       // ===================================================
 
