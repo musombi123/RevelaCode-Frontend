@@ -41,10 +41,10 @@ function filenamePart(value) {
     .slice(0, 64) || "user";
 }
 
-function roleList(profile, user) {
-  const roles = firstValue(profile?.roles, user?.roles);
+function roleList(profile) {
+  const roles = profile?.roles;
   if (Array.isArray(roles) && roles.length) return roles.map(String);
-  const role = firstValue(profile?.role, user?.role);
+  const role = profile?.role;
   return role ? [String(role)] : [];
 }
 
@@ -136,11 +136,15 @@ export default function UserProfile() {
   const [refreshSequence, setRefreshSequence] = useState(0);
 
   const isGuest = user?.role === "guest";
-  const fullName = firstValue(remoteProfile?.full_name, remoteProfile?.fullName, remoteProfile?.name, user?.fullName, user?.full_name, "User");
-  const contact = firstValue(remoteProfile?.email, remoteProfile?.contact, user?.email, user?.contact, "");
-  const roles = useMemo(() => roleList(remoteProfile || {}, user || {}), [remoteProfile, user]);
+  const fullName = remoteProfile
+    ? firstValue(remoteProfile.full_name, remoteProfile.fullName, remoteProfile.name, "Name not returned by account service")
+    : firstValue(user?.fullName, user?.full_name, "Signed-in user");
+  const contact = remoteProfile
+    ? firstValue(remoteProfile.email, remoteProfile.contact, remoteProfile.phone, "Contact not returned by account service")
+    : firstValue(user?.email, user?.contact, "");
+  const roles = useMemo(() => (remoteProfile ? roleList(remoteProfile) : []), [remoteProfile]);
   const avatar = firstValue(remoteProfile?.avatar, remoteProfile?.avatar_url, remoteProfile?.avatarUrl, user?.avatar, user?.avatarUrl, "");
-  const joined = firstValue(remoteProfile?.joined_at, remoteProfile?.joinedAt, remoteProfile?.created_at, remoteProfile?.createdAt, user?.joined_at, user?.created_at);
+  const joined = firstValue(remoteProfile?.joined_at, remoteProfile?.joinedAt, remoteProfile?.created_at, remoteProfile?.createdAt);
   const hubs = Array.isArray(remoteProfile?.hubs)
     ? remoteProfile.hubs
     : Array.isArray(remoteProfile?.current_hubs)
@@ -242,7 +246,19 @@ export default function UserProfile() {
       if (!response.ok || !payload?.certificate_id) {
         throw new Error(payload?.error?.message || payload?.message || `Certificate issuance failed (HTTP ${response.status}).`);
       }
-      setCertificateMessage(payload.already_issued ? "Your existing active certificate is ready." : "Your account certificate was issued and verified against RevelaCode records.");
+      const verifyResponse = await authFetch(
+        `${API_BASE}/api/verify/certificate/${encodeURIComponent(payload.certificate_id)}`,
+        { method: "GET", headers: { Accept: "application/json" } },
+      );
+      const verification = await verifyResponse.json().catch(() => ({}));
+      if (!verifyResponse.ok || verification?.valid !== true) {
+        throw new Error(
+          verification?.message ||
+          verification?.detail ||
+          "The account service returned a certificate ID, but the public verifier did not confirm it as valid. The file was not presented as verified.",
+        );
+      }
+
       const downloadResponse = await authFetch(`${API_BASE}${payload.download_url || `/api/accounts/certificates/${encodeURIComponent(payload.certificate_id)}/download`}`, {
         method: "GET",
         headers: { Accept: "application/pdf" },
@@ -260,6 +276,11 @@ export default function UserProfile() {
       link.click();
       link.remove();
       URL.revokeObjectURL(objectUrl);
+      setCertificateMessage(
+        payload.already_issued
+          ? "The existing account certificate passed public verification and is ready to download."
+          : "The account identity and participation certificate passed public verification and is ready to download.",
+      );
       setRefreshSequence((value) => value + 1);
     } catch (error) {
       setProfileError(error?.message || "Unable to issue or download the account certificate.");
@@ -291,6 +312,13 @@ export default function UserProfile() {
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{fullName}</h2>
               <p className="mt-1 break-all text-sm text-slate-600 dark:text-slate-300">{contact || "No email/contact on record"}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {remoteProfile
+                  ? "Identity details received from the authenticated account service."
+                  : profileError
+                    ? "Showing cached session details only; authoritative profile data could not be confirmed."
+                    : "Loading authoritative account details…"}
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {roles.length ? roles.map((role) => (
                   <span key={role} className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold capitalize text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">{role.replaceAll("_", " ")}</span>
@@ -315,11 +343,11 @@ export default function UserProfile() {
           </div>
           <div className="flex gap-3">
             <GraduationCap className="mt-0.5 h-5 w-5 text-indigo-600" />
-            <div><p className="text-xs text-slate-500">Recorded hubs</p><p className="font-medium text-slate-800 dark:text-slate-100">{hubs.length}</p></div>
+            <div><p className="text-xs text-slate-500">Recorded hubs</p><p className="font-medium text-slate-800 dark:text-slate-100">{remoteProfile ? hubs.length : "Not yet verified"}</p></div>
           </div>
           <div className="flex gap-3">
             <Award className="mt-0.5 h-5 w-5 text-indigo-600" />
-            <div><p className="text-xs text-slate-500">Certificates</p><p className="font-medium text-slate-800 dark:text-slate-100">{firstValue(remoteProfile?.certificates_count, remoteProfile?.certificate_count, remoteProfile?.certificates?.length, 0)}</p></div>
+            <div><p className="text-xs text-slate-500">Certificates</p><p className="font-medium text-slate-800 dark:text-slate-100">{remoteProfile ? firstValue(remoteProfile.certificates_count, remoteProfile.certificate_count, remoteProfile.certificates?.length, "Not reported") : "Not yet verified"}</p></div>
           </div>
           <div className="flex gap-3">
             <Clock3 className="mt-0.5 h-5 w-5 text-indigo-600" />
@@ -333,7 +361,7 @@ export default function UserProfile() {
           <CardHeader className="flex flex-col gap-3 border-b border-slate-200 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Learning hub activity</h3>
-              <p className="text-sm text-slate-500">Progress, completed lessons, time spent, instructors, skills and certificate status returned by the account API.</p>
+              <p className="text-sm text-slate-500">Progress, completed lessons, time spent, instructors, skills and certificate status returned by the authenticated account API.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" disabled={loadingProfile} onClick={() => setRefreshSequence((value) => value + 1)}>
@@ -346,11 +374,14 @@ export default function UserProfile() {
                 <FileJson className="mr-2 h-4 w-4" /> {downloadState === "json" ? "Preparing JSON…" : "Download JSON"}
               </Button>
               <Button variant="outline" disabled={Boolean(certificateState)} onClick={() => void issueAndDownloadCertificate()}>
-                <Award className="mr-2 h-4 w-4" /> {certificateState === "issuing" ? "Issuing certificate…" : "Issue / Download Certificate"}
+                <Award className="mr-2 h-4 w-4" /> {certificateState === "issuing" ? "Issuing certificate…" : "Issue / Download Account Certificate"}
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+              <strong>Account Identity &amp; Participation Certificate.</strong> This document records verified RevelaCode account identity and supported role or hub-participation records. It is not an academic qualification, professional licence, government accreditation, or third-party credential.
+            </div>
             {certificateMessage && (
               <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
                 {certificateMessage}
