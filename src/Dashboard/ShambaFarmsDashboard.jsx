@@ -9,6 +9,7 @@ import React, {
 
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   MapPin,
   Plus,
