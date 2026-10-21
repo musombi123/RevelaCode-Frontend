@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Clock3, RefreshCw, ShieldCheck, UserRound, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, RefreshCw, ShieldCheck, User, XCircle } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 function formatDate(value) {
@@ -20,7 +20,7 @@ function FarmerReviewCard({ item, busy, note, onNoteChange, onReview }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#087F5B] dark:bg-emerald-950/40 dark:text-emerald-300">
-            <UserRound size={20} />
+            <User size={20} />
           </div>
           <div className="min-w-0">
             <h2 className="break-words text-base font-black text-slate-900 dark:text-white">{item.farmer_name || "Unnamed farmer"}</h2>
@@ -123,7 +123,7 @@ export default function ShambaFarmerVerificationDashboard() {
           <button type="button" aria-label="Refresh queue" title="Refresh queue" onClick={() => loadQueue({ silent: true })} disabled={loading || refreshing} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/20 disabled:opacity-50"><RefreshCw size={17} className={refreshing ? "animate-spin" : ""} /></button>
         </div>
         <div className="mt-5 flex items-center gap-3 rounded-xl border border-white/15 bg-black/10 px-4 py-3">
-          <Clock3 size={18} className="shrink-0 text-emerald-100" />
+          <Clock size={18} className="shrink-0 text-emerald-100" />
           <div><p className="text-xl font-black tabular-nums">{items.length}</p><p className="text-[12px] text-emerald-100">Profiles awaiting a decision or additional details</p></div>
         </div>
       </section>
