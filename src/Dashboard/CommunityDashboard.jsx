@@ -13,6 +13,7 @@ import {
   Compass,
   GraduationCap,
   Leaf,
+  Megaphone,
   MapPin,
   MessageCircle,
   Plus,
@@ -24,6 +25,8 @@ import {
   Sparkles,
   Target,
   Users,
+  UserRound,
+  UserPlus,
   X,
 } from "lucide-react";
 
@@ -37,6 +40,8 @@ import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCar
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
+import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirectory.jsx";
+import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -173,7 +178,7 @@ function getPostId(post) {
   );
 }
 
-function getPostType(post) {
+function isCommunityPromotion(post) {\n  const category = String(post?.category || post?.type || post?.post_type || "").toLowerCase();\n  return post?.is_sponsored === true || post?.sponsored === true || post?.ad_status === "active" || ["advertisement", "promotion", "sponsored"].includes(category);\n}\n\nfunction getPostType(post) {
   return String(
     post?.type || post?.post_type || "",
   ).toLowerCase();
