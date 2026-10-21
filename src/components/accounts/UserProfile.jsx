@@ -164,13 +164,18 @@ export default function UserProfile() {
         const message = payload?.detail || payload?.error?.message || payload?.message || `Profile API returned HTTP ${response.status}.`;
         throw new Error(message);
       }
-      const candidate = payload?.profile || payload?.user || payload?.data?.profile || payload?.data?.user || payload?.data || payload;
+      const candidate = payload?.profile || payload?.data?.profile || payload?.data || payload;
       if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
         throw new Error("The profile service returned an unexpected response.");
       }
+      const sourceUser = candidate.user || candidate;
+      const certificates = candidate.certificates || payload?.certificates || payload?.data?.certificates || [];
       setRemoteProfile({
         ...candidate,
+        ...sourceUser,
         hubs: candidate.hubs || payload?.hubs || payload?.data?.hubs || [],
+        certificates,
+        certificates_count: candidate.certificates_count ?? payload?.certificates_count ?? certificates.length,
       });
     } catch (error) {
       // Keep the authenticated identity visible; show the API failure clearly.
