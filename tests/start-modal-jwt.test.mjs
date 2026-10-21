@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const startModal = await readFile(new URL("../src/components/StartModal.jsx", import.meta.url), "utf8");
 const authContext = await readFile(new URL("../src/context/AuthContext.jsx", import.meta.url), "utf8");
 const authGate = await readFile(new URL("../src/components/AuthGate.jsx", import.meta.url), "utf8");
+const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
 
 test("StartModal delegates token persistence to AuthContext and does not put credentials in the cached user", () => {
   assert.match(startModal, /login\(\{\s*user:\s*safeAuthUser,\s*access_token:\s*accessToken/);
@@ -37,7 +38,8 @@ test("AuthGate fails closed unless the server confirms an identity and current r
   assert.match(authGate, /\/api\/auth\/me/);
   assert.match(authGate, /payload\?\.authenticated !== true/);
   assert.match(authGate, /const verifiedUser = payload\?\.user \|\| payload\?\.data\?\.user/);
-  assert.match(authGate, /verifiedUser\?\.roles/);
+  assert.match(authGate, /verifiedUser\.roles/);
+  assert.match(app, /<AuthGate requiredRoles=\{requiredRoles\}>[\s\S]*?<Pages initialAdminTab=\{initialAdminTab\}/);
   assert.doesNotMatch(authGate, /user\?\.roles/);
   assert.match(authGate, /Navigate to="\/login" replace state=\{\{ from: location \}\}/);
 });
