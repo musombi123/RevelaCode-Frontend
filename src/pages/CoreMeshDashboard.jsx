@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
+import { useAuth } from "@/context/AuthContext.jsx";
 import {
   Activity,
   AlertTriangle,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = String(
-  import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com",
+  import.meta.env.VITE_REVELAAI_API_URL || import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com",
 ).trim().replace(/\/+$/, "");
 
 function readAuthHeaders(jsonBody = false) {
@@ -24,15 +25,43 @@ function readAuthHeaders(jsonBody = false) {
   return headers;
 }
 
-async function requestCoreMesh(path, options = {}) {
-  const response = await fetch(API_BASE + path, {
-    ...options,
-    headers: {
-      ...readAuthHeaders(Boolean(options.body)),
-      ...(options.headers || {}),
-    },
-    cache: "no-store",
-  });
+function coreMeshErrorMessage(payload, status) {
+  const candidates = [
+    payload?.error?.message,
+    payload?.detail?.message,
+    payload?.message?.message,
+    payload?.message,
+    typeof payload?.error === "string" ? payload.error : payload?.error?.code,
+    typeof payload?.detail === "string" ? payload.detail : null,
+    payload?.code,
+  ];
+  const message = candidates.find((value) => typeof value === "string" && value.trim());
+  if (message) return message.trim();
+  const structured = payload?.error ?? payload?.detail;
+  if (structured && typeof structured === "object") {
+    try {
+      return JSON.stringify(structured);
+    } catch {
+      // Fall through to the status-specific message.
+    }
+  }
+  return "Core Mesh request failed (HTTP " + status + ").";
+}
+
+async function requestCoreMesh(path, options = {}, authenticatedFetch) {
+  const url = API_BASE + path;
+  const headers = {
+    Accept: "application/json",
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers || {}),
+  };
+  const requestOptions = { ...options, headers, cache: "no-store" };
+  const response = typeof authenticatedFetch === "function"
+    ? await authenticatedFetch(url, requestOptions)
+    : await fetch(url, {
+        ...requestOptions,
+        headers: { ...readAuthHeaders(Boolean(options.body)), ...headers },
+      });
 
   let payload = {};
   try {
@@ -42,12 +71,7 @@ async function requestCoreMesh(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message =
-      payload?.error?.message ||
-      payload?.message ||
-      (typeof payload?.error === "string" ? payload.error : "") ||
-      "Core Mesh request failed (HTTP " + response.status + ").";
-    throw new Error(String(message));
+    throw new Error(coreMeshErrorMessage(payload, response.status));
   }
 
   return payload?.data ?? payload;
@@ -115,6 +139,8 @@ function StatusPill({ reachable }) {
 }
 
 export default function CoreMeshDashboard() {
+  const auth = useAuth();
+  const authenticatedFetch = auth?.authFetch;
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -139,7 +165,7 @@ export default function CoreMeshDashboard() {
     setRefreshing(true);
     setError("");
     try {
-      const data = await requestCoreMesh("/api/core-mesh/dashboard" + (force ? "?refresh=1" : ""));
+      const data = await requestCoreMesh("/api/core-mesh/dashboard" + (force ? "?refresh=1" : ""), {}, authenticatedFetch);
       setSnapshot(data);
     } catch (requestError) {
       setError(requestError?.message || "Could not read the Core Mesh status.");
@@ -147,13 +173,13 @@ export default function CoreMeshDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [authenticatedFetch]);
 
   const refreshSignedTools = useCallback(async () => {
     setToolsLoading(true);
     setToolsError("");
     try {
-      const data = await requestCoreMesh("/api/core-mesh/tools");
+      const data = await requestCoreMesh("/api/core-mesh/tools", {}, authenticatedFetch);
       setSignedTools(Array.isArray(data?.active_tools) ? data.active_tools : []);
       setCanExecuteTools(data?.can_execute === true);
     } catch (requestError) {
@@ -163,7 +189,7 @@ export default function CoreMeshDashboard() {
     } finally {
       setToolsLoading(false);
     }
-  }, []);
+  }, [authenticatedFetch]);
 
   useEffect(() => {
     refresh(true);
@@ -212,7 +238,7 @@ export default function CoreMeshDashboard() {
       const result = await requestCoreMesh(endpoint, {
         method: "POST",
         body: JSON.stringify(body),
-      });
+      }, authenticatedFetch);
       setActionResult({ label, data: result });
       setNotice(label + " submitted. The result is a proposal; a human must review it.");
       if (genesis) setDemand("");
@@ -222,7 +248,7 @@ export default function CoreMeshDashboard() {
     } finally {
       setActionBusy("");
     }
-  }, [demand, objective, toolName, refresh]);
+  }, [demand, objective, toolName, refresh, authenticatedFetch]);
 
   const executeSignedTool = useCallback(async (tool) => {
     const name = String(tool?.name || "");
@@ -265,7 +291,7 @@ export default function CoreMeshDashboard() {
         const confirmation = await requestCoreMesh(confirmPath, {
           method: "POST",
           body: JSON.stringify({ arguments: argumentsObject }),
-        });
+        }, authenticatedFetch);
         confirmationToken = confirmation?.confirmation_token;
         if (!confirmationToken) {
           throw new Error("Genesis did not issue an action-bound confirmation token.");
@@ -281,7 +307,7 @@ export default function CoreMeshDashboard() {
           arguments: argumentsObject,
           ...(confirmationToken ? { confirmation_token: confirmationToken } : {}),
         }),
-      });
+      }, authenticatedFetch);
       setToolExecutionResult({ name, riskTier, result });
       await refresh(true);
       await refreshSignedTools();
@@ -290,7 +316,7 @@ export default function CoreMeshDashboard() {
     } finally {
       setExecutingTool("");
     }
-  }, [toolArguments, refresh, refreshSignedTools]);
+  }, [toolArguments, refresh, refreshSignedTools, authenticatedFetch]);
 
   return (
     <div className="space-y-6">
