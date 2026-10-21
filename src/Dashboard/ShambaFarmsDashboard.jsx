@@ -18,7 +18,7 @@ import {
   Tractor,
   ShieldCheck,
   Clock,
-  UserRound,
+  User,
   X,
 } from "lucide-react";
 
@@ -817,7 +817,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       <section className="mb-5 overflow-hidden rounded-2xl border border-[#DCE5E1] bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <div className="flex items-start gap-3 border-b border-[#DCE5E1] bg-gradient-to-r from-emerald-50 to-white px-4 py-4 dark:border-slate-800 dark:from-emerald-950/30 dark:to-slate-950 sm:px-5">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087F5B] text-white">
-            {profileApproved ? <ShieldCheck size={19} /> : verificationStatus === "pending" ? <Clock size={19} /> : <UserRound size={19} />}
+            {profileApproved ? <ShieldCheck size={19} /> : verificationStatus === "pending" ? <Clock size={19} /> : <User size={19} />}
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-black text-slate-900 dark:text-white">Farmer identity & verification</h2>
