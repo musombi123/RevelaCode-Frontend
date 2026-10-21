@@ -244,7 +244,7 @@ function FarmCard({ farm }) {
 
             {farm?.irrigation && (
               <span className="rounded-lg bg-slate-50 px-2 py-1.5 text-[13px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                {farm.irrigation}
+                Irrigation available
               </span>
             )}
           </div>
@@ -862,6 +862,9 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               </p>
               {farmerProfile?.verification_review_notes && (
                 <p className="mt-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300">Admin note: {farmerProfile.verification_review_notes}</p>
+              )}
+              {profileMessage && (
+                <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px] leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">{profileMessage}</p>
               )}
             </div>
           ) : (
