@@ -14,6 +14,7 @@ import {
   persistTokens,
   clearStoredTokens,
 } from "@/auth/tokenStorage.mjs";
+import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
 
 /* =========================================================
    CONTEXT
@@ -41,39 +42,6 @@ const LEGACY_TOKEN_KEY =
 const LEGACY_TOKEN_ALIAS =
   "token";
 
-const SENSITIVE_SESSION_KEYS = new Set([
-  "accesstoken",
-  "access_token",
-  "refreshtoken",
-  "refresh_token",
-  "token",
-  "jwt",
-  "authorization",
-  "password",
-  "password_hash",
-  "apikey",
-  "api_key",
-  "secret",
-  "privatekey",
-  "private_key",
-]);
-
-function sanitizeSessionIdentity(value) {
-  if (Array.isArray(value)) {
-    return value.map(sanitizeSessionIdentity);
-  }
-  if (!value || typeof value !== "object") {
-    return value;
-  }
-
-  const safe = {};
-  for (const [key, nestedValue] of Object.entries(value)) {
-    const normalizedKey = key.replace(/[-\s]/g, "").toLowerCase();
-    if (SENSITIVE_SESSION_KEYS.has(normalizedKey)) continue;
-    safe[key] = sanitizeSessionIdentity(nestedValue);
-  }
-  return safe;
-}
 
 
 /* =========================================================
