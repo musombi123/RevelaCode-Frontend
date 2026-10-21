@@ -61,6 +61,21 @@ export default function CertificateVerifyPage() {
                 <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900"><dt className="text-xs text-slate-500">Issued</dt><dd className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{record.issued_at ? new Date(record.issued_at).toLocaleDateString() : "Not recorded"}</dd><dd className="mt-1 text-xs text-slate-500">Signature algorithm: {record.signature_algorithm || "Not reported"}</dd></div>
               </dl>
               <div className="mt-5"><h3 className="font-semibold text-slate-900 dark:text-slate-100">Certified roles</h3><div className="mt-2 flex flex-wrap gap-2">{(record.roles || []).map((role) => <span key={role} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">{role}</span>)}</div></div>
+              {Array.isArray(record.hub?.hubs) && record.hub.hubs.length > 0 && (
+                <div className="mt-5">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">Recorded hub affiliations</h3>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {record.hub.hubs.map((hub, index) => (
+                      <div key={hub.id || `${hub.name || "hub"}-${index}`} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{hub.name || "Hub affiliation"}</p>
+                        {hub.institution && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{hub.institution}</p>}
+                        <p className="mt-1 text-xs text-slate-500">Status: {hub.status || "recorded"}{hub.role ? ` • Role: ${hub.role}` : ""}</p>
+                        {hub.progress_percent != null && <p className="mt-1 text-xs text-slate-500">Recorded progress: {hub.progress_percent}%</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="mt-5"><h3 className="font-semibold text-slate-900 dark:text-slate-100">Skills recorded</h3><div className="mt-2 flex flex-wrap gap-2">{(record.skills || []).map((skill) => <span key={skill} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:text-slate-200">{skill}</span>)}</div></div>
               {record.signature_fingerprint_sha256 && <p className="mt-5 break-all text-xs text-slate-500">Signature fingerprint (SHA-256): {record.signature_fingerprint_sha256}</p>}
             </div>
