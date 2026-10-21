@@ -165,6 +165,16 @@ function Field({ label, children, required = false }) {
 function FarmCard({ farm }) {
   const farmSize = formatSize(farm);
   const isActive = farm?.status !== "deleted";
+  const rightsStatus = String(farm?.legal_verification_status || "not_submitted").toLowerCase();
+  const rightsLabel = rightsStatus === "verified"
+    ? "Farm rights reviewed"
+    : rightsStatus === "pending"
+      ? "Rights review pending"
+      : rightsStatus === "more_info"
+        ? "More details requested"
+        : rightsStatus === "rejected"
+          ? "Rights review rejected"
+          : "Rights review not submitted";
 
   return (
     <article
@@ -202,6 +212,18 @@ function FarmCard({ farm }) {
               }`}
             >
               {isActive ? "Active" : "Deleted"}
+            </span>
+          </div>
+
+          <div className="mt-2">
+            <span className={`inline-flex rounded-lg px-2 py-1 text-[11px] font-black ${
+              rightsStatus === "verified"
+                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                : rightsStatus === "rejected"
+                  ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                  : "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+            }`}>
+              {rightsLabel}
             </span>
           </div>
 
@@ -1046,7 +1068,8 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
             <button
               type="button"
               onClick={openAddFarm}
-              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98]"
+              disabled={!profileApproved || farmerLoading}
+              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-[#087F5B] px-4 py-2.5 text-[13px] font-black text-white transition hover:bg-[#075E46] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={15} />
               Add Your First Farm
