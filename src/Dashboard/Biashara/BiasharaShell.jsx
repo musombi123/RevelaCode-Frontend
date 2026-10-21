@@ -16,7 +16,8 @@ const PRIMARY_NAV = [
   { key: "sync", label: "Sync Centre", route: "sync", icon: RefreshCw, available: true },
   { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
   { key: "team", label: "Team", route: "team", icon: Users, available: true },
-  { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },\n  { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight, available: true },
+  { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },
+  { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight, available: true },
 ];
 
 const MORE_TOOLS = [
