@@ -126,6 +126,7 @@ export default function CoreMeshDashboard() {
   const [toolName, setToolName] = useState("offline_vault_fixture");
   const [actionResult, setActionResult] = useState(null);
   const [signedTools, setSignedTools] = useState([]);
+  const [canExecuteTools, setCanExecuteTools] = useState(false);
   const [toolsLoading, setToolsLoading] = useState(false);
   const [toolsError, setToolsError] = useState("");
   const [toolArguments, setToolArguments] = useState(
@@ -154,8 +155,10 @@ export default function CoreMeshDashboard() {
     try {
       const data = await requestCoreMesh("/api/core-mesh/tools");
       setSignedTools(Array.isArray(data?.active_tools) ? data.active_tools : []);
+      setCanExecuteTools(data?.can_execute === true);
     } catch (requestError) {
       setSignedTools([]);
+      setCanExecuteTools(false);
       setToolsError(requestError?.message || "Signed Genesis tools could not be loaded.");
     } finally {
       setToolsLoading(false);
@@ -458,6 +461,120 @@ export default function CoreMeshDashboard() {
           </div>
         </section>
       )}
+
+      <section className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Active signed Genesis tools</h3>
+              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">
+                Invocation is delegated to Genesis. The gateway does not execute generated source; Genesis revalidates the signed artifact, sandbox evidence, risk policy and any required approval.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={refreshSignedTools}
+              disabled={toolsLoading}
+              className="inline-flex w-fit flex-shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <RefreshCw className={"h-3.5 w-3.5 " + (toolsLoading ? "animate-spin" : "")} />
+              Refresh tools
+            </button>
+          </div>
+        </div>
+
+        <div className="px-5 py-4 sm:px-6">
+          <label htmlFor="core-mesh-tool-arguments" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+            Tool arguments (JSON)
+          </label>
+          <textarea
+            id="core-mesh-tool-arguments"
+            value={toolArguments}
+            onChange={(event) => setToolArguments(event.target.value)}
+            rows={4}
+            spellCheck={false}
+            maxLength={12000}
+            className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-xs leading-5 text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          />
+          <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+            Arguments are sent only after you select a tool and confirm the invocation. Tool-specific schema validation remains on the Genesis service.
+          </p>
+
+          {toolsError && (
+            <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-50 p-3 text-xs leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>{toolsError}</span>
+            </div>
+          )}
+
+          {!canExecuteTools && (
+            <p className="mt-3 rounded-xl border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+              Invocation is restricted to approved Core Mesh operators. You can inspect the active tool list, but the server will reject invocation unless your account is allowlisted.
+            </p>
+          )}
+
+          {toolsLoading && signedTools.length === 0 ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading signed tool registry…
+            </div>
+          ) : signedTools.length ? (
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {signedTools.map((tool, index) => {
+                const name = String(tool?.name || "Unnamed tool");
+                const version = String(tool?.version || tool?.manifest?.version || "unknown");
+                const hash = String(tool?.artifact_hash || "");
+                const tier = Number(tool?.risk_tier ?? tool?.manifest?.risk_tier ?? 0);
+                return (
+                  <article key={name + "-" + version + "-" + hash + "-" + index} className="min-w-0 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="break-words text-sm font-black text-slate-900 dark:text-white">{name}</h4>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Version {version} · Risk tier {tier}</p>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Signed · active</span>
+                    </div>
+                    <p className="mt-3 break-all font-mono text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+                      Artifact SHA-256: {hash || "missing"}
+                    </p>
+                    <div className="mt-4 flex justify-end">
+                      {canExecuteTools && (
+                        <button
+                          type="button"
+                          onClick={() => executeSignedTool(tool)}
+                          disabled={Boolean(executingTool) || !hash}
+                          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-xs font-extrabold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {executingTool === name && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                          Invoke signed tool
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {toolsError ? "Tool list unavailable" : "No active signed tools"}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                {toolsError ? "The registry request failed. Refresh after the Genesis service and credentials are healthy." : "Only published, activated tools with valid signed-artifact and sandbox-evidence records are listed here."}
+              </p>
+            </div>
+          )}
+
+          {toolExecutionResult && (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                Last invocation result · {toolExecutionResult.name} · tier {toolExecutionResult.riskTier}
+              </div>
+              <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] leading-5 text-slate-200">{JSON.stringify(toolExecutionResult.result, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-6">
