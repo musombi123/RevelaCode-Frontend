@@ -48,7 +48,6 @@ const LOCATION_CACHE_DURATION = 30 * 60 * 1000;
 const MOBILE_PRIMARY_KEYS = [
   "home",
   "farms",
-  "crops",
   "market",
 ];
 
@@ -689,18 +688,15 @@ function DesktopNavItem({ item, active, onClick }) {
       type="button"
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${
-        active
-          ? "bg-[#087F5B] text-white shadow-sm"
-          : "text-slate-600 hover:bg-emerald-50 hover:text-[#075E46]"
-      }`}
+      className={"group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition " + (active ? "bg-[#E6F4E9] text-[#123D2F] shadow-sm" : "text-[#D3E5D9] hover:bg-white/10 hover:text-white")}
+
     >
       <Icon
         size={17}
         className={
           active
-            ? "text-white"
-            : "text-slate-400 group-hover:text-[#087F5B]"
+            ? "text-[#123D2F]"
+            : "text-[#A9C8B5] group-hover:text-white"
         }
       />
 
@@ -1091,7 +1087,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             MAIN CONTENT
         ================================================== */}
 
-        <main className="min-w-0 flex-1 bg-[#F3F6F5] pb-24 lg:pb-8">
+        <main className="min-w-0 flex-1 bg-[#F3F6F5] pb-[calc(5.5rem+env(safe-area-inset-bottom))] min-[1200px]:pb-8">
           {/* ==================================================
               COMMAND HEADER
           ================================================== */}
@@ -1119,7 +1115,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                 gap-3
                 px-3
                 sm:px-4
-                lg:px-6
+                min-[1200px]:px-8
               "
             >
               {/* SHAMBA CONTEXT */}
@@ -1311,7 +1307,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
           MOBILE BOTTOM NAVIGATION
       ==================================================== */}
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#DCE5E1] bg-white/95 px-2 py-2 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#DCE5E1] bg-white/95 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg min-[1200px]:hidden dark:border-slate-800 dark:bg-slate-950/95">
         <div className="mx-auto flex max-w-[600px] items-center gap-1">
           {MOBILE_PRIMARY_KEYS.map((key) => {
             const item = SHAMBA_SECTIONS[key];
