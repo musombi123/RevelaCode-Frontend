@@ -799,6 +799,15 @@ export function useJumuiyaApi() {
       saveFarmer: (data) =>
         postData("/shamba/farmer", data),
 
+      getFarmerVerificationQueue: () =>
+        getData("/shamba/farmer/verification-queue"),
+
+      reviewFarmerProfile: (farmerId, data) =>
+        postData(
+          `/shamba/farmer/${encodeId(farmerId, "Farmer ID")}/review`,
+          data,
+        ),
+
       // ===================================================
       // SHAMBA — FARMS
       // ===================================================
