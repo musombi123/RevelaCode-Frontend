@@ -47,15 +47,28 @@ const EMPTY_PROFILE_FORM = {
   county: "",
   town: "",
   location: "",
-  farming_type: "mixed",
-  experience_years: "0",
+  farming_type: "",
+  experience_years: "",
   primary_crops: "",
   livestock: "",
   soil_type: "",
   water_source: "",
   irrigation_available: false,
+  preferred_contact_method: "phone",
+  sub_county: "",
+  village: "",
   primary_goal: "food_and_income",
   target_market: "",
+  farm_size: "",
+  farm_size_unit: "acres",
+  declaration: false,
+  privacy_consent: false,
+  gps_consent: false,
+  latitude: null,
+  longitude: null,
+  location_accuracy: null,
+  location_source: "manual",
+  location_precision: "unspecified",
   description: "",
 };
 
@@ -147,13 +160,27 @@ function displayArea(value) {
 // =========================================================
 
 function Field({ label, children, required = false }) {
+  const fieldId = React.useId();
+
   return (
     <div>
-      <label className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+      <label htmlFor={fieldId} className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {label}
         {required && <span className="ml-1 text-[#087F5B]">*</span>}
       </label>
-      <div className="mt-1.5">{children}</div>
+      <div className="mt-1.5">
+        {React.Children.map(children, (child) => {
+          if (
+            React.isValidElement(child) &&
+            ["input", "select", "textarea"].includes(String(child.type).toLowerCase())
+          ) {
+            return React.cloneElement(child, {
+              id: child.props.id || fieldId,
+            });
+          }
+          return child;
+        })}
+      </div>
     </div>
   );
 }
@@ -503,6 +530,8 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
+  const [profileStep, setProfileStep] = useState(0);
+  const [profileFieldErrors, setProfileFieldErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -527,11 +556,14 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
           ...EMPTY_PROFILE_FORM,
           farmer_name: profile.farmer_name || "",
           phone: profile.phone || "",
+          preferred_contact_method: profile.preferred_contact_method || "phone",
           county: profile.county || "",
+          sub_county: profile.sub_county || "",
           town: profile.town || "",
+          village: profile.village || "",
           location: profile.location || "",
-          farming_type: profile.farming_type || "mixed",
-          experience_years: String(profile.experience_years ?? 0),
+          farming_type: profile.farming_type || "",
+          experience_years: profile.experience_years === null || profile.experience_years === undefined ? "" : String(profile.experience_years),
           primary_crops: Array.isArray(profile.primary_crops) ? profile.primary_crops.join(", ") : "",
           livestock: Array.isArray(profile.livestock) ? profile.livestock.join(", ") : "",
           soil_type: profile.soil_type || "",
@@ -539,6 +571,16 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
           irrigation_available: Boolean(profile.irrigation_available),
           primary_goal: profile.primary_goal || "food_and_income",
           target_market: profile.target_market || "",
+          farm_size: profile.farm_size === null || profile.farm_size === undefined ? "" : String(profile.farm_size),
+          farm_size_unit: profile.farm_size_unit || "acres",
+          declaration: Boolean(profile.declaration),
+          privacy_consent: Boolean(profile.privacy_consent),
+          gps_consent: Boolean(profile.gps_consent),
+          latitude: profile.latitude ?? null,
+          longitude: profile.longitude ?? null,
+          location_accuracy: profile.location_accuracy ?? null,
+          location_source: profile.location_source || "manual",
+          location_precision: profile.location_precision || "unspecified",
           description: profile.description || "",
         });
       } else {
@@ -601,41 +643,55 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
     loadFarmer();
   }, [loadFarmer]);
 
-  const verificationStatus = farmerProfile?.verification_status || "not_submitted";
-  const profileApproved = verificationStatus === "approved";
+  const verificationStatus = farmerProfile?.verification_status_display || farmerProfile?.verification_status || "not_submitted";
+  const profileApproved = ["approved", "verified"].includes(String(verificationStatus).toLowerCase());
   const profileCanEdit = !farmerProfile ||
-    ["not_submitted", "rejected", "more_info"].includes(verificationStatus);
+    ["not_submitted", "draft", "rejected", "more_info"].includes(String(verificationStatus).toLowerCase());
 
   const updateProfileField = useCallback((field, value) => {
     setProfileForm((current) => ({ ...current, [field]: value }));
+    setProfileFieldErrors((current) => ({ ...current, [field]: "" }));
     setProfileError("");
     setProfileMessage("");
   }, []);
 
-  const handleProfileSubmit = useCallback(async (event) => {
-    event.preventDefault();
-    if (!profileForm.farmer_name.trim() || !profileForm.phone.trim() ||
-        !profileForm.county.trim() || !profileForm.town.trim() ||
-        !profileForm.farming_type.trim()) {
-      setProfileError("Complete your name, phone, county, town and farming type before submitting.");
+  const handleProfileSubmit = useCallback(async (event, intent = "submit") => {
+    event?.preventDefault?.();
+    const errors = {};
+    if (intent === "submit") {
+      if (!profileForm.farmer_name.trim()) errors.farmer_name = "Enter your display name.";
+      if (!profileForm.phone.trim()) errors.phone = "Enter a contact phone.";
+      if (!profileForm.county.trim()) errors.county = "Choose or enter your county.";
+      if (!profileForm.town.trim()) errors.town = "Enter your town or nearest centre.";
+      if (!profileForm.declaration) errors.declaration = "Confirm the details are accurate and you are authorised to submit them.";
+      if (!profileForm.privacy_consent) errors.privacy_consent = "Consent is required to submit this profile to Shamba.";
+    }
+    const yearsInput = String(profileForm.experience_years ?? "").trim();
+    const years = yearsInput === "" ? null : Number(yearsInput);
+    if (years !== null && (!Number.isInteger(years) || years < 0 || years > 80)) errors.experience_years = "Enter a whole number from 0 to 80.";
+    setProfileFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      setProfileError("Complete the required fields shown below before continuing.");
+      const key = Object.keys(errors)[0];
+      if (["farmer_name", "phone"].includes(key)) setProfileStep(0);
+      else if (["county", "town"].includes(key)) setProfileStep(1);
+      else if (["farming_type", "experience_years"].includes(key)) setProfileStep(2);
+      else setProfileStep(4);
       return;
     }
-
-    const years = Number(profileForm.experience_years || 0);
-    if (!Number.isInteger(years) || years < 0 || years > 80) {
-      setProfileError("Farming experience must be a whole number between 0 and 80.");
-      return;
-    }
-
     try {
       setProfileSaving(true);
       setProfileError("");
       setProfileMessage("");
       const result = await saveFarmer({
+        intent,
         farmer_name: profileForm.farmer_name.trim(),
         phone: profileForm.phone.trim(),
+        preferred_contact_method: profileForm.preferred_contact_method,
         county: profileForm.county.trim(),
+        sub_county: profileForm.sub_county.trim(),
         town: profileForm.town.trim(),
+        village: profileForm.village.trim(),
         location: profileForm.location.trim(),
         farming_type: profileForm.farming_type,
         experience_years: years,
@@ -646,18 +702,26 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
         irrigation_available: Boolean(profileForm.irrigation_available),
         primary_goal: profileForm.primary_goal,
         target_market: profileForm.target_market.trim(),
+        farm_size: profileForm.farm_size === "" ? null : Number(profileForm.farm_size),
+        farm_size_unit: profileForm.farm_size_unit,
+        gps_consent: Boolean(profileForm.gps_consent),
+        latitude: profileForm.gps_consent ? profileForm.latitude : null,
+        longitude: profileForm.gps_consent ? profileForm.longitude : null,
+        location_accuracy: profileForm.gps_consent ? profileForm.location_accuracy : null,
+        location_source: profileForm.location_source,
+        location_precision: profileForm.location_precision,
+        declaration: intent === "submit" ? Boolean(profileForm.declaration) : false,
+        privacy_consent: intent === "submit" ? Boolean(profileForm.privacy_consent) : false,
         description: profileForm.description.trim(),
       });
-
-      const submitted = result?.farmer || result?.profile || result;
-      if (submitted && typeof submitted === "object" && submitted.verification_status) {
-        setFarmerProfile(submitted);
-      } else {
-        await loadFarmer();
-      }
-      setProfileMessage("Your farmer profile has been submitted. Farm registration unlocks after admin approval.");
+      const saved = result?.farmer || result?.profile || result;
+      if (saved && typeof saved === "object" && saved.verification_status) setFarmerProfile(saved);
+      else await loadFarmer();
+      setProfileMessage(intent === "draft"
+        ? "Draft saved privately. Resume the profile and submit it when you are ready."
+        : "Your farmer profile was submitted for administrator review. Farm registration unlocks after approval.");
     } catch (err) {
-      setProfileError(err?.message || "Unable to submit your farmer profile.");
+      setProfileError(err?.message || "Unable to save your farmer profile.");
     } finally {
       setProfileSaving(false);
     }
@@ -833,7 +897,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               verificationStatus === "pending" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" :
               "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
             }`}>
-              {profileApproved ? "Approved" : verificationStatus === "pending" ? "Under review" : verificationStatus === "rejected" ? "Changes required" : verificationStatus === "more_info" ? "More info needed" : "Not submitted"}
+              {profileApproved ? "Verified farmer" : String(verificationStatus).toLowerCase() === "pending" ? "Under review" : String(verificationStatus).toLowerCase() === "draft" ? "Draft saved" : String(verificationStatus).toLowerCase() === "rejected" ? "Not approved" : String(verificationStatus).toLowerCase() === "more_info" ? "More info needed" : "Not submitted"}
             </span>
           )}
         </div>
@@ -868,102 +932,82 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               )}
             </div>
           ) : (
-            <form onSubmit={handleProfileSubmit} className="space-y-4">
+            <form onSubmit={(event) => profileStep < 4 ? event.preventDefault() : handleProfileSubmit(event, "submit")} className="space-y-4">
               <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-3 text-[13px] leading-5 text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-200">
                 {verificationStatus === "rejected"
-                  ? "Your previous submission was not approved. Review the administrator's note, correct the details and resubmit."
+                  ? "Your previous submission was not approved. Read the review note, correct the details and resubmit."
                   : verificationStatus === "more_info"
-                    ? "The administrator needs additional information. Update your profile below and resubmit."
-                    : "Complete the required fields below. Shamba will submit your details for manual review; this does not verify land ownership."}
-                {farmerProfile?.verification_review_notes && (
-                  <p className="mt-2 font-semibold">Admin note: {farmerProfile.verification_review_notes}</p>
-                )}
+                    ? "The administrator needs additional information. Update relevant fields and resubmit."
+                    : verificationStatus === "draft"
+                      ? "Your saved draft is private and does not grant farm or seller permissions."
+                      : "Complete the short steps below. You do not need to provide a national ID or passport number."}
+                {(farmerProfile?.review_notes || farmerProfile?.verification_review_notes) && <p className="mt-2 font-semibold">Reviewer note: {farmerProfile.review_notes || farmerProfile.verification_review_notes}</p>}
               </div>
+              {profileError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">{profileError}</p>}
+              {profileMessage && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">{profileMessage}</p>}
+              <div className="grid grid-cols-5 gap-1.5" aria-label="Farmer profile setup steps">
+                {["About you", "Location", "Farming", "Goals", "Review"].map((label, index) => <button key={label} type="button" onClick={() => { if (index <= profileStep) setProfileStep(index); }} aria-current={profileStep === index ? "step" : undefined} className={"min-w-0 rounded-xl px-1.5 py-2 text-center text-[10px] font-black sm:px-2 sm:text-xs " + (profileStep === index ? "bg-[#123D2F] text-white" : index < profileStep ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200" : "bg-slate-100 text-slate-400 dark:bg-slate-800")}><span className="block">{index + 1}</span><span className="mt-0.5 block truncate">{label}</span></button>)}
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={5} aria-valuenow={profileStep + 1}><div className="h-full rounded-full bg-[#72A966] transition-all" style={{ width: (((profileStep + 1) / 5) * 100) + "%" }} /></div>
 
-              {profileError && (
-                <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">{profileError}</p>
-              )}
-              {profileMessage && (
-                <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[13px] leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">{profileMessage}</p>
-              )}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Full name" required>
-                  <input value={profileForm.farmer_name} onChange={(e) => updateProfileField("farmer_name", e.target.value)} className={INPUT_CLASS} autoComplete="name" required />
-                </Field>
-                <Field label="Phone number" required>
-                  <input value={profileForm.phone} onChange={(e) => updateProfileField("phone", e.target.value)} className={INPUT_CLASS} type="tel" autoComplete="tel" placeholder="+254…" required />
-                </Field>
-                <Field label="County" required>
-                  <input value={profileForm.county} onChange={(e) => updateProfileField("county", e.target.value)} className={INPUT_CLASS} autoComplete="address-level1" required />
-                </Field>
-                <Field label="Town / nearest centre" required>
-                  <input value={profileForm.town} onChange={(e) => updateProfileField("town", e.target.value)} className={INPUT_CLASS} required />
-                </Field>
-                <Field label="Village / area">
-                  <input value={profileForm.location} onChange={(e) => updateProfileField("location", e.target.value)} className={INPUT_CLASS} />
-                </Field>
-                <Field label="Farming type" required>
-                  <select value={profileForm.farming_type} onChange={(e) => updateProfileField("farming_type", e.target.value)} className={INPUT_CLASS} required>
-                    <option value="mixed">Mixed farming</option>
-                    <option value="crop">Crop farming</option>
-                    <option value="livestock">Livestock</option>
-                    <option value="horticulture">Horticulture</option>
-                    <option value="aquaculture">Aquaculture</option>
-                    <option value="agribusiness">Agribusiness</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
-                <Field label="Years of experience">
-                  <input type="number" min="0" max="80" step="1" value={profileForm.experience_years} onChange={(e) => updateProfileField("experience_years", e.target.value)} className={INPUT_CLASS} />
-                </Field>
-                <Field label="Main crops (comma-separated)">
-                  <input value={profileForm.primary_crops} onChange={(e) => updateProfileField("primary_crops", e.target.value)} className={INPUT_CLASS} placeholder="Maize, beans, tomatoes" />
-                </Field>
-                <Field label="Livestock (comma-separated)">
-                  <input value={profileForm.livestock} onChange={(e) => updateProfileField("livestock", e.target.value)} className={INPUT_CLASS} placeholder="Dairy cattle, poultry" />
-                </Field>
-                <Field label="Soil type">
-                  <input value={profileForm.soil_type} onChange={(e) => updateProfileField("soil_type", e.target.value)} className={INPUT_CLASS} />
-                </Field>
-                <Field label="Main water source">
-                  <select value={profileForm.water_source} onChange={(e) => updateProfileField("water_source", e.target.value)} className={INPUT_CLASS}>
-                    <option value="">Select water source</option>
-                    <option value="rainfall">Rainfall</option>
-                    <option value="borehole">Borehole</option>
-                    <option value="river">River</option>
-                    <option value="dam">Dam / reservoir</option>
-                    <option value="piped">Piped water</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Field>
-                <Field label="Primary goal">
-                  <select value={profileForm.primary_goal} onChange={(e) => updateProfileField("primary_goal", e.target.value)} className={INPUT_CLASS}>
-                    <option value="food_and_income">Food and income</option>
-                    <option value="commercial">Commercial production</option>
-                    <option value="subsistence">Household food</option>
-                    <option value="livestock">Livestock production</option>
-                    <option value="export">Export market</option>
-                    <option value="agribusiness">Agribusiness</option>
-                  </select>
-                </Field>
-                <Field label="Target market">
-                  <input value={profileForm.target_market} onChange={(e) => updateProfileField("target_market", e.target.value)} className={INPUT_CLASS} placeholder="Local market, cooperative…" />
-                </Field>
-                <div className="flex items-center rounded-xl border border-[#DCE5E1] px-3 py-2.5 dark:border-slate-700">
-                  <input id="shamba-irrigation-available" type="checkbox" checked={profileForm.irrigation_available} onChange={(e) => updateProfileField("irrigation_available", e.target.checked)} className="h-4 w-4 accent-emerald-700" />
-                  <label htmlFor="shamba-irrigation-available" className="ml-2 text-sm font-semibold text-slate-700 dark:text-slate-200">I have irrigation access</label>
+              {profileStep === 0 && <section className="space-y-4" aria-labelledby="profile-step-about">
+                <div><h3 id="profile-step-about" className="text-base font-black text-slate-900 dark:text-white">About you</h3><p className="mt-1 text-xs leading-5 text-slate-500">Use a display name and contact method. Shamba will not ask for identity-document numbers here.</p></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Farmer / display name" required><input value={profileForm.farmer_name} onChange={(e) => updateProfileField("farmer_name", e.target.value)} className={INPUT_CLASS} autoComplete="name" required aria-invalid={Boolean(profileFieldErrors.farmer_name)} />{profileFieldErrors.farmer_name && <span className="mt-1 block text-xs text-red-600" role="alert">{profileFieldErrors.farmer_name}</span>}</Field>
+                  <Field label="Contact phone" required><input value={profileForm.phone} onChange={(e) => updateProfileField("phone", e.target.value)} className={INPUT_CLASS} type="tel" autoComplete="tel" placeholder="+254…" required aria-invalid={Boolean(profileFieldErrors.phone)} />{profileFieldErrors.phone && <span className="mt-1 block text-xs text-red-600" role="alert">{profileFieldErrors.phone}</span>}</Field>
+                  <Field label="Preferred contact method"><select value={profileForm.preferred_contact_method} onChange={(e) => updateProfileField("preferred_contact_method", e.target.value)} className={INPUT_CLASS}><option value="phone">Phone call</option><option value="sms">SMS</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option></select></Field>
                 </div>
-              </div>
-              <Field label="About your farming operation">
-                <textarea value={profileForm.description} onChange={(e) => updateProfileField("description", e.target.value)} rows={3} maxLength={1000} className={`${INPUT_CLASS} resize-y`} placeholder="Briefly describe what you farm and your goals." />
-              </Field>
+              </section>}
 
-              <div className="flex flex-col gap-2 border-t border-[#DCE5E1] pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-xl text-[12px] leading-5 text-slate-500">Only collect details needed to operate Shamba. Do not enter national ID or passport numbers here.</p>
-                <button type="submit" disabled={profileSaving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#087F5B] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#075E46] disabled:cursor-not-allowed disabled:opacity-60">
-                  <ShieldCheck size={16} /> {profileSaving ? "Submitting…" : "Submit for verification"}
-                </button>
+              {profileStep === 1 && <section className="space-y-4" aria-labelledby="profile-step-location">
+                <div><h3 id="profile-step-location" className="text-base font-black text-slate-900 dark:text-white">Where you farm</h3><p className="mt-1 text-xs leading-5 text-slate-500">County and nearby town are required. More precise location and GPS are optional.</p></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="County" required><input value={profileForm.county} onChange={(e) => updateProfileField("county", e.target.value)} className={INPUT_CLASS} autoComplete="address-level1" required aria-invalid={Boolean(profileFieldErrors.county)} />{profileFieldErrors.county && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.county}</span>}</Field>
+                  <Field label="Sub-county (optional)"><input value={profileForm.sub_county} onChange={(e) => updateProfileField("sub_county", e.target.value)} className={INPUT_CLASS} /></Field>
+                  <Field label="Town / nearest centre" required><input value={profileForm.town} onChange={(e) => updateProfileField("town", e.target.value)} className={INPUT_CLASS} required aria-invalid={Boolean(profileFieldErrors.town)} />{profileFieldErrors.town && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.town}</span>}</Field>
+                  <Field label="Village / area (optional)"><input value={profileForm.village} onChange={(e) => updateProfileField("village", e.target.value)} className={INPUT_CLASS} /></Field>
+                  <Field label="Additional location description (optional)"><input value={profileForm.location} onChange={(e) => updateProfileField("location", e.target.value)} className={INPUT_CLASS} placeholder="e.g. near the cooperative" /></Field>
+                </div>
+                <div className="rounded-xl border border-[#DCE7DE] p-3 dark:border-slate-700"><p className="text-xs font-black text-slate-800 dark:text-white">Optional GPS sharing</p><p className="mt-1 text-xs leading-5 text-slate-500">This version does not request device coordinates automatically. Manual location is sufficient to submit a profile.</p></div>
+              </section>}
+
+              {profileStep === 2 && <section className="space-y-4" aria-labelledby="profile-step-farming">
+                <div><h3 id="profile-step-farming" className="text-base font-black text-slate-900 dark:text-white">What you grow</h3><p className="mt-1 text-xs leading-5 text-slate-500">Crop, soil and water details improve guidance but do not exclude smallholder farmers when unknown.</p></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Farming type (optional)"><select value={profileForm.farming_type} onChange={(e) => updateProfileField("farming_type", e.target.value)} className={INPUT_CLASS}><option value="">Not specified</option><option value="mixed">Mixed farming</option><option value="crop">Crop farming</option><option value="livestock">Livestock</option><option value="horticulture">Horticulture</option><option value="aquaculture">Aquaculture</option><option value="agribusiness">Agribusiness</option><option value="other">Other</option></select>{profileFieldErrors.farming_type && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.farming_type}</span>}</Field>
+                  <Field label="Years of experience"><input type="number" min="0" max="80" step="1" value={profileForm.experience_years} onChange={(e) => updateProfileField("experience_years", e.target.value)} className={INPUT_CLASS} aria-invalid={Boolean(profileFieldErrors.experience_years)} />{profileFieldErrors.experience_years && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.experience_years}</span>}</Field>
+                  <Field label="Main crops (optional)"><input value={profileForm.primary_crops} onChange={(e) => updateProfileField("primary_crops", e.target.value)} className={INPUT_CLASS} placeholder="Maize, beans, tomatoes" /></Field>
+                  <Field label="Livestock (optional)"><input value={profileForm.livestock} onChange={(e) => updateProfileField("livestock", e.target.value)} className={INPUT_CLASS} placeholder="Dairy cattle, poultry" /></Field>
+                  <Field label="Soil type (optional)"><input value={profileForm.soil_type} onChange={(e) => updateProfileField("soil_type", e.target.value)} className={INPUT_CLASS} /></Field>
+                  <Field label="Main water source (optional)"><select value={profileForm.water_source} onChange={(e) => updateProfileField("water_source", e.target.value)} className={INPUT_CLASS}><option value="">Not sure / not recorded</option><option value="rainfall">Rainfall</option><option value="borehole">Borehole</option><option value="river">River</option><option value="dam">Dam / reservoir</option><option value="piped">Piped water</option><option value="other">Other</option></select></Field>
+                  <label className="flex min-h-11 items-center rounded-xl border border-[#DCE7DE] px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.irrigation_available} onChange={(e) => updateProfileField("irrigation_available", e.target.checked)} className="h-4 w-4 accent-emerald-700" /><span className="ml-2">I have irrigation access</span></label>
+                </div>
+              </section>}
+
+              {profileStep === 3 && <section className="space-y-4" aria-labelledby="profile-step-goals">
+                <div><h3 id="profile-step-goals" className="text-base font-black text-slate-900 dark:text-white">Your goals</h3><p className="mt-1 text-xs leading-5 text-slate-500">Optional planning details help tailor market and production guidance.</p></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Primary goal"><select value={profileForm.primary_goal} onChange={(e) => updateProfileField("primary_goal", e.target.value)} className={INPUT_CLASS}><option value="food_and_income">Food and income</option><option value="commercial">Commercial production</option><option value="subsistence">Household food</option><option value="livestock">Livestock production</option><option value="export">Export market</option><option value="agribusiness">Agribusiness</option><option value="market_access">Market access</option></select></Field>
+                  <Field label="Target buyers / market (optional)"><input value={profileForm.target_market} onChange={(e) => updateProfileField("target_market", e.target.value)} className={INPUT_CLASS} placeholder="Local market, cooperative…" /></Field>
+                  <Field label="Farm-size summary (optional)"><input type="number" min="0" step="0.01" value={profileForm.farm_size} onChange={(e) => updateProfileField("farm_size", e.target.value)} className={INPUT_CLASS} placeholder="Leave blank if unknown" /></Field>
+                  <Field label="Farm-size unit"><select value={profileForm.farm_size_unit} onChange={(e) => updateProfileField("farm_size_unit", e.target.value)} className={INPUT_CLASS}><option value="acres">Acres</option><option value="hectares">Hectares</option><option value="square_metres">Square metres</option></select></Field>
+                </div>
+                <Field label="About your farming operation (optional)"><textarea value={profileForm.description} onChange={(e) => updateProfileField("description", e.target.value)} rows={3} maxLength={1000} className={INPUT_CLASS + " resize-y"} placeholder="Briefly describe your farming operation and goals." /></Field>
+              </section>}
+
+              {profileStep === 4 && <section className="space-y-4" aria-labelledby="profile-step-review">
+                <div><h3 id="profile-step-review" className="text-base font-black text-slate-900 dark:text-white">Review and submit</h3><p className="mt-1 text-xs leading-5 text-slate-500">Check the details below before sending them to Shamba’s authorized reviewers.</p></div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{[["Farmer",profileForm.farmer_name],["Contact",profileForm.phone],["Preferred contact",profileForm.preferred_contact_method],["County",profileForm.county],["Sub-county",profileForm.sub_county],["Town",profileForm.town],["Village / area",profileForm.village || profileForm.location],["Farming type",profileForm.farming_type],["Experience",profileForm.experience_years ? profileForm.experience_years + " years" : "Not supplied"],["Crops",profileForm.primary_crops],["Livestock",profileForm.livestock],["Goal",profileForm.primary_goal],["Target market",profileForm.target_market],["Farm size",profileForm.farm_size ? profileForm.farm_size + " " + profileForm.farm_size_unit : "Not supplied"]].map(([label, value]) => <div key={label} className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-900"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words text-xs font-semibold text-slate-800 dark:text-slate-200">{value || "Not supplied"}</p></div>)}</div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">Shamba uses these details to provide agricultural features and review your farmer profile. This platform review is not a title search or government certificate. Do not include national ID or passport numbers.</div>
+                <label className="flex items-start gap-3 rounded-xl border border-[#DCE7DE] p-3 text-xs leading-5 text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.declaration} onChange={(e) => updateProfileField("declaration", e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-emerald-700" /><span>I confirm this information is accurate to the best of my knowledge and I am authorized to provide it for this profile.<span className="text-red-600"> *</span>{profileFieldErrors.declaration && <span className="mt-1 block text-red-600">{profileFieldErrors.declaration}</span>}</span></label>
+                <label className="flex items-start gap-3 rounded-xl border border-[#DCE7DE] p-3 text-xs leading-5 text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.privacy_consent} onChange={(e) => updateProfileField("privacy_consent", e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-emerald-700" /><span>I consent to Shamba using these details to operate the hub and allow authorized reviewers to assess this submission.<span className="text-red-600"> *</span>{profileFieldErrors.privacy_consent && <span className="mt-1 block text-red-600">{profileFieldErrors.privacy_consent}</span>}</span></label>
+              </section>}
+
+              <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-2 border-t border-[#DCE7DE] bg-white/95 p-3 backdrop-blur sm:-mx-5 sm:flex-row sm:items-center sm:justify-between sm:px-5 dark:border-slate-800 dark:bg-slate-950/95">
+                <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={profileStep === 0 || profileSaving} onClick={() => setProfileStep((step) => Math.max(0, step - 1))} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[#DCE7DE] px-3 py-2 text-xs font-black text-slate-600 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300">Back</button>
+                  {profileStep < 4 && <button type="button" disabled={profileSaving} onClick={() => { const errors = {}; if (profileStep === 0) { if (!profileForm.farmer_name.trim()) errors.farmer_name = "Enter your display name."; if (!profileForm.phone.trim()) errors.phone = "Enter a contact phone."; } if (profileStep === 1) { if (!profileForm.county.trim()) errors.county = "Enter a county."; if (!profileForm.town.trim()) errors.town = "Enter a town or nearby centre."; }  setProfileFieldErrors((current) => ({ ...current, ...errors })); if (Object.keys(errors).length) { setProfileError("Complete the required fields shown before continuing."); return; } setProfileError(""); setProfileStep((step) => Math.min(4, step + 1)); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#123D2F] px-4 py-2 text-xs font-black text-white hover:bg-[#205A43]">Continue<ArrowRight size={14}/></button>}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end"><button type="button" disabled={profileSaving} onClick={() => handleProfileSubmit(null, "draft")} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-[#DCE7DE] bg-white px-3 py-2 text-xs font-black text-[#286947] disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-emerald-300">{profileSaving ? "Saving…" : "Save draft"}</button>{profileStep === 4 && <button type="submit" disabled={profileSaving} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[#123D2F] px-4 py-2.5 text-xs font-black text-white transition hover:bg-[#205A43] disabled:opacity-50 sm:flex-none"><ShieldCheck size={15}/>{profileSaving ? "Submitting…" : "Submit for verification"}</button>}</div>
               </div>
             </form>
           )}
