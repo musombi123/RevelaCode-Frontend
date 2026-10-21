@@ -129,6 +129,8 @@ export default function UserProfile() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [downloadState, setDownloadState] = useState("");
+  const [certificateState, setCertificateState] = useState("");
+  const [certificateMessage, setCertificateMessage] = useState("");
   const [refreshSequence, setRefreshSequence] = useState(0);
 
   const isGuest = user?.role === "guest";
@@ -224,6 +226,47 @@ export default function UserProfile() {
     }
   };
 
+  const issueAndDownloadCertificate = async () => {
+    setCertificateState("issuing");
+    setCertificateMessage("");
+    setProfileError("");
+    try {
+      const response = await authFetch(`${API_BASE}/api/accounts/certificates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({}),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.certificate_id) {
+        throw new Error(payload?.error?.message || payload?.message || `Certificate issuance failed (HTTP ${response.status}).`);
+      }
+      setCertificateMessage(payload.already_issued ? "Your existing active certificate is ready." : "Your account certificate was issued and verified against RevelaCode records.");
+      const downloadResponse = await authFetch(`${API_BASE}${payload.download_url || `/api/accounts/certificates/${encodeURIComponent(payload.certificate_id)}/download`}`, {
+        method: "GET",
+        headers: { Accept: "application/pdf" },
+      });
+      const contentType = downloadResponse.headers.get("content-type") || "";
+      if (!downloadResponse.ok || !contentType.includes("application/pdf")) {
+        const errorPayload = contentType.includes("json") ? await downloadResponse.json().catch(() => ({})) : {};
+        throw new Error(errorPayload?.error?.message || errorPayload?.message || `Certificate download failed (HTTP ${downloadResponse.status}).`);
+      }
+      const objectUrl = URL.createObjectURL(await downloadResponse.blob());
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${payload.certificate_id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      setRefreshSequence((value) => value + 1);
+    } catch (error) {
+      setProfileError(error?.message || "Unable to issue or download the account certificate.");
+      setCertificateMessage("");
+    } finally {
+      setCertificateState("");
+    }
+  };
+
   if (!user) {
     return (
       <div className="m-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-5 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
@@ -300,9 +343,17 @@ export default function UserProfile() {
               <Button variant="outline" disabled={downloadState !== ""} onClick={() => void downloadProfile("json")}>
                 <FileJson className="mr-2 h-4 w-4" /> {downloadState === "json" ? "Preparing JSON…" : "Download JSON"}
               </Button>
+              <Button variant="outline" disabled={Boolean(certificateState)} onClick={() => void issueAndDownloadCertificate()}>
+                <Award className="mr-2 h-4 w-4" /> {certificateState === "issuing" ? "Issuing certificate…" : "Issue / Download Certificate"}
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
+            {certificateMessage && (
+              <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                {certificateMessage}
+              </div>
+            )}
             {profileError && (
               <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
