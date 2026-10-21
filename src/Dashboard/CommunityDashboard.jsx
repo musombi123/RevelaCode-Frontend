@@ -1301,6 +1301,15 @@ export default function CommunityDashboard({
           </p>
         ) : null}
 
+        {activeSurface === "pulse" && promotionPosts.length ? (
+          <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/20 dark:via-slate-900 dark:to-orange-950/10 xl:hidden">
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"><Megaphone size={16}/></span><div><h3 className="text-sm font-black text-slate-900 dark:text-white">Community promotions</h3><p className="text-[10px] text-slate-500 dark:text-slate-400">Member offers and sponsored posts</p></div></div><span className="rounded-full border border-amber-200 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-amber-800 dark:border-amber-500/20 dark:text-amber-200">Promoted</span></div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {promotionPosts.slice(0, 2).map((ad, adIndex) => <button key={getPostId(ad) || `mobile-promotion-${adIndex}`} type="button" onClick={() => openPost(ad)} className="rounded-xl border border-amber-200/80 bg-white p-3 text-left transition hover:border-amber-300 dark:border-amber-500/20 dark:bg-slate-900"><span className="text-[9px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">{ad?.is_sponsored === true || ad?.sponsored === true || ad?.ad_status === "active" ? "Sponsored" : "Member promotion"}</span><span className="mt-1 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{ad?.title || ad?.headline || ad?.body || ad?.content || "Community offer"}</span><span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{ad?.author?.name || ad?.author_name || "Community member"}</span></button>)}
+            </div>
+          </section>
+        ) : null}
+
         {/* ====================================================
             SURFACE CONTENT
         ==================================================== */}
