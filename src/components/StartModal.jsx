@@ -5,6 +5,7 @@ import React, {
 } from "react";
 
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 
 import {
   ArrowRight,
@@ -29,13 +30,13 @@ export default function StartModal() {
   const {
     login,
     guestMode,
+    authFetch,
+    getAccessToken,
   } = useAuth();
+  const location = useLocation();
 
   const baseUrl =
-    import.meta.env.VITE_REVELACODE_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_URL ||
-    "";
+    String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
   // =======================================================
   // STATE
@@ -142,10 +143,26 @@ export default function StartModal() {
   // =======================================================
 
   const goHomeByRole = (role) => {
-    // Preserve the invitation route so authentication returns to the pending invite.
+    // Leave invitation acceptance in place; its own workflow consumes the session.
     if (window.location.pathname === "/elimu-invitation") return;
 
-    switch (role) {
+    // Return to the protected URL that caused AuthGate to request a login.
+    // Only same-origin absolute paths are accepted; external URLs are ignored.
+    const from = location?.state?.from;
+    const fromPath = typeof from === "string" ? from : from?.pathname;
+    const returnPath = fromPath
+      ? `${fromPath}${typeof from === "object" ? (from.search || "") + (from.hash || "") : ""}`
+      : "";
+    if (
+      returnPath.startsWith("/") &&
+      !returnPath.startsWith("//") &&
+      !["/login", "/admin/login", "/support/login"].includes(fromPath)
+    ) {
+      window.location.replace(returnPath);
+      return;
+    }
+
+    switch (String(role || "").trim().toLowerCase()) {
       case "admin":
         window.location.replace(
           "/admin/dashboard"
@@ -181,21 +198,33 @@ export default function StartModal() {
       );
     }
 
-    const res = await fetch(
-      `${baseUrl}${path}`,
-      {
-        method: "POST",
+    const url = `${baseUrl}${path}`;
+    const headers = {
+      "Content-Type": "application/json",
+    };
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+    // Optional license claims stay in storage and are never hard-coded.
+    try {
+      const license =
+        localStorage.getItem("revela_license") ||
+        localStorage.getItem("revela_license_token") ||
+        "";
+      if (license) headers["X-Revela-License"] = license;
+    } catch {
+      // Continue with JWT authentication if storage is restricted.
+    }
 
-        body: JSON.stringify(
-          payload
-        ),
-      }
-    );
+    const requestOptions = {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    };
+
+    // authFetch attaches the latest JWT and retries once after a successful
+    // refresh. Modal visibility/close actions never clear authentication.
+    const res = typeof authFetch === "function"
+      ? await authFetch(url, requestOptions)
+      : await fetch(url, requestOptions);
 
     const data =
       await res
@@ -356,6 +385,17 @@ const completeLogin = (data = {}) => {
     user?.tokenType ||
     "Bearer";
 
+  const resolvedRefreshToken =
+    data?.refresh_token ||
+    data?.refreshToken ||
+    level1?.refresh_token ||
+    level1?.refreshToken ||
+    level2?.refresh_token ||
+    level2?.refreshToken ||
+    user?.refresh_token ||
+    user?.refreshToken ||
+    "";
+
   /*
    * -------------------------------------------------------
    * USER ID
@@ -509,27 +549,8 @@ const completeLogin = (data = {}) => {
    */
 
   if (!accessToken) {
-    console.error(
-      "LOGIN SUCCEEDED BUT NO ACCESS TOKEN WAS FOUND.",
-      {
-        response: data,
-        level1,
-        level2,
-        user,
-        topLevelKeys: Object.keys(
-          data || {}
-        ),
-        level1Keys: Object.keys(
-          level1 || {}
-        ),
-        level2Keys: Object.keys(
-          level2 || {}
-        ),
-        userKeys: Object.keys(
-          user || {}
-        ),
-      }
-    );
+    // Never log authentication responses, which may contain credentials.
+    console.error("Login response did not include an access token.");
 
     throw new Error(
       "Login succeeded, but the backend did not provide an access token."
@@ -597,6 +618,12 @@ const completeLogin = (data = {}) => {
 
     tokenType,
 
+    refresh_token:
+      resolvedRefreshToken,
+
+    refreshToken:
+      resolvedRefreshToken,
+
     expires_in:
       expiresIn,
 
@@ -605,52 +632,37 @@ const completeLogin = (data = {}) => {
 
   /*
    * -------------------------------------------------------
-   * PERSIST TOKEN
+   * UPDATE CENTRAL AUTH CONTEXT
    * -------------------------------------------------------
    */
 
-  localStorage.setItem(
-    "revelacode_access_token",
-    accessToken
-  );
+  // Keep credentials outside the cached user/profile object. AuthContext owns
+  // the single persistence path and applies the legacy-key migration policy.
+  const safeAuthUser = { ...authUser };
+  for (const key of [
+    "accessToken", "access_token", "refreshToken", "refresh_token", "token",
+    "apiKey", "api_key", "password", "password_hash", "secret",
+  ]) {
+    delete safeAuthUser[key];
+  }
 
-  localStorage.setItem(
-    "revelacode_token_type",
-    tokenType
-  );
-
-  /*
-   * Compatibility keys
-   */
-
-  localStorage.setItem(
-    "access_token",
-    accessToken
-  );
-
-  localStorage.setItem(
-    "token",
-    accessToken
-  );
+  login({
+    user: safeAuthUser,
+    access_token: accessToken,
+    token_type: tokenType,
+    refresh_token: resolvedRefreshToken,
+  });
 
   /*
    * -------------------------------------------------------
-   * UPDATE AUTH CONTEXT
-   * -------------------------------------------------------
-   */
-
-  login(authUser);
-
-  /*
-   * -------------------------------------------------------
-   * VERIFY PERSISTENCE
+   * VERIFY PERSISTENCE WITHOUT READING/LOGGING THE SECRET
    * -------------------------------------------------------
    */
 
   const storedToken =
-    localStorage.getItem(
-      "revelacode_access_token"
-    );
+    typeof getAccessToken === "function"
+      ? getAccessToken()
+      : "";
 
   if (!storedToken) {
     throw new Error(
@@ -684,11 +696,10 @@ const completeLogin = (data = {}) => {
    */
 
   return {
-    user: authUser,
+    user: safeAuthUser,
     role: resolvedRole,
     fullName: resolvedFullName,
     contact: resolvedContact,
-    accessToken,
     tokenType,
   };
 };

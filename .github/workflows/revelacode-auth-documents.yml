@@ -1,0 +1,25 @@
+name: RevelaCode auth and account documents
+
+on:
+  push:
+    branches:
+      - feat/usect-foundry-fastapi-native
+  pull_request:
+    branches:
+      - feat/usect-foundry-fastapi-native
+
+jobs:
+  frontend-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Test token persistence and AuthGate contracts
+        run: npm run test:auth
+      - name: Build production frontend
+        run: npm run build

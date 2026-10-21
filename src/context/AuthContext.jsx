@@ -7,6 +7,14 @@ import {
   useState,
   useCallback,
 } from "react";
+import {
+  readAccessToken as readStoredAccessToken,
+  readRefreshToken,
+  readTokenType as readStoredTokenType,
+  persistTokens,
+  clearStoredTokens,
+} from "@/auth/tokenStorage.mjs";
+import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
 
 /* =========================================================
    CONTEXT
@@ -19,7 +27,7 @@ const STORAGE_KEY =
   "revela_auth";
 
 const TOKEN_KEY =
-  "revelacode_access_token";
+  "revela_jwt";
 
 const TOKEN_TYPE_KEY =
   "revelacode_token_type";
@@ -33,6 +41,7 @@ const LEGACY_TOKEN_KEY =
 
 const LEGACY_TOKEN_ALIAS =
   "token";
+
 
 
 /* =========================================================
@@ -78,120 +87,24 @@ export function AuthProvider({
   ======================================================= */
 
   const readAccessToken =
-    useCallback(() => {
-      try {
-        return (
-          localStorage.getItem(
-            TOKEN_KEY
-          ) ||
-          localStorage.getItem(
-            LEGACY_TOKEN_KEY
-          ) ||
-          localStorage.getItem(
-            LEGACY_TOKEN_ALIAS
-          ) ||
-          ""
-        );
-      } catch {
-        return "";
-      }
-    }, []);
+    useCallback(() => readStoredAccessToken(), []);
 
 
   const readTokenType =
-    useCallback(() => {
-      try {
-        return (
-          localStorage.getItem(
-            TOKEN_TYPE_KEY
-          ) ||
-          "Bearer"
-        );
-      } catch {
-        return "Bearer";
-      }
-    }, []);
+    useCallback(() => readStoredTokenType(), []);
 
 
   const persistToken =
     useCallback(
-      (
-        accessToken,
-        tokenType = "Bearer"
-      ) => {
-        if (!accessToken) {
-          return false;
-        }
-
-        const normalizedTokenType =
-          tokenType ||
-          "Bearer";
-
-        try {
-          /*
-           * Canonical storage.
-           */
-          localStorage.setItem(
-            TOKEN_KEY,
-            accessToken
-          );
-
-          localStorage.setItem(
-            TOKEN_TYPE_KEY,
-            normalizedTokenType
-          );
-
-          /*
-           * Compatibility storage.
-           */
-          localStorage.setItem(
-            LEGACY_TOKEN_KEY,
-            accessToken
-          );
-
-          localStorage.setItem(
-            LEGACY_TOKEN_ALIAS,
-            accessToken
-          );
-
-          return true;
-        } catch (error) {
-          console.error(
-            "Failed to persist authentication token:",
-            error
-          );
-
-          return false;
-        }
-      },
+      (accessToken, tokenType = "Bearer", refreshToken = "") =>
+        persistTokens({ accessToken, tokenType, refreshToken }),
       []
     );
 
 
   const clearToken =
     useCallback(() => {
-      try {
-        localStorage.removeItem(
-          TOKEN_KEY
-        );
-
-        localStorage.removeItem(
-          TOKEN_TYPE_KEY
-        );
-
-        localStorage.removeItem(
-          LEGACY_TOKEN_KEY
-        );
-
-        localStorage.removeItem(
-          LEGACY_TOKEN_ALIAS
-        );
-      } catch (error) {
-        console.warn(
-          "Failed to clear authentication tokens:",
-          error
-        );
-      }
+      clearStoredTokens();
     }, []);
 
 
@@ -220,7 +133,7 @@ export function AuthProvider({
             parsed?.user
           ) {
             setUser(
-              parsed.user
+              sanitizeSessionIdentity(parsed.user)
             );
           }
 
@@ -662,6 +575,33 @@ export function AuthProvider({
 
 
   /* =======================================================
+     RESOLVE REFRESH TOKEN
+  ======================================================= */
+
+  const resolveRefreshToken =
+    useCallback(
+      (payload = {}) => {
+        const root = payload || {};
+        const level1 = root?.data || {};
+        const level2 = level1?.data || {};
+        const userData = resolveUserData(payload);
+        return (
+          root?.refresh_token ||
+          root?.refreshToken ||
+          level1?.refresh_token ||
+          level1?.refreshToken ||
+          level2?.refresh_token ||
+          level2?.refreshToken ||
+          userData?.refresh_token ||
+          userData?.refreshToken ||
+          ""
+        );
+      },
+      [resolveUserData]
+    );
+
+
+  /* =======================================================
      LOGIN
   ======================================================= */
 
@@ -699,15 +639,16 @@ export function AuthProvider({
             payload
           );
 
+        const refreshToken =
+          resolveRefreshToken(payload);
+
         /*
          * Authenticated sessions MUST contain
          * a token.
          */
         if (!accessToken) {
-          console.error(
-            "Login payload received without access token:",
-            payload
-          );
+          // Never log the authentication payload; it may contain credentials.
+          console.error("Login payload did not include an access token.");
 
           throw new Error(
             "Login succeeded but no access token was returned by the backend."
@@ -718,8 +659,8 @@ export function AuthProvider({
          * Normalize user identity.
          */
         const normalizedUser =
-          normalizeUser(
-            userData
+          sanitizeSessionIdentity(
+            normalizeUser(userData)
           );
 
         /*
@@ -733,11 +674,7 @@ export function AuthProvider({
           !normalizedUser.id
         ) {
           console.warn(
-            "Authenticated token received but no user identity was found.",
-            {
-              payload,
-              userData,
-            }
+            "Authenticated token received without a complete user identity."
           );
         }
 
@@ -780,7 +717,8 @@ export function AuthProvider({
         const tokenStored =
           persistToken(
             accessToken,
-            tokenType
+            tokenType,
+            refreshToken
           );
 
         if (!tokenStored) {
@@ -801,6 +739,36 @@ export function AuthProvider({
           throw new Error(
             "Access token could not be persisted in localStorage."
           );
+        }
+
+        /*
+         * The existing account login may return only an access token. Exchange
+         * that still-valid JWT for a dedicated refresh token when the configured
+         * FastAPI auth endpoint is available. Failure is non-fatal for login;
+         * tokens are retained and the API will report whether refresh is set up.
+         */
+        const apiBase = String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+        if (!refreshToken && apiBase && typeof fetch === "function") {
+          const refreshUrl = `${apiBase}/api/auth/refresh`;
+          void fetch(refreshUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ refresh_token: storedToken }),
+          })
+            .then(async (response) => {
+              const session = await response.json().catch(() => ({}));
+              if (!response.ok || !session?.refresh_token) return;
+              const renewedAccess = session?.access_token || storedToken;
+              persistToken(
+                renewedAccess,
+                session?.token_type || session?.tokenType || tokenType,
+                session.refresh_token,
+              );
+            })
+            .catch(() => {
+              // Keep the successfully logged-in session; lack of refresh support
+              // is reported when an authenticated API actually requires it.
+            });
         }
 
         /*
@@ -854,6 +822,7 @@ export function AuthProvider({
         normalizeUser,
         persistToken,
         resolveAccessToken,
+        resolveRefreshToken,
         resolveTokenType,
         resolveUserData,
       ]
@@ -999,98 +968,138 @@ export function AuthProvider({
 
 
   /* =======================================================
-     AUTHENTICATED REQUEST
+     AUTHENTICATED REQUEST + SINGLE REFRESH RETRY
   ======================================================= */
 
   const authFetch =
     useCallback(
-      async (
-        url,
-        options = {}
-      ) => {
-        const token =
-          getAccessToken();
+      async (url, options = {}) => {
+        const token = getAccessToken();
+        const tokenType = getTokenType();
+        const headers = new Headers(options.headers || {});
 
-        const tokenType =
-          getTokenType();
-
-        /*
-         * Headers safely support:
-         * - plain objects
-         * - Headers instances
-         * - different header casing
-         */
-        const headers =
-          new Headers(
-            options.headers || {}
-          );
-
-        /*
-         * Set JSON content type only when appropriate.
-         */
         if (
           options.body &&
-          !(
-            options.body instanceof
-            FormData
-          ) &&
-          !headers.has(
-            "Content-Type"
-          )
+          typeof FormData !== "undefined" &&
+          !(options.body instanceof FormData) &&
+          !headers.has("Content-Type")
         ) {
-          headers.set(
-            "Content-Type",
-            "application/json"
-          );
+          headers.set("Content-Type", "application/json");
         }
 
-        /*
-         * Attach JWT unless the caller explicitly
-         * supplied Authorization.
-         */
-        if (
-          token &&
-          tokenType &&
-          !headers.has(
-            "Authorization"
-          )
-        ) {
-          headers.set(
-            "Authorization",
-            `${tokenType} ${token}`
-          );
+        if (token && !headers.has("Authorization")) {
+          headers.set("Authorization", `${tokenType || "Bearer"} ${String(token).replace(/^Bearer\s+/i, "")}`);
         }
 
-        const response =
-          await fetch(
-            url,
-            {
-              ...options,
-              headers,
-            }
-          );
-
-        /*
-         * A real 401 means the backend rejected
-         * the current credentials.
-         */
-        if (
-          response.status ===
-          401
-        ) {
-          clearToken();
-
-          /*
-           * Remove the stale identity too.
-           */
-          try {
-            localStorage.removeItem(
-              STORAGE_KEY
-            );
-          } catch {
-            // Ignore.
+        try {
+          const license =
+            localStorage.getItem("revela_license") ||
+            localStorage.getItem("revela_license_token") ||
+            "";
+          if (license && !headers.has("X-Revela-License")) {
+            headers.set("X-Revela-License", license);
           }
+        } catch {
+          // The JWT still works when optional browser storage is blocked.
+        }
 
+        const requestUrl = String(url);
+        const isAuthEntryRequest = /\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:[?#]|$)/i.test(requestUrl);
+        let response = await fetch(url, { ...options, headers });
+
+        if (
+          response.status === 401 &&
+          !requestUrl.includes("/api/auth/refresh") &&
+          !isAuthEntryRequest
+        ) {
+          const refreshToken = readRefreshToken();
+
+          if (refreshToken) {
+            try {
+              let refreshUrl = "";
+              const configuredBase = String(
+                import.meta.env.VITE_API_URL ||
+                ""
+              ).trim().replace(/\/+$/, "");
+
+              refreshUrl = configuredBase ? `${configuredBase}/api/auth/refresh` : "/api/auth/refresh";
+
+              const refreshResponse = await fetch(refreshUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ refresh_token: refreshToken }),
+              });
+
+              const refreshPayload = await refreshResponse.json().catch(() => ({}));
+              const refreshData = refreshPayload?.data || {};
+              const nextToken =
+                refreshPayload?.access_token ||
+                refreshPayload?.accessToken ||
+                refreshPayload?.token ||
+                refreshData?.access_token ||
+                refreshData?.accessToken ||
+                refreshData?.token ||
+                "";
+
+              if (refreshResponse.ok && nextToken) {
+                const nextTokenType =
+                  refreshPayload?.token_type ||
+                  refreshPayload?.tokenType ||
+                  refreshData?.token_type ||
+                  refreshData?.tokenType ||
+                  "Bearer";
+                const nextRefreshToken =
+                  refreshPayload?.refresh_token ||
+                  refreshPayload?.refreshToken ||
+                  refreshData?.refresh_token ||
+                  refreshData?.refreshToken ||
+                  refreshToken;
+
+                persistToken(nextToken, nextTokenType, nextRefreshToken);
+
+                const retryHeaders = new Headers(options.headers || {});
+                if (
+                  options.body &&
+                  typeof FormData !== "undefined" &&
+                  !(options.body instanceof FormData) &&
+                  !retryHeaders.has("Content-Type")
+                ) {
+                  retryHeaders.set("Content-Type", "application/json");
+                }
+                retryHeaders.set(
+                  "Authorization",
+                  `${nextTokenType} ${String(nextToken).replace(/^Bearer\s+/i, "")}`
+                );
+
+                try {
+                  const license =
+                    localStorage.getItem("revela_license") ||
+                    localStorage.getItem("revela_license_token") ||
+                    "";
+                  if (license && !retryHeaders.has("X-Revela-License")) {
+                    retryHeaders.set("X-Revela-License", license);
+                  }
+                } catch {
+                  // Continue without an optional license header.
+                }
+
+                response = await fetch(url, { ...options, headers: retryHeaders });
+              }
+            } catch (error) {
+              console.warn("JWT refresh could not complete; preserving stored tokens.", error);
+            }
+          }
+        }
+
+        if (response.status === 401) {
+          // A 401 after the one permitted refresh/retry means the session is
+          // no longer accepted. Clear stale credentials, not just React state.
+          clearToken();
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // Ignore blocked storage.
+          }
           setUser(null);
           setIsGuest(false);
         }
@@ -1100,6 +1109,7 @@ export function AuthProvider({
       [
         getAccessToken,
         getTokenType,
+        persistToken,
         clearToken,
       ]
     );
