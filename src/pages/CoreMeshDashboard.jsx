@@ -341,7 +341,7 @@ export default function CoreMeshDashboard() {
               <DataPoint label="ZERO dispatcher" value={configuration.zero_tools_ready ? "Configured" : "Missing configuration"} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Genesis registry" value={configuration.genesis_registry_ready ? "Reachable" : "Unavailable"} />
-              <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured ? "Configured" : "Missing"} />
+              <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
               <DataPoint label="Genesis tool catalog" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
               <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
@@ -366,7 +366,17 @@ export default function CoreMeshDashboard() {
             const core = cores[key] || {};
             const Icon = item.icon;
             const colors = colorClasses[item.color];
-            const mode = core.model_free === false ? "Model-assisted" : "Model-free";
+            const mode = key === "one"
+              ? core.model_assisted === true
+                ? "Model-assisted"
+                : core.model_assisted === false
+                  ? "Standalone"
+                  : "Unknown"
+              : core.model_free === false
+                ? "Model-assisted"
+                : core.model_free === true
+                  ? "Model-free"
+                  : "Unknown";
             return (
               <article key={key} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/40">
                 <div className={"h-1 w-full bg-gradient-to-r " + colors.line} />
