@@ -1151,7 +1151,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                         sm:text-base
                       "
                     >
-                      Farm intelligence workspace
+                      Your farm command centre
                     </div>
                   </div>
 
