@@ -14,6 +14,7 @@ import {
   persistTokens,
   clearStoredTokens,
 } from "@/auth/tokenStorage.mjs";
+import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
 
 /* =========================================================
    CONTEXT
@@ -40,6 +41,7 @@ const LEGACY_TOKEN_KEY =
 
 const LEGACY_TOKEN_ALIAS =
   "token";
+
 
 
 /* =========================================================
@@ -131,7 +133,7 @@ export function AuthProvider({
             parsed?.user
           ) {
             setUser(
-              parsed.user
+              sanitizeSessionIdentity(parsed.user)
             );
           }
 
@@ -645,10 +647,8 @@ export function AuthProvider({
          * a token.
          */
         if (!accessToken) {
-          console.error(
-            "Login payload received without access token:",
-            payload
-          );
+          // Never log the authentication payload; it may contain credentials.
+          console.error("Login payload did not include an access token.");
 
           throw new Error(
             "Login succeeded but no access token was returned by the backend."
@@ -659,8 +659,8 @@ export function AuthProvider({
          * Normalize user identity.
          */
         const normalizedUser =
-          normalizeUser(
-            userData
+          sanitizeSessionIdentity(
+            normalizeUser(userData)
           );
 
         /*
@@ -674,11 +674,7 @@ export function AuthProvider({
           !normalizedUser.id
         ) {
           console.warn(
-            "Authenticated token received but no user identity was found.",
-            {
-              payload,
-              userData,
-            }
+            "Authenticated token received without a complete user identity."
           );
         }
 
@@ -1096,8 +1092,9 @@ export function AuthProvider({
         }
 
         if (response.status === 401) {
-          // Keep token storage intact. Protected routes can redirect to login,
-          // but only the explicit logout action deletes persisted credentials.
+          // A 401 after the one permitted refresh/retry means the session is
+          // no longer accepted. Clear stale credentials, not just React state.
+          clearToken();
           try {
             localStorage.removeItem(STORAGE_KEY);
           } catch {
@@ -1113,6 +1110,7 @@ export function AuthProvider({
         getAccessToken,
         getTokenType,
         persistToken,
+        clearToken,
       ]
     );
 

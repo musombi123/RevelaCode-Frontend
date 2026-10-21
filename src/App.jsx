@@ -66,36 +66,18 @@ function InternalDashboard() {
  * according to the authenticated user's role.
  */
 function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600" />
-          Checking platform access…
-        </div>
-      </div>
-    );
-  }
-
-  const role = String(user?.role || "").trim().toLowerCase();
-  const platformAdminRoles = ["admin", "platform_admin", "super_admin", "revelacode_admin"];
-  const roleAllowed = requiredRole === "admin"
-    ? platformAdminRoles.includes(role)
-    : role === requiredRole;
-
-  if (!user || !roleAllowed) {
-    return <Navigate to="/pages" replace />;
-  }
+  const requiredRoles = requiredRole === "admin"
+    ? ["admin", "platform_admin", "super_admin", "revelacode_admin"]
+    : [requiredRole];
 
   return (
-    <Layout>
-      <Pages initialAdminTab={initialAdminTab} />
-    </Layout>
+    <AuthGate requiredRoles={requiredRoles}>
+      <Layout>
+        <Pages initialAdminTab={initialAdminTab} />
+      </Layout>
+    </AuthGate>
   );
 }
-
 function isPlatformHostname() {
   const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configured = String(import.meta.env.VITE_PLATFORM_HOSTNAMES || "")
