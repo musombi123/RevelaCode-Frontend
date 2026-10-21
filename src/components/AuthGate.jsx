@@ -138,5 +138,7 @@ export default function AuthGate({ children, requiredRoles = [] }) {
     );
   }
 
-  return state === "authenticated" ? <>{children}</> : null;
+  if (state !== "authenticated") return null;
+
+  return <>{children}</>;
 }

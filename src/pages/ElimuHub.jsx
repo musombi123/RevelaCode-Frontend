@@ -61,7 +61,7 @@ export default function ElimuHub() {
     setError("");
     try {
       if (!getAccessToken()) throw new Error("Sign in before opening the Elimu learning hub.");
-      const response = await authFetch(apiUrl("/api/elimu/hubs"), {
+      const response = await authFetch(apiUrl("/api/study/elimu/hubs"), {
         method: "GET",
         headers: { Accept: "application/json" },
       });
@@ -99,7 +99,7 @@ export default function ElimuHub() {
     setError("");
     setNotice("");
     try {
-      const response = await authFetch(apiUrl(`/api/elimu/hubs/${encodeURIComponent(hubId)}`), {
+      const response = await authFetch(apiUrl(`/api/study/elimu/hubs/${encodeURIComponent(hubId)}`), {
         method: "GET",
         headers: { Accept: "application/json" },
       });
@@ -132,7 +132,7 @@ export default function ElimuHub() {
     setNotice("");
     setCertificate(null);
     try {
-      const response = await authFetch(apiUrl("/api/elimu/progress"), {
+      const response = await authFetch(apiUrl("/api/study/elimu/progress"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -167,7 +167,7 @@ export default function ElimuHub() {
     setError("");
     setNotice("");
     try {
-      const response = await authFetch(apiUrl("/api/certificates/generate"), {
+      const response = await authFetch(apiUrl("/api/study/elimu/certificates/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ hub_id: String(hub.id) }),
@@ -191,7 +191,7 @@ export default function ElimuHub() {
     setBusy("download");
     setError("");
     try {
-      const response = await authFetch(apiUrl(`/api/certificates/${encodeURIComponent(id)}`), {
+      const response = await authFetch(apiUrl(`/api/study/elimu/certificates/${encodeURIComponent(id)}`), {
         method: "GET",
         headers: { Accept: "application/pdf" },
       });
