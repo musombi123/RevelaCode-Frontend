@@ -104,29 +104,49 @@ export default function UsectZeroConsole() {
     if (typeof auth?.getAccessToken === "function") return await auth.getAccessToken();
     return user?.accessToken || user?.access_token || "";
   }, [auth, user]);
+  const authenticatedFetch = auth?.authFetch;
 
   const request = useCallback(async (path, options = {}) => {
     const accessToken = await getToken();
-    const response = await fetch(API_BASE + path, {
-      ...options,
-      headers: {
-        Accept: "application/json",
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...(accessToken ? { Authorization: "Bearer " + String(accessToken).replace(/^Bearer\s+/i, "") } : {}),
-        ...(options.headers || {}),
-      },
-    });
+    const url = API_BASE + path;
+    const headers = {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    };
+    const response = typeof authenticatedFetch === "function"
+      ? await authenticatedFetch(url, { ...options, headers })
+      : await fetch(url, {
+          ...options,
+          headers: {
+            ...headers,
+            ...(accessToken ? { Authorization: "Bearer " + String(accessToken).replace(/^Bearer\s+/i, "") } : {}),
+          },
+        });
     const raw = await response.text();
     let data = {};
     try { data = raw ? JSON.parse(raw) : {}; } catch { data = { message: raw }; }
     if (!response.ok) {
-      const error = new Error(data?.message || data?.error || data?.detail || data?.code || ("Request failed (" + response.status + ")"));
+      const candidate =
+        data?.error?.message ||
+        data?.detail?.message ||
+        data?.message?.message ||
+        data?.message ||
+        (typeof data?.error === "string" ? data.error : data?.error?.code) ||
+        (typeof data?.detail === "string" ? data.detail : null) ||
+        data?.code ||
+        ("Request failed (" + response.status + ")");
+      let message = typeof candidate === "string" ? candidate : "";
+      if (!message && candidate && typeof candidate === "object") {
+        try { message = JSON.stringify(candidate); } catch { /* use status fallback */ }
+      }
+      const error = new Error(message || ("Request failed (" + response.status + ")"));
       error.status = response.status;
       error.payload = data;
       throw error;
     }
     return data;
-  }, [getToken]);
+  }, [authenticatedFetch, getToken]);
 
   const refresh = useCallback(async (quiet = false) => {
     if (!quiet) setRefreshing(true);
