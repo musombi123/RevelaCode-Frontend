@@ -25,7 +25,7 @@ import {
   Sparkles,
   Target,
   Users,
-  UserRound,
+  User,
   UserPlus,
   X,
 } from "lucide-react";
@@ -1046,7 +1046,7 @@ export default function CommunityDashboard({
                 Explore marketplace
               </button>
               <button type="button" onClick={() => navigate("community-people")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10">
-                <UserRound size={15} /> Member directory
+                <User size={15} /> Member directory
               </button>
               <button type="button" onClick={() => navigate("community-invite-members")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-400/15 px-4 py-3 text-xs font-black text-emerald-100 transition hover:bg-emerald-400/25">
                 <UserPlus size={15} /> Invite members
@@ -1069,7 +1069,7 @@ export default function CommunityDashboard({
 
         <section className="grid gap-3 md:grid-cols-3">
           <button type="button" onClick={() => navigate("community-people")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><UserRound size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Member directory</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Find the people contributing to Community.</span></span><ArrowRight size={15} className="text-slate-400"/>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><User size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Member directory</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Find the people contributing to Community.</span></span><ArrowRight size={15} className="text-slate-400"/>
           </button>
           <button type="button" onClick={() => navigate("community-invite-members")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"><UserPlus size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Invite members</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Bring someone new into the circle.</span></span><ArrowRight size={15} className="text-slate-400"/>
