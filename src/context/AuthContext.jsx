@@ -746,6 +746,36 @@ export function AuthProvider({
         }
 
         /*
+         * The existing account login may return only an access token. Exchange
+         * that still-valid JWT for a dedicated refresh token when the configured
+         * FastAPI auth endpoint is available. Failure is non-fatal for login;
+         * tokens are retained and the API will report whether refresh is set up.
+         */
+        if (!refreshToken && typeof fetch === "function") {
+          const apiBase = String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+          const refreshUrl = apiBase ? `${apiBase}/api/auth/refresh` : "/api/auth/refresh";
+          void fetch(refreshUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ refresh_token: storedToken }),
+          })
+            .then(async (response) => {
+              const session = await response.json().catch(() => ({}));
+              if (!response.ok || !session?.refresh_token) return;
+              const renewedAccess = session?.access_token || storedToken;
+              persistToken(
+                renewedAccess,
+                session?.token_type || session?.tokenType || tokenType,
+                session.refresh_token,
+              );
+            })
+            .catch(() => {
+              // Keep the successfully logged-in session; lack of refresh support
+              // is reported when an authenticated API actually requires it.
+            });
+        }
+
+        /*
          * Helpful development logging.
          */
         console.info(
