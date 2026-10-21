@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import BiasharaWebsiteBuilder from "@/Dashboard/Biashara/BiasharaWebsiteBuilder.jsx";
+import BiasharaContractsWorkspace from "@/Dashboard/Biashara/BiasharaContractsWorkspace.jsx";
 
 const ROUTES = [
   { key: "products", label: "Products", icon: Package },
@@ -42,6 +43,11 @@ const TITLES = {
   "biashara-analytics": ["Business analytics", "Review metrics returned by your business dashboard API."],
   "biashara-intelligence": ["Business intelligence", "Use your available business data to identify operational priorities."],
   notifications: ["Business alerts", "Actionable alerts derived from your currently loaded business data."],
+  finance: ["Finance", "Invoices and payment allocation records."],
+  automations: ["Automations", "Configure operational rules and review execution readiness."],
+  sync: ["Sync Centre", "Track synchronization requests and processing status."],
+  team: ["Team management", "Manage business membership and invitation records."],
+  "business-switch": ["Business switching", "Choose an accessible business workspace."],
 };
 
 function valueOf(value, fallback = 0) {
