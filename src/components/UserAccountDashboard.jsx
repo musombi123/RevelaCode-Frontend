@@ -61,12 +61,7 @@ const Notifications = React.lazy(
    API BASE
 ========================================================= */
 
-const API_BASE = (
-  import.meta.env.VITE_REVELACODE_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  import.meta.env.VITE_API_URL ||
-  ""
-).replace(/\/+$/, "");
+const API_BASE = String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
 /* =========================================================
    MENU CONFIG
