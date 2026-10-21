@@ -372,6 +372,10 @@ export default function BiasharaInternalWorkspace({
     return alerts;
   }, [completeness, pendingOrders, lowStock, business]);
 
+  if (["finance", "automations", "sync", "team", "business-switch"].includes(route)) {
+    return <BiasharaContractsWorkspace route={route} business={business} onRefresh={onRefresh} />;
+  }
+
   return (
     <div className="min-h-full bg-[#f4f7fb] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-screen-2xl space-y-6">
