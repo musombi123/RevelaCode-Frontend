@@ -315,7 +315,7 @@ export default function UserProfile() {
           </div>
           <div className="flex gap-3">
             <GraduationCap className="mt-0.5 h-5 w-5 text-indigo-600" />
-            <div><p className="text-xs text-slate-500">Hubs in use</p><p className="font-medium text-slate-800 dark:text-slate-100">{hubs.length}</p></div>
+            <div><p className="text-xs text-slate-500">Recorded hubs</p><p className="font-medium text-slate-800 dark:text-slate-100">{hubs.length}</p></div>
           </div>
           <div className="flex gap-3">
             <Award className="mt-0.5 h-5 w-5 text-indigo-600" />
