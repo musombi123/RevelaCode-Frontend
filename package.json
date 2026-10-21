@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "vision:assets": "node scripts/fetch-free-vision-assets.mjs"
+    "vision:assets": "node scripts/fetch-free-vision-assets.mjs",
+    "test:auth": "node --test tests/token-storage.test.mjs"
   },
   "engines": {
     "node": "20.x"
