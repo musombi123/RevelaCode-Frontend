@@ -65,8 +65,10 @@ function HubCard({ hub }) {
             {firstValue(hub.name, hub.title, hub.hub_name, "Unnamed hub")}
           </h4>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            {firstValue(hub.description, "No description was returned for this hub.")}
+            {firstValue(hub.description, hub.institution ? `Institution: ${hub.institution}` : "", "No description was returned for this hub.")}
           </p>
+          {hub.role && <p className="mt-2 text-xs font-medium text-indigo-700 dark:text-indigo-300">Recorded hub role: {hub.role}</p>}
+          {hub.joined_at && <p className="mt-1 text-xs text-slate-500">Affiliation recorded: {dateLabel(hub.joined_at)}</p>}
           {hub.id || hub.hub_id ? (
             <p className="mt-2 break-all text-xs text-slate-500">Hub ID: {hub.id || hub.hub_id}</p>
           ) : null}
