@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
+const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
 const TARGETS = [
   { value: "backend", label: "Backend Flask Blueprint" },
   { value: "frontend", label: "Frontend Component" },
