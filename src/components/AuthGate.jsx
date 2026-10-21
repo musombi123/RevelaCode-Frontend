@@ -61,7 +61,7 @@ export default function AuthGate({ children, requiredRoles = [] }) {
       });
 
     return () => { active = false; };
-  }, [authFetch, getAccessToken, location.pathname, attempt, requiredRoles.join("|"), user]);
+  }, [authFetch, getAccessToken, location.pathname, attempt, requiredRoles.join("|")]);
 
   if (state === "unauthenticated") {
     return <Navigate to="/login" replace state={{ from: location }} />;
