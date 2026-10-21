@@ -221,6 +221,74 @@ export default function CoreMeshDashboard() {
     }
   }, [demand, objective, toolName, refresh]);
 
+  const executeSignedTool = useCallback(async (tool) => {
+    const name = String(tool?.name || "");
+    const version = String(tool?.version || "");
+    const artifactHash = String(tool?.artifact_hash || "");
+    const riskTier = Number(tool?.risk_tier ?? tool?.manifest?.risk_tier ?? 0);
+    if (!name || !version || !/^[0-9a-f]{64}$/.test(artifactHash)) {
+      setToolsError("The active tool record is missing a valid signed artifact identity.");
+      return;
+    }
+
+    let argumentsObject;
+    try {
+      argumentsObject = JSON.parse(toolArguments);
+    } catch {
+      setToolsError("Tool arguments must be valid JSON before execution.");
+      return;
+    }
+    if (!argumentsObject || typeof argumentsObject !== "object" || Array.isArray(argumentsObject)) {
+      setToolsError("Tool arguments must be a JSON object.");
+      return;
+    }
+    if (typeof argumentsObject.action !== "string" || !argumentsObject.action.trim()) {
+      setToolsError('Tool arguments require a non-empty "action" string.');
+      return;
+    }
+    if (!window.confirm(
+      "Run the active signed tool '" + name + "' (risk tier " + riskTier + ")? Genesis will verify the request again.",
+    )) return;
+
+    setExecutingTool(name);
+    setToolsError("");
+    setToolExecutionResult(null);
+    try {
+      let confirmationToken;
+      if (riskTier === 2) {
+        const confirmPath = "/api/core-mesh/tools/"
+          + encodeURIComponent(name) + "/" + encodeURIComponent(version) + "/"
+          + encodeURIComponent(artifactHash) + "/confirm";
+        const confirmation = await requestCoreMesh(confirmPath, {
+          method: "POST",
+          body: JSON.stringify({ arguments: argumentsObject }),
+        });
+        confirmationToken = confirmation?.confirmation_token;
+        if (!confirmationToken) {
+          throw new Error("Genesis did not issue an action-bound confirmation token.");
+        }
+      }
+
+      const result = await requestCoreMesh("/api/core-mesh/tools/execute", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          version,
+          artifact_hash: artifactHash,
+          arguments: argumentsObject,
+          ...(confirmationToken ? { confirmation_token: confirmationToken } : {}),
+        }),
+      });
+      setToolExecutionResult({ name, riskTier, result });
+      await refresh(true);
+      await refreshSignedTools();
+    } catch (requestError) {
+      setToolsError(requestError?.message || "Genesis refused or could not complete the signed tool invocation.");
+    } finally {
+      setExecutingTool("");
+    }
+  }, [toolArguments, refresh, refreshSignedTools]);
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
