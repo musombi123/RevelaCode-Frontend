@@ -29,6 +29,7 @@ export default function StartModal() {
   const {
     login,
     guestMode,
+    authFetch,
   } = useAuth();
 
   const baseUrl =
@@ -181,21 +182,33 @@ export default function StartModal() {
       );
     }
 
-    const res = await fetch(
-      `${baseUrl}${path}`,
-      {
-        method: "POST",
+    const url = `${baseUrl}${path}`;
+    const headers = {
+      "Content-Type": "application/json",
+    };
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+    // Optional license claims stay in storage and are never hard-coded.
+    try {
+      const license =
+        localStorage.getItem("revela_license") ||
+        localStorage.getItem("revela_license_token") ||
+        "";
+      if (license) headers["X-Revela-License"] = license;
+    } catch {
+      // Continue with JWT authentication if storage is restricted.
+    }
 
-        body: JSON.stringify(
-          payload
-        ),
-      }
-    );
+    const requestOptions = {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    };
+
+    // authFetch attaches the latest JWT and retries once after a successful
+    // refresh. Modal visibility/close actions never clear authentication.
+    const res = typeof authFetch === "function"
+      ? await authFetch(url, requestOptions)
+      : await fetch(url, requestOptions);
 
     const data =
       await res
@@ -355,6 +368,17 @@ const completeLogin = (data = {}) => {
     user?.token_type ||
     user?.tokenType ||
     "Bearer";
+
+  const resolvedRefreshToken =
+    data?.refresh_token ||
+    data?.refreshToken ||
+    level1?.refresh_token ||
+    level1?.refreshToken ||
+    level2?.refresh_token ||
+    level2?.refreshToken ||
+    user?.refresh_token ||
+    user?.refreshToken ||
+    "";
 
   /*
    * -------------------------------------------------------
@@ -597,6 +621,12 @@ const completeLogin = (data = {}) => {
 
     tokenType,
 
+    refresh_token:
+      resolvedRefreshToken,
+
+    refreshToken:
+      resolvedRefreshToken,
+
     expires_in:
       expiresIn,
 
@@ -609,10 +639,20 @@ const completeLogin = (data = {}) => {
    * -------------------------------------------------------
    */
 
+  // Canonical key used by the Start modal, AuthGate, and all API clients.
+  localStorage.setItem(
+    "revela_jwt",
+    accessToken
+  );
+
   localStorage.setItem(
     "revelacode_access_token",
     accessToken
   );
+
+  if (resolvedRefreshToken) {
+    localStorage.setItem("revela_refresh_token", resolvedRefreshToken);
+  }
 
   localStorage.setItem(
     "revelacode_token_type",
@@ -648,9 +688,8 @@ const completeLogin = (data = {}) => {
    */
 
   const storedToken =
-    localStorage.getItem(
-      "revelacode_access_token"
-    );
+    localStorage.getItem("revela_jwt") ||
+    localStorage.getItem("revelacode_access_token");
 
   if (!storedToken) {
     throw new Error(
