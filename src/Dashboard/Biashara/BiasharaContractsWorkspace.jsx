@@ -40,7 +40,7 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
       if (route === "finance") { response = await api.getBiasharaInvoices(); setRows(rowsOf(response, "invoices")); }
       else if (route === "automations") { response = await api.getBiasharaAutomationRules(); setRows(rowsOf(response, "rules")); }
       else if (route === "sync") { response = await api.getBiasharaSyncJobs(); setRows(rowsOf(response, "jobs")); }
-      else if (route === "team") { response = await api.getBiasharaTeam(); setRows(rowsOf(response, "members")); }
+      else if (route === "team") { response = await api.getBiasharaTeam(); const members = rowsOf(response, "members").map((row) => ({ ...row, record_type: "member" })); const invitations = rowsOf(response, "invitations").map((row) => ({ ...row, record_type: "invitation" })); setRows([...members, ...invitations]); }
       else if (route === "business-switch") { response = await api.getBiasharaBusinesses(); setBusinesses(rowsOf(response, "businesses")); setRows(rowsOf(response, "businesses")); }
     } catch (e) { setRows([]); setError(errorText(e)); }
     finally { setLoading(false); }
@@ -77,13 +77,6 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
       await onRefresh?.();
       await load();
     } catch (e) { setError(errorText(e)); }
-    finally { setSaving(false); }
-  };
-
-  const toggleRule = async (row) => {
-    setSaving(true); setError(""); setNotice("");
-    try { await api.updateBiasharaAutomationRule(row.id || row._id, { enabled: !row.enabled }); await load(); }
-    catch (e) { setError(errorText(e)); }
     finally { setSaving(false); }
   };
 
@@ -141,7 +134,7 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
 
       <section className={panel}>
         <div className="flex items-center justify-between gap-3"><div><h2 className="font-bold text-slate-900">{route === "finance" ? "Invoices" : route === "automations" ? "Saved rules" : route === "sync" ? "Sync job history" : route === "team" ? "Current memberships" : "Business list"}</h2><p className="mt-1 text-xs text-slate-500">{rows.length} record(s) · scoped to the authenticated business owner</p></div><button type="button" onClick={load} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700"><RefreshCw size={15} />Refresh</button></div>
-        {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"><Loader2 size={18} className="animate-spin" />Loading records…</div> : rows.length ? <div className="mt-3 divide-y divide-slate-100">{rows.map((row, i) => <article key={row.id || row._id || i} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="break-words text-sm font-semibold text-slate-900">{row.invoice_number || row.name || row.email || row.source || row.business_name || row.name || row.id || "Record"}</p><p className="mt-1 break-words text-xs text-slate-500">{row.customer_name || row.trigger || row.direction || row.role || row.status || row.message || ""}</p></div><div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">{row.total ? <span className="font-bold">{row.currency || "KES"} {row.total}</span> : null}{row.status ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.status}</span> : null}{route === "automations" ? <button type="button" disabled={saving} onClick={() => toggleRule(row)} className="rounded-lg border border-slate-200 px-3 py-2 font-semibold">{row.enabled ? "Disable" : "Enable"}</button> : null}{row.delivery_status ? <span>{row.delivery_status}</span> : null}</div></article>)}</div> : <div className="py-10 text-center text-sm text-slate-500">No records returned yet.</div>}
+        {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"><Loader2 size={18} className="animate-spin" />Loading records…</div> : rows.length ? <div className="mt-3 divide-y divide-slate-100">{rows.map((row, i) => <article key={row.id || row._id || i} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="break-words text-sm font-semibold text-slate-900">{row.invoice_number || row.name || row.email || row.source || row.business_name || row.name || row.id || "Record"}</p><p className="mt-1 break-words text-xs text-slate-500">{row.customer_name || row.trigger || row.direction || row.role || row.status || row.message || (row.record_type === "invitation" ? "Invitation pending" : "")}</p></div><div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">{row.total ? <span className="font-bold">{row.currency || "KES"} {row.total}</span> : null}{row.status ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.status}</span> : null}{route === "automations" ? <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-800">Worker unavailable</span> : null}{row.delivery_status ? <span>{row.delivery_status}</span> : null}{row.record_type === "invitation" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800">Pending invitation</span> : null}</div></article>)}</div> : <div className="py-10 text-center text-sm text-slate-500">No records returned yet.</div>}
       </section>
       <p className="flex items-start gap-2 text-xs leading-5 text-slate-500"><Activity size={15} className="mt-0.5 shrink-0" />Actions are recorded through the authenticated backend. External payment settlement, invitation email delivery, automation execution and sync processing are not claimed unless their dedicated providers/workers are configured.</p>
     </div>
