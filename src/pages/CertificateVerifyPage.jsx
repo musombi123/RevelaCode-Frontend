@@ -26,7 +26,7 @@ export default function CertificateVerifyPage() {
         } else if (payload?.valid === false) {
           setState("invalid");
           setError(payload?.reason === "signature_invalid"
-            ? "The signature could not be validated with the configured RevelaCode public key."
+            ? "The stored record does not match its server-side integrity signature."
             : "No matching issued certificate was found.");
         } else {
           setState("error");
@@ -81,7 +81,7 @@ export default function CertificateVerifyPage() {
             </div>
           )}
           {state === "invalid" && <div role="alert" className="flex items-start gap-3 text-rose-800 dark:text-rose-200"><AlertCircle className="h-7 w-7 shrink-0" /><div><h2 className="font-bold">Certificate not verified</h2><p className="mt-1 text-sm">{error}</p></div></div>}
-          {state === "error" && <div role="alert" className="flex items-start gap-3 text-amber-800 dark:text-amber-200"><AlertCircle className="h-7 w-7 shrink-0" /><div><h2 className="font-bold">Verification service unavailable</h2><p className="mt-1 text-sm">{error}</p><p className="mt-2 text-xs">The service must be configured with the same RSA public key used to verify the issued credential.</p></div></div>}
+          {state === "error" && <div role="alert" className="flex items-start gap-3 text-amber-800 dark:text-amber-200"><AlertCircle className="h-7 w-7 shrink-0" /><div><h2 className="font-bold">Verification service unavailable</h2><p className="mt-1 text-sm">{error}</p><p className="mt-2 text-xs">The certificate verification service must have access to the configured RevelaCode signing secret.</p></div></div>}
           <div className="mt-8 border-t border-slate-200 pt-5 dark:border-slate-700"><Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-300"><ShieldCheck className="h-4 w-4" /> Return to RevelaCode</Link></div>
         </div>
       </section>
