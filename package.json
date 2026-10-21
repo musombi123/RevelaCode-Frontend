@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "vision:assets": "node scripts/fetch-free-vision-assets.mjs",
-    "test:auth": "node --test tests/token-storage.test.mjs tests/start-modal-jwt.test.mjs"
+    "test:auth": "node --test tests/token-storage.test.mjs tests/session-identity.test.mjs tests/start-modal-jwt.test.mjs"
   },
   "engines": {
     "node": "20.x"
