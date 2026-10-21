@@ -160,13 +160,27 @@ function displayArea(value) {
 // =========================================================
 
 function Field({ label, children, required = false }) {
+  const fieldId = React.useId();
+
   return (
     <div>
-      <label className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
+      <label htmlFor={fieldId} className="text-[13px] font-black uppercase tracking-wide text-slate-600 dark:text-slate-300">
         {label}
         {required && <span className="ml-1 text-[#087F5B]">*</span>}
       </label>
-      <div className="mt-1.5">{children}</div>
+      <div className="mt-1.5">
+        {React.Children.map(children, (child) => {
+          if (
+            React.isValidElement(child) &&
+            ["input", "select", "textarea"].includes(String(child.type).toLowerCase())
+          ) {
+            return React.cloneElement(child, {
+              id: child.props.id || fieldId,
+            });
+          }
+          return child;
+        })}
+      </div>
     </div>
   );
 }
