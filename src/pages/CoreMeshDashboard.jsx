@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 import {
   Activity,
   AlertTriangle,
@@ -18,19 +19,8 @@ const API_BASE = String(
 
 function readAuthHeaders(jsonBody = false) {
   const headers = jsonBody ? { "Content-Type": "application/json" } : {};
-  if (typeof window === "undefined") return headers;
-  try {
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    if (token) {
-      const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
-      headers.Authorization = tokenType + " " + token;
-    }
-  } catch {
-    // Authentication errors are presented by the API helper.
-  }
+  const token = readAccessToken();
+  if (token) headers.Authorization = readTokenType() + " " + token;
   return headers;
 }
 
@@ -135,6 +125,14 @@ export default function CoreMeshDashboard() {
   const [objective, setObjective] = useState("Improve offline_vault graph traversal efficiency");
   const [toolName, setToolName] = useState("offline_vault_fixture");
   const [actionResult, setActionResult] = useState(null);
+  const [signedTools, setSignedTools] = useState([]);
+  const [toolsLoading, setToolsLoading] = useState(false);
+  const [toolsError, setToolsError] = useState("");
+  const [toolArguments, setToolArguments] = useState(
+    '{"action":"Describe the result and its evidence","inputs":{},"consent":false}',
+  );
+  const [executingTool, setExecutingTool] = useState("");
+  const [toolExecutionResult, setToolExecutionResult] = useState(null);
 
   const refresh = useCallback(async (force = false) => {
     setRefreshing(true);
@@ -150,11 +148,29 @@ export default function CoreMeshDashboard() {
     }
   }, []);
 
+  const refreshSignedTools = useCallback(async () => {
+    setToolsLoading(true);
+    setToolsError("");
+    try {
+      const data = await requestCoreMesh("/api/core-mesh/tools");
+      setSignedTools(Array.isArray(data?.active_tools) ? data.active_tools : []);
+    } catch (requestError) {
+      setSignedTools([]);
+      setToolsError(requestError?.message || "Signed Genesis tools could not be loaded.");
+    } finally {
+      setToolsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     refresh(true);
-    const timer = window.setInterval(() => refresh(false), 30000);
+    refreshSignedTools();
+    const timer = window.setInterval(() => {
+      refresh(false);
+      refreshSignedTools();
+    }, 30000);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, refreshSignedTools]);
 
   const cores = snapshot?.cores || {};
   const onlineCount = useMemo(
@@ -205,6 +221,74 @@ export default function CoreMeshDashboard() {
     }
   }, [demand, objective, toolName, refresh]);
 
+  const executeSignedTool = useCallback(async (tool) => {
+    const name = String(tool?.name || "");
+    const version = String(tool?.version || "");
+    const artifactHash = String(tool?.artifact_hash || "");
+    const riskTier = Number(tool?.risk_tier ?? tool?.manifest?.risk_tier ?? 0);
+    if (!name || !version || !/^[0-9a-f]{64}$/.test(artifactHash)) {
+      setToolsError("The active tool record is missing a valid signed artifact identity.");
+      return;
+    }
+
+    let argumentsObject;
+    try {
+      argumentsObject = JSON.parse(toolArguments);
+    } catch {
+      setToolsError("Tool arguments must be valid JSON before execution.");
+      return;
+    }
+    if (!argumentsObject || typeof argumentsObject !== "object" || Array.isArray(argumentsObject)) {
+      setToolsError("Tool arguments must be a JSON object.");
+      return;
+    }
+    if (typeof argumentsObject.action !== "string" || !argumentsObject.action.trim()) {
+      setToolsError('Tool arguments require a non-empty "action" string.');
+      return;
+    }
+    if (!window.confirm(
+      "Run the active signed tool '" + name + "' (risk tier " + riskTier + ")? Genesis will verify the request again.",
+    )) return;
+
+    setExecutingTool(name);
+    setToolsError("");
+    setToolExecutionResult(null);
+    try {
+      let confirmationToken;
+      if (riskTier === 2) {
+        const confirmPath = "/api/core-mesh/tools/"
+          + encodeURIComponent(name) + "/" + encodeURIComponent(version) + "/"
+          + encodeURIComponent(artifactHash) + "/confirm";
+        const confirmation = await requestCoreMesh(confirmPath, {
+          method: "POST",
+          body: JSON.stringify({ arguments: argumentsObject }),
+        });
+        confirmationToken = confirmation?.confirmation_token;
+        if (!confirmationToken) {
+          throw new Error("Genesis did not issue an action-bound confirmation token.");
+        }
+      }
+
+      const result = await requestCoreMesh("/api/core-mesh/tools/execute", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          version,
+          artifact_hash: artifactHash,
+          arguments: argumentsObject,
+          ...(confirmationToken ? { confirmation_token: confirmationToken } : {}),
+        }),
+      });
+      setToolExecutionResult({ name, riskTier, result });
+      await refresh(true);
+      await refreshSignedTools();
+    } catch (requestError) {
+      setToolsError(requestError?.message || "Genesis refused or could not complete the signed tool invocation.");
+    } finally {
+      setExecutingTool("");
+    }
+  }, [toolArguments, refresh, refreshSignedTools]);
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -244,6 +328,25 @@ export default function CoreMeshDashboard() {
           </div>
         </div>
 
+        {snapshot && (
+          <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-6">
+            <div className="mb-3">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Integration readiness</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Configuration checks are not proof of successful live execution.</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <DataPoint label="ZERO dispatcher" value={configuration.zero_tools_ready ? "Configured" : "Missing configuration"} />
+              <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
+              <DataPoint label="Genesis registry" value={configuration.genesis_registry_ready ? "Reachable" : "Unavailable"} />
+              <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured ? "Configured" : "Missing"} />
+              <DataPoint label="Genesis tool catalog" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
+              <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
+              <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
+              <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="m-5 flex items-start gap-3 rounded-2xl border border-rose-300/60 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
@@ -272,11 +375,14 @@ export default function CoreMeshDashboard() {
                   <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">{item.title}</h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{item.subtitle}</p>
                   <p className="mt-3 min-h-[52px] text-xs leading-5 text-slate-500 dark:text-slate-400">{item.description}</p>
+                  {core.failure_reason && <p className="mt-2 break-words rounded-lg border border-amber-300/50 bg-amber-50 px-2.5 py-2 text-[10px] leading-4 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">Diagnostic: {core.failure_reason}</p>}
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <DataPoint label="Version" value={core.version || "—"} />
                     <DataPoint label="Execution mode" value={mode} />
                     {key === "one" && <DataPoint label="Inventions" value={core.invention_count ?? "—"} />}
                     {key === "one" && <DataPoint label="Guardian" value={core.guardian_ready === true ? "Ready" : core.guardian_ready === false ? "Needs attention" : "Unknown"} />}
+                    {key === "one" && <DataPoint label="Signed registry" value={core.signed_tool_registry_ready ? "Reachable" : "Unavailable"} />}
+                    {key === "one" && <DataPoint label="Active signed tools" value={core.active_signed_tools_count ?? 0} />}
                     {key === "two" && <DataPoint label="Learning records" value={core.learning_feedback_count ?? "—"} />}
                     {key === "two" && <DataPoint label="Metrics" value={core.metrics_available ? "Available" : "Unavailable"} />}
                     {key === "zero" && <DataPoint label="Audit log" value={core.audit_log_observed === true ? "Observed" : core.audit_log_observed === false ? "Not observed" : "Unknown"} />}
