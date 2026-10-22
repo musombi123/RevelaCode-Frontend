@@ -757,9 +757,9 @@ export default function RevenueCenter() {
                         <button
                           type="button"
                           onClick={() => updatePlanStatus(plan, plan.status === "available" ? "proposed" : "available")}
-                          disabled={!adminOps.billing?.mpesa_checkout_enabled || Boolean(updatingPlanCode)}
+                          disabled={Boolean(updatingPlanCode) || (plan.status !== "available" && !adminOps.billing?.mpesa_checkout_enabled)}
                           className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
-                          title={!adminOps.billing?.mpesa_checkout_enabled ? "Configure M-Pesa first" : undefined}
+                          title={!adminOps.billing?.mpesa_checkout_enabled && plan.status !== "available" ? "Configure production M-Pesa before publishing" : undefined}
                         >
                           {updatingPlanCode === plan.code ? "Saving…" : plan.status === "available" ? "Pause plan" : "Publish plan"}
                         </button>
