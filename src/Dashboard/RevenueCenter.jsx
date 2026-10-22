@@ -213,8 +213,8 @@ export default function RevenueCenter() {
         setActionError("Configure M-Pesa checkout before publishing a plan for customer payments.");
         return;
       }
-      if (!(Number(plan.amount) > 0) || !["month", "year"].includes(String(plan.interval || "").toLowerCase())) {
-        setActionError("Only positive monthly or yearly hub subscription plans can be published for M-Pesa checkout.");
+      if (!(Number(plan.amount) > 0) || !Number.isInteger(Number(plan.amount)) || !["month", "year"].includes(String(plan.interval || "").toLowerCase())) {
+        setActionError("M-Pesa checkout requires a positive whole-KES price and a monthly or yearly hub subscription interval.");
         return;
       }
       if (!["shamba", "biashara", "elimu", "community", "smart_ai", "marketplace", "faith"].includes(plan.hub)) {
@@ -751,7 +751,7 @@ export default function RevenueCenter() {
                 </div>
                 <div>
                   <label htmlFor="new-revenue-plan-amount" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Proposed amount (KES)</label>
-                  <input id="new-revenue-plan-amount" type="number" min="0" step="0.01" value={newPlanDraft.amount} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, amount: event.target.value }))} placeholder="Enter price" className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" required />
+                  <input id="new-revenue-plan-amount" type="number" min="1" step="1" value={newPlanDraft.amount} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, amount: event.target.value }))} placeholder="Enter price" className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" required />
                 </div>
                 <div>
                   <label htmlFor="new-revenue-plan-interval" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Billing interval</label>
