@@ -1142,6 +1142,8 @@ export default function ElimuParentPortal({
                   <PrivateSection
                     section={selectedSection}
                     data={sectionData}
+                    request={request}
+                    onReceiptSubmitted={() => openChildSection("finance")}
                   />
                 ) : !sectionError ? (
                   <EmptyPanel
