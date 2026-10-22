@@ -78,6 +78,9 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [trialLoading, setTrialLoading] = useState(true);
   const [trialStarting, setTrialStarting] = useState(false);
   const [trialError, setTrialError] = useState("");
+  const [subscription, setSubscription] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [subscriptionLoadError, setSubscriptionLoadError] = useState("");
   const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [checkout, setCheckout] = useState(null);
@@ -135,10 +138,43 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     const controller = new AbortController();
     loadPlans(controller.signal);
     loadTrial(controller.signal);
+    loadSubscription(controller.signal);
     return () => controller.abort();
-  }, [loadPlans, loadTrial]);
+  }, [loadPlans, loadTrial, loadSubscription]);
+
+  const loadSubscription = useCallback(async (signal) => {
+    if (!apiHub) {
+      setSubscription(null);
+      setSubscriptionLoading(false);
+      return;
+    }
+    setSubscriptionLoading(true);
+    setSubscriptionLoadError("");
+    try {
+      const response = await revenueApi.listSubscriptions({ signal });
+      const active = (Array.isArray(response?.items) ? response.items : [])
+        .filter((item) => item?.hub === apiHub && item?.status === "active")
+        .sort((a, b) => new Date(b.ends_at || 0).getTime() - new Date(a.ends_at || 0).getTime())[0] || null;
+      setSubscription(active);
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setSubscription(null);
+        setSubscriptionLoadError("Could not verify this hub's existing subscription. Reload before making another payment.");
+      }
+    } finally {
+      if (!signal?.aborted) setSubscriptionLoading(false);
+    }
+  }, [apiHub, revenueApi]);
 
   const startCheckout = async (plan) => {
+    if (subscriptionLoading || subscriptionLoadError) {
+      setActionError("The current subscription status could not be verified. Reload this hub before making a payment.");
+      return;
+    }
+    if (subscription?.status === "active") {
+      setActionError("This hub already has an active paid subscription. No second payment was started.");
+      return;
+    }
     const phone = checkoutPhone.trim();
     if (!phone) {
       setActionError("Enter the Kenyan M-Pesa phone number that should receive the payment prompt.");
@@ -181,12 +217,15 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       setCheckout(updated);
       if (updated?.status === "succeeded") {
         setNotice("Payment verified. Your subscription is active.");
+        setSubscription(updated?.subscription || null);
         try {
           const entitlement = await revenueApi.getEntitlement(apiHub, { params: { feature: "premium" } });
+          if (entitlement?.subscription) setSubscription(entitlement.subscription);
           if (entitlement?.premium_access) setNotice("Payment verified. Your " + label + " premium access is active.");
         } catch {
           // Checkout success is already confirmed by the backend; entitlement refresh is supplementary.
         }
+        await loadSubscription();
       } else if (updated?.status === "failed") {
         setActionError(updated?.result_description || "M-Pesa reports that this payment was not completed. You can start a new checkout.");
       } else if (updated?.status === "verified_activation_failed") {
@@ -204,6 +243,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   };
 
   const startTrial = async () => {
+    if (subscription?.status === "active") {
+      setNotice("This hub already has an active paid subscription.");
+      return;
+    }
     setTrialStarting(true);
     setTrialError("");
     setActionError("");
@@ -272,14 +315,23 @@ export default function HubRevenueOffers({ hub, compact = false }) {
             <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
               Each hub has its own one-time 30-day trial. Premium access is checked by the backend. Paid checkout appears only after production Daraja credentials and the registered HTTPS callback are configured.
             </p>
-            {!trialLoading && trial?.status === "active" ? (
+            {!subscriptionLoading && subscription?.status === "active" ? (
+              <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Paid subscription active · {subscription.plan_code || "premium"} · access through {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : "renewal date unavailable"}</p>
+            ) : !trialLoading && trial?.status === "active" ? (
               <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Trial active · {trial.days_remaining ?? "—"} days remaining · ends {trial.ends_at ? new Date(trial.ends_at).toLocaleDateString() : "soon"}</p>
             ) : null}
-            {!trialLoading && trial?.status === "expired" ? (
+            {!subscriptionLoading && subscriptionLoadError ? (
+              <p role="alert" className="mt-2 text-xs leading-5 text-amber-700 dark:text-amber-300">{subscriptionLoadError}</p>
+            ) : null}
+            {!trialLoading && trial?.status === "expired" && subscription?.status !== "active" ? (
               <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">This hub’s free trial has ended. Select a plan when checkout becomes available.</p>
             ) : null}
           </div>
-          {trialLoading ? (
+          {subscriptionLoading ? (
+            <span className="text-xs text-slate-500">Checking subscription…</span>
+          ) : subscription?.status === "active" ? (
+            <span className="inline-flex min-h-10 items-center rounded-xl bg-emerald-100 px-4 text-xs font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">Paid access active</span>
+          ) : trialLoading ? (
             <span className="text-xs text-slate-500">Checking trial…</span>
           ) : trial?.status === "active" ? (
             <span className="inline-flex min-h-10 items-center rounded-xl bg-emerald-100 px-4 text-xs font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">Trial active</span>
@@ -394,7 +446,15 @@ export default function HubRevenueOffers({ hub, compact = false }) {
                   ))}
                 </ul>
               ) : null}
-              {checkoutEnabled && plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0 ? (
+              {subscriptionLoading || subscriptionLoadError ? (
+                <div className="mt-4 rounded-xl border border-amber-200 px-3 py-2.5 text-xs leading-5 text-amber-800 dark:border-amber-900/50 dark:text-amber-200">
+                  Verify existing subscription status before starting another payment.
+                </div>
+              ) : subscription?.status === "active" ? (
+                <div className="mt-4 rounded-xl border border-emerald-200 px-3 py-2.5 text-xs leading-5 text-emerald-800 dark:border-emerald-900/50 dark:text-emerald-200">
+                  Subscription active through {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : "the current period"}.
+                </div>
+              ) : checkoutEnabled && plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0 ? (
                 <button
                   type="button"
                   onClick={() => startCheckout(plan)}
