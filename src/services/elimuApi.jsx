@@ -718,6 +718,15 @@ export function createElimuApiClient({
     revokeStaffInvitation: (invitationId, options) =>
       del(`staff/invitations/${pathSegment(invitationId, "invitation ID")}`, options),
 
+    getStaffChangeRequests: (params, options) =>
+      get("staff/change-requests", params, options),
+
+    requestStaffChange: (userId, data, options) =>
+      post(`staff/${pathSegment(userId, "user ID")}/change-requests`, data, options),
+
+    decideStaffChangeRequest: (requestId, data, options) =>
+      post(`staff/change-requests/${pathSegment(requestId, "request ID")}/decision`, data, options),
+
     assignStaff: (data, options) =>
       post("staff/assignments", data, options),
 
