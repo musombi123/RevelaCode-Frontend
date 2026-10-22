@@ -387,6 +387,49 @@ export default function ElimuParentPortal({
     [getAuthHeaders]
   );
 
+  const downloadCompletionCertificate = useCallback(async () => {
+    const studentId = getStudentId(selectedChild);
+    if (!studentId) return;
+    setSectionError("");
+    try {
+      const extraHeaders = getAuthHeaders ? await getAuthHeaders() : {};
+      const response = await fetch(`${API_BASE}/children/${encodeURIComponent(studentId)}/completion-certificate`, {
+        method: "GET",
+        credentials: "include",
+        headers: { ...(extraHeaders || {}), Accept: "application/pdf" },
+      });
+      if (!response.ok) {
+        let message = "The completion certificate could not be downloaded.";
+        try { const payload = await response.json(); message = getErrorMessage(unwrapResponse(payload), message); } catch { /* PDF error bodies may not be JSON. */ }
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `${String(selectedChild?.admission_number || studentId).replace(/[^A-Za-z0-9_-]/g, "-")}-completion-certificate.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      setSuccessMessage("Completion certificate downloaded.");
+    } catch (error) {
+      setSectionError(error?.message || "The completion certificate could not be downloaded.");
+    }
+  }, [getAuthHeaders, selectedChild]);
+
+  const submitInactivityResponse = useCallback(async (responseKind, notes) => {
+    const studentId = getStudentId(selectedChild);
+    if (!studentId) throw new Error("Select the student record first.");
+    await request(`/children/${encodeURIComponent(studentId)}/inactivity-response`, {
+      method: "POST",
+      body: { response: responseKind, notes: String(notes || "").trim() },
+    });
+    setSuccessMessage("Your response has been sent to the school registrar for review.");
+    await openChildSection("profile");
+    await loadChildren();
+  }, [request, selectedChild, openChildSection, loadChildren]);
+
   const loadChildren = useCallback(async () => {
     setLoadingChildren(true);
     setPageError("");
@@ -1144,6 +1187,8 @@ export default function ElimuParentPortal({
                     data={sectionData}
                     request={request}
                     onReceiptSubmitted={() => openChildSection("finance")}
+                    onDownloadCertificate={downloadCompletionCertificate}
+                    onInactivityResponse={submitInactivityResponse}
                   />
                 ) : !sectionError ? (
                   <EmptyPanel
@@ -1174,11 +1219,14 @@ export default function ElimuParentPortal({
   );
 }
 
-function PrivateSection({ section, data, request, onReceiptSubmitted }) {
+function PrivateSection({ section, data, request, onReceiptSubmitted, onDownloadCertificate, onInactivityResponse }) {
   const [receiptForm, setReceiptForm] = useState({ fee_id: "", amount: "", payment_method: "mpesa", payment_reference: "", receipt_url: "", notes: "" });
   const [receiptSubmitting, setReceiptSubmitting] = useState(false);
   const [receiptFeedback, setReceiptFeedback] = useState("");
   const [receiptError, setReceiptError] = useState("");
+  const [lifecycleNotes, setLifecycleNotes] = useState("");
+  const [lifecycleSubmitting, setLifecycleSubmitting] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState("");
   const record =
     data?.student ||
     data?.profile ||
@@ -1236,16 +1284,11 @@ function PrivateSection({ section, data, request, onReceiptSubmitted }) {
                 </p>
               </div>
 
-              {url && (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Open
-                </a>
-              )}
+              {document.document_type === "completion_certificate" ? (
+                <button type="button" onClick={() => onDownloadCertificate?.()} className="shrink-0 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Download PDF</button>
+              ) : url ? (
+                <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Open</a>
+              ) : null}
             </div>
           );
         })}
@@ -1404,6 +1447,10 @@ function PrivateSection({ section, data, request, onReceiptSubmitted }) {
     ["Class", record?.class_name || record?.class || record?.grade],
     ["School", record?.school_name],
     ["Status", record?.status],
+    ["Portal duration", record?.portal_duration || record?.student_duration],
+    ["Portal expiry / course end", record?.portal_expires_at || record?.leaving_date],
+    ["Course", record?.course_name],
+    ["Completion status", record?.completion_status],
   ].filter(([, value]) => value !== undefined && value !== null && value !== "");
 
   if (!fields.length) {
@@ -1418,8 +1465,24 @@ function PrivateSection({ section, data, request, onReceiptSubmitted }) {
     );
   }
 
+  const lifecycle = record?.lifecycle_notice || {};
+  const canRespondToInactivity = Boolean(lifecycle.parent_reminder_sent_at && !lifecycle.parent_response_at && record?.status === "inactive");
+  const lifecycleStatus = lifecycle.registrar_review_requested_at ? "Registrar review has been requested." : lifecycle.parent_response_at ? "Your response has been recorded." : "Waiting for parent/guardian response.";
   return (
     <div className="mt-6 space-y-3">
+      {canRespondToInactivity && (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm">
+          <div className="flex items-start gap-3"><AlertCircle size={20} className="mt-0.5 shrink-0"/><div><h3 className="font-bold">School status confirmation requested</h3><p className="mt-1 text-sm leading-6">The school has recorded this learner as inactive for more than one term. Confirm whether the student is still enrolled or has withdrawn. The registrar will review your response.</p><p className="mt-2 text-xs">Response due: {formatDate(lifecycle.parent_response_deadline)}</p></div></div>
+          {lifecycleError && <p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{lifecycleError}</p>}
+          <label className="mt-4 block text-xs font-semibold">Notes to the school (optional)<textarea rows={2} value={lifecycleNotes} onChange={(event) => setLifecycleNotes(event.target.value)} maxLength={800} className="mt-1.5 w-full rounded-xl border border-amber-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-900" placeholder="Share context or ask the school to contact you"/></label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("still_enrolled", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Still enrolled</button>
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("withdrawn", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 disabled:opacity-50">Student has withdrawn</button>
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("please_contact_me", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 disabled:opacity-50">Please contact me</button>
+          </div>
+          <p className="mt-3 text-xs">{lifecycleStatus}</p>
+        </section>
+      )}
       {fields.map(([label, value]) => (
         <div
           key={label}
