@@ -84,6 +84,15 @@ export default function RevenueCenter() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
 
+  const [adminOps, setAdminOps] = useState({
+    authorized: false,
+    loading: true,
+    error: "",
+    billing: null,
+    subscriptions: [],
+    trials: [],
+  });
+
   const [submittingPlan, setSubmittingPlan] = useState("");
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
@@ -130,6 +139,38 @@ export default function RevenueCenter() {
     }
   }, [revenueApi]);
 
+  const loadAdminOps = useCallback(async (signal) => {
+    try {
+      const billing = await revenueApi.adminBillingStatus({ signal });
+      if (signal?.aborted) return;
+      const [subscriptionResult, trialResult] = await Promise.allSettled([
+        revenueApi.adminSubscriptions({ page: 1, perPage: 25 }, { signal }),
+        revenueApi.adminTrials({ page: 1, perPage: 25 }, { signal }),
+      ]);
+      if (signal?.aborted) return;
+      const failed = [subscriptionResult, trialResult]
+        .filter((result) => result.status === "rejected")
+        .map((result) => getErrorMessage(result.reason));
+      setAdminOps({
+        authorized: true,
+        loading: false,
+        error: failed.join(" "),
+        billing,
+        subscriptions: subscriptionResult.status === "fulfilled" && Array.isArray(subscriptionResult.value?.items)
+          ? subscriptionResult.value.items : [],
+        trials: trialResult.status === "fulfilled" && Array.isArray(trialResult.value?.items)
+          ? trialResult.value.items : [],
+      });
+    } catch (error) {
+      if (signal?.aborted) return;
+      if ([401, 403].includes(error?.status)) {
+        setAdminOps({ authorized: false, loading: false, error: "", billing: null, subscriptions: [], trials: [] });
+      } else {
+        setAdminOps({ authorized: true, loading: false, error: getErrorMessage(error), billing: null, subscriptions: [], trials: [] });
+      }
+    }
+  }, [revenueApi]);
+
   const loadHealth = useCallback(async (signal) => {
     setHealthError("");
     try {
@@ -149,16 +190,18 @@ export default function RevenueCenter() {
     const controller = new AbortController();
     loadHistory(controller.signal);
     loadHealth(controller.signal);
+    loadAdminOps(controller.signal);
     return () => controller.abort();
-  }, [loadHistory, loadHealth]);
+  }, [loadHistory, loadHealth, loadAdminOps]);
 
   const refreshAll = useCallback(() => {
     const controller = new AbortController();
     loadPlans(controller.signal);
     loadHistory(controller.signal);
     loadHealth(controller.signal);
+    loadAdminOps(controller.signal);
     // Requests are aborted automatically when the component unmounts or stream changes.
-  }, [loadPlans, loadHistory, loadHealth]);
+  }, [loadPlans, loadHistory, loadHealth, loadAdminOps]);
 
   const canSubmitIntents = health?.success === true && health?.billing_enabled === false;
   const visiblePlans = useMemo(() => plans, [plans]);
@@ -350,6 +393,79 @@ export default function RevenueCenter() {
           ) : null}
         </div>
       </section>
+
+      {adminOps.authorized ? (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Restricted administration</p>
+              <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">Billing operations</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Payment readiness, recent subscriptions and per-hub trial records.</p>
+            </div>
+            <button type="button" onClick={() => loadAdminOps()} disabled={adminOps.loading} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300">
+              <RefreshCw className={`h-3.5 w-3.5 ${adminOps.loading ? "animate-spin" : ""}`} />
+              Refresh billing data
+            </button>
+          </div>
+          <div className="grid gap-3 p-5 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">M-Pesa checkout</p>
+              <div className="mt-2"><StatusTag tone={adminOps.billing?.mpesa_checkout_enabled ? "success" : "proposed"}>{adminOps.billing?.mpesa_checkout_enabled ? "Configured" : "Not configured"}</StatusTag></div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{adminOps.billing?.mpesa_checkout_enabled ? "Daraja credentials and the HTTPS callback are present." : "Set the Daraja environment variables before checkout can start."}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Verified activation</p>
+              <div className="mt-2"><StatusTag tone={adminOps.billing?.provider_callback_enabled ? "success" : "proposed"}>{adminOps.billing?.provider_callback_enabled ? "Adapter available" : "Not configured"}</StatusTag></div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Subscriptions activate only after verified provider status, not a browser return.</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Allowed providers</p>
+              <p className="mt-2 break-words text-sm font-bold text-slate-800 dark:text-slate-100">{(adminOps.billing?.providers_allowed || []).join(", ") || "None configured"}</p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Secrets are never returned to this page.</p>
+            </div>
+          </div>
+          {adminOps.error ? <p className="mx-5 mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{adminOps.error}</p> : null}
+          <div className="grid gap-5 p-5 pt-0 xl:grid-cols-2">
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Recent subscriptions</h4>
+              {adminOps.subscriptions.length ? (
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
+                  <table className="w-full min-w-[520px] text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 dark:bg-white/5"><tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Plan / hub</th><th className="px-3 py-2.5">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Ends</th></tr></thead>
+                    <tbody>{adminOps.subscriptions.map((item) => (
+                      <tr key={item.id} className="border-t border-slate-100 dark:border-white/10">
+                        <td className="max-w-28 truncate px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.user_id || "—"}</td>
+                        <td className="px-3 py-2.5"><p className="font-semibold text-slate-800 dark:text-slate-100">{item.plan_code || "—"}</p><p className="text-[10px] text-slate-400">{item.hub || "—"}</p></td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-semibold">{formatMoney(item.amount, item.currency)}</td>
+                        <td className="px-3 py-2.5"><StatusTag tone={item.status === "active" ? "success" : "neutral"}>{item.status}</StatusTag></td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.ends_at)}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              ) : <p className="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-xs text-slate-500 dark:border-white/10">{adminOps.loading ? "Loading subscriptions…" : "No paid subscriptions recorded."}</p>}
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Recent hub trials</h4>
+              {adminOps.trials.length ? (
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
+                  <table className="w-full min-w-[440px] text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 dark:bg-white/5"><tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Hub</th><th className="px-3 py-2.5">Started</th><th className="px-3 py-2.5">Ends</th></tr></thead>
+                    <tbody>{adminOps.trials.map((item) => (
+                      <tr key={item.id} className="border-t border-slate-100 dark:border-white/10">
+                        <td className="max-w-28 truncate px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.user_id || "—"}</td>
+                        <td className="px-3 py-2.5 font-semibold text-slate-800 dark:text-slate-100">{item.hub || "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.started_at)}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.ends_at)}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              ) : <p className="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-xs text-slate-500 dark:border-white/10">{adminOps.loading ? "Loading trial records…" : "No hub trials recorded."}</p>}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         {/* Fee preview */}
