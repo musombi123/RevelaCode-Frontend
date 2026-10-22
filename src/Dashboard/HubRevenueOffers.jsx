@@ -134,14 +134,6 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     }
   }, [apiHub, revenueApi]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    loadPlans(controller.signal);
-    loadTrial(controller.signal);
-    loadSubscription(controller.signal);
-    return () => controller.abort();
-  }, [loadPlans, loadTrial, loadSubscription]);
-
   const loadSubscription = useCallback(async (signal) => {
     if (!apiHub) {
       setSubscription(null);
@@ -165,6 +157,14 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       if (!signal?.aborted) setSubscriptionLoading(false);
     }
   }, [apiHub, revenueApi]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadPlans(controller.signal);
+    loadTrial(controller.signal);
+    loadSubscription(controller.signal);
+    return () => controller.abort();
+  }, [loadPlans, loadTrial, loadSubscription]);
 
   const startCheckout = async (plan) => {
     if (subscriptionLoading || subscriptionLoadError) {
