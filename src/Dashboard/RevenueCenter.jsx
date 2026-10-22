@@ -293,7 +293,7 @@ export default function RevenueCenter() {
   };
 
   const resolveUnknownSubmission = async (checkout) => {
-    if (!checkout?.id || savingUnknownCheckoutId) return;
+    if (!checkout?.id || (savingUnknownCheckoutId && savingUnknownCheckoutId !== checkout.id)) return;
     const evidenceReference = manualEvidenceReference.trim();
     const notes = manualResolutionNotes.trim();
     if (evidenceReference.length < 6 || evidenceReference.length > 160) {
