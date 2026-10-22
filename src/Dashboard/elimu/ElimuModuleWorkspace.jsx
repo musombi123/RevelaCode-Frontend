@@ -506,7 +506,7 @@ function RecordTable({ rows, query, moduleKey }) {
   };
   const classOf = (row) => row?.class_name || row?.class?.name || row?.class?.class_name || row?.grade || row?.level || "";
   const streamOf = (row) => row?.stream_name || row?.stream || row?.class_stream || row?.class?.stream || "";
-  const coursesOf = (row) => row?.courses || row?.subjects || row?.course_names || row?.learning_areas || row?.teaching?.subjects || [];
+  const coursesOf = (row) => row?.courses || row?.subjects || row?.course_names || row?.course_name || row?.programme_name || row?.learning_areas || row?.teaching?.subjects || [];
   const unique = (values) => [...new Set(values.map((value) => displayText(value)).filter((value) => value && value !== "—"))].sort((a, b) => a.localeCompare(b));
   const classOptions = unique(rows.map(classOf));
   const streamOptions = unique(rows.map(streamOf));
