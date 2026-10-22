@@ -1065,6 +1065,12 @@ export default function BiasharaDashboard({
         "biashara-analytics",
         "biashara-intelligence",
         "notifications",
+        // These are internal Biashara workspace routes, not global dashboard routes.
+        "finance",
+        "automations",
+        "sync",
+        "team",
+        "business-switch",
       ]);
 
       if (internalRoutes.has(route)) {
