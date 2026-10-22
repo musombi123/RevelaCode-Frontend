@@ -181,7 +181,7 @@ function EmptyState({
         {description}
       </p>
 
-      {actionLabel && onAction && (
+      {actionLabel && typeof onAction === "function" && (
         <button
           type="button"
           onClick={onAction}
@@ -288,7 +288,7 @@ function GroupCard({
       <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4 dark:border-white/10">
         <button
           type="button"
-          onClick={() => onOpen(group)}
+          onClick={() => { if (typeof onOpen === "function") onOpen(group); }}
           className="
             inline-flex min-h-10 flex-1 items-center
             justify-center gap-1.5 rounded-xl border
@@ -305,7 +305,7 @@ function GroupCard({
         <button
           type="button"
           disabled={busy}
-          onClick={() => onToggleMembership(group)}
+          onClick={() => { if (typeof onToggleMembership === "function") onToggleMembership(group); }}
           className={`
             inline-flex min-h-10 flex-1 items-center
             justify-center gap-2 rounded-xl px-3 py-2
@@ -348,6 +348,7 @@ function CreateGroupModal({
   onSubmit,
 }) {
   const [form, setForm] = useState(EMPTY_GROUP_FORM);
+  const [submissionError, setSubmissionError] = useState("");
 
   const updateField = (field, value) => {
     setForm((current) => ({
@@ -358,16 +359,29 @@ function CreateGroupModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setSubmissionError("");
 
-    const succeeded = await onSubmit({
-      name: form.name.trim(),
-      description: form.description.trim(),
-      category: form.category,
-      location: form.location.trim(),
-    });
+    if (typeof onSubmit !== "function") {
+      setSubmissionError("Group creation is temporarily unavailable. Close this form and try again.");
+      return;
+    }
 
-    if (succeeded) {
-      onClose();
+    try {
+      const succeeded = await onSubmit({
+        name: form.name.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        location: form.location.trim(),
+      });
+
+      if (succeeded && typeof onClose === "function") {
+        onClose();
+      } else if (!succeeded && !error) {
+        setSubmissionError("The group could not be created. Review the form and try again.");
+      }
+    } catch (submitError) {
+      console.error("[Community groups] Create group action failed:", submitError);
+      setSubmissionError(submitError?.message || "The group could not be created. Please try again.");
     }
   };
 
@@ -380,7 +394,7 @@ function CreateGroupModal({
       "
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          if (typeof onClose === "function") onClose();
         }
       }}
     >
@@ -414,7 +428,7 @@ function CreateGroupModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => { if (typeof onClose === "function") onClose(); }}
             aria-label="Close create group form"
             className="
               rounded-xl p-2 text-slate-500
@@ -547,7 +561,7 @@ function CreateGroupModal({
             </p>
           </div>
 
-          {error && (
+          {error || submissionError ? (
             <div
               role="alert"
               className="
@@ -557,15 +571,15 @@ function CreateGroupModal({
                 dark:text-rose-300
               "
             >
-              {error}
+              {error || submissionError}
             </div>
-          )}
+          ) : null}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               disabled={saving}
-              onClick={onClose}
+              onClick={() => { if (typeof onClose === "function") onClose(); }}
               className="
                 flex-1 rounded-xl border border-slate-200
                 px-4 py-3 text-xs font-bold text-slate-600
@@ -628,7 +642,7 @@ function GroupDetailsModal({
       "
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          if (typeof onClose === "function") onClose();
         }
       }}
     >
@@ -655,7 +669,7 @@ function GroupDetailsModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => { if (typeof onClose === "function") onClose(); }}
             aria-label="Close group details"
             className="
               rounded-xl p-2 text-slate-500
@@ -712,7 +726,7 @@ function GroupDetailsModal({
           </div>
         </div>
 
-        {error && (
+        {error ? (
           <div
             role="alert"
             className="
@@ -724,12 +738,12 @@ function GroupDetailsModal({
           >
             {error}
           </div>
-        )}
+        ) : null}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={() => onToggleMembership(group)}
+            onClick={() => { if (typeof onToggleMembership === "function") onToggleMembership(group); }}
             disabled={busy || loading}
             className={`
               inline-flex min-h-12 flex-1 items-center
@@ -759,7 +773,7 @@ function GroupDetailsModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => { if (typeof onClose === "function") onClose(); }}
             className="
               min-h-12 rounded-xl border border-slate-200
               px-5 py-3 text-xs font-bold text-slate-600

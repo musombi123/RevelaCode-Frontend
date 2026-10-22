@@ -157,7 +157,7 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
         <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
           <button
             type="button"
-            onClick={() => onDelete(listing)}
+            onClick={() => { if (typeof onDelete === "function") onDelete(listing); }}
             disabled={deleting}
             className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/30"
           >
@@ -193,7 +193,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => { if (typeof onClose === "function") onClose(); }}
             disabled={saving}
             aria-label="Close listing form"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
@@ -202,7 +202,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-5 space-y-4">
+        <form onSubmit={(event) => { if (typeof onSubmit === "function") onSubmit(event); else event.preventDefault(); }} className="mt-5 space-y-4">
           <div>
             <label htmlFor="marketplace-title" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
               Listing title *
@@ -213,7 +213,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               required
               maxLength={160}
               value={form.title}
-              onChange={(event) => onChange("title", event.target.value)}
+              onChange={(event) => { if (typeof onChange === "function") onChange("title", event.target.value); }}
               placeholder="What are you offering?"
               className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
@@ -229,7 +229,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               rows={4}
               maxLength={2000}
               value={form.description}
-              onChange={(event) => onChange("description", event.target.value)}
+              onChange={(event) => { if (typeof onChange === "function") onChange("description", event.target.value); }}
               placeholder="Describe condition, what is included, delivery options or the service you provide."
               className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
@@ -244,7 +244,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               <select
                 id="marketplace-category"
                 value={form.category}
-                onChange={(event) => onChange("category", event.target.value)}
+                onChange={(event) => { if (typeof onChange === "function") onChange("category", event.target.value); }}
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               >
                 {CATEGORIES.filter((item) => item.value).map((item) => (
@@ -261,7 +261,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 name="location"
                 maxLength={200}
                 value={form.location}
-                onChange={(event) => onChange("location", event.target.value)}
+                onChange={(event) => { if (typeof onChange === "function") onChange("location", event.target.value); }}
                 placeholder="e.g. Mombasa or Online"
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
@@ -280,7 +280,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 min="0"
                 step="0.01"
                 value={form.price}
-                onChange={(event) => onChange("price", event.target.value)}
+                onChange={(event) => { if (typeof onChange === "function") onChange("price", event.target.value); }}
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
@@ -295,7 +295,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 min="0"
                 step="0.01"
                 value={form.quantity_available}
-                onChange={(event) => onChange("quantity_available", event.target.value)}
+                onChange={(event) => { if (typeof onChange === "function") onChange("quantity_available", event.target.value); }}
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
@@ -307,7 +307,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 id="marketplace-unit"
                 maxLength={40}
                 value={form.unit}
-                onChange={(event) => onChange("unit", event.target.value)}
+                onChange={(event) => { if (typeof onChange === "function") onChange("unit", event.target.value); }}
                 placeholder="piece, hour, kg…"
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
@@ -323,7 +323,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
           <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-white/5 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { if (typeof onClose === "function") onClose(); }}
               disabled={saving}
               className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
             >
@@ -525,7 +525,7 @@ export default function CommunityMarketplace({ onNavigate }) {
         <div className="relative">
           <button
             type="button"
-            onClick={() => onNavigate?.("community")}
+            onClick={() => { if (typeof onNavigate === "function") onNavigate("community"); }}
             className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-white/75 transition hover:bg-white/10 hover:text-white"
           >
             <ArrowLeft size={14} />

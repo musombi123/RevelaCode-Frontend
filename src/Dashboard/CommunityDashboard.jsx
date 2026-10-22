@@ -493,24 +493,25 @@ export default function CommunityDashboard({
           return;
 
         case "community-hub-biashara":
-          onNavigate?.("biashara");
+          if (typeof onNavigate === "function") onNavigate("biashara");
           return;
 
         case "community-hub-shamba":
-          onNavigate?.("shamba");
+          if (typeof onNavigate === "function") onNavigate("shamba");
           return;
 
         case "community-hub-elimu":
-          onNavigate?.("education");
+          if (typeof onNavigate === "function") onNavigate("education");
           return;
 
         case "elimu":
-          onNavigate?.("education");
+          if (typeof onNavigate === "function") onNavigate("education");
           return;
 
         default:
           // Top-level dashboards still belong to the global shell.
-          onNavigate?.(destination);
+          if (typeof onNavigate === "function") onNavigate(destination);
+          return;
       }
     },
     [onNavigate],
@@ -666,7 +667,13 @@ export default function CommunityDashboard({
     setMarketplaceLoading(true);
     setMarketplaceError("");
 
-    getMarketplaceListings({ hub: "community" })
+    Promise.resolve()
+      .then(() => {
+        if (typeof getMarketplaceListings !== "function") {
+          throw new Error("The Community Marketplace service is unavailable.");
+        }
+        return getMarketplaceListings({ hub: "community" });
+      })
       .then((response) => {
         if (!active) return;
         const payload = response?.data ?? response;
@@ -853,6 +860,10 @@ export default function CommunityDashboard({
 
       if (!postId) {
         throw new Error("The post ID is missing.");
+      }
+
+      if (typeof reactToCommunityPost !== "function") {
+        throw new Error("The Community reaction service is unavailable. Refresh the page and try again.");
       }
 
       await reactToCommunityPost(postId);
