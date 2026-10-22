@@ -147,6 +147,27 @@ export function createRevenueApiClient({
         body: payload,
       });
     },
+    startCheckout: (payload, options = {}) => {
+      const { idempotencyKey = newIdempotencyKey(), ...requestOptions } = options;
+      return request("/checkout", {
+        ...requestOptions,
+        method: "POST",
+        headers: {
+          ...(requestOptions.headers || {}),
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: payload,
+      });
+    },
+    getCheckout: (checkoutId, options = {}) =>
+      request(`/checkout/${encodeURIComponent(checkoutId)}`, options),
+    refreshCheckout: (checkoutId, options = {}) =>
+      request(`/checkout/${encodeURIComponent(checkoutId)}/refresh`, {
+        ...options,
+        method: "POST",
+        body: {},
+      }),
+    listSubscriptions: (options = {}) => request("/subscriptions", options),
     listTransactions: ({ page = 1, perPage = 10 } = {}, options = {}) =>
       request("/transactions", {
         ...options,
