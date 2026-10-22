@@ -561,7 +561,7 @@ function CreateGroupModal({
             </p>
           </div>
 
-          {error && (
+          {error || submissionError ? (
             <div
               role="alert"
               className="
@@ -571,15 +571,15 @@ function CreateGroupModal({
                 dark:text-rose-300
               "
             >
-              {error}
+              {error || submissionError}
             </div>
-          )}
+          ) : null}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               disabled={saving}
-              onClick={onClose}
+              onClick={() => { if (typeof onClose === "function") onClose(); }}
               className="
                 flex-1 rounded-xl border border-slate-200
                 px-4 py-3 text-xs font-bold text-slate-600
@@ -726,7 +726,7 @@ function GroupDetailsModal({
           </div>
         </div>
 
-        {error || submissionError ? (
+        {error ? (
           <div
             role="alert"
             className="
@@ -736,7 +736,7 @@ function GroupDetailsModal({
               dark:bg-rose-950/30 dark:text-rose-300
             "
           >
-            {error || submissionError}
+            {error}
           </div>
         ) : null}
 
