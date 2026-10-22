@@ -141,7 +141,7 @@ export default function LegalDocumentsPage() {
 
         {loading && (
           <div role="status" className="mt-6 flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-10 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            <LoaderCircle size={19} className="animate-spin" /> Loading legal documents…
+            <Loader2 size={19} className="animate-spin" /> Loading legal documents…
           </div>
         )}
 
