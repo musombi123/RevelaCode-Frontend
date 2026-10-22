@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, BookOpen, FileText, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 
 const DEFAULT_BACKEND_URL = "https://revelacode-backend.onrender.com";
 const ENV = import.meta.env || {};
