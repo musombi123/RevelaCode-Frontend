@@ -105,6 +105,7 @@ export default function RevenueCenter() {
   const [updatingPlanCode, setUpdatingPlanCode] = useState("");
   const [reconcilingCheckoutId, setReconcilingCheckoutId] = useState("");
   const [resolvingUnknownCheckoutId, setResolvingUnknownCheckoutId] = useState("");
+  const [savingUnknownCheckoutId, setSavingUnknownCheckoutId] = useState("");
   const [manualEvidenceReference, setManualEvidenceReference] = useState("");
   const [manualResolutionNotes, setManualResolutionNotes] = useState("");
 
@@ -292,7 +293,7 @@ export default function RevenueCenter() {
   };
 
   const resolveUnknownSubmission = async (checkout) => {
-    if (!checkout?.id || resolvingUnknownCheckoutId) return;
+    if (!checkout?.id || savingUnknownCheckoutId) return;
     const evidenceReference = manualEvidenceReference.trim();
     const notes = manualResolutionNotes.trim();
     if (evidenceReference.length < 6 || evidenceReference.length > 160) {
@@ -304,7 +305,7 @@ export default function RevenueCenter() {
       return;
     }
 
-    setResolvingUnknownCheckoutId(checkout.id);
+    setSavingUnknownCheckoutId(checkout.id);
     setActionError("");
     setNotice("");
     try {
@@ -321,7 +322,7 @@ export default function RevenueCenter() {
     } catch (error) {
       setActionError(getErrorMessage(error));
     } finally {
-      setResolvingUnknownCheckoutId("");
+      setSavingUnknownCheckoutId("");
     }
   };
 
@@ -880,7 +881,7 @@ export default function RevenueCenter() {
                                     setManualResolutionNotes("");
                                     setActionError("");
                                   }}
-                                  disabled={Boolean(resolvingUnknownCheckoutId) || Boolean(reconcilingCheckoutId)}
+                                  disabled={Boolean(savingUnknownCheckoutId) || Boolean(reconcilingCheckoutId)}
                                   className="inline-flex min-h-8 items-center justify-center rounded-lg border border-amber-300 px-2.5 py-1.5 text-[10px] font-bold text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-800 dark:text-amber-200"
                                 >
                                   {resolvingUnknownCheckoutId === item.id ? "Close review" : "Record no-charge review"}
@@ -908,10 +909,10 @@ export default function RevenueCenter() {
                                     <button
                                       type="button"
                                       onClick={() => resolveUnknownSubmission(item)}
-                                      disabled={Boolean(resolvingUnknownCheckoutId && resolvingUnknownCheckoutId !== item.id) || manualEvidenceReference.trim().length < 6 || manualResolutionNotes.trim().length < 10}
+                                      disabled={savingUnknownCheckoutId === item.id || manualEvidenceReference.trim().length < 6 || manualResolutionNotes.trim().length < 10}
                                       className="inline-flex min-h-8 w-full items-center justify-center gap-1 rounded-md bg-amber-700 px-2 py-1.5 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
                                     >
-                                      {resolvingUnknownCheckoutId === item.id ? "Resolving…" : "Confirm no charge"}
+                                      {savingUnknownCheckoutId === item.id ? "Resolving…" : "Confirm no charge"}
                                     </button>
                                   </div>
                                 ) : null}
@@ -920,7 +921,7 @@ export default function RevenueCenter() {
                               <button
                                 type="button"
                                 onClick={() => reconcileCheckout(item)}
-                                disabled={!item.checkout_request_id || Boolean(reconcilingCheckoutId) || Boolean(resolvingUnknownCheckoutId) || item.status === "succeeded" || item.status === "sandbox_verified"}
+                                disabled={!item.checkout_request_id || Boolean(reconcilingCheckoutId) || Boolean(savingUnknownCheckoutId) || item.status === "succeeded" || item.status === "sandbox_verified"}
                                 className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
                               >
                                 <RefreshCw className={"h-3 w-3 " + (reconcilingCheckoutId === item.checkout_request_id ? "animate-spin" : "")} />
