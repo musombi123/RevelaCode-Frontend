@@ -243,6 +243,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   };
 
   const startTrial = async () => {
+    if (subscriptionLoading || subscriptionLoadError) {
+      setTrialError("The current subscription status could not be verified. Reload this hub before starting a trial.");
+      return;
+    }
     if (subscription?.status === "active") {
       setNotice("This hub already has an active paid subscription.");
       return;
@@ -352,7 +356,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         <span>Plan prices are managed centrally. Production M-Pesa checkout is available only for administrator-published plans; access activates only after verified provider confirmation.</span>
       </div>
 
-      {checkoutEnabled && plans.some((plan) => plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0) ? (
+      {checkoutEnabled && !subscriptionLoading && !subscriptionLoadError && subscription?.status !== "active" && plans.some((plan) => plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0) ? (
         <div className="mt-4 rounded-xl border border-emerald-200 p-4 dark:border-emerald-900/50">
           <label htmlFor="revenue-mpesa-phone" className="block text-xs font-bold text-slate-800 dark:text-slate-100">M-Pesa phone number</label>
           <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Use a Kenyan Safaricom mobile number. The payment prompt will be sent to this phone.</p>
