@@ -458,8 +458,8 @@ export default function RevenueCenter() {
           <div className="grid gap-3 p-5 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">M-Pesa checkout</p>
-              <div className="mt-2"><StatusTag tone={adminOps.billing?.mpesa_checkout_enabled ? "success" : "proposed"}>{adminOps.billing?.mpesa_checkout_enabled ? "Configured" : "Not configured"}</StatusTag></div>
-              <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{adminOps.billing?.mpesa_checkout_enabled ? "Daraja credentials and the HTTPS callback are present." : "Set the Daraja environment variables before checkout can start."}</p>
+              <div className="mt-2"><StatusTag tone={adminOps.billing?.mpesa_checkout_enabled ? "success" : "proposed"}>{adminOps.billing?.mpesa_checkout_enabled ? "Live checkout configured" : adminOps.billing?.mpesa_sandbox_configured ? "Sandbox only" : "Not configured"}</StatusTag></div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">{adminOps.billing?.mpesa_checkout_enabled ? "Production Daraja credentials and the registered HTTPS callback are present." : adminOps.billing?.mpesa_sandbox_configured ? "Sandbox is for provider testing only. It cannot activate live subscriptions or be published for customer checkout." : "Set production Daraja credentials and the registered public HTTPS callback before publishing paid plans."}</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Verified activation</p>
