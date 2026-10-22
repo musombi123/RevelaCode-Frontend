@@ -168,6 +168,17 @@ export function createRevenueApiClient({
         body: {},
       }),
     listSubscriptions: (options = {}) => request("/subscriptions", options),
+    adminBillingStatus: (options = {}) => request("/admin/billing/status", options),
+    adminSubscriptions: ({ page = 1, perPage = 25, hub, status } = {}, options = {}) =>
+      request("/admin/subscriptions", {
+        ...options,
+        params: { page, per_page: perPage, hub, status, ...(options.params || {}) },
+      }),
+    adminTrials: ({ page = 1, perPage = 25 } = {}, options = {}) =>
+      request("/admin/trials", {
+        ...options,
+        params: { page, per_page: perPage, ...(options.params || {}) },
+      }),
     listTransactions: ({ page = 1, perPage = 10 } = {}, options = {}) =>
       request("/transactions", {
         ...options,
