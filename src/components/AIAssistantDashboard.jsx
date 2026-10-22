@@ -15,6 +15,7 @@ import {
   MessageSquarePlus,
 } from "lucide-react";
 
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
@@ -340,6 +341,9 @@ export default function AIAssistantDashboard({
 
   const [voiceActive, setVoiceActive] =
     useState(false);
+
+  // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
+  const [aiRevenueOpen, setAiRevenueOpen] = useState(false);
 
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
@@ -1863,6 +1867,32 @@ export default function AIAssistantDashboard({
               <ShieldCheck size={12} />
               AUTO ROUTING ACTIVE
             </div>
+
+            <button
+              type="button"
+              onClick={() => setAiRevenueOpen((open) => !open)}
+              aria-expanded={aiRevenueOpen}
+              aria-controls="revela-ai-revenue-panel"
+              className="
+                inline-flex
+                items-center
+                gap-2
+                rounded-xl
+                border
+                border-emerald-500/20
+                bg-emerald-500/10
+                px-3
+                py-2
+                text-xs
+                font-bold
+                text-emerald-200
+                transition
+                hover:bg-emerald-500/20
+              "
+            >
+              <Sparkles size={14} />
+              {aiRevenueOpen ? "Hide plans" : "AI trial & plans"}
+            </button>
 
             <button
               type="button"
