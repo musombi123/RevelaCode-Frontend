@@ -181,7 +181,7 @@ function EmptyState({
         {description}
       </p>
 
-      {actionLabel && onAction && (
+      {actionLabel && typeof onAction === "function" && (
         <button
           type="button"
           onClick={onAction}
