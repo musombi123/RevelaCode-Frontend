@@ -191,6 +191,8 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         setActionError(updated?.result_description || "M-Pesa reports that this payment was not completed. You can start a new checkout.");
       } else if (updated?.status === "verified_activation_failed") {
         setActionError("The payment was verified but access needs administrator reconciliation. Do not pay again; contact support.");
+      } else if (updated?.status === "sandbox_verified") {
+        setNotice("Daraja sandbox test succeeded. No live subscription or revenue was created; switch to production Daraja to enable paid checkout.");
       } else {
         setNotice("M-Pesa status is still being verified. Refresh again shortly; do not submit another payment.");
       }
