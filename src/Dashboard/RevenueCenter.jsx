@@ -235,7 +235,10 @@ export default function RevenueCenter() {
       setHealth(response);
       setCheckoutEnabled(response?.checkout_enabled === true);
     } catch (error) {
-      if (error?.name !== "AbortError") setHealthError(getErrorMessage(error));
+      if (error?.name !== "AbortError") {
+        setHealthError(getErrorMessage(error));
+        setCheckoutEnabled(false);
+      }
     }
   }, [revenueApi]);
 
