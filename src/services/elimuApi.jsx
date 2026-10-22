@@ -629,6 +629,18 @@ export function createElimuApiClient({
     createFeeRecord: (data, options) =>
       post("fees", data, options),
 
+    getSchoolPaymentAccounts: (params, options) =>
+      get("finance/payment-accounts", params, options),
+
+    updateSchoolPaymentAccounts: (data, options) =>
+      put("finance/payment-accounts", data, options),
+
+    getSchoolFeeReceipts: (params, options) =>
+      get("finance/receipts", params, options),
+
+    reviewSchoolFeeReceipt: (receiptId, data, options) =>
+      post(`finance/receipts/${pathSegment(receiptId, "receipt ID")}/review`, data, options),
+
     getEvents: (params, options) =>
       get("events", params, options),
 
