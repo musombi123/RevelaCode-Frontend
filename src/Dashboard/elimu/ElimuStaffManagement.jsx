@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  ClipboardList,
   Mail,
   RefreshCw,
   ShieldCheck,
@@ -18,6 +19,7 @@ const ROLE_OPTIONS = [
   { value: "teacher", label: "Teacher" },
   { value: "bursar", label: "Bursar" },
   { value: "registrar", label: "Registrar" },
+  { value: "storekeeper", label: "Storekeeper" },
 ];
 
 const ROLE_LABELS = {
@@ -26,6 +28,7 @@ const ROLE_LABELS = {
   teacher: "Teacher",
   bursar: "Bursar",
   registrar: "Registrar",
+  storekeeper: "Storekeeper",
 };
 
 function unwrap(value) {
@@ -132,6 +135,7 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
 
   const [staff, setStaff] = useState([]);
   const [invitations, setInvitations] = useState([]);
+  const [changeRequests, setChangeRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [busyInvitationId, setBusyInvitationId] = useState("");
@@ -144,6 +148,8 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
     email: "",
     role: role === "owner" ? "principal" : "teacher",
     expires_in_days: "7",
+    department: "",
+    store: "",
   });
 
   const schoolName = school?.name || school?.school_name || school?.institution_name || "your school";
@@ -162,9 +168,10 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    const [staffResult, invitationResult] = await Promise.allSettled([
+    const [staffResult, invitationResult, requestResult] = await Promise.allSettled([
       api.getStaff(),
       api.getStaffInvitations(),
+      api.getStaffChangeRequests(),
     ]);
 
     if (staffResult.status === "fulfilled") {
@@ -183,8 +190,14 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
         : (invitationResult.reason?.message || "Pending invitations could not be loaded; ensure the backend invitation-management routes are deployed."));
     }
 
+    if (requestResult.status === "fulfilled") {
+      setChangeRequests(rowsFrom(requestResult.value, "requests"));
+    } else {
+      setChangeRequests([]);
+    }
+
     setLoading(false);
-  }, [api.getStaff, api.getStaffInvitations]);
+  }, [api.getStaff, api.getStaffInvitations, api.getStaffChangeRequests]);
 
   useEffect(() => {
     void load();
@@ -221,6 +234,10 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
         role: form.role,
         expires_in_days: Number(form.expires_in_days || 7),
         identity: { email, display_name: displayName || undefined },
+        employment: {
+          department: form.department.trim() || undefined,
+          store: form.store.trim() || undefined,
+        },
       });
       const result = unwrap(response) || {};
       if (result.email_sent === false) {
@@ -228,7 +245,7 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
       } else {
         setNotice(`Invitation sent directly to ${email} as ${ROLE_LABELS[form.role] || form.role}.`);
       }
-      setForm({ display_name: "", email: "", role: "teacher", expires_in_days: "7" });
+      setForm({ display_name: "", email: "", role: "teacher", expires_in_days: "7", department: "", store: "" });
       await load();
     } catch (requestError) {
       setError(requestError?.message || "The invitation could not be created.");
@@ -282,14 +299,36 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
     setError("");
     setNotice("");
     try {
-      await api.deleteStaffMember(userId);
-      setNotice(`${staffName(member)} was removed from ${schoolName}. Their RevelaCode account and historical school records remain intact.`);
+      const removalResult = unwrap(await api.deleteStaffMember(userId)) || {};
+      if (removalResult.approval_required || removalResult.request?.approval_required) {
+        setNotice(`Removal request for ${staffName(member)} was submitted to the School Owner/Director for approval. Access has not been removed yet.`);
+      } else {
+        setNotice(`${staffName(member)} was removed from ${schoolName}. Their RevelaCode account and historical school records remain intact.`);
+      }
       setPendingRemoval(null);
       await load();
     } catch (requestError) {
       setError(requestError?.message || "The staff membership could not be removed.");
     } finally {
       setBusyStaffId("");
+    }
+  };
+
+  const decideChangeRequest = async (request, decision) => {
+    const requestId = String(request?._id || request?.id || request?.request_id || "");
+    if (!requestId || busyInvitationId) return;
+    if (role !== "owner") return;
+    setBusyInvitationId(requestId);
+    setError("");
+    setNotice("");
+    try {
+      await api.decideStaffChangeRequest(requestId, { decision });
+      setNotice(`Staff ${request?.change_type || "change"} request ${decision === "approve" ? "approved" : "rejected"}.`);
+      await load();
+    } catch (requestError) {
+      setError(requestError?.message || "The staff change request could not be updated.");
+    } finally {
+      setBusyInvitationId("");
     }
   };
 
@@ -306,9 +345,9 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
       <section className="overflow-hidden rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-blue-200"><ShieldCheck size={14} /> Owner-controlled access</div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-blue-200"><ShieldCheck size={14} /> Role-gated staff access</div>
             <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Staff & access</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">Invite school leaders and staff by email, track onboarding, resend or revoke pending invitations, and remove school access without deleting a RevelaCode account.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Invite staff by email and track onboarding. Principals can request staff transfers or removals; only the School Owner/Director approves and executes those changes.</p>
             <p className="mt-3 text-sm font-semibold text-white">{schoolName}</p>
           </div>
           <Button variant="secondary" onClick={() => void load()} disabled={loading} className="shrink-0"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh records</Button>
@@ -342,6 +381,8 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
             <div><label htmlFor="elimu-staff-name" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitee name (optional)</label><input id="elimu-staff-name" name="display_name" autoComplete="name" value={form.display_name} onChange={(event) => changeForm("display_name", event.target.value)} placeholder="e.g. Jane Wanjiku" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></div>
             <div><label htmlFor="elimu-staff-email" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitee email address</label><input id="elimu-staff-email" name="email" type="email" autoComplete="email" required value={form.email} onChange={(event) => changeForm("email", event.target.value)} placeholder="person@example.com" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">They must register or sign in with this exact email address.</p></div>
             <div><label htmlFor="elimu-staff-role" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">School role</label><select id="elimu-staff-role" name="role" required value={form.role} onChange={(event) => changeForm("role", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white">{ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={option.value === "principal" && !canInvitePrincipal}>{option.label}{option.value === "principal" && principalAssigned ? " (already assigned)" : option.value === "principal" && role !== "owner" ? " (owner only)" : ""}</option>)}</select><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">Owner permissions cannot be granted from staff management.</p></div>
+            <div><label htmlFor="elimu-staff-department" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Department (optional)</label><input id="elimu-staff-department" name="department" value={form.department} onChange={(event) => changeForm("department", event.target.value)} placeholder="e.g. Languages, Science, Finance" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></div>
+            <div><label htmlFor="elimu-staff-store" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Store assignment (optional)</label><input id="elimu-staff-store" name="store" value={form.store} onChange={(event) => changeForm("store", event.target.value)} placeholder="e.g. Science store" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></div>
             <div><label htmlFor="elimu-staff-expiry" className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300">Invitation validity</label><select id="elimu-staff-expiry" name="expires_in_days" value={form.expires_in_days} onChange={(event) => changeForm("expires_in_days", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
             <Button type="submit" variant="primary" disabled={submitting} className="w-full">{submitting ? <><RefreshCw size={16} className="animate-spin" /> Sending invitation…</> : <><Mail size={16} /> Send invitation email</>}</Button>
           </form>
@@ -349,17 +390,56 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
           <div className="flex items-start justify-between gap-3"><div><h3 className="text-base font-bold text-slate-950 dark:text-white">School staff</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Active and suspended membership records for this school.</p></div><StatusPill tone="blue">{staff.length} records</StatusPill></div>
-          <div className="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
-            {loading && !staff.length ? <div className="py-8 text-center text-sm text-slate-500"><RefreshCw size={18} className="mx-auto mb-2 animate-spin" />Loading school staff…</div> : staff.length ? staff.map((member, index) => {
-              const userId = String(member?.user_id || member?.userId || member?.revelacode_user_id || "");
-              const memberRole = String(member?.role || "").toLowerCase();
-              const status = String(member?.status || "unknown").toLowerCase();
-              const isOwner = memberRole === "owner";
-              const isSelf = Boolean(currentUserId && userId && userId === currentUserId);
-              const canRemove = !isOwner && !isSelf && Boolean(userId) && status !== "removed";
-              return <article key={member?._id || userId || index} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center"><div className="flex min-w-0 flex-1 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300"><Users size={18} /></span><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold text-slate-900 dark:text-white">{staffName(member)}</p><p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{text(staffEmail(member), "Email not on profile")}</p><div className="mt-2 flex flex-wrap gap-2"><StatusPill tone={memberRole === "owner" ? "amber" : memberRole === "principal" ? "blue" : "slate"}>{ROLE_LABELS[memberRole] || text(member?.role, "Staff")}</StatusPill><StatusPill tone={status === "active" ? "green" : status === "suspended" ? "amber" : "slate"}>{status.replace(/[_-]+/g, " ")}</StatusPill>{isSelf && <StatusPill>Current account</StatusPill>}</div></div></div>{canRemove && <Button type="button" variant="danger" className="shrink-0 self-start sm:self-center" disabled={Boolean(busyStaffId)} onClick={() => setPendingRemoval(member)}><Users size={15} /> Remove from school</Button>}</article>;
-            }) : <div className="py-8 text-center"><Users size={24} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">No staff records yet</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Send your first invitation using the form.</p></div>}
+          <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            {loading && !staff.length ? <div className="py-8 text-center text-sm text-slate-500"><RefreshCw size={18} className="mx-auto mb-2 animate-spin" />Loading school staff…</div> : staff.length ? (
+              <table className="min-w-full divide-y divide-slate-200 text-left dark:divide-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-900"><tr>{["Role", "ID", "Contact", "Department", "Status", "Courses", "Action"].map((label) => <th key={label} className="whitespace-nowrap px-3 py-3 text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</th>)}</tr></thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-950">
+                  {staff.map((member, index) => {
+                    const userId = String(member?.user_id || member?.userId || member?.revelacode_user_id || "");
+                    const memberRole = String(member?.role || "").toLowerCase();
+                    const status = String(member?.status || "unknown").toLowerCase();
+                    const isOwner = memberRole === "owner";
+                    const isSelf = Boolean(currentUserId && userId && userId === currentUserId);
+                    const canRemove = !isOwner && !isSelf && Boolean(userId) && status !== "removed";
+                    const courses = member?.teaching?.subjects || member?.subjects || member?.teaching?.learning_area_ids || [];
+                    const contact = member?.identity?.email || member?.email || member?.identity?.phone || member?.phone || member?.contact || "—";
+                    return <tr key={member?._id || userId || index} className="align-top hover:bg-slate-50/70 dark:hover:bg-slate-900/60">
+                      <td className="whitespace-nowrap px-3 py-3 text-xs font-bold text-slate-800 dark:text-slate-100">{ROLE_LABELS[memberRole] || text(memberRole, "Staff")}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-600 dark:text-slate-300">{text(member?.staff_id || member?.employment?.employee_number || userId)}</td>
+                      <td className="max-w-[230px] px-3 py-3 text-xs text-slate-700 dark:text-slate-300"><span className="block break-all font-semibold">{staffName(member)}</span><span className="mt-1 block break-all text-slate-500">{contact}</span></td>
+                      <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-600 dark:text-slate-300">{text(member?.employment?.department || member?.department)}</td>
+                      <td className="whitespace-nowrap px-3 py-3"><StatusPill tone={status === "active" ? "green" : status === "suspended" ? "amber" : "slate"}>{status.replace(/[_-]+/g, " ")}</StatusPill></td>
+                      <td className="max-w-[210px] px-3 py-3 text-xs text-slate-600 dark:text-slate-300">{memberRole === "teacher" ? text(Array.isArray(courses) ? courses.join(", ") : courses) : "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{canRemove ? <Button type="button" variant="danger" disabled={Boolean(busyStaffId)} onClick={() => setPendingRemoval(member)}><Users size={14} /> {role === "owner" ? "Remove" : "Request removal"}</Button> : isSelf ? <StatusPill>Current account</StatusPill> : <span className="text-xs text-slate-400">Protected</span>}</td>
+                    </tr>;
+                  })}
+                </tbody>
+              </table>
+            ) : <div className="py-8 text-center"><Users size={24} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">No staff records yet</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Send your first invitation using the form.</p></div>}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+        <div className="flex items-start justify-between gap-3"><div><h3 className="text-base font-bold text-slate-950 dark:text-white">Staff change approvals</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Principal/Headteacher transfer and removal requests are held until the School Owner/Director decides.</p></div><StatusPill tone="amber">{changeRequests.filter((request) => String(request?.status || "").toLowerCase() === "pending").length} pending</StatusPill></div>
+        <div className="mt-4 space-y-3">
+          {changeRequests.length ? changeRequests.map((request, index) => {
+            const requestId = String(request?._id || request?.id || request?.request_id || "");
+            const changes = request?.requested_changes || {};
+            const employment = changes.employment || {};
+            const pending = String(request?.status || "").toLowerCase() === "pending";
+            return <article key={requestId || index} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-slate-900 dark:text-white">{text(request?.staff_name || request?.staff_user_id, "Staff member")}</p><StatusPill tone={pending ? "amber" : request?.status === "approved" ? "green" : "slate"}>{text(request?.status, "unknown")}</StatusPill></div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{String(request?.change_type || "change").replace(/[_-]+/g, " ")} · requested by {text(request?.requester_role, "school leader")} · {formatDate(request?.requested_at)}</p>
+                {Object.keys(employment).length > 0 && <p className="mt-2 text-xs text-slate-700 dark:text-slate-300">Department: {text(employment.department)} · Store: {text(employment.store)}</p>}
+                {Array.isArray(changes.assigned_class_ids) && <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">Class assignments: {changes.assigned_class_ids.join(", ") || "None"}</p>}
+                {request?.notes && <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{request.notes}</p>}
+                {request?.decision_notes && <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Decision: {request.decision_notes}</p>}
+              </div>
+              {role === "owner" && pending && <div className="flex shrink-0 flex-wrap gap-2"><Button type="button" variant="primary" disabled={Boolean(busyInvitationId)} onClick={() => void decideChangeRequest(request, "approve")}>{busyInvitationId === requestId ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}Approve</Button><Button type="button" variant="danger" disabled={Boolean(busyInvitationId)} onClick={() => void decideChangeRequest(request, "reject")}><X size={14} />Reject</Button></div>}
+            </article>;
+          }) : <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400"><ClipboardList size={20} className="mx-auto mb-2" />No staff transfer or removal requests.</p>}
         </div>
       </section>
 
