@@ -1221,6 +1221,8 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
         </section>
       )}
 
+      <a href="https://github.com/musombi123/RevelaCode-Frontend/blob/main/docs/ELIMU_HUB_USER_GUIDE.md" target="_blank" rel="noopener noreferrer" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-blue-900/60 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:focus:ring-offset-slate-950" aria-label="Open Elimu Hub Help and Documentation in a new tab"><BookOpen size={20} className="shrink-0 text-blue-700 dark:text-blue-300"/><span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900 dark:text-white">Help &amp; Documentation</span><span className="mt-0.5 block text-xs leading-5 text-slate-600 dark:text-slate-300">Open the guide to roles, workflows, accessibility and troubleshooting.</span></span><ArrowUpRight size={17} className="shrink-0 text-blue-700 dark:text-blue-300"/></a>
+
       <section className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"><ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" /><p className="text-xs leading-5 text-slate-600 dark:text-slate-300">These modules use the shared Elimu API client. The browser does not choose or override school ownership. Backend permissions remain authoritative for all saved records.</p></section>
     </div>
   );
