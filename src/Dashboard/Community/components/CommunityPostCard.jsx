@@ -51,23 +51,28 @@ function persistSavedPostId(postId, shouldSave) {
   );
 }
 
+function safeDisplayText(value, fallback = "") {
+  if (typeof value !== "string" && typeof value !== "number") return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
 function getAuthorName(post) {
-  return (
+  return safeDisplayText(
     post?.author?.name ||
-    post?.author?.full_name ||
-    post?.author?.fullName ||
-    post?.user?.name ||
-    post?.user?.full_name ||
-    post?.username ||
-    post?.author_name ||
-    "Community Member"
+      post?.author?.full_name ||
+      post?.author?.fullName ||
+      post?.user?.name ||
+      post?.user?.full_name ||
+      post?.username ||
+      post?.author_name,
+    "Community Member",
   );
 }
 
 function getAuthorInitials(name) {
-  if (!name) return "CM";
-
-  const parts = name.trim().split(/\s+/);
+  const safeName = safeDisplayText(name, "Community Member");
+  const parts = safeName.trim().split(/\s+/);
 
   if (parts.length === 1) {
     return parts[0].slice(0, 2).toUpperCase();
@@ -77,7 +82,7 @@ function getAuthorInitials(name) {
 }
 
 function getAuthorAvatar(post) {
-  return (
+  const candidate =
     post?.author?.avatar ||
     post?.author?.avatar_url ||
     post?.author?.profile_image ||
@@ -85,49 +90,30 @@ function getAuthorAvatar(post) {
     post?.user?.avatar ||
     post?.user?.avatar_url ||
     post?.avatar ||
-    null
-  );
+    null;
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
 }
 
 function getPostTitle(post) {
-  return (
-    post?.title ||
-    post?.headline ||
-    "Community Update"
-  );
+  return safeDisplayText(post?.title || post?.headline, "Community Update");
 }
 
 function getPostBody(post) {
-  return (
-    post?.body ||
-    post?.content ||
-    post?.description ||
-    ""
-  );
+  return safeDisplayText(post?.body || post?.content || post?.description);
 }
 
 function getPostCategory(post) {
-  return (
-    post?.category ||
-    post?.type ||
-    "general"
-  );
+  return safeDisplayText(post?.category || post?.type, "general");
 }
 
 function getPostHub(post) {
-  return (
-    post?.hub ||
-    post?.hub_name ||
-    "community"
-  );
+  return safeDisplayText(post?.hub || post?.hub_name, "community");
 }
 
 function getPostLocation(post) {
-  return (
-    post?.location ||
-    post?.location_name ||
-    ""
-  );
+  return safeDisplayText(post?.location || post?.location_name);
 }
 
 function getPostTime(post) {
@@ -791,10 +777,9 @@ export default function CommunityPostCard({
           <button
             type="button"
             onClick={() =>
-              onOpen?.({
+              typeof onOpen === "function" && onOpen({
                 ...post,
-                action:
-                  "author",
+                action: "author",
               })
             }
             className="
@@ -1077,7 +1062,7 @@ export default function CommunityPostCard({
                     : "Save post"}
                 </button>
 
-                {onReport && (
+                {typeof onReport === "function" && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1198,7 +1183,7 @@ export default function CommunityPostCard({
       <button
         type="button"
         onClick={() =>
-          onOpen?.(post)
+          typeof onOpen === "function" && onOpen(post)
         }
         className="
           mt-4
