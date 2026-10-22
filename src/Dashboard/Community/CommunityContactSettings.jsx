@@ -138,7 +138,7 @@ export default function CommunityContactSettings({ onBack }) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => { if (typeof onBack === "function") onBack(); }}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-white/5"
           aria-label="Back to Community"
         >
@@ -259,7 +259,7 @@ export default function CommunityContactSettings({ onBack }) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={onBack}
+                onClick={() => { if (typeof onBack === "function") onBack(); }}
                 className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
               >
                 Back to Community
