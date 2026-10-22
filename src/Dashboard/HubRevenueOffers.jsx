@@ -252,7 +252,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       setTrialError("The current subscription status could not be verified. Reload this hub before starting a trial.");
       return;
     }
-    if (checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status)) {
+    if (checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed", "submission_unknown"].includes(checkout.status)) {
       setTrialError("A payment for this hub is unresolved. Refresh its status before starting a trial.");
       return;
     }
@@ -287,6 +287,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       });
       setNotice(response?.message || "Your plan-interest request was recorded. No payment was initiated.");
     } catch (error) {
+      if (error?.payload?.checkout) setCheckout(error.payload.checkout);
       setActionError(messageForError(error));
     } finally {
       setSubmittingCode("");
@@ -351,7 +352,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
           ) : trial?.status === "expired" ? (
             <button type="button" disabled className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-200 px-4 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Trial used</button>
           ) : (
-            <button type="button" onClick={startTrial} disabled={trialStarting || Boolean(checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status))} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={startTrial} disabled={trialStarting || Boolean(checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed", "submission_unknown"].includes(checkout.status))} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
               {trialStarting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {trialStarting ? "Starting trial…" : "Start free month"}
             </button>
@@ -395,6 +396,8 @@ export default function HubRevenueOffers({ hub, compact = false }) {
               <span className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">Subscription active</span>
             ) : checkout.status === "failed" ? (
               <span className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-bold text-rose-800 dark:bg-rose-900/30 dark:text-rose-200">Payment not completed</span>
+            ) : ["submission_unknown", "initiating"].includes(checkout.status) && !checkout.checkout_request_id ? (
+              <span className="max-w-64 rounded-lg bg-amber-100 px-3 py-2 text-xs font-bold leading-5 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">Do not pay again. Finance must reconcile the provider record before this checkout can be released.</span>
             ) : (
               <button type="button" onClick={refreshCheckout} disabled={checkoutRefreshing || !checkout.checkout_request_id} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200">
                 <RefreshCw className={`h-3.5 w-3.5 ${checkoutRefreshing ? "animate-spin" : ""}`} />
@@ -471,7 +474,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
                 <button
                   type="button"
                   onClick={() => startCheckout(plan)}
-                  disabled={Boolean(submittingCode) || !checkoutPhone.trim() || Boolean(checkout && ["pending", "initiating", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status))}
+                  disabled={Boolean(submittingCode) || !checkoutPhone.trim() || Boolean(checkout && ["pending", "initiating", "callback_received", "awaiting_verification", "verified_activation_failed", "submission_unknown"].includes(checkout.status))}
                   className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submittingCode === plan.code ? "Starting M-Pesa..." : `Pay ${money(plan.amount, plan.currency || "KES")} with M-Pesa`}
