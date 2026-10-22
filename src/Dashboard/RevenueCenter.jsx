@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -83,6 +83,11 @@ export default function RevenueCenter() {
   const [transactions, setTransactions] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
+  const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [activeCheckout, setActiveCheckout] = useState(null);
+  const [checkoutRefreshing, setCheckoutRefreshing] = useState(false);
+  const checkoutKeys = useRef({});
 
   const [adminOps, setAdminOps] = useState({
     authorized: false,
@@ -222,7 +227,9 @@ export default function RevenueCenter() {
   const loadHealth = useCallback(async (signal) => {
     setHealthError("");
     try {
-      setHealth(await revenueApi.health({ signal }));
+      const response = await revenueApi.health({ signal });
+      setHealth(response);
+      setCheckoutEnabled(response?.checkout_enabled === true);
     } catch (error) {
       if (error?.name !== "AbortError") setHealthError(getErrorMessage(error));
     }
@@ -276,6 +283,70 @@ export default function RevenueCenter() {
       setActionError(getErrorMessage(error));
     } finally {
       setSubmittingPlan("");
+    }
+  };
+
+  const startCheckout = async (plan) => {
+    if (!plan?.code || !checkoutEnabled) return;
+    if (!checkoutPhone.trim()) {
+      setActionError("Enter the Kenyan M-Pesa phone number that should receive the payment prompt.");
+      return;
+    }
+    const phoneKey = checkoutPhone.trim().replace(/[\\s()+-]/g, "");
+    const keyScope = plan.code + ":" + phoneKey;
+    const idempotencyKey = checkoutKeys.current[keyScope] || (
+      globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID()
+        : "mpesa-" + Date.now() + "-" + Math.random().toString(36).slice(2, 14)
+    );
+    checkoutKeys.current[keyScope] = idempotencyKey;
+    setSubmittingPlan(plan.code);
+    setActionError("");
+    setNotice("");
+    try {
+      const result = await revenueApi.startCheckout(
+        { plan_code: plan.code, phone: checkoutPhone.trim() },
+        { idempotencyKey },
+      );
+      setActiveCheckout(result?.checkout || null);
+      delete checkoutKeys.current[keyScope];
+      setNotice(result?.message || "M-Pesa prompt sent. Confirm payment on your phone.");
+    } catch (error) {
+      // Keep the same idempotency key for safe retries after ambiguous network or
+      // initiation failures; the backend will replay or recover the same checkout.
+      setActionError(getErrorMessage(error));
+    } finally {
+      setSubmittingPlan("");
+    }
+  };
+
+  const refreshCheckoutStatus = async () => {
+    const checkoutId = activeCheckout?.checkout_request_id;
+    if (!checkoutId) return;
+    setCheckoutRefreshing(true);
+    setActionError("");
+    try {
+      const result = await revenueApi.refreshCheckout(checkoutId);
+      const updated = result?.checkout || null;
+      setActiveCheckout(updated);
+      if (updated?.status === "succeeded") {
+        setNotice("Payment verified and your subscription is active.");
+        await loadHistory();
+        await loadHealth();
+        await loadAdminOps();
+      } else if (updated?.status === "failed") {
+        setActionError(updated?.result_description || "M-Pesa reports that the payment was not completed.");
+      } else if (updated?.status === "verified_activation_failed") {
+        setActionError("Payment was verified but subscription reconciliation needs support. Do not pay again.");
+      } else if (updated?.status === "sandbox_verified") {
+        setNotice("This was a sandbox result only. It created no live subscription or revenue.");
+      } else {
+        setNotice("Payment is still being verified. Refresh shortly; do not submit another payment.");
+      }
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    } finally {
+      setCheckoutRefreshing(false);
     }
   };
 
@@ -369,6 +440,14 @@ export default function RevenueCenter() {
             </div>
           </div>
 
+          {checkoutEnabled && visiblePlans.some((plan) => plan?.status === "available" && Number(plan.amount) > 0 && ["month", "year"].includes(String(plan.interval || "").toLowerCase()) && plan.hub !== "all") ? (
+            <div className="mt-4 rounded-xl border border-emerald-200 p-4 dark:border-emerald-900/50">
+              <label htmlFor="revenue-center-mpesa-phone" className="block text-xs font-bold text-slate-800 dark:text-slate-100">M-Pesa phone number</label>
+              <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Use the Kenyan mobile number that should receive the STK Push payment prompt.</p>
+              <input id="revenue-center-mpesa-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0712 345 678" value={checkoutPhone} onChange={(event) => setCheckoutPhone(event.target.value)} className="mt-2 min-h-11 w-full max-w-md rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+            </div>
+          ) : null}
+
           {plansError ? (
             <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{plansError}
@@ -409,15 +488,27 @@ export default function RevenueCenter() {
                       ))}
                     </ul>
                     {paidProposal ? (
-                      <button
-                        type="button"
-                        disabled={Boolean(submittingPlan) || !canSubmitIntents}
-                        onClick={() => registerInterest(plan)}
-                        className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-                      >
-                        {submittingPlan === plan.code ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                        {submittingPlan === plan.code ? "Recording request…" : "Register interest · no charge"}
-                      </button>
+                      checkoutEnabled && plan.status === "available" && ["month", "year"].includes(String(plan.interval || "").toLowerCase()) && plan.hub !== "all" ? (
+                        <button
+                          type="button"
+                          disabled={Boolean(submittingPlan) || !checkoutPhone.trim() || Boolean(activeCheckout && ["pending", "initiating", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(activeCheckout.status))}
+                          onClick={() => startCheckout(plan)}
+                          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {submittingPlan === plan.code ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                          {submittingPlan === plan.code ? "Starting M-Pesa…" : "Pay " + formatMoney(plan.amount, plan.currency) + " with M-Pesa"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={Boolean(submittingPlan) || !canSubmitIntents}
+                          onClick={() => registerInterest(plan)}
+                          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                        >
+                          {submittingPlan === plan.code ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                          {submittingPlan === plan.code ? "Recording request…" : "Register interest · no charge"}
+                        </button>
+                      )
                     ) : (
                       <div className="mt-5 rounded-xl bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold text-slate-500 dark:bg-white/5 dark:text-slate-400">
                         {Number(plan.amount) === 0 ? "Free plan · no purchase needed" : "Request not available for this catalogue item"}
@@ -428,6 +519,27 @@ export default function RevenueCenter() {
               })}
             </div>
           )}
+
+          {activeCheckout ? (
+            <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">M-Pesa checkout · {String(activeCheckout.status || "pending").replace(/_/g, " ")}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{activeCheckout.message || activeCheckout.result_description || "Waiting for the provider's final confirmation."}</p>
+                  {activeCheckout.checkout_request_id ? <p className="mt-2 break-all font-mono text-[10px] text-slate-500">Reference: {activeCheckout.checkout_request_id}</p> : null}
+                  {activeCheckout.receipt ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Receipt: {activeCheckout.receipt}</p> : null}
+                </div>
+                {activeCheckout.status === "succeeded" ? (
+                  <StatusTag tone="success">Subscription active</StatusTag>
+                ) : (
+                  <button type="button" onClick={refreshCheckoutStatus} disabled={checkoutRefreshing || !activeCheckout.checkout_request_id} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200">
+                    <RefreshCw className={"h-3.5 w-3.5 " + (checkoutRefreshing ? "animate-spin" : "")} />
+                    {checkoutRefreshing ? "Checking…" : "Refresh payment status"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           {notice ? (
             <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
