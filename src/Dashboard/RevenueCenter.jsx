@@ -98,6 +98,7 @@ export default function RevenueCenter() {
     trials: [],
     payments: [],
     paymentTotals: [],
+    checkouts: [],
     plans: [],
   });
   const [updatingPlanCode, setUpdatingPlanCode] = useState("");
@@ -152,14 +153,15 @@ export default function RevenueCenter() {
     try {
       const billing = await revenueApi.adminBillingStatus({ signal });
       if (signal?.aborted) return;
-      const [subscriptionResult, trialResult, paymentResult, planResult] = await Promise.allSettled([
+      const [subscriptionResult, trialResult, paymentResult, checkoutResult, planResult] = await Promise.allSettled([
         revenueApi.adminSubscriptions({ page: 1, perPage: 25 }, { signal }),
         revenueApi.adminTrials({ page: 1, perPage: 25 }, { signal }),
         revenueApi.adminPayments({ page: 1, perPage: 25 }, { signal }),
+        revenueApi.adminCheckouts({ page: 1, perPage: 25 }, { signal }),
         revenueApi.adminPlans({ signal }),
       ]);
       if (signal?.aborted) return;
-      const failed = [subscriptionResult, trialResult, paymentResult, planResult]
+      const failed = [subscriptionResult, trialResult, paymentResult, checkoutResult, planResult]
         .filter((result) => result.status === "rejected")
         .map((result) => getErrorMessage(result.reason));
       setAdminOps({
@@ -175,15 +177,17 @@ export default function RevenueCenter() {
           ? paymentResult.value.items : [],
         paymentTotals: paymentResult.status === "fulfilled" && Array.isArray(paymentResult.value?.totals)
           ? paymentResult.value.totals : [],
+        checkouts: checkoutResult.status === "fulfilled" && Array.isArray(checkoutResult.value?.items)
+          ? checkoutResult.value.items : [],
         plans: planResult.status === "fulfilled" && Array.isArray(planResult.value?.plans)
           ? planResult.value.plans : [],
       });
     } catch (error) {
       if (signal?.aborted) return;
       if ([401, 403].includes(error?.status)) {
-        setAdminOps({ authorized: false, loading: false, error: "", billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], plans: [] });
+        setAdminOps({ authorized: false, loading: false, error: "", billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], checkouts: [], plans: [] });
       } else {
-        setAdminOps({ authorized: true, loading: false, error: getErrorMessage(error), billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], plans: [] });
+        setAdminOps({ authorized: true, loading: false, error: getErrorMessage(error), billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], checkouts: [], plans: [] });
       }
     }
   }, [revenueApi]);
@@ -655,6 +659,41 @@ export default function RevenueCenter() {
                   ))}
                 </div>
               ) : null}
+            </div>
+          </div>
+
+          <div className="px-5 pb-5">
+            <div className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">M-Pesa checkout queue</h4>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Use this queue to identify pending, failed, sandbox-only and reconciliation-required checkouts. Customer phone numbers are not displayed.</p>
+                </div>
+                <StatusTag tone={adminOps.checkouts.some((item) => ["verified_activation_failed", "awaiting_verification"].includes(item.status)) ? "proposed" : "neutral"}>
+                  {adminOps.checkouts.filter((item) => ["verified_activation_failed", "awaiting_verification", "pending", "callback_received"].includes(item.status)).length} requiring review
+                </StatusTag>
+              </div>
+              {adminOps.checkouts.length ? (
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
+                  <table className="w-full min-w-[780px] text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 dark:bg-white/5">
+                      <tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Plan / hub</th><th className="px-3 py-2.5">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Provider reference</th><th className="px-3 py-2.5">Created</th></tr>
+                    </thead>
+                    <tbody>
+                      {adminOps.checkouts.map((item) => (
+                        <tr key={item.id} className="border-t border-slate-100 dark:border-white/10">
+                          <td className="max-w-28 truncate px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.user_id || "—"}</td>
+                          <td className="px-3 py-2.5"><p className="font-semibold text-slate-800 dark:text-slate-100">{item.plan_code || "—"}</p><p className="text-[10px] text-slate-400">{item.hub || "—"}</p></td>
+                          <td className="whitespace-nowrap px-3 py-2.5 font-semibold">{formatMoney(item.amount, item.currency)}</td>
+                          <td className="px-3 py-2.5"><StatusTag tone={["succeeded"].includes(item.status) ? "success" : ["failed", "initiation_failed"].includes(item.status) ? "proposed" : "neutral"}>{String(item.status || "unknown").replace(/_/g, " ")}</StatusTag></td>
+                          <td className="max-w-48 break-all px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.checkout_request_id || item.merchant_request_id || "Not submitted"}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : <p className="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-xs text-slate-500 dark:border-white/10">{adminOps.loading ? "Loading checkouts…" : "No M-Pesa checkouts recorded yet."}</p>}
             </div>
           </div>
 
