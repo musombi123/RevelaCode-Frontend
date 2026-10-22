@@ -91,7 +91,11 @@ export default function RevenueCenter() {
     billing: null,
     subscriptions: [],
     trials: [],
+    payments: [],
+    paymentTotals: [],
+    plans: [],
   });
+  const [updatingPlanCode, setUpdatingPlanCode] = useState("");
 
   const [submittingPlan, setSubmittingPlan] = useState("");
   const [notice, setNotice] = useState("");
@@ -143,12 +147,14 @@ export default function RevenueCenter() {
     try {
       const billing = await revenueApi.adminBillingStatus({ signal });
       if (signal?.aborted) return;
-      const [subscriptionResult, trialResult] = await Promise.allSettled([
+      const [subscriptionResult, trialResult, paymentResult, planResult] = await Promise.allSettled([
         revenueApi.adminSubscriptions({ page: 1, perPage: 25 }, { signal }),
         revenueApi.adminTrials({ page: 1, perPage: 25 }, { signal }),
+        revenueApi.adminPayments({ page: 1, perPage: 25 }, { signal }),
+        revenueApi.adminPlans({ signal }),
       ]);
       if (signal?.aborted) return;
-      const failed = [subscriptionResult, trialResult]
+      const failed = [subscriptionResult, trialResult, paymentResult, planResult]
         .filter((result) => result.status === "rejected")
         .map((result) => getErrorMessage(result.reason));
       setAdminOps({
@@ -160,16 +166,58 @@ export default function RevenueCenter() {
           ? subscriptionResult.value.items : [],
         trials: trialResult.status === "fulfilled" && Array.isArray(trialResult.value?.items)
           ? trialResult.value.items : [],
+        payments: paymentResult.status === "fulfilled" && Array.isArray(paymentResult.value?.items)
+          ? paymentResult.value.items : [],
+        paymentTotals: paymentResult.status === "fulfilled" && Array.isArray(paymentResult.value?.totals)
+          ? paymentResult.value.totals : [],
+        plans: planResult.status === "fulfilled" && Array.isArray(planResult.value?.plans)
+          ? planResult.value.plans : [],
       });
     } catch (error) {
       if (signal?.aborted) return;
       if ([401, 403].includes(error?.status)) {
-        setAdminOps({ authorized: false, loading: false, error: "", billing: null, subscriptions: [], trials: [] });
+        setAdminOps({ authorized: false, loading: false, error: "", billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], plans: [] });
       } else {
-        setAdminOps({ authorized: true, loading: false, error: getErrorMessage(error), billing: null, subscriptions: [], trials: [] });
+        setAdminOps({ authorized: true, loading: false, error: getErrorMessage(error), billing: null, subscriptions: [], trials: [], payments: [], paymentTotals: [], plans: [] });
       }
     }
   }, [revenueApi]);
+
+  const updatePlanStatus = async (plan, status) => {
+    if (!plan?.code || !["available", "proposed"].includes(status)) return;
+    if (status === "available") {
+      if (!adminOps.billing?.mpesa_checkout_enabled) {
+        setActionError("Configure M-Pesa checkout before publishing a plan for customer payments.");
+        return;
+      }
+      if (!(Number(plan.amount) > 0) || !["month", "year"].includes(String(plan.interval || "").toLowerCase())) {
+        setActionError("Only positive monthly or yearly hub subscription plans can be published for M-Pesa checkout.");
+        return;
+      }
+      if (plan.hub === "all" || plan.hub === "advertising") {
+        setActionError("This checkout integration currently publishes individual hub subscriptions only.");
+        return;
+      }
+    }
+    setUpdatingPlanCode(plan.code);
+    setActionError("");
+    setNotice("");
+    try {
+      const result = await revenueApi.updateAdminPlan(plan.code, {
+        name: plan.name,
+        amount: String(plan.amount),
+        interval: plan.interval,
+        status,
+        features: Array.isArray(plan.features) ? plan.features : [],
+      });
+      setNotice(result?.message || (plan.name + " updated."));
+      await Promise.all([loadPlans(), loadAdminOps()]);
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    } finally {
+      setUpdatingPlanCode("");
+    }
+  };
 
   const loadHealth = useCallback(async (signal) => {
     setHealthError("");
@@ -425,6 +473,77 @@ export default function RevenueCenter() {
             </div>
           </div>
           {adminOps.error ? <p className="mx-5 mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{adminOps.error}</p> : null}
+          <div className="grid gap-5 px-5 pb-5 xl:grid-cols-2">
+            <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-white/10">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Plan publishing</h4>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Publishing makes an approved subscription purchasable. Proposed prices are not charged.</p>
+                </div>
+                <StatusTag tone={adminOps.billing?.mpesa_checkout_enabled ? "success" : "proposed"}>{adminOps.billing?.mpesa_checkout_enabled ? "Checkout configured" : "Checkout off"}</StatusTag>
+              </div>
+              <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+                {adminOps.plans.filter((plan) => Number(plan?.amount) > 0 && plan?.hub !== "all" && plan?.status !== "retired").map((plan) => {
+                  const eligible = ["month", "year"].includes(String(plan.interval || "").toLowerCase()) && plan.hub !== "advertising";
+                  return (
+                    <div key={plan.code} className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">{plan.name}</p>
+                        <p className="mt-0.5 text-[10px] text-slate-500">{plan.hub} · {formatMoney(plan.amount, plan.currency)} / {plan.interval}</p>
+                        <p className="mt-1"><StatusTag tone={plan.status === "available" ? "success" : "proposed"}>{plan.status}</StatusTag></p>
+                      </div>
+                      {eligible ? (
+                        <button
+                          type="button"
+                          onClick={() => updatePlanStatus(plan, plan.status === "available" ? "proposed" : "available")}
+                          disabled={!adminOps.billing?.mpesa_checkout_enabled || Boolean(updatingPlanCode)}
+                          className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
+                          title={!adminOps.billing?.mpesa_checkout_enabled ? "Configure M-Pesa first" : undefined}
+                        >
+                          {updatingPlanCode === plan.code ? "Saving…" : plan.status === "available" ? "Pause plan" : "Publish plan"}
+                        </button>
+                      ) : (
+                        <span className="max-w-32 text-right text-[10px] leading-4 text-slate-400">This plan type is not covered by the current subscription checkout.</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {!adminOps.plans.some((plan) => Number(plan?.amount) > 0 && plan?.hub !== "all" && plan?.status !== "retired") ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 p-3 text-xs text-slate-500 dark:border-white/10">No paid hub plans in the catalogue.</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-white/10">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Verified payment totals</h4>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Only successful payments reconciled against Daraja appear here.</p>
+              </div>
+              {adminOps.paymentTotals.length ? (
+                <div className="mt-3 space-y-2">
+                  {adminOps.paymentTotals.map((item) => (
+                    <div key={item.currency + ":" + item.stream} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 dark:bg-white/5">
+                      <div className="min-w-0"><p className="text-xs font-bold text-slate-800 dark:text-slate-100">{item.stream}</p><p className="text-[10px] text-slate-500">{item.count} confirmed payment(s)</p></div>
+                      <p className="whitespace-nowrap text-sm font-black text-emerald-700 dark:text-emerald-300">{formatMoney(item.amount, item.currency)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500 dark:border-white/10">No verified payments recorded yet.</p>}
+              {adminOps.payments.length ? (
+                <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+                  {adminOps.payments.slice(0, 10).map((item) => (
+                    <div key={item.id} className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0"><p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">{item.plan_code || item.description || "Subscription payment"}</p><p className="mt-0.5 text-[10px] text-slate-500">{item.stream} · {item.payment_provider || "provider"} · {displayDate(item.paid_at)}</p></div>
+                        <p className="whitespace-nowrap text-xs font-black text-slate-900 dark:text-white">{formatMoney(item.amount, item.currency)}</p>
+                      </div>
+                      {item.receipt ? <p className="mt-1 break-all font-mono text-[10px] text-slate-500">Receipt: {item.receipt}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           <div className="grid gap-5 p-5 pt-0 xl:grid-cols-2">
             <div className="min-w-0">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">Recent subscriptions</h4>
