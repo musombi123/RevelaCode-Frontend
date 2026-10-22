@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
+import ElimuFinanceControls from "./ElimuFinanceControls";
 import ElimuLegacyImport from "./ElimuLegacyImport.jsx";
 import ElimuTimetableWorkspace from "./ElimuTimetableWorkspace.jsx";
 
@@ -1166,6 +1167,7 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
       </section>
 
       {moduleKey === "sync" && <ElimuLegacyImport api={api} school={school} />}
+      {moduleKey === "fees" && <ElimuFinanceControls api={api} role={role} onNotice={setNotice} onError={setError} />}
 
       {demo && <div className="flex items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-100"><ShieldCheck size={18} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Demo school session</p><p className="mt-1 leading-5">The screen still calls the Elimu API. If a demo endpoint is unavailable, sample entries may be shown in browser-only preview mode and clearly labelled as local demo data.</p></div></div>}
 
