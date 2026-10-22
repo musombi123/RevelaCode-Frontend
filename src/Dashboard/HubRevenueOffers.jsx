@@ -17,6 +17,10 @@ const HUB_MAP = {
   community: "community",
   smart_ai: "smart_ai",
   smartai: "smart_ai",
+  marketplace: "marketplace",
+  faith: "faith",
+  theology: "faith",
+  mahubiri: "faith",
 };
 
 // Cross-sell only related ecosystem streams within the active workspace.
@@ -36,6 +40,7 @@ const HUB_LABELS = {
   elimu: "Elimu",
   community: "Community",
   smart_ai: "Smart AI",
+  faith: "Faith & Scripture",
   marketplace: "Marketplace",
   transaction_fees: "Transaction fees",
   advertising: "Advertising",
@@ -69,6 +74,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [actionError, setActionError] = useState("");
   const [notice, setNotice] = useState("");
   const [submittingCode, setSubmittingCode] = useState("");
+  const [trial, setTrial] = useState(null);
+  const [trialLoading, setTrialLoading] = useState(true);
+  const [trialStarting, setTrialStarting] = useState(false);
+  const [trialError, setTrialError] = useState("");
 
   const loadPlans = useCallback(async (signal) => {
     if (!apiHub) {
@@ -101,11 +110,43 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     }
   }, [apiHub, revenueApi]);
 
+  const loadTrial = useCallback(async (signal) => {
+    if (!apiHub) { setTrialLoading(false); return; }
+    setTrialLoading(true);
+    setTrialError("");
+    try {
+      const response = await revenueApi.listTrials({ signal });
+      const found = (Array.isArray(response?.trials) ? response.trials : []).find((item) => item?.hub === apiHub);
+      setTrial(found || { hub: apiHub, status: "not_started", access: "start_trial" });
+    } catch (error) {
+      if (error?.name !== "AbortError") setTrialError(messageForError(error));
+    } finally {
+      if (!signal?.aborted) setTrialLoading(false);
+    }
+  }, [apiHub, revenueApi]);
+
   useEffect(() => {
     const controller = new AbortController();
     loadPlans(controller.signal);
+    loadTrial(controller.signal);
     return () => controller.abort();
-  }, [loadPlans]);
+  }, [loadPlans, loadTrial]);
+
+  const startTrial = async () => {
+    setTrialStarting(true);
+    setTrialError("");
+    setActionError("");
+    setNotice("");
+    try {
+      const response = await revenueApi.startTrial(apiHub);
+      setTrial(response?.trial || null);
+      setNotice(response?.message || `Your 30-day ${label} trial is active.`);
+    } catch (error) {
+      setTrialError(messageForError(error));
+    } finally {
+      setTrialStarting(false);
+    }
+  };
 
   const requestPlan = async (plan) => {
     setSubmittingCode(plan.code);
@@ -151,6 +192,36 @@ export default function HubRevenueOffers({ hub, compact = false }) {
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh plans
         </button>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/60 dark:bg-blue-950/25">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">30-day free {label} trial</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+              Each hub has its own one-time trial. Starting it does not require M-Pesa. Paid checkout will be enabled after payment verification is integrated.
+            </p>
+            {!trialLoading && trial?.status === "active" ? (
+              <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Trial active · {trial.days_remaining ?? "—"} days remaining · ends {trial.ends_at ? new Date(trial.ends_at).toLocaleDateString() : "soon"}</p>
+            ) : null}
+            {!trialLoading && trial?.status === "expired" ? (
+              <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">This hub’s free trial has ended. Select a plan when checkout becomes available.</p>
+            ) : null}
+          </div>
+          {trialLoading ? (
+            <span className="text-xs text-slate-500">Checking trial…</span>
+          ) : trial?.status === "active" ? (
+            <span className="inline-flex min-h-10 items-center rounded-xl bg-emerald-100 px-4 text-xs font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">Trial active</span>
+          ) : trial?.status === "expired" ? (
+            <button type="button" disabled className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-200 px-4 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Trial used</button>
+          ) : (
+            <button type="button" onClick={startTrial} disabled={trialStarting || Boolean(trialError)} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
+              {trialStarting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {trialStarting ? "Starting trial…" : "Start free month"}
+            </button>
+          )}
+        </div>
+        {trialError ? <p role="alert" className="mt-3 text-xs leading-5 text-red-700 dark:text-red-300">{trialError}</p> : null}
       </div>
 
       <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-600 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400">
