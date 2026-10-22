@@ -265,7 +265,7 @@ export default function RevenueCenter() {
     // Requests are aborted automatically when the component unmounts or stream changes.
   }, [loadPlans, loadHistory, loadHealth, loadAdminOps]);
 
-  const canSubmitIntents = health?.success === true && health?.billing_enabled === false;
+  const canSubmitIntents = health?.success === true;
   const visiblePlans = useMemo(() => plans, [plans]);
 
   const registerInterest = async (plan) => {
