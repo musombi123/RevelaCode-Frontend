@@ -252,6 +252,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       setTrialError("The current subscription status could not be verified. Reload this hub before starting a trial.");
       return;
     }
+    if (checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status)) {
+      setTrialError("A payment for this hub is unresolved. Refresh its status before starting a trial.");
+      return;
+    }
     if (subscription?.status === "active") {
       setNotice("This hub already has an active paid subscription.");
       return;
@@ -347,7 +351,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
           ) : trial?.status === "expired" ? (
             <button type="button" disabled className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-200 px-4 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Trial used</button>
           ) : (
-            <button type="button" onClick={startTrial} disabled={trialStarting} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={startTrial} disabled={trialStarting || Boolean(checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status))} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
               {trialStarting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {trialStarting ? "Starting trial…" : "Start free month"}
             </button>
