@@ -15,13 +15,18 @@ export default function ElimuInvitationPage() {
   const api = useElimuApi();
   // Keep the original token in component state even after removing it from the URL.
   const [token] = useState(invitationTokenFromUrl);
+  const [recipientEmail] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return (new URLSearchParams(window.location.search).get("email") || "").trim().toLowerCase();
+  });
   const attemptedToken = useRef("");
   const [retryVersion, setRetryVersion] = useState(0);
   const [status, setStatus] = useState("checking");
   const [error, setError] = useState("");
   const [membership, setMembership] = useState(null);
 
-  const invitedAccountEmail = auth?.user?.email || auth?.user?.contact || "";
+  const invitedAccountEmail = String(auth?.user?.email || auth?.user?.contact || "").trim().toLowerCase();
+  const identityMatchesInvitation = !recipientEmail || invitedAccountEmail === recipientEmail;
 
   useEffect(() => {
     if (!token) {
@@ -32,6 +37,14 @@ export default function ElimuInvitationPage() {
 
     if (!auth?.isAuthenticated) {
       setStatus("signin");
+      return;
+    }
+
+    // Never call the accept endpoint from a session belonging to another
+    // person. Keep the one-time token in the URL until the invitee signs in.
+    if (recipientEmail && !identityMatchesInvitation) {
+      setStatus("wrong_account");
+      setError(`This invitation was sent to ${recipientEmail}. Sign out of the current account and sign in with that invited email address.`);
       return;
     }
 
@@ -57,6 +70,7 @@ export default function ElimuInvitationPage() {
         if (typeof window !== "undefined") {
           const cleanUrl = new URL(window.location.href);
           cleanUrl.searchParams.delete("token");
+          cleanUrl.searchParams.delete("email");
           window.history.replaceState({}, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
         }
       })
@@ -67,7 +81,7 @@ export default function ElimuInvitationPage() {
       });
 
     return () => { cancelled = true; };
-  }, [token, auth?.isAuthenticated, api.acceptStaffInvitation, retryVersion]);
+  }, [token, recipientEmail, identityMatchesInvitation, auth?.isAuthenticated, api.acceptStaffInvitation, retryVersion]);
 
   const retry = () => {
     attemptedToken.current = "";
@@ -92,7 +106,19 @@ export default function ElimuInvitationPage() {
           ) : null}
 
           {status === "signin" && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"><div className="flex items-start gap-3"><Mail size={19} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Sign in or register to continue</p><p className="mt-1 leading-5">Use your verified RevelaCode account for the invited email address. If you are in a guest session or the wrong account, switch accounts below. The invitation link will be preserved while you sign in.</p></div></div>{typeof auth?.logout === "function" && <button type="button" onClick={() => void auth.logout()} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-slate-950 dark:text-amber-200 dark:hover:bg-amber-950/50">Switch account / open sign-in</button>}</div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"><div className="flex items-start gap-3"><Mail size={19} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Sign in or register to continue</p><p className="mt-1 leading-5">Sign in or register with the exact invited email address. This page keeps the invitation token in the URL while you change accounts.</p>{recipientEmail && <p className="mt-2 break-all font-semibold">Invited email: {recipientEmail}</p>}</div></div>{typeof auth?.logout === "function" && <button type="button" onClick={() => void auth.logout()} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 font-semibold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-slate-950 dark:text-amber-200 dark:hover:bg-amber-950/50">Switch account / open sign-in</button>}</div>
+          )}
+
+          {status === "wrong_account" && (
+            <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-start gap-3"><AlertCircle size={19} className="mt-0.5 shrink-0" /><div>
+                <p className="font-bold">Wrong RevelaCode account is signed in</p>
+                <p className="mt-1 leading-5">{error}</p>
+                <p className="mt-2 break-all">Invitation recipient: <strong>{recipientEmail}</strong></p>
+                <p className="mt-2 leading-5">For security, the invitation has not been accepted and no membership has been created.</p>
+              </div></div>
+              {typeof auth?.logout === "function" && <button type="button" onClick={() => void auth.logout()} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 font-semibold text-amber-950 hover:bg-amber-100 dark:border-amber-800 dark:bg-slate-950 dark:text-amber-200">Sign out and switch account</button>}
+            </div>
           )}
 
           {status === "accepted" && (
