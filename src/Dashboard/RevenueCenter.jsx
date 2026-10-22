@@ -252,8 +252,9 @@ export default function RevenueCenter() {
       .map((item) => item.trim())
       .filter(Boolean);
 
-    if (!code || !newPlanDraft.name.trim() || newPlanDraft.amount === "") {
-      setActionError("Enter a plan code, a name, and a proposed price before creating the plan.");
+    const proposedAmount = Number(newPlanDraft.amount);
+    if (!code || !newPlanDraft.name.trim() || newPlanDraft.amount === "" || !Number.isFinite(proposedAmount) || proposedAmount <= 0) {
+      setActionError("Enter a plan code, a name, and a positive KES price before creating the plan.");
       return;
     }
 
