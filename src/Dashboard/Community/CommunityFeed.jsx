@@ -1704,7 +1704,7 @@ export default function CommunityFeed({
                           return;
                         }
                         setCommentPost(post);
-                      }
+                      }}
                       className="
                         flex
                         items-center
