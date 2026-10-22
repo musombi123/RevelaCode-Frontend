@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
+import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
 
 import {
   Bookmark,
@@ -441,6 +442,8 @@ export default function CommunityPostCard({
       )
     );
 
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
   // ==========================================================
   // DERIVED DATA
   // ==========================================================
@@ -666,20 +669,12 @@ export default function CommunityPostCard({
   };
 
   const handleComment = () => {
-    if (
-      typeof onComment ===
-      "function"
-    ) {
-      onComment(post);
+    const id = post?.id ?? post?._id ?? post?.post_id ?? post?.postId;
+    if (id === undefined || id === null || !String(id).trim()) {
+      setShareFeedback("Comments are unavailable because this post has no valid ID. Refresh the feed and try again.");
       return;
     }
-
-    if (
-      typeof onOpen ===
-      "function"
-    ) {
-      onOpen(post);
-    }
+    setCommentsOpen(true);
   };
 
   const handleShare = async () => {
@@ -1631,6 +1626,16 @@ export default function CommunityPostCard({
           You are following this member
         </div>
       )}
+
+      {commentsOpen ? (
+        <CommunityPostComments
+          post={post}
+          onClose={() => setCommentsOpen(false)}
+          onCommentAdded={() => {
+            setLocalComments((current) => Math.max(0, Number(current) || 0) + 1);
+          }}
+        />
+      ) : null}
 
       {/* ======================================================
           AI / SMART CONTENT INDICATOR
