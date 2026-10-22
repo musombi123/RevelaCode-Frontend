@@ -638,6 +638,9 @@ export function createElimuApiClient({
     getSchoolFeeReceipts: (params, options) =>
       get("finance/receipts", params, options),
 
+    getElimuParentDirectory: (params, options) =>
+      get("portal/parents", params, options),
+
     reviewSchoolFeeReceipt: (receiptId, data, options) =>
       post(`finance/receipts/${pathSegment(receiptId, "receipt ID")}/review`, data, options),
 
