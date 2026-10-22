@@ -666,7 +666,13 @@ export default function CommunityDashboard({
     setMarketplaceLoading(true);
     setMarketplaceError("");
 
-    getMarketplaceListings({ hub: "community" })
+    Promise.resolve()
+      .then(() => {
+        if (typeof getMarketplaceListings !== "function") {
+          throw new Error("The Community Marketplace service is unavailable.");
+        }
+        return getMarketplaceListings({ hub: "community" });
+      })
       .then((response) => {
         if (!active) return;
         const payload = response?.data ?? response;
@@ -853,6 +859,10 @@ export default function CommunityDashboard({
 
       if (!postId) {
         throw new Error("The post ID is missing.");
+      }
+
+      if (typeof reactToCommunityPost !== "function") {
+        throw new Error("The Community reaction service is unavailable. Refresh the page and try again.");
       }
 
       await reactToCommunityPost(postId);
