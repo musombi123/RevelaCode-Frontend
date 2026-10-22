@@ -1925,7 +1925,6 @@ export default function CommunityFeed({
             <Bell size={16} />
           </button>
         </div>
-      </div>
 
       {commentPost ? (
         <CommunityPostComments
@@ -1945,5 +1944,6 @@ export default function CommunityFeed({
           }}
         />
       ) : null}
+      </div>
   );
 }
