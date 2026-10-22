@@ -397,7 +397,7 @@ export default function ElimuTeacherDashboard({
   const currentMinute = Number(clockParts.find((part) => part.type === "minute")?.value || 0);
   const currentMinutes = currentHour * 60 + currentMinute;
   const minutesFromClock = (value) => {
-    const match = /^(\\d{1,2}):(\\d{2})/.exec(String(value || ""));
+    const match = /^(\d{1,2}):(\d{2})/.exec(String(value || ""));
     if (!match) return null;
     const hour = Number(match[1]);
     const minute = Number(match[2]);
