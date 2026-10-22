@@ -143,6 +143,8 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pendingRemoval, setPendingRemoval] = useState(null);
+  const [pendingTransfer, setPendingTransfer] = useState(null);
+  const [transferForm, setTransferForm] = useState({ department: "", store: "", notes: "" });
   const [form, setForm] = useState({
     display_name: "",
     email: "",
@@ -314,6 +316,50 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
     }
   };
 
+  const openTransferRequest = (member) => {
+    setPendingTransfer(member);
+    setTransferForm({
+      department: String(member?.employment?.department || member?.department || ""),
+      store: String(member?.employment?.store || member?.employment?.store_name || ""),
+      notes: "",
+    });
+    setError("");
+    setNotice("");
+  };
+
+  const submitTransferRequest = async (event) => {
+    event.preventDefault();
+    const member = pendingTransfer;
+    const userId = String(member?.user_id || member?.userId || member?.revelacode_user_id || "");
+    if (!member || !userId || role !== "principal" || busyStaffId) return;
+    const previousDepartment = String(member?.employment?.department || member?.department || "").trim();
+    const previousStore = String(member?.employment?.store || member?.employment?.store_name || "").trim();
+    const employment = {};
+    if (transferForm.department.trim() !== previousDepartment) employment.department = transferForm.department.trim();
+    if (transferForm.store.trim() !== previousStore) employment.store = transferForm.store.trim();
+    if (!Object.keys(employment).length) {
+      setError("Change the department or store assignment before submitting the transfer request.");
+      return;
+    }
+    setBusyStaffId(userId);
+    setError("");
+    setNotice("");
+    try {
+      await api.requestStaffChange(userId, {
+        change_type: "transfer",
+        employment,
+        notes: transferForm.notes.trim(),
+      });
+      setNotice(`Transfer request for ${staffName(member)} was sent to the School Owner/Director. No staff assignment changes until approval.`);
+      setPendingTransfer(null);
+      await load();
+    } catch (requestError) {
+      setError(requestError?.message || "The staff transfer request could not be submitted.");
+    } finally {
+      setBusyStaffId("");
+    }
+  };
+
   const decideChangeRequest = async (request, decision) => {
     const requestId = String(request?._id || request?.id || request?.request_id || "");
     if (!requestId || busyInvitationId) return;
@@ -411,7 +457,7 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
                       <td className="whitespace-nowrap px-3 py-3 text-xs text-slate-600 dark:text-slate-300">{text(member?.employment?.department || member?.department)}</td>
                       <td className="whitespace-nowrap px-3 py-3"><StatusPill tone={status === "active" ? "green" : status === "suspended" ? "amber" : "slate"}>{status.replace(/[_-]+/g, " ")}</StatusPill></td>
                       <td className="max-w-[210px] px-3 py-3 text-xs text-slate-600 dark:text-slate-300">{memberRole === "teacher" ? text(Array.isArray(courses) ? courses.join(", ") : courses) : "—"}</td>
-                      <td className="whitespace-nowrap px-3 py-3">{canRemove ? <Button type="button" variant="danger" disabled={Boolean(busyStaffId)} onClick={() => setPendingRemoval(member)}><Users size={14} /> {role === "owner" ? "Remove" : "Request removal"}</Button> : isSelf ? <StatusPill>Current account</StatusPill> : <span className="text-xs text-slate-400">Protected</span>}</td>
+                      <td className="whitespace-nowrap px-3 py-3">{canRemove ? <div className="flex flex-wrap gap-2">{role === "principal" && <Button type="button" disabled={Boolean(busyStaffId)} onClick={() => openTransferRequest(member)}><ClipboardList size={14} /> Transfer</Button>}<Button type="button" variant="danger" disabled={Boolean(busyStaffId)} onClick={() => setPendingRemoval(member)}><Users size={14} /> {role === "owner" ? "Remove" : "Request removal"}</Button></div> : isSelf ? <StatusPill>Current account</StatusPill> : <span className="text-xs text-slate-400">Protected</span>}</td>
                     </tr>;
                   })}
                 </tbody>
@@ -460,7 +506,9 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
 
       <section className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-950 dark:border-blue-900/60 dark:bg-blue-950/20 dark:text-blue-100"><ShieldCheck size={18} className="mt-0.5 shrink-0" /><p className="leading-6">Removing a staff member revokes access to this school only. The person's RevelaCode account and historical school records are retained. Ownership is protected by the backend.</p></section>
 
-      {pendingRemoval && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busyStaffId) setPendingRemoval(null); }}><section role="dialog" aria-modal="true" aria-labelledby="elimu-remove-staff-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950"><div className="flex items-start gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"><Users size={20} /></span><div className="min-w-0 flex-1"><h3 id="elimu-remove-staff-title" className="text-base font-bold text-slate-950 dark:text-white">Remove staff from school?</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">This will revoke <strong>{staffName(pendingRemoval)}</strong>'s access to <strong>{schoolName}</strong> and deactivate teaching assignments. It will not delete their RevelaCode account or historical records.</p></div></div><div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" onClick={() => setPendingRemoval(null)} disabled={Boolean(busyStaffId)}>Cancel</Button><Button type="button" variant="danger" onClick={() => void confirmRemoveStaff()} disabled={Boolean(busyStaffId)}>{busyStaffId ? <><RefreshCw size={15} className="animate-spin" /> Removing…</> : <><Users size={15} /> Remove from this school</>}</Button></div></section></div>}
+      {pendingTransfer && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busyStaffId) setPendingTransfer(null); }}><section role="dialog" aria-modal="true" aria-labelledby="elimu-transfer-staff-title" className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950"><div className="flex items-start gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"><ClipboardList size={20} /></span><div className="min-w-0 flex-1"><h3 id="elimu-transfer-staff-title" className="text-base font-bold text-slate-950 dark:text-white">Request staff transfer</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Request a department or store reassignment for <strong>{staffName(pendingTransfer)}</strong>. The School Owner/Director must approve before changes take effect.</p></div></div><form onSubmit={submitTransferRequest} className="mt-5 space-y-4"><label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">Department<input value={transferForm.department} onChange={(event) => setTransferForm((current) => ({ ...current, department: event.target.value }))} maxLength={160} placeholder="Department name" className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label><label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">Store assignment<input value={transferForm.store} onChange={(event) => setTransferForm((current) => ({ ...current, store: event.target.value }))} maxLength={160} placeholder="Optional store name" className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label><label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">Reason (optional)<textarea rows={3} value={transferForm.notes} onChange={(event) => setTransferForm((current) => ({ ...current, notes: event.target.value }))} maxLength={1000} placeholder="Explain why this transfer is needed" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label><div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" onClick={() => setPendingTransfer(null)} disabled={Boolean(busyStaffId)}>Cancel</Button><Button type="submit" variant="primary" disabled={Boolean(busyStaffId)}>{busyStaffId ? <><RefreshCw size={15} className="animate-spin" /> Submitting…</> : <><ClipboardList size={15} /> Submit for approval</>}</Button></div></form></section></div>}
+
+      {pendingRemoval && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busyStaffId) setPendingRemoval(null); }}><section role="dialog" aria-modal="true" aria-labelledby="elimu-remove-staff-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950"><div className="flex items-start gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300"><Users size={20} /></span><div className="min-w-0 flex-1"><h3 id="elimu-remove-staff-title" className="text-base font-bold text-slate-950 dark:text-white">Remove staff from school?</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{role === "owner" ? <>This will revoke <strong>{staffName(pendingRemoval)}</strong>'s access to <strong>{schoolName}</strong> and deactivate teaching assignments. It will not delete their RevelaCode account or historical records.</> : <>This submits a removal request for <strong>{staffName(pendingRemoval)}</strong> to the School Owner/Director. Their access remains active until the request is approved.</>}</p></div></div><div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" onClick={() => setPendingRemoval(null)} disabled={Boolean(busyStaffId)}>Cancel</Button><Button type="button" variant="danger" onClick={() => void confirmRemoveStaff()} disabled={Boolean(busyStaffId)}>{busyStaffId ? <><RefreshCw size={15} className="animate-spin" /> Removing…</> : <><Users size={15} /> {role === "owner" ? "Remove from this school" : "Request removal approval"}</>}</Button></div></section></div>}
     </div>
   );
 }
