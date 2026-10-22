@@ -4,6 +4,7 @@ import React from "react";
 
 import {
   ArrowRight,
+  BookOpen,
   BadgeCheck,
   Building2,
   CheckCircle2,
@@ -489,6 +490,23 @@ export default function ElimuSchoolAccess({
           </div>
         </div>
       </div>
+
+      <a
+        href="https://github.com/musombi123/RevelaCode-Frontend/blob/main/docs/ELIMU_HUB_USER_GUIDE.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex min-h-20 items-center gap-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-blue-900/60 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:focus:ring-offset-slate-950"
+        aria-label="Open Elimu Hub Help and Documentation in a new tab"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+          <BookOpen size={21} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold text-slate-900 dark:text-white">Help &amp; Documentation</span>
+          <span className="mt-1 block text-sm leading-5 text-slate-600 dark:text-slate-300">Read the Elimu user guide for role-based access, school setup, module workflows, accessibility and troubleshooting.</span>
+        </span>
+        <ArrowRight size={18} className="shrink-0 text-blue-700 transition group-hover:translate-x-0.5 dark:text-blue-300" />
+      </a>
     </div>
   );
 }
