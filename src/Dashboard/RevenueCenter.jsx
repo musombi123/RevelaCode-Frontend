@@ -405,7 +405,7 @@ export default function RevenueCenter() {
               {health?.success ? "API responding" : healthError ? "API unavailable" : "Checking API"}
             </StatusTag>
             <StatusTag tone="proposed">Pricing: {pricingStatus}</StatusTag>
-            <StatusTag>{health?.billing_enabled ? "Billing enabled" : "Billing disabled"}</StatusTag>
+            <StatusTag tone={checkoutEnabled || health?.billing_enabled ? "success" : "proposed"}>{checkoutEnabled ? "M-Pesa checkout enabled" : health?.billing_enabled ? "Billing enabled" : "Billing disabled"}</StatusTag>
           </div>
         </div>
 
@@ -413,9 +413,11 @@ export default function RevenueCenter() {
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
             <div className="text-xs leading-5 text-amber-900 dark:text-amber-200">
-              <p className="font-bold">Requests are not payments</p>
+              <p className="font-bold">{checkoutEnabled ? "Verified M-Pesa checkout" : "Requests are not payments"}</p>
               <p className="mt-1">
-                Plan prices are proposals. Registering interest creates a pending intent only; it does not charge a customer, activate a subscription, credit a wallet, or confirm platform revenue.
+                {checkoutEnabled
+                  ? "Only plans published by a platform administrator can be purchased. A subscription activates after the backend verifies the final Daraja result; an STK prompt or browser return is not proof of payment."
+                  : "Plan prices are proposals. Registering interest creates a pending intent only; it does not charge a customer, activate a subscription, credit a wallet, or confirm platform revenue."}
               </p>
             </div>
           </div>
