@@ -493,24 +493,25 @@ export default function CommunityDashboard({
           return;
 
         case "community-hub-biashara":
-          onNavigate?.("biashara");
+          if (typeof onNavigate === "function") onNavigate("biashara");
           return;
 
         case "community-hub-shamba":
-          onNavigate?.("shamba");
+          if (typeof onNavigate === "function") onNavigate("shamba");
           return;
 
         case "community-hub-elimu":
-          onNavigate?.("education");
+          if (typeof onNavigate === "function") onNavigate("education");
           return;
 
         case "elimu":
-          onNavigate?.("education");
+          if (typeof onNavigate === "function") onNavigate("education");
           return;
 
         default:
           // Top-level dashboards still belong to the global shell.
-          onNavigate?.(destination);
+          if (typeof onNavigate === "function") onNavigate(destination);
+          return;
       }
     },
     [onNavigate],
