@@ -143,11 +143,15 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     setSubscriptionLoading(true);
     setSubscriptionLoadError("");
     try {
-      const response = await revenueApi.listSubscriptions({ signal });
+      const [response, checkoutResponse] = await Promise.all([
+        revenueApi.listSubscriptions({ signal }),
+        revenueApi.getCurrentCheckout(apiHub, { signal }),
+      ]);
       const active = (Array.isArray(response?.items) ? response.items : [])
         .filter((item) => item?.hub === apiHub && item?.status === "active")
         .sort((a, b) => new Date(b.ends_at || 0).getTime() - new Date(a.ends_at || 0).getTime())[0] || null;
       setSubscription(active);
+      setCheckout(checkoutResponse?.checkout || null);
     } catch (error) {
       if (error?.name !== "AbortError") {
         setSubscription(null);
@@ -200,6 +204,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       delete checkoutKeys.current[keyScope];
       setNotice(response?.message || "M-Pesa prompt started. Confirm payment on your phone.");
     } catch (error) {
+      if (error?.payload?.checkout) setCheckout(error.payload.checkout);
       setActionError(messageForError(error));
     } finally {
       setSubmittingCode("");
