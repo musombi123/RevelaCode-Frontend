@@ -179,6 +179,18 @@ export function createRevenueApiClient({
         ...options,
         params: { page, per_page: perPage, ...(options.params || {}) },
       }),
+    adminPayments: ({ page = 1, perPage = 25, stream, provider } = {}, options = {}) =>
+      request("/admin/payments", {
+        ...options,
+        params: { page, per_page: perPage, stream, provider, ...(options.params || {}) },
+      }),
+    adminPlans: (options = {}) => request("/admin/plans", options),
+    updateAdminPlan: (planCode, payload, options = {}) =>
+      request(`/admin/plans/${encodeURIComponent(planCode)}`, {
+        ...options,
+        method: "PUT",
+        body: payload,
+      }),
     listTransactions: ({ page = 1, perPage = 10 } = {}, options = {}) =>
       request("/transactions", {
         ...options,
