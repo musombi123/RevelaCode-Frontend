@@ -151,7 +151,9 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         .filter((item) => item?.hub === apiHub && item?.status === "active")
         .sort((a, b) => new Date(b.ends_at || 0).getTime() - new Date(a.ends_at || 0).getTime())[0] || null;
       setSubscription(active);
-      setCheckout(checkoutResponse?.checkout || null);
+      setCheckout((previous) => checkoutResponse?.checkout || (
+        previous?.hub === apiHub && previous?.status === "succeeded" ? previous : null
+      ));
     } catch (error) {
       if (error?.name !== "AbortError") {
         setSubscription(null);
