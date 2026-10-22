@@ -174,6 +174,11 @@ export function createRevenueApiClient({
         ...options,
         params: { page, per_page: perPage, hub, status, ...(options.params || {}) },
       }),
+    adminCheckouts: ({ page = 1, perPage = 25, hub, status } = {}, options = {}) =>
+      request("/admin/checkouts", {
+        ...options,
+        params: { page, per_page: perPage, hub, status, ...(options.params || {}) },
+      }),
     adminTrials: ({ page = 1, perPage = 25 } = {}, options = {}) =>
       request("/admin/trials", {
         ...options,
