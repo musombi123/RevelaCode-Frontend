@@ -23,6 +23,7 @@ import SEOManager from "./components/SEOManager.jsx";
 import AuthGate from "./components/AuthGate.jsx";
 import ElimuHub from "./pages/ElimuHub.jsx";
 import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
+import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import UserAccountDashboard from "./components/UserAccountDashboard.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
@@ -260,6 +261,9 @@ export default function App() {
                 path="/support/*"
                 element={<Navigate to="/support/dashboard" replace />}
               />
+
+              {/* Platform legal pages must never be interpreted as public school slugs. */}
+              <Route path="/legal" element={<LegalDocumentsPage />} />
 
               {/* Jumuiya application routes */}
               <Route
