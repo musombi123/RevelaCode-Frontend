@@ -10,17 +10,27 @@ function arrayFrom(value) {
   if (Array.isArray(value?.items)) return value.items;
   return [];
 }
+function safeText(value, fallback = "") {
+  if (typeof value !== "string" && typeof value !== "number") return fallback;
+  const normalized = String(value).trim();
+  return normalized || fallback;
+}
+
 function authorFor(post) {
   const author = post?.author || post?.user || {};
-  const id = author.user_id || author.member_id || author.id || author._id || post?.author_user_id || post?.user_id;
+  const idValue = author.user_id || author.member_id || author.id || author._id || post?.author_user_id || post?.user_id;
+  if (idValue === undefined || idValue === null || (typeof idValue !== "string" && typeof idValue !== "number")) return null;
+  const id = String(idValue).trim();
   if (!id) return null;
+
+  const rawAvatar = author.avatar_url || author.avatar || author.profile_image || null;
   return {
-    id: String(id),
-    name: author.name || author.full_name || author.fullName || post?.author_name || "Community member",
-    avatar: author.avatar_url || author.avatar || author.profile_image || null,
-    bio: author.bio || "",
-    county: author.county || "",
-    town: author.town || "",
+    id,
+    name: safeText(author.name || author.full_name || author.fullName || post?.author_name, "Community member"),
+    avatar: typeof rawAvatar === "string" && rawAvatar.trim() ? rawAvatar.trim() : null,
+    bio: safeText(author.bio),
+    county: safeText(author.county),
+    town: safeText(author.town),
     postCount: 1,
     latestPost: post,
     contactEnabled: author.can_whatsapp_contact === true || author.whatsapp_contact_enabled === true,
@@ -76,10 +86,10 @@ export default function CommunityPeopleDirectory({ onBack, onInvite }) {
   return <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-5 sm:px-6 lg:px-8">
     <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#081b2e] via-[#0f3440] to-[#075e54] p-6 text-white shadow-xl sm:p-8">
       <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl" />
-      <button type="button" onClick={onBack} className="relative inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white/85 hover:bg-white/15"><ArrowLeft size={14}/> Community home</button>
+      <button type="button" onClick={() => { if (typeof onBack === "function") onBack(); }} className="relative inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white/85 hover:bg-white/15"><ArrowLeft size={14}/> Community home</button>
       <div className="relative mt-6 flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div><p className="text-[11px] font-black uppercase tracking-[.2em] text-emerald-200">Jumuiya · People</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The people behind the pulse.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">Discover members who are contributing to Community. Profiles shown here are based on real public community activity.</p></div>
-        <button type="button" onClick={onInvite} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-xs font-black text-slate-900 hover:bg-emerald-50"><Users size={15}/> Invite a member</button>
+        <button type="button" onClick={() => { if (typeof onInvite === "function") onInvite(); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-xs font-black text-slate-900 hover:bg-emerald-50"><Users size={15}/> Invite a member</button>
       </div>
       <div className="relative mt-6 grid grid-cols-2 gap-3 sm:max-w-sm"><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><p className="text-2xl font-black">{members.length}</p><p className="mt-1 text-[11px] font-semibold text-white/65">Active contributors found</p></div><div className="rounded-2xl border border-white/10 bg-white/10 p-4"><p className="text-2xl font-black">Open</p><p className="mt-1 text-[11px] font-semibold text-white/65">Profiles from public activity</p></div></div>
     </section>
