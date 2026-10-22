@@ -22,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
+import ElimuFinanceControls from "./ElimuFinanceControls";
+import ElimuParentDirectory from "./ElimuParentDirectory";
 import ElimuLegacyImport from "./ElimuLegacyImport.jsx";
 import ElimuTimetableWorkspace from "./ElimuTimetableWorkspace.jsx";
 
@@ -491,35 +493,97 @@ function Field({ field, value, onChange }) {
   );
 }
 
-function RecordTable({ rows, query }) {
-  const filteredRows = rows.filter((row) => JSON.stringify(row).toLowerCase().includes(query.toLowerCase()));
-  if (!filteredRows.length) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-200 px-5 py-12 text-center dark:border-slate-800">
-        <Search size={23} className="mx-auto text-slate-300 dark:text-slate-600" />
-        <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">No matching records</p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Use refresh to reload the backend records or add a new record where available.</p>
-      </div>
-    );
-  }
-  const preferred = ["admission_number", "full_name", "name", "title", "subject", "class_name", "role", "status", "date", "due_date", "amount", "amount_paid", "score", "max_score"];
-  const keys = [...new Set(filteredRows.flatMap((row) => Object.keys(row || {})))].filter((key) => !["_id", "metadata", "raw"].includes(key)).sort((a, b) => {
+function RecordTable({ rows, query, moduleKey }) {
+  const [classFilter, setClassFilter] = useState("");
+  const [streamFilter, setStreamFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+
+  const displayText = (value) => {
+    if (value === null || value === undefined || value === "") return "—";
+    if (Array.isArray(value)) return value.map((item) => typeof item === "object" ? (item?.name || item?.title || item?.label || "") : String(item)).filter(Boolean).join(", ") || "—";
+    if (typeof value === "object") return value.name || value.display_name || value.title || value.label || "—";
+    return String(value);
+  };
+  const classOf = (row) => row?.class_name || row?.class?.name || row?.class?.class_name || row?.grade || row?.level || "";
+  const streamOf = (row) => row?.stream_name || row?.stream || row?.class_stream || row?.class?.stream || "";
+  const coursesOf = (row) => row?.courses || row?.subjects || row?.course_names || row?.course_name || row?.programme_name || row?.learning_areas || row?.teaching?.subjects || [];
+  const unique = (values) => [...new Set(values.map((value) => displayText(value)).filter((value) => value && value !== "—"))].sort((a, b) => a.localeCompare(b));
+  const classOptions = unique(rows.map(classOf));
+  const streamOptions = unique(rows.map(streamOf));
+  const courseOptions = unique(rows.flatMap((row) => {
+    const values = coursesOf(row);
+    return Array.isArray(values) ? values.map((item) => typeof item === "object" ? (item.name || item.title || item.label) : item) : String(values || "").split(",");
+  }));
+
+  const filteredRows = rows.filter((row) => {
+    const matchesQuery = JSON.stringify(row).toLowerCase().includes(String(query || "").toLowerCase());
+    if (!matchesQuery) return false;
+    if (moduleKey !== "students") return true;
+    if (classFilter && String(classOf(row)) !== classFilter) return false;
+    if (streamFilter && String(streamOf(row)) !== streamFilter) return false;
+    if (courseFilter) {
+      const courses = coursesOf(row);
+      const courseText = (Array.isArray(courses) ? courses : [courses]).map((item) => typeof item === "object" ? (item.name || item.title || item.label || "") : String(item || "")).join(", ").toLowerCase();
+      if (!courseText.includes(courseFilter.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  const classColumns = [
+    { key: "class_id", label: "Class ID", value: (row) => row?.class_id || row?.id || row?._id || row?.code },
+    { key: "class_name", label: "Class name", value: (row) => row?.class_name || row?.name || row?.title },
+    { key: "class_teacher", label: "Class teacher", value: (row) => row?.class_teacher_name || row?.teacher_name || row?.class_teacher?.display_name || row?.class_teacher?.name || row?.teacher?.display_name || row?.teacher?.name || row?.class_teacher || row?.teacher },
+    { key: "total_students", label: "Total student", value: (row) => row?.total_students ?? row?.student_count ?? row?.students_count ?? (Array.isArray(row?.students) ? row.students.length : undefined) },
+  ];
+  const studentColumns = [
+    { key: "admission_number", label: "Admission no. by school", value: (row) => row?.admission_number || row?.school_admission_number || row?.admission_no || row?.student_number },
+    { key: "student_name", label: "Name", value: (row) => row?.full_name || row?.display_name || row?.name || [row?.first_name, row?.last_name].filter(Boolean).join(" ") },
+    { key: "class_name", label: "Class", value: classOf },
+    { key: "stream", label: "Stream", value: streamOf },
+    { key: "duration", label: "Duration period", value: (row) => row?.duration_period || row?.enrollment_duration || row?.student_duration || row?.duration || row?.term_enrolled || row?.academic_period },
+  ];
+  const preferred = ["admission_number", "school_admission_number", "admission_no", "full_name", "display_name", "name", "title", "subject", "class_name", "stream", "role", "status", "date", "due_date", "amount", "amount_paid", "score", "max_score"];
+  const genericKeys = [...new Set(filteredRows.flatMap((row) => Object.keys(row || {})))].filter((key) => !["_id", "metadata", "raw"].includes(key)).sort((a, b) => {
     const ai = preferred.indexOf(a); const bi = preferred.indexOf(b);
     return (ai < 0 ? 100 : ai) - (bi < 0 ? 100 : bi);
   }).slice(0, 7);
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-      <table className="min-w-full divide-y divide-slate-200 text-left dark:divide-slate-800">
-        <thead className="bg-slate-50 dark:bg-slate-900">
-          <tr>{keys.map((key) => <th key={key} className="whitespace-nowrap px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{humanize(key)}</th>)}</tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-950">
-          {filteredRows.map((row, index) => <tr key={row?.id || row?._id || `${rowTitle(row, index)}-${index}`} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/60">
-            {keys.map((key) => <td key={key} className="max-w-[280px] px-4 py-3 text-sm text-slate-700 dark:text-slate-300"><span className="block truncate" title={valueText(row?.[key])}>{valueText(row?.[key])}</span></td>)}
-          </tr>)}
-        </tbody>
-      </table>
+  const columns = moduleKey === "classes" ? classColumns : moduleKey === "students" ? studentColumns : genericKeys.map((key) => ({ key, label: humanize(key), value: (row) => row?.[key] }));
+
+  const filters = moduleKey === "students" ? (
+    <div className="mb-4 grid gap-2 sm:grid-cols-3">
+      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Class
+        <select value={classFilter} onChange={(event) => setClassFilter(event.target.value)} className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal dark:border-slate-700 dark:bg-slate-900 dark:text-white"><option value="">All classes</option>{classOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+      </label>
+      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Stream
+        <select value={streamFilter} onChange={(event) => setStreamFilter(event.target.value)} className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal dark:border-slate-700 dark:bg-slate-900 dark:text-white"><option value="">All streams</option>{streamOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+      </label>
+      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Course
+        <select value={courseFilter} onChange={(event) => setCourseFilter(event.target.value)} className="mt-1.5 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal dark:border-slate-700 dark:bg-slate-900 dark:text-white"><option value="">All courses</option>{courseOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+      </label>
     </div>
+  ) : null;
+
+  if (!filteredRows.length) {
+    return <>{filters}<div className="rounded-2xl border border-dashed border-slate-200 px-5 py-12 text-center dark:border-slate-800"><Search size={23} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">No matching records</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Change the search or filters, refresh the backend records, or add a new record where available.</p></div></>;
+  }
+
+  return (
+    <>
+      {filters}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+        <table className="min-w-full divide-y divide-slate-200 text-left dark:divide-slate-800">
+          <thead className="bg-slate-50 dark:bg-slate-900"><tr>{columns.map((column) => <th key={column.key} className="whitespace-nowrap px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{column.label}</th>)}</tr></thead>
+          <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-950">
+            {filteredRows.map((row, index) => <tr key={row?.id || row?._id || row?.class_id || row?.student_id || `${rowTitle(row, index)}-${index}`} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/60">
+              {columns.map((column) => {
+                const value = column.value(row);
+                return <td key={column.key} className="max-w-[280px] px-4 py-3 text-sm text-slate-700 dark:text-slate-300"><span className="block truncate" title={displayText(value)}>{displayText(value)}</span></td>;
+              })}
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -931,7 +995,34 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
       if (typeof method !== "function") throw new Error(`The API method for ${meta.title} is not present in src/services/elimuApi.jsx.`);
       const response = await method.call(api, moduleKey === "reports" ? {} : {});
       const data = unwrap(response);
-      const nextRows = extractRows(data);
+      let nextRows = extractRows(data);
+      if (moduleKey === "classes") {
+        const [studentsResult, staffResult] = await Promise.allSettled([
+          api.getStudents(),
+          api.getStaff(),
+        ]);
+        const studentsData = studentsResult.status === "fulfilled" ? unwrap(studentsResult.value) : null;
+        const staffData = staffResult.status === "fulfilled" ? unwrap(staffResult.value) : null;
+        const students = Array.isArray(studentsData) ? studentsData : (studentsData?.students || studentsData?.items || studentsData?.records || []);
+        const staff = Array.isArray(staffData) ? staffData : (staffData?.staff || staffData?.members || staffData?.items || []);
+        nextRows = nextRows.map((classRecord) => {
+          const id = String(classRecord?.class_id || classRecord?.id || classRecord?._id || "");
+          const name = String(classRecord?.class_name || classRecord?.name || classRecord?.title || "");
+          const teacherId = String(classRecord?.class_teacher_user_id || classRecord?.teacher_user_id || classRecord?.teacher_id || classRecord?.class_teacher?.user_id || classRecord?.teacher?.user_id || "");
+          const assignedStudents = students.filter((student) => {
+            const studentClassId = String(student?.class_id || student?.classId || student?.class?.id || "");
+            const studentClassName = String(student?.class_name || student?.class?.name || student?.grade || "");
+            return (id && studentClassId && id === studentClassId) || (!studentClassId && name && studentClassName.toLowerCase() === name.toLowerCase());
+          });
+          const teacher = staff.find((member) => String(member?.user_id || member?.userId || member?.revelacode_user_id || "") === teacherId);
+          const teacherName = classRecord?.class_teacher_name || classRecord?.teacher_name || classRecord?.class_teacher?.display_name || classRecord?.class_teacher?.name || classRecord?.teacher?.display_name || classRecord?.teacher?.name || teacher?.identity?.display_name || teacher?.display_name || teacher?.full_name;
+          return {
+            ...classRecord,
+            total_students: classRecord?.total_students ?? classRecord?.student_count ?? classRecord?.students_count ?? (studentsResult.status === "fulfilled" ? assignedStudents.length : undefined),
+            class_teacher_name: teacherName || "",
+          };
+        });
+      }
       setPayload(data);
       const hasObjectPayload = Boolean(
         data && typeof data === "object" && !Array.isArray(data) && Object.keys(data).length
@@ -1077,6 +1168,7 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
       </section>
 
       {moduleKey === "sync" && <ElimuLegacyImport api={api} school={school} />}
+      {moduleKey === "fees" && <ElimuFinanceControls api={api} role={role} onNotice={setNotice} onError={setError} />}
 
       {demo && <div className="flex items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-100"><ShieldCheck size={18} className="mt-0.5 shrink-0" /><div><p className="font-semibold">Demo school session</p><p className="mt-1 leading-5">The screen still calls the Elimu API. If a demo endpoint is unavailable, sample entries may be shown in browser-only preview mode and clearly labelled as local demo data.</p></div></div>}
 
@@ -1124,7 +1216,8 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
             <div className="mt-4 flex flex-wrap gap-2"><button type="submit" disabled={saving} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">{saving ? <Loader size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}{saving ? "Savingâ€¦" : moduleKey === "staff" ? "Send invitation" : "Save record"}</button><button type="button" onClick={() => setFormOpen(false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">Cancel</button></div>
           </form>}
 
-          {loading ? <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl bg-slate-50 p-12 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400"><Loader size={19} className="animate-spin" /> Loading {meta.title.toLowerCase()}â€¦</div> : rows.length ? <div className="mt-5"><RecordTable rows={rows} query={query} /></div> : !sections && <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-5 py-12 text-center dark:border-slate-800"><ModuleIcon size={25} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">No records to display yet</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">This screen is connected to its Elimu read endpoint. Add a record where supported, or refresh after records have been created for this school.</p></div>}
+          {loading ? <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl bg-slate-50 p-12 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400"><Loader size={19} className="animate-spin" /> Loading {meta.title.toLowerCase()}â€¦</div> : rows.length ? <div className="mt-5"><RecordTable rows={rows} query={query} moduleKey={moduleKey} /></div> : !sections && <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-5 py-12 text-center dark:border-slate-800"><ModuleIcon size={25} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">No records to display yet</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">This screen is connected to its Elimu read endpoint. Add a record where supported, or refresh after records have been created for this school.</p></div>}
+          {moduleKey === "students" && <ElimuParentDirectory api={api} />}
         </section>
       )}
 

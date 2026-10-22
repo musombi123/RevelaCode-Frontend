@@ -629,6 +629,21 @@ export function createElimuApiClient({
     createFeeRecord: (data, options) =>
       post("fees", data, options),
 
+    getSchoolPaymentAccounts: (params, options) =>
+      get("finance/payment-accounts", params, options),
+
+    updateSchoolPaymentAccounts: (data, options) =>
+      put("finance/payment-accounts", data, options),
+
+    getSchoolFeeReceipts: (params, options) =>
+      get("finance/receipts", params, options),
+
+    getElimuParentDirectory: (params, options) =>
+      get("portal/parents", params, options),
+
+    reviewSchoolFeeReceipt: (receiptId, data, options) =>
+      post(`finance/receipts/${pathSegment(receiptId, "receipt ID")}/review`, data, options),
+
     getEvents: (params, options) =>
       get("events", params, options),
 
@@ -717,6 +732,15 @@ export function createElimuApiClient({
 
     revokeStaffInvitation: (invitationId, options) =>
       del(`staff/invitations/${pathSegment(invitationId, "invitation ID")}`, options),
+
+    getStaffChangeRequests: (params, options) =>
+      get("staff/change-requests", params, options),
+
+    requestStaffChange: (userId, data, options) =>
+      post(`staff/${pathSegment(userId, "user ID")}/change-requests`, data, options),
+
+    decideStaffChangeRequest: (requestId, data, options) =>
+      post(`staff/change-requests/${pathSegment(requestId, "request ID")}/decision`, data, options),
 
     assignStaff: (data, options) =>
       post("staff/assignments", data, options),

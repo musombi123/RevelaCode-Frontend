@@ -292,8 +292,23 @@ export function ElimuSchoolAccessCard({
         </p>
 
         {hasSchool && (
-          <div className="mt-5">
+          <div className="mt-5 space-y-3">
             <StatusPill status={status} />
+            {(access?.review_notes || access?.school?.review_notes || access?.school?.verification_notes) && !allowed && (
+              <div className={String(status).includes("reject") ? "rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-950 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200" : "rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"}>
+                <p className="font-bold">{String(status).includes("reject") ? "Reason for rejection" : "Reviewer feedback / missing resources"}</p>
+                <p className="mt-1 whitespace-pre-wrap leading-6">{access?.review_notes || access?.school?.review_notes || access?.school?.verification_notes}</p>
+              </div>
+            )}
+            {!allowed && (access?.missing_resources || access?.school?.missing_resources) && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                <p className="font-bold">Resources still required</p>
+                <p className="mt-1 leading-6">{Array.isArray(access?.missing_resources || access?.school?.missing_resources) ? (access?.missing_resources || access?.school?.missing_resources).join(", ") : String(access?.missing_resources || access?.school?.missing_resources)}</p>
+              </div>
+            )}
+            {(access?.school?.submitted_at || access?.school?.reviewed_at || access?.school?.updated_at) && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">Submitted: {access?.school?.submitted_at ? new Date(access.school.submitted_at).toLocaleString("en-KE") : "—"} · Last reviewed: {access?.school?.reviewed_at ? new Date(access.school.reviewed_at).toLocaleString("en-KE") : "Not yet reviewed"}</p>
+            )}
           </div>
         )}
 

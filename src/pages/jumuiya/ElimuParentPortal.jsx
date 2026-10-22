@@ -387,6 +387,37 @@ export default function ElimuParentPortal({
     [getAuthHeaders]
   );
 
+  const downloadCompletionCertificate = useCallback(async () => {
+    const studentId = getStudentId(selectedChild);
+    if (!studentId) return;
+    setSectionError("");
+    try {
+      const extraHeaders = getAuthHeaders ? await getAuthHeaders() : {};
+      const response = await fetch(`${API_BASE}/children/${encodeURIComponent(studentId)}/completion-certificate`, {
+        method: "GET",
+        credentials: "include",
+        headers: { ...(extraHeaders || {}), Accept: "application/pdf" },
+      });
+      if (!response.ok) {
+        let message = "The completion certificate could not be downloaded.";
+        try { const payload = await response.json(); message = getErrorMessage(unwrapResponse(payload), message); } catch { /* PDF error bodies may not be JSON. */ }
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `${String(selectedChild?.admission_number || studentId).replace(/[^A-Za-z0-9_-]/g, "-")}-completion-certificate.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      setSuccessMessage("Completion certificate downloaded.");
+    } catch (error) {
+      setSectionError(error?.message || "The completion certificate could not be downloaded.");
+    }
+  }, [getAuthHeaders, selectedChild]);
+
   const loadChildren = useCallback(async () => {
     setLoadingChildren(true);
     setPageError("");
@@ -529,6 +560,18 @@ export default function ElimuParentPortal({
       setLoadingSection(false);
     }
   };
+
+  const submitInactivityResponse = useCallback(async (responseKind, notes) => {
+    const studentId = getStudentId(selectedChild);
+    if (!studentId) throw new Error("Select the student record first.");
+    await request(`/children/${encodeURIComponent(studentId)}/inactivity-response`, {
+      method: "POST",
+      body: { response: responseKind, notes: String(notes || "").trim() },
+    });
+    setSuccessMessage("Your response has been sent to the school registrar for review.");
+    await openChildSection("profile");
+    await loadChildren();
+  }, [request, selectedChild, openChildSection, loadChildren]);
 
   const returnToOverview = () => {
     setSelectedSection("overview");
@@ -1142,6 +1185,10 @@ export default function ElimuParentPortal({
                   <PrivateSection
                     section={selectedSection}
                     data={sectionData}
+                    request={request}
+                    onReceiptSubmitted={() => openChildSection("finance")}
+                    onDownloadCertificate={downloadCompletionCertificate}
+                    onInactivityResponse={submitInactivityResponse}
                   />
                 ) : !sectionError ? (
                   <EmptyPanel
@@ -1172,7 +1219,14 @@ export default function ElimuParentPortal({
   );
 }
 
-function PrivateSection({ section, data }) {
+function PrivateSection({ section, data, request, onReceiptSubmitted, onDownloadCertificate, onInactivityResponse }) {
+  const [receiptForm, setReceiptForm] = useState({ fee_id: "", amount: "", payment_method: "mpesa", payment_reference: "", receipt_url: "", notes: "" });
+  const [receiptSubmitting, setReceiptSubmitting] = useState(false);
+  const [receiptFeedback, setReceiptFeedback] = useState("");
+  const [receiptError, setReceiptError] = useState("");
+  const [lifecycleNotes, setLifecycleNotes] = useState("");
+  const [lifecycleSubmitting, setLifecycleSubmitting] = useState(false);
+  const [lifecycleError, setLifecycleError] = useState("");
   const record =
     data?.student ||
     data?.profile ||
@@ -1230,16 +1284,11 @@ function PrivateSection({ section, data }) {
                 </p>
               </div>
 
-              {url && (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Open
-                </a>
-              )}
+              {document.document_type === "completion_certificate" ? (
+                <button type="button" onClick={() => onDownloadCertificate?.()} className="shrink-0 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Download PDF</button>
+              ) : url ? (
+                <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Open</a>
+              ) : null}
             </div>
           );
         })}
@@ -1249,84 +1298,146 @@ function PrivateSection({ section, data }) {
 
   if (section === "finance") {
     const fees = getArray(data, ["fees", "transactions", "items"]);
-    const totalDue =
-      data?.total_due ??
-      data?.balance_due ??
-      data?.outstanding_balance;
-    const totalPaid =
-      data?.total_paid ??
-      data?.paid_amount;
+    const accounts = getArray(data, ["payment_accounts", "accounts"]).filter((account) => account?.active !== false);
+    const totalDue = data?.total_due ?? data?.balance_due ?? data?.outstanding_balance;
+    const totalPaid = data?.total_paid ?? data?.paid_amount;
+    const payableFees = fees.filter((fee) => Number(fee?.balance ?? (Number(fee?.amount || 0) - Number(fee?.paid_amount || 0))) > 0);
+    const selectedFee = payableFees.find((fee) => String(fee.id || fee._id) === receiptForm.fee_id);
+
+    const submitReceipt = async (event) => {
+      event.preventDefault();
+      setReceiptError("");
+      setReceiptFeedback("");
+      if (!receiptForm.fee_id) {
+        setReceiptError("Choose the fee line this receipt pays.");
+        return;
+      }
+      if (!Number.isFinite(Number(receiptForm.amount)) || Number(receiptForm.amount) <= 0) {
+        setReceiptError("Enter a valid amount paid.");
+        return;
+      }
+      if (!receiptForm.payment_reference.trim() && !receiptForm.receipt_url.trim()) {
+        setReceiptError("Enter the M-Pesa/bank reference or a secure receipt URL.");
+        return;
+      }
+      setReceiptSubmitting(true);
+      try {
+        const studentId = String(data?.student?.id || data?.student?.student_id || "");
+        await request(`/children/${encodeURIComponent(studentId)}/finance/receipts`, {
+          method: "POST",
+          body: {
+            ...receiptForm,
+            amount: Number(receiptForm.amount),
+            payment_reference: receiptForm.payment_reference.trim(),
+            receipt_url: receiptForm.receipt_url.trim(),
+            notes: receiptForm.notes.trim(),
+          },
+        });
+        setReceiptFeedback("Receipt submitted. It will appear in your student's statement after the school reviews it.");
+        setReceiptForm({ fee_id: "", amount: "", payment_method: "mpesa", payment_reference: "", receipt_url: "", notes: "" });
+        if (typeof onReceiptSubmitted === "function") await onReceiptSubmitted();
+      } catch (error) {
+        setReceiptError(error?.message || "The receipt could not be submitted. Please retry.");
+      } finally {
+        setReceiptSubmitting(false);
+      }
+    };
 
     return (
-      <div className="mt-6 space-y-5">
+      <div className="mt-6 space-y-6">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl bg-slate-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-500">Outstanding balance</p>
-            <p className="mt-2 text-xl font-bold text-slate-950">
-              {totalDue !== undefined
-                ? formatKES(totalDue)
-                : "Not provided"}
-            </p>
+            <p className="mt-2 text-xl font-bold text-slate-950">{totalDue !== undefined ? formatKES(totalDue) : "Not provided"}</p>
           </div>
-
-          <div className="rounded-2xl bg-emerald-50 p-4">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
             <p className="text-sm text-emerald-800">Total paid</p>
-            <p className="mt-2 text-xl font-bold text-emerald-950">
-              {totalPaid !== undefined
-                ? formatKES(totalPaid)
-                : "Not provided"}
-            </p>
+            <p className="mt-2 text-xl font-bold text-emerald-950">{totalPaid !== undefined ? formatKES(totalPaid) : "Not provided"}</p>
           </div>
         </div>
 
-        {fees.length ? (
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full min-w-[460px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Description</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 text-right font-semibold">Amount</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100">
-                {fees.map((fee, index) => (
-                  <tr key={fee.id || fee._id || index}>
-                    <td className="px-4 py-3 font-medium text-slate-800">
-                      {fee.description || fee.title || fee.type || "Fee record"}
-                    </td>
-
-                    <td className="px-4 py-3 text-slate-500">
-                      {formatDate(fee.date || fee.created_at)}
-                    </td>
-
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                      {formatKES(
-                        fee.amount ??
-                          fee.paid_amount ??
-                          fee.balance ??
-                          fee.total
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section>
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div><h3 className="text-base font-bold text-slate-950">Fee statement</h3><p className="mt-1 text-xs text-slate-500">Balances and due dates are supplied by the school.</p></div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{fees.length} fee line{fees.length === 1 ? "" : "s"}</span>
           </div>
-        ) : (
-          <EmptyPanel
-            icon={Wallet}
-            title="No fee entries available"
-            description="No fee entries were returned for this student. Contact the school if you expected a statement."
-          />
-        )}
+          {fees.length ? (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr>
+                  <th className="px-4 py-3 font-semibold">Fee type / description</th>
+                  <th className="px-4 py-3 font-semibold">Term</th>
+                  <th className="px-4 py-3 font-semibold">Due date</th>
+                  <th className="px-4 py-3 text-right font-semibold">Amount</th>
+                  <th className="px-4 py-3 text-right font-semibold">Paid</th>
+                  <th className="px-4 py-3 text-right font-semibold">Balance</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                </tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {fees.map((fee, index) => {
+                    const balance = Number(fee.balance ?? (Number(fee.amount || 0) - Number(fee.paid_amount || 0)));
+                    const status = String(fee.status || (balance <= 0 ? "paid" : "due")).toLowerCase().replace(/[_-]+/g, " ");
+                    return <tr key={fee.id || fee._id || index}>
+                      <td className="px-4 py-3"><p className="font-semibold text-slate-900">{fee.fee_type || fee.title || fee.type || "School fee"}</p><p className="mt-1 text-xs text-slate-500">{fee.description || fee.academic_year || ""}</p></td>
+                      <td className="px-4 py-3 text-slate-600">{fee.term || "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(fee.due_date)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-slate-800">{formatKES(fee.amount)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-emerald-800">{formatKES(fee.paid_amount || 0)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-slate-900">{formatKES(Math.max(balance, 0))}</td>
+                      <td className="px-4 py-3"><span className={balance <= 0 ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800" : "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800"}>{status}</span></td>
+                    </tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : <EmptyPanel icon={Wallet} title="No fee entries available" description="The school has not issued fee records for this student yet. Contact the school if you expected a fee statement." />}
+        </section>
 
-        <p className="text-xs leading-5 text-slate-500">
-          Financial figures are displayed only from the authorized backend
-          response. Confirm payment instructions with the school before making
-          a payment.
-        </p>
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Wallet size={19}/></div><div><h3 className="text-base font-bold text-slate-950">Pay the school / submit receipt</h3><p className="mt-1 text-sm leading-6 text-slate-600">Use the payment instructions configured by the school. Submit the transaction reference or receipt for the Bursar to reconcile.</p></div></div>
+
+          {accounts.length ? <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {accounts.map((account, index) => <article key={account.id || index} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center justify-between gap-2"><h4 className="font-bold text-slate-900">{account.label || (account.type === "bank" ? "Bank account" : "M-Pesa")}</h4><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">{account.type}</span></div>
+              {account.account_name && <p className="mt-2 text-sm text-slate-700">Account name: <strong>{account.account_name}</strong></p>}
+              {account.paybill && <p className="mt-1 text-sm text-slate-700">Paybill: <strong>{account.paybill}</strong></p>}
+              {account.till && <p className="mt-1 text-sm text-slate-700">Till number: <strong>{account.till}</strong></p>}
+              {account.bank_name && <p className="mt-1 text-sm text-slate-700">Bank: <strong>{account.bank_name}</strong></p>}
+              {account.branch && <p className="mt-1 text-sm text-slate-700">Branch: <strong>{account.branch}</strong></p>}
+              {account.account_number && <p className="mt-1 break-all text-sm text-slate-700">Account number: <strong>{account.account_number}</strong></p>}
+              {account.account_reference && <p className="mt-1 text-sm text-slate-700">Account/reference: <strong>{account.account_reference}</strong></p>}
+              {account.instructions && <p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-slate-500">{account.instructions}</p>}
+            </article>)}
+          </div> : <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">The school has not configured payment instructions yet. Contact the Bursar before paying.</div>}
+
+          {data?.payment_notice && <p className="mt-3 rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900">{data.payment_notice}</p>}
+          {receiptFeedback && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{receiptFeedback}</p>}
+          {receiptError && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{receiptError}</p>}
+
+          {payableFees.length > 0 && <form onSubmit={submitReceipt} className="mt-5 grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
+            <label className="text-xs font-semibold text-slate-600">Fee line
+              <select required value={receiptForm.fee_id} onChange={(event) => { const fee = payableFees.find((item) => String(item.id || item._id) === event.target.value); setReceiptForm((current) => ({ ...current, fee_id: event.target.value, amount: fee ? String(fee.balance ?? Math.max(Number(fee.amount || 0) - Number(fee.paid_amount || 0), 0)) : "" })); }} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900">
+                <option value="">Select a fee</option>{payableFees.map((fee) => <option key={fee.id || fee._id} value={fee.id || fee._id}>{fee.fee_type || fee.title || fee.type || "Fee"} · balance {formatKES(fee.balance ?? Math.max(Number(fee.amount || 0) - Number(fee.paid_amount || 0), 0))}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-semibold text-slate-600">Amount paid (KES)
+              <input required type="number" min="0.01" max={selectedFee ? Number(selectedFee.balance ?? Math.max(Number(selectedFee.amount || 0) - Number(selectedFee.paid_amount || 0), 0)) : undefined} step="0.01" value={receiptForm.amount} onChange={(event) => setReceiptForm((current) => ({ ...current, amount: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900" placeholder="Amount paid" />
+            </label>
+            <label className="text-xs font-semibold text-slate-600">Payment method
+              <select value={receiptForm.payment_method} onChange={(event) => setReceiptForm((current) => ({ ...current, payment_method: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900"><option value="mpesa">M-Pesa</option><option value="bank">Bank transfer</option></select>
+            </label>
+            <label className="text-xs font-semibold text-slate-600">Transaction / bank reference
+              <input value={receiptForm.payment_reference} onChange={(event) => setReceiptForm((current) => ({ ...current, payment_reference: event.target.value }))} maxLength={120} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900" placeholder="e.g. M-Pesa transaction code" />
+            </label>
+            <label className="text-xs font-semibold text-slate-600 md:col-span-2">Secure receipt URL (optional if reference is provided)
+              <input type="url" value={receiptForm.receipt_url} onChange={(event) => setReceiptForm((current) => ({ ...current, receipt_url: event.target.value }))} maxLength={500} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900" placeholder="https://…" />
+            </label>
+            <label className="text-xs font-semibold text-slate-600 md:col-span-2">Note to the Bursar (optional)
+              <textarea rows={2} value={receiptForm.notes} onChange={(event) => setReceiptForm((current) => ({ ...current, notes: event.target.value }))} maxLength={800} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal text-slate-900" placeholder="Any clarification about this payment" />
+            </label>
+            <div className="md:col-span-2"><button type="submit" disabled={receiptSubmitting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">{receiptSubmitting ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}{receiptSubmitting ? "Submitting receipt…" : "Submit receipt for review"}</button><p className="mt-2 text-xs leading-5 text-slate-500">Your receipt is pending until the school reviews it. A receipt submission alone does not confirm payment settlement.</p></div>
+          </form>}
+        </section>
       </div>
     );
   }
@@ -1336,6 +1447,10 @@ function PrivateSection({ section, data }) {
     ["Class", record?.class_name || record?.class || record?.grade],
     ["School", record?.school_name],
     ["Status", record?.status],
+    ["Portal duration", record?.portal_duration || record?.student_duration],
+    ["Portal expiry / course end", record?.portal_expires_at || record?.leaving_date],
+    ["Course", record?.course_name],
+    ["Completion status", record?.completion_status],
   ].filter(([, value]) => value !== undefined && value !== null && value !== "");
 
   if (!fields.length) {
@@ -1350,8 +1465,24 @@ function PrivateSection({ section, data }) {
     );
   }
 
+  const lifecycle = record?.lifecycle_notice || {};
+  const canRespondToInactivity = Boolean(lifecycle.parent_reminder_sent_at && !lifecycle.parent_response_at && record?.status === "inactive");
+  const lifecycleStatus = lifecycle.registrar_review_requested_at ? "Registrar review has been requested." : lifecycle.parent_response_at ? "Your response has been recorded." : "Waiting for parent/guardian response.";
   return (
     <div className="mt-6 space-y-3">
+      {canRespondToInactivity && (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm">
+          <div className="flex items-start gap-3"><AlertCircle size={20} className="mt-0.5 shrink-0"/><div><h3 className="font-bold">School status confirmation requested</h3><p className="mt-1 text-sm leading-6">The school has recorded this learner as inactive for more than one term. Confirm whether the student is still enrolled or has withdrawn. The registrar will review your response.</p><p className="mt-2 text-xs">Response due: {formatDate(lifecycle.parent_response_deadline)}</p></div></div>
+          {lifecycleError && <p role="alert" className="mt-3 text-sm font-semibold text-rose-800">{lifecycleError}</p>}
+          <label className="mt-4 block text-xs font-semibold">Notes to the school (optional)<textarea rows={2} value={lifecycleNotes} onChange={(event) => setLifecycleNotes(event.target.value)} maxLength={800} className="mt-1.5 w-full rounded-xl border border-amber-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-900" placeholder="Share context or ask the school to contact you"/></label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("still_enrolled", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Still enrolled</button>
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("withdrawn", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 disabled:opacity-50">Student has withdrawn</button>
+            <button type="button" disabled={lifecycleSubmitting} onClick={async () => { setLifecycleSubmitting(true); setLifecycleError(""); try { await onInactivityResponse?.("please_contact_me", lifecycleNotes); } catch (error) { setLifecycleError(error?.message || "Unable to send your response."); } finally { setLifecycleSubmitting(false); } }} className="min-h-10 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 disabled:opacity-50">Please contact me</button>
+          </div>
+          <p className="mt-3 text-xs">{lifecycleStatus}</p>
+        </section>
+      )}
       {fields.map(([label, value]) => (
         <div
           key={label}
