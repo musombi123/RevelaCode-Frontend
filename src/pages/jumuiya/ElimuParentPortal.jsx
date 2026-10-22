@@ -418,18 +418,6 @@ export default function ElimuParentPortal({
     }
   }, [getAuthHeaders, selectedChild]);
 
-  const submitInactivityResponse = useCallback(async (responseKind, notes) => {
-    const studentId = getStudentId(selectedChild);
-    if (!studentId) throw new Error("Select the student record first.");
-    await request(`/children/${encodeURIComponent(studentId)}/inactivity-response`, {
-      method: "POST",
-      body: { response: responseKind, notes: String(notes || "").trim() },
-    });
-    setSuccessMessage("Your response has been sent to the school registrar for review.");
-    await openChildSection("profile");
-    await loadChildren();
-  }, [request, selectedChild, openChildSection, loadChildren]);
-
   const loadChildren = useCallback(async () => {
     setLoadingChildren(true);
     setPageError("");
@@ -572,6 +560,18 @@ export default function ElimuParentPortal({
       setLoadingSection(false);
     }
   };
+
+  const submitInactivityResponse = useCallback(async (responseKind, notes) => {
+    const studentId = getStudentId(selectedChild);
+    if (!studentId) throw new Error("Select the student record first.");
+    await request(`/children/${encodeURIComponent(studentId)}/inactivity-response`, {
+      method: "POST",
+      body: { response: responseKind, notes: String(notes || "").trim() },
+    });
+    setSuccessMessage("Your response has been sent to the school registrar for review.");
+    await openChildSection("profile");
+    await loadChildren();
+  }, [request, selectedChild, openChildSection, loadChildren]);
 
   const returnToOverview = () => {
     setSelectedSection("overview");
