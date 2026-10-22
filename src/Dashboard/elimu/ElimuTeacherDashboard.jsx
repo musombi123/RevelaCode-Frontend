@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
+  BellRing,
   BookOpen,
   CalendarDays,
   CheckCircle2,
@@ -390,6 +391,25 @@ export default function ElimuTeacherDashboard({
 
   const recentAssignments = assignments.slice(0, 4);
   const recentLessons = lessons.slice(0, 5);
+  const todayName = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Nairobi", weekday: "long" }).format(new Date()).toLowerCase();
+  const clockParts = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Nairobi", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const currentHour = Number(clockParts.find((part) => part.type === "hour")?.value || 0);
+  const currentMinute = Number(clockParts.find((part) => part.type === "minute")?.value || 0);
+  const currentMinutes = currentHour * 60 + currentMinute;
+  const minutesFromClock = (value) => {
+    const match = /^(\\d{1,2}):(\\d{2})/.exec(String(value || ""));
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    return hour < 24 && minute < 60 ? hour * 60 + minute : null;
+  };
+  const dayLessons = timetableEntries
+    .filter((entry) => String(entry?.day || entry?.day_of_week || "").trim().toLowerCase() === todayName && !["break", "lunch", "free"].includes(String(entry?.period_type || entry?.type || "lesson").toLowerCase()))
+    .map((entry) => ({ ...entry, _startMinutes: minutesFromClock(entry?.start_time || entry?.time), _endMinutes: minutesFromClock(entry?.end_time) }))
+    .sort((a, b) => (a._startMinutes ?? 1440) - (b._startMinutes ?? 1440));
+  const currentLesson = dayLessons.find((entry) => entry._startMinutes !== null && entry._endMinutes !== null && entry._startMinutes <= currentMinutes && currentMinutes < entry._endMinutes);
+  const nextLesson = dayLessons.find((entry) => entry._startMinutes !== null && entry._startMinutes > currentMinutes);
+  const minutesToNextLesson = nextLesson?._startMinutes !== null && nextLesson?._startMinutes !== undefined ? nextLesson._startMinutes - currentMinutes : null;
 
   return (
     <div className="space-y-8">
@@ -641,6 +661,19 @@ export default function ElimuTeacherDashboard({
           </div>
         </section>
       </div>
+
+      <section className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-white p-5 shadow-sm dark:border-blue-900/60 dark:from-blue-950/40 dark:to-slate-950 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-200"><BellRing size={19}/></span><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-800 dark:text-blue-300">Today's teaching reminders</p><h2 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{currentLesson ? "Class is in session" : nextLesson ? "Upcoming teaching session" : "Teaching schedule overview"}</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{currentLesson ? "Your timetable shows a class in progress. Check in and record attendance through the attendance workspace." : nextLesson && minutesToNextLesson !== null ? (minutesToNextLesson <= 15 ? `Your next class starts in ${minutesToNextLesson} minute${minutesToNextLesson === 1 ? "" : "s"}. Prepare the lesson and take attendance.` : `Your next scheduled class starts in ${minutesToNextLesson} minutes. Use the timetable to prepare and record attendance when the lesson begins.`) : "No later class is scheduled for today in the timetable data currently available to your account."}</p></div></div>
+          <button type="button" onClick={() => navigate("elimu/attendance")} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"><CheckCircle2 size={15}/>Open attendance</button>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-blue-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"><p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Classes to attend today</p><p className="mt-1 text-2xl font-extrabold text-slate-950 dark:text-white">{dayLessons.length}</p></div>
+          <div className="rounded-xl border border-blue-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"><p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Next class</p><p className="mt-1 text-sm font-extrabold text-slate-950 dark:text-white">{currentLesson ? (currentLesson.subject || currentLesson.subject_name || "Scheduled lesson") : nextLesson ? (nextLesson.subject || nextLesson.subject_name || nextLesson.title || "Scheduled lesson") : "None remaining today"}</p><p className="mt-1 text-xs text-slate-500">{currentLesson ? `${currentLesson.start_time || ""}–${currentLesson.end_time || ""}` : nextLesson ? `${nextLesson.start_time || nextLesson.time || "Time not specified"}` : todayName.charAt(0).toUpperCase() + todayName.slice(1)}</p></div>
+          <div className="rounded-xl border border-blue-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"><p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Class / stream</p><p className="mt-1 text-sm font-extrabold text-slate-950 dark:text-white">{currentLesson?.class_name || currentLesson?.class?.name || nextLesson?.class_name || nextLesson?.class?.name || "See timetable"}</p><p className="mt-1 text-xs text-slate-500">{currentLesson ? "Attend now" : minutesToNextLesson !== null ? `Starts in ${minutesToNextLesson} min` : "Schedule based on published timetable"}</p></div>
+        </div>
+        {!dayLessons.length && <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">No lessons were found for today in the available teacher timetable. The class count is based only on returned schedule data.</p>}
+      </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
         <div className="flex items-center justify-between gap-3">
