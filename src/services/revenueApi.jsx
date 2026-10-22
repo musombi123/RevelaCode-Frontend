@@ -179,6 +179,12 @@ export function createRevenueApiClient({
         ...options,
         params: { page, per_page: perPage, hub, status, ...(options.params || {}) },
       }),
+    adminRefreshCheckout: (checkoutId, options = {}) =>
+      request(`/admin/checkouts/${encodeURIComponent(checkoutId)}/refresh`, {
+        ...options,
+        method: "POST",
+        body: {},
+      }),
     adminTrials: ({ page = 1, perPage = 25 } = {}, options = {}) =>
       request("/admin/trials", {
         ...options,
