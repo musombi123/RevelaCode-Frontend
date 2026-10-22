@@ -190,6 +190,12 @@ export function createRevenueApiClient({
         method: "POST",
         body: {},
       }),
+    adminResolveUnknownCheckout: (checkoutRowId, payload, options = {}) =>
+      request(`/admin/checkouts/by-id/${encodeURIComponent(checkoutRowId)}/resolve-no-payment`, {
+        ...options,
+        method: "POST",
+        body: payload,
+      }),
     adminTrials: ({ page = 1, perPage = 25 } = {}, options = {}) =>
       request("/admin/trials", {
         ...options,
