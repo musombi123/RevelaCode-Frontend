@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
 import ElimuFinanceControls from "./ElimuFinanceControls";
+import ElimuParentDirectory from "./ElimuParentDirectory";
 import ElimuLegacyImport from "./ElimuLegacyImport.jsx";
 import ElimuTimetableWorkspace from "./ElimuTimetableWorkspace.jsx";
 
@@ -1216,6 +1217,7 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
           </form>}
 
           {loading ? <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl bg-slate-50 p-12 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400"><Loader size={19} className="animate-spin" /> Loading {meta.title.toLowerCase()}â€¦</div> : rows.length ? <div className="mt-5"><RecordTable rows={rows} query={query} moduleKey={moduleKey} /></div> : !sections && <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-5 py-12 text-center dark:border-slate-800"><ModuleIcon size={25} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">No records to display yet</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">This screen is connected to its Elimu read endpoint. Add a record where supported, or refresh after records have been created for this school.</p></div>}
+          {moduleKey === "students" && <ElimuParentDirectory api={api} />}
         </section>
       )}
 
