@@ -21,6 +21,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
 
 // ============================================================
 // CONFIG
@@ -288,6 +289,8 @@ export default function CommunityFeed({
 
   const [reactingPost, setReactingPost] =
     useState(null);
+
+  const [commentPost, setCommentPost] = useState(null);
 
   const displayName = useMemo(
     () => getDisplayName(user),
@@ -1695,11 +1698,13 @@ export default function CommunityFeed({
 
                     <button
                       type="button"
-                      onClick={() =>
-                        navigate(
-                          `community-post-${postId}-comments`
-                        )
-                      }
+                      onClick={() => {
+                        if (!postId) {
+                          setError("Comments are unavailable because this post has no valid ID. Refresh the feed and try again.");
+                          return;
+                        }
+                        setCommentPost(post);
+                      }}
                       className="
                         flex
                         items-center
@@ -1921,5 +1926,24 @@ export default function CommunityFeed({
           </button>
         </div>
       </div>
+
+      {commentPost ? (
+        <CommunityPostComments
+          post={commentPost}
+          onClose={() => setCommentPost(null)}
+          onCommentAdded={(savedPostId) => {
+            const normalizedId = String(savedPostId || "");
+            setPosts((current) => current.map((item) => {
+              if (String(getPostId(item) || "") !== normalizedId) return item;
+              const nextCount = Math.max(0, Number(getCommentCount(item)) || 0) + 1;
+              return {
+                ...item,
+                comments_count: nextCount,
+                comment_count: nextCount,
+              };
+            }));
+          }}
+        />
+      ) : null}
   );
 }
