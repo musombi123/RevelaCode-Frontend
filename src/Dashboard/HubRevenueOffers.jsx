@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -78,6 +78,11 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [trialLoading, setTrialLoading] = useState(true);
   const [trialStarting, setTrialStarting] = useState(false);
   const [trialError, setTrialError] = useState("");
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
+  const [checkoutPhone, setCheckoutPhone] = useState("");
+  const [checkout, setCheckout] = useState(null);
+  const [checkoutRefreshing, setCheckoutRefreshing] = useState(false);
+  const checkoutKeys = useRef({});
 
   const loadPlans = useCallback(async (signal) => {
     if (!apiHub) {
@@ -93,6 +98,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       const responses = await Promise.all(
         streams.map((stream) => revenueApi.listPlans(stream, { signal })),
       );
+      setCheckoutEnabled(responses.some((response) => response?.checkout_enabled === true));
       const uniquePlans = new Map();
       responses.forEach((response) => {
         (Array.isArray(response?.plans) ? response.plans : []).forEach((plan) => {
@@ -131,6 +137,69 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     loadTrial(controller.signal);
     return () => controller.abort();
   }, [loadPlans, loadTrial]);
+
+  const startCheckout = async (plan) => {
+    const phone = checkoutPhone.trim();
+    if (!phone) {
+      setActionError("Enter the Kenyan M-Pesa phone number that should receive the payment prompt.");
+      return;
+    }
+    const keyScope = `${plan.code}:${phone.replace(/[\s()+-]/g, "")}`;
+    const idempotencyKey = checkoutKeys.current[keyScope] || (
+      globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID()
+        : `mpesa-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`
+    );
+    checkoutKeys.current[keyScope] = idempotencyKey;
+    setSubmittingCode(plan.code);
+    setActionError("");
+    setNotice("");
+    try {
+      const response = await revenueApi.startCheckout(
+        { plan_code: plan.code, phone },
+        { idempotencyKey },
+      );
+      const started = response?.checkout || null;
+      setCheckout(started);
+      delete checkoutKeys.current[keyScope];
+      setNotice(response?.message || "M-Pesa prompt started. Confirm payment on your phone.");
+    } catch (error) {
+      setActionError(messageForError(error));
+    } finally {
+      setSubmittingCode("");
+    }
+  };
+
+  const refreshCheckout = async () => {
+    const checkoutId = checkout?.checkout_request_id;
+    if (!checkoutId) return;
+    setCheckoutRefreshing(true);
+    setActionError("");
+    try {
+      const response = await revenueApi.refreshCheckout(checkoutId);
+      const updated = response?.checkout || null;
+      setCheckout(updated);
+      if (updated?.status === "succeeded") {
+        setNotice("Payment verified. Your subscription is active.");
+        try {
+          const entitlement = await revenueApi.getEntitlement(apiHub, { params: { feature: "premium" } });
+          if (entitlement?.premium_access) setNotice("Payment verified. Your " + label + " premium access is active.");
+        } catch {
+          // Checkout success is already confirmed by the backend; entitlement refresh is supplementary.
+        }
+      } else if (updated?.status === "failed") {
+        setActionError(updated?.result_description || "M-Pesa reports that this payment was not completed. You can start a new checkout.");
+      } else if (updated?.status === "verified_activation_failed") {
+        setActionError("The payment was verified but access needs administrator reconciliation. Do not pay again; contact support.");
+      } else {
+        setNotice("M-Pesa status is still being verified. Refresh again shortly; do not submit another payment.");
+      }
+    } catch (error) {
+      setActionError(messageForError(error));
+    } finally {
+      setCheckoutRefreshing(false);
+    }
+  };
 
   const startTrial = async () => {
     setTrialStarting(true);
@@ -199,7 +268,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
           <div className="min-w-0">
             <p className="text-sm font-bold text-slate-900 dark:text-white">30-day free {label} trial</p>
             <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-              Each hub has its own one-time trial. Starting it does not require M-Pesa. Paid checkout will be enabled after payment verification is integrated.
+              Each hub has its own one-time 30-day trial. Premium access is checked by the backend. Published paid plans can use M-Pesa when Daraja credentials and the HTTPS callback are configured.
             </p>
             {!trialLoading && trial?.status === "active" ? (
               <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Trial active · {trial.days_remaining ?? "—"} days remaining · ends {trial.ends_at ? new Date(trial.ends_at).toLocaleDateString() : "soon"}</p>
@@ -226,8 +295,48 @@ export default function HubRevenueOffers({ hub, compact = false }) {
 
       <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-600 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-        <span>Plan prices are controlled centrally. A request is only an intent record; billing is currently disabled.</span>
+        <span>Plan prices are managed centrally. M-Pesa checkout is available only for published plans when the provider is configured; access activates only after verification.</span>
       </div>
+
+      {checkoutEnabled && plans.some((plan) => plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0) ? (
+        <div className="mt-4 rounded-xl border border-emerald-200 p-4 dark:border-emerald-900/50">
+          <label htmlFor="revenue-mpesa-phone" className="block text-xs font-bold text-slate-800 dark:text-slate-100">M-Pesa phone number</label>
+          <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Use a Kenyan Safaricom mobile number. The payment prompt will be sent to this phone.</p>
+          <input
+            id="revenue-mpesa-phone"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="0712 345 678"
+            value={checkoutPhone}
+            onChange={(event) => setCheckoutPhone(event.target.value)}
+            className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          />
+        </div>
+      ) : null}
+
+      {checkout ? (
+        <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">M-Pesa checkout · {checkout.status?.replaceAll("_", " ")}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{checkout.message || checkout.result_description || "Waiting for the provider's final confirmation."}</p>
+              {checkout.checkout_request_id ? <p className="mt-2 break-all font-mono text-[10px] text-slate-500">Reference: {checkout.checkout_request_id}</p> : null}
+              {checkout.receipt ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Receipt: {checkout.receipt}</p> : null}
+            </div>
+            {checkout.status === "succeeded" ? (
+              <span className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">Subscription active</span>
+            ) : checkout.status === "failed" ? (
+              <span className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-bold text-rose-800 dark:bg-rose-900/30 dark:text-rose-200">Payment not completed</span>
+            ) : (
+              <button type="button" onClick={refreshCheckout} disabled={checkoutRefreshing || !checkout.checkout_request_id} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200">
+                <RefreshCw className={`h-3.5 w-3.5 ${checkoutRefreshing ? "animate-spin" : ""}`} />
+                {checkoutRefreshing ? "Checking..." : "Refresh payment status"}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {loadError ? (
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
@@ -283,14 +392,25 @@ export default function HubRevenueOffers({ hub, compact = false }) {
                   ))}
                 </ul>
               ) : null}
-              <button
-                type="button"
-                onClick={() => requestPlan(plan)}
-                disabled={Boolean(submittingCode)}
-                className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-              >
-                {submittingCode === plan.code ? "Submitting request..." : "Request plan details"}
-              </button>
+              {checkoutEnabled && plan.status === "available" && ["month", "year"].includes(plan.interval) && Number(plan.amount) > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => startCheckout(plan)}
+                  disabled={Boolean(submittingCode) || !checkoutPhone.trim() || Boolean(checkout && ["pending", "initiating", "callback_received", "awaiting_verification", "verified_activation_failed"].includes(checkout.status))}
+                  className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submittingCode === plan.code ? "Starting M-Pesa..." : `Pay ${money(plan.amount, plan.currency || "KES")} with M-Pesa`}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => requestPlan(plan)}
+                  disabled={Boolean(submittingCode)}
+                  className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                >
+                  {submittingCode === plan.code ? "Submitting request..." : "Request plan details"}
+                </button>
+              )}
             </article>
           ))}
         </div>
