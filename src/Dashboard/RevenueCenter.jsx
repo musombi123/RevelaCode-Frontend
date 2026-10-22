@@ -104,6 +104,9 @@ export default function RevenueCenter() {
   });
   const [updatingPlanCode, setUpdatingPlanCode] = useState("");
   const [reconcilingCheckoutId, setReconcilingCheckoutId] = useState("");
+  const [resolvingUnknownCheckoutId, setResolvingUnknownCheckoutId] = useState("");
+  const [manualEvidenceReference, setManualEvidenceReference] = useState("");
+  const [manualResolutionNotes, setManualResolutionNotes] = useState("");
 
   const [submittingPlan, setSubmittingPlan] = useState("");
   const [newPlanDraft, setNewPlanDraft] = useState({
@@ -285,6 +288,40 @@ export default function RevenueCenter() {
       setActionError(getErrorMessage(error));
     } finally {
       setSubmittingPlan("");
+    }
+  };
+
+  const resolveUnknownSubmission = async (checkout) => {
+    if (!checkout?.id || resolvingUnknownCheckoutId) return;
+    const evidenceReference = manualEvidenceReference.trim();
+    const notes = manualResolutionNotes.trim();
+    if (evidenceReference.length < 6 || evidenceReference.length > 160) {
+      setActionError("Enter the provider-side reconciliation/report reference (6–160 characters).");
+      return;
+    }
+    if (notes.length < 10 || notes.length > 1000) {
+      setActionError("Add 10–1,000 characters explaining the provider-side review.");
+      return;
+    }
+
+    setResolvingUnknownCheckoutId(checkout.id);
+    setActionError("");
+    setNotice("");
+    try {
+      const response = await revenueApi.adminResolveUnknownCheckout(checkout.id, {
+        resolution: "provider_checked_no_charge",
+        evidence_reference: evidenceReference,
+        notes,
+      });
+      setNotice(response?.message || "The provider review was saved and the checkout slot was released.");
+      setManualEvidenceReference("");
+      setManualResolutionNotes("");
+      setResolvingUnknownCheckoutId("");
+      await Promise.all([loadAdminOps(), loadHistory()]);
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    } finally {
+      setResolvingUnknownCheckoutId("");
     }
   };
 
@@ -812,13 +849,13 @@ export default function RevenueCenter() {
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">M-Pesa checkout queue</h4>
                   <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Use this queue to identify pending, failed, sandbox-only and reconciliation-required checkouts. Customer phone numbers are not displayed.</p>
                 </div>
-                <StatusTag tone={adminOps.checkouts.some((item) => ["verified_activation_failed", "awaiting_verification"].includes(item.status)) ? "proposed" : "neutral"}>
-                  {adminOps.checkouts.filter((item) => ["verified_activation_failed", "awaiting_verification", "pending", "callback_received"].includes(item.status)).length} requiring review
+                <StatusTag tone={adminOps.checkouts.some((item) => ["verified_activation_failed", "awaiting_verification", "submission_unknown", "initiating"].includes(item.status)) ? "proposed" : "neutral"}>
+                  {adminOps.checkouts.filter((item) => ["verified_activation_failed", "awaiting_verification", "pending", "callback_received", "submission_unknown", "initiating"].includes(item.status)).length} requiring review
                 </StatusTag>
               </div>
               {adminOps.checkouts.length ? (
                 <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-                  <table className="w-full min-w-[920px] text-left text-xs">
+                  <table className="w-full min-w-[980px] text-left text-xs">
                     <thead className="bg-slate-50 text-slate-500 dark:bg-white/5">
                       <tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Plan / hub</th><th className="px-3 py-2.5">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Provider reference</th><th className="px-3 py-2.5">Created</th><th className="px-3 py-2.5">Action</th></tr>
                     </thead>
@@ -828,19 +865,68 @@ export default function RevenueCenter() {
                           <td className="max-w-28 truncate px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.user_id || "—"}</td>
                           <td className="px-3 py-2.5"><p className="font-semibold text-slate-800 dark:text-slate-100">{item.plan_code || "—"}</p><p className="text-[10px] text-slate-400">{item.hub || "—"}</p></td>
                           <td className="whitespace-nowrap px-3 py-2.5 font-semibold">{formatMoney(item.amount, item.currency)}</td>
-                          <td className="px-3 py-2.5"><StatusTag tone={["succeeded"].includes(item.status) ? "success" : ["failed", "initiation_failed"].includes(item.status) ? "proposed" : "neutral"}>{String(item.status || "unknown").replace(/_/g, " ")}</StatusTag></td>
+                          <td className="px-3 py-2.5"><StatusTag tone={["succeeded"].includes(item.status) ? "success" : ["failed", "initiation_failed", "submission_unknown"].includes(item.status) ? "proposed" : "neutral"}>{String(item.status || "unknown").replace(/_/g, " ")}</StatusTag></td>
                           <td className="max-w-48 break-all px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.checkout_request_id || item.merchant_request_id || "Not submitted"}</td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.created_at)}</td>
                           <td className="px-3 py-2.5">
-                            <button
-                              type="button"
-                              onClick={() => reconcileCheckout(item)}
-                              disabled={!item.checkout_request_id || Boolean(reconcilingCheckoutId) || item.status === "succeeded" || item.status === "sandbox_verified"}
-                              className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
-                            >
-                              <RefreshCw className={"h-3 w-3 " + (reconcilingCheckoutId === item.checkout_request_id ? "animate-spin" : "")} />
-                              {reconcilingCheckoutId === item.checkout_request_id ? "Checking…" : "Reconcile"}
-                            </button>
+                            {["submission_unknown", "initiating"].includes(item.status) && !item.checkout_request_id ? (
+                              <div className="min-w-[220px] space-y-2">
+                                <p className="max-w-64 text-[10px] leading-4 text-amber-700 dark:text-amber-300">No Daraja reference was saved. Check provider-side transaction records before releasing this checkout.</p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setResolvingUnknownCheckoutId((current) => current === item.id ? "" : item.id);
+                                    setManualEvidenceReference("");
+                                    setManualResolutionNotes("");
+                                    setActionError("");
+                                  }}
+                                  disabled={Boolean(resolvingUnknownCheckoutId) || Boolean(reconcilingCheckoutId)}
+                                  className="inline-flex min-h-8 items-center justify-center rounded-lg border border-amber-300 px-2.5 py-1.5 text-[10px] font-bold text-amber-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-800 dark:text-amber-200"
+                                >
+                                  {resolvingUnknownCheckoutId === item.id ? "Close review" : "Record no-charge review"}
+                                </button>
+                                {resolvingUnknownCheckoutId === item.id ? (
+                                  <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-900/50 dark:bg-amber-950/20">
+                                    <p className="text-[10px] font-semibold leading-4 text-amber-900 dark:text-amber-200">Only confirm after checking the Safaricom/Daraja transaction history. This does not refund money or activate a subscription.</p>
+                                    <input
+                                      value={manualEvidenceReference}
+                                      onChange={(event) => setManualEvidenceReference(event.target.value)}
+                                      maxLength={160}
+                                      placeholder="Provider report/reference"
+                                      aria-label="Provider reconciliation evidence reference"
+                                      className="min-h-8 w-full rounded-md border border-amber-200 bg-white px-2 text-[10px] text-slate-900 outline-none focus:border-amber-500 dark:border-amber-900 dark:bg-slate-950 dark:text-white"
+                                    />
+                                    <textarea
+                                      value={manualResolutionNotes}
+                                      onChange={(event) => setManualResolutionNotes(event.target.value)}
+                                      maxLength={1000}
+                                      rows={3}
+                                      placeholder="What provider records did you verify?"
+                                      aria-label="Provider reconciliation notes"
+                                      className="w-full rounded-md border border-amber-200 bg-white px-2 py-1.5 text-[10px] text-slate-900 outline-none focus:border-amber-500 dark:border-amber-900 dark:bg-slate-950 dark:text-white"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => resolveUnknownSubmission(item)}
+                                      disabled={Boolean(resolvingUnknownCheckoutId && resolvingUnknownCheckoutId !== item.id) || manualEvidenceReference.trim().length < 6 || manualResolutionNotes.trim().length < 10}
+                                      className="inline-flex min-h-8 w-full items-center justify-center gap-1 rounded-md bg-amber-700 px-2 py-1.5 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      {resolvingUnknownCheckoutId === item.id ? "Resolving…" : "Confirm no charge"}
+                                    </button>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => reconcileCheckout(item)}
+                                disabled={!item.checkout_request_id || Boolean(reconcilingCheckoutId) || Boolean(resolvingUnknownCheckoutId) || item.status === "succeeded" || item.status === "sandbox_verified"}
+                                className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
+                              >
+                                <RefreshCw className={"h-3 w-3 " + (reconcilingCheckoutId === item.checkout_request_id ? "animate-spin" : "")} />
+                                {reconcilingCheckoutId === item.checkout_request_id ? "Checking…" : "Reconcile"}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
