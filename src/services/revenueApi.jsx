@@ -161,6 +161,11 @@ export function createRevenueApiClient({
     },
     getCheckout: (checkoutId, options = {}) =>
       request(`/checkout/${encodeURIComponent(checkoutId)}`, options),
+    getCurrentCheckout: (hub, options = {}) =>
+      request("/checkouts/current", {
+        ...options,
+        params: { ...(options.params || {}), hub },
+      }),
     refreshCheckout: (checkoutId, options = {}) =>
       request(`/checkout/${encodeURIComponent(checkoutId)}/refresh`, {
         ...options,
