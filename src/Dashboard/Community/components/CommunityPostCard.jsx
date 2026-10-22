@@ -839,7 +839,7 @@ export default function CommunityPostCard({
               <button
                 type="button"
                 onClick={() =>
-                  onOpen?.({
+                  typeof onOpen === "function" && onOpen({
                     ...post,
                     action:
                       "author",
@@ -1326,7 +1326,7 @@ export default function CommunityPostCard({
         <button
           type="button"
           onClick={() =>
-            onOpen?.(post)
+            typeof onOpen === "function" && onOpen(post)
           }
           className="
             mt-4
