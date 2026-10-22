@@ -102,6 +102,7 @@ export default function RevenueCenter() {
     plans: [],
   });
   const [updatingPlanCode, setUpdatingPlanCode] = useState("");
+  const [reconcilingCheckoutId, setReconcilingCheckoutId] = useState("");
 
   const [submittingPlan, setSubmittingPlan] = useState("");
   const [notice, setNotice] = useState("");
@@ -225,6 +226,42 @@ export default function RevenueCenter() {
       setActionError(getErrorMessage(error));
     } finally {
       setUpdatingPlanCode("");
+    }
+  };
+
+  const reconcileCheckout = async (checkout) => {
+    const checkoutId = checkout?.checkout_request_id;
+    if (!checkoutId || reconcilingCheckoutId) return;
+    setReconcilingCheckoutId(checkoutId);
+    setActionError("");
+    setNotice("");
+    try {
+      const response = await revenueApi.adminRefreshCheckout(checkoutId);
+      const updated = response?.checkout;
+      if (updated) {
+        setAdminOps((previous) => ({
+          ...previous,
+          checkouts: previous.checkouts.map((item) =>
+            item.checkout_request_id === checkoutId ? updated : item
+          ),
+        }));
+      }
+      if (updated?.status === "succeeded") {
+        setNotice("Daraja verified the payment and the subscription is active." + (updated.receipt ? " Receipt: " + updated.receipt : " The payment is confirmed; the receipt may still arrive in a callback."));
+      } else if (updated?.status === "sandbox_verified") {
+        setNotice("The provider response was from sandbox. No real subscription or revenue was recorded.");
+      } else if (updated?.status === "verified_activation_failed") {
+        setActionError("Daraja confirmed payment, but subscription activation needs support reconciliation. Do not ask the customer to pay again.");
+      } else if (updated?.status === "failed") {
+        setNotice("Daraja reports that this payment was not completed.");
+      } else {
+        setNotice("Checkout remains " + String(updated?.status || "unverified").replace(/_/g, " ") + ". Keep it in the reconciliation queue and do not assume payment.");
+      }
+      await Promise.all([loadAdminOps(), loadHistory()]);
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    } finally {
+      setReconcilingCheckoutId("");
     }
   };
 
@@ -678,9 +715,9 @@ export default function RevenueCenter() {
               </div>
               {adminOps.checkouts.length ? (
                 <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-                  <table className="w-full min-w-[780px] text-left text-xs">
+                  <table className="w-full min-w-[920px] text-left text-xs">
                     <thead className="bg-slate-50 text-slate-500 dark:bg-white/5">
-                      <tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Plan / hub</th><th className="px-3 py-2.5">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Provider reference</th><th className="px-3 py-2.5">Created</th></tr>
+                      <tr><th className="px-3 py-2.5">Account</th><th className="px-3 py-2.5">Plan / hub</th><th className="px-3 py-2.5">Amount</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Provider reference</th><th className="px-3 py-2.5">Created</th><th className="px-3 py-2.5">Action</th></tr>
                     </thead>
                     <tbody>
                       {adminOps.checkouts.map((item) => (
@@ -691,6 +728,17 @@ export default function RevenueCenter() {
                           <td className="px-3 py-2.5"><StatusTag tone={["succeeded"].includes(item.status) ? "success" : ["failed", "initiation_failed"].includes(item.status) ? "proposed" : "neutral"}>{String(item.status || "unknown").replace(/_/g, " ")}</StatusTag></td>
                           <td className="max-w-48 break-all px-3 py-2.5 font-mono text-[10px] text-slate-500">{item.checkout_request_id || item.merchant_request_id || "Not submitted"}</td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{displayDate(item.created_at)}</td>
+                          <td className="px-3 py-2.5">
+                            <button
+                              type="button"
+                              onClick={() => reconcileCheckout(item)}
+                              disabled={!item.checkout_request_id || Boolean(reconcilingCheckoutId) || item.status === "succeeded" || item.status === "sandbox_verified"}
+                              className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
+                            >
+                              <RefreshCw className={"h-3 w-3 " + (reconcilingCheckoutId === item.checkout_request_id ? "animate-spin" : "")} />
+                              {reconcilingCheckoutId === item.checkout_request_id ? "Checking…" : "Reconcile"}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
