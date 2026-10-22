@@ -125,6 +125,9 @@ export function createRevenueApiClient({
   return {
     request,
     health: (options = {}) => request("/health", options),
+    listTrials: (options = {}) => request("/trials", options),
+    startTrial: (hub, options = {}) => request("/trials/start", { ...options, method: "POST", body: { hub } }),
+    getEntitlement: (hub, options = {}) => request("/entitlements", { ...options, params: { ...(options.params || {}), hub } }),
     listPlans: (hub, options = {}) =>
       request("/plans", {
         ...options,
