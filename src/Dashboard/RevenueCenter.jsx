@@ -19,6 +19,7 @@ const HUB_OPTIONS = [
   { value: "biashara", label: "Biashara" },
   { value: "elimu", label: "Elimu" },
   { value: "community", label: "Community" },
+  { value: "faith", label: "Faith & Scripture" },
   { value: "marketplace", label: "Marketplace" },
   { value: "advertising", label: "Advertising" },
   { value: "transaction_fees", label: "Transaction fees" },
@@ -105,6 +106,14 @@ export default function RevenueCenter() {
   const [reconcilingCheckoutId, setReconcilingCheckoutId] = useState("");
 
   const [submittingPlan, setSubmittingPlan] = useState("");
+  const [newPlanDraft, setNewPlanDraft] = useState({
+    code: "",
+    name: "",
+    hub: "smart_ai",
+    amount: "",
+    interval: "month",
+    features: "",
+  });
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
 
@@ -204,7 +213,7 @@ export default function RevenueCenter() {
         setActionError("Only positive monthly or yearly hub subscription plans can be published for M-Pesa checkout.");
         return;
       }
-      if (plan.hub === "all" || plan.hub === "advertising") {
+      if (!["shamba", "biashara", "elimu", "community", "smart_ai", "marketplace", "faith"].includes(plan.hub)) {
         setActionError("This checkout integration currently publishes individual hub subscriptions only.");
         return;
       }
@@ -226,6 +235,55 @@ export default function RevenueCenter() {
       setActionError(getErrorMessage(error));
     } finally {
       setUpdatingPlanCode("");
+    }
+  };
+
+  const createAdminPlan = async (event) => {
+    event.preventDefault();
+    if (!adminOps.authorized || submittingPlan) return;
+
+    const code = String(newPlanDraft.code || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    const features = String(newPlanDraft.features || "")
+      .split(/[,\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!code || !newPlanDraft.name.trim() || newPlanDraft.amount === "") {
+      setActionError("Enter a plan code, a name, and a proposed price before creating the plan.");
+      return;
+    }
+
+    setSubmittingPlan("__create_plan__");
+    setActionError("");
+    setNotice("");
+    try {
+      const result = await revenueApi.createAdminPlan({
+        code,
+        name: newPlanDraft.name.trim(),
+        hub: newPlanDraft.hub,
+        amount: String(newPlanDraft.amount),
+        interval: newPlanDraft.interval,
+        status: "proposed",
+        features,
+      });
+      setNotice(result?.message || "Plan saved to the proposed catalogue. It is not purchasable yet.");
+      setNewPlanDraft({
+        code: "",
+        name: "",
+        hub: "smart_ai",
+        amount: "",
+        interval: "month",
+        features: "",
+      });
+      await Promise.all([loadPlans(), loadAdminOps()]);
+    } catch (error) {
+      setActionError(getErrorMessage(error));
+    } finally {
+      setSubmittingPlan("");
     }
   };
 
@@ -633,6 +691,51 @@ export default function RevenueCenter() {
           {adminOps.error ? <p className="mx-5 mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">{adminOps.error}</p> : null}
           <div className="grid gap-5 px-5 pb-5 xl:grid-cols-2">
             <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-white/10">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Create a plan</h4>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">New prices are saved as proposals. They cannot charge anyone until a platform admin reviews and publishes them with production M-Pesa configured.</p>
+              </div>
+              <form onSubmit={createAdminPlan} className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="new-revenue-plan-code" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Plan code</label>
+                  <input id="new-revenue-plan-code" value={newPlanDraft.code} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, code: event.target.value }))} placeholder="faith_plus" maxLength={60} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" required />
+                </div>
+                <div>
+                  <label htmlFor="new-revenue-plan-name" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Display name</label>
+                  <input id="new-revenue-plan-name" value={newPlanDraft.name} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, name: event.target.value }))} placeholder="Faith & Scripture Plus" maxLength={100} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" required />
+                </div>
+                <div>
+                  <label htmlFor="new-revenue-plan-hub" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Hub / stream</label>
+                  <select id="new-revenue-plan-hub" value={newPlanDraft.hub} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, hub: event.target.value }))} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+                    {HUB_OPTIONS.filter((option) => option.value !== "all").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="new-revenue-plan-amount" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Proposed amount (KES)</label>
+                  <input id="new-revenue-plan-amount" type="number" min="0" step="0.01" value={newPlanDraft.amount} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, amount: event.target.value }))} placeholder="Enter price" className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" required />
+                </div>
+                <div>
+                  <label htmlFor="new-revenue-plan-interval" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Billing interval</label>
+                  <select id="new-revenue-plan-interval" value={newPlanDraft.interval} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, interval: event.target.value }))} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+                    <option value="month">Monthly</option>
+                    <option value="year">Yearly</option>
+                    <option value="one_time">One-time campaign / item</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="new-revenue-plan-features" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Included features (one per line)</label>
+                  <textarea id="new-revenue-plan-features" rows={3} value={newPlanDraft.features} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, features: event.target.value }))} placeholder="Advanced reports\nExpanded tools" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                </div>
+                <div className="flex items-end">
+                  <button type="submit" disabled={!adminOps.authorized || Boolean(submittingPlan)} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900">
+                    {submittingPlan === "__create_plan__" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    {submittingPlan === "__create_plan__" ? "Saving proposal…" : "Create proposed plan"}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-white/10">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h4 className="text-sm font-bold text-slate-900 dark:text-white">Plan publishing</h4>
@@ -642,7 +745,7 @@ export default function RevenueCenter() {
               </div>
               <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">
                 {adminOps.plans.filter((plan) => Number(plan?.amount) > 0 && plan?.hub !== "all" && plan?.status !== "retired").map((plan) => {
-                  const eligible = ["month", "year"].includes(String(plan.interval || "").toLowerCase()) && plan.hub !== "advertising";
+                  const eligible = ["month", "year"].includes(String(plan.interval || "").toLowerCase()) && ["shamba", "biashara", "elimu", "community", "smart_ai", "marketplace", "faith"].includes(plan.hub);
                   return (
                     <div key={plan.code} className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
