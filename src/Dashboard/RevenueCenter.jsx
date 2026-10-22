@@ -694,7 +694,7 @@ export default function RevenueCenter() {
             <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-white/10">
               <div>
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">Create a plan</h4>
-                <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">New prices are saved as proposals. They cannot charge anyone until a platform admin reviews and publishes them with production M-Pesa configured.</p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">New prices are saved as proposals. This form creates monthly/yearly hub subscriptions only; campaign delivery, refunds, seller settlement, and other one-time products are separate workflows.</p>
               </div>
               <form onSubmit={createAdminPlan} className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
@@ -708,7 +708,7 @@ export default function RevenueCenter() {
                 <div>
                   <label htmlFor="new-revenue-plan-hub" className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-300">Hub / stream</label>
                   <select id="new-revenue-plan-hub" value={newPlanDraft.hub} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, hub: event.target.value }))} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
-                    {HUB_OPTIONS.filter((option) => option.value !== "all").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    {HUB_OPTIONS.filter((option) => ["smart_ai", "shamba", "biashara", "elimu", "community", "marketplace", "faith"].includes(option.value)).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -720,7 +720,6 @@ export default function RevenueCenter() {
                   <select id="new-revenue-plan-interval" value={newPlanDraft.interval} onChange={(event) => setNewPlanDraft((previous) => ({ ...previous, interval: event.target.value }))} className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white">
                     <option value="month">Monthly</option>
                     <option value="year">Yearly</option>
-                    <option value="one_time">One-time campaign / item</option>
                   </select>
                 </div>
                 <div>
