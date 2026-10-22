@@ -268,17 +268,33 @@ export default function CommunityNotifications({
 
   const markAsRead = async (id) => {
     setActionError("");
-    const succeeded = await markNotificationRead(id);
-    if (!succeeded) {
-      setActionError("We couldn't update this notification. Refresh and try again.");
+    try {
+      if (typeof markNotificationRead !== "function") {
+        throw new Error("The notification read action is unavailable. Refresh Community and try again.");
+      }
+      const succeeded = await markNotificationRead(id);
+      if (!succeeded) {
+        setActionError("We couldn't update this notification. Refresh and try again.");
+      }
+    } catch (requestError) {
+      console.error("[Community] Mark notification read failed:", requestError);
+      setActionError(requestError?.message || "We couldn't update this notification. Refresh and try again.");
     }
   };
 
   const markAllAsRead = async () => {
     setActionError("");
-    const succeeded = await markAllRead();
-    if (!succeeded) {
-      setActionError("We couldn't mark all notifications as read. Please try again.");
+    try {
+      if (typeof markAllRead !== "function") {
+        throw new Error("The bulk notification action is unavailable. Refresh Community and try again.");
+      }
+      const succeeded = await markAllRead();
+      if (!succeeded) {
+        setActionError("We couldn't mark all notifications as read. Please try again.");
+      }
+    } catch (requestError) {
+      console.error("[Community] Mark all notifications read failed:", requestError);
+      setActionError(requestError?.message || "We couldn't mark all notifications as read. Please try again.");
     }
   };
 
@@ -290,7 +306,15 @@ export default function CommunityNotifications({
 
   const refreshNotifications = async () => {
     setActionError("");
-    await fetchNotifications({ silent: true });
+    try {
+      if (typeof fetchNotifications !== "function") {
+        throw new Error("The notification refresh action is unavailable. Reload Community and try again.");
+      }
+      await fetchNotifications({ silent: true });
+    } catch (requestError) {
+      console.error("[Community] Refresh notifications failed:", requestError);
+      setActionError(requestError?.message || "Notifications could not be refreshed. Please try again.");
+    }
   };
 
   // ==========================================================
