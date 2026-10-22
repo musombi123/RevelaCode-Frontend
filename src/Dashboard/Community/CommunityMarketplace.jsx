@@ -323,7 +323,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
           <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-white/5 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { if (typeof onClose === "function") onClose(); }}
               disabled={saving}
               className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
             >
