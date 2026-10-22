@@ -196,6 +196,11 @@ export function createRevenueApiClient({
         params: { page, per_page: perPage, stream, provider, ...(options.params || {}) },
       }),
     adminPlans: (options = {}) => request("/admin/plans", options),
+    createAdminPlan: (payload, options = {}) => request("/admin/plans", {
+      ...options,
+      method: "POST",
+      body: payload,
+    }),
     updateAdminPlan: (planCode, payload, options = {}) =>
       request(`/admin/plans/${encodeURIComponent(planCode)}`, {
         ...options,
