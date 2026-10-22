@@ -142,23 +142,33 @@ export function useCommunityNotifications(refreshInterval = 12000) {
       const unread = notifications.filter((item) => !item.read);
       if (unread.length === 0) return true;
 
-      const results = await Promise.allSettled(
-        unread.map((item) => markJumuiyaNotificationRead(item.id)),
-      );
+      try {
+        if (typeof markJumuiyaNotificationRead !== "function") {
+          throw new Error("The notification read service is unavailable. Refresh Community and try again.");
+        }
 
-      const succeededIds = unread
-        .filter((item, index) => results[index].status === "fulfilled")
-        .map((item) => String(item.id));
+        const results = await Promise.allSettled(
+          unread.map((item) => markJumuiyaNotificationRead(item.id)),
+        );
 
-      setNotifications((current) => current.map((item) => (
-        succeededIds.includes(String(item.id))
-          ? { ...item, read: true, is_read: true }
-          : item
-      )));
+        const succeededIds = unread
+          .filter((item, index) => results[index].status === "fulfilled")
+          .map((item) => String(item.id));
 
-      const allSucceeded = results.every((result) => result.status === "fulfilled");
-      setError(allSucceeded ? null : "Some notifications could not be marked as read. Please retry.");
-      return allSucceeded;
+        setNotifications((current) => current.map((item) => (
+          succeededIds.includes(String(item.id))
+            ? { ...item, read: true, is_read: true }
+            : item
+        )));
+
+        const allSucceeded = results.every((result) => result.status === "fulfilled");
+        setError(allSucceeded ? null : "Some notifications could not be marked as read. Please retry.");
+        return allSucceeded;
+      } catch (requestError) {
+        console.error("[Notifications] Mark all as read failed:", requestError);
+        setError(requestError?.message || "Notifications could not be marked as read. Please retry.");
+        return false;
+      }
     },
     [notifications, markJumuiyaNotificationRead],
   );
