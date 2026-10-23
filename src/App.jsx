@@ -169,6 +169,8 @@ export default function App() {
             <SEOManager />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
+              <Route path="/community" element={<Navigate to="/?hub=community" replace />} />
+              <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />
               <Route
                 path="/accounts"
@@ -298,7 +300,7 @@ export default function App() {
 
               <Route
                 path="/jumuiya/community"
-                element={<InternalDashboard />}
+                element={<Navigate to="/?hub=community" replace />}
               />
 
               <Route
