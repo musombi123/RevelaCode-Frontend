@@ -2167,6 +2167,89 @@ export default function AIAssistantDashboard({
         )}
       </main>
 
+      {identityOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          role="presentation"
+          onClick={() => setIdentityOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revelaai-identity-title"
+            onClick={(event) => event.stopPropagation()}
+            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-emerald-400/20 bg-slate-950 p-4 text-white shadow-2xl sm:p-6"
+          >
+            <header className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-300/20 to-cyan-400/10 text-emerald-200 ring-1 ring-emerald-300/20">
+                  <Sparkles size={24} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-300">RevelaCode · Intelligence</p>
+                  <h2 id="revelaai-identity-title" className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Meet RevelaAI</h2>
+                  <p className="mt-1 text-xs text-slate-400">One adaptive assistant. A local-first fallback. Your conversation workspace.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIdentityOpen(false)}
+                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close RevelaAI Identity"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <p className="mt-5 text-sm leading-6 text-slate-300">
+              RevelaAI routes questions through the configured AI service when Adaptive mode is available. When you choose Free mode—or the service cannot be reached—the dashboard can keep working with on-device rules and local media measurements.
+            </p>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Sparkles size={16} className="text-emerald-300" /> Adaptive intelligence</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><WifiOff size={16} className="text-emerald-300" /> Free mode</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Mic size={16} className="text-emerald-300" /> Voice</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Browser speech recognition plus spoken replies where the device and browser support them.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Camera size={16} className="text-sky-300" /> Vision</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
+              </article>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-xs font-bold text-slate-200">Privacy and capability boundary</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">Free mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-emerald-300 px-3 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-emerald-200">
+                Use Free mode
+              </button>
+              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                Adaptive mode
+              </button>
+              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                <Mic size={14} /> Voice
+              </button>
+              <button type="button" onClick={() => { setIdentityOpen(false); openVision(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                <Camera size={14} /> Vision
+              </button>
+            </div>
+            <button type="button" onClick={() => { setIdentityOpen(false); setAiRevenueOpen(true); }} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2.5 text-xs font-bold text-amber-100 transition hover:bg-amber-300/15">
+              <CreditCard size={14} /> View trial and plans
+            </button>
+          </section>
+        </div>
+      )}
+
       {/* ===================================================
           VOICE CHAT
       =================================================== */}
