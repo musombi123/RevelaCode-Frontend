@@ -12,10 +12,14 @@ const STUDY_API_BASE = (
   "https://revelacode-backend.onrender.com"
 ).replace(/\/+$/, "");
 
-export const FAITH_LIBRARY_CACHE_SCOPE = STUDY_API_BASE + "/faith-library-v3";
+export const FAITH_LIBRARY_CACHE_SCOPE = STUDY_API_BASE + "/faith-library-v4-clean";
 
 const FAITH_TOPIC_PATTERN = /\b(faith|scripture|bible|biblical|christian|theolog(?:y|ical|ian)?|religious? studies|devotional|prophecy|adventist|sda|catholic|interfaith|jewish|judaism|islam|qur['’]?an|muslim|spiritual|church|worship|sanctuary|gospel|prayer|comparative|daily[\s-]+life|faith[\s-]+academy)\b/i;
 const NON_FAITH_TOPIC_PATTERN = /\b(cpa|accounting|entrepreneurship|software development|technology(?:\s*&\s*innovation)?|business|inventory|finance|stock management|computer science|programming|agriculture|farming|chemistry|physics|biology|mathematics|economics)\b/i;
+// Common test/admin artefacts are excluded while legitimate studies discussing
+// testing faith, prophecy, or testimony remain eligible.
+const TEST_ARTIFACT_PATTERN = /\b(?:lorem\s+ipsum|placeholder(?:\s+(?:text|content|material|lesson|data))?|dummy(?:\s+(?:data|content|material|lesson|entry))?|mock(?:\s+(?:data|content|material|lesson|entry))?|fake\s+(?:data|content|material|lesson|entry)|test(?:ing)?[-\s]*(?:only|record|material|lesson|entry|document|content|data|item)|(?:record|material|lesson|entry|document|content|data|item)[-\s]*test|sample[-\s]*(?:material|lesson|entry|data|content)|demo[-\s]*(?:data|content|material|lesson|entry)|delete\s+me|do\s+not\s+use|qwerty|asdfghjkl)\b/i;
+const TEST_TITLE_PATTERN = /^(?:untitled(?:\s+material)?|new\s+(?:material|lesson|document)|test(?:$|\s+(?:\d+|material|lesson|record|entry|document|content|data|item|only)|[-:#_]\S.*)|testing(?:$|\s+(?:\d+|material|lesson|record|entry|content|data|item|only)|[-:#_]\S.*)|(?:sample|demo)(?:$|\s+(?:\d+|material|lesson|record|entry|content|data|item|only)|[-:#_]\S.*)|dummy(?:$|\s+.*)|mock(?:$|\s+(?:\d+|data|content|material|lesson|entry)|[-:#_]\S.*)|placeholder(?:$|\s+.*)|lorem\s+ipsum.*|temp(?:orary)?(?:$|\s+.*)|asdf\w*|qwerty\w*|foo(?:\s+bar)?|xxx+|123+)$/i;
 const FALLBACK_PREFIX = "revelacode_faith_study_cache_v1::";
 let databasePromise = null;
 
@@ -166,6 +170,25 @@ export function normalizeFaithStudyMaterials(rawMaterials) {
     if (!id || seenIds.has(id) || raw.published === false) continue;
 
     const metadata = raw.metadata && typeof raw.metadata === "object" ? raw.metadata : {};
+    const titleText = plainText(raw.title);
+    const statusText = plainText(raw.status || metadata.status || raw.workflow_status || metadata.workflow_status).toLowerCase();
+    const explicitlyTestData = [
+      raw.is_test, raw.is_demo, raw.test_data, raw.is_placeholder,
+      metadata.is_test, metadata.is_demo, metadata.test_data, metadata.is_placeholder,
+    ].some((flag) => flag === true || String(flag || "").toLowerCase() === "true");
+    const qualityText = [
+      titleText, raw.description, raw.summary, metadata.editorial_title,
+      metadata.editorial_summary, raw.content, metadata.notes,
+    ].map(plainText).join("\n").slice(0, 12000);
+    if (
+      !titleText ||
+      titleText.length < 4 ||
+      TEST_TITLE_PATTERN.test(titleText) ||
+      TEST_ARTIFACT_PATTERN.test(qualityText) ||
+      explicitlyTestData ||
+      /^(?:draft|test|testing|demo|sample|placeholder|deleted|archived|private|unpublished)$/i.test(statusText)
+    ) continue;
+
     const taxonomicFields = [
       raw.category, raw.subcategory, raw.subject, raw.topic, raw.hub,
       raw.discipline, raw.tags, metadata.category, metadata.subcategory,
@@ -186,7 +209,7 @@ export function normalizeFaithStudyMaterials(rawMaterials) {
     if (!isPublishedCatalogue) continue;
     if (!hasFaithClassification && !hasCuratedEditorialSlug) continue;
 
-    const title = plainText(raw.title).toLowerCase();
+    const title = titleText.toLowerCase();
     const description = plainText(raw.description || raw.summary || metadata.editorial_summary).toLowerCase();
     const content = plainText(raw.content).slice(0, 1400).toLowerCase();
     const taxonomy = taxonomicFields.join("|").toLowerCase();
@@ -371,11 +394,16 @@ export async function saveCachedBibleBook(bookKey, book) {
 export async function getCachedLibrary(scope) {
   const record = await readRecord(libraryKey(scope));
   if (!record || !Array.isArray(record.value)) return null;
-  return { materials: record.value, savedAt: record.savedAt || null };
+  const materials = normalizeFaithStudyMaterials(record.value);
+  // Sanitize any existing cache before a dashboard can render old test entries.
+  if (JSON.stringify(materials) !== JSON.stringify(record.value)) {
+    await saveCachedLibrary(scope, materials);
+  }
+  return { materials, savedAt: record.savedAt || null };
 }
 
 export async function saveCachedLibrary(scope, materials) {
-  const safeMaterials = Array.isArray(materials) ? materials : [];
+  const safeMaterials = normalizeFaithStudyMaterials(Array.isArray(materials) ? materials : []);
   const collectionRecord = await writeRecord(libraryKey(scope), safeMaterials);
 
   // Cache individual content-bearing documents as well, so the reader can

@@ -95,6 +95,47 @@ const TOPIC_FILTERS = [
   { id: "daily-life", label: "Daily life" },
 ];
 
+const TOPIC_ALIASES = {
+  "biblical-literacy": ["bible-study", "bible", "scripture", "biblical-literacy", "biblical-studies"],
+  "christian-foundations": ["christianity", "christian", "christian-foundations", "christian-theology"],
+  prophecy: ["prophecy", "prophetic-studies", "eschatology"],
+  sda: ["sda", "adventist", "seventh-day-adventist"],
+  catholic: ["catholic", "roman-catholic"],
+  interfaith: ["interfaith", "comparative-religion", "comparative-theology", "multi-faith"],
+  "daily-life": ["daily-life", "devotional", "prayer", "spiritual-growth", "christian-living"],
+};
+
+function toTopicSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function getMaterialTopics(material) {
+  const metadata = material?.metadata && typeof material.metadata === "object" ? material.metadata : {};
+  const values = [
+    material?.category, material?.subcategory, material?.subject, material?.topic,
+    material?.discipline, material?.tradition, metadata.category, metadata.subcategory,
+    metadata.subject, metadata.topic, metadata.discipline, metadata.tradition,
+    material?.tags, metadata.tags,
+  ];
+  return values
+    .flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value) => typeof value === "string" && value.trim())
+    .map(toTopicSlug);
+}
+
+function matchesTopicFilter(material, topicFilter) {
+  if (topicFilter === "all") return true;
+  const topics = getMaterialTopics(material);
+  const aliases = TOPIC_ALIASES[topicFilter] || [topicFilter];
+  return topics.some((topic) =>
+    aliases.some((alias) => topic === alias || topic.includes(alias) || alias.includes(topic))
+  );
+}
+
 /* =========================================================
    STUDY LIBRARY
 ========================================================= */
@@ -243,22 +284,23 @@ export default function StudyLibrary({
     const query =
       search.trim().toLowerCase();
 
-    if (!query) {
-      return materials;
-    }
-
     return materials.filter((material) => {
-      if (topicFilter !== "all" && String(material.subcategory || material?.metadata?.subcategory || "").toLowerCase() !== topicFilter) {
-        return false;
-      }
+      // Topic filters must work even when the search field is empty.
+      if (!matchesTopicFilter(material, topicFilter)) return false;
       if (!query) return true;
 
-      const title = String(material.title || "").toLowerCase();
-      const description = String(material.description || material.summary || material.content || "").toLowerCase();
-      const category = String(material.category || material.subcategory || "").toLowerCase();
-      const subject = String(material.subject || material?.metadata?.subject || "").toLowerCase();
+      const metadata = material?.metadata && typeof material.metadata === "object" ? material.metadata : {};
+      const searchable = [
+        material.title, material.description, material.summary, material.content,
+        material.category, material.subcategory, material.subject, material.topic,
+        material.tradition, material.tags, metadata.category, metadata.subcategory,
+        metadata.subject, metadata.topic, metadata.tradition, metadata.tags,
+      ].flatMap((value) => Array.isArray(value) ? value : [value])
+        .filter((value) => value != null && typeof value !== "object")
+        .join(" ")
+        .toLowerCase();
 
-      return title.includes(query) || description.includes(query) || category.includes(query) || subject.includes(query);
+      return searchable.includes(query);
     });
   }, [materials, search, topicFilter]);
 
