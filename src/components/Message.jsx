@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
   Check,
-  Cpu,
   Copy,
   Edit2,
   ExternalLink,
@@ -422,31 +421,7 @@ function Message({ message, onEdit, onReveal }) {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [viewerUrl, setViewerUrl] = useState(null);
-  const [toolDetailsExpanded, setToolDetailsExpanded] = useState(false);
 
-  const usectTool = message.metadata?.usect_zero_tool || message.metadata?.usectZeroTool || null;
-  const coreMesh = message.metadata?.core_mesh || message.metadata?.coreMesh || null;
-  const coreMeshCores = coreMesh && typeof coreMesh.cores === "object" ? coreMesh.cores : {};
-  const coreRouteNames = {
-    "core-zero": "USECT-ZERO",
-    "core-one": "Genesis · Core-One",
-    "core-two": "Infinite Mind · Core-Two",
-    orchestrator: "RevelaAI Orchestrator",
-  };
-  const coreRouteKey = String(coreMesh?.selected_core || "orchestrator").toLowerCase();
-  const coreRouteLabel = coreRouteNames[coreRouteKey] || "RevelaAI Orchestrator";
-  const coreStatusLabel = (core) => {
-    if (core?.reachable === true) return "Reachable";
-    if (core?.reachable === false) return "Unavailable";
-    const status = String(core?.status || "").replace(/[_-]+/g, " ").trim();
-    return !status || status === "not probed" || status === "unknown" ? "Not probed" : status;
-  };
-  const toolStatus = String(usectTool?.status || "unknown").toLowerCase();
-  const toolSucceeded = toolStatus === "success" || toolStatus === "completed";
-  const toolBlocked = ["blocked", "unavailable", "failed", "error"].includes(toolStatus);
-  const toolLabel = String(usectTool?.name || usectTool?.operation || "engineering tool")
-    .replace(/^usect_zero_/, "")
-    .replace(/[_-]+/g, " ");
 
   const emotion = getMessageEmotion(message);
   const isUser = message.role === "user";
@@ -606,122 +581,6 @@ function Message({ message, onEdit, onReveal }) {
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isSystem && !isError && (
           <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
-            {coreMesh && typeof coreMesh === "object" && (
-              <section
-                aria-label="Core Mesh routing status"
-                className="mb-4 overflow-hidden rounded-xl border border-indigo-400/20 bg-slate-950/60 text-sm leading-normal"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-400/10 text-indigo-200">
-                      <Cpu size={15} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-200">USECT Core Mesh</p>
-                      <p className="truncate text-xs font-semibold text-slate-100">Advisory route · {coreRouteLabel}</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full border border-indigo-400/20 bg-indigo-400/10 px-2.5 py-1 text-[10px] font-bold text-indigo-200">
-                    {String(coreMesh.mesh_status || "not probed").replace(/[_-]+/g, " ")}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2 border-t border-white/5 px-3 py-2.5 sm:px-4">
-                  {[
-                    ["zero", "USECT-ZERO"],
-                    ["one", "Genesis · ONE"],
-                    ["two", "Infinite Mind · TWO"],
-                  ].map(([key, label]) => {
-                    const core = coreMeshCores[key] || {};
-                    const reachable = core.reachable === true;
-                    const unavailable = core.reachable === false;
-                    const stateClass = reachable
-                      ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-200"
-                      : unavailable
-                        ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
-                        : "border-slate-700 bg-slate-900/60 text-slate-400";
-                    return (
-                      <span
-                        key={key}
-                        className={"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold " + stateClass}
-                      >
-                        <span className={"h-1.5 w-1.5 rounded-full " + (reachable ? "bg-emerald-400" : unavailable ? "bg-amber-400" : "bg-slate-500")} />
-                        {label}: {coreStatusLabel(core)}
-                      </span>
-                    );
-                  })}
-                </div>
-                <p className="px-3 pb-3 text-[10px] leading-4 text-slate-500 sm:px-4">
-                  Route selection is advisory only. This indicator does not mean a core operation, invention, recovery, or evolution was executed.
-                </p>
-              </section>
-            )}
-
-            {usectTool && (
-              <section className="mb-4 overflow-hidden rounded-xl border border-cyan-400/20 bg-slate-950/70 text-sm leading-normal">
-                <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/10 text-cyan-200">
-                      <Cpu size={15} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">USECT-ZERO</p>
-                      <p className="truncate text-xs font-semibold capitalize text-slate-200">{toolLabel}</p>
-                    </div>
-                    <span className={"rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wide " + (
-                      toolSucceeded
-                        ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
-                        : toolBlocked
-                          ? "border-rose-400/25 bg-rose-400/10 text-rose-300"
-                          : "border-amber-400/25 bg-amber-400/10 text-amber-200"
-                    )}>
-                      {toolSucceeded ? "Completed" : toolBlocked ? "Blocked / unavailable" : toolStatus.replace(/[_-]/g, " ")}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setToolDetailsExpanded((open) => !open)}
-                    aria-expanded={toolDetailsExpanded}
-                    className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
-                  >
-                    {toolDetailsExpanded ? "Hide evidence" : "Execution details"}
-                  </button>
-                </div>
-                {toolDetailsExpanded && (
-                  <div className="border-t border-white/10 px-3 py-3 sm:px-4">
-                    <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-                      <div>
-                        <dt className="text-[10px] uppercase tracking-wide text-slate-500">Operation</dt>
-                        <dd className="mt-1 break-words font-medium text-slate-200">{String(usectTool.operation || "—").replace(/[_-]/g, " ")}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[10px] uppercase tracking-wide text-slate-500">Executed</dt>
-                        <dd className="mt-1 font-medium text-slate-200">{usectTool.executed ? "Yes" : "No"}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[10px] uppercase tracking-wide text-slate-500">HTTP status</dt>
-                        <dd className="mt-1 font-medium text-slate-200">{usectTool.http_status ?? "—"}</dd>
-                      </div>
-                    </dl>
-                    {usectTool.error_code && (
-                      <p className="mt-3 break-words rounded-lg border border-rose-400/15 bg-rose-400/5 px-3 py-2 text-xs text-rose-200">
-                        {String(usectTool.error_code)}
-                      </p>
-                    )}
-                    {usectTool.message && (
-                      <p className="mt-3 break-words text-xs leading-5 text-slate-400">{String(usectTool.message)}</p>
-                    )}
-                    {usectTool.result_summary && Object.keys(usectTool.result_summary).length > 0 && (
-                      <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] leading-5 text-slate-300">
-                        {JSON.stringify(usectTool.result_summary, null, 2)}
-                      </pre>
-                    )}
-                    <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                      This receipt reflects the server-reported tool outcome. Approval-gated proposals are not treated as deployed or applied changes.
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
             {visible && specialOutput && !revealing ? (
               <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
                 <header className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-700 bg-slate-800/90 px-3 py-2 sm:px-4">

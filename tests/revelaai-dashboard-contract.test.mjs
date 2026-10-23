@@ -8,6 +8,7 @@ const dashboard = read("../src/components/AIAssistantDashboard.jsx");
 const sidebar = read("../src/components/Sidebar.jsx");
 const composer = read("../src/components/InputBar.jsx");
 const voice = read("../src/ai/RevelaAIVoiceChat.jsx");
+const message = read("../src/components/Message.jsx");
 
 test("AI sidebar exposes user actions and a persistent weak-network mode toggle", () => {
   for (const label of [
@@ -37,6 +38,15 @@ test("user-facing dashboard has no Guardian/core-tool dock", () => {
   ]) {
     assert.ok(dashboard.includes(prop), `Dashboard does not wire ${prop}`);
   }
+});
+
+test("assistant chat hides internal USECT/Core Mesh status and strips it from response metadata", () => {
+  assert.doesNotMatch(message, /USECT Core Mesh|Advisory route|Route selection is advisory only|Core Mesh routing status|Execution details/);
+  assert.doesNotMatch(message, /USECT-ZERO|Genesis · Core-One|Infinite Mind · Core-Two/);
+  for (const key of ["core_mesh", "coreMesh", "usect_zero_tool", "usectZeroTool"]) {
+    assert.match(dashboard, new RegExp("delete responseMeta\\." + key));
+  }
+  assert.doesNotMatch(dashboard, /usect_zero_tool:\s*payload\?\.meta/);
 });
 
 test("plans opens the existing authoritative trial/subscription/checkout component", () => {

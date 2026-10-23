@@ -1201,7 +1201,7 @@ export default function AIAssistantDashboard({
 
             brainMetadata = {
               ...brainMetadata,
-              ...(payload?.meta || {}),
+              ...responseMeta,
               // The /ai endpoint returns hub routing fields inside data, not
               // consistently inside meta. Preserve the server's decision so
               // the response badge reflects the brain that actually answered.
@@ -1293,7 +1293,14 @@ export default function AIAssistantDashboard({
             }
           }
 
-          const normalized = {
+          // Core Mesh/tool routing diagnostics are internal metadata, not part of the user-facing chat UI.
+        const responseMeta = { ...(payload?.meta || {}) };
+        delete responseMeta.core_mesh;
+        delete responseMeta.coreMesh;
+        delete responseMeta.usect_zero_tool;
+        delete responseMeta.usectZeroTool;
+
+        const normalized = {
             text: cleanAssistantAnswer(localText) || "I couldn't complete that analysis. Please try again.",
             imageUrls: localImageUrls,
             sources: localSources,
@@ -1744,7 +1751,6 @@ export default function AIAssistantDashboard({
             network: true,
             networkUsed: true,
             memory: "server",
-            usect_zero_tool: payload?.meta?.usect_zero_tool || payload?.meta?.usectZeroTool || null,
           },
           type: imageUrls.length ? "image" : "text",
         };
