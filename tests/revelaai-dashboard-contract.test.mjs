@@ -39,6 +39,12 @@ test("user-facing dashboard has no Guardian/core-tool dock", () => {
   }
 });
 
+test("plans opens the existing authoritative trial/subscription/checkout component", () => {
+  assert.match(dashboard, /id="revela-ai-revenue-panel"/);
+  assert.match(dashboard, /aria-controls="revela-ai-revenue-panel"/);
+  assert.match(dashboard, /<HubRevenueOffers hub="smart_ai" compact \/>/);
+});
+
 test("the identity panel describes local mode and distinguishes its limitations", () => {
   assert.match(dashboard, /Meet RevelaAI/);
   assert.match(dashboard, /not a complete local language model|not a full local language model/i);
