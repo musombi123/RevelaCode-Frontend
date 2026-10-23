@@ -82,6 +82,7 @@ function ToolButton({ label, onClick, disabled, active, children }) {
 export default function InputBar({
   onSend,
   onMic,
+  onRegisterVision,
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
 }) {
@@ -185,7 +186,7 @@ export default function InputBar({
     return () => window.removeEventListener("keydown", onKey);
   }, [cameraOpen, stopCamera]);
 
-  const openCamera = async () => {
+  const openCamera = useCallback(async () => {
     setCameraError("");
     setLiveVisionResult("");
     setLiveVisionUpdatedAt("");
@@ -217,7 +218,14 @@ export default function InputBar({
       );
       setCameraOpen(true);
     }
-  };
+  }, []);
+
+  // Expose the real composer camera action to the dashboard's vision shortcut.
+  // No duplicate camera implementation or second permission path is introduced.
+  useEffect(() => {
+    onRegisterVision?.(openCamera);
+    return () => onRegisterVision?.(null);
+  }, [onRegisterVision, openCamera]);
 
   const toggleTorch = async () => {
     try {

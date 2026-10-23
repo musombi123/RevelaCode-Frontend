@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import RevelaAIGuardianDock from "@/components/RevelaAIGuardianDock.jsx";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
@@ -341,6 +342,19 @@ export default function AIAssistantDashboard({
 
   const [voiceActive, setVoiceActive] =
     useState(false);
+
+  // The WelcomeScreen launches the very same camera control used by InputBar.
+  const [visionReady, setVisionReady] = useState(false);
+  const visionLauncherRef = useRef(null);
+  const registerVisionLauncher = useCallback((launcher) => {
+    visionLauncherRef.current = typeof launcher === "function" ? launcher : null;
+    setVisionReady(typeof launcher === "function");
+  }, []);
+  const openVision = useCallback(() => {
+    if (typeof visionLauncherRef.current === "function") {
+      visionLauncherRef.current();
+    }
+  }, []);
 
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
   const [aiRevenueOpen, setAiRevenueOpen] = useState(false);
@@ -1963,7 +1977,7 @@ export default function AIAssistantDashboard({
                   justify-center
                 "
               >
-                <WelcomeScreen onSuggestion={sendTextMessage} />
+                <WelcomeScreen onSuggestion={sendTextMessage} onVoice={openVoice} onVision={openVision} visionAvailable={visionReady} />
 
                 <div
                   className="
@@ -1976,7 +1990,12 @@ export default function AIAssistantDashboard({
                     placeholder={hubInputPlaceholder}
                     onSend={sendMessage}
                     onMic={openVoice}
+                    onRegisterVision={registerVisionLauncher}
                   />
+                </div>
+
+                <div className="mt-4 w-full max-w-4xl">
+                  <RevelaAIGuardianDock onAction={sendTextMessage} />
                 </div>
 
                 <p
@@ -2046,6 +2065,7 @@ export default function AIAssistantDashboard({
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
                   onMic={openVoice}
+                  onRegisterVision={registerVisionLauncher}
                 />
               </div>
             </div>
