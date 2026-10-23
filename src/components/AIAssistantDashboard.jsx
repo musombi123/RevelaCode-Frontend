@@ -13,17 +13,22 @@ import {
   Sparkles,
   ShieldCheck,
   MessageSquarePlus,
+  Info,
+  X,
+  Mic,
+  Camera,
+  CreditCard,
+  WifiOff,
 } from "lucide-react";
 
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import RevelaAIGuardianDock from "@/components/RevelaAIGuardianDock.jsx";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import { analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 // Reuse the existing RevelaCode session token for authenticated AI requests.
@@ -358,6 +363,23 @@ export default function AIAssistantDashboard({
 
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
   const [aiRevenueOpen, setAiRevenueOpen] = useState(false);
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const [freeMode, setFreeMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("revelaai.free_mode.v1") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("revelaai.free_mode.v1", freeMode ? "true" : "false");
+    } catch {
+      // Privacy mode or a full browser store must not stop the assistant from working.
+    }
+  }, [freeMode]);
 
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
@@ -1746,15 +1768,15 @@ export default function AIAssistantDashboard({
         open={sidebarOpen}
         setOpen={setSidebarOpen}
         chats={chats}
-        activeChatId={
-          activeChatId
-        }
-        onNewChat={
-          startNewChat
-        }
-        onSelectChat={
-          selectChat
-        }
+        activeChatId={activeChatId}
+        onNewChat={startNewChat}
+        onSelectChat={selectChat}
+        onOpenPlans={() => setAiRevenueOpen(true)}
+        onOpenVoice={openVoice}
+        onOpenVision={openVision}
+        onOpenIdentity={() => setIdentityOpen(true)}
+        freeMode={freeMode}
+        onToggleFreeMode={() => setFreeMode((current) => !current)}
       />
 
       {/* ===================================================
@@ -1992,10 +2014,6 @@ export default function AIAssistantDashboard({
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                   />
-                </div>
-
-                <div className="mt-4 w-full max-w-4xl">
-                  <RevelaAIGuardianDock onAction={sendTextMessage} />
                 </div>
 
                 <p
