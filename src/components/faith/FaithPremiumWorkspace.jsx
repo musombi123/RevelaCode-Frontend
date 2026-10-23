@@ -9,6 +9,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 
+const PRIORITY_FAITH_COURSES = Object.freeze([
+  "three-angels-messages",
+  "sda-28-fundamental-beliefs",
+  "great-controversy-theme",
+  "catholic-muslim-comparative-dialogue",
+]);
+
 const API = (
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_REVELACODE_URL ||
@@ -136,6 +143,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   const [answerSelections, setAnswerSelections] = useState({});
   const [assessmentResult, setAssessmentResult] = useState(null);
   const [question, setQuestion] = useState("");
+  const [companionMode, setCompanionMode] = useState("interpret");
   const [companionAnswer, setCompanionAnswer] = useState("");
   const [workspace, setWorkspace] = useState({ notes: [], progress: [], assessments: [], summary: {} });
   const [noteTitle, setNoteTitle] = useState("");
@@ -261,6 +269,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       setAssessmentResult(null);
       setCompanionAnswer("");
       setQuestion("");
+      setCompanionMode("interpret");
       setTab("courses");
     } catch (e) {
       setError(e.message);
@@ -359,7 +368,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     try {
       const data = await faithApi("/api/study/faith/companion", {
         method: "POST",
-        body: { course_slug: selectedCourse.slug, lesson_slug: selectedLesson.slug, question: question.trim() },
+        body: { course_slug: selectedCourse.slug, lesson_slug: selectedLesson.slug, question: question.trim(), discussion_mode: companionMode },
       });
       setCompanionAnswer(data.answer || "");
     } catch (e) {
@@ -651,11 +660,19 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
         <div className="space-y-4">
           <SectionHeading eyebrow="Structured learning" title="Courses built for serious study" description="Every course includes objectives, source-linked lessons, assessment questions graded by the backend, and resumable progress. One lesson is available as a free preview." actions={<Button variant="subtle" onClick={() => setTab("plans")}><Wallet size={14} /> Trial & pricing</Button>} />
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {(courses.length ? courses : [
+            {[...(courses.length ? courses : [
+              { slug: "three-angels-messages", title: "The Three Angels’ Messages — Text, Tradition & Debate", summary: "Read Revelation 14 in context and compare Adventist and alternative Christian interpretations.", level: "Priority · Prophecy", duration_minutes: 75, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
+              { slug: "sda-28-fundamental-beliefs", title: "The 28 Fundamental Beliefs — A Complete Adventist Study", summary: "Study all 28 official beliefs with sources, questions, and fair comparison.", level: "Priority · Foundations", duration_minutes: 110, lesson_count: 6, completed_lessons: 0, locked: !hasPremium },
+              { slug: "great-controversy-theme", title: "The Great Controversy — Good, Evil, Freedom & Hope", summary: "Explore the Adventist framework and debate evil, freedom, justice, and hope.", level: "Priority · Theology", duration_minutes: 70, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
+              { slug: "catholic-muslim-comparative-dialogue", title: "Catholic & Muslim Perspectives — A Shared Study and Debate", summary: "Compare Catholic and Muslim primary sources on God, Jesus, Mary, revelation, worship, and ethics without ranking either tradition.", level: "Priority · Interfaith", duration_minutes: 85, lesson_count: 4, completed_lessons: 0, locked: !hasPremium },
               { slug: "scripture-study-method", title: "Study Scripture with Context", summary: "Observe, interpret, and apply Scripture responsibly.", level: "Foundations", duration_minutes: 50, lesson_count: 3, completed_lessons: 0, preview_available: true, locked: !hasPremium },
               { slug: "daniel-revelation-research-lab", title: "Daniel & Revelation Research Lab", summary: "Study apocalyptic texts and compare prophetic frameworks.", level: "Intermediate", duration_minutes: 65, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
               { slug: "comparative-christian-traditions", title: "Comparative Theology: Scripture, Worship & Tradition", summary: "Compare traditions using primary texts and source-based reasoning.", level: "Intermediate", duration_minutes: 60, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
-            ]).map((course) => (
+            ])].sort((a, b) => {
+              const aIndex = PRIORITY_FAITH_COURSES.indexOf(a.slug);
+              const bIndex = PRIORITY_FAITH_COURSES.indexOf(b.slug);
+              return (aIndex < 0 ? 100 : aIndex) - (bIndex < 0 ? 100 : bIndex);
+            }).map((course) => (
               <button key={course.slug} type="button" onClick={() => openCourse(course.slug)} disabled={working === "course"} className="group flex min-h-[195px] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
                 <div className="flex items-start justify-between gap-2">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"><BookOpen size={19} /></span>
@@ -747,7 +764,21 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                   <div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white"><MessageCircle size={17} /></div><div><h3 className="font-black text-slate-900 dark:text-white">RevelaAI Study Companion</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Answers use this lesson and its source list as context. It distinguishes textual claims from interpretation and states uncertainty where needed.</p></div></div>
                   {hasPremium ? <>
                     <textarea value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} placeholder="Ask about the reasoning, context, or alternative interpretations…" className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:border-indigo-400 dark:border-slate-700 dark:bg-slate-950" />
-                    <Button className="mt-2 w-full" onClick={askCompanion} disabled={working === "companion" || !question.trim()}>{working === "companion" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Ask grounded question</Button>
+                    <div className="mt-3 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+                      <p className="px-1 text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">AI discussion mode</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => { setCompanionMode("interpret"); setCompanionAnswer(""); }} aria-pressed={companionMode === "interpret"} className={"rounded-lg px-3 py-2 text-xs font-bold transition " + (companionMode === "interpret" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300")}>
+                          Interpret
+                        </button>
+                        <button type="button" onClick={() => { setCompanionMode("debate"); setCompanionAnswer(""); }} aria-pressed={companionMode === "debate"} className={"rounded-lg px-3 py-2 text-xs font-bold transition " + (companionMode === "debate" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300")}>
+                          Balanced debate
+                        </button>
+                      </div>
+                      <p className="mt-2 px-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                        {companionMode === "debate" ? "AI presents the strongest sourced views, objections from both sides, common ground, and unresolved differences without declaring a religion superior." : "AI explains the passage in context and separates source text, official teaching, interpretation, and uncertainty."}
+                      </p>
+                    </div>
+                    <Button className="mt-2 w-full" onClick={askCompanion} disabled={working === "companion" || !question.trim()}>{working === "companion" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {companionMode === "debate" ? "Start balanced debate" : "Interpret with AI"}</Button>
                     {companionAnswer && <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><Markdown>{companionAnswer}</Markdown></div>}
                   </> : <><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">The lesson is available, but the advanced companion is part of Faith Plus / Pro or the 30-day trial.</p><Button className="mt-3 w-full" onClick={() => setTab("plans")}>Unlock Study Companion</Button></>}
                 </section>
