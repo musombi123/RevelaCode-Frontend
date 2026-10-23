@@ -80,6 +80,7 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
   const [reportSummary, setReportSummary] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [recentReminders, setRecentReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -102,6 +103,9 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
       api.getFeesReport(),
       api.getSchoolFeeReceipts({ status: "pending" }),
       api.getSchoolPaymentAccounts(),
+      typeof api.getSchoolFeeReminders === "function"
+        ? api.getSchoolFeeReminders({ limit: 6 })
+        : Promise.reject(new Error("Reminder delivery history is not available in this frontend build.")),
     ]);
     const failures = [];
 
@@ -126,6 +130,12 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
       setAccounts(getRows(results[3].value, ["payment_accounts", "accounts", "items"]));
     } else {
       failures.push("Payment instructions: " + errorText(results[3].reason));
+    }
+    if (results[4].status === "fulfilled") {
+      setRecentReminders(getRows(results[4].value, ["reminders", "items", "records"]));
+    } else {
+      // Delivery history is supplementary; it should not block the finance desk.
+      setRecentReminders([]);
     }
 
     setError(failures.join(" "));
@@ -487,6 +497,54 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
                 {account.instructions && <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{account.instructions}</p>}
               </article>
             ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-bold text-slate-950 dark:text-white">Recent parent reminders</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">WhatsApp status is updated from signed Meta delivery callbacks. “Accepted” means Meta accepted the send request; it does not yet confirm delivery.</p>
+          </div>
+          <button type="button" onClick={() => void refresh()} disabled={loading || refreshing} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold dark:border-slate-700"><RefreshCw size={13} />Refresh status</button>
+        </div>
+        {recentReminders.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800">No parent reminders have been recorded yet. Send a reminder from a student fee statement to see its status here.</p>
+        ) : (
+          <div className="space-y-2">
+            {recentReminders.map((reminder, index) => {
+              const status = String(reminder.whatsapp_delivery_status || "not_sent").toLowerCase();
+              const labels = {
+                accepted: "Accepted by Meta",
+                sent: "Sent",
+                delivered: "Delivered",
+                read: "Read",
+                failed: "Failed",
+                manual_send_required: "Manual WhatsApp send needed",
+                not_sent: "WhatsApp not sent",
+              };
+              const classes = {
+                accepted: "bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+                sent: "bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+                delivered: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+                read: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+                failed: "bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+                manual_send_required: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+                not_sent: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+              };
+              const channelNames = Array.isArray(reminder.channels_sent) ? reminder.channels_sent.map((channel) => String(channel).toUpperCase()) : [];
+              return (
+                <article key={reminder.reminder_id || reminder.student_id || index} className="flex flex-col gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{reminder.student_name || "Student"} <span className="font-normal text-slate-500">· {reminder.admission_number || reminder.student_id || "ID not recorded"}</span></p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{kes(reminder.balance)} outstanding{channelNames.length ? " · automated channel: " + channelNames.join(", ") : ""}{reminder.created_at ? " · " + new Date(reminder.created_at).toLocaleString() : ""}</p>
+                    {status === "failed" && reminder.whatsapp_last_error_title && <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">{reminder.whatsapp_last_error_title}</p>}
+                  </div>
+                  <span className={"inline-flex w-fit shrink-0 rounded-full px-2.5 py-1 text-xs font-bold " + (classes[status] || classes.not_sent)}>{labels[status] || "Status pending"}</span>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
