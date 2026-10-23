@@ -962,19 +962,21 @@ export default function AIAssistantDashboard({
           };
 
           if (!attachedFile && inputMeta?.visionResult && String(inputMeta.visionResult).trim()) {
-            // The configured vision model has already analyzed an explicitly shared camera frame.
-            // Use its grounded response directly; never re-label pixel math as semantic vision.
+            // Camera analysis may be remote or local pixel math. Keep its real provenance.
             localText = String(inputMeta.visionResult).trim();
             localType = "vision-chat";
+            const localVisionOnly = inputMeta.visionProvider === "local-pixel-math";
             brainMetadata = {
               ...brainMetadata,
-              engine: inputMeta.visionProvider ? String(inputMeta.visionProvider) + "-vision" : "revelaai-vision",
-              provider: inputMeta.visionProvider || "gemini",
-              network: true,
-              networkUsed: true,
+              engine: localVisionOnly ? "revelaai-free-local-vision" : (inputMeta.visionProvider ? String(inputMeta.visionProvider) + "-vision" : "revelaai-vision"),
+              provider: inputMeta.visionProvider || "local-pixel-math",
+              network: !localVisionOnly,
+              networkUsed: !localVisionOnly,
               visionUsed: true,
+              visionFallback: localVisionOnly,
+              freeMode: localVisionOnly,
               mediaRetained: false,
-              memory: "server",
+              memory: localVisionOnly ? "local-only" : "server",
             };
           } else if (attachedFile) {
             if (attachedFile.type?.startsWith("image/")) {
@@ -1026,7 +1028,7 @@ export default function AIAssistantDashboard({
 
           // Interpret free on-device perception with the existing text provider.
           // The image itself is not uploaded to a paid vision provider.
-          if (attachedFile && localText && !attachedFile.type?.startsWith("video/")) {
+          if (attachedFile && localText && !attachedFile.type?.startsWith("video/") && !freeMode) {
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             const tokenHeaders = getRevelaCodeAuthHeaders();
             if (Object.keys(tokenHeaders).length) {
@@ -1073,8 +1075,28 @@ export default function AIAssistantDashboard({
               }
             }
           } else if (!attachedFile && !inputMeta?.visionResult) {
-            // Normal text chat must use the server-side generative model.
-            // Never substitute the local rule engine when the service is unavailable.
+            if (freeMode) {
+              const recentContext = currentMessages
+                .filter((item) => item.role === "user" || item.role === "assistant")
+                .slice(-6)
+                .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
+                .join("\n");
+              localText = answerLocally(cleaned || requestMessage, recentContext);
+              localType = "text";
+              brainMetadata = {
+                ...brainMetadata,
+                engine: "revelaai-free-local-rules",
+                provider: "on-device",
+                network: false,
+                networkUsed: false,
+                freeMode: true,
+                fallback: true,
+                memory: "local-only",
+                limitation: "Local templates and calculations; not a hosted language model.",
+              };
+            } else {
+            // Adaptive mode uses the hosted model. Network failures are recovered below
+            // using the free local engine instead of leaving a dead-end error bubble.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             let response;
             try {
@@ -1167,6 +1189,7 @@ export default function AIAssistantDashboard({
               networkUsed: true,
               memory: "server",
             };
+            }
           }
 
           // Let the existing text model reason over on-device image/video observations.
@@ -1174,7 +1197,8 @@ export default function AIAssistantDashboard({
           if (
             attachedFile &&
             (attachedFile.type?.startsWith("image/") || attachedFile.type?.startsWith("video/")) &&
-            localText
+            localText &&
+            !freeMode
           ) {
             const observations = localText;
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -1411,6 +1435,7 @@ export default function AIAssistantDashboard({
         activeHub,
         userScope,
         user,
+        freeMode,
       ]
     );
 
