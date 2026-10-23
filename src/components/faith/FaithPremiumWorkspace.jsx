@@ -659,7 +659,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               <button key={course.slug} type="button" onClick={() => openCourse(course.slug)} disabled={working === "course"} className="group flex min-h-[195px] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
                 <div className="flex items-start justify-between gap-2">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"><BookOpen size={19} /></span>
-                  {course.locked ? <Pill tone="amber"><LockKeyhole size={10} className="mr-1" /> Premium</Pill> : course.preview_available ? <Pill tone="green">Preview open</Pill> : <Pill tone="green">Unlocked</Pill>}
+                  {course.locked ? <Pill tone="amber"><Lock size={10} className="mr-1" /> Premium</Pill> : course.preview_available ? <Pill tone="green">Preview open</Pill> : <Pill tone="green">Unlocked</Pill>}
                 </div>
                 <p className="mt-3 text-[10px] font-black uppercase tracking-wide text-indigo-600 dark:text-indigo-400">{course.level || "Guided course"} · {course.duration_minutes || 0} min</p>
                 <h3 className="mt-1 text-base font-black text-slate-950 dark:text-white">{course.title}</h3>
@@ -696,7 +696,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               <div className="mt-3 space-y-2">
                 {(selectedCourse.lessons || []).map((lesson, index) => (
                   <button key={lesson.slug} type="button" onClick={() => { if (lesson.locked) { setTab("plans"); setError("This lesson is locked. Start your trial or choose an eligible plan."); return; } setSelectedLessonSlug(lesson.slug); setAnswerSelections({}); setAssessmentResult(null); setCompanionAnswer(""); }} className={"flex w-full items-start gap-3 rounded-xl border p-3 text-left transition " + (selectedLessonSlug === lesson.slug ? "border-indigo-300 bg-indigo-50/60 dark:border-indigo-900/50 dark:bg-indigo-950/20" : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60")}>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{lesson.completed ? <Check size={15} className="text-emerald-600" /> : lesson.locked ? <LockKeyhole size={14} /> : index + 1}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{lesson.completed ? <Check size={15} className="text-emerald-600" /> : lesson.locked ? <Lock size={14} /> : index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900 dark:text-white">{lesson.title}</span><span className="mt-1 block text-[11px] text-slate-500 dark:text-slate-400">{lesson.minutes || 10} min · {lesson.reference || "Guided reading"}</span>{lesson.summary && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{lesson.summary}</span>}</span>
                     {lesson.preview && <Pill tone="green">Free preview</Pill>}
                     {lesson.locked && <Pill tone="amber">Locked</Pill>}
@@ -710,7 +710,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">These courses separate the passage itself, historical context, interpretive tradition, and application. A tradition-specific position is labelled instead of presented as a universal Christian view.</p>
                 <div className="mt-3 space-y-2">{(selectedCourse.sources || []).map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-xs font-semibold leading-5 text-indigo-700 underline underline-offset-2 dark:text-indigo-300"><ExternalLink size={13} className="mt-0.5 shrink-0" />{source.label}</a>)}</div>
               </div>
-              {hasPremium && <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20"><h3 className="font-black text-slate-900 dark:text-white">Need a study plan?</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Use your private workspace for notes, progress, and assessment history.</p><Button className="mt-3" onClick={() => setTab("workspace")}><NotebookPen size={14} /> Open workspace</Button></div>}
+              {hasPremium && <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20"><h3 className="font-black text-slate-900 dark:text-white">Need a study plan?</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Use your private workspace for notes, progress, and assessment history.</p><Button className="mt-3" onClick={() => setTab("workspace")}><FileText size={14} /> Open workspace</Button></div>}
             </aside>
           </div>
 
@@ -721,8 +721,8 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <div className="py-3"><Markdown>{selectedLesson.content}</Markdown></div>
                 <section className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50"><h4 className="text-xs font-black text-slate-900 dark:text-white">Sources for this lesson</h4><div className="mt-2 space-y-2">{(selectedLesson.sources || []).map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-xs font-semibold leading-5 text-indigo-700 underline underline-offset-2 dark:text-indigo-300"><ExternalLink size={13} className="mt-0.5 shrink-0" />{source.label}</a>)}</div></section>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <Button onClick={() => saveProgress(true)} disabled={working === "progress"}>{working === "progress" ? <LoaderCircle size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Mark complete</Button>
-                  {hasPremium && <Button variant="subtle" onClick={() => { setTab("workspace"); setNoteTitle(selectedLesson.title); setNoteContent(""); }}><NotebookPen size={14} /> Add a private note</Button>}
+                  <Button onClick={() => saveProgress(true)} disabled={working === "progress"}>{working === "progress" ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Mark complete</Button>
+                  {hasPremium && <Button variant="subtle" onClick={() => { setTab("workspace"); setNoteTitle(selectedLesson.title); setNoteContent(""); }}><FileText size={14} /> Add a private note</Button>}
                 </div>
                 {selectedLesson.quiz?.length > 0 && (
                   <section className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
@@ -736,7 +736,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                         </div>
                       ))}
                     </div>
-                    <Button className="mt-4" onClick={submitAssessment} disabled={working === "assessment" || Object.keys(answerSelections).length !== selectedLesson.quiz.length}>{working === "assessment" ? <LoaderCircle size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Submit answers</Button>
+                    <Button className="mt-4" onClick={submitAssessment} disabled={working === "assessment" || Object.keys(answerSelections).length !== selectedLesson.quiz.length}>{working === "assessment" ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Submit answers</Button>
                     {assessmentResult && <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50"><div className="flex flex-wrap items-center gap-2"><Pill tone={assessmentResult.passed ? "green" : "amber"}>{assessmentResult.passed ? "Passed" : "Review and retry"}</Pill><strong className="text-lg font-black text-slate-900 dark:text-white">{assessmentResult.score_percent}%</strong><span className="text-xs text-slate-500 dark:text-slate-400">{assessmentResult.correct_count}/{assessmentResult.question_count} correct</span></div><div className="mt-3 space-y-3">{(assessmentResult.feedback || []).map((feedback, index) => <div key={index} className="text-xs leading-5"><p className={"font-bold " + (feedback.correct ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300")}>{index + 1}. {feedback.correct ? "Correct" : "Not quite"} — {feedback.question}</p><p className="mt-1 text-slate-600 dark:text-slate-300">{feedback.explanation}</p></div>)}</div></div>}
                   </section>
                 )}
@@ -747,7 +747,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                   <div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white"><MessageCircle size={17} /></div><div><h3 className="font-black text-slate-900 dark:text-white">RevelaAI Study Companion</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Answers use this lesson and its source list as context. It distinguishes textual claims from interpretation and states uncertainty where needed.</p></div></div>
                   {hasPremium ? <>
                     <textarea value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} placeholder="Ask about the reasoning, context, or alternative interpretations…" className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:border-indigo-400 dark:border-slate-700 dark:bg-slate-950" />
-                    <Button className="mt-2 w-full" onClick={askCompanion} disabled={working === "companion" || !question.trim()}>{working === "companion" ? <LoaderCircle size={14} className="animate-spin" /> : <Send size={14} />} Ask grounded question</Button>
+                    <Button className="mt-2 w-full" onClick={askCompanion} disabled={working === "companion" || !question.trim()}>{working === "companion" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Ask grounded question</Button>
                     {companionAnswer && <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><Markdown>{companionAnswer}</Markdown></div>}
                   </> : <><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">The lesson is available, but the advanced companion is part of Faith Plus / Pro or the 30-day trial.</p><Button className="mt-3 w-full" onClick={() => setTab("plans")}>Unlock Study Companion</Button></>}
                 </section>
@@ -769,10 +769,10 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               ].map((stat) => <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"><p className="text-[10px] font-bold uppercase text-slate-500">{stat.label}</p><p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{stat.value}</p></div>)}</div>
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <form onSubmit={saveNote} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                  <div className="flex items-center gap-2"><NotebookPen size={17} className="text-indigo-600" /><h3 className="font-black text-slate-900 dark:text-white">Write a study note</h3></div>
+                  <div className="flex items-center gap-2"><FileText size={17} className="text-indigo-600" /><h3 className="font-black text-slate-900 dark:text-white">Write a study note</h3></div>
                   <input value={noteTitle} onChange={(event) => setNoteTitle(event.target.value)} maxLength={160} placeholder="Note title" className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
                   <textarea required value={noteContent} onChange={(event) => setNoteContent(event.target.value)} maxLength={8000} rows={5} placeholder="Record your observations, source links, questions, and conclusions…" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-950" />
-                  <Button type="submit" disabled={working === "note" || !noteContent.trim()} className="mt-3">{working === "note" ? <LoaderCircle size={14} className="animate-spin" /> : <Bookmark size={14} />} Save note</Button>
+                  <Button type="submit" disabled={working === "note" || !noteContent.trim()} className="mt-3">{working === "note" ? <Loader2 size={14} className="animate-spin" /> : <Bookmark size={14} />} Save note</Button>
                   {noteMessage && <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">{noteMessage}</p>}
                 </form>
                 <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -795,13 +795,13 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                   <input required minLength={3} value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength={120} placeholder="Group name" className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
                   <input value={organization} onChange={(event) => setOrganization(event.target.value)} maxLength={120} placeholder="Church / ministry / organisation (optional)" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
                   <textarea value={groupDescription} onChange={(event) => setGroupDescription(event.target.value)} maxLength={500} rows={2} placeholder="What will this group study?" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
-                  <Button className="mt-3" type="submit" disabled={working === "group-create" || groupName.trim().length < 3}>{working === "group-create" ? <LoaderCircle size={14} className="animate-spin" /> : <Plus size={14} />} Create group</Button>
+                  <Button className="mt-3" type="submit" disabled={working === "group-create" || groupName.trim().length < 3}>{working === "group-create" ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create group</Button>
                 </form>
                 <form onSubmit={joinGroup} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="font-black text-slate-900 dark:text-white">Join an existing group</h3>
                   <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Ask the group leader for their invite code. Joining by code creates a real group membership attached to your account.</p>
                   <input required value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} maxLength={32} placeholder="Group invite code" className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm uppercase tracking-wider dark:border-slate-700 dark:bg-slate-950" />
-                  <Button type="submit" className="mt-3" disabled={working === "group-join" || !inviteCode.trim()}>{working === "group-join" ? <LoaderCircle size={14} className="animate-spin" /> : <Users size={14} />} Join group</Button>
+                  <Button type="submit" className="mt-3" disabled={working === "group-join" || !inviteCode.trim()}>{working === "group-join" ? <Loader2 size={14} className="animate-spin" /> : <Users size={14} />} Join group</Button>
                 </form>
               </div>
               <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -831,7 +831,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
           <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black text-slate-950 dark:text-white">Faith trial status</h3><Pill tone={currentTrial?.status === "active" ? "green" : currentTrial?.status === "expired" ? "amber" : "slate"}>{currentTrial?.status || (signedIn ? "not checked" : "sign in required")}</Pill></div><p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{currentTrial?.status === "active" ? "Your full Faith Academy access ends " + niceDate(currentTrial.ends_at) + ". " + currentTrial.days_remaining + " day(s) remaining." : currentTrial?.status === "expired" ? "This account has already used its Faith trial. Choose an approved plan after the platform enables checkout." : "Each account can use one 30-day trial per hub. Starting it activates the complete Faith premium feature set for that period."}</p></div>
-              {!currentTrial || currentTrial.status === "not_started" ? <Button onClick={startTrial} disabled={working === "trial" || !signedIn}>{working === "trial" ? <LoaderCircle size={14} className="animate-spin" /> : <ShieldCheck size={14} />} Start 30-day trial</Button> : currentTrial.status === "active" ? <Pill tone="green">Premium trial active</Pill> : null}
+              {!currentTrial || currentTrial.status === "not_started" ? <Button onClick={startTrial} disabled={working === "trial" || !signedIn}>{working === "trial" ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />} Start 30-day trial</Button> : currentTrial.status === "active" ? <Pill tone="green">Premium trial active</Pill> : null}
             </div>
           </section>
 
@@ -846,7 +846,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{money(plan.amount, plan.currency)}<span className="ml-1 text-xs font-semibold text-slate-500">/ {plan.interval || "month"}</span></p>
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{isPro ? "Built for pastors, group leaders, ministries, and organised study classes." : "Built for individuals who want structured courses, personal study records, and the source-grounded AI companion."}</p>
                 <ul className="mt-4 space-y-2">{(plan.features || []).map((feature) => <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />{feature}</li>)}</ul>
-                {pricingMeta.checkout_enabled && available ? <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><label className="text-xs font-bold text-slate-700 dark:text-slate-300">M-Pesa phone number<input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" placeholder="07xx xxx xxx or 2547xx…" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal dark:border-slate-700 dark:bg-slate-950" /></label><Button className="mt-2 w-full" onClick={() => startCheckout(plan)} disabled={working === "checkout" || !signedIn}>{working === "checkout" ? <LoaderCircle size={14} className="animate-spin" /> : <CreditCard size={14} />} Continue to M-Pesa</Button></div> : <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">{available ? "The plan is published, but production checkout is not yet configured. No payment can be taken right now." : "This is proposed pricing, not an approved live offer. A platform admin must publish the plan after reviewing price and provider readiness."}</div>}
+                {pricingMeta.checkout_enabled && available ? <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><label className="text-xs font-bold text-slate-700 dark:text-slate-300">M-Pesa phone number<input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" placeholder="07xx xxx xxx or 2547xx…" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal dark:border-slate-700 dark:bg-slate-950" /></label><Button className="mt-2 w-full" onClick={() => startCheckout(plan)} disabled={working === "checkout" || !signedIn}>{working === "checkout" ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />} Continue to M-Pesa</Button></div> : <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">{available ? "The plan is published, but production checkout is not yet configured. No payment can be taken right now." : "This is proposed pricing, not an approved live offer. A platform admin must publish the plan after reviewing price and provider readiness."}</div>}
               </article>;
             })}
           </div>
@@ -862,12 +862,4 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       </div>
     </div>
   );
-}
-
-function _unusedCourseOptions(courses) {
-  return (courses || []).flatMap((course) => (course.lessons || []).map((lesson) => ({
-    course_slug: course.slug,
-    lesson_slug: lesson.slug,
-    label: course.title + " — " + lesson.title,
-  })));
 }
