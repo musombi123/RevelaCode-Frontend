@@ -942,7 +942,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             <div className="school-hero-pattern absolute inset-0" aria-hidden="true" />
             <div className="school-home-hero-glow" aria-hidden="true" />
             <div className="school-hero-watermark pointer-events-none absolute right-[3%] top-1/2 hidden -translate-y-1/2 opacity-20 lg:block" aria-hidden="true">
-              {logo ? <img src={logo} alt="" className="h-64 w-64 object-contain xl:h-80 xl:w-80" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <School size={248} strokeWidth={0.65} />}
+              <School size={248} strokeWidth={0.65} className="school-hero-watermark-icon" />
+              {logo && <img src={logo} alt="" className="school-hero-watermark-logo relative z-10 h-64 w-64 object-contain xl:h-80 xl:w-80" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
             </div>
             <div className="relative z-10 mx-auto grid min-h-[500px] max-w-[88rem] grid-cols-1 items-center gap-8 px-5 py-14 sm:px-8 sm:py-18 lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_minmax(13rem,.5fr)] lg:px-12 xl:px-16">
               <div className="school-hero-content relative z-10 flex max-w-4xl flex-col justify-center">
@@ -1073,6 +1074,9 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .school-hero-lead { color:var(--school-body); opacity:1; }
         [data-school-website="true"] .school-hero-badge { color:var(--school-heading); background:color-mix(in srgb,var(--school-surface) 88%,transparent); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); }
         [data-school-website="true"] .school-hero-watermark { color:var(--school-accent); }
+        [data-school-website="true"] .school-hero-watermark-icon { position:absolute; width:15rem; height:15rem; opacity:.4; }
+        [data-school-website="true"] .school-hero-watermark-logo { opacity:.84; }
+        @supports selector(:has(*)) { [data-school-website="true"] .school-home-hero:has(.school-hero-cover[style*="display: none"]) .school-hero-pattern { opacity:.55; } }
         [data-school-website="true"] .school-hero-community { color:var(--school-heading); background:color-mix(in srgb,var(--school-surface) 88%,transparent); border-color:color-mix(in srgb,var(--school-primary) 22%,var(--school-surface)); box-shadow:0 22px 48px color-mix(in srgb,var(--school-heading) 20%,transparent); }
         [data-school-website="true"] .school-hero-community p:first-child { color:var(--school-body); opacity:1; }
         [data-school-website="true"] .school-cta-primary { border:1px solid var(--school-primary); color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); box-shadow:0 12px 26px color-mix(in srgb,var(--school-heading) 18%,transparent); }
