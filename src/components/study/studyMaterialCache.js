@@ -4,6 +4,18 @@
 const DB_NAME = "revelacode-faith-study-cache";
 const STORE_NAME = "records";
 const DB_VERSION = 1;
+
+const STUDY_API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://revelacode-backend.onrender.com"
+).replace(/\/+$/, "");
+
+export const FAITH_LIBRARY_CACHE_SCOPE = STUDY_API_BASE + "/faith-library-v3";
+
+const FAITH_TOPIC_PATTERN = /\b(faith|scripture|bible|biblical|christian|theolog(?:y|ical|ian)?|religious? studies|devotional|prophecy|adventist|sda|catholic|interfaith|jewish|judaism|islam|qur['’]?an|muslim|spiritual|church|worship|sanctuary|gospel|prayer|comparative|daily[\s-]+life|faith[\s-]+academy)\b/i;
+const NON_FAITH_TOPIC_PATTERN = /\b(cpa|accounting|entrepreneurship|software development|technology(?:\s*&\s*innovation)?|business|inventory|finance|stock management|computer science|programming|agriculture|farming|chemistry|physics|biology|mathematics|economics)\b/i;
 const FALLBACK_PREFIX = "revelacode_faith_study_cache_v1::";
 let databasePromise = null;
 
@@ -129,6 +141,127 @@ async function writeRecord(key, value) {
   } catch {
     return null;
   }
+}
+
+
+/* =========================================================
+   FAITH CATALOGUE NORMALIZATION
+========================================================= */
+
+function plainText(value) {
+  if (Array.isArray(value)) return value.map(plainText).filter(Boolean).join(" ");
+  if (value == null || typeof value === "object") return "";
+  return String(value).replace(/\s+/g, " ").trim();
+}
+
+export function normalizeFaithStudyMaterials(rawMaterials) {
+  const rows = Array.isArray(rawMaterials) ? rawMaterials : [];
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
+  const output = [];
+
+  for (const raw of rows) {
+    if (!raw || typeof raw !== "object") continue;
+    const id = getMaterialId(raw);
+    if (!id || seenIds.has(id) || raw.published === false) continue;
+
+    const metadata = raw.metadata && typeof raw.metadata === "object" ? raw.metadata : {};
+    const taxonomicFields = [
+      raw.category, raw.subcategory, raw.subject, raw.topic, raw.hub,
+      raw.discipline, raw.tags, metadata.category, metadata.subcategory,
+      metadata.subject, metadata.topic, metadata.hub, metadata.discipline,
+      metadata.tags,
+    ].map(plainText).filter(Boolean);
+
+    if (taxonomicFields.some((field) => NON_FAITH_TOPIC_PATTERN.test(field))) continue;
+
+    const hasFaithClassification = taxonomicFields.some((field) => FAITH_TOPIC_PATTERN.test(field));
+    const hasCuratedEditorialSlug = Boolean(plainText(metadata.catalog_slug));
+    const titleAndDescription = [
+      raw.title, raw.description, raw.summary,
+      metadata.editorial_summary, metadata.tradition,
+    ].map(plainText).join(" ");
+    if (NON_FAITH_TOPIC_PATTERN.test(titleAndDescription)) continue;
+    if (!hasFaithClassification && !hasCuratedEditorialSlug) continue;
+
+    const title = plainText(raw.title).toLowerCase();
+    const description = plainText(raw.description || raw.summary || metadata.editorial_summary).toLowerCase();
+    const content = plainText(raw.content).slice(0, 1400).toLowerCase();
+    const taxonomy = taxonomicFields.join("|").toLowerCase();
+    const fingerprint = [title, taxonomy, description, content].join("::");
+    if (seenFingerprints.has(fingerprint)) continue;
+
+    seenIds.add(id);
+    seenFingerprints.add(fingerprint);
+    output.push({ ...raw, id: String(id) });
+  }
+
+  return output;
+}
+
+/**
+ * Refresh the Faith library in the background after the platform opens.
+ * The application remains usable while cached material is being warmed.
+ */
+export async function warmFaithStudyCache() {
+  let previous = null;
+  try {
+    previous = await getCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE);
+    if (previous && Array.isArray(previous.materials)) {
+      const sanitized = normalizeFaithStudyMaterials(previous.materials);
+      if (JSON.stringify(sanitized) !== JSON.stringify(previous.materials)) {
+        await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, sanitized);
+      }
+    }
+  } catch {
+    previous = null;
+  }
+
+  if (typeof fetch !== "function" || !STUDY_API_BASE) {
+    return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+  }
+
+  try {
+    const response = await fetch(
+      STUDY_API_BASE + "/api/study/materials?category=faith&limit=100",
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) {
+      return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+    }
+
+    const payload = await response.json().catch(() => ({}));
+    const raw = Array.isArray(payload?.materials)
+      ? payload.materials
+      : Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+      ? payload
+      : [];
+
+    const normalized = normalizeFaithStudyMaterials(raw);
+    await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, normalized);
+    return { source: "network", count: normalized.length };
+  } catch {
+    return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+  }
+}
+
+export async function getCachedBibleBook(bookKey) {
+  if (!bookKey) return null;
+  const record = await readRecord("bible::web::" + String(bookKey).trim());
+  return record?.value && typeof record.value === "object" ? record.value : null;
+}
+
+export async function saveCachedBibleBook(bookKey, book) {
+  if (!bookKey || !book || typeof book !== "object") return false;
+  const record = await writeRecord("bible::web::" + String(bookKey).trim(), book);
+  return Boolean(record);
 }
 
 export async function getCachedLibrary(scope) {
