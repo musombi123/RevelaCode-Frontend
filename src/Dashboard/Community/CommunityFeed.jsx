@@ -22,7 +22,6 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
-import CommunityAdCard from "@/Dashboard/Community/CommunityAdCard.jsx";
 
 // ============================================================
 // CONFIG
@@ -257,12 +256,15 @@ function isReacted(post) {
 
 export default function CommunityFeed({
   onNavigate,
+  onEditPost,
 }) {
   const { user } = useAuth();
 
   const {
     getCommunityFeed,
+    searchCommunity,
     reactToCommunityPost,
+    deleteCommunityPost,
   } = useJumuiyaApi();
 
   const [posts, setPosts] = useState([]);
@@ -278,6 +280,11 @@ export default function CommunityFeed({
 
   const [searchTerm, setSearchTerm] =
     useState("");
+  const [serverSearchResults, setServerSearchResults] = useState(null);
+  const [serverSearchLoading, setServerSearchLoading] = useState(false);
+  const [serverSearchError, setServerSearchError] = useState("");
+  const [postMenuId, setPostMenuId] = useState("");
+  const [notice, setNotice] = useState("");
 
   const [selectedHub, setSelectedHub] =
     useState("all");
@@ -388,38 +395,73 @@ export default function CommunityFeed({
   }, [loadFeed]);
 
   // ==========================================================
-  // LOCAL SEARCH
+  // BACKEND SEARCH (with local-feed fallback)
   // ==========================================================
 
-  const filteredPosts = useMemo(() => {
-    const query =
-      searchTerm.trim().toLowerCase();
-
+  useEffect(() => {
+    const query = searchTerm.trim();
     if (!query) {
-      return posts;
+      setServerSearchResults(null);
+      setServerSearchError("");
+      setServerSearchLoading(false);
+      return undefined;
     }
 
-    return posts.filter((post) => {
-      const title =
-        getTitle(post).toLowerCase();
+    let active = true;
+    setServerSearchResults(null);
+    setServerSearchError("");
+    setServerSearchLoading(true);
 
-      const body =
-        getBody(post).toLowerCase();
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await searchCommunity({ query, limit: 50 });
+        const rows = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.posts)
+            ? response.posts
+            : Array.isArray(response?.results)
+              ? response.results
+              : Array.isArray(response?.items)
+                ? response.items
+                : Array.isArray(response?.data)
+                  ? response.data
+                  : [];
+        if (active) setServerSearchResults(rows);
+      } catch (searchError) {
+        if (active) {
+          setServerSearchResults(null);
+          setServerSearchError(searchError?.message || "Backend search is unavailable; showing matches from the loaded feed.");
+        }
+      } finally {
+        if (active) setServerSearchLoading(false);
+      }
+    }, 300);
 
-      const author =
-        getAuthor(post).toLowerCase();
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [searchTerm, searchCommunity]);
 
-      const hub =
-        getHub(post).toLowerCase();
+  const filteredPosts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    const source = query && Array.isArray(serverSearchResults)
+      ? serverSearchResults
+      : posts;
 
-      return (
-        title.includes(query) ||
-        body.includes(query) ||
-        author.includes(query) ||
-        hub.includes(query)
-      );
+    return source.filter((post) => {
+      const title = getTitle(post).toLowerCase();
+      const body = getBody(post).toLowerCase();
+      const author = getAuthor(post).toLowerCase();
+      const hub = getHub(post).toLowerCase();
+      const category = getCategory(post).toLowerCase();
+      const matchesSearch = !query || (Array.isArray(serverSearchResults)
+        || title.includes(query) || body.includes(query) || author.includes(query) || hub.includes(query));
+      const matchesHub = selectedHub === "all" || hub === selectedHub;
+      const matchesCategory = selectedCategory === "all" || category === selectedCategory;
+      return matchesSearch && matchesHub && matchesCategory;
     });
-  }, [posts, searchTerm]);
+  }, [posts, searchTerm, serverSearchResults, selectedHub, selectedCategory]);
 
   // ==========================================================
   // REACT TO POST
@@ -476,6 +518,33 @@ export default function CommunityFeed({
       setReactingPost(null);
     }
   };
+
+  const handleDeletePost = useCallback(async (post) => {
+    const postId = getPostId(post);
+    if (!postId) {
+      setError("This post has no ID, so it cannot be deleted.");
+      return;
+    }
+    if (typeof window !== "undefined" && typeof window.confirm === "function") {
+      const confirmed = window.confirm("Delete this Community post? This cannot be undone.");
+      if (!confirmed) return;
+    }
+
+    setError("");
+    setNotice("");
+    setPostMenuId("");
+    try {
+      await deleteCommunityPost(postId);
+      setPosts((current) => current.filter((item) => String(getPostId(item)) !== String(postId)));
+      setServerSearchResults((current) => Array.isArray(current)
+        ? current.filter((item) => String(getPostId(item)) !== String(postId))
+        : current);
+      setNotice("Your post has been deleted.");
+    } catch (deleteError) {
+      setError(deleteError?.message || "The post could not be deleted.");
+    }
+  }, [deleteCommunityPost]);
+
 
   // ==========================================================
   // ACTIVE FILTER COUNT
@@ -1036,6 +1105,15 @@ export default function CommunityFeed({
           )}
         </section>
 
+        {notice ? (
+          <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200">{notice}</div>
+        ) : null}
+        {serverSearchError ? (
+          <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-100">{serverSearchError}</div>
+        ) : serverSearchLoading && searchTerm.trim() ? (
+          <p role="status" className="text-xs text-slate-400">Searching Community…</p>
+        ) : null}
+
         {/* ====================================================
             ACTIVE FILTER SUMMARY
         ==================================================== */}
@@ -1350,9 +1428,14 @@ export default function CommunityFeed({
               </button>
             </div>
           ) : (
-            filteredPosts.map((post, postIndex) => {
-              const postId =
-                getPostId(post);
+            filteredPosts.map((post) => {
+              const postId = getPostId(post);
+              const authorUserId = post?.author_user_id ?? post?.author_id ?? post?.user_id ?? post?.author?.id ?? post?.author?._id ?? post?.user?.id ?? post?.user?._id ?? null;
+              const currentUserIds = [user?.id, user?._id, user?.user_id, user?.userId, user?.sub]
+                .filter((value) => value !== undefined && value !== null && String(value).trim())
+                .map(String);
+              const isOwnPost = authorUserId !== null && currentUserIds.includes(String(authorUserId));
+              const menuKey = String(postId || `${getAuthor(post)}-${getTitle(post)}`);
 
               const author =
                 getAuthor(post);
@@ -1379,8 +1462,13 @@ export default function CommunityFeed({
                 getShareCount(post);
 
               return (
-                <React.Fragment key={postId || `${author}-${getTitle(post)}`}>
                 <article
+                  key={
+                    postId ||
+                    `${author}-${getTitle(
+                      post
+                    )}`
+                  }
                   className="
                     overflow-hidden
                     rounded-[24px]
@@ -1524,29 +1612,33 @@ export default function CommunityFeed({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        className="
-                          flex
-                          h-8
-                          w-8
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-lg
-                          text-slate-400
-                          transition
-                          hover:bg-slate-100
-                          hover:text-slate-700
-                          dark:hover:bg-white/5
-                          dark:hover:text-white
-                        "
-                        aria-label="Post options"
-                      >
-                        <ChevronDown
-                          size={16}
-                        />
-                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setPostMenuId((current) => current === menuKey ? "" : menuKey)}
+                          aria-expanded={postMenuId === menuKey}
+                          aria-haspopup="menu"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white"
+                          aria-label="Post options"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                        {postMenuId === menuKey ? (
+                          <>
+                            <button type="button" aria-label="Close post options" className="fixed inset-0 z-20 cursor-default" onClick={() => setPostMenuId("")} />
+                            <div role="menu" className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-slate-900">
+                              {isOwnPost && typeof onEditPost === "function" ? (
+                                <button type="button" role="menuitem" onClick={() => { setPostMenuId(""); onEditPost(post); }} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5">Edit post</button>
+                              ) : null}
+                              {isOwnPost ? (
+                                <button type="button" role="menuitem" onClick={() => { void handleDeletePost(post); }} className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30">Delete post</button>
+                              ) : (
+                                <p className="px-3 py-2 text-[10px] leading-4 text-slate-400">Only the post owner can edit or delete it.</p>
+                              )}
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
 
                     {/* POST CONTENT */}
@@ -1764,10 +1856,6 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 </article>
-                {(postIndex + 1) % 8 === 0 ? (
-                  <CommunityAdCard key={`community-feed-ad-${postIndex + 1}`} />
-                ) : null}
-                </React.Fragment>
               );
             })
           )}
