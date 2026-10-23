@@ -10,9 +10,11 @@ const DEFAULT_SETTINGS = {
   tagline: "",
   about: "",
   logo_url: "",
+  cover_image_url: "",
   hero_image_url: "",
   hero_video_url: "",
   hero_slides: [],
+  service_items: [],
   gallery_items: [],
   social_links: {},
   custom_domain: "",
@@ -25,6 +27,7 @@ const DEFAULT_SETTINGS = {
   seo_description: "",
   whatsapp_number: "",
   show_products: true,
+  show_services: true,
   show_gallery: true,
   show_social_links: true,
   contact_enabled: true,
@@ -210,6 +213,7 @@ export default function BiasharaWebsiteBuilder({ business }) {
       setForm({
         ...settings,
         hero_slides: Array.isArray(settings.hero_slides) ? settings.hero_slides : [],
+        service_items: Array.isArray(settings.service_items) ? settings.service_items : [],
         gallery_items: Array.isArray(settings.gallery_items) ? settings.gallery_items : [],
         social_links: settings.social_links && typeof settings.social_links === "object" ? settings.social_links : {},
       });
@@ -260,6 +264,19 @@ export default function BiasharaWebsiteBuilder({ business }) {
     gallery_items: [...current.gallery_items, { type, url: "", caption: "", alt: "" }].slice(0, 12),
   }));
 
+  const updateServiceItem = (index, field, value) => setForm((current) => ({
+    ...current,
+    service_items: (current.service_items || []).map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item),
+  }));
+  const removeServiceItem = (index) => setForm((current) => ({
+    ...current,
+    service_items: (current.service_items || []).filter((_, itemIndex) => itemIndex !== index),
+  }));
+  const addServiceItem = () => setForm((current) => ({
+    ...current,
+    service_items: [...(current.service_items || []), { title: "", description: "", price_label: "", image_url: "" }].slice(0, 12),
+  }));
+
   const save = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -268,6 +285,7 @@ export default function BiasharaWebsiteBuilder({ business }) {
     const payload = {
       ...form,
       hero_slides: (form.hero_slides || []).filter((item) => item.image_url || item.video_url),
+      service_items: (form.service_items || []).filter((item) => String(item.title || "").trim()),
       gallery_items: (form.gallery_items || []).filter((item) => item.url),
       social_links: Object.fromEntries(SOCIAL_FIELDS.map(([key]) => [key, String(form.social_links?.[key] || "").trim()])),
     };
@@ -278,6 +296,7 @@ export default function BiasharaWebsiteBuilder({ business }) {
       setForm({
         ...settings,
         hero_slides: Array.isArray(settings.hero_slides) ? settings.hero_slides : [],
+        service_items: Array.isArray(settings.service_items) ? settings.service_items : [],
         gallery_items: Array.isArray(settings.gallery_items) ? settings.gallery_items : [],
         social_links: settings.social_links && typeof settings.social_links === "object" ? settings.social_links : {},
       });
@@ -297,7 +316,7 @@ export default function BiasharaWebsiteBuilder({ business }) {
 
   const slug = site?.slug || business?.slug || "";
   const publicPath = site?.url_path || (slug ? "/b/" + slug : "");
-  const previewImage = safePreviewImage(form.hero_image_url) || safePreviewImage(form.hero_slides?.[0]?.image_url);
+  const previewImage = safePreviewImage(form.cover_image_url) || safePreviewImage(form.hero_image_url) || safePreviewImage(form.hero_slides?.[0]?.image_url);
   const previewLogo = safePreviewImage(form.logo_url) || safePreviewImage(business?.logo_url);
   const slidesCount = (form.hero_slides || []).filter((item) => item.image_url || item.video_url).length;
   const galleryCount = (form.gallery_items || []).filter((item) => item.url).length;
@@ -346,7 +365,8 @@ export default function BiasharaWebsiteBuilder({ business }) {
                 </label>
               </Section>
 
-              <Section title="Hero images and videos" description="The homepage changes hero slides automatically every 30 seconds. Add up to eight image/video slides.">
+              <Section title="Hero images and videos" description="Set a strong cover photo, then add optional rotating hero slides and videos.">
+                <ImageField label="Website cover photo" value={form.cover_image_url} onChange={(v) => setField("cover_image_url", v)} onError={setError} maxSide={1800} help="This is the main cover image shown behind your homepage hero. Use a wide, high-quality image." />
                 <ImageField label="Fallback hero image" value={form.hero_image_url} onChange={(v) => setField("hero_image_url", v)} onError={setError} maxSide={1600} />
                 <VideoField label="Fallback hero video (optional)" value={form.hero_video_url} onChange={(v) => setField("hero_video_url", v)} />
                 {(form.hero_slides || []).map((slide, index) => (
@@ -367,6 +387,30 @@ export default function BiasharaWebsiteBuilder({ business }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-xs text-slate-500">{slidesCount} configured slide(s) · Rotates every 30 seconds</p>
                   <button type="button" onClick={addSlide} disabled={(form.hero_slides || []).length >= 8} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><Plus size={15} />Add hero slide</button>
+                </div>
+              </Section>
+
+              <Section title="Services and offerings" description="Show the work you do, service descriptions, optional pricing and supporting images. Add up to twelve services.">
+                {(form.service_items || []).map((item, index) => (
+                  <div key={index} className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-700">Service {index + 1}</p>
+                      <button type="button" onClick={() => removeServiceItem(index)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"><Trash2 size={14} />Remove</button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <TextField label="Service title" value={item.title} maxLength={100} placeholder="e.g. Installation and setup" onChange={(v) => updateServiceItem(index, "title", v)} />
+                      <TextField label="Price label (optional)" value={item.price_label} maxLength={80} placeholder="e.g. From KES 2,000" onChange={(v) => updateServiceItem(index, "price_label", v)} />
+                    </div>
+                    <label className="block">
+                      <span className="mb-1.5 block text-xs font-semibold text-slate-700">Service description</span>
+                      <textarea rows={3} maxLength={600} value={item.description || ""} onChange={(event) => updateServiceItem(index, "description", event.target.value)} placeholder="Explain what is included, who it helps and how customers can book." className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+                    </label>
+                    <ImageField label="Service image (optional)" value={item.image_url || ""} onChange={(v) => updateServiceItem(index, "image_url", v)} onError={setError} maxSide={1200} help="Choose a real photo of the service, team or completed work." />
+                  </div>
+                ))}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500">{(form.service_items || []).length}/12 service(s)</p>
+                  <button type="button" onClick={addServiceItem} disabled={(form.service_items || []).length >= 12} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><Plus size={15} />Add service</button>
                 </div>
               </Section>
 
@@ -439,10 +483,11 @@ export default function BiasharaWebsiteBuilder({ business }) {
               <Section title="Storefront controls">
                 {[
                   ["show_products", "Show products", "Publish active products, images, prices and availability from your catalogue."],
+                  ["show_services", "Show services", "Display your service offerings, descriptions, images and pricing labels."],
                   ["show_gallery", "Show media gallery", "Show gallery images and embedded videos."],
                   ["show_social_links", "Show social links", "Show links to the social profiles you have provided."],
                   ["contact_enabled", "Accept customer inquiries", "Add a contact form and business contact options to the public website."],
-                  ["published", "Publish website", "Make the storefront visible publicly. Only verified, active businesses can save/publish."],
+                  ["published", "Enable public website", "Turn off public visibility without deleting your business, products or saved website design. Only verified, active businesses can publish."],
                 ].map(([key, label, description]) => (
                   <label key={key} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4">
                     <input type="checkbox" checked={Boolean(form[key])} onChange={(event) => setField(key, event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
