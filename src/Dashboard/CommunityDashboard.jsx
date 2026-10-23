@@ -10,8 +10,10 @@ import React, {
 
 import {
   ArrowRight,
+  CalendarDays,
   Compass,
   GraduationCap,
+  Home,
   Leaf,
   Megaphone,
   MapPin,
@@ -32,6 +34,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
@@ -139,6 +142,50 @@ const HUBS = [
     icon: "education",
   },
 ];
+
+const INTENT_TILES = [
+  { value: "buy", label: "Buy", localLabel: "Nunua", detail: "Find useful goods", icon: ShoppingBag, hub: "biashara", accent: "bg-blue-500" },
+  { value: "sell", label: "Sell", localLabel: "Uza", detail: "Offer goods or skills", icon: Target, hub: "biashara", accent: "bg-blue-500" },
+  { value: "learn", label: "Learn", localLabel: "Jifunze", detail: "Find knowledge and skills", icon: GraduationCap, hub: "elimu", accent: "bg-violet-500" },
+  { value: "help", label: "Help", localLabel: "Msaada", detail: "Ask for or offer help", icon: MessageCircle, hub: "community", accent: "bg-cyan-500" },
+  { value: "hire", label: "Hire", localLabel: "Ajiri", detail: "Find people and work", icon: UserPlus, hub: "biashara", accent: "bg-blue-500" },
+  { value: "attend", label: "Events", localLabel: "Tukio", detail: "Find events to attend", icon: CalendarDays, hub: "community", accent: "bg-amber-500" },
+];
+
+const AROUND_YOU_TYPES = new Set([
+  "opportunity",
+  "offer",
+  "request",
+  "event",
+  "help",
+  "help_request",
+  "job",
+  "market",
+  "service_offer",
+  "service_needed",
+  "advertisement",
+  "alert",
+  "question",
+  "knowledge",
+  "resource",
+]);
+
+function getAroundYouKind(post) {
+  const type = getPostType(post);
+  if (["request", "help", "help_request", "service_needed", "question", "alert"].includes(type)) return "Need";
+  if (["offer", "service_offer", "job", "opportunity", "market", "event", "advertisement"].includes(type) || isCommunityPromotion(post)) return "Offer";
+  return "Community";
+}
+
+function getAroundYouAction(post) {
+  const type = getPostType(post);
+  if (type === "event") return "View event";
+  if (["request", "help", "help_request", "service_needed", "question"].includes(type)) return "Respond";
+  if (["job", "opportunity"].includes(type)) return "Explore opportunity";
+  if (["offer", "service_offer", "market", "advertisement"].includes(type) || isCommunityPromotion(post)) return "View offer";
+  return "View details";
+}
+
 
 // ============================================================
 // RESPONSE HELPERS
@@ -426,11 +473,12 @@ export default function CommunityDashboard({
 }) {
   const { user } = useAuth();
 
+  const communityApi = useJumuiyaApi();
   const {
     get,
     getMarketplaceListings,
     reactToCommunityPost,
-  } = useJumuiyaApi();
+  } = communityApi;
 
   // ----------------------------------------------------------
   // Workspace navigation
@@ -447,6 +495,22 @@ export default function CommunityDashboard({
         case "community-hub-community":
           setWorkspacePage("home");
           setActiveSurface("pulse");
+          return;
+
+        case "community-chats":
+        case "chats":
+          setWorkspacePage("chats");
+          return;
+
+        case "community-circles":
+        case "circles":
+          setWorkspacePage("groups");
+          setActiveSurface("groups");
+          return;
+
+        case "community-me":
+        case "me":
+          setWorkspacePage("me");
           return;
 
         case "community-feed":
@@ -532,6 +596,7 @@ export default function CommunityDashboard({
   const [reloadToken, setReloadToken] = useState(0);
 
   const [posts, setPosts] = useState([]);
+  const [selectedBoardPost, setSelectedBoardPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -842,6 +907,16 @@ export default function CommunityDashboard({
     [discoveryIntent],
   );
 
+  const selectIntent = useCallback((intent) => {
+    setDiscoveryQuery("");
+    setSubmittedQuery("");
+    setDiscoveryIntent(intent);
+    setSubmittedIntent(intent);
+    setWorkspacePage("home");
+    setActiveSurface("discovery");
+    setReloadToken((value) => value + 1);
+  }, []);
+
   // ----------------------------------------------------------
   // Post actions
   // ----------------------------------------------------------
@@ -920,6 +995,19 @@ export default function CommunityDashboard({
     [posts],
   );
 
+  const aroundYouItems = useMemo(() => {
+    const matches = posts.filter((post) =>
+      AROUND_YOU_TYPES.has(getPostType(post)) || isCommunityPromotion(post)
+    );
+    if (matches.length) return matches.slice(0, 14);
+    // Intent search results are already filtered by the backend, so retain
+    // those genuine results even when their type is not in the common board set.
+    if (activeSurface === "discovery" && (submittedIntent || submittedQuery)) {
+      return posts.slice(0, 14);
+    }
+    return [];
+  }, [posts, activeSurface, submittedIntent, submittedQuery]);
+
   const actionPosts = useMemo(
     () =>
       posts.filter((post) => {
@@ -956,10 +1044,6 @@ export default function CommunityDashboard({
     return <CommunityNotifications onNavigate={navigate} />;
   }
 
-  if (workspacePage === "groups") {
-    return <CommunityGroups onNavigate={navigate} />;
-  }
-
   if (workspacePage === "marketplace") {
     return <CommunityMarketplace onNavigate={navigate} />;
   }
@@ -981,582 +1065,264 @@ export default function CommunityDashboard({
   }
 
   // ==========================================================
-  // RENDER
+  // INTENT-FIRST MOBILE / DESKTOP WORKSPACE
   // ==========================================================
 
   return (
-    
-      <div className="space-y-5 pb-10">
-
-        {/* ====================================================
-            HERO
-        ==================================================== */}
-
-        <section className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 text-white shadow-lg sm:rounded-[28px] sm:p-6">
-          <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full bg-emerald-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-
-          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-300">
-                  <Sparkles size={13} />
-                  Jumuiya Community
-                </div>
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold ${isOnline ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-amber-300/20 bg-amber-300/10 text-amber-100"}`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? "animate-pulse bg-emerald-300" : "bg-amber-300"}`} />
-                  {isOnline ? "Live · auto-refresh on" : "Offline · waiting to reconnect"}
-                </div>
-              </div>
-
-              <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-                Useful beats noisy.
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
-                A living connection layer for people, knowledge,
-                opportunities, shared interests and meaningful action.
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {[
-                  "Relevance first",
-                  "Real-world context",
-                  "Trust aware",
-                  "Built for action",
-                ].map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold text-white/80"
-                  >
-                    {item}
-                  </span>
-                ))}
+    <div className="min-h-[70vh] w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-3 px-3 pb-28 pt-3 sm:px-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[184px_minmax(0,1fr)_272px]">
+        {/* Desktop left rail */}
+        <aside className="hidden min-w-0 lg:block">
+          <div className="sticky top-4 space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center bg-cyan-500 text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
+                  <Users size={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-black">Jumuiya</span>
+                  <span className="block text-[10px] text-slate-400">Community</span>
+                </span>
               </div>
             </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row xl:flex-col 2xl:flex-row">
-              <button
-                type="button"
-                onClick={openComposer}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-50 active:scale-[0.98]"
-              >
-                <Plus size={16} />
-                Start something
+            <nav aria-label="Community navigation" className="rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">
+              <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "home" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
+                <Home size={16} /> Home
               </button>
-              <button
-                type="button"
-                onClick={() => navigate("community-marketplace")}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
-              >
-                <ShoppingBag size={15} />
-                Explore marketplace
+              <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "groups" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
+                <Users size={16} /> Circles
               </button>
-              <button type="button" onClick={() => navigate("community-people")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10">
-                <User size={15} /> Member directory
+              <button type="button" onClick={openComposer} className="mb-1 flex w-full items-center gap-3 rounded-xl bg-slate-950 px-3 py-3 text-left text-xs font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+                <Plus size={16} /> Create
               </button>
-              <button type="button" onClick={() => navigate("community-invite-members")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-400/15 px-4 py-3 text-xs font-black text-emerald-100 transition hover:bg-emerald-400/25">
-                <UserPlus size={15} /> Invite members
+              <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "chats" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
+                <MessageCircle size={16} /> Chats
               </button>
-              <button
-                type="button"
-                onClick={() => navigate("community-contact-settings")}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black text-white transition hover:bg-white/10 active:scale-[0.98]"
-              >
-                <Settings2 size={15} />
-                Contact settings
+              <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "me" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
+                <User size={16} /> Me
               </button>
+            </nav>
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Quick access</p>
+              <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
+              <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
+              <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
             </div>
           </div>
+        </aside>
 
-          <p className="relative mt-5 border-t border-white/10 pt-4 text-xs font-semibold text-white/50">
-            Welcome back, {displayName}.
-          </p>
-        </section>
-
-        <section className="grid gap-3 md:grid-cols-3">
-          <button type="button" onClick={() => navigate("community-people")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><User size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Member directory</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Find the people contributing to Community.</span></span><ArrowRight size={15} className="text-slate-400"/>
-          </button>
-          <button type="button" onClick={() => navigate("community-invite-members")} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"><UserPlus size={19}/></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">Invite members</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Bring someone new into the circle.</span></span><ArrowRight size={15} className="text-slate-400"/>
-          </button>
-          <div className="flex items-center gap-3 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/20 dark:to-orange-950/20">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm dark:bg-slate-900 dark:text-amber-300"><Megaphone size={19}/></span><span className="min-w-0"><span className="block text-xs font-black text-slate-900 dark:text-white">Community promotions</span><span className="mt-1 block text-[11px] leading-4 text-slate-600 dark:text-slate-400">Clearly marked member ads and offers.</span></span>
-          </div>
-        </section>
-
-        {/* ====================================================
-            SIX PILLARS
-        ==================================================== */}
-
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white">
-                Your Community
-              </h2>
-
-              <p className="mt-1 text-xs text-slate-400">
-                Seven ways to turn connection into value.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]">
-            {PILLARS.map((pillar) => (
-              <PillarButton
-                key={pillar.key}
-                pillar={pillar}
-                active={activeSurface === pillar.key}
-                onClick={() => {
-                  setError("");
-
-                  if (pillar.key === "marketplace") {
-                    setWorkspacePage("marketplace");
-                    return;
-                  }
-
-                  if (pillar.key === "groups") {
-                    setActiveSurface("groups");
-                    setWorkspacePage("groups");
-                    return;
-                  }
-
-                  setWorkspacePage("home");
-                  setActiveSurface(pillar.key);
-                }}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* ====================================================
-            SURFACE HEADER
-        ==================================================== */}
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
-                <ActiveIcon size={20} />
+        {/* Main mobile-first surface */}
+        <main className="min-w-0">
+          {workspacePage === "chats" ? (
+            <CommunityMattersWorkspace api={communityApi} />
+          ) : workspacePage === "groups" ? (
+            <CommunityGroups onNavigate={navigate} />
+          ) : workspacePage === "me" ? (
+            <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900 sm:p-7">
+              <div className="flex items-start gap-4">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center bg-cyan-500 text-lg font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
+                  {displayName.slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">Your Community space</p>
+                  <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-slate-950 dark:text-white">{displayName}</h1>
+                  <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{user?.email || "Email not provided by the active account."}</p>
+                </div>
               </div>
-
-              <div>
-                <h2 className="text-base font-black text-slate-900 dark:text-white">
-                  {activePillar.label}
-                </h2>
-
-                <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  {activePillar.description}
-                </p>
+              <p className="mt-5 text-sm leading-6 text-slate-500 dark:text-slate-400">Manage the contact details you share with other members, discover people, or invite someone into Jumuiya.</p>
+              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                <button type="button" onClick={() => navigate("community-contact-settings")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Contact settings <ArrowRight size={13} className="ml-1 inline" /></button>
+                <button type="button" onClick={() => navigate("community-people")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Member directory <ArrowRight size={13} className="ml-1 inline" /></button>
+                <button type="button" onClick={() => navigate("community-invite-members")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Invite members <ArrowRight size={13} className="ml-1 inline" /></button>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {activeSurface === "pulse" ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {PULSE_MODES.map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      aria-pressed={pulseMode === mode.value}
-                      onClick={() => setPulseMode(mode.value)}
-                      className={`
-                        rounded-full px-3 py-2 text-[10px] font-black transition
-                        ${
-                          pulseMode === mode.value
-                            ? "bg-emerald-600 text-white"
-                            : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                        }
-                      `}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={refresh}
-                disabled={loading || refreshing || activeSurface === "groups"}
-                aria-label="Refresh Community"
-                title="Refresh"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
-              >
-                <RefreshCw
-                  size={15}
-                  className={refreshing ? "animate-spin" : ""}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* ================================================
-              DISCOVERY SEARCH
-          ================================================ */}
-
-          {activeSurface === "discovery" ? (
-            <div className="mt-5 border-t border-slate-100 pt-4 dark:border-white/5">
-              <form
-                onSubmit={submitDiscovery}
-                className="flex flex-col gap-3 md:flex-row"
-              >
-                <div className="relative min-w-0 flex-1">
-                  <Search
-                    size={17}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    type="search"
-                    value={discoveryQuery}
-                    maxLength={100}
-                    onChange={(event) =>
-                      setDiscoveryQuery(event.target.value)
-                    }
-                    placeholder="Search topics, questions and opportunities..."
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-10 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:border-white/10 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-800"
-                  />
-
-                  {discoveryQuery ? (
-                    <button
-                      type="button"
-                      onClick={() => setDiscoveryQuery("")}
-                      aria-label="Clear search"
-                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                    >
-                      <X size={14} />
-                    </button>
-                  ) : null}
-                </div>
-
-                <select
-                  value={discoveryIntent}
-                  onChange={(event) =>
-                    setDiscoveryIntent(event.target.value)
-                  }
-                  className="h-12 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  {INTENTS.map((intent) => (
-                    <option
-                      key={intent.value || "any"}
-                      value={intent.value}
-                    >
-                      {intent.label}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="submit"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-xs font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950"
-                >
-                  <Compass size={15} />
-                  Discover
-                </button>
-              </form>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {[
-                  "business",
-                  "opportunities",
-                  "technology",
-                  "education",
-                  "agriculture",
-                  "services",
-                ].map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => chooseSuggestion(term)}
-                    className="rounded-full border border-slate-200 px-3 py-1.5 text-[10px] font-bold text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-white/10 dark:text-slate-400 dark:hover:bg-emerald-950/20"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </section>
-
-        {/* ====================================================
-            REQUEST ERROR
-        ==================================================== */}
-
-        {error ? (
-          <div
-            role="alert"
-            className="flex items-start justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-500/20 dark:bg-rose-950/20 dark:text-rose-300"
-          >
-            <div>{error}</div>
-
-            <button
-              type="button"
-              onClick={refresh}
-              className="shrink-0 rounded-lg px-2 py-1 underline"
-            >
-              Retry
-            </button>
-          </div>
-        ) : null}
-
-        {activeSurface === "pulse" && marketplaceError ? (
-          <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
-            {marketplaceError}
-          </p>
-        ) : null}
-
-        {activeSurface === "pulse" && promotionPosts.length ? (
-          <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/20 dark:via-slate-900 dark:to-orange-950/10 xl:hidden">
-            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"><Megaphone size={16}/></span><div><h3 className="text-sm font-black text-slate-900 dark:text-white">Community promotions</h3><p className="text-[10px] text-slate-500 dark:text-slate-400">Member offers and sponsored posts</p></div></div><span className="rounded-full border border-amber-200 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-amber-800 dark:border-amber-500/20 dark:text-amber-200">Promoted</span></div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {promotionPosts.slice(0, 2).map((ad, adIndex) => <button key={getPostId(ad) || `mobile-promotion-${adIndex}`} type="button" onClick={() => openPost(ad)} className="rounded-xl border border-amber-200/80 bg-white p-3 text-left transition hover:border-amber-300 dark:border-amber-500/20 dark:bg-slate-900"><span className="text-[9px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">{ad?.is_sponsored === true || ad?.sponsored === true || ad?.ad_status === "active" ? "Sponsored" : "Member promotion"}</span><span className="mt-1 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{ad?.title || ad?.headline || ad?.body || ad?.content || "Community offer"}</span><span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{ad?.author?.name || ad?.author_name || "Community member"}</span></button>)}
-            </div>
-          </section>
-        ) : null}
-
-        {/* ====================================================
-            SURFACE CONTENT
-        ==================================================== */}
-
-        {activeSurface === "groups" ? (
-          <EmptyState
-            icon={Users}
-            title="Groups are built around belonging"
-            description="Persistent groups need group records, membership, roles and join permissions on the backend. Those endpoints are not part of the current Community routes, so this view deliberately does not display fabricated groups or member counts."
-            onAction={openComposer}
-            actionLabel="Start a Community conversation"
-          />
-        ) : loading || (activeSurface === "pulse" && marketplaceLoading && posts.length === 0) ? (
-          <LoadingState />
-        ) : activeSurface === "threads" && threadPosts.length === 0 ? (
-          <EmptyState
-            icon={MessageCircle}
-            title="No focused threads yet"
-            description="Questions, help requests, discussions and project posts will appear here. The current backend can supply those posts; dedicated thread records and resolution states are a subsequent step."
-            onAction={openComposer}
-            actionLabel="Start a conversation"
-          />
-        ) : activeSurface === "actions" && actionPosts.length === 0 ? (
-          <EmptyState
-            icon={Target}
-            title="No actionable opportunities found"
-            description="When the current Community feed contains opportunities, offers, requests, events or help requests, they can be surfaced here."
-            onAction={openComposer}
-            actionLabel="Publish something useful"
-          />
-        ) : activeSurface === "trust" && posts.length === 0 ? (
-          <EmptyState
-            icon={ShieldCheck}
-            title="No results in this view"
-            description="There are no results returned by the current trusted-discovery endpoint. This does not mean a person is untrustworthy; full identity verification and reputation services still need their own backend implementation."
-          />
-        ) : posts.length > 0 || (activeSurface === "pulse" && marketplaceListings.length > 0) ? (
-          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="min-w-0 space-y-5">
-              {(activeSurface === "threads"
-                ? threadPosts
-                : activeSurface === "actions"
-                  ? actionPosts
-                  : posts
-              ).map((post, index) => {
-                const id =
-                  getPostId(post) ||
-                  `${getPostType(post)}-${index}`;
-
-                const reason =
-                  getDiscoveryReason(post);
-
-                return (
-                  <article
-                    key={id}
-                    className="min-w-0"
-                  >
-                    {reason ? (
-                      <div className="mb-2 flex items-center gap-2 px-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                        <Sparkles size={12} />
-                        <span>{reason}</span>
-                      </div>
-                    ) : null}
-
-                    <CommunityPostCard
-                      post={post}
-                      currentUser={user}
-                      onOpen={openPost}
-                      onLike={handleLike}
-                      onComment={openPost}
-                    />
-                  </article>
-                );
-              })}
-
-              {activeSurface === "pulse" ? marketplaceListings.map((listing, index) => (
-                <MarketplaceListingCard
-                  key={listing?.id || listing?._id || `community-marketplace-${index}`}
-                  listing={listing}
-                />
-              )) : null}
-            </div>
-
-            <aside className="hidden space-y-4 xl:block">
-              <section className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles
-                    size={16}
-                    className="text-emerald-500"
-                  />
-
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                    Why this view?
-                  </h3>
-                </div>
-
-                <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  Community prioritizes relevance, useful context and
-                  possible next steps. Raw popularity should not decide
-                  everything a member sees.
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  {[
-                    ["Relevance", "Context matters more than noise."],
-                    ["Connection", "Discover people and knowledge across Jumuiya."],
-                    ["Action", "Move from discussion to a meaningful next step."],
-                    ["Trust", "Confidence should be grounded in real signals."],
-                  ].map(([title, detail]) => (
-                    <div key={title}>
-                      <p className="text-[10px] font-black text-slate-700 dark:text-slate-200">
-                        {title}
-                      </p>
-
-                      <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
-                        {detail}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {promotionPosts.length ? (
-                <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-3.5 dark:border-amber-500/20 dark:from-amber-950/20 dark:to-slate-900 sm:rounded-[22px] sm:p-4">
-                  <div className="flex items-center gap-2"><Megaphone size={15} className="text-amber-700 dark:text-amber-300"/><h3 className="text-sm font-black text-slate-900 dark:text-white">Community promotions</h3></div>
-                  <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Member-submitted promotions from the live feed.</p>
-                  <div className="mt-3 space-y-2">
-                    {promotionPosts.map((ad, adIndex) => (
-                      <button key={getPostId(ad) || `promotion-${adIndex}`} type="button" onClick={() => openPost(ad)} className="w-full rounded-xl border border-amber-200/70 bg-white p-3 text-left transition hover:border-amber-300 hover:shadow-sm dark:border-amber-500/20 dark:bg-slate-900">
-                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{ad?.is_sponsored === true || ad?.sponsored === true || ad?.ad_status === "active" ? "Sponsored" : "Member promotion"}</span>
-                        <span className="mt-2 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{ad?.title || ad?.headline || ad?.body || ad?.content || "Community offer"}</span>
-                        <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{ad?.author?.name || ad?.author_name || "Community member"}</span>
-                      </button>
-                    ))}
+            </section>
+          ) : (
+            <>
+              <header className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">
+                    <Sparkles size={13} /> Jumuiya Community
                   </div>
-                </section>
-              ) : null}
+                  <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (isOnline ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                    <span className={"h-1.5 w-1.5 rounded-full " + (isOnline ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
+                    {isOnline ? "Connected" : "Offline"}
+                  </div>
+                </div>
+                <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">Start with an intention. Find nearby needs and offers, connect through the right Jumuiya hub, and take one useful next step.</p>
+              </header>
 
-              <section className="rounded-2xl border border-slate-200 bg-white p-3.5 dark:border-white/10 dark:bg-slate-900 sm:rounded-[22px] sm:p-4">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                  Connected hubs
-                </h3>
-
-                <p className="mt-1 text-xs leading-5 text-slate-400">
-                  Explore the wider Jumuiya ecosystem.
-                </p>
-
-                <div className="mt-4 space-y-2">
-                  {HUBS.map((hub) => {
-                    const Icon =
-                      hub.icon === "business"
-                        ? Target
-                        : hub.icon === "farm"
-                          ? Leaf
-                          : GraduationCap;
-
+              <section className="mt-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {INTENT_TILES.map((intentTile) => {
+                    const TileIcon = intentTile.icon;
+                    const selected = activeSurface === "discovery" && submittedIntent === intentTile.value;
                     return (
-                      <button
-                        key={hub.key}
-                        type="button"
-                        onClick={() =>
-                          navigate(`community-hub-${hub.key}`)
-                        }
-                        className="flex w-full items-center gap-3 rounded-xl bg-slate-50 px-3 py-3 text-left transition hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/20"
-                      >
-                        <Icon
-                          size={15}
-                          className="text-slate-500 dark:text-slate-400"
-                        />
-
-                        <span className="flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">
-                          {hub.label}
+                      <button key={intentTile.value} type="button" onClick={() => selectIntent(intentTile.value)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
+                        <span className={"absolute inset-x-0 top-0 h-1 " + intentTile.accent} />
+                        <span className={"flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white"}>
+                          <TileIcon size={19} />
                         </span>
-
-                        <ArrowRight
-                          size={14}
-                          className="text-slate-400"
-                        />
+                        <span className="mt-3 block text-sm font-black text-slate-950 dark:text-white">{intentTile.label}</span>
+                        <span className="mt-0.5 block text-[10px] font-black uppercase tracking-[0.1em] text-cyan-700 dark:text-cyan-300">{intentTile.localLabel}</span>
+                        <span className="mt-2 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">{intentTile.detail}</span>
                       </button>
                     );
                   })}
                 </div>
               </section>
-            </aside>
+
+              <form onSubmit={submitDiscovery} className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">
+                <Search size={17} className="ml-2 shrink-0 text-slate-400" />
+                <input type="search" value={discoveryQuery} maxLength={100} onChange={(event) => setDiscoveryQuery(event.target.value)} placeholder="Search needs, offers, skills or places…" className="h-10 min-w-0 flex-1 bg-transparent px-1 text-xs outline-none placeholder:text-slate-400 dark:text-white" />
+                {discoveryQuery ? <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"><X size={14} /></button> : null}
+                <button type="submit" className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-[11px] font-black text-white hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"><Compass size={14} /> Search</button>
+              </form>
+
+              {error ? (
+                <div role="alert" className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-rose-300/30 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:bg-rose-950/20 dark:text-rose-300">
+                  <span>{error}</span>
+                  <button type="button" onClick={refresh} className="shrink-0 underline">Retry</button>
+                </div>
+              ) : null}
+
+              <section className="mt-6">
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">{activeSurface === "discovery" && submittedIntent ? "Around you" : "Around you"}</h2>
+                      <span className="rounded-full bg-slate-200/70 px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs & offers</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{activeSurface === "discovery" && submittedIntent ? "Results for your selected intent." : "Useful opportunities from the live Community service."}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">All activity <ArrowRight size={12} /></button>
+                    <button type="button" onClick={refresh} disabled={loading || refreshing} aria-label="Refresh Around you" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-slate-900"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /></button>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <LoadingState />
+                ) : aroundYouItems.length ? (
+                  <div className="columns-1 gap-3 sm:columns-2">
+                    {aroundYouItems.map((post, index) => {
+                      const id = getPostId(post) || (getPostType(post) + "-" + index);
+                      const hub = getPostHub(post);
+                      const edge = hub === "biashara" ? "bg-blue-500" : hub === "shamba" ? "bg-emerald-500" : hub === "elimu" ? "bg-violet-500" : "bg-cyan-500";
+                      return (
+                        <article key={id} className="relative mb-3 break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900">
+                          <span className={"absolute inset-x-0 top-0 h-1 " + edge} />
+                          <div className="flex items-center justify-between gap-2 pt-1">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{getAroundYouKind(post)}</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">{hub}</span>
+                          </div>
+                          <h3 className="mt-3 line-clamp-2 break-words text-sm font-black leading-5 text-slate-950 dark:text-white">{getPostTitle(post)}</h3>
+                          {getPostBody(post) ? <p className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">{getPostBody(post)}</p> : null}
+                          <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400"><MapPin size={12} />{post?.location || post?.place || post?.area || "Location not shared"}</p>
+                          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
+                            <button type="button" onClick={() => setSelectedBoardPost(post)} className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-xl bg-slate-950 px-3 py-2 text-left text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+                              {getAroundYouAction(post)} <ArrowRight size={13} />
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyState icon={Compass} title="No needs or offers surfaced yet" description={activeSurface === "discovery" ? "The current discovery query returned no matching needs or offers. Try another intent or search term." : "The live Community service has not returned actionable needs or offers for this view. Nothing is fabricated; refresh later or search for a specific intent."} onAction={() => selectIntent("buy")} actionLabel="Explore things to buy" />
+                )}
+              </section>
+            </>
+          )}
+        </main>
+
+        {/* Desktop right-hand context panel */}
+        <aside className="hidden min-w-0 xl:block">
+          <div className="sticky top-4 space-y-3">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Your space</p>
+              <div className="mt-3 flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-cyan-500 text-sm font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>{displayName.slice(0, 2).toUpperCase()}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-black text-slate-950 dark:text-white">{displayName}</span>
+                  <span className="mt-0.5 block text-[10px] text-slate-400">Jumuiya member</span>
+                </span>
+              </div>
+              <button type="button" onClick={() => navigate("community-me")} className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">Open my space <ArrowRight size={12} className="ml-1 inline" /></button>
+            </section>
+
+            {workspacePage === "chats" ? (
+              <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                <h2 className="text-xs font-black text-slate-950 dark:text-white">Matter states</h2>
+                <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Open → Agreed → Done. Matter status, private messages, read state, presence and voice-note support must come from the backend.</p>
+              </section>
+            ) : (
+              <>
+                <section className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+                  <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Shortcuts</p>
+                  <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
+                  <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
+                  <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
+                  <button type="button" onClick={() => navigate("community-feed")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={14} /> All activity</button>
+                </section>
+                {promotionPosts.length ? (
+                  <section className="rounded-2xl border border-amber-300/40 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-950/20">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200"><Megaphone size={14} /><h2 className="text-xs font-black">Community promotions</h2></div>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Promotions are shown only when returned by the live Community service.</p>
+                    <div className="mt-3 space-y-2">
+                      {promotionPosts.map((ad, index) => <button type="button" key={getPostId(ad) || ("promotion-" + index)} onClick={() => setSelectedBoardPost(ad)} className="w-full rounded-xl border border-amber-300/30 bg-white p-3 text-left dark:bg-slate-900"><span className="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">Sponsored / promotion</span><span className="mt-2 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{getPostTitle(ad)}</span></button>)}
+                    </div>
+                  </section>
+                ) : null}
+              </>
+            )}
           </div>
-        ) : (
-          <EmptyState
-            icon={
-              activeSurface === "discovery"
-                ? Compass
-                : activeSurface === "trust"
-                  ? ShieldCheck
-                  : Sparkles
-            }
-            title={
-              activeSurface === "discovery"
-                ? "No matching results"
-                : "Your Pulse is quiet"
-            }
-            description={
-              activeSurface === "discovery"
-                ? "Try another topic or intent. This version ranks Community post candidates; discovering actual businesses, farms, schools and people requires their source services to be connected."
-                : "The API returned no published Community posts for this view. You can be the person who starts the next useful conversation."
-            }
-            onAction={openComposer}
-            actionLabel="Create a post"
-          />
-        )}
-
-        {/* ====================================================
-            MOBILE QUICK ACTIONS
-        ==================================================== */}
-
-        <div className="grid grid-cols-2 gap-3 xl:hidden">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSurface("discovery");
-              setSubmittedQuery(discoveryQuery.trim());
-              setSubmittedIntent(discoveryIntent);
-            }}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"
-          >
-            <Compass size={15} />
-            Discover
-          </button>
-
-          <button
-            type="button"
-            onClick={openComposer}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-black text-white hover:bg-emerald-700"
-          >
-            <Plus size={15} />
-            Create post
-          </button>
-        </div>
+        </aside>
       </div>
+
+      {/* Floating phone navigation dock */}
+      <nav aria-label="Community mobile navigation" className="fixed bottom-3 left-1/2 z-[90] grid w-[min(94vw,420px)] -translate-x-1/2 grid-cols-5 items-end gap-1 rounded-[26px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/15 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 lg:hidden">
+        <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+          <Home size={18} /> Home
+        </button>
+        <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "groups" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+          <Users size={18} /> Circles
+        </button>
+        <button type="button" onClick={openComposer} aria-label="Create a Community post" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-[9px] font-black text-cyan-700 dark:text-cyan-300">
+          <span className="-mt-5 flex h-14 w-14 items-center justify-center bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-600/25 transition active:scale-95" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
+            <Plus size={25} strokeWidth={2.5} />
+          </span>
+          Create
+        </button>
+        <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "chats" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+          <MessageCircle size={18} /> Chats
+        </button>
+        <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "me" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+          <User size={18} /> Me
+        </button>
+      </nav>
+
+      {selectedBoardPost ? (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/65 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setSelectedBoardPost(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="community-board-detail-title" className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-4 dark:border-white/10 sm:p-5">
+              <div className="min-w-0">
+                <span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-700 dark:text-cyan-300">{getAroundYouKind(selectedBoardPost)} · {getPostHub(selectedBoardPost)}</span>
+                <h2 id="community-board-detail-title" className="mt-3 break-words text-lg font-black text-slate-950 dark:text-white">{getPostTitle(selectedBoardPost)}</h2>
+              </div>
+              <button type="button" onClick={() => setSelectedBoardPost(null)} aria-label="Close details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 dark:border-white/10"><X size={16} /></button>
+            </div>
+            <div className="p-4 sm:p-5">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-600 dark:text-slate-300">{getPostBody(selectedBoardPost) || "No further description was shared."}</p>
+              <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400"><MapPin size={14} />{selectedBoardPost?.location || selectedBoardPost?.place || selectedBoardPost?.area || "Location not shared"}</p>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => { setSelectedBoardPost(null); navigate("community-feed"); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-xs font-black text-white dark:bg-cyan-400 dark:text-slate-950">Open Community activity <ArrowRight size={14} /></button>
+                <button type="button" onClick={async () => { try { await handleLike(selectedBoardPost); setSelectedBoardPost(null); } catch (error) { setError(error?.message || "The reaction could not be saved."); } }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-700 dark:border-white/10 dark:text-slate-200"><Sparkles size={14} /> React to this item</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </div>
   );
 }
