@@ -1130,7 +1130,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] [class*="text-white/"] { color:var(--school-surface)!important; opacity:.84; }
         [data-school-website="true"] [class*="border-white/"] { border-color:color-mix(in srgb,var(--school-surface) 24%,transparent)!important; }
         [data-school-website="true"] [class*="bg-white/"] { background-color:color-mix(in srgb,var(--school-surface) 10%,transparent)!important; }
-        [data-school-website="true"] .school-home-contact { background:linear-gradient(115deg,color-mix(in srgb,var(--school-secondary) 55%,var(--school-heading)),color-mix(in srgb,var(--school-primary) 40%,var(--school-heading))); box-shadow:0 20px 50px color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-home-contact { background:linear-gradient(115deg,color-mix(in srgb,var(--school-secondary) 20%,var(--school-heading) 80%),color-mix(in srgb,var(--school-primary) 20%,var(--school-heading) 80%)); box-shadow:0 20px 50px color-mix(in srgb,var(--school-heading) 12%,transparent); }
         [data-school-website="true"] .public-media-card img { transition:transform .55s cubic-bezier(.2,.7,.2,1); aspect-ratio:4/3; object-fit:cover; }
         [data-school-website="true"] .public-media-card:hover img { transform:scale(1.035); }
         [data-school-website="true"] .school-home-page article,[data-school-website="true"] .public-feature-link { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); box-shadow:0 12px 28px color-mix(in srgb,var(--school-heading) 5%,transparent); }
@@ -1188,8 +1188,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .border-emerald-700 { border-color:var(--school-primary)!important; }
         [data-school-website="true"] .from-slate-100 { --tw-gradient-from:var(--school-surface-tint) var(--tw-gradient-from-position)!important; --tw-gradient-to:color-mix(in srgb,var(--school-surface-tint) 0%,transparent) var(--tw-gradient-to-position)!important; }
         [data-school-website="true"] .to-slate-200 { --tw-gradient-to:var(--school-background) var(--tw-gradient-to-position)!important; }
-        [data-school-website="true"] [class~="bg-slate-950/75"] { background-color:color-mix(in srgb,var(--school-secondary) 85%,transparent)!important; }
-        [data-school-website="true"] [class~="bg-slate-950/90"] { background-color:color-mix(in srgb,var(--school-secondary) 92%,transparent)!important; }
+        [data-school-website="true"] [class~="bg-slate-950/75"] { background-color:color-mix(in srgb,var(--school-heading) 85%,transparent)!important; }
+        [data-school-website="true"] [class~="bg-slate-950/90"] { background-color:color-mix(in srgb,var(--school-heading) 92%,transparent)!important; }
         [data-school-website="true"] .text-white { color:var(--school-surface)!important; }
         [data-school-website="true"] [class*="bg-amber-"] { background-color:color-mix(in srgb,var(--school-accent) 12%,var(--school-surface))!important; }
         [data-school-website="true"] [class*="border-amber-"] { border-color:color-mix(in srgb,var(--school-accent) 32%,var(--school-surface))!important; }
