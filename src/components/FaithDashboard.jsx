@@ -8,6 +8,7 @@ import {
   Book,
   BookOpen,
   Bookmark,
+  CalendarDays,
   ChevronRight,
   Clock3,
   Globe,
@@ -26,6 +27,7 @@ import RecommendationsPanel from "./study/RecommendationsPanel.jsx";
 import StudyReader from "./study/StudyReader.jsx";
 import FaithAtlas from "./faith/FaithAtlas.jsx";
 import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
+import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -261,6 +263,11 @@ export default function FaithDashboard({
   const openFaithAcademy = () => {
     setSelectedMaterial(null);
     setFaithSection("premium");
+  };
+
+  const openSDAQuarterly = () => {
+    setSelectedMaterial(null);
+    setFaithSection("quarterly");
   };
 
   const openMaterial = (material) => {
@@ -534,6 +541,18 @@ export default function FaithDashboard({
             <GraduationCap size={16} />
             Academy
           </button>
+          <button
+            type="button"
+            onClick={openSDAQuarterly}
+            className={"inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition " + (
+              faithSection === "quarterly"
+                ? "bg-amber-500 text-white"
+                : "border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-950/50"
+            )}
+          >
+            <CalendarDays size={16} />
+            SDA Quarterly
+          </button>
         </div>
       </div>
     </section>
@@ -641,6 +660,19 @@ export default function FaithDashboard({
       </div>
     );
   }
+  if (faithSection === "quarterly") {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+        {renderStudyHeader(
+          "SDA Quarterly",
+          "Sabbath School lessons in the Faith hub. Choose a quarter, read imported daily lessons, or open the official quarterly source.",
+          closeStudyView
+        )}
+        <SDAQuarterlyWorkspace onOpen={openMaterial} />
+      </div>
+    );
+  }
+
   if (faithSection === "reader") {
     return (
       <div
@@ -1082,10 +1114,10 @@ export default function FaithDashboard({
       <section
         className="
           grid
-          grid-cols-1
+          grid-cols-2
           gap-2
           sm:grid-cols-2
-          xl:grid-cols-4
+          xl:grid-cols-5
         "
       >
         <button
@@ -1307,6 +1339,24 @@ export default function FaithDashboard({
               </p>
             </div>
             <ChevronRight size={18} className="text-indigo-500 transition-transform group-hover:translate-x-1" />
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={openSDAQuarterly}
+          className="group rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/30 dark:to-gray-900 sm:p-4"
+        >
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white sm:h-11 sm:w-11">
+              <CalendarDays size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black text-gray-900 dark:text-white">SDA Quarterly</h3>
+              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
+                Daily Sabbath School lessons and quarter archive.
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-amber-600 transition-transform group-hover:translate-x-1" />
           </div>
         </button>
       </section>
