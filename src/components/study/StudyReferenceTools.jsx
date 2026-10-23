@@ -45,7 +45,22 @@ export default function StudyReferenceTools({
       setError("Bible reading is not available from this view.");
       return;
     }
-    onOpenReference(value);
+
+    // A typed reference goes straight to Bible; a topic opens the best-matching
+    // curated passage instead of sending a topic word to the verse parser.
+    const directReference = /^(?:(?:1|2|3)\\s*)?(?:Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1?\\s?Samuel|1?\\s?Kings|1?\\s?Chronicles|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song of Solomon|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1?\\s?Corinthians|Galatians|Ephesians|Philippians|Colossians|1?\\s?Thessalonians|1?\\s?Timothy|Titus|Philemon|Hebrews|James|1?\\s?Peter|1?\\s?John|Jude|Revelation)\\s+\\d+(?::\\s*\\d+(?:\\s*[–—-]\\s*\\d+)?)?$/i.test(value);
+    if (directReference) {
+      const readyReference = value.includes(":") ? value : value.replace(/\\s*[–—-]\\s*$/, "") + ":1";
+      onOpenReference(readyReference);
+      return;
+    }
+
+    const topicMatch = nodes.find((node) => openableReference(node.reference));
+    if (topicMatch) {
+      onOpenReference(openableReference(topicMatch.reference));
+      return;
+    }
+    setError("No single passage matched that topic. Try a full Bible reference such as John 3:16.");
   };
 
   return (
