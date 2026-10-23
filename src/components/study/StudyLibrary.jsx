@@ -97,7 +97,6 @@ const TOPIC_FILTERS = [
 
 export default function StudyLibrary({
   onOpen,
-  userId,
   initialTopicFilter = "all",
 }) {
   const [materials, setMaterials] =
@@ -171,7 +170,6 @@ export default function StudyLibrary({
       try {
         const url = `${API}/api/study/materials?category=faith&limit=100`;
         const headers = { Accept: "application/json" };
-        if (userId) headers["X-User-ID"] = String(userId);
 
         const res = await fetch(url, {
           method: "GET",
@@ -223,7 +221,7 @@ export default function StudyLibrary({
         setRefreshing(false);
       }
     },
-    [userId]
+    []
   );
 
   useEffect(() => {
