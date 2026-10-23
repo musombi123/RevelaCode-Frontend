@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, ArrowRight, BookOpen, Bookmark, CheckCircle2, ChevronRight,
-  Clock3, CreditCard, ExternalLink, GraduationCap, LoaderCircle, LockKeyhole,
-  MessageCircle, NotebookPen, Plus, RefreshCw, Send, ShieldCheck, Users,
-  Wallet, Check, AlertCircle, Globe2, Trash2, Trophy, CircleHelp,
+  Clock3, CreditCard, ExternalLink, GraduationCap, Loader2, Lock,
+  MessageCircle, FileText, Plus, RefreshCw, Send, ShieldCheck, Users,
+  Wallet, Check, AlertCircle, Globe2, Trash2, Trophy, HelpCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -244,6 +244,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   }, [tab, signedIn, hasPremium, hasGroupTools, events.length, loadEvents]);
 
   async function openCourse(slug) {
+    if (!signedIn) {
+      setError("Sign in to open the structured course preview and save your learning progress.");
+      if (onLogin) onLogin();
+      return;
+    }
     setError("");
     setNotice("");
     setWorking("course");
@@ -556,7 +561,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
 
   const tabItems = [
     { id: "courses", label: "Courses", icon: GraduationCap },
-    { id: "workspace", label: "My workspace", icon: NotebookPen },
+    { id: "workspace", label: "My workspace", icon: FileText },
     { id: "groups", label: "Church groups", icon: Users },
     { id: "briefing", label: "Daily briefing", icon: Globe2 },
     { id: "plans", label: "Plans & access", icon: Wallet },
@@ -566,13 +571,12 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     () => courses.reduce((sum, course) => sum + Number(course.completed_lessons || 0), 0),
     [courses]
   );
-  const activeCourseOptions = _unusedCourseOptions(courses);
 
   function renderLockedCard(title, description, feature) {
     return (
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"><LockKeyhole size={18} /></div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"><Lock size={18} /></div>
           <div className="min-w-0 flex-1">
             <h3 className="font-black text-slate-950 dark:text-white">{title}</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
@@ -585,7 +589,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   }
 
   if (loading) {
-    return <div className="flex min-h-[260px] items-center justify-center gap-3 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={20} /> Loading Faith Academy…</div>;
+    return <div className="flex min-h-[260px] items-center justify-center gap-3 text-sm text-slate-500"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div>;
   }
 
   return (
@@ -722,7 +726,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 </div>
                 {selectedLesson.quiz?.length > 0 && (
                   <section className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
-                    <div className="flex items-center gap-2"><CircleHelp size={17} className="text-indigo-600" /><h4 className="font-black text-slate-900 dark:text-white">Knowledge check</h4></div>
+                    <div className="flex items-center gap-2"><HelpCircle size={17} className="text-indigo-600" /><h4 className="font-black text-slate-900 dark:text-white">Knowledge check</h4></div>
                     <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Answers are graded on the server. You need 70% to pass; explanations are shown after submission.</p>
                     <div className="mt-4 space-y-5">
                       {selectedLesson.quiz.map((item, index) => (
