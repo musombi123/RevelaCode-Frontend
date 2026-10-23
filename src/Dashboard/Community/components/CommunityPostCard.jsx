@@ -680,10 +680,9 @@ export default function CommunityPostCard({
   const handleShare = async () => {
     setShareFeedback("");
 
-    const shareUrl =
-      typeof window !== "undefined"
-        ? window.location.href
-        : "";
+    const shareUrl = postId
+      ? `https://community.revelacode.co.ke/post/${encodeURIComponent(String(postId))}`
+      : "https://community.revelacode.co.ke";
 
     try {
       if (typeof onShare === "function") {
