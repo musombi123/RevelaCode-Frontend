@@ -13,6 +13,8 @@ import {
   RefreshCw,
   AlertCircle,
   GraduationCap,
+  Clock3,
+  BadgeCheck,
 } from "lucide-react";
 
 import {
@@ -31,7 +33,8 @@ const API = (
   import.meta.env.VITE_BACKEND_URL ||
   "https://revelacode-backend.onrender.com"
 ).replace(/\/+$/, "");
-const CACHE_SCOPE = API;
+// Versioned cache prevents an old mixed-hub/demo library from resurfacing.
+const CACHE_SCOPE = `${API}/faith-library-v2`;
 
 /* =========================================================
    NORMALIZE MATERIAL ID
@@ -51,6 +54,44 @@ function resolveMaterialId(material) {
 }
 
 /* =========================================================
+   PRESENTATION HELPERS
+========================================================= */
+
+function materialSummary(material) {
+  const meta = material?.metadata && typeof material.metadata === "object" ? material.metadata : {};
+  const supplied = material?.description || material?.summary || meta.editorial_summary;
+  if (typeof supplied === "string" && supplied.trim()) return supplied.trim();
+
+  const raw = typeof material?.content === "string" ? material.content : "";
+  const clean = raw
+    .replace(/^\s*#+\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/[*_~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!clean) return "A published Faith study resource.";
+  const firstParagraph = clean.split(/(?<=[.!?])\s+/)[0] || clean;
+  return firstParagraph.length > 190 ? firstParagraph.slice(0, 187).trim() + "…" : firstParagraph;
+}
+
+function materialSources(material) {
+  const meta = material?.metadata && typeof material.metadata === "object" ? material.metadata : {};
+  const sources = material?.sources || meta.sources;
+  return Array.isArray(sources) ? sources.filter((source) => source && typeof source.url === "string") : [];
+}
+
+const TOPIC_FILTERS = [
+  { id: "all", label: "All Faith" },
+  { id: "biblical-literacy", label: "Bible study" },
+  { id: "christian-foundations", label: "Christianity" },
+  { id: "prophecy", label: "Prophecy" },
+  { id: "sda", label: "SDA" },
+  { id: "catholic", label: "Catholic" },
+  { id: "interfaith", label: "Interfaith" },
+  { id: "daily-life", label: "Daily life" },
+];
+
+/* =========================================================
    STUDY LIBRARY
 ========================================================= */
 
@@ -63,6 +104,8 @@ export default function StudyLibrary({
 
   const [search, setSearch] =
     useState("");
+
+  const [topicFilter, setTopicFilter] = useState("all");
 
   const [loading, setLoading] =
     useState(true);
@@ -125,7 +168,7 @@ export default function StudyLibrary({
       setError("");
 
       try {
-        const url = `${API}/api/study/materials`;
+        const url = `${API}/api/study/materials?category=faith&limit=100`;
         const headers = { Accept: "application/json" };
         if (userId) headers["X-User-ID"] = String(userId);
 
@@ -201,6 +244,8 @@ export default function StudyLibrary({
 
     return materials.filter(
       (material) => {
+        if (topicFilter !== "all" && String(material.subcategory || "").toLowerCase() !== topicFilter) return false;
+
         const title =
           String(
             material.title || ""
@@ -225,7 +270,7 @@ export default function StudyLibrary({
         );
       }
     );
-  }, [materials, search]);
+  }, [materials, search, topicFilter]);
 
   /* =======================================================
      OPEN MATERIAL
@@ -303,7 +348,7 @@ export default function StudyLibrary({
           </h2>
 
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Explore your available learning materials.
+            Curated, source-linked study guides for Scripture, prophecy, Christian traditions, interfaith understanding, and daily life.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
@@ -366,6 +411,24 @@ export default function StudyLibrary({
         </div>
       )}
 
+      {/* TOPIC FILTERS */}
+      <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter Faith studies">
+        {TOPIC_FILTERS.map((filter) => (
+          <button
+            key={filter.id}
+            type="button"
+            onClick={() => setTopicFilter(filter.id)}
+            className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold transition ${
+              topicFilter === filter.id
+                ? "border-indigo-600 bg-indigo-600 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
       {/* =================================================
           SEARCH
       ================================================= */}
@@ -412,17 +475,16 @@ export default function StudyLibrary({
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-slate-400">
           {filtered.length}{" "}
-          {filtered.length === 1
-            ? "material"
-            : "materials"}
+          {filtered.length === 1 ? "study" : "studies"} shown
         </p>
 
-        {search && (
+        {(search || topicFilter !== "all") && (
           <button
             type="button"
-            onClick={() =>
-              setSearch("")
-            }
+            onClick={() => {
+              setSearch("");
+              setTopicFilter("all");
+            }}
             className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
           >
             Clear search
@@ -441,15 +503,15 @@ export default function StudyLibrary({
           </div>
 
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            {search
-              ? "No matching materials"
-              : "No study materials yet"}
+            {search || topicFilter !== "all"
+              ? "No matching studies"
+              : "The curated Faith library is not published yet"}
           </h3>
 
           <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-400">
-            {search
-              ? "Try a different search term or clear the search."
-              : "Study materials published to your library will appear here."}
+            {search || topicFilter !== "all"
+              ? "Try another topic or clear the filters."
+              : "An administrator can publish the source-linked starter catalogue from Study Hub Management. Your Bible-reading tools remain available."}
           </p>
         </div>
       ) : (
@@ -486,7 +548,7 @@ export default function StudyLibrary({
                   )
                 }
               >
-                <CardContent className="p-5">
+                <CardContent className="p-4">
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -503,17 +565,35 @@ export default function StudyLibrary({
 
                   {/* Description */}
                   <p className="mt-4 line-clamp-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    {material.description ||
-                      material.content ||
-                      "No description available."}
+                    {materialSummary(material)}
                   </p>
 
                   {/* Metadata */}
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-600 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-400">
                       {material.category ||
                         "General"}
                     </span>
+
+                    {material.tradition && (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-300">
+                        {material.tradition}
+                      </span>
+                    )}
+
+                    {(material.estimated_minutes || material.metadata?.estimated_minutes) && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                        <Clock3 className="h-3 w-3" />
+                        {material.estimated_minutes || material.metadata?.estimated_minutes} min
+                      </span>
+                    )}
+
+                    {materialSources(material).length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+                        <BadgeCheck className="h-3 w-3" />
+                        Sources linked
+                      </span>
+                    )}
 
                     {material.year && (
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -523,7 +603,7 @@ export default function StudyLibrary({
                   </div>
 
                   {/* Footer */}
-                  <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
                     <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                       Open material →
                     </span>
