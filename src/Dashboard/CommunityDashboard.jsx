@@ -539,6 +539,7 @@ export default function CommunityDashboard({
           return;
 
         case "community-composer":
+          setEditingPost(null);
           setComposerCategory("general");
           setWorkspacePage("composer");
           return;
@@ -1284,7 +1285,7 @@ export default function CommunityDashboard({
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {INTENT_TILES.map((intentTile) => {
                     const TileIcon = intentTile.icon;
-                    const selected = activeSurface === "discovery" && submittedIntent === intentTile.value;
+                    const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
                     return (
                       <button key={intentTile.value} type="button" onClick={() => handleIntentTileClick(intentTile)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
                         <span className={"absolute inset-x-0 top-0 h-1 " + intentTile.accent} />
