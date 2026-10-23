@@ -1129,13 +1129,10 @@ export default function CommunityDashboard({
 
   if (workspacePage === "composer") {
     return (
-      <div className="min-w-0">
-        {renderBackMenu()}
-        <CommunityComposer
-          initialPost={editingPost}
-          onNavigate={navigate}
-        />
-      </div>
+      <CommunityComposer
+        initialPost={editingPost}
+        onNavigate={navigate}
+      />
     );
   }
 
@@ -1252,6 +1249,27 @@ export default function CommunityDashboard({
                       {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
                     </div>
                   </div>
+                  <div className="relative">
+                    <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+                      <Menu size={14} /> Menu <ChevronDown size={12} />
+                    </button>
+                    {backMenuOpen ? (
+                      <>
+                        <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
+                        <div role="menu" className="absolute right-0 top-11 z-[100] w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+                          <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
+                            <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
+                          </button>
+                          <div className="my-1 border-t border-slate-100 dark:border-white/10" />
+                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
+                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
+                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("education"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
                 </div>
                 <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">Start with an intention. Find nearby needs and offers, connect through the right Jumuiya hub, and take one useful next step.</p>
