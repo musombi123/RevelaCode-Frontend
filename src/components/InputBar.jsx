@@ -96,6 +96,7 @@ export default function InputBar({
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const [torchOn, setTorchOn] = useState(false);
   const [liveVisionActive, setLiveVisionActive] = useState(false);
   const [liveVisionPrompt, setLiveVisionPrompt] = useState(
@@ -422,17 +423,19 @@ export default function InputBar({
     recognition.lang = voiceLanguage;
     recognition.continuous = false;
     recognition.interimResults = true;
+    setVoiceError("");
     recognition.onstart = () => setListening(true);
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map((result) => result[0]?.transcript || "")
         .join("");
+      if (transcript.trim()) setVoiceError("");
       setText(transcript);
     };
     recognition.onerror = (event) => {
       setListening(false);
       const code = String(event?.error || "unknown");
-      setCameraError(
+      setVoiceError(
         code === "not-allowed" || code === "service-not-allowed"
           ? "Microphone permission was denied. Allow it in browser settings and try again."
           : code === "no-speech"
@@ -910,6 +913,12 @@ export default function InputBar({
           RevelaAI
         </span>
       </div>
+
+      {voiceError && (
+        <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">
+          {voiceError}
+        </p>
+      )}
 
       {!voiceSupported && (
         <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">
