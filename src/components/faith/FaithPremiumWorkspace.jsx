@@ -645,11 +645,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       )}
       {notice && <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200"><CheckCircle2 className="mt-0.5 shrink-0" size={16} /><p className="flex-1 leading-6">{notice}</p><button type="button" onClick={() => setNotice("")} className="text-xs font-bold underline">Dismiss</button></div>}
 
-      <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Faith Academy sections">
+      <nav className="flex gap-1.5 overflow-x-auto pb-1 sm:gap-2" aria-label="Faith Academy sections">
         {tabItems.map((item) => {
           const Icon = item.icon;
           return (
-            <button key={item.id} type="button" onClick={() => { setTab(item.id); setError(""); setNotice(""); }} className={"inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition " + (tab === item.id ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300")}>
+            <button key={item.id} type="button" onClick={() => { setTab(item.id); setError(""); setNotice(""); }} className={"inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-2 text-[11px] font-bold transition sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2.5 sm:text-xs " + (tab === item.id ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300")}>
               <Icon size={15} />{item.label}
             </button>
           );
@@ -659,7 +659,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       {tab === "courses" && !selectedCourse && (
         <div className="space-y-4">
           <SectionHeading eyebrow="Structured learning" title="Courses built for serious study" description="Every course includes objectives, source-linked lessons, assessment questions graded by the backend, and resumable progress. One lesson is available as a free preview." actions={<Button variant="subtle" onClick={() => setTab("plans")}><Wallet size={14} /> Trial & pricing</Button>} />
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
             {[...(courses.length ? courses : [
               { slug: "three-angels-messages", title: "The Three Angels’ Messages — Text, Tradition & Debate", summary: "Read Revelation 14 in context and compare Adventist and alternative Christian interpretations.", level: "Priority · Prophecy", duration_minutes: 75, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
               { slug: "sda-28-fundamental-beliefs", title: "The 28 Fundamental Beliefs — A Complete Adventist Study", summary: "Study all 28 official beliefs with sources, questions, and fair comparison.", level: "Priority · Foundations", duration_minutes: 110, lesson_count: 6, completed_lessons: 0, locked: !hasPremium },
@@ -673,22 +673,22 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               const bIndex = PRIORITY_FAITH_COURSES.indexOf(b.slug);
               return (aIndex < 0 ? 100 : aIndex) - (bIndex < 0 ? 100 : bIndex);
             }).map((course) => (
-              <button key={course.slug} type="button" onClick={() => openCourse(course.slug)} disabled={working === "course"} className="group flex min-h-[195px] flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800">
+              <button key={course.slug} type="button" onClick={() => openCourse(course.slug)} disabled={working === "course"} className="group flex min-h-[150px] flex-col rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-800 sm:min-h-[190px] sm:rounded-2xl sm:p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"><BookOpen size={19} /></span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 sm:h-10 sm:w-10 sm:rounded-xl"><BookOpen size={16} /></span>
                   {course.locked ? <Pill tone="amber"><Lock size={10} className="mr-1" /> Premium</Pill> : course.preview_available ? <Pill tone="green">Preview open</Pill> : <Pill tone="green">Unlocked</Pill>}
                 </div>
-                <p className="mt-3 text-[10px] font-black uppercase tracking-wide text-indigo-600 dark:text-indigo-400">{course.level || "Guided course"} · {course.duration_minutes || 0} min</p>
-                <h3 className="mt-1 text-base font-black text-slate-950 dark:text-white">{course.title}</h3>
-                <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{course.summary}</p>
-                <div className="mt-auto flex items-center justify-between pt-4 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                  <span>{course.completed_lessons || 0} of {course.lesson_count || 0} lessons complete</span><ChevronRight size={16} className="transition group-hover:translate-x-1" />
+                <p className="mt-2 text-[8px] font-black uppercase tracking-wide text-indigo-600 dark:text-indigo-400 sm:mt-3 sm:text-[10px]">{course.level || "Guided course"} · {course.duration_minutes || 0} min</p>
+                <h3 className="mt-1 line-clamp-3 text-xs font-black leading-4 text-slate-950 dark:text-white sm:text-base sm:leading-5">{course.title}</h3>
+                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400 sm:mt-2 sm:text-xs sm:leading-5">{course.summary}</p>
+                <div className="mt-auto flex items-center justify-between gap-1 pt-3 text-[9px] font-bold leading-3 text-indigo-700 dark:text-indigo-300 sm:pt-4 sm:text-xs sm:leading-normal">
+                  <span className="line-clamp-2">{course.completed_lessons || 0}/{course.lesson_count || 0} lessons complete</span><ChevronRight size={14} className="shrink-0 transition group-hover:translate-x-1 sm:size-4" />
                 </div>
               </button>
             ))}
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="flex items-start gap-3"><Trophy size={19} className="mt-0.5 text-amber-500" /><div><h3 className="font-bold text-slate-900 dark:text-white">Progress that means something</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Assessment answers are graded server-side; 70% is the passing mark. Results and completed lessons are attached to the signed-in account, not simply marked complete in the browser.</p></div></div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="flex items-start gap-2 sm:gap-3"><Trophy size={16} className="mt-0.5 shrink-0 text-amber-500 sm:size-5" /><div><h3 className="font-bold text-slate-900 dark:text-white">Progress that means something</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Assessment answers are graded server-side; 70% is the passing mark. Results and completed lessons are attached to the signed-in account, not simply marked complete in the browser.</p></div></div>
           </div>
         </div>
       )}
