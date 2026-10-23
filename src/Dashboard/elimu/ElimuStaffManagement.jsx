@@ -20,6 +20,7 @@ const ROLE_OPTIONS = [
   { value: "bursar", label: "Bursar" },
   { value: "registrar", label: "Registrar" },
   { value: "storekeeper", label: "Storekeeper" },
+  { value: "librarian", label: "School Librarian (optional)" },
 ];
 
 const ROLE_LABELS = {
@@ -29,6 +30,7 @@ const ROLE_LABELS = {
   bursar: "Bursar",
   registrar: "Registrar",
   storekeeper: "Storekeeper",
+  librarian: "School Librarian",
 };
 
 function unwrap(value) {

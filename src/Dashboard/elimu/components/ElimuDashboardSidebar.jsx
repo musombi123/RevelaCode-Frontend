@@ -45,6 +45,8 @@ const NAVIGATION = [
           "bursar",
           "registrar",
           "teacher",
+          "storekeeper",
+          "librarian",
         ],
       },
       {
@@ -134,6 +136,13 @@ const NAVIGATION = [
         roles: ["owner", "principal", "teacher"],
       },
       {
+        id: "exam-centre",
+        label: "Exam Centre",
+        icon: ClipboardCheck,
+        path: "elimu/exams",
+        roles: ["owner", "principal", "registrar"],
+      },
+      {
         id: "attendance",
         label: "Attendance",
         icon: UserCheck,
@@ -177,13 +186,34 @@ const NAVIGATION = [
         label: "Reports",
         icon: BarChart3,
         path: "elimu/reports",
-        roles: [
-          "owner",
-          "principal",
-          "bursar",
-          "registrar",
-          "teacher",
-        ],
+        roles: ["owner", "principal", "registrar", "teacher"],
+      },
+      {
+        id: "finance-reports",
+        label: "Financial reports",
+        icon: Wallet,
+        path: "elimu/reports/fees",
+        roles: ["owner", "principal", "bursar"],
+      },
+    ],
+  },
+
+  {
+    label: "School resources",
+    items: [
+      {
+        id: "inventory",
+        label: "Inventory & stores",
+        icon: ListChecks,
+        path: "elimu/inventory",
+        roles: ["owner", "principal", "storekeeper"],
+      },
+      {
+        id: "library",
+        label: "School library",
+        icon: Library,
+        path: "elimu/library",
+        roles: ["owner", "principal", "librarian"],
       },
     ],
   },
@@ -226,6 +256,8 @@ const ROLE_LABELS = {
   bursar: "Bursar",
   registrar: "Registrar",
   teacher: "Teacher",
+  storekeeper: "Storekeeper",
+  librarian: "School Librarian",
 };
 
 // ============================================================
@@ -266,6 +298,14 @@ function normalizeRole(access) {
     normalized.includes("admission")
   ) {
     return "registrar";
+  }
+
+  if (normalized.includes("storekeeper") || normalized.includes("store keeper")) {
+    return "storekeeper";
+  }
+
+  if (normalized.includes("librarian") || normalized.includes("library")) {
+    return "librarian";
   }
 
   if (

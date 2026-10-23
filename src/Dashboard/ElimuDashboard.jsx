@@ -711,6 +711,17 @@ export default function ElimuDashboard({
           return;
         }
 
+        // Finance and resource roles deliberately do not have the broad
+        // reports.view permission. Their workspaces load only the APIs
+        // granted to them, so do not call the general school dashboard.
+        const accessRole = String(
+          accessResolved.role || accessResolved.membership?.role || ""
+        ).trim().toLowerCase().replace(/[_-]+/g, " ");
+        if (["bursar", "storekeeper", "librarian"].includes(accessRole)) {
+          setDashboard(null);
+          return;
+        }
+
         // GET /api/jumuiya/elimu/dashboard
         const dashboardResponse = await getDashboard({
           signal: controller.signal,
