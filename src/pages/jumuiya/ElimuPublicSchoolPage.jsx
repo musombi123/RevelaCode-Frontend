@@ -1100,8 +1100,16 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .school-hero-community,
         [data-school-website="true"] .school-hero-badge { color:var(--school-secondary-text)!important; }
 
-        [data-school-website="true"] .school-cta-primary { background-color:var(--school-primary)!important; color:var(--school-primary-text)!important; border-color:var(--school-primary)!important; }
+        [data-school-website="true"] .school-cta-primary,
+        [data-school-website="true"] .school-portal-primary,
+        [data-school-website="true"] .school-footer-portal-primary,
+        [data-school-website="true"] .school-fact-actions > .school-fact-action:first-child { background-color:var(--school-primary)!important; color:var(--school-primary-text)!important; border-color:var(--school-primary)!important; }
         [data-school-website="true"] .school-cta-secondary { background-color:var(--school-surface)!important; color:var(--school-primary)!important; border-color:color-mix(in srgb,var(--school-primary) 45%,var(--school-surface))!important; }
+        [data-school-website="true"] .school-section-icon { background-color:color-mix(in srgb,var(--school-primary) 10%,var(--school-surface))!important; color:var(--school-primary)!important; border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface))!important; }
+        [data-school-website="true"] .school-tag { background-color:color-mix(in srgb,var(--school-primary) 9%,var(--school-surface))!important; color:var(--school-primary)!important; border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface))!important; }
+        [data-school-website="true"] .school-nav-link[aria-current="page"] { color:var(--school-primary)!important; }
+        [data-school-website="true"] .school-fact-actions { background-color:color-mix(in srgb,var(--school-primary) 6%,var(--school-surface))!important; }
+        [data-school-website="true"] .school-home-contact { background:linear-gradient(115deg,var(--school-secondary),var(--school-primary))!important; }
         [data-school-website="true"].school-buttons-outline .school-cta-primary { background:transparent!important; color:var(--school-primary)!important; border:1px solid var(--school-primary)!important; }
         [data-school-website="true"].school-buttons-soft .school-cta-primary { background-color:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface))!important; color:var(--school-primary)!important; border-color:transparent!important; }
 
