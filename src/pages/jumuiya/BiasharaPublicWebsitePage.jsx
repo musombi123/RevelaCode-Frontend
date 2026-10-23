@@ -183,7 +183,7 @@ export default function BiasharaPublicWebsitePage() {
     : website.service_items.filter((item) => item && String(item.title || "").trim());
   const openingHoursEntries = Object.entries(business.opening_hours && typeof business.opening_hours === "object" ? business.opening_hours : {})
     .map(([day, value]) => ({
-      day: day.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (char) => char.toUpperCase()),
+      day: day.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
       hours: typeof value === "string" ? value.trim() : value && typeof value === "object"
         ? (value.closed === true ? "Closed" : [value.open, value.close].filter(Boolean).join(" – "))
         : String(value || ""),
