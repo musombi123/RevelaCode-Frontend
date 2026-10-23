@@ -22,5 +22,7 @@ jobs:
         run: npm ci
       - name: Run authentication regressions
         run: npm run test:auth
+      - name: Run RevelaAI dashboard contracts
+        run: node --test tests/revelaai-dashboard-contract.test.mjs
       - name: Build production frontend
         run: npm run build
