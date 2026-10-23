@@ -389,7 +389,7 @@ function PillarButton({
 
         <span
           className={`
-            mt-0.5 block text-[9px] font-semibold
+            mt-0.5 block text-xs font-semibold
             ${active ? "text-white/70" : "text-slate-400"}
           `}
         >
@@ -483,13 +483,13 @@ function MarketplaceListingCard({ listing }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Marketplace</span>
-            <span className="text-[10px] text-slate-400">Community</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Marketplace</span>
+            <span className="text-xs text-slate-400">Community</span>
           </div>
           <h3 className="break-words text-sm font-black text-slate-900 dark:text-white">{title}</h3>
           <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">{description}</p>
           <p className="mt-3 text-base font-black text-slate-950 dark:text-white">{price}</p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400">
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
             {Number.isFinite(quantity) ? <span>{quantity} available</span> : null}
             {location ? <span>{location}</span> : null}
           </div>
@@ -1137,14 +1137,14 @@ export default function CommunityDashboard({
   const renderBackMenu = () => (
     <div className="mb-3 flex justify-end">
       <div className="relative">
-        <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+        <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
           <Menu size={14} /> RevelaCode menu <ChevronDown size={12} />
         </button>
         {backMenuOpen ? (
           <>
             <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
             <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
-              <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+              <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
               <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
                 <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
               </button>
@@ -1229,7 +1229,7 @@ export default function CommunityDashboard({
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-black">Jumuiya</span>
-                  <span className="block text-[10px] text-slate-400">Community</span>
+                  <span className="block text-xs text-slate-400">Community</span>
                 </span>
               </div>
             </div>
@@ -1251,10 +1251,10 @@ export default function CommunityDashboard({
               </button>
             </nav>
             <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Quick access</p>
-              <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
-              <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
-              <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Quick access</p>
+              <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
+              <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
+              <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
             </div>
           </div>
         </aside>
@@ -1273,7 +1273,7 @@ export default function CommunityDashboard({
                   {displayName.slice(0, 2).toUpperCase()}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">Your Community space</p>
+                  <p className="text-xs font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">Your Community space</p>
                   <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-slate-950 dark:text-white">{displayName}</h1>
                   <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{user?.email || "Email not provided by the active account."}</p>
                 </div>
@@ -1289,27 +1289,27 @@ export default function CommunityDashboard({
             <>
               <header className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">
+                  <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">
                     <Sparkles size={13} /> Jumuiya Community
                   </div>
                   <div className="flex items-center gap-2">
-                    <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                    <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
                       <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
                       {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
                     </div>
-                    <button type="button" onClick={() => navigate("community-advertisement")} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900" aria-label="Create a Community advertisement">
+                    <button type="button" onClick={() => navigate("community-advertisement")} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900" aria-label="Create a Community advertisement">
                       <Megaphone size={14} /> Create an ad
                     </button>
                   </div>
                   <div className="relative">
-                    <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+                    <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
                       <Menu size={14} /> Menu <ChevronDown size={12} />
                     </button>
                     {backMenuOpen ? (
                       <>
                         <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
                         <div role="menu" className="absolute right-0 top-11 z-[100] w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
-                          <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+                          <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
                           <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
                             <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
                           </button>
@@ -1335,8 +1335,8 @@ export default function CommunityDashboard({
                   return (
                     <section key={group.key} className="min-w-0">
                       <div className="mb-1.5 px-0.5">
-                        <h2 className="text-[11px] font-black text-slate-900 dark:text-white sm:text-xs">{group.label}</h2>
-                        <p className="mt-0.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{group.detail}</p>
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white sm:text-xs">{group.label}</h2>
+                        <p className="mt-0.5 text-xs leading-4 text-slate-500 dark:text-slate-400">{group.detail}</p>
                       </div>
                       <div className={"grid gap-1.5 " + group.layout}>
                         {groupTiles.map((intentTile) => {
@@ -1355,7 +1355,7 @@ export default function CommunityDashboard({
                               <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white " + (compactLayout ? "" : "mx-auto")}>
                                 <TileIcon size={15} />
                               </span>
-                              <span className={"min-w-0 text-[10px] font-extrabold leading-4 text-slate-900 dark:text-white " + (compactLayout ? "flex-1 truncate" : "w-full truncate text-center")}>{intentTile.label}</span>
+                              <span className={"min-w-0 text-xs font-extrabold leading-4 text-slate-900 dark:text-white " + (compactLayout ? "flex-1 truncate" : "w-full truncate text-center")}>{intentTile.label}</span>
                               {compactLayout ? <ArrowRight size={13} className="shrink-0 text-slate-400" /> : null}
                             </button>
                           );
@@ -1370,7 +1370,7 @@ export default function CommunityDashboard({
                 <Search size={17} className="ml-2 shrink-0 text-slate-400" />
                 <input type="search" value={discoveryQuery} maxLength={100} onChange={(event) => setDiscoveryQuery(event.target.value)} placeholder="Search needs, offers, skills or places…" className="h-10 min-w-0 flex-1 bg-transparent px-1 text-xs outline-none placeholder:text-slate-400 dark:text-white" />
                 {discoveryQuery ? <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"><X size={14} /></button> : null}
-                <button type="submit" className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-[11px] font-black text-white hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"><Compass size={14} /> Search</button>
+                <button type="submit" className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-xs font-black text-white hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"><Compass size={14} /> Search</button>
               </form>
 
               {error ? (
@@ -1391,13 +1391,13 @@ export default function CommunityDashboard({
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">Around you</h2>
-                      <span className="rounded-full bg-slate-200/70 px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs & offers</span>
+                      <span className="rounded-full bg-slate-200/70 px-2 py-1 text-xs font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs & offers</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{activeSurface === "discovery" && (submittedIntent || submittedQuery) ? "Results for your selected intent or search." : activeSurface === "pulse" ? "Relevant posts, needs, offers and Marketplace listings." : `Showing ${({ discovery: "discovery", nearby: "nearby", actions: "opportunities", trust: "trusted discovery", exploration: "exploration", threads: "discussion threads" })[activeSurface] || "Community"} results.`}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <button type="button" onClick={() => setViewsMenuOpen((open) => !open)} aria-expanded={viewsMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Compass size={13} /> Views <ChevronDown size={12} /></button>
+                      <button type="button" onClick={() => setViewsMenuOpen((open) => !open)} aria-expanded={viewsMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Compass size={13} /> Views <ChevronDown size={12} /></button>
                       {viewsMenuOpen ? (
                         <>
                           <button type="button" aria-label="Close Community views" className="fixed inset-0 z-[95] cursor-default" onClick={() => setViewsMenuOpen(false)} />
@@ -1413,20 +1413,20 @@ export default function CommunityDashboard({
                             ].map(([surface, label]) => (
                               <button key={surface} type="button" role="menuitem" onClick={() => selectCommunitySurface(surface)} className={"flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-bold " + (activeSurface === surface ? "bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5")}>
                                 {label}
-                                {activeSurface === surface ? <span className="text-[9px] font-black">Selected</span> : null}
+                                {activeSurface === surface ? <span className="text-xs font-black">Selected</span> : null}
                               </button>
                             ))}
                           </div>
                         </>
                       ) : null}
                     </div>
-                    <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">All activity <ArrowRight size={12} /></button>
+                    <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">All activity <ArrowRight size={12} /></button>
                     <button type="button" onClick={refresh} disabled={loading || refreshing} aria-label="Refresh Around you" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-slate-900"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /></button>
                   </div>
                 </div>
 
                 {marketplaceError && activeSurface === "pulse" ? (
-                  <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[10px] leading-4 text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-100">{marketplaceError}</p>
+                  <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-4 text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-100">{marketplaceError}</p>
                 ) : null}
                 {(loading || (activeSurface === "pulse" && marketplaceLoading && posts.length === 0)) ? (
                   <LoadingState />
@@ -1445,15 +1445,15 @@ export default function CommunityDashboard({
                         <article key={id} className="relative mb-3 break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900">
                           <span className={"absolute inset-x-0 top-0 h-1 " + edge} />
                           <div className="flex items-center justify-between gap-2 pt-1">
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{getAroundYouKind(post)}</span>
-                            <span className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">{hub}</span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{getAroundYouKind(post)}</span>
+                            <span className="text-xs font-black uppercase tracking-[0.1em] text-slate-400">{hub}</span>
                           </div>
                           <h3 className="mt-3 line-clamp-2 break-words text-sm font-black leading-5 text-slate-950 dark:text-white">{getPostTitle(post)}</h3>
                           {getPostBody(post) ? <p className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">{getPostBody(post)}</p> : null}
                           {isMarketplaceListing && priceText ? <p className="mt-3 text-sm font-black text-slate-950 dark:text-white">{priceText}</p> : null}
-                          <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400"><MapPin size={12} />{post?.location || post?.place || post?.area || "Location not shared"}</p>
+                          <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400"><MapPin size={12} />{post?.location || post?.place || post?.area || "Location not shared"}</p>
                           <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-                            <button type="button" onClick={() => { if (isMarketplaceListing) navigate("community-marketplace"); else setSelectedBoardPost(post); }} className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-xl bg-slate-950 px-3 py-2 text-left text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+                            <button type="button" onClick={() => { if (isMarketplaceListing) navigate("community-marketplace"); else setSelectedBoardPost(post); }} className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-xl bg-slate-950 px-3 py-2 text-left text-xs font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
                               {isMarketplaceListing ? "View listing" : getAroundYouAction(post)} <ArrowRight size={13} />
                             </button>
                           </div>
@@ -1474,37 +1474,37 @@ export default function CommunityDashboard({
         <aside className="hidden min-w-0 xl:block">
           <div className="sticky top-4 space-y-3">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Your space</p>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Your space</p>
               <div className="mt-3 flex items-center gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-cyan-500 text-sm font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>{displayName.slice(0, 2).toUpperCase()}</span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-black text-slate-950 dark:text-white">{displayName}</span>
-                  <span className="mt-0.5 block text-[10px] text-slate-400">Jumuiya member</span>
+                  <span className="mt-0.5 block text-xs text-slate-400">Jumuiya member</span>
                 </span>
               </div>
-              <button type="button" onClick={() => navigate("community-me")} className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">Open my space <ArrowRight size={12} className="ml-1 inline" /></button>
+              <button type="button" onClick={() => navigate("community-me")} className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left text-xs font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">Open my space <ArrowRight size={12} className="ml-1 inline" /></button>
             </section>
 
             {workspacePage === "chats" ? (
               <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
                 <h2 className="text-xs font-black text-slate-950 dark:text-white">Matter states</h2>
-                <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Open → Agreed → Done. Matter status, private messages, read state, presence and voice-note support must come from the backend.</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Open → Agreed → Done. Matter status, private messages, read state, presence and voice-note support must come from the backend.</p>
               </section>
             ) : (
               <>
                 <section className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
-                  <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Shortcuts</p>
-                  <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
-                  <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
-                  <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
-                  <button type="button" onClick={() => navigate("community-feed")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-[11px] font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={14} /> All activity</button>
+                  <p className="px-1 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Shortcuts</p>
+                  <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
+                  <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
+                  <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
+                  <button type="button" onClick={() => navigate("community-feed")} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={14} /> All activity</button>
                 </section>
                 {promotionPosts.length ? (
                   <section className="rounded-2xl border border-amber-300/40 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-950/20">
                     <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200"><Megaphone size={14} /><h2 className="text-xs font-black">Community promotions</h2></div>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Promotions are shown only when returned by the live Community service.</p>
+                    <p className="mt-1 text-xs leading-4 text-slate-500 dark:text-slate-400">Promotions are shown only when returned by the live Community service.</p>
                     <div className="mt-3 space-y-2">
-                      {promotionPosts.map((ad, index) => <button type="button" key={getPostId(ad) || ("promotion-" + index)} onClick={() => setSelectedBoardPost(ad)} className="w-full rounded-xl border border-amber-300/30 bg-white p-3 text-left dark:bg-slate-900"><span className="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">Sponsored / promotion</span><span className="mt-2 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{getPostTitle(ad)}</span></button>)}
+                      {promotionPosts.map((ad, index) => <button type="button" key={getPostId(ad) || ("promotion-" + index)} onClick={() => setSelectedBoardPost(ad)} className="w-full rounded-xl border border-amber-300/30 bg-white p-3 text-left dark:bg-slate-900"><span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-black uppercase text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">Sponsored / promotion</span><span className="mt-2 block line-clamp-2 text-xs font-black text-slate-900 dark:text-white">{getPostTitle(ad)}</span></button>)}
                     </div>
                   </section>
                 ) : null}
@@ -1516,22 +1516,22 @@ export default function CommunityDashboard({
 
       {/* Floating phone navigation dock */}
       <nav aria-label="Community mobile navigation" className="fixed bottom-3 left-1/2 z-[90] grid w-[min(94vw,420px)] -translate-x-1/2 grid-cols-5 items-end gap-1 rounded-[26px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/15 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 lg:hidden">
-        <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+        <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <Home size={18} /> Home
         </button>
-        <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "groups" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+        <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "groups" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <Users size={18} /> Circles
         </button>
-        <button type="button" onClick={openComposer} aria-label="Create a Community post" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-[9px] font-black text-cyan-700 dark:text-cyan-300">
+        <button type="button" onClick={openComposer} aria-label="Create a Community post" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-xs font-black text-cyan-700 dark:text-cyan-300">
           <span className="-mt-5 flex h-14 w-14 items-center justify-center bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-600/25 transition active:scale-95" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
             <Plus size={25} strokeWidth={2.5} />
           </span>
           Create
         </button>
-        <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "chats" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+        <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "chats" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <MessageCircle size={18} /> Chats
         </button>
-        <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[9px] font-black " + (workspacePage === "me" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+        <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "me" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <User size={18} /> Me
         </button>
       </nav>
@@ -1541,7 +1541,7 @@ export default function CommunityDashboard({
           <section role="dialog" aria-modal="true" aria-labelledby="community-board-detail-title" className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-4 dark:border-white/10 sm:p-5">
               <div className="min-w-0">
-                <span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-700 dark:text-cyan-300">{getAroundYouKind(selectedBoardPost)} · {getPostHub(selectedBoardPost)}</span>
+                <span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-cyan-700 dark:text-cyan-300">{getAroundYouKind(selectedBoardPost)} · {getPostHub(selectedBoardPost)}</span>
                 <h2 id="community-board-detail-title" className="mt-3 break-words text-lg font-black text-slate-950 dark:text-white">{getPostTitle(selectedBoardPost)}</h2>
               </div>
               <button type="button" onClick={() => setSelectedBoardPost(null)} aria-label="Close details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 dark:border-white/10"><X size={16} /></button>
