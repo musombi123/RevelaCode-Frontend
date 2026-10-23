@@ -201,7 +201,10 @@ export default function StudyLibrary({
             const id = material?.id ?? material?._id ?? material?.material_id ?? material?.materialId ?? null;
             return { ...material, id: id == null ? null : String(id) };
           })
-          .filter((material) => material.id);
+          // Faith's public catalogue shows only content explicitly published by
+          // an administrator or the versioned editorial catalogue. This keeps
+          // legacy demo/test uploads out of the learner-facing experience.
+          .filter((material) => material.id && (material.published === true || Boolean(material?.metadata?.catalog_slug)));
 
         setMaterials(normalized);
         const savedAt = await saveCachedLibrary(CACHE_SCOPE, normalized);
