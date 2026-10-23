@@ -19,6 +19,7 @@ import {
   RefreshCw,
   ShieldCheck,
   UploadCloud,
+  Wallet,
   Image as ImageIcon,
 } from "lucide-react";
 
