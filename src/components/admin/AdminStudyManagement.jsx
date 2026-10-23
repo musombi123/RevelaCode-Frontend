@@ -29,6 +29,8 @@ export default function AdminStudyManagement() {
 
   const [loading, setLoading] = useState(false);
 
+  const [seeding, setSeeding] = useState(false);
+
   const [message, setMessage] = useState("");
 
   function updateField(field, value) {
@@ -170,15 +172,64 @@ export default function AdminStudyManagement() {
 
   }
 
+  async function publishFaithStarterLibrary() {
+    if (seeding) return;
+    setSeeding(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API}/api/study/seed-faith-catalog`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "X-API-KEY": user?.apiKey || "",
+        },
+        credentials: "include",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) {
+        throw new Error(result?.message || result?.error || `Catalogue publish failed (${response.status}).`);
+      }
+
+      const inserted = Number(result.inserted || 0);
+      const updated = Number(result.updated || 0);
+      const skipped = Number(result.skipped_existing || 0);
+      const errors = Array.isArray(result.errors) ? result.errors.length : 0;
+      setMessage(
+        `Faith starter catalogue processed: ${inserted} added, ${updated} refreshed, ${skipped} existing title(s) preserved, ${errors} error(s). Open Faith → Study Library and refresh to load the curated lessons.`
+      );
+    } catch (err) {
+      console.error("Faith catalogue publish error:", err);
+      setMessage(err?.message || "Could not publish the Faith starter catalogue.");
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
 
     <Card className="shadow-lg">
 
       <CardContent className="p-6 space-y-5">
 
-        <h2 className="text-2xl font-bold">
-          Study Hub Management
-        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">
+              Study Hub Management
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
+              Publish original, source-linked Faith lessons into the existing study library. Re-running the action refreshes only RevelaCode-curated records and preserves ordinary uploaded materials.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={publishFaithStarterLibrary}
+            disabled={seeding}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {seeding ? "Publishing catalogue…" : "Publish Faith starter studies"}
+          </button>
+        </div>
 
         {message && (
 

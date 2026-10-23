@@ -1595,9 +1595,58 @@ export default function StudyReader({
                     </p>
                   </div>
 
+                  {(material.description || material.summary || material.metadata?.editorial_summary) && (
+                    <p className="mb-6 rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm leading-6 text-indigo-950 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-indigo-100">
+                      {material.description || material.summary || material.metadata?.editorial_summary}
+                    </p>
+                  )}
+
                   {renderStudyContent(
                     material.content
                   )}
+
+                  {(material.tradition || material.metadata?.tradition) && (
+                    <div className="mt-8 rounded-xl border border-violet-200 bg-violet-50/60 px-4 py-3 dark:border-violet-900/40 dark:bg-violet-950/20">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+                        Interpretive lens
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-violet-950 dark:text-violet-100">
+                        {material.tradition || material.metadata?.tradition}
+                      </p>
+                    </div>
+                  )}
+
+                  {(() => {
+                    const sourceList = Array.isArray(material.sources)
+                      ? material.sources
+                      : Array.isArray(material.metadata?.sources)
+                      ? material.metadata.sources
+                      : [];
+                    const safeSources = sourceList.filter((source) => source && typeof source.url === "string" && /^https?:\/\//i.test(source.url));
+                    return safeSources.length > 0 ? (
+                      <section className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50 sm:p-5">
+                        <h2 className="text-sm font-black text-slate-900 dark:text-white">Sources & further reading</h2>
+                        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                          Follow these references to check the primary text or the tradition's own published explanation.
+                        </p>
+                        <ul className="mt-3 space-y-2">
+                          {safeSources.map((source, index) => (
+                            <li key={source.url + index}>
+                              <a
+                                href={source.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-start gap-2 text-sm font-semibold leading-5 text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-200"
+                              >
+                                <span aria-hidden="true">↗</span>
+                                <span>{source.label || source.title || source.url}</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    ) : null;
+                  })()}
 
                   {/* End marker */}
 
