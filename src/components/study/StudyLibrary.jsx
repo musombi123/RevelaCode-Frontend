@@ -139,7 +139,7 @@ export default function StudyLibrary({
 
       // Normal navigation is cache-first: no repeated download when a saved
       // library exists. The user can explicitly refresh to check the backend.
-      if (!force && savedCopy && Array.isArray(savedCopy.materials)) {
+      if (!force && savedCopy && Array.isArray(savedCopy.materials) && savedCopy.materials.length > 0) {
         setMaterials(savedCopy.materials);
         setCacheStatus("saved");
         setLastUpdated(savedCopy.savedAt || "");
@@ -204,7 +204,7 @@ export default function StudyLibrary({
           // Faith's public catalogue shows only content explicitly published by
           // an administrator or the versioned editorial catalogue. This keeps
           // legacy demo/test uploads out of the learner-facing experience.
-          .filter((material) => material.id && (material.published === true || Boolean(material?.metadata?.catalog_slug)));
+          .filter((material) => material.id && (material.published === true || (material.published !== false && Boolean(material?.metadata?.catalog_slug))));
 
         setMaterials(normalized);
         const savedAt = await saveCachedLibrary(CACHE_SCOPE, normalized);
