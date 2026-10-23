@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 import {
   Activity,
   AlertTriangle,
@@ -22,19 +23,12 @@ const API_BASE = String(
 
 function authHeaders() {
   if (typeof window === "undefined") return { Accept: "application/json" };
-  try {
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    const type = localStorage.getItem("revelacode_token_type") || "Bearer";
-    return {
-      Accept: "application/json",
-      ...(token ? { Authorization: type + " " + token } : {}),
-    };
-  } catch {
-    return { Accept: "application/json" };
-  }
+  const token = readAccessToken();
+  const type = readTokenType();
+  return {
+    Accept: "application/json",
+    ...(token ? { Authorization: type + " " + token } : {}),
+  };
 }
 
 async function readEndpoint(path, signal) {
