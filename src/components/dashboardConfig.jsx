@@ -1630,17 +1630,29 @@ function HomeDashboard({
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{language === "sw" ? (hasHubHistory ? "Vituo unavyotumia zaidi huwekwa mbele kiotomatiki." : t("Your hubs are ready when you are.")) : language === "fr" ? (hasHubHistory ? "Vos espaces les plus utilisés passent automatiquement en premier." : t("Your hubs are ready when you are.")) : (hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are.")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {frequentHubs.map((hub, index) => {
+      <section aria-label="Quick access to recent hubs" className="space-y-2">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <h2 className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2>
+            <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{hasHubHistory ? "Recently used spaces" : "Start with a connected hub"}</p>
+          </div>
+          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[9px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {frequentHubs.map((hub) => {
             const Icon = hub.icon;
             const uses = Number(hubUsage[hub.key]?.count) || 0;
             return (
-              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group min-w-0 rounded-2xl border " + hub.borderTone + " " + hub.surface + " p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:p-4"} aria-label={"Open " + hub.title}>
-                <div className="flex items-start justify-between gap-1"><span className={"flex h-9 w-9 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}><Icon size={19} strokeWidth={2} /></span>{uses > 0 && index === 0 ? <span className="rounded-full bg-white/80 px-1.5 py-1 text-[9px] font-extrabold text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">TOP</span> : null}</div>
-                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
-                <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + (language === "sw" ? " ziara" : language === "fr" ? " visites" : " visits") : t("Open workspace")}</span>
+              <button
+                key={hub.key}
+                type="button"
+                onClick={() => handleHubOpen(hub.key)}
+                className={"group flex min-h-11 shrink-0 items-center gap-2 rounded-xl border " + hub.borderTone + " " + hub.surface + " px-2.5 py-2 text-left transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"}
+                aria-label={"Open " + hub.title}
+              >
+                <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg " + hub.iconBg + " " + hub.iconTone}><Icon size={15} strokeWidth={2} /></span>
+                <span className="max-w-[8rem] truncate text-[11px] font-extrabold text-slate-900 dark:text-white sm:text-xs">{t(hub.shortTitle)}</span>
+                {uses > 0 ? <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">{formatNumber(uses)}</span> : null}
               </button>
             );
           })}
