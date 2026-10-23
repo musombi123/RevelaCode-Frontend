@@ -1292,6 +1292,13 @@ export default function ElimuDashboardWorkspace({
   const isInventoryCenter = normalizedPath === "elimu/inventory" || normalizedPath === "inventory" || normalizedPath.endsWith("/elimu/inventory");
   const isLibraryCenter = normalizedPath === "elimu/library" || normalizedPath === "library" || normalizedPath.endsWith("/elimu/library");
   const isFinanceReportsCenter = normalizedPath === "elimu/reports/fees" || normalizedPath === "reports/fees" || normalizedPath.endsWith("/elimu/reports/fees");
+  const isBursarFinanceWorkspace = role === "bursar" && [
+    "elimu",
+    "elimu/fees",
+    "fees",
+    "elimu/reports/fees",
+    "reports/fees",
+  ].includes(normalizedPath);
 
   const moduleMeta = getElimuModuleMeta(normalizedPath);
   const isModuleCenter = !isWebsiteCenter && Boolean(moduleMeta);
@@ -1315,6 +1322,14 @@ export default function ElimuDashboardWorkspace({
     [onNavigate, role]
   );
 
+  // A Bursar must never remain on an academic or general-administration route.
+  // Direct links to restricted URLs are returned to the finance dashboard.
+  useEffect(() => {
+    if (role === "bursar" && !canAccessCurrentPath) {
+      handleNavigate("elimu");
+    }
+  }, [role, canAccessCurrentPath, handleNavigate]);
+
   const handleRefresh = useCallback(() => {
     if (typeof onRefresh === "function") {
       return onRefresh();
@@ -1331,8 +1346,9 @@ export default function ElimuDashboardWorkspace({
 
   // The workspace supports dedicated pages as well as role dashboards.
   // Never fall through to the same dashboard when a module path is active.
-  const isSpecialCenter =
-    isRoleAccessDenied || isDocumentCenter || isMediaCenter || isWebsiteCenter || isPortalRequestsCenter || isExamCenter || isInventoryCenter || isLibraryCenter || isFinanceReportsCenter || isModuleCenter;
+  const isSpecialCenter = !isBursarFinanceWorkspace && (
+    isRoleAccessDenied || isDocumentCenter || isMediaCenter || isWebsiteCenter || isPortalRequestsCenter || isExamCenter || isInventoryCenter || isLibraryCenter || isFinanceReportsCenter || isModuleCenter
+  );
 
   const centerTitle = isRoleAccessDenied
     ? "Workspace access restricted"
@@ -1374,13 +1390,13 @@ export default function ElimuDashboardWorkspace({
                     ? "Prepare, submit and review school document records."
                     : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
 
-  const headerActionPath = isSpecialCenter
+  const headerActionPath = isBursarFinanceWorkspace || isSpecialCenter
     ? "elimu"
     : role === "bursar"
       ? "elimu/reports/fees"
       : "elimu/documents";
 
-  const headerActionLabel = isSpecialCenter
+  const headerActionLabel = isBursarFinanceWorkspace || isSpecialCenter
     ? "Dashboard"
     : role === "bursar"
       ? "Financial reports"
@@ -1615,7 +1631,7 @@ export default function ElimuDashboardWorkspace({
                 )
               )}
 
-              {isFinanceReportsCenter && role && canAccessCurrentPath && (
+              {isFinanceReportsCenter && role && canAccessCurrentPath && !isBursarFinanceWorkspace && (
                 <ElimuFinanceReportsWorkspace school={school} onNavigate={handleNavigate} />
               )}
 
@@ -1631,7 +1647,7 @@ export default function ElimuDashboardWorkspace({
                 <ElimuLibraryWorkspace role={role} access={access} school={school} />
               )}
 
-              {isModuleCenter && role && canAccessCurrentPath && !isExamCenter && !isInventoryCenter && !isLibraryCenter && (
+              {isModuleCenter && role && canAccessCurrentPath && !isBursarFinanceWorkspace && !isExamCenter && !isInventoryCenter && !isLibraryCenter && (
                 (normalizedPath === "elimu/staff" || normalizedPath === "staff") ? (
                   <ElimuStaffManagement
                     access={access}

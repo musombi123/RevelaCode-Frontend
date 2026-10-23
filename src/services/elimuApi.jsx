@@ -654,6 +654,12 @@ export function createElimuApiClient({
     returnLibraryLoan: (loanId, data = {}, options) =>
       post(`library/loans/${pathSegment(loanId, "loan ID")}/return`, data, options),
 
+    getFinanceFeeStatus: (params, options) =>
+      get("finance/fee-status", params, options),
+
+    sendSchoolFeeReminder: (data, options) =>
+      post("finance/fee-reminders", data, options),
+
     getSchoolPaymentAccounts: (params, options) =>
       get("finance/payment-accounts", params, options),
 
