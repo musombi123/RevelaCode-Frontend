@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpen, CalendarDays, ExternalLink, LoaderCircle, RefreshCw } from "lucide-react";
+import { BookOpen, CalendarDays, ExternalLink, RefreshCw } from "lucide-react";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -157,7 +157,7 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-12 text-sm font-semibold text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
-          <LoaderCircle size={18} className="animate-spin" /> Loading SDA Quarterly…
+          <RefreshCw size={18} className="animate-spin" /> Loading SDA Quarterly…
         </div>
       ) : sortedMaterials.length ? (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
