@@ -1381,39 +1381,60 @@ export default function AIAssistantDashboard({
 
           const isNetworkFailure =
             error instanceof TypeError ||
-            /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
-          const visibleError = isNetworkFailure
-            ? "RevelaAI is waking up, please wait 20 seconds..."
+            /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
+          const recentContext = currentMessages
+            .filter((item) => item.role === "user" || item.role === "assistant")
+            .slice(-6)
+            .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
+            .join("\n");
+          const localFallback = (freeMode || isNetworkFailure)
+            ? answerLocally(cleaned || userDisplayText, recentContext)
+            : "";
+          const localFallbackNotice = freeMode
+            ? "Free mode is active. This answer was generated locally without a hosted model."
+            : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
+          const visibleText = localFallback
+            ? localFallback + "\n\n" + localFallbackNotice
             : (error?.message || "Request failed. Please try again.");
 
-          setMessages(
-            (previous) => {
-              const updated =
-                previous.map(
-                  (
-                    message
-                  ) =>
-                    message.id ===
-                    loadingId
-                      ? {
-                          ...message,
+          if (localFallback) {
+            void recordConversationTurn({
+              scope: userScope,
+              userText: userDisplayText,
+              assistantText: visibleText,
+              hub: "general",
+              emotion: "neutral",
+            }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
+          }
 
-                          text: visibleError,
-
-                          status:
-                            "error",
-                        }
-                      : message
-                );
-
-              updateChat(
-                chatId,
-                updated
-              );
-
-              return updated;
-            }
-          );
+          setMessages((previous) => {
+            const updated = previous.map((message) => {
+              if (message.id !== loadingId) return message;
+              if (localFallback) {
+                return {
+                  ...message,
+                  text: visibleText,
+                  status: "done",
+                  contentType: "text",
+                  sourcePrompt: userDisplayText,
+                  metadata: {
+                    engine: "revelaai-free-local-rules",
+                    provider: "on-device",
+                    hub: "general",
+                    hubLabel: "General",
+                    network: false,
+                    networkUsed: false,
+                    freeMode: true,
+                    fallback: true,
+                    limitation: "Local templates and calculations, not a hosted language model.",
+                  },
+                };
+              }
+              return { ...message, text: visibleText, status: "error" };
+            });
+            updateChat(chatId, updated);
+            return updated;
+          });
         } finally {
           sendLockRef.current = false;
           if (
