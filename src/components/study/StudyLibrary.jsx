@@ -98,6 +98,7 @@ const TOPIC_FILTERS = [
 export default function StudyLibrary({
   onOpen,
   userId,
+  initialTopicFilter = "all",
 }) {
   const [materials, setMaterials] =
     useState([]);
@@ -105,7 +106,7 @@ export default function StudyLibrary({
   const [search, setSearch] =
     useState("");
 
-  const [topicFilter, setTopicFilter] = useState("all");
+  const [topicFilter, setTopicFilter] = useState(initialTopicFilter || "all");
 
   const [loading, setLoading] =
     useState(true);
@@ -221,6 +222,10 @@ export default function StudyLibrary({
     },
     [userId]
   );
+
+  useEffect(() => {
+    setTopicFilter(initialTopicFilter || "all");
+  }, [initialTopicFilter]);
 
   /* =======================================================
      INITIAL LOAD
