@@ -142,6 +142,178 @@ function Notice({ tone = "blue", children }) {
   return <div className={`rounded-xl border px-3 py-2.5 text-sm ${styles[tone] || styles.blue}`}>{children}</div>;
 }
 
+
+function BiasharaForecastPanel({ business, currency = "KES" }) {
+  const api = useJumuiyaApi();
+  const [horizon, setHorizon] = useState(7);
+  const [targetMargin, setTargetMargin] = useState(25);
+  const [report, setReport] = useState(null);
+  const [loadingForecast, setLoadingForecast] = useState(true);
+  const [forecastError, setForecastError] = useState("");
+
+  const loadForecast = useCallback(async () => {
+    setLoadingForecast(true);
+    setForecastError("");
+    try {
+      if (typeof api.getBiasharaBusinessForecast !== "function") {
+        throw new Error("The business forecast API helper is missing. Update the RevelaCode frontend API client.");
+      }
+      const result = await api.getBiasharaBusinessForecast({
+        forecastDays: horizon,
+        targetMarginPercent: targetMargin,
+      });
+      setReport(result?.report || result?.data || result);
+    } catch (error) {
+      setForecastError(error?.message || "Business forecast could not be loaded.");
+      setReport(null);
+    } finally {
+      setLoadingForecast(false);
+    }
+  }, [api, horizon, targetMargin]);
+
+  useEffect(() => {
+    loadForecast();
+  }, [loadForecast]);
+
+  const revenue = report?.revenue || {};
+  const dailyForecast = Array.isArray(revenue.daily_forecast) ? revenue.daily_forecast : [];
+  const productRows = Array.isArray(report?.products) ? report.products : [];
+  const maximumRevenue = Math.max(1, ...dailyForecast.map((item) => Number(item?.value || 0)));
+  const daysWithSales = Number(report?.sales_days_with_revenue || 0);
+  const projectedRevenue = revenue.available ? money(revenue.projected_total, report?.currency || currency) : "Insufficient history";
+  const confidenceLabel = revenue.available ? Math.round(Number(revenue.confidence || 0) * 100) + "%" : "—";
+
+  return (
+    <div className="space-y-5">
+      <section className="relative isolate overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white shadow-lg sm:p-6">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-sky-400/15 blur-3xl" />
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-sky-300">Biashara Intelligence · Live business records</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Forecast sales. Review pricing. Plan stock.</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Projections use sales already recorded for this business. Pricing guidance compares current selling prices with recorded costs and your selected gross-margin target.</p>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:min-w-[330px]">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-[11px] font-semibold text-slate-300">Forecast horizon</span>
+              <select value={horizon} onChange={(event) => setHorizon(Number(event.target.value))} className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-sky-400">
+                <option value={7}>Next 7 days</option>
+                <option value={14}>Next 14 days</option>
+                <option value={30}>Next 30 days</option>
+                <option value={60}>Next 60 days</option>
+                <option value={90}>Next 90 days</option>
+              </select>
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-[11px] font-semibold text-slate-300">Target gross margin</span>
+              <select value={targetMargin} onChange={(event) => setTargetMargin(Number(event.target.value))} className="min-h-11 w-full rounded-xl border border-white/15 bg-slate-900/80 px-3 text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-sky-400">
+                {[15, 20, 25, 30, 35, 40, 50].map((value) => <option key={value} value={value}>{value}% margin</option>)}
+              </select>
+            </label>
+          </div>
+        </div>
+        <div className="relative z-10 mt-4 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Server-derived forecasts</span>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">{business?.name || report?.business_name || "Current business"}</span>
+          <button type="button" onClick={loadForecast} disabled={loadingForecast} className="ml-auto inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/10 disabled:opacity-60"><RefreshCw size={14} className={loadingForecast ? "animate-spin" : ""} />Refresh forecast</button>
+        </div>
+      </section>
+
+      {forecastError ? <Notice tone="red">{forecastError}</Notice> : null}
+      {loadingForecast && !report ? (
+        <div className="flex min-h-36 items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500"><Loader2 size={18} className="animate-spin" />Calculating forecasts from your recorded business data…</div>
+      ) : null}
+
+      {report ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric label="Recorded sales · last 7 days" value={money(report.actual_last_7_days, report.currency || currency)} helper={Number(report.sales_record_count || 0) + " recorded sale entries in the 90-day window"} />
+            <Metric label={"Projected sales · next " + horizon + " days"} value={projectedRevenue} helper={revenue.available ? "Model output, not guaranteed revenue" : (revenue.reason || "More recorded sales required")} />
+            <Metric label="Forecast confidence" value={confidenceLabel} helper={revenue.available ? "Indicative model confidence based on history and variation" : "Shown only when enough sales history exists"} />
+            <Metric label="Active products reviewed" value={number(productRows.length)} helper={productRows.filter((item) => item.low_stock).length + " at or below their stock threshold"} />
+          </div>
+
+          {revenue.available ? (
+            <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-950">Projected daily sales</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">Forecast from {report.history_start} to {report.history_end}, using recorded sales across {report.history_days} calendar days.</p>
+                </div>
+                <span className="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold capitalize text-indigo-700">{String(revenue.direction || "stable").replaceAll("_", " ")}</span>
+              </div>
+              <div className="mt-5 grid grid-cols-4 gap-3 sm:grid-cols-7">
+                {dailyForecast.map((point, index) => (
+                  <div key={(point.date || "forecast") + ":" + index} className="flex min-w-0 flex-col items-center gap-2">
+                    <div className="flex h-36 w-full items-end justify-center rounded-xl bg-slate-50 p-2">
+                      <div className="w-full max-w-10 rounded-t-lg bg-gradient-to-t from-blue-700 to-sky-400 transition-all duration-500" style={{ height: Math.max(4, Number(point.value || 0) / maximumRevenue * 112) + "px" }} title={money(point.value, report.currency || currency)} />
+                    </div>
+                    <span className="text-center text-[10px] font-semibold text-slate-500">{point.date ? new Intl.DateTimeFormat("en-KE", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(point.date + "T00:00:00Z")) : "Day " + (index + 1)}</span>
+                    <span className="max-w-full truncate text-center text-[10px] font-bold text-slate-800">{money(point.value, report.currency || currency)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs leading-5 text-slate-500">Historical days with recorded revenue: {daysWithSales}. Missing dates in the recorded timeline are treated as zero recorded sales; sales that were never entered into Biashara cannot be included.</p>
+            </section>
+          ) : (
+            <section className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+              <h3 className="font-bold text-amber-950">A reliable revenue forecast is not ready yet</h3>
+              <p className="mt-2 text-sm leading-6 text-amber-900">{revenue.reason || "Record sales on at least three different dates to generate the first projection."}</p>
+              <p className="mt-2 text-xs leading-5 text-amber-800">No forecast number is invented when the recorded business history is too limited.</p>
+            </section>
+          )}
+
+          <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">Price and stock intelligence</p>
+                <h3 className="mt-1 text-xl font-black text-slate-950">Review current product pricing</h3>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">Suggested prices are calculated from your current cost and a {targetMargin}% gross-margin target—not from a fictional future price trend.</p>
+              </div>
+              <span className="inline-flex w-fit rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">{productRows.length} active products</span>
+            </div>
+
+            {productRows.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {productRows.map((product) => (
+                  <article key={product.id} className="min-w-0 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="break-words font-bold text-slate-950">{product.name || "Product"}</h4>
+                        <p className="mt-1 truncate text-xs text-slate-500">{product.category || "Uncategorised"}</p>
+                      </div>
+                      {product.low_stock ? <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700">Low stock</span> : <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Stock OK</span>}
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Current price</p><p className="mt-1 break-words text-sm font-black text-slate-950">{money(product.current_price, product.currency || currency)}</p></div>
+                      <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Recorded cost</p><p className="mt-1 break-words text-sm font-black text-slate-950">{product.cost_price == null ? "Add cost data" : money(product.cost_price, product.currency || currency)}</p></div>
+                      <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Gross margin</p><p className="mt-1 break-words text-sm font-black text-slate-950">{product.gross_margin_percent == null ? "—" : Number(product.gross_margin_percent).toFixed(1) + "%"}</p></div>
+                      <div className="rounded-xl bg-white p-3 ring-1 ring-slate-100"><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Target price</p><p className="mt-1 break-words text-sm font-black text-slate-950">{product.recommended_price == null ? "Need cost data" : money(product.recommended_price, product.currency || currency)}</p></div>
+                    </div>
+                    <div className="mt-3">
+                      {product.pricing_status === "below_target_margin" ? <Notice tone="amber">Current price is below the selected {targetMargin}% gross-margin target, based on recorded cost.</Notice> : product.pricing_status === "target_met" ? <Notice tone="green">Current price meets the selected gross-margin target before other costs.</Notice> : <Notice tone="blue">{product.pricing_status === "cost_required" ? "Add a recorded cost price to review profitability." : "Add a valid selling price to review profitability."}</Notice>}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs">
+                      <span className="text-slate-500">Stock on hand</span><strong className="text-slate-900">{number(product.stock_quantity)}</strong>
+                    </div>
+                    <div className="mt-3 rounded-xl bg-white p-3 ring-1 ring-slate-100">
+                      <div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-800">Demand forecast</span><span className="text-[10px] font-semibold text-slate-500">{product.demand?.available ? Math.round(Number(product.demand.confidence || 0) * 100) + "% confidence" : "Needs history"}</span></div>
+                      {product.demand?.available ? <p className="mt-1 text-xs leading-5 text-slate-600">Projected units over {horizon} days: <strong className="text-slate-900">{number(product.demand.projected_units)}</strong>. Trend: <strong className="capitalize text-slate-900">{String(product.demand.direction || "stable").replaceAll("_", " ")}</strong>.</p> : <p className="mt-1 text-xs leading-5 text-slate-500">{product.demand?.reason || "Record sales for this product on more than one day to generate a demand projection."}</p>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-8 text-center"><h4 className="font-bold text-slate-800">No active products to review</h4><p className="mt-1 text-sm text-slate-500">Add products to the Biashara catalogue to analyse pricing, margins and stock.</p></div>
+            )}
+          </section>
+          <p className="text-[11px] leading-5 text-slate-500">{report.method_note}</p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export default function BiasharaInternalWorkspace({
   route,
   business,
@@ -489,11 +661,7 @@ export default function BiasharaInternalWorkspace({
         ) : null}
 
         {route === "biashara-intelligence" ? (
-          <>
-            <section className="rounded-3xl bg-slate-900 p-5 text-white sm:p-6"><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300"><Sparkles size={22} /></div><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-300">RevelaAI · Biashara</p><h2 className="mt-1 text-xl font-bold">Operational signals from your business data</h2><p className="mt-2 text-sm leading-6 text-slate-300">This panel reports only signals that can be derived from the currently loaded business profile and dashboard response.</p></div></div></section>
-            <div className="grid gap-3 sm:grid-cols-2"><Metric label="Sales returned by API" value={money(totalSales, currency)} /><Metric label="Orders requiring review" value={number(pendingOrders)} /><Metric label="Low-stock product records" value={number(lowStock.length)} /><Metric label="Business profile completeness" value={`${completeness.percentage}%`} /></div>
-            <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80"><h2 className="font-bold text-slate-900">Recommended next steps</h2><div className="mt-3 space-y-3">{lowStock.length ? <Notice tone="amber">Review {lowStock.length} low-stock product record(s) and replenish stock where appropriate.</Notice> : <Notice tone="green">No low-stock product records were returned in the current dashboard response.</Notice>}{pendingOrders ? <Notice tone="blue">Review {number(pendingOrders)} pending or active order(s).</Notice> : null}{completeness.percentage < 100 ? <Notice tone="amber">Complete the business profile to improve identity consistency.</Notice> : null}</div><button type="button" onClick={() => onNavigate?.("ai")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700"><Sparkles size={16} />Open RevelaAI assistant<ChevronRight size={16} /></button></section>
-          </>
+          <BiasharaForecastPanel business={business} currency={currency} />
         ) : null}
 
         {route === "notifications" ? (
