@@ -1206,13 +1206,24 @@ export default function FaithDashboard({
               Open a topic-specific catalogue of guided, source-linked lessons.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => openStudy("all")}
-            className="mt-1 inline-flex w-fit items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-          >
-            All Faith studies <ArrowRight size={14} />
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigateTo("events")}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
+            >
+              <Globe size={14} />
+              Current world events
+              <ArrowRight size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => openStudy("all")}
+              className="inline-flex w-fit items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+              All Faith studies <ArrowRight size={14} />
+            </button>
+          </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
@@ -1222,7 +1233,7 @@ export default function FaithDashboard({
             { id: "sda", label: "SDA perspective" },
             { id: "catholic", label: "Catholic perspective" },
             { id: "interfaith", label: "Islam & Christianity" },
-            { id: "daily-life", label: "Daily faith & facts" },
+            { id: "daily-life", label: "Daily life & reflection" },
           ].map((track) => (
             <button
               key={track.id}
