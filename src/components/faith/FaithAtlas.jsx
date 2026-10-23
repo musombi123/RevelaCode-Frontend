@@ -14,7 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const ATLAS_NODES = [
+export const ATLAS_NODES = [
   {
     id: "daniel-2",
     reference: "Daniel 2:31–45",
@@ -266,6 +266,14 @@ const ATLAS_NODES = [
 
 const FILTERS = ["All", "Prophecy", "Sanctuary", "Worship", "Covenant", "Christian Life", "Hope", "Saved"];
 
+function primaryVerseReference(reference) {
+  const value = String(reference || "").trim().replace(/[–—]/g, "-");
+  const verseMatch = value.match(/^(.+?\s+\d+):(\d+)/);
+  if (verseMatch) return verseMatch[1] + ":" + verseMatch[2];
+  const chapterMatch = value.match(/^(.+?\s+)(\d+)$/);
+  return chapterMatch ? chapterMatch[1] + chapterMatch[2] + ":1" : "";
+}
+
 function readSaved(key) {
   if (typeof window === "undefined") return [];
   try {
@@ -276,7 +284,7 @@ function readSaved(key) {
   }
 }
 
-export default function FaithAtlas({ userId = "guest" }) {
+export default function FaithAtlas({ userId = "guest", onOpenReference }) {
   const storageKey = "revelacode_faith_atlas_saved_v1_" + String(userId || "guest");
   const [savedIds, setSavedIds] = useState(() => readSaved(storageKey));
   const [selectedId, setSelectedId] = useState("daniel-7");
@@ -400,7 +408,7 @@ export default function FaithAtlas({ userId = "guest" }) {
             <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950"><h4 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white"><BookOpen size={16} className="text-indigo-600 dark:text-indigo-300" /> Observe in the passage</h4><ul className="mt-3 space-y-2">{selectedNode.textFocus.map((item) => <li key={item} className="flex gap-2 text-xs leading-5 text-gray-700 dark:text-gray-300"><Check size={14} className="mt-0.5 shrink-0 text-emerald-600" /><span>{item}</span></li>)}</ul></div>
             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20"><h4 className="flex items-center gap-2 text-sm font-black text-amber-900 dark:text-amber-200"><HelpCircle size={16} /> Interpretive study lens</h4><p className="mt-2 text-xs leading-6 text-amber-950/90 dark:text-amber-100/90">{selectedNode.studyLens}</p></div>
             <div className="mt-4"><h4 className="text-sm font-black text-gray-900 dark:text-white">Questions worth investigating</h4><ol className="mt-2 list-inside list-decimal space-y-2">{selectedNode.questions.map((question) => <li key={question} className="text-xs leading-5 text-gray-700 dark:text-gray-300">{question}</li>)}</ol></div>
-            <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={toggleSaved} className={"inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition " + (savedIds.includes(selectedNode.id) ? "border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" : "bg-indigo-600 text-white hover:bg-indigo-700")}><Bookmark size={15} /> {savedIds.includes(selectedNode.id) ? "Saved topic" : "Save topic"}</button><button type="button" onClick={copyStudyPrompt} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"><Sparkles size={15} /> Prepare AI study prompt</button></div>
+            <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => onOpenReference?.(primaryVerseReference(selectedNode.reference))} disabled={!onOpenReference || !primaryVerseReference(selectedNode.reference)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"><BookOpen size={15} /> Open passage in Bible</button><button type="button" onClick={toggleSaved} className={"inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition " + (savedIds.includes(selectedNode.id) ? "border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800")}><Bookmark size={15} /> {savedIds.includes(selectedNode.id) ? "Saved topic" : "Save topic"}</button><button type="button" onClick={copyStudyPrompt} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"><Sparkles size={15} /> Prepare AI study prompt</button></div>
             {copyNotice && <p role="status" className="mt-3 text-xs leading-5 text-gray-600 dark:text-gray-300">{copyNotice}</p>}
             {promptOpen && <textarea readOnly value={buildStudyPrompt()} rows={7} className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs leading-5 text-gray-800 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100" onFocus={(event) => event.target.select()} aria-label="Study prompt to copy into RevelaAI" />}
             <p className="mt-3 text-[11px] leading-5 text-gray-500 dark:text-gray-400">Saved topics currently stay in this browser on this device. Account sync and source-verified AI answers are planned next.</p>
