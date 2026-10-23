@@ -94,8 +94,11 @@ function normalizeState(record, response, restricted = false) {
   if (["error", "failed", "offline", "unavailable", "disabled"].includes(status)) {
     return { label: status === "disabled" ? "Disabled" : "Unavailable", tone: "down" };
   }
-  // A 2xx health endpoint with no state payload is reachable, but not a proof
-  // that every downstream function is operational.
+  // A real dashboard response with returned counters proves the dashboard
+  // operation completed; a generic 2xx without evidence only proves reachability.
+  if (value.counts || ["threats_last_24h", "shields_active", "module_count"].some((key) => value[key] !== undefined)) {
+    return { label: "Online", tone: "good" };
+  }
   return { label: "Reachable", tone: "neutral" };
 }
 
@@ -112,7 +115,7 @@ const TOOLS = [
     name: "Genesis · Core One",
     role: "Signed tools & invention proposals",
     icon: GitBranch,
-    action: "Propose a safe, reviewable invention through Genesis (Core One) that improves RevelaCode ecosystem monitoring. Return the proposal status only; do not activate or merge it.",
+    action: "Create a safe, reviewable tool through Genesis (Core One) that improves RevelaCode ecosystem monitoring. Return the proposal status only; do not activate or merge it.",
   },
   {
     key: "two",
@@ -183,8 +186,8 @@ export default function RevelaAIGuardianDock({ onAction }) {
       const next = {
         mesh: normalizeState(meshData, mesh),
         zero: normalizeState(zeroCore || zero?.payload?.data || zero?.payload, zero),
-        one: normalizeState(oneCore, mesh?.ok ? mesh : null),
-        two: normalizeState(twoCore, mesh?.ok ? mesh : null),
+        one: oneCore ? normalizeState(oneCore, mesh) : { label: "Unreported", tone: "muted" },
+        two: twoCore ? normalizeState(twoCore, mesh) : { label: "Unreported", tone: "muted" },
         meta: normalizeState(meta?.payload?.data || meta?.payload, meta),
         sci: normalizeState(sci?.payload?.data || sci?.payload, sci, true),
         details: {
