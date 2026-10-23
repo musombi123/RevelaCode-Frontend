@@ -1420,7 +1420,7 @@ export default function CommunityDashboard({
                         </>
                       ) : null}
                     </div>
-                    <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">All activity <ArrowRight size={12} /></button>
+                    <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">Community stream <ArrowRight size={12} /></button>
                     <button type="button" onClick={refresh} disabled={loading || refreshing} aria-label="Refresh Around you" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-slate-900"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /></button>
                   </div>
                 </div>
@@ -1515,24 +1515,24 @@ export default function CommunityDashboard({
       </div>
 
       {/* Floating phone navigation dock */}
-      <nav aria-label="Community mobile navigation" className="fixed bottom-3 left-1/2 z-[90] grid w-[min(94vw,420px)] -translate-x-1/2 grid-cols-5 items-end gap-1 rounded-[26px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/15 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 lg:hidden">
+      <nav aria-label="Jumuiya Community navigation" className="fixed bottom-3 left-1/2 z-[90] grid w-[min(94vw,420px)] -translate-x-1/2 grid-cols-5 items-end gap-1 rounded-[26px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/15 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 lg:hidden">
         <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <Home size={18} /> Home
         </button>
         <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "groups" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
-          <Users size={18} /> Circles
+          <Users size={18} /> Networks
         </button>
-        <button type="button" onClick={openComposer} aria-label="Create a Community post" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-xs font-black text-cyan-700 dark:text-cyan-300">
+        <button type="button" onClick={openComposer} aria-label="Create a Jumuiya community matter" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-xs font-black text-cyan-700 dark:text-cyan-300">
           <span className="-mt-5 flex h-14 w-14 items-center justify-center bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-600/25 transition active:scale-95" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
             <Plus size={25} strokeWidth={2.5} />
           </span>
           Create
         </button>
         <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "chats" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
-          <MessageCircle size={18} /> Chats
+          <MessageCircle size={18} /> Matters
         </button>
         <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "me" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
-          <User size={18} /> Me
+          <User size={18} /> My space
         </button>
       </nav>
 
