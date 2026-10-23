@@ -244,7 +244,9 @@ export default function RevelaAIGuardianDock({ onAction }) {
       const next = {
         mesh: normalizeState(meshData, mesh),
         guardian: { label: "On demand", tone: "neutral" },
-        zero: normalizeState(zeroCore || zero?.payload?.data || zero?.payload, zero),
+        // Prefer the dedicated Zero health endpoint; mesh reachability alone must
+        // not mask an unavailable gateway/diagnostics integration.
+        zero: normalizeState(zero?.payload?.data || zero?.payload || zeroCore, zero),
         one: oneCore ? normalizeState(oneCore, mesh) : meshUnavailable ? meshBlockedState : { label: "Unreported", tone: "muted" },
         two: twoCore ? normalizeState(twoCore, mesh) : meshUnavailable ? meshBlockedState : { label: "Unreported", tone: "muted" },
         meta: normalizeState(meta?.payload?.data || meta?.payload, meta),
@@ -272,16 +274,16 @@ export default function RevelaAIGuardianDock({ onAction }) {
       else if (oneCore?.reachable === false) next.one = { label: "Offline", tone: "down" };
       if (twoCore?.reachable === true) next.two = { label: "Online", tone: "good" };
       else if (twoCore?.reachable === false) next.two = { label: "Offline", tone: "down" };
-      if (zeroCore?.reachable === true) next.zero = { label: "Online", tone: "good" };
-      else if (zeroCore?.reachable === false) next.zero = { label: "Offline", tone: "down" };
+      if (zero?.ok && zeroCore?.reachable === true) next.zero = { label: "Online", tone: "good" };
+      else if (zero?.ok && zeroCore?.reachable === false) next.zero = { label: "Offline", tone: "down" };
       setSnapshot(next);
       setCheckedAt(new Date());
 
       const notes = [];
-      if (meshError) notes.push(`Core Mesh: ${meshError}`);
-      if (zeroError) notes.push(`USECT-ZERO: ${zeroError}`);
-      if (sciError) notes.push(`Sci Defend: ${sciError}`);
-      if (next.details.metaReason) notes.push(`Meta Engineer: ${next.details.metaReason}`);
+      if (meshError) notes.push(meshError);
+      if (zeroError) notes.push(zeroError);
+      if (sciError) notes.push(sciError);
+      if (next.details.metaReason) notes.push(next.details.metaReason);
       setRefreshError(notes.join(" "));
     } catch {
       setRefreshError("The live capability snapshot could not be refreshed.");
