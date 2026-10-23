@@ -518,6 +518,8 @@ export default function BibleDashboard({
       deut: "deuteronomy",
       ps: "psalms",
       psa: "psalms",
+      psalm: "psalms",
+      "song of songs": "song of solomon",
       prov: "proverbs",
       matt: "matthew",
       mk: "mark",
