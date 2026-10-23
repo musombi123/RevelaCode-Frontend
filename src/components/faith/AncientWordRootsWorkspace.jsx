@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, Bookmark, Check, ExternalLink, Search, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -657,6 +657,14 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin }) {
     });
   }, [query, language, tradition, savedOnly, savedIds]);
 
+  useEffect(() => {
+    if (visibleRoots.length && !visibleRoots.some((item) => item.id === selectedId)) {
+      setSelectedId(visibleRoots[0].id);
+      setAnswer("");
+      setError("");
+    }
+  }, [visibleRoots, selectedId]);
+
   const toggleSaved = (id) => {
     setSavedIds((current) => {
       const next = current.includes(id) ? current.filter((value) => value !== id) : [...current, id];
@@ -792,22 +800,24 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin }) {
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {visibleRoots.map((item) => (
-              <button key={item.id} type="button" onClick={() => { setSelectedId(item.id); setAnswer(""); setError(""); setNotice(""); }} className={"min-w-0 rounded-xl border p-3 text-left transition " + (selectedId === item.id ? "border-violet-300 bg-violet-50 shadow-sm dark:border-violet-800 dark:bg-violet-950/30" : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700")}>
+              <div key={item.id} className={"min-w-0 rounded-xl border p-3 transition " + (selectedId === item.id ? "border-violet-300 bg-violet-50 shadow-sm dark:border-violet-800 dark:bg-violet-950/30" : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700")}>
                 <div className="flex min-w-0 items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <button type="button" onClick={() => { setSelectedId(item.id); setAnswer(""); setError(""); setNotice(""); }} aria-pressed={selectedId === item.id} className="min-w-0 flex-1 text-left">
                     <p className="text-lg font-bold text-slate-950 dark:text-white" lang={item.language === "Qur'anic Arabic" ? "ar" : item.language === "Koine Greek" ? "el" : "he"} dir={["Biblical Hebrew","Biblical Aramaic"].includes(item.language) ? "rtl" : "auto"}>{item.term}</p>
                     <p className="mt-0.5 truncate text-xs font-bold text-violet-700 dark:text-violet-300">{item.transliteration}</p>
-                  </div>
-                  <button type="button" aria-label={savedIds.includes(item.id) ? "Remove saved word" : "Save word"} onClick={(event) => { event.stopPropagation(); toggleSaved(item.id); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-violet-100 hover:text-violet-700 dark:hover:bg-violet-950/50">
+                  </button>
+                  <button type="button" aria-label={savedIds.includes(item.id) ? "Remove saved word" : "Save word"} aria-pressed={savedIds.includes(item.id)} onClick={() => toggleSaved(item.id)} className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-violet-100 hover:text-violet-700 dark:hover:bg-violet-950/50">
                     {savedIds.includes(item.id) ? <Check size={15} className="text-violet-600 dark:text-violet-300" /> : <Bookmark size={15} />}
                   </button>
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{item.gloss}</p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  <RootPill>{item.language}</RootPill>
-                  {item.traditions.includes("Comparative") && <RootPill>Comparative</RootPill>}
-                </div>
-              </button>
+                <button type="button" onClick={() => { setSelectedId(item.id); setAnswer(""); setError(""); setNotice(""); }} className="mt-2 block w-full text-left">
+                  <p className="line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{item.gloss}</p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <RootPill>{item.language}</RootPill>
+                    {item.traditions.includes("Comparative") && <RootPill>Comparative</RootPill>}
+                  </div>
+                </button>
+              </div>
             ))}
             {visibleRoots.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -818,6 +828,8 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin }) {
         </section>
 
         <section className="min-w-0 space-y-3">
+          {visibleRoots.length > 0 ? (
+            <>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -923,6 +935,14 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin }) {
               <li>Recognize genuine differences calmly without insulting people, erasing disagreements, or declaring a winning religion.</li>
             </ol>
           </section>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+              <Search size={28} className="mx-auto text-slate-400" />
+              <h3 className="mt-3 text-base font-black text-slate-900 dark:text-white">No word selected</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">Adjust the search or filters to find a word to study.</p>
+            </div>
+          )}
         </section>
       </div>
     </div>
