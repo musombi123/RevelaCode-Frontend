@@ -180,6 +180,12 @@ const INTENT_TILES = [
   { value: "attend", label: "Events", detail: "Find events to attend", icon: CalendarDays, hub: "community", accent: "bg-amber-500" },
 ];
 
+const INTENT_GROUPS = [
+  { key: "trade", label: "Trade & Work", detail: "Buy, sell and hire", values: ["buy", "sell", "hire"], layout: "grid-cols-3" },
+  { key: "learning", label: "Learning & Skills", detail: "Knowledge and education", values: ["learn"], layout: "grid-cols-1" },
+  { key: "community", label: "Community Life", detail: "Help and events", values: ["help", "attend"], layout: "grid-cols-2" },
+];
+
 const AROUND_YOU_TYPES = new Set([
   "opportunity",
   "offer",
@@ -1320,23 +1326,44 @@ export default function CommunityDashboard({
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">Start with an intention. Find nearby needs and offers, connect through the right Jumuiya hub, and take one useful next step.</p>
               </header>
 
-              <section className="mt-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {INTENT_TILES.map((intentTile) => {
-                    const TileIcon = intentTile.icon;
-                    const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
-                    return (
-                      <button key={intentTile.value} type="button" onClick={() => handleIntentTileClick(intentTile)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
-                        <span className={"absolute inset-x-0 top-0 h-1 " + intentTile.accent} />
-                        <span className={"flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white"}>
-                          <TileIcon size={19} />
-                        </span>
-                        <span className="mt-3 block text-sm font-black text-slate-950 dark:text-white">{intentTile.label}</span>
-                        <span className="mt-2 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">{intentTile.detail}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+              <section aria-label="Community actions by category" className="mt-3 grid grid-cols-1 gap-3 sm:mt-4 sm:grid-cols-3">
+                {INTENT_GROUPS.map((group) => {
+                  const groupTiles = group.values
+                    .map((value) => INTENT_TILES.find((tile) => tile.value === value))
+                    .filter(Boolean);
+
+                  return (
+                    <section key={group.key} className="min-w-0">
+                      <div className="mb-1.5 px-0.5">
+                        <h2 className="text-[11px] font-black text-slate-900 dark:text-white sm:text-xs">{group.label}</h2>
+                        <p className="mt-0.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">{group.detail}</p>
+                      </div>
+                      <div className={"grid gap-1.5 " + group.layout}>
+                        {groupTiles.map((intentTile) => {
+                          const TileIcon = intentTile.icon;
+                          const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
+                          const compactLayout = group.key === "learning";
+
+                          return (
+                            <button
+                              key={intentTile.value}
+                              type="button"
+                              onClick={() => handleIntentTileClick(intentTile)}
+                              aria-pressed={selected}
+                              className={"group flex min-w-0 items-center gap-2 rounded-xl border bg-white p-2 text-left transition active:scale-[0.99] dark:bg-slate-900 " + (compactLayout ? "min-h-[48px]" : "min-h-[54px] flex-col justify-center") + " " + (selected ? "border-cyan-400 ring-1 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20")}
+                            >
+                              <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white " + (compactLayout ? "" : "mx-auto")}>
+                                <TileIcon size={15} />
+                              </span>
+                              <span className={"min-w-0 text-[10px] font-extrabold leading-4 text-slate-900 dark:text-white " + (compactLayout ? "flex-1 truncate" : "w-full truncate text-center")}>{intentTile.label}</span>
+                              {compactLayout ? <ArrowRight size={13} className="shrink-0 text-slate-400" /> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
               </section>
 
               <form onSubmit={submitDiscovery} className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">
