@@ -123,7 +123,7 @@ function ProgressLine({ status }) {
   );
 }
 
-export default function CommunityMattersWorkspace({ api }) {
+export default function CommunityMattersWorkspace({ api, currentUserId }) {
   const adapter = useMemo(() => createCommunityMattersAdapter(api), [api]);
   const [matterResult, setMatterResult] = useState({
     supported: false,
@@ -345,7 +345,7 @@ export default function CommunityMattersWorkspace({ api }) {
           <div className="flex min-h-[270px] flex-1 flex-col gap-3 bg-slate-50/70 p-4 dark:bg-slate-950/40 sm:p-5">
             {selectedMatter && canLoadMessages && messageResult.items.length ? (
               messageResult.items.map((message, index) => {
-                const mine = String(message?.sender_user_id || message?.author_user_id || "") === String(api?.currentUserId || "");
+                const mine = Boolean(currentUserId) && String(message?.sender_user_id || message?.author_user_id || "") === String(currentUserId);
                 return (
                   <div key={message?.id || message?._id || index} className={"max-w-[88%] rounded-2xl border px-3.5 py-2.5 text-xs leading-5 " + (mine ? "ml-auto border-cyan-300/40 bg-cyan-50 text-slate-800 dark:bg-cyan-950/30 dark:text-slate-100" : "border-slate-200 bg-white text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200")}>
                     {messageText(message)}
