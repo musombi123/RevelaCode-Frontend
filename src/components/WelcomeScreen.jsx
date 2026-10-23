@@ -2,7 +2,7 @@
 import React from "react";
 import {
   ArrowUpRight,
-  AudioLines,
+  Activity,
   BookOpen,
   Code2,
   Eye,
@@ -98,7 +98,7 @@ export default function WelcomeScreen({
           >
             <Mic size={15} />
             Talk to RevelaAI
-            <AudioLines size={14} className="ml-1 opacity-70" />
+            <Activity size={14} className="ml-1 opacity-70" />
           </button>
           <button
             type="button"
