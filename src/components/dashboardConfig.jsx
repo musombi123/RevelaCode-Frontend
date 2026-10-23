@@ -1045,6 +1045,28 @@ const HOME_HUBS = Object.freeze([
   { key: "community", title: "Community", shortTitle: "Community", description: "People, groups and opportunities", icon: Users, surface: "bg-cyan-50 dark:bg-cyan-950/25", iconTone: "text-cyan-700 dark:text-cyan-300", borderTone: "border-cyan-100 dark:border-cyan-900/50", iconBg: "bg-cyan-100 dark:bg-cyan-900/50" },
 ]);
 
+
+const HOME_HUB_GROUPS = Object.freeze([
+  {
+    key: "learn",
+    title: "Learn & Faith",
+    description: "Knowledge, scripture and education",
+    hubKeys: ["faith", "education"],
+  },
+  {
+    key: "grow",
+    title: "Work & Grow",
+    description: "Business, farming and livelihoods",
+    hubKeys: ["biashara", "shamba"],
+  },
+  {
+    key: "community",
+    title: "People & Community",
+    description: "Relationships, groups and opportunities",
+    hubKeys: ["community"],
+  },
+]);
+
 const HOME_HUB_USAGE_KEY = "revelacode_home_hub_usage_v1";
 
 function readHomeHubUsage() {
@@ -1626,59 +1648,56 @@ function HomeDashboard({
       </section>
 
       {/* ==================================================
-          YOUR HUBS
-      ================================================== */}      {/* ==================================================
-          YOUR HUBS
+          YOUR HUBS — COMPACT CATEGORIZED NAVIGATION
       ================================================== */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-4
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-5
-        "
-      >
-        <div>
-          <h2
-            className="
-              text-lg
-              font-black
-              text-gray-900
-              dark:text-white
-            "
-          >
-            {t("Your Hubs")}
-          </h2>
-
-          <p
-            className="
-              mt-1
-              text-sm
-              text-gray-500
-              dark:text-gray-400
-            "
-          >
-            {t("Access the platforms that power your world.")}
-          </p>
+      <section aria-label="Hubs grouped by purpose" className="space-y-3">
+        <div className="px-1">
+          <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-white sm:text-lg">{t("Your Hubs")}</h2>
+          <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400 sm:text-sm">{t("Choose a category, then open the workspace you need.")}</p>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {sortedHubs.map((hub, index) => {
-            const Icon = hub.icon;
-            const uses = Number(hubUsage[hub.key]?.count) || 0;
-            const isMostUsed = hasHubHistory && index === 0 && uses > 0;
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {HOME_HUB_GROUPS.map((group) => {
+            const hubs = sortedHubs.filter((hub) => group.hubKeys.includes(hub.key));
+            if (!hubs.length) return null;
+
             return (
-              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group relative flex min-h-[132px] items-center gap-4 overflow-hidden rounded-2xl border " + hub.borderTone + " bg-white p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-900 dark:hover:border-slate-700 dark:focus-visible:ring-offset-slate-950 sm:p-5"} aria-label={"Open " + hub.title}>
-                <span className={"flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl " + hub.iconBg + " " + hub.iconTone + " transition-transform group-hover:scale-105"}><Icon size={24} strokeWidth={1.9} /></span>
-                <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{t(hub.title)}</span>{isMostUsed ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">{t("Most used")}</span> : null}</span><span className="mt-1.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">{t(hub.description)}</span><span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300">{t("Open workspace")} <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" /></span></span>
-                {uses > 0 ? <span className="hidden shrink-0 text-[10px] font-semibold text-slate-400 sm:block">{formatNumber(uses)} visits</span> : null}
-              </button>
+              <section key={group.key} aria-labelledby={"hub-group-" + group.key} className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4">
+                <div className="mb-2.5">
+                  <h3 id={"hub-group-" + group.key} className="text-xs font-black text-slate-900 dark:text-white sm:text-sm">{t(group.title)}</h3>
+                  <p className="mt-0.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400 sm:text-xs">{t(group.description)}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  {hubs.map((hub) => {
+                    const Icon = hub.icon;
+                    const uses = Number(hubUsage[hub.key]?.count) || 0;
+                    const isMostUsed = hasHubHistory && hub.key === sortedHubs[0]?.key && uses > 0;
+
+                    return (
+                      <button
+                        key={hub.key}
+                        type="button"
+                        onClick={() => handleHubOpen(hub.key)}
+                        className={"group flex min-h-[64px] min-w-0 items-center gap-2.5 rounded-xl border " + hub.borderTone + " bg-white p-2.5 text-left transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-950 dark:focus-visible:ring-offset-slate-950 sm:min-h-[76px] sm:gap-3 sm:p-3"}
+                        aria-label={"Open " + hub.title}
+                      >
+                        <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}>
+                          <Icon size={18} strokeWidth={2} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
+                            {isMostUsed ? <span className="shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">{t("Top")}</span> : null}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-500 dark:text-slate-400 sm:whitespace-normal sm:text-xs">{t(hub.description)}</span>
+                        </span>
+                        <ArrowRight size={14} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-300" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </div>
