@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertCircle,
   MessageCircle,
@@ -11,19 +12,29 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 function readPostId(post) {
-  const value = post?.id ?? post?._id ?? post?.post_id ?? post?.postId;
+  let value = post?.id ?? post?._id ?? post?.post_id ?? post?.postId;
+  if (value && typeof value === "object") value = value.$oid ?? value.oid ?? value.id ?? "";
   if (value === undefined || value === null) return "";
   return String(value).trim();
 }
 
-function asCommentList(value) {
+function asCommentList(value, depth = 0) {
   if (Array.isArray(value)) return value;
-  if (Array.isArray(value?.comments)) return value.comments;
-  if (Array.isArray(value?.items)) return value.items;
-  if (Array.isArray(value?.results)) return value.results;
-  if (Array.isArray(value?.data)) return value.data;
-  if (Array.isArray(value?.data?.comments)) return value.data.comments;
-  if (Array.isArray(value?.data?.items)) return value.data.items;
+  if (!value || typeof value !== "object" || depth > 4) return [];
+
+  // Some deployments wrap the comments array in one or more data/result
+  // envelopes. Walk only known collection keys and leave metadata untouched.
+  const keys = ["comments", "items", "results", "rows", "records", "data", "payload", "result"];
+  for (const key of keys) {
+    if (Array.isArray(value[key])) return value[key];
+  }
+  for (const key of keys) {
+    const nested = value[key];
+    if (nested && typeof nested === "object") {
+      const found = asCommentList(nested, depth + 1);
+      if (found.length) return found;
+    }
+  }
   return [];
 }
 
@@ -245,7 +256,7 @@ export default function CommunityPostComments({
     if (typeof onClose === "function") onClose();
   };
 
-  return (
+  return createPortal((
     <div
       className="fixed inset-0 z-[140] flex items-end justify-center bg-slate-950/65 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       role="presentation"
@@ -368,5 +379,5 @@ export default function CommunityPostComments({
         </form>
       </section>
     </div>
-  );
+  ), document.body);
 }
