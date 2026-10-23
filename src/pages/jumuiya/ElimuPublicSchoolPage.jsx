@@ -1074,6 +1074,11 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .school-fact-label { color:var(--school-body); font-size:.65rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; opacity:.82; }
         [data-school-website="true"] .school-fact-actions { border-top:1px solid color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); background:var(--school-surface-tint); }
         [data-school-website="true"] .school-fact-action { color:var(--school-primary); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); background:var(--school-surface); }
+        [data-school-website="true"] .school-fact-actions > .school-fact-action:first-child { color:var(--school-surface); background:var(--school-primary); border:1px solid var(--school-primary); }
+        [data-school-website="true"].school-buttons-outline .school-fact-actions > .school-fact-action:first-child { color:var(--school-primary); background:transparent; border-color:var(--school-primary); }
+        [data-school-website="true"].school-buttons-soft .school-fact-actions > .school-fact-action:first-child { color:var(--school-primary); background:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); }
+        [data-school-website="true"] .text-emerald-100,[data-school-website="true"] .text-emerald-200,[data-school-website="true"] .text-emerald-300 { color:var(--school-heading)!important; }
+        [data-school-website="true"] .text-emerald-500 { color:var(--school-primary)!important; }
         [data-school-website="true"] .school-statement-panel { border:0; border-top:3px solid var(--school-primary); border-radius:1rem; padding:1.5rem; background:var(--school-surface); box-shadow:0 14px 34px color-mix(in srgb,var(--school-heading) 7%,transparent); }
         [data-school-website="true"] .school-statement-icon { background:color-mix(in srgb,var(--school-primary) 11%,var(--school-surface)); color:var(--school-primary); }
         [data-school-website="true"] .school-motto-quote { border-top:0; border-left:3px solid var(--school-accent); background:var(--school-surface-tint); }
