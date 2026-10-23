@@ -73,6 +73,7 @@ export default function FaithDashboard({
   ======================================================= */
 
   const [faithSection, setFaithSection] = useState("home");
+  const [studyTopic, setStudyTopic] = useState("all");
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [studyReturnSection, setStudyReturnSection] = useState("study");
 
@@ -235,8 +236,9 @@ export default function FaithDashboard({
      INTERNAL STUDY NAVIGATION
   ======================================================= */
 
-  const openStudy = () => {
+  const openStudy = (topic = "all") => {
     setSelectedMaterial(null);
+    setStudyTopic(topic || "all");
     setFaithSection("study");
   };
 
@@ -537,7 +539,7 @@ export default function FaithDashboard({
           closeStudyView
         )}
 
-        <StudyLibrary onOpen={openMaterial} />
+        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} />
       </div>
     );
   }
@@ -1183,7 +1185,7 @@ export default function FaithDashboard({
                 <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">New preview</span>
               </div>
               <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Follow connections across Daniel, Revelation, sanctuary themes, worship, and Christian hopeâ€”with interpretations clearly labeled for investigation.
+                Follow connections across Daniel, Revelation, sanctuary themes, worship, and Christian hope—with interpretations clearly labeled for investigation.
               </p>
             </div>
           </div>
@@ -1192,6 +1194,49 @@ export default function FaithDashboard({
           </button>
         </div>
       </section>
+      {/* =====================================================
+          CURATED STUDY TRACKS
+      ===================================================== */}
+
+      <section className="rounded-2xl border border-gray-200/70 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-base font-black text-gray-900 dark:text-white">Explore study tracks</h2>
+            <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+              Open a topic-specific catalogue of guided, source-linked lessons.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openStudy("all")}
+            className="mt-1 inline-flex w-fit items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            All Faith studies <ArrowRight size={14} />
+          </button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { id: "biblical-literacy", label: "Bible study" },
+            { id: "christian-foundations", label: "Christian foundations" },
+            { id: "prophecy", label: "Prophecy research" },
+            { id: "sda", label: "SDA perspective" },
+            { id: "catholic", label: "Catholic perspective" },
+            { id: "interfaith", label: "Islam & Christianity" },
+            { id: "daily-life", label: "Daily faith & facts" },
+          ].map((track) => (
+            <button
+              key={track.id}
+              type="button"
+              onClick={() => openStudy(track.id)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-300"
+            >
+              {track.label}
+              <ChevronRight size={13} />
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* =====================================================
           CONTINUE WHERE YOU LEFT OFF
       ===================================================== */}
@@ -1428,7 +1473,7 @@ export default function FaithDashboard({
                   group
                   relative
                   flex
-                  min-h-[235px]
+                  min-h-[160px]
                   flex-col
                   overflow-hidden
                   rounded-2xl
@@ -1489,7 +1534,7 @@ export default function FaithDashboard({
                   className="
                     relative
                     z-10
-                    mt-5
+                    mt-3
                     w-fit
                     rounded-full
                     border
@@ -1510,7 +1555,7 @@ export default function FaithDashboard({
                   {tool.badge}
                 </span>
 
-                <div className="relative z-10 mt-3">
+                <div className="relative z-10 mt-2">
                   <h3
                     className="
                       text-lg
@@ -1543,7 +1588,7 @@ export default function FaithDashboard({
                     flex
                     items-center
                     gap-1.5
-                    pt-5
+                    pt-3
                     text-sm
                     font-bold
                     text-indigo-600
