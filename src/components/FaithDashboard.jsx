@@ -757,7 +757,7 @@ export default function FaithDashboard({
         mx-auto
         w-full
         max-w-[1500px]
-        space-y-5
+        space-y-3 sm:space-y-5
       "
     >
       {/* =====================================================
@@ -768,15 +768,16 @@ export default function FaithDashboard({
         className="
           relative
           overflow-hidden
-          rounded-3xl
+          rounded-2xl
           bg-gradient-to-br
-          from-indigo-700
-          via-purple-700
+          from-indigo-800
+          via-indigo-700
           to-violet-800
-          p-5
+          p-3.5
           text-white
-          shadow-xl
-          sm:p-7
+          shadow-lg
+          sm:rounded-3xl
+          sm:p-6
           lg:p-9
         "
       >
@@ -833,10 +834,12 @@ export default function FaithDashboard({
 
           <div
             className="
-              mt-5
+              mt-3
               flex
               flex-col
-              gap-5
+              gap-3
+              sm:mt-5
+              sm:gap-5
               lg:flex-row
               lg:items-end
               lg:justify-between
@@ -845,7 +848,7 @@ export default function FaithDashboard({
             <div>
               <h1
                 className="
-                  text-3xl
+                  text-xl
                   font-black
                   tracking-tight
                   sm:text-4xl
@@ -857,12 +860,23 @@ export default function FaithDashboard({
 
               <p
                 className="
-                  mt-4
+                  mt-2
+
                   max-w-3xl
-                  text-sm
-                  leading-7
+
+                  text-xs
+
+                  leading-5
+
                   text-white/90
-                  sm:text-base
+
+                  sm:mt-4
+
+                  sm:text-sm
+
+                  sm:leading-7
+
+                  lg:text-base
                 "
               >
                 Your connected Scripture workspace for Bible study,
@@ -897,28 +911,73 @@ export default function FaithDashboard({
 
           <div
             className="
-              mt-7
-              flex
-              flex-col
-              gap-3
+              mt-4
+              grid
+              grid-cols-2
+              gap-2
+              sm:mt-6
+              sm:flex
               sm:flex-row
               sm:flex-wrap
             "
           >
             <button
               type="button"
+              onClick={openFaithAcademy}
+              className="
+                group
+                col-span-2
+                inline-flex
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                border
+                border-amber-200/80
+                bg-gradient-to-r
+                from-amber-200
+                to-amber-100
+                px-3
+                py-2.5
+                text-sm
+                font-black
+                text-indigo-950
+                shadow-md
+                transition
+                hover:from-amber-100
+                hover:to-white
+                active:scale-[0.99]
+                sm:w-auto
+                sm:px-5
+                sm:py-3
+              "
+            >
+              <GraduationCap size={17} />
+              Open Faith Academy
+              <ArrowRight size={16} />
+            </button>
+
+            <button
+              type="button"
               onClick={() => navigateTo("bible")}
               className="
                 inline-flex
+                w-full
                 items-center
                 justify-center
                 gap-2
                 rounded-xl
                 bg-white
-                px-5
-                py-3
+                px-2.5
+                py-2.5
+                text-xs
                 font-bold
                 text-indigo-700
+                sm:w-auto
+                sm:px-5
+                sm:py-3
+                sm:text-sm
                 shadow-lg
                 transition
                 hover:bg-gray-100
@@ -934,6 +993,7 @@ export default function FaithDashboard({
               onClick={() => navigateTo("prophecy")}
               className="
                 inline-flex
+                w-full
                 items-center
                 justify-center
                 gap-2
@@ -941,10 +1001,15 @@ export default function FaithDashboard({
                 border
                 border-white/20
                 bg-white/10
-                px-5
-                py-3
+                px-2.5
+                py-2.5
+                text-xs
                 font-bold
                 text-white
+                sm:w-auto
+                sm:px-5
+                sm:py-3
+                sm:text-sm
                 backdrop-blur-sm
                 transition
                 hover:bg-white/20
@@ -1018,7 +1083,7 @@ export default function FaithDashboard({
         className="
           grid
           grid-cols-1
-          gap-3
+          gap-2
           sm:grid-cols-2
           xl:grid-cols-4
         "
@@ -1032,8 +1097,9 @@ export default function FaithDashboard({
             border
             border-indigo-200
             bg-indigo-50
-            p-4
+            p-2.5
             text-left
+            sm:p-4
             transition
             hover:-translate-y-0.5
             hover:shadow-md
@@ -1045,9 +1111,11 @@ export default function FaithDashboard({
             <div
               className="
                 flex
-                h-11
-                w-11
+                h-9
+                w-9
                 shrink-0
+                sm:h-11
+                sm:w-11
                 items-center
                 justify-center
                 rounded-xl
@@ -1061,6 +1129,7 @@ export default function FaithDashboard({
             <div className="min-w-0 flex-1">
               <h3
                 className="
+                  text-sm
                   font-black
                   text-gray-900
                   dark:text-white
@@ -1069,7 +1138,7 @@ export default function FaithDashboard({
                 Study Library
               </h3>
 
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 hidden text-xs text-gray-500 dark:text-gray-400 sm:block">
                 Browse uploaded study materials.
               </p>
             </div>
@@ -1228,12 +1297,12 @@ export default function FaithDashboard({
           "
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-700 text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-700 text-white sm:h-11 sm:w-11">
               <GraduationCap size={20} />
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-black text-gray-900 dark:text-white">Faith Academy</h3>
-              <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
                 Structured courses, assessments, notes, AI study, and church groups.
               </p>
             </div>
@@ -1533,10 +1602,12 @@ export default function FaithDashboard({
 
         <div
           className="
-            mt-5
+            mt-3
             grid
-            grid-cols-1
-            gap-4
+            grid-cols-2
+            gap-2
+            sm:mt-5
+            sm:gap-4
             sm:grid-cols-2
             xl:grid-cols-4
           "
@@ -1553,15 +1624,17 @@ export default function FaithDashboard({
                   group
                   relative
                   flex
-                  min-h-[160px]
+                  min-h-[132px]
+                  sm:min-h-[180px]
                   flex-col
                   overflow-hidden
                   rounded-2xl
                   border
                   border-gray-200
                   bg-gray-50
-                  p-3.5
+                  p-2.5
                   text-left
+                  sm:p-4
                   transition-all
                   duration-200
                   hover:-translate-y-1
@@ -1596,9 +1669,11 @@ export default function FaithDashboard({
                     relative
                     z-10
                     flex
-                    h-12
-                    w-12
+                    h-9
+                    w-9
                     items-center
+                    sm:h-12
+                    sm:w-12
                     justify-center
                     rounded-xl
                     bg-gradient-to-br
@@ -1607,22 +1682,27 @@ export default function FaithDashboard({
                     shadow-md
                   `}
                 >
-                  <Icon size={23} />
+                  <Icon size={18} />
                 </div>
 
                 <span
                   className="
                     relative
                     z-10
-                    mt-3
+                    mt-2
                     w-fit
+                    max-w-full
+                    sm:mt-3
                     rounded-full
                     border
                     border-gray-200
                     bg-white
-                    px-2.5
-                    py-1
-                    text-[10px]
+                    px-1.5
+                    py-0.5
+                    text-[8px]
+                    sm:px-2.5
+                    sm:py-1
+                    sm:text-[10px]
                     font-bold
                     uppercase
                     tracking-wide
@@ -1638,8 +1718,9 @@ export default function FaithDashboard({
                 <div className="relative z-10 mt-2">
                   <h3
                     className="
-                      text-lg
+                      text-sm
                       font-black
+                      sm:text-lg
                       text-gray-900
                       dark:text-white
                     "
@@ -1649,11 +1730,19 @@ export default function FaithDashboard({
 
                   <p
                     className="
-                      mt-2
-                      text-sm
-                      leading-6
-                      text-gray-500
-                      dark:text-gray-400
+                      mt-1
+
+                      line-clamp-2
+
+                      text-[11px]
+
+                      leading-4
+
+                      sm:mt-2
+
+                      sm:text-sm
+
+                      sm:leading-6
                     "
                   >
                     {tool.description}
@@ -1668,8 +1757,10 @@ export default function FaithDashboard({
                     flex
                     items-center
                     gap-1.5
-                    pt-3
-                    text-sm
+                    pt-2
+                    text-[11px]
+                    sm:pt-3
+                    sm:text-sm
                     font-bold
                     text-indigo-600
                     dark:text-indigo-400
