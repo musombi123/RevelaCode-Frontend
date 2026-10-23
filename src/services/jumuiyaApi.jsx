@@ -1100,6 +1100,10 @@ export function useJumuiyaApi() {
         {
           category = "",
           hub = "",
+          type = "",
+          search = "",
+          surface = "",
+          mode = "",
           limit = 30,
         } = {},
       ) =>
@@ -1107,9 +1111,62 @@ export function useJumuiyaApi() {
           withQuery("/community/feed", {
             category,
             hub,
+            type,
+            search,
+            surface,
+            mode,
             limit,
           }),
         ),
+
+      getCommunityPulse: (
+        { category = "", hub = "", type = "", search = "", mode = "relevant", limit = 30 } = {},
+      ) =>
+        getData(withQuery("/community/pulse", { category, hub, type, search, mode, limit })),
+
+      getCommunityDiscovery: (
+        { query = "", intent = "", hub = "", hubs = [], category = "", type = [], limit = 20 } = {},
+      ) =>
+        getData(withQuery("/community/discovery", {
+          q: query,
+          intent,
+          hub: hubs.length ? hubs : hub,
+          category,
+          type,
+          limit,
+        })),
+
+      getCommunityNearby: (
+        { category = "", hub = "", type = "", search = "", limit = 20 } = {},
+      ) =>
+        getData(withQuery("/community/nearby", { category, hub, type, search, limit })),
+
+      getCommunityOpportunities: (
+        { category = "", hub = "", type = "", search = "", limit = 20 } = {},
+      ) =>
+        getData(withQuery("/community/opportunities", { category, hub, type, search, limit })),
+
+      getCommunityTrusted: (
+        { category = "", hub = "", type = "", search = "", limit = 20 } = {},
+      ) =>
+        getData(withQuery("/community/trusted", { category, hub, type, search, limit })),
+
+      getCommunityExploration: (
+        { category = "", hub = "", type = "", search = "", limit = 20 } = {},
+      ) =>
+        getData(withQuery("/community/exploration", { category, hub, type, search, limit })),
+
+      searchCommunity: ({ query = "", limit = 20 } = {}) => {
+        const normalizedQuery = String(query || "").trim();
+        if (!normalizedQuery) {
+          throw new JumuiyaAPIError(
+            "Enter a search term before searching Community.",
+            422,
+            "search_query_required",
+          );
+        }
+        return getData(withQuery("/community/search", { q: normalizedQuery, limit }));
+      },
 
       // ===================================================
       // COMMUNITY — GROUPS
