@@ -1045,6 +1045,28 @@ const HOME_HUBS = Object.freeze([
   { key: "community", title: "Community", shortTitle: "Community", description: "People, groups and opportunities", icon: Users, surface: "bg-cyan-50 dark:bg-cyan-950/25", iconTone: "text-cyan-700 dark:text-cyan-300", borderTone: "border-cyan-100 dark:border-cyan-900/50", iconBg: "bg-cyan-100 dark:bg-cyan-900/50" },
 ]);
 
+
+const HOME_HUB_GROUPS = Object.freeze([
+  {
+    key: "learn",
+    title: "Learn & Faith",
+    description: "Knowledge, scripture and education",
+    hubKeys: ["faith", "education"],
+  },
+  {
+    key: "grow",
+    title: "Work & Grow",
+    description: "Business, farming and livelihoods",
+    hubKeys: ["biashara", "shamba"],
+  },
+  {
+    key: "community",
+    title: "People & Community",
+    description: "Relationships, groups and opportunities",
+    hubKeys: ["community"],
+  },
+]);
+
 const HOME_HUB_USAGE_KEY = "revelacode_home_hub_usage_v1";
 
 function readHomeHubUsage() {
@@ -1585,40 +1607,52 @@ function HomeDashboard({
           WELCOME
       ================================================== */}
 
-      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:rounded-[1.75rem] sm:p-7">
         <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-400/10" />
-        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.72fr)] lg:items-center">
+        <div className="relative grid gap-3 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.72fr)] lg:items-center">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" /> RevelaCode ecosystem</div>
-            <h1 className="mt-4 text-2xl font-black tracking-[-0.04em] text-slate-950 dark:text-white sm:text-3xl lg:text-4xl">{t("Welcome back,")} <span className="text-blue-700 dark:text-blue-300">{displayName}</span></h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base sm:leading-7">{t("One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.")}</p>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <h1 className="mt-3 text-xl font-black tracking-[-0.04em] text-slate-950 dark:text-white sm:mt-4 sm:text-3xl lg:text-4xl">{t("Welcome back,")} <span className="text-blue-700 dark:text-blue-300">{displayName}</span></h1>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-600 dark:text-slate-300 sm:mt-3 sm:text-base sm:leading-7">{t("One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.")}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 sm:mt-5 sm:gap-2 sm:text-xs">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Layers size={14} /> {t("Five connected hubs")}</span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800"><Sparkles size={14} /> {t("Intelligence built in")}</span>
             </div>
           </div>
-          <button type="button" onClick={() => onOpenAI?.()} className="group relative w-full overflow-hidden rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-4 text-left text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-slate-800 dark:via-blue-950 dark:to-indigo-950 dark:shadow-black/20 dark:focus-visible:ring-offset-slate-900 sm:p-5" aria-label="Open RevelaAI assistant">
+          <button type="button" onClick={() => onOpenAI?.()} className="group relative w-full overflow-hidden rounded-xl border border-blue-200/70 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-3 text-left text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-blue-400/20 dark:from-slate-800 dark:via-blue-950 dark:to-indigo-950 dark:shadow-black/20 dark:focus-visible:ring-offset-slate-900 sm:p-5" aria-label="Open RevelaAI assistant">
             <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl transition group-hover:bg-white/15" />
             <div className="relative flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/15 shadow-inner backdrop-blur"><Sparkles size={22} /></div><span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> AI assistant</span></div>
             <h2 className="relative mt-4 text-lg font-extrabold tracking-tight sm:text-xl">{t("Think with RevelaAI")}</h2>
-            <p className="relative mt-1.5 max-w-sm text-sm leading-5 text-blue-50/90 dark:text-slate-200">{language === "sw" ? "Pata msaada katika vituo vyako vya RevelaCode." : language === "fr" ? "Obtenez de l’aide dans vos espaces RevelaCode connectés." : "Get help across your connected RevelaCode workspaces."}</p>
-            <div className="relative mt-4 flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-sm font-bold backdrop-blur-sm">{t("Start a conversation")} <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></div>
+            <p className="relative mt-1.5 hidden max-w-sm text-sm leading-5 text-blue-50/90 dark:text-slate-200 sm:block">{language === "sw" ? "Pata msaada katika vituo vyako vya RevelaCode." : language === "fr" ? "Obtenez de l’aide dans vos espaces RevelaCode connectés." : "Get help across your connected RevelaCode workspaces."}</p>
+            <div className="relative mt-3 flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-xs font-bold backdrop-blur-sm sm:mt-4 sm:px-3.5 sm:py-3 sm:text-sm">{t("Start a conversation")} <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></div>
           </button>
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3 px-1"><div><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{language === "sw" ? (hasHubHistory ? "Vituo unavyotumia zaidi huwekwa mbele kiotomatiki." : t("Your hubs are ready when you are.")) : language === "fr" ? (hasHubHistory ? "Vos espaces les plus utilisés passent automatiquement en premier." : t("Your hubs are ready when you are.")) : (hasHubHistory ? "Your most-used hubs move to the front automatically." : "Your hubs are ready when you are.")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {frequentHubs.map((hub, index) => {
+      <section aria-label="Quick access to recent hubs" className="space-y-2">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <h2 className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2>
+            <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">{hasHubHistory ? "Recently used spaces" : "Start with a connected hub"}</p>
+          </div>
+          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[9px] font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {frequentHubs.map((hub) => {
             const Icon = hub.icon;
             const uses = Number(hubUsage[hub.key]?.count) || 0;
             return (
-              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group min-w-0 rounded-2xl border " + hub.borderTone + " " + hub.surface + " p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 sm:p-4"} aria-label={"Open " + hub.title}>
-                <div className="flex items-start justify-between gap-1"><span className={"flex h-9 w-9 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}><Icon size={19} strokeWidth={2} /></span>{uses > 0 && index === 0 ? <span className="rounded-full bg-white/80 px-1.5 py-1 text-[9px] font-extrabold text-slate-600 dark:bg-slate-900/70 dark:text-slate-300">TOP</span> : null}</div>
-                <span className="mt-3 block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
-                <span className="mt-1 block text-[10px] leading-4 text-slate-600 dark:text-slate-400 sm:text-xs">{uses > 0 ? formatNumber(uses) + (language === "sw" ? " ziara" : language === "fr" ? " visites" : " visits") : t("Open workspace")}</span>
+              <button
+                key={hub.key}
+                type="button"
+                onClick={() => handleHubOpen(hub.key)}
+                className={"group flex min-h-11 shrink-0 items-center gap-2 rounded-xl border " + hub.borderTone + " " + hub.surface + " px-2.5 py-2 text-left transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"}
+                aria-label={"Open " + hub.title}
+              >
+                <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg " + hub.iconBg + " " + hub.iconTone}><Icon size={15} strokeWidth={2} /></span>
+                <span className="max-w-[8rem] truncate text-[11px] font-extrabold text-slate-900 dark:text-white sm:text-xs">{t(hub.shortTitle)}</span>
+                {uses > 0 ? <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">{formatNumber(uses)}</span> : null}
               </button>
             );
           })}
@@ -1626,59 +1660,56 @@ function HomeDashboard({
       </section>
 
       {/* ==================================================
-          YOUR HUBS
-      ================================================== */}      {/* ==================================================
-          YOUR HUBS
+          YOUR HUBS — COMPACT CATEGORIZED NAVIGATION
       ================================================== */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-4
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-5
-        "
-      >
-        <div>
-          <h2
-            className="
-              text-lg
-              font-black
-              text-gray-900
-              dark:text-white
-            "
-          >
-            {t("Your Hubs")}
-          </h2>
-
-          <p
-            className="
-              mt-1
-              text-sm
-              text-gray-500
-              dark:text-gray-400
-            "
-          >
-            {t("Access the platforms that power your world.")}
-          </p>
+      <section aria-label="Hubs grouped by purpose" className="space-y-3">
+        <div className="px-1">
+          <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-white sm:text-lg">{t("Your Hubs")}</h2>
+          <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400 sm:text-sm">{t("Choose a category, then open the workspace you need.")}</p>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {sortedHubs.map((hub, index) => {
-            const Icon = hub.icon;
-            const uses = Number(hubUsage[hub.key]?.count) || 0;
-            const isMostUsed = hasHubHistory && index === 0 && uses > 0;
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {HOME_HUB_GROUPS.map((group) => {
+            const hubs = sortedHubs.filter((hub) => group.hubKeys.includes(hub.key));
+            if (!hubs.length) return null;
+
             return (
-              <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} className={"group relative flex min-h-[132px] items-center gap-4 overflow-hidden rounded-2xl border " + hub.borderTone + " bg-white p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-900 dark:hover:border-slate-700 dark:focus-visible:ring-offset-slate-950 sm:p-5"} aria-label={"Open " + hub.title}>
-                <span className={"flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl " + hub.iconBg + " " + hub.iconTone + " transition-transform group-hover:scale-105"}><Icon size={24} strokeWidth={1.9} /></span>
-                <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-base">{t(hub.title)}</span>{isMostUsed ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">{t("Most used")}</span> : null}</span><span className="mt-1.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">{t(hub.description)}</span><span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-300">{t("Open workspace")} <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" /></span></span>
-                {uses > 0 ? <span className="hidden shrink-0 text-[10px] font-semibold text-slate-400 sm:block">{formatNumber(uses)} visits</span> : null}
-              </button>
+              <section key={group.key} aria-labelledby={"hub-group-" + group.key} className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4">
+                <div className="mb-2.5">
+                  <h3 id={"hub-group-" + group.key} className="text-xs font-black text-slate-900 dark:text-white sm:text-sm">{t(group.title)}</h3>
+                  <p className="mt-0.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400 sm:text-xs">{t(group.description)}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  {hubs.map((hub) => {
+                    const Icon = hub.icon;
+                    const uses = Number(hubUsage[hub.key]?.count) || 0;
+                    const isMostUsed = hasHubHistory && hub.key === sortedHubs[0]?.key && uses > 0;
+
+                    return (
+                      <button
+                        key={hub.key}
+                        type="button"
+                        onClick={() => handleHubOpen(hub.key)}
+                        className={"group flex min-h-[64px] min-w-0 items-center gap-2.5 rounded-xl border " + hub.borderTone + " bg-white p-2.5 text-left transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-slate-950 dark:focus-visible:ring-offset-slate-950 sm:min-h-[76px] sm:gap-3 sm:p-3"}
+                        aria-label={"Open " + hub.title}
+                      >
+                        <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}>
+                          <Icon size={18} strokeWidth={2} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{t(hub.shortTitle)}</span>
+                            {isMostUsed ? <span className="shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">{t("Top")}</span> : null}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-500 dark:text-slate-400 sm:whitespace-normal sm:text-xs">{t(hub.description)}</span>
+                        </span>
+                        <ArrowRight size={14} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-300" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </div>
