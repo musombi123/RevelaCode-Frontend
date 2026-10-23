@@ -1345,33 +1345,33 @@ export default function ElimuDashboardWorkspace({
             ? "School library"
             : isPortalRequestsCenter
               ? "Portal verification requests"
-    : isWebsiteCenter
-      ? "Public school website"
-      : isMediaCenter
-        ? "School photos and videos"
-        : isDocumentCenter
-          ? "School document centre"
-          : moduleMeta?.title || "School workspace";
+              : isWebsiteCenter
+                ? "Public school website"
+                : isMediaCenter
+                  ? "School photos and videos"
+                  : isDocumentCenter
+                    ? "School document centre"
+                    : moduleMeta?.title || "School workspace";
 
   const centerDescription = isRoleAccessDenied
     ? "This page is outside the permissions assigned to your active school role."
     : isFinanceReportsCenter
-      ? "View only school fee totals, recorded payments and outstanding balances."
+      ? "View school fee totals, recorded payments and outstanding balances only."
       : isExamCenter
-        ? "Access the assessment register, report-card generation and publication controls."
+        ? "Access assessment records, report-card generation and publication controls."
         : isInventoryCenter
           ? "Track school stock, record receipts and issues, and manage Principal-approved supply needs."
           : isLibraryCenter
             ? "Manage the school book catalogue, check-outs and returns."
             : isPortalRequestsCenter
               ? "Verify student and guardian links before private school records become available."
-    : isWebsiteCenter
-    ? "Edit your public school page, set its web address, and publish verified school information."
-    : isMediaCenter
-      ? "Upload, organize and manage approved media for your school's public page."
-      : isDocumentCenter
-        ? "Prepare, submit and review school document records."
-        : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
+              : isWebsiteCenter
+                ? "Edit the public school page and publish verified school information."
+                : isMediaCenter
+                  ? "Upload, organize and manage approved media for the school's public page."
+                  : isDocumentCenter
+                    ? "Prepare, submit and review school document records."
+                    : moduleMeta?.description || "Manage school operations from your Elimu workspace.";
 
   const headerActionPath = isSpecialCenter
     ? "elimu"
@@ -1488,15 +1488,15 @@ export default function ElimuDashboardWorkspace({
                 access={access}
                 school={school}
                 title={isSpecialCenter ? centerTitle : headerTitle}
-                description={
-                  isSpecialCenter
-                    ? centerDescription
-                    : headerDescription
-                }
+                description={isSpecialCenter ? centerDescription : headerDescription}
                 onNavigate={handleNavigate}
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
               />
+
+              {routeAccessError && !isRoleAccessDenied && (
+                <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{routeAccessError}</div>
+              )}
 
               {!role && (
                 <section
@@ -1524,7 +1524,20 @@ export default function ElimuDashboardWorkspace({
                 </section>
               )}
 
-              {isDocumentCenter && role && (
+              {isRoleAccessDenied && role && (
+                <section role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
+                  <div className="flex items-start gap-3">
+                    <LockKeyhole size={22} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
+                    <div>
+                      <h2 className="font-bold text-amber-950 dark:text-amber-200">This workspace is not assigned to your role</h2>
+                      <p className="mt-2 text-sm leading-6 text-amber-900 dark:text-amber-300">Your active Elimu role is <strong>{ROLE_LABELS[role] || role}</strong>. This page has not been opened. Return to your dashboard to continue with your assigned tasks.</p>
+                      <button type="button" onClick={() => handleNavigate("elimu")} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-800 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-900">Return to dashboard <ArrowRight size={15} /></button>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {isDocumentCenter && role && canAccessCurrentPath && (
                 <ElimuDocumentCenter
                   access={access}
                   school={school}
@@ -1533,15 +1546,15 @@ export default function ElimuDashboardWorkspace({
                 />
               )}
 
-              {isPortalRequestsCenter && role === "owner" && (
+              {isPortalRequestsCenter && role === "owner" && canAccessCurrentPath && (
                 <ElimuPortalRequests />
               )}
 
-              {isPortalRequestsCenter && role && role !== "owner" && (
+              {isPortalRequestsCenter && role && canAccessCurrentPath && role !== "owner" && (
                 <section role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">Only the verified school owner can review portal verification requests.</section>
               )}
 
-              {isWebsiteCenter && role === "owner" && (
+              {isWebsiteCenter && role === "owner" && canAccessCurrentPath && (
                 <ElimuWebsiteSettings
                   access={access}
                   school={school}
@@ -1549,7 +1562,7 @@ export default function ElimuDashboardWorkspace({
                 />
               )}
 
-              {isWebsiteCenter && role && role !== "owner" && (
+              {isWebsiteCenter && role && canAccessCurrentPath && role !== "owner" && (
                 <section
                   role="alert"
                   className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
@@ -1558,7 +1571,7 @@ export default function ElimuDashboardWorkspace({
                 </section>
               )}
 
-              {isMediaCenter && role && (
+              {isMediaCenter && role && canAccessCurrentPath && (
                 canManageMedia ? (
                   <ElimuMediaManager
                     access={access}
@@ -1601,7 +1614,23 @@ export default function ElimuDashboardWorkspace({
                 )
               )}
 
-              {isModuleCenter && role && (
+              {isFinanceReportsCenter && role && canAccessCurrentPath && (
+                <ElimuFinanceReportsWorkspace school={school} onNavigate={handleNavigate} />
+              )}
+
+              {isExamCenter && role && canAccessCurrentPath && (
+                <ElimuExamCentre role={role} school={school} onNavigate={handleNavigate} />
+              )}
+
+              {isInventoryCenter && role && canAccessCurrentPath && (
+                <ElimuInventoryWorkspace role={role} access={access} school={school} onNavigate={handleNavigate} />
+              )}
+
+              {isLibraryCenter && role && canAccessCurrentPath && (
+                <ElimuLibraryWorkspace role={role} access={access} school={school} />
+              )}
+
+              {isModuleCenter && role && canAccessCurrentPath && !isExamCenter && !isInventoryCenter && !isLibraryCenter && (
                 (normalizedPath === "elimu/staff" || normalizedPath === "staff") ? (
                   <ElimuStaffManagement
                     access={access}
@@ -1632,7 +1661,7 @@ export default function ElimuDashboardWorkspace({
                 />
               )}
 
-              {!RoleDashboard && role && (
+              {!isSpecialCenter && !RoleDashboard && role && (
                 <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 sm:p-8">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
                     <AlertCircle size={24} />
