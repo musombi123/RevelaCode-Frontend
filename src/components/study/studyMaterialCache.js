@@ -306,6 +306,56 @@ export async function warmFaithStudyCache() {
   }
 }
 
+
+const CROSS_REFERENCE_DATASET_URL = "https://raw.githubusercontent.com/midvash/bible-cross-references/main/cross-references.json";
+const CROSS_REFERENCE_DATASET_KEY = "cross-reference-dataset::midvash-v1";
+let crossReferenceWarmPromise = null;
+
+export async function getCachedCrossReferenceDataset() {
+  try {
+    const record = await readRecord(CROSS_REFERENCE_DATASET_KEY);
+    const data = record?.value;
+    return data && Array.isArray(data.references) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Downloads the openly licensed Midvash verse cross-reference dataset once,
+ * stores it in the existing IndexedDB record store, and falls back offline.
+ * Dataset attribution is displayed in the Study Reference Desk.
+ */
+export function warmCrossReferenceDataset() {
+  if (crossReferenceWarmPromise) return crossReferenceWarmPromise;
+
+  crossReferenceWarmPromise = (async () => {
+    const saved = await getCachedCrossReferenceDataset();
+    try {
+      const response = await fetch(CROSS_REFERENCE_DATASET_URL, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "force-cache",
+      });
+      if (!response.ok) {
+        return { source: saved ? "cache" : "unavailable", dataset: saved, count: saved?.references?.length || 0 };
+      }
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.references) || !payload.indexed || typeof payload.indexed !== "object") {
+        throw new Error("Cross-reference dataset schema was not recognized.");
+      }
+      await writeRecord(CROSS_REFERENCE_DATASET_KEY, payload);
+      return { source: "network", dataset: payload, count: payload.references.length };
+    } catch {
+      return { source: saved ? "cache" : "unavailable", dataset: saved, count: saved?.references?.length || 0 };
+    }
+  })().finally(() => {
+    crossReferenceWarmPromise = null;
+  });
+
+  return crossReferenceWarmPromise;
+}
+
 export async function getCachedBibleBook(bookKey) {
   if (!bookKey) return null;
   const record = await readRecord("bible::web::" + String(bookKey).trim());
