@@ -342,6 +342,27 @@ export default function MainDashboardV2() {
   }, []);
 
   /* =========================================================
+     Direct Hub Links
+  ========================================================= */
+
+  useEffect(() => {
+    const requestedHub = String(searchParams.get("hub") || "")
+      .trim()
+      .toLowerCase();
+
+    if (!requestedHub) return;
+
+    const isKnownHub = DASHBOARDS.some(
+      (dashboard) => dashboard.key === requestedHub
+    );
+
+    if (!isKnownHub) return;
+
+    setActiveView(requestedHub);
+    setSidebarOpen(false);
+  }, [searchParams]);
+
+  /* =========================================================
      Verse URL Handling
   ========================================================= */
 
