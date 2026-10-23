@@ -254,7 +254,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   const Icon = kind === "event" ? CalendarDays : kind === "project" ? BookOpen : FileText;
 
   return (
-    <article className="school-resource-card school-surface-card group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
+    <article className={"school-resource-card school-surface-card group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6 " + (kind === "document" ? "school-document-row" : "")}>
       <div className="flex items-start gap-3">
         <div className="school-section-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
         <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 tracking-tight text-slate-900 sm:text-base">{title}</h2>
@@ -837,15 +837,15 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       pageContent = (
         <>
           <PageHeading icon={BookOpen} eyebrow="Learning and achievement" title="Courses, programs and departments" description="Explore the learning pathways and academic departments offered by this school, alongside its published CBC projects." />
-          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band mb-10 space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">Courses and programs</h2><p className="mt-1 text-sm leading-6 text-slate-500">School-published courses, programs, duration and entry information.</p></div>
             <PublicOfferingGrid items={courses} icon={BookOpen} emptyTitle="Courses will be listed here" emptyDescription="The school has not published course or program details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `course-${index}`} title={text(item, ["name", "title"], "Course / program")} eyebrow={text(item, ["level"], "Course / program")} description={text(item, ["description"])} details={[item.duration ? `Duration: ${item.duration}` : "", item.requirements ? `Entry requirements: ${item.requirements}` : ""]} />} />
           </section>
-          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band mb-10 space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">Academic departments</h2><p className="mt-1 text-sm leading-6 text-slate-500">Departments and the subjects or learning areas they support.</p></div>
             <PublicOfferingGrid items={departments} icon={School} emptyTitle="Departments will be listed here" emptyDescription="The school has not published department details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `department-${index}`} title={text(item, ["name", "title"], "Department")} eyebrow="Academic department" description={text(item, ["description"])} tags={item.subjects || []} />} />
           </section>
-          <section className="space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">CBC projects and academic highlights</h2><p className="mt-1 text-sm leading-6 text-slate-500">Learning projects and highlights approved for public viewing.</p></div>
             {projects.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map((item, index) => <ResourceCard key={recordId(item) || `project-${index}`} item={item} kind="project" />)}</div> : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm leading-6 text-slate-500">Published academic projects and learning highlights will appear here when available.</p>}
           </section>
@@ -869,7 +869,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       );
       break;
     case "media":
-      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
+      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="school-media-bento grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
       break;
     case "documents":
       pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
@@ -960,7 +960,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                 <div className="school-hero-community max-w-sm rounded-2xl border p-5 backdrop-blur-xl">
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em]">School community</p>
                   <p className="mt-2 break-words text-lg font-extrabold">{schoolName}</p>
-                  {text(school, ["academic_year"]) && <p className="mt-4 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-sm font-extrabold" style={{ backgroundColor: websiteTheme.accent, color: websiteTheme.heading }}>{text(school, ["academic_year"])}</p>}
+                  {text(school, ["academic_year"]) && <p className="mt-4 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-sm font-extrabold" style={{ backgroundColor: websiteTheme.surface, color: websiteTheme.heading, border: "1px solid " + websiteTheme.accent }}>{text(school, ["academic_year"])}</p>}
                 </div>
               </div>
             </div>
@@ -1145,8 +1145,20 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .school-inquiry-form input::placeholder,[data-school-website="true"] .school-inquiry-form textarea::placeholder { color:var(--school-body); opacity:.68; }
         [data-school-website="true"] .school-inquiry-form input:focus-visible,[data-school-website="true"] .school-inquiry-form select:focus-visible,[data-school-website="true"] .school-inquiry-form textarea:focus-visible { outline:2px solid var(--school-primary); outline-offset:2px; border-color:var(--school-primary); box-shadow:0 0 0 4px color-mix(in srgb,var(--school-primary) 17%,transparent); }
         [data-school-website="true"] .school-media-bento > .public-media-card { min-width:0; }
-        @media(min-width:768px) { [data-school-website="true"] .school-media-bento > .public-media-card:first-child { grid-column:span 2; grid-row:span 2; } [data-school-website="true"] .school-media-bento > .public-media-card:first-child > div:first-child { height:100%; min-height:22rem; aspect-ratio:auto; } }
+        @media(min-width:1280px) { [data-school-website="true"] .school-media-bento > .public-media-card:first-child { grid-column:span 2; grid-row:span 2; } [data-school-website="true"] .school-media-bento > .public-media-card:first-child > div:first-child { height:100%; min-height:22rem; aspect-ratio:auto; } }
         @media(max-width:767px) { [data-school-website="true"] .school-contact-panel { padding:1.15rem; } }
+        [data-school-website="true"] .school-academic-band { padding:1rem 0 2.25rem; border-bottom:1px solid color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); }
+        [data-school-website="true"] .school-academic-band:last-child { border-bottom:0; }
+        [data-school-website="true"] .school-academic-band > div:first-child h2 { color:var(--school-heading); letter-spacing:-.025em; }
+        [data-school-website="true"] .school-academic-band > div:first-child p { color:var(--school-body); }
+        [data-school-website="true"] .school-document-row { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) auto auto; align-items:center; gap:1rem; padding:1rem 1.2rem; }
+        [data-school-website="true"] .school-document-row > :first-child { align-items:center; }
+        [data-school-website="true"] .school-document-row > p { margin:0; }
+        [data-school-website="true"] .school-document-row .school-resource-meta { margin:0; padding:0; border:0; }
+        [data-school-website="true"] .school-document-row .school-download-button { margin:0; white-space:nowrap; }
+        [data-school-website="true"] .school-document-row .school-date-badge { white-space:nowrap; }
+        @media(max-width:1023px) { [data-school-website="true"] .school-document-row { grid-template-columns:minmax(0,1fr) auto; gap:.65rem 1rem; } [data-school-website="true"] .school-document-row > :first-child,[data-school-website="true"] .school-document-row > p { grid-column:1 / -1; } [data-school-website="true"] .school-document-row .school-resource-meta { grid-column:1; } [data-school-website="true"] .school-document-row .school-download-button { grid-column:2; grid-row:auto; } }
+        @media(max-width:520px) { [data-school-website="true"] .school-document-row { padding:1rem; } [data-school-website="true"] .school-document-row > :first-child { align-items:flex-start; } [data-school-website="true"] .school-document-row .school-resource-meta { flex-wrap:wrap; } [data-school-website="true"] .school-document-row .school-download-button { min-height:44px; padding:.65rem .8rem; } }
         [data-school-website="true"] .bg-emerald-500 { background-color:var(--school-primary)!important; }
         [data-school-website="true"] .border-emerald-700 { border-color:var(--school-primary)!important; }
         [data-school-website="true"] .from-slate-100 { --tw-gradient-from:var(--school-surface-tint) var(--tw-gradient-from-position)!important; --tw-gradient-to:color-mix(in srgb,var(--school-surface-tint) 0%,transparent) var(--tw-gradient-to-position)!important; }
@@ -1188,6 +1200,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                   aria-current={active ? "page" : undefined}
                   title={item.label}
                   className={`school-nav-link group relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:gap-2 2xl:px-2.5 2xl:text-sm ${active ? "text-emerald-700" : "text-slate-600 hover:text-emerald-800"}`}
+                  aria-label={item.label}
                 >
                   <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
                   <span className="hidden 2xl:inline">{item.label}</span>
