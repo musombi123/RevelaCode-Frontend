@@ -290,8 +290,8 @@ export default function BiasharaPublicWebsitePage() {
       </header>
 
       <section className="relative isolate overflow-hidden text-white" style={{ backgroundColor: primary }}>
-        {heroImage ? <img key={heroImage} src={heroImage} alt={heroSlide?.alt || ""} className="absolute inset-0 -z-20 h-full w-full object-cover opacity-20 transition-opacity duration-700 motion-reduce:transition-none" /> : null}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950/65 via-slate-950/35 to-black/30" />
+        {heroImage ? <img key={heroImage} src={heroImage} alt={heroSlide?.alt || ""} className="absolute inset-0 -z-20 h-full w-full object-cover opacity-40 transition-opacity duration-700 motion-reduce:transition-none" /> : null}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950/45 via-slate-950/25 to-black/25" />
         <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 py-12 text-center sm:px-6 sm:py-16 md:py-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)] lg:gap-12 lg:px-8 lg:text-left">
           <div className="mx-auto w-full max-w-3xl lg:mx-0">
             <p className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur sm:text-xs"><Sparkles size={14} />{business.category || "Welcome to our business"}</p>
