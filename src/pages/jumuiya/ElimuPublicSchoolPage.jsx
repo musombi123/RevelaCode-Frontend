@@ -86,6 +86,27 @@ function rgbaFromHex(hex, alpha) {
   return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
 }
 
+function themeLuminance(hex) {
+  const safe = /^#[0-9a-f]{6}$/i.test(String(hex || "")) ? String(hex) : "#ffffff";
+  const channels = [1, 3, 5].map((offset) => parseInt(safe.slice(offset, offset + 2), 16) / 255);
+  const linear = channels.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+function themeContrastRatio(background, foreground) {
+  const a = themeLuminance(background);
+  const b = themeLuminance(foreground);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+function themeForeground(background, preferred = DEFAULT_PUBLIC_THEME.heading) {
+  const safePreferred = /^#[0-9a-f]{6}$/i.test(String(preferred || "")) ? preferred : DEFAULT_PUBLIC_THEME.heading;
+  return themeContrastRatio(background, "#ffffff") >= themeContrastRatio(background, safePreferred)
+    ? "#ffffff"
+    : safePreferred;
+}
+
+
 const ROUTE_ALIASES = {
   home: "",
   index: "",
@@ -403,14 +424,18 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       : "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   const websiteThemeStyle = {
     "--school-primary": websiteTheme.primary,
+    "--school-primary-text": themeForeground(websiteTheme.primary, websiteTheme.heading),
     "--school-secondary": websiteTheme.secondary,
+    "--school-secondary-text": themeForeground(websiteTheme.secondary, websiteTheme.heading),
     "--school-accent": websiteTheme.accent,
     "--school-background": websiteTheme.background,
     "--school-surface": websiteTheme.surface,
     "--school-heading": websiteTheme.heading,
     "--school-body": websiteTheme.body,
     "--school-header": websiteTheme.header,
+    "--school-header-text": themeForeground(websiteTheme.header, websiteTheme.heading),
     "--school-footer": websiteTheme.footer,
+    "--school-footer-text": themeForeground(websiteTheme.footer, websiteTheme.heading),
     "--school-surface-tint": rgbaFromHex(websiteTheme.primary, 0.045),
     backgroundColor: websiteTheme.background,
     color: websiteTheme.body,
@@ -1022,8 +1047,74 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
   }
 
   return (
-    <div data-school-website="true" className={"min-h-screen text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
-      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface))!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface))!important;color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important; } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
+    <div data-school-website="true" className={"min-h-screen pb-32 text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
+      <style>{`
+        [data-school-website="true"] .text-emerald-700,
+        [data-school-website="true"] .text-emerald-800,
+        [data-school-website="true"] .text-emerald-900,
+        [data-school-website="true"] .text-emerald-950,
+        [data-school-website="true"] .text-blue-700,
+        [data-school-website="true"] .text-blue-800 { color:var(--school-primary)!important; }
+
+        [data-school-website="true"] .bg-emerald-700,
+        [data-school-website="true"] .bg-emerald-800,
+        [data-school-website="true"] .bg-blue-700,
+        [data-school-website="true"] .bg-blue-800 { background-color:var(--school-primary)!important; color:var(--school-primary-text)!important; }
+
+        [data-school-website="true"] .bg-emerald-900,
+        [data-school-website="true"] .bg-emerald-950,
+        [data-school-website="true"] .bg-slate-950 { background-color:var(--school-secondary)!important; color:var(--school-secondary-text)!important; }
+
+        [data-school-website="true"] .bg-emerald-50,
+        [data-school-website="true"] .bg-emerald-100,
+        [data-school-website="true"] .bg-blue-50,
+        [data-school-website="true"] .bg-blue-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; }
+
+        [data-school-website="true"] .bg-slate-50 { background-color:var(--school-background)!important; }
+        [data-school-website="true"] .bg-slate-100 { background-color:color-mix(in srgb,var(--school-primary) 4%,var(--school-surface))!important; }
+
+        [data-school-website="true"] .border-emerald-100,
+        [data-school-website="true"] .border-emerald-200,
+        [data-school-website="true"] .border-blue-100,
+        [data-school-website="true"] .border-blue-200 { border-color:color-mix(in srgb,var(--school-primary) 22%,var(--school-surface))!important; }
+
+        [data-school-website="true"] .border-slate-100,
+        [data-school-website="true"] .border-slate-200 { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface))!important; }
+
+        [data-school-website="true"] .text-slate-950,
+        [data-school-website="true"] .text-slate-900 { color:var(--school-heading)!important; }
+        [data-school-website="true"] .text-slate-700,
+        [data-school-website="true"] .text-slate-600 { color:var(--school-body)!important; }
+
+        [data-school-website="true"] .bg-white { background-color:var(--school-surface)!important; }
+        [data-school-website="true"] [data-school-header="v2"] { background-color:var(--school-header)!important; color:var(--school-header-text)!important; }
+        [data-school-website="true"] footer { background-color:var(--school-footer)!important; color:var(--school-footer-text)!important; }
+        [data-school-website="true"] footer .text-white { color:var(--school-footer-text)!important; }
+        [data-school-website="true"] footer a { color:var(--school-footer-text)!important; }
+        [data-school-website="true"] .school-home-hero { color:var(--school-secondary-text); }
+        [data-school-website="true"] .school-hero-heading,
+        [data-school-website="true"] .school-hero-kicker,
+        [data-school-website="true"] .school-hero-lead,
+        [data-school-website="true"] .school-hero-motto,
+        [data-school-website="true"] .school-hero-community,
+        [data-school-website="true"] .school-hero-badge { color:var(--school-secondary-text)!important; }
+
+        [data-school-website="true"] .school-cta-primary { background-color:var(--school-primary)!important; color:var(--school-primary-text)!important; border-color:var(--school-primary)!important; }
+        [data-school-website="true"] .school-cta-secondary { background-color:var(--school-surface)!important; color:var(--school-primary)!important; border-color:color-mix(in srgb,var(--school-primary) 45%,var(--school-surface))!important; }
+        [data-school-website="true"].school-buttons-outline .school-cta-primary { background:transparent!important; color:var(--school-primary)!important; border:1px solid var(--school-primary)!important; }
+        [data-school-website="true"].school-buttons-soft .school-cta-primary { background-color:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface))!important; color:var(--school-primary)!important; border-color:transparent!important; }
+
+        @media (prefers-reduced-motion:reduce) {
+          [data-school-website="true"] *,
+          [data-school-website="true"] *::before,
+          [data-school-website="true"] *::after {
+            scroll-behavior:auto!important;
+            animation-duration:0.01ms!important;
+            animation-iteration-count:1!important;
+            transition-duration:0.01ms!important;
+          }
+        }
+      `}</style>
       <style>{`
         [data-school-website="true"] .school-home-page { color:var(--school-body); }
         [data-school-website="true"] .school-home-hero { border-radius:0; overflow:hidden; box-shadow:0 28px 70px color-mix(in srgb,var(--school-heading) 16%,transparent); }
