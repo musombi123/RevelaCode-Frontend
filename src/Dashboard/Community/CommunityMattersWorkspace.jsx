@@ -273,7 +273,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
           <Info size={18} className="mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-black">Messaging is not connected to the backend yet.</p>
-            <p className="mt-1 text-xs leading-5 opacity-85">{matterResult.message}</p>
+            <p className="mt-1 text-xs leading-5 opacity-85">Community currently supports posts, comments, reactions and groups. A matter/conversation listing contract is not exposed by the backend yet.</p>
             <p className="mt-2 text-xs leading-5 opacity-85">No sample conversations are shown. The list and thread remain empty until the real API contract is added.</p>
           </div>
         </div>
