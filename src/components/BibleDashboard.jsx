@@ -97,6 +97,53 @@ const newTestament = [
 ];
 
 /* =========================================================
+   WORLD ENGLISH BIBLE (WEB)
+   Load one book at a time to keep the KJV offline-first and
+   avoid adding the full alternate dataset to the Android APK.
+========================================================= */
+
+const WEB_BOOK_IDS = {
+  "Genesis": "Gen", "Exodus": "Exod", "Leviticus": "Lev",
+  "Numbers": "Num", "Deuteronomy": "Deut", "Joshua": "Josh",
+  "Judges": "Judg", "Ruth": "Ruth", "1 Samuel": "1Sam",
+  "2 Samuel": "2Sam", "1 Kings": "1Kgs", "2 Kings": "2Kgs",
+  "1 Chronicles": "1Chr", "2 Chronicles": "2Chr", "Ezra": "Ezra",
+  "Nehemiah": "Neh", "Esther": "Esth", "Job": "Job",
+  "Psalms": "Ps", "Proverbs": "Prov", "Ecclesiastes": "Eccl",
+  "Song of Solomon": "Song", "Isaiah": "Isa", "Jeremiah": "Jer",
+  "Lamentations": "Lam", "Ezekiel": "Ezek", "Daniel": "Dan",
+  "Hosea": "Hos", "Joel": "Joel", "Amos": "Amos", "Obadiah": "Obad",
+  "Jonah": "Jonah", "Micah": "Mic", "Nahum": "Nah", "Habakkuk": "Hab",
+  "Zephaniah": "Zeph", "Haggai": "Hag", "Zechariah": "Zech", "Malachi": "Mal",
+  "Matthew": "Matt", "Mark": "Mark", "Luke": "Luke", "John": "John",
+  "Acts": "Acts", "Romans": "Rom", "1 Corinthians": "1Cor",
+  "2 Corinthians": "2Cor", "Galatians": "Gal", "Ephesians": "Eph",
+  "Philippians": "Phil", "Colossians": "Col", "1 Thessalonians": "1Thess",
+  "2 Thessalonians": "2Thess", "1 Timothy": "1Tim", "2 Timothy": "2Tim",
+  "Titus": "Titus", "Philemon": "Phlm", "Hebrews": "Heb", "James": "Jas",
+  "1 Peter": "1Pet", "2 Peter": "2Pet", "1 John": "1John",
+  "2 John": "2John", "3 John": "3John", "Jude": "Jude",
+  "Revelation": "Rev",
+};
+
+function normalizeWebBook(payload, fallbackBookName) {
+  return {
+    book: payload?.englishName || fallbackBookName,
+    chapters: Array.isArray(payload?.chapters)
+      ? payload.chapters.map((chapter) => ({
+          chapter: chapter.chapter,
+          verses: Array.isArray(chapter.verses)
+            ? chapter.verses.map((verse) => ({
+                verse: verse.number ?? verse.verse,
+                text: verse.text || "",
+              }))
+            : [],
+        }))
+      : [],
+  };
+}
+
+/* =========================================================
    DASHBOARD LABELS
 ========================================================= */
 
@@ -171,6 +218,18 @@ export default function BibleDashboard({
   const navigate = useNavigate();
 
   const [bibleData, setBibleData] = useState({});
+  const [webData, setWebData] = useState({});
+  const [bibleVersion, setBibleVersion] = useState(() => {
+    if (typeof window === "undefined") return "kjv";
+    try {
+      return window.localStorage.getItem("revelacode_bible_version") === "web"
+        ? "web"
+        : "kjv";
+    } catch {
+      return "kjv";
+    }
+  });
+  const [loadingVersionBook, setLoadingVersionBook] = useState(false);
   const [bookKeys, setBookKeys] = useState([]);
   const [selectedBookKey, setSelectedBookKey] =
     useState("");
@@ -185,6 +244,71 @@ export default function BibleDashboard({
     useState("");
 
   const verseRefs = useRef({});
+  const displayedBibleData =
+    bibleVersion === "web"
+      ? { ...bibleData, ...webData }
+      : bibleData;
+
+  const loadWebBibleBook = async (bookKey) => {
+    if (webData[bookKey]) return webData[bookKey];
+
+    const bookName = bibleData[bookKey]?.book || bookKey;
+    const osisId = WEB_BOOK_IDS[bookName];
+    if (!osisId) {
+      throw new Error(`World English Bible data is not mapped for ${bookName}.`);
+    }
+
+    const response = await fetch(
+      `https://raw.githubusercontent.com/midvash/bible-data/main/versions/en/web/books/${osisId}.json`,
+      { cache: "force-cache" }
+    );
+    if (!response.ok) {
+      throw new Error(`World English Bible book load failed (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    const normalized = normalizeWebBook(payload, bookName);
+    if (!normalized.chapters.length) {
+      throw new Error("World English Bible response contained no chapters.");
+    }
+    return normalized;
+  };
+
+  const handleBibleVersionChange = async (event) => {
+    const nextVersion = event.target.value;
+    setBibleVersion(nextVersion);
+    setSearchError("");
+
+    try {
+      window.localStorage.setItem("revelacode_bible_version", nextVersion);
+    } catch {
+      // Continue to support browsing where browser storage is unavailable.
+    }
+
+    if (nextVersion === "kjv") {
+      setLoadingVersionBook(false);
+      if (selectedBookKey && selectedChapterIndex !== null) {
+        setVerses(bibleData[selectedBookKey]?.chapters?.[selectedChapterIndex]?.verses || []);
+      }
+      return;
+    }
+
+    if (!selectedBookKey) return;
+
+    setLoadingVersionBook(true);
+    try {
+      const book = await loadWebBibleBook(selectedBookKey);
+      setWebData((current) => ({ ...current, [selectedBookKey]: book }));
+      if (selectedChapterIndex !== null) {
+        setVerses(book.chapters?.[selectedChapterIndex]?.verses || []);
+      }
+    } catch (error) {
+      console.error("World English Bible loading error:", error);
+      setSearchError("World English Bible could not be loaded. Check your connection and try again; KJV remains available offline.");
+    } finally {
+      setLoadingVersionBook(false);
+    }
+  };
 
   /* =======================================================
      USER
@@ -413,185 +537,66 @@ export default function BibleDashboard({
      OPEN VERSE REFERENCE
   ======================================================= */
 
-  const openVerseReference = (
-    reference
-  ) => {
-    if (
-      !reference ||
-      !bibleData ||
-      !bookKeys.length
-    ) {
-      return false;
-    }
+  const openVerseReference = async (reference) => {
+    if (!reference || !bibleData || !bookKeys.length) return false;
 
-    let cleanedReference =
-      decodeURIComponent(
-        reference
-      )
-        .trim()
-        .replace(/\s+/g, " ");
+    let cleanedReference = decodeURIComponent(reference)
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/\bverses?\b/gi, ":")
+      .replace(/\bvs\.?\b/gi, ":")
+      .replace(/\s*:\s*/g, ":")
+      .replace(/\s*-\s*/g, "-");
 
-    /*
-      Accept formats like:
-
-      John 3:16
-      John 3:16-18
-      John 1:1-1
-      John 3vs5
-      John 3 vs 5
-      John 3 verse 5
-      John 3 5
-      Jonh 3vs5
-    */
-
-    cleanedReference = cleanedReference
-      .replace(
-        /\bverses?\b/gi,
-        ":"
-      )
-      .replace(
-        /\bvs\.?\b/gi,
-        ":"
-      )
-      .replace(
-        /\s*:\s*/g,
-        ":"
-      )
-      .replace(
-        /\s*-\s*/g,
-        "-"
-      );
-
-    /*
-      Match:
-
-      Book + chapter + verse + optional range
-    */
-
-    let match =
-      cleanedReference.match(
-        /^(.+?)\s+(\d+)(?::|\s+)(\d+)(?:-(\d+))?$/i
-      );
-
-    /*
-      Also support:
-
-      John3:16
-      1John3:16
-    */
-
+    let match = cleanedReference.match(
+      /^(.+?)\s+(\d+)(?::|\s+)(\d+)(?:-(\d+))?$/i
+    );
     if (!match) {
-      match =
-        cleanedReference.match(
-          /^(.+?)(\d+):(\d+)(?:-(\d+))?$/i
-        );
+      match = cleanedReference.match(/^(.+?)(\d+):(\d+)(?:-(\d+))?$/i);
     }
+    if (!match) return false;
 
-    if (!match) {
-      return false;
-    }
-
-    const [
-      ,
-      bookNameRaw,
-      chapterNum,
-      verseStart,
-      verseEnd,
-    ] = match;
-
-    const normalizedBook =
-      normalizeBookName(
-        bookNameRaw
-      );
-
-    const bookKey =
-      bookKeys.find((key) => {
-        const bookName =
-          bibleData[key]?.book;
-
-        if (!bookName) {
-          return false;
-        }
-
-        return (
-          normalizeBookName(
-            bookName
-          ) === normalizedBook
-        );
-      });
-
-    if (!bookKey) {
-      return false;
-    }
-
-    const chapterIndex =
-      Number(chapterNum) - 1;
-
-    const verseStartIndex =
-      Number(verseStart) - 1;
-
-    const verseEndIndex = verseEnd
-      ? Number(verseEnd) - 1
-      : verseStartIndex;
-
-    const chapters =
-      bibleData[bookKey]?.chapters ||
-      [];
-
-    const chapter =
-      chapters[chapterIndex];
-
-    if (!chapter) {
-      return false;
-    }
-
-    const versesArray =
-      chapter.verses || [];
-
-    if (!versesArray.length) {
-      return false;
-    }
-
-    if (
-      verseStartIndex < 0 ||
-      verseStartIndex >=
-        versesArray.length
-    ) {
-      return false;
-    }
-
-    if (
-      verseEndIndex <
-        verseStartIndex ||
-      verseEndIndex >=
-        versesArray.length
-    ) {
-      return false;
-    }
-
-    setSelectedBookKey(
-      bookKey
+    const [, bookNameRaw, chapterNum, verseStart, verseEnd] = match;
+    const normalizedBook = normalizeBookName(bookNameRaw);
+    const bookKey = bookKeys.find((key) =>
+      normalizeBookName(bibleData[key]?.book) === normalizedBook
     );
+    if (!bookKey) return false;
 
-    setSelectedChapterIndex(
-      chapterIndex
-    );
+    let selectedBookData = bibleVersion === "web"
+      ? webData[bookKey]
+      : bibleData[bookKey];
 
-    setVerses([
-      ...versesArray,
-    ]);
+    if (bibleVersion === "web" && !selectedBookData) {
+      setLoadingVersionBook(true);
+      try {
+        selectedBookData = await loadWebBibleBook(bookKey);
+        setWebData((current) => ({ ...current, [bookKey]: selectedBookData }));
+      } catch (error) {
+        console.error("World English Bible reference load error:", error);
+        setSearchError("World English Bible could not be loaded. Check your connection and try again; KJV remains available offline.");
+        return false;
+      } finally {
+        setLoadingVersionBook(false);
+      }
+    }
 
-    setViewLevel(
-      "verses"
-    );
+    const chapterIndex = Number(chapterNum) - 1;
+    const verseStartIndex = Number(verseStart) - 1;
+    const verseEndIndex = verseEnd ? Number(verseEnd) - 1 : verseStartIndex;
+    const chapter = selectedBookData?.chapters?.[chapterIndex];
+    const versesArray = chapter?.verses || [];
 
-    setHighlightedVerseRange({
-      start: verseStartIndex,
-      end: verseEndIndex,
-    });
+    if (!chapter || !versesArray.length) return false;
+    if (verseStartIndex < 0 || verseStartIndex >= versesArray.length) return false;
+    if (verseEndIndex < verseStartIndex || verseEndIndex >= versesArray.length) return false;
 
+    setSelectedBookKey(bookKey);
+    setSelectedChapterIndex(chapterIndex);
+    setVerses([...versesArray]);
+    setViewLevel("verses");
+    setHighlightedVerseRange({ start: verseStartIndex, end: verseEndIndex });
     setSearchError("");
-
     return true;
   };
 
@@ -630,22 +635,13 @@ export default function BibleDashboard({
      SEARCH
   ======================================================= */
 
-  const handleSearch = () => {
-    if (!searchInput.trim()) {
-      return;
-    }
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return;
 
     setSearchError("");
-
-    const success =
-      openVerseReference(
-        searchInput.trim()
-      );
-
-    if (!success) {
-      setSearchError(
-        "❌ Verse not found. Example: John 3:16"
-      );
+    const success = await openVerseReference(searchInput.trim());
+    if (!success && bibleVersion === "kjv") {
+      setSearchError("❌ Verse not found. Example: John 3:16");
     }
   };
 
@@ -654,139 +650,54 @@ export default function BibleDashboard({
   ======================================================= */
 
   useEffect(() => {
-    if (
-      !bookKeys.length ||
-      !Object.keys(bibleData).length
-    ) {
-      return;
-    }
+    if (!bookKeys.length || !Object.keys(bibleData).length) return;
 
-    const params =
-      new URLSearchParams(
-        location.search
-      );
+    const params = new URLSearchParams(location.search);
+    const verse = params.get("verse");
+    if (!verse) return;
 
-    const verse =
-      params.get("verse");
-
-    if (!verse) {
-      return;
-    }
-
-    const success =
-      openVerseReference(
-        verse
-      );
-
-    if (!success) {
-      setSearchError(
-        "❌ Reference not found. Try formats like John 3:16, John 1:1-3, John 3vs5, or Jonh 3vs5."
-      );
-    }
-  }, [
-    location.search,
-    bookKeys,
-    bibleData,
-  ]);
-
-  /* =======================================================
-     ASK REVELAAI
-  ======================================================= */
-
-  const askAI = async () => {
-    const prompt =
-      searchInput.trim();
-
-    if (!prompt) {
-      return;
-    }
-
-    const aiBaseUrl =
-      import.meta.env
-        .VITE_REVELAAI_URL;
-
-    if (!aiBaseUrl) {
-      alert(
-        "RevelaAI is not configured in this environment."
-      );
-      return;
-    }
-
-    try {
-      const response =
-        await fetch(
-          `${aiBaseUrl.replace(
-            /\/$/,
-            ""
-          )}/ai`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              message: prompt,
-            }),
-          }
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          `AI request failed: ${response.status}`
-        );
+    let cancelled = false;
+    const openFromUrl = async () => {
+      const success = await openVerseReference(verse);
+      if (!cancelled && !success && bibleVersion === "kjv") {
+        setSearchError("❌ Reference not found. Try John 3:16, John 1:1-3, or John 3:5.");
       }
+    };
+    openFromUrl();
 
-      const data =
-        await response.json();
+    return () => {
+      cancelled = true;
+    };
+  }, [location.search, bookKeys, bibleData, bibleVersion]);
 
-      const content =
-        data?.data?.content ||
-        data?.content ||
-        data?.message ||
-        "RevelaAI returned no response.";
-
-      alert(
-        `🤖 RevelaAI says:\n${content}`
-      );
-    } catch (error) {
-      console.error(
-        "❌ AI request failed:",
-        error
-      );
-
-      alert(
-        "RevelaAI could not be reached right now. Please try again."
-      );
-    }
-  };
 
   /* =======================================================
      BOOK SELECTION
   ======================================================= */
 
-  const handleBookClick = (
-    key
-  ) => {
-    setSelectedBookKey(
-      key
-    );
-
-    setSelectedChapterIndex(
-      null
-    );
-
+  const handleBookClick = async (key) => {
+    setSelectedBookKey(key);
+    setSelectedChapterIndex(null);
     setVerses([]);
-
-    setViewLevel(
-      "chapters"
-    );
-
-    setHighlightedVerseRange(
-      null
-    );
-
+    setHighlightedVerseRange(null);
     setSearchError("");
+
+    if (bibleVersion === "web") {
+      setLoadingVersionBook(true);
+      try {
+        const book = await loadWebBibleBook(key);
+        setWebData((current) => ({ ...current, [key]: book }));
+      } catch (error) {
+        console.error("World English Bible book load error:", error);
+        setSearchError("Could not load the World English Bible book. Check your connection or switch back to KJV.");
+        setViewLevel("books");
+        return;
+      } finally {
+        setLoadingVersionBook(false);
+      }
+    }
+
+    setViewLevel("chapters");
   };
 
   /* =======================================================
@@ -797,7 +708,7 @@ export default function BibleDashboard({
     index
   ) => {
     const selectedBookData =
-      bibleData[
+      displayedBibleData[
         selectedBookKey
       ];
 
@@ -871,7 +782,7 @@ export default function BibleDashboard({
   ======================================================= */
 
   const selectedBook =
-    bibleData[
+    displayedBibleData[
       selectedBookKey
     ];
 
@@ -883,16 +794,16 @@ export default function BibleDashboard({
     bookKeys
       .filter((key) =>
         oldTestament.includes(
-          bibleData[key]?.book
+          displayedBibleData[key]?.book
         )
       )
       .sort(
         (a, b) =>
           oldTestament.indexOf(
-            bibleData[a].book
+            displayedBibleData[a].book
           ) -
           oldTestament.indexOf(
-            bibleData[b].book
+            displayedBibleData[b].book
           )
       );
 
@@ -904,16 +815,16 @@ export default function BibleDashboard({
     bookKeys
       .filter((key) =>
         newTestament.includes(
-          bibleData[key]?.book
+          displayedBibleData[key]?.book
         )
       )
       .sort(
         (a, b) =>
           newTestament.indexOf(
-            bibleData[a].book
+            displayedBibleData[a].book
           ) -
           newTestament.indexOf(
-            bibleData[b].book
+            displayedBibleData[b].book
           )
       );
 
@@ -1109,36 +1020,36 @@ export default function BibleDashboard({
           Search
         </button>
 
-        <button
-          type="button"
-          onClick={
-            askAI
-          }
-          disabled={
-            !searchInput.trim()
-          }
-          className="
-            w-full
-            rounded-lg
-            bg-green-600
-            px-4
-            py-2
-            text-white
-            transition
-            hover:bg-green-700
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-            sm:w-auto
-          "
-        >
-          Ask RevelaAI
-        </button>
+        <label className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 sm:w-auto">
+          <span className="shrink-0">Version</span>
+          <select
+            aria-label="Bible version"
+            value={bibleVersion}
+            onChange={handleBibleVersionChange}
+            disabled={loadingVersionBook}
+            className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none disabled:opacity-60 sm:w-48"
+          >
+            <option value="kjv">KJV · King James Version (offline)</option>
+            <option value="web">WEB · World English Bible (online)</option>
+          </select>
+        </label>
       </div>
 
       {/* =====================================================
           SEARCH ERROR
       ===================================================== */}
 
+      {bibleVersion === "web" && (
+        <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+          World English Bible · loads one book at a time and uses browser caching. The KJV remains available offline.
+          {" "}<a href="https://ebible.org/web/" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 underline dark:text-blue-400">About the WEB text</a>
+        </p>
+      )}
+      {loadingVersionBook && (
+        <div role="status" className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300">
+          Loading {bibleVersion === "web" ? "World English Bible" : "Bible"} book…
+        </div>
+      )}
       {searchError && (
         <div
           className="
@@ -1333,7 +1244,7 @@ export default function BibleDashboard({
                           "
                         >
                           {
-                            bibleData[
+                            displayedBibleData[
                               key
                             ]?.book
                           }
@@ -1347,7 +1258,7 @@ export default function BibleDashboard({
                           "
                         >
                           {
-                            bibleData[
+                            displayedBibleData[
                               key
                             ]?.chapters
                               ?.length ||
@@ -1463,7 +1374,7 @@ export default function BibleDashboard({
                           "
                         >
                           {
-                            bibleData[
+                            displayedBibleData[
                               key
                             ]?.book
                           }
@@ -1477,7 +1388,7 @@ export default function BibleDashboard({
                           "
                         >
                           {
-                            bibleData[
+                            displayedBibleData[
                               key
                             ]?.chapters
                               ?.length ||
