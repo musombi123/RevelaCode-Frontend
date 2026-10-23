@@ -91,18 +91,18 @@ export default function ElimuInvitationPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-      <section className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-slate-950 p-6 text-white sm:p-8">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-200"><GraduationCap size={25} /></span>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">RevelaCode Elimu</p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-[#0A74DA]/5 px-4 py-10 dark:from-slate-950 dark:via-slate-950 dark:to-[#2E8B57]/10">
+      <section className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-950">
+        <div className="bg-gradient-to-br from-[#10304B] via-[#0A74DA] to-[#2E8B57] p-6 text-white sm:p-8">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white"><GraduationCap size={25} /></span>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-white/80">RevelaCode Elimu</p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">School staff invitation</h1>
           <p className="mt-2 text-sm leading-6 text-slate-300">Join your school workspace using the RevelaCode account tied to the invited email address.</p>
         </div>
 
         <div className="space-y-5 p-6 sm:p-8">
           {status === "accepting" || status === "checking" ? (
-            <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200"><RefreshCw size={19} className="mt-0.5 shrink-0 animate-spin" /><div><p className="font-semibold">Accepting invitation…</p><p className="mt-1 leading-5">We are validating the invitation and connecting the account to the school. Please keep this page open.</p></div></div>
+            <div className="flex items-start gap-3 rounded-xl border border-[#0A74DA]/20 bg-[#0A74DA]/5 p-4 text-sm text-slate-800 dark:border-[#0A74DA]/30 dark:bg-[#0A74DA]/10 dark:text-slate-200"><RefreshCw size={19} className="mt-0.5 shrink-0 animate-spin" /><div><p className="font-semibold">Accepting invitation…</p><p className="mt-1 leading-5">We are validating the invitation and connecting the account to the school. Please keep this page open.</p></div></div>
           ) : null}
 
           {status === "signin" && (
