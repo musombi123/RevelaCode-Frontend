@@ -11,7 +11,7 @@ import { composeLivingResponse, getLocalBrainMemory } from "@/ai/v2-free/livingB
  * capabilities; availability and offline behaviour vary by device/browser.
  * No audio is uploaded and no paid/model API is called by this component.
  */
-export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope = "guest", onVoiceResult, onClose }) {
+export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope = "guest", freeMode = false, onVoiceResult, onClose }) {
   const { user, isGuest, isAuthenticated, authFetch } = useAuth();
   const [reply, setReply] = useState("");
   const [activeHub, setActiveHub] = useState(hub || "auto");
@@ -53,7 +53,7 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
     // Browser speech recognition stays on-device. The transcript uses the
     // same authenticated backend provider team as typed chat; local speech
     // synthesis remains available even when the provider is offline.
-    if (isAuthenticated && !isGuest && typeof authFetch === "function") {
+    if (!freeMode && isAuthenticated && !isGuest && typeof authFetch === "function") {
       try {
         let memoryContext = "";
         try {
@@ -133,7 +133,9 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
             </span>
             <div className="min-w-0">
               <h2 className="text-sm font-bold">RevelaAI Voice</h2>
-              <p className="mt-0.5 text-[10px] text-slate-400">On-device conversation · local-first</p>
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                {freeMode ? "Free mode · local-only · no model API calls" : "Adaptive voice · local-first fallback"}
+              </p>
             </div>
           </div>
           <button type="button" onClick={close} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5" aria-label="End voice chat">
@@ -147,6 +149,11 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
         </div>
 
         <VoiceOrbFree onTranscript={handleTranscript} />
+        {freeMode && (
+          <p className="mt-3 rounded-xl border border-emerald-300/15 bg-emerald-300/[.04] p-3 text-[11px] leading-5 text-emerald-100/80">
+            Free voice mode uses this device's speech recognition, local rules and speech synthesis. On-device/browser support varies; no hosted AI request is made from this voice session.
+          </p>
+        )}
 
         {reply && (
           <div className="mt-3 rounded-2xl border border-emerald-300/15 bg-emerald-300/[.04] p-3">
