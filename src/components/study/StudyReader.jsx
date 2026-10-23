@@ -825,16 +825,16 @@ function renderStudyContent(content) {
 }
 
 
-const SCRIPTURE_BOOKS = "(?:Song of Solomon|Song of Songs|1\\s*Samuel|2\\s*Samuel|1\\s*Kings|2\\s*Kings|1\\s*Chronicles|2\\s*Chronicles|1\\s*Corinthians|2\\s*Corinthians|1\\s*Thessalonians|2\\s*Thessalonians|1\\s*Timothy|2\\s*Timothy|1\\s*Peter|2\\s*Peter|1\\s*John|2\\s*John|3\\s*John|1\\s*Kings|2\\s*Kings|Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|Galatians|Ephesians|Philippians|Colossians|Titus|Philemon|Hebrews|James|Jude|Revelation)";
+const SCRIPTURE_BOOKS = "(?:Song of Solomon|Song of Songs|1\\s*Samuel|2\\s*Samuel|1\\s*Kings|2\\s*Kings|1\\s*Chronicles|2\\s*Chronicles|1\\s*Corinthians|2\\s*Corinthians|1\\s*Thessalonians|2\\s*Thessalonians|1\\s*Timothy|2\\s*Timothy|1\\s*Peter|2\\s*Peter|1\\s*John|2\\s*John|3\\s*John|Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|Galatians|Ephesians|Philippians|Colossians|Titus|Philemon|Hebrews|James|Jude|Revelation)";
 
 function extractScriptureReferences(content) {
   const raw = normalizeContent(content);
   if (!raw) return [];
-  const expression = new RegExp("\\\\b" + SCRIPTURE_BOOKS + "\\\\s+\\\\d+(?::\\\\s*\\\\d+(?:\\\\s*[–—-]\\\\s*\\\\d+)?)?", "gi");
+  const expression = new RegExp("\\b" + SCRIPTURE_BOOKS + "\\s+\\d+(?::\\s*\\d+(?:\\s*[–—-]\\s*\\d+)?)?", "gi");
   const seen = new Set();
   const output = [];
   for (const match of raw.matchAll(expression)) {
-    let reference = match[0].replace(/\\s*:\\s*/g, ":").replace(/[–—]/g, "-").replace(/\\s*-/g, "-").trim();
+    let reference = match[0].replace(/\s*:\s*/g, ":").replace(/[–—]/g, "-").replace(/\s*-\s*/g, "-").trim();
     // Whole-chapter references are useful study destinations too; the Bible
     // reader requires a verse, so open the first verse of that chapter.
     if (!reference.includes(":")) reference += ":1";
