@@ -85,6 +85,7 @@ function friendlyEndpointError(name, response) {
     usect_zero_misconfigured: "the diagnostics connection is invalid",
     usect_zero_unavailable: "the diagnostics service is temporarily unavailable",
     usect_zero_brain_credential_missing: "scoped diagnostics access is unavailable",
+    usect_zero_brain_token_missing: "scoped diagnostics access is unavailable",
   };
   const reason = safeReasons[code];
   return `${name}: ${reason || `the request failed (HTTP ${response.status || "unknown"})`}.`;
