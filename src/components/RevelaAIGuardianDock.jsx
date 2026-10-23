@@ -184,20 +184,40 @@ export default function RevelaAIGuardianDock({ onAction }) {
       const zeroCore = coreEntry(cores, "zero");
       const oneCore = coreEntry(cores, "one");
       const twoCore = coreEntry(cores, "two");
+      const meshUnavailable = !mesh?.ok;
+      const meshBlockedState = mesh?.status === 401
+        ? { label: "Mesh sign-in needed", tone: "restricted" }
+        : mesh?.status === 403
+          ? { label: "Mesh access restricted", tone: "restricted" }
+          : { label: "Mesh unavailable", tone: "down" };
+      const meshError = meshUnavailable
+        ? (mesh?.status === 0
+          ? (mesh?.error === "timeout" ? "Core Mesh request timed out." : "Core Mesh request could not reach the gateway; check CORS/network access.")
+          : `Core Mesh returned HTTP ${mesh.status}: ${mesh?.payload?.error?.message || mesh?.payload?.message || mesh?.payload?.error?.code || "status details unavailable"}`)
+        : ((!oneCore || !twoCore) ? "Core Mesh responded without all expected core records." : null);
+      const zeroError = !zero?.ok
+        ? (zero?.payload?.error?.message || zero?.payload?.message || (zero?.status === 0 ? "Health request could not reach the gateway." : `Health endpoint returned HTTP ${zero?.status}.`))
+        : null;
+      const sciError = (sci?.status === 401 || sci?.status === 403)
+        ? "This endpoint requires a verified platform-admin session; restricted status does not prove the service is offline."
+        : (!sci?.ok ? (sci?.payload?.error?.message || sci?.payload?.message || `Health endpoint returned HTTP ${sci?.status || "unknown"}.`) : null);
       const next = {
         mesh: normalizeState(meshData, mesh),
         guardian: { label: "On demand", tone: "neutral" },
         zero: normalizeState(zeroCore || zero?.payload?.data || zero?.payload, zero),
-        one: oneCore ? normalizeState(oneCore, mesh) : { label: "Unreported", tone: "muted" },
-        two: twoCore ? normalizeState(twoCore, mesh) : { label: "Unreported", tone: "muted" },
+        one: oneCore ? normalizeState(oneCore, mesh) : meshUnavailable ? meshBlockedState : { label: "Unreported", tone: "muted" },
+        two: twoCore ? normalizeState(twoCore, mesh) : meshUnavailable ? meshBlockedState : { label: "Unreported", tone: "muted" },
         meta: normalizeState(meta?.payload?.data || meta?.payload, meta),
         sci: normalizeState(sci?.payload?.data || sci?.payload, sci, true),
         details: {
           signedTools: oneCore?.active_signed_tools_count ?? meshData?.active_signed_tools_count,
           meshStatus: meshData?.mesh_status || meshData?.status || null,
-          zeroReason: zeroCore?.failure_reason || zero?.payload?.message || null,
-          oneReason: oneCore?.failure_reason || null,
-          twoReason: twoCore?.failure_reason || null,
+          meshReason: meshError,
+          zeroReason: zeroCore?.failure_reason || zero?.payload?.error?.message || zero?.payload?.message || zeroError,
+          oneReason: oneCore?.failure_reason || (meshUnavailable ? meshError : (!oneCore ? "Core One status record is missing." : null)),
+          twoReason: twoCore?.failure_reason || (meshUnavailable ? meshError : (!twoCore ? "Core Two status record is missing." : null)),
+          sciReason: sciError,
+          metaReason: !meta?.ok ? (meta?.payload?.error?.message || meta?.payload?.message || `Health endpoint returned HTTP ${meta?.status || "unknown"}.`) : null,
         },
       };
       // A reachable mesh endpoint does not mean a core is healthy. Respect each
