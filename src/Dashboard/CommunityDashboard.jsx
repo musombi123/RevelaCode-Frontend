@@ -49,6 +49,7 @@ import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
 import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirectory.jsx";
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
+import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -1399,6 +1400,7 @@ export default function CommunityDashboard({
                   <EmptyState icon={Compass} title="No needs or offers surfaced yet" description={activeSurface === "discovery" ? "The current discovery query returned no matching needs or offers. Try another intent or search term." : "The live Community service has not returned actionable needs or offers for this view. Nothing is fabricated; refresh later or search for a specific intent."} onAction={() => selectIntent("buy")} actionLabel="Explore things to buy" />
                 )}
               </section>
+              <CommunityAdSenseUnit />
             </>
           )}
         </main>
