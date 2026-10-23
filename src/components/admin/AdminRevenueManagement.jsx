@@ -10,7 +10,6 @@ import {
   RefreshCw,
   Save,
   Search,
-  ShieldCheck,
   X,
 } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
@@ -351,7 +350,9 @@ export default function AdminRevenueManagement() {
       });
       setEditingCode("");
       const savedStatus = response?.plan?.status || values.status;
-      const savedCheckoutEnabled = response?.checkout_enabled === true || catalogueMeta.checkout_enabled === true;
+      const savedCheckoutEnabled = typeof response?.checkout_enabled === "boolean"
+        ? response.checkout_enabled
+        : catalogueMeta.checkout_enabled === true;
       setNotice(
         savedStatus === "available" && !savedCheckoutEnabled
           ? `Plan "${code}" is marked Available in the catalogue, but is not effective for checkout while production M-PESA is disabled.`
@@ -385,8 +386,11 @@ export default function AdminRevenueManagement() {
       });
       setShowCreate(false);
       setCreateForm(INITIAL_CREATE);
+      const responseCheckoutEnabled = typeof response?.checkout_enabled === "boolean"
+        ? response.checkout_enabled
+        : catalogueMeta.checkout_enabled === true;
       setNotice(
-        response?.plan?.status === "available" && response?.checkout_enabled !== true && catalogueMeta.checkout_enabled !== true
+        response?.plan?.status === "available" && !responseCheckoutEnabled
           ? `Plan "${createForm.code.trim().toLowerCase()}" is marked Available in the catalogue, but is not effective for checkout while production M-PESA is disabled.`
           : response?.message || "Plan saved to the catalogue.",
       );
