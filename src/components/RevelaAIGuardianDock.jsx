@@ -230,9 +230,13 @@ export default function RevelaAIGuardianDock({ onAction }) {
       else if (zeroCore?.reachable === false) next.zero = { label: "Offline", tone: "down" };
       setSnapshot(next);
       setCheckedAt(new Date());
-      if (mesh?.status === 0 && zero?.status === 0 && meta?.status === 0) {
-        setRefreshError("RevelaAI status endpoints could not be reached. Actions remain available and report their own blockers.");
-      }
+
+      const notes = [];
+      if (meshError) notes.push(`Core Mesh: ${meshError}`);
+      if (zeroError) notes.push(`USECT-ZERO: ${zeroError}`);
+      if (sciError) notes.push(`Sci Defend: ${sciError}`);
+      if (next.details.metaReason) notes.push(`Meta Engineer: ${next.details.metaReason}`);
+      setRefreshError(notes.join(" "));
     } catch {
       setRefreshError("The live capability snapshot could not be refreshed.");
     } finally {
