@@ -134,32 +134,44 @@ function getInitials(name) {
 
 export default function CommunityComposer({
   onNavigate,
+  initialPost = null,
 }) {
   const { user } = useAuth();
 
   const {
     createCommunityPost,
+    updateCommunityPost,
     uploadCommunityMedia,
   } = useJumuiyaApi();
+
+  const initialCategoryChoice = useMemo(() => {
+    const supported = new Set(POST_CATEGORIES.map((item) => item.value));
+    return [
+      initialPost?.type,
+      initialPost?.post_type,
+      initialPost?.category,
+    ].map((value) => String(value || "").toLowerCase())
+      .find((value) => supported.has(value)) || "general";
+  }, [initialPost]);
 
   // ==========================================================
   // FORM STATE
   // ==========================================================
 
   const [postTitle, setPostTitle] =
-    useState("");
+    useState(() => String(initialPost?.title || initialPost?.subject || ""));
 
   const [postBody, setPostBody] =
-    useState("");
+    useState(() => String(initialPost?.body || initialPost?.content || initialPost?.text || ""));
 
   const [postCategory, setPostCategory] =
-    useState("general");
+    useState(initialCategoryChoice);
 
   const [postHub, setPostHub] =
-    useState("community");
+    useState(() => String(initialPost?.hub || initialPost?.source_hub || "community"));
 
   const [postLocation, setPostLocation] =
-    useState("");
+    useState(() => String(initialPost?.location || ""));
 
   const [posting, setPosting] =
     useState(false);
@@ -185,7 +197,7 @@ export default function CommunityComposer({
     useState(null);
 
   const [externalLink, setExternalLink] =
-    useState("");
+    useState(() => String(initialPost?.action?.target || ""));
 
   // ==========================================================
   // USER DATA
@@ -259,7 +271,7 @@ export default function CommunityComposer({
     const location =
       postLocation.trim();
 
-    let action = {};
+    let action = initialPost?.action && typeof initialPost.action === "object" ? initialPost.action : {};
 
     if (externalLink.trim()) {
       let candidate = externalLink.trim();
@@ -319,6 +331,10 @@ export default function CommunityComposer({
 
       let attachments = [];
 
+      if (initialPost && attachmentFile) {
+        throw new Error("Attachments cannot be replaced by the current post-update contract. Remove the file and save the text changes, or publish a new post.");
+      }
+
       if (attachmentFile) {
         const uploadResult = await uploadCommunityMedia(attachmentFile);
         const uploadedAttachment =
@@ -335,22 +351,43 @@ export default function CommunityComposer({
         attachments = [{ media_id: String(uploadedAttachment.id) }];
       }
 
-      await createCommunityPost({
+      const normalizedPostType = {
+        general: "discussion",
+        discussion: "discussion",
+        question: "question",
+        announcement: "announcement",
+        advertisement: "advertisement",
+        opportunity: "opportunity",
+        help: "help",
+      }[postCategory] || "discussion";
+
+      const preserveOriginalCategory = Boolean(
+        initialPost && postCategory === initialCategoryChoice && initialPost.category
+      );
+      const payload = {
         title,
         body,
-        category:
-          postCategory || "general",
-        hub:
-          postCategory === "advertisement"
-            ? "community"
-            : postHub || "community",
+        category: preserveOriginalCategory ? String(initialPost.category) : (postCategory || "general"),
+        type: initialPost && postCategory === initialCategoryChoice
+          ? (initialPost.type || initialPost.post_type || normalizedPostType)
+          : normalizedPostType,
+        hub: postCategory === "advertisement" ? "community" : (postHub || "community"),
         location,
-        attachments,
         action,
-      });
+      };
+
+      if (initialPost) {
+        const postId = initialPost.id ?? initialPost._id ?? initialPost.post_id ?? initialPost.postId;
+        if (postId === undefined || postId === null || !String(postId).trim()) {
+          throw new Error("The post ID is missing. Refresh Community and try editing again.");
+        }
+        await updateCommunityPost(postId, payload);
+      } else {
+        await createCommunityPost({ ...payload, attachments });
+      }
 
       setSuccess(
-        "Your post has been published successfully."
+        initialPost ? "Your post has been updated successfully." : "Your post has been published successfully."
       );
 
       setPostTitle("");
@@ -564,7 +601,7 @@ export default function CommunityComposer({
                       dark:text-white
                     "
                   >
-                    Create a community post
+                    {initialPost ? "Edit community post" : "Create a community post"}
                   </h1>
 
                   <p
@@ -575,8 +612,9 @@ export default function CommunityComposer({
                       text-slate-400
                     "
                   >
-                    Share an idea, announcement,
-                    question, opportunity or update.
+                    {initialPost
+                      ? "Update the content of your existing Community post."
+                      : "Share an idea, announcement, question, opportunity or update."}
                   </p>
                 </div>
               </div>
@@ -1269,7 +1307,7 @@ export default function CommunityComposer({
                             dark:text-slate-200
                           "
                         >
-                          Add photo or video
+                          {initialPost ? "Existing attachment" : "Add photo or video"}
                         </div>
 
                         <div
@@ -1280,8 +1318,9 @@ export default function CommunityComposer({
                             text-slate-400
                           "
                         >
-                          {attachmentName ||
-                            "Uploads when you publish · Images 12 MB · Videos 50 MB"}
+                          {initialPost
+                            ? "The current update API does not replace existing attachments."
+                            : attachmentName || "Uploads when you publish · Images 12 MB · Videos 50 MB"}
                         </div>
                       </div>
 
@@ -1292,7 +1331,7 @@ export default function CommunityComposer({
                         onChange={
                           handleAttachment
                         }
-                        disabled={posting}
+                        disabled={posting || Boolean(initialPost)}
                       />
                     </label>
 
@@ -1632,12 +1671,12 @@ export default function CommunityComposer({
                             size={16}
                             className="animate-spin"
                           />
-                          Publishing...
+                          Saving...
                         </>
                       ) : (
                         <>
                           <Send size={16} />
-                          Publish post
+                          {initialPost ? "Save changes" : "Publish post"}
                         </>
                       )}
                     </button>
