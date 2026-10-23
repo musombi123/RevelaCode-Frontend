@@ -1044,6 +1044,16 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         [data-school-website="true"] .school-document-row { width:100%; }
         [data-school-website="true"] .school-hero-kicker { color:var(--school-heading)!important; }
         [data-school-website="true"] .school-hero-motto { color:var(--school-heading)!important; }
+        [data-school-website="true"] .shadow-sm,[data-school-website="true"] .shadow,[data-school-website="true"] .shadow-md,[data-school-website="true"] .shadow-lg,[data-school-website="true"] .shadow-xl,[data-school-website="true"] .shadow-2xl { --tw-shadow-color:color-mix(in srgb,var(--school-heading) 10%,transparent)!important; }
+        [data-school-website="true"] [class*="ring-offset-"] { --tw-ring-offset-color:var(--school-surface)!important; }
+        [data-school-website="true"] [class*="focus-visible:ring-emerald-"]:focus-visible { --tw-ring-color:color-mix(in srgb,var(--school-primary) 50%,transparent)!important; }
+        [data-school-website="true"] [class*="hover:bg-emerald-"]:hover { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="hover:text-emerald-"]:hover { color:var(--school-primary)!important; }
+        [data-school-website="true"] [class*="hover:border-emerald-"]:hover { border-color:color-mix(in srgb,var(--school-primary) 28%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="hover:bg-slate-50"]:hover,[data-school-website="true"] [class*="hover:bg-slate-100"]:hover { background-color:var(--school-surface-tint)!important; }
+        [data-school-website="true"] [class*="hover:text-slate-950"]:hover,[data-school-website="true"] [class*="hover:text-slate-900"]:hover { color:var(--school-heading)!important; }
+        [data-school-website="true"] [class*="hover:border-slate-"]:hover { border-color:color-mix(in srgb,var(--school-heading) 22%,var(--school-surface))!important; }
+        [data-school-website="true"] .text-slate-300,[data-school-website="true"] .text-slate-400,[data-school-website="true"] .text-slate-500 { color:var(--school-body)!important; opacity:.84; }
         @media(max-width:640px) { [data-school-website="true"] .school-home-hero { border-radius:1.1rem; } [data-school-website="true"] .school-home-contact { border-radius:1.1rem; } }
 
         /* Premium public-school website system: colours are derived from the selected school palette. */
