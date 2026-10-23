@@ -28,6 +28,7 @@ import StudyReader from "./study/StudyReader.jsx";
 import FaithAtlas from "./faith/FaithAtlas.jsx";
 import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
 import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
+import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -268,6 +269,11 @@ export default function FaithDashboard({
   const openSDAQuarterly = () => {
     setSelectedMaterial(null);
     setFaithSection("quarterly");
+  };
+
+  const openAncientWordRoots = () => {
+    setSelectedMaterial(null);
+    setFaithSection("word-roots");
   };
 
   const openMaterial = (material) => {
@@ -553,6 +559,18 @@ export default function FaithDashboard({
             <CalendarDays size={16} />
             SDA Quarterly
           </button>
+          <button
+            type="button"
+            onClick={openAncientWordRoots}
+            className={"inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition " + (
+              faithSection === "word-roots"
+                ? "bg-violet-600 text-white"
+                : "border border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-300 dark:hover:bg-violet-950/50"
+            )}
+          >
+            <BookOpen size={16} />
+            Ancient Word Roots
+          </button>
         </div>
       </div>
     </section>
@@ -669,6 +687,22 @@ export default function FaithDashboard({
           closeStudyView
         )}
         <SDAQuarterlyWorkspace onOpen={openMaterial} />
+      </div>
+    );
+  }
+
+  if (faithSection === "word-roots") {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+        {renderStudyHeader(
+          "Ancient Word Roots",
+          "Explore Hebrew, Aramaic, Koine Greek, and Qur'anic Arabic in context—with respectful, source-aware theological perspectives.",
+          closeStudyView
+        )}
+        <AncientWordRootsWorkspace
+          onOpenAcademy={openFaithAcademy}
+          onLogin={onLogin}
+        />
       </div>
     );
   }
@@ -1117,7 +1151,7 @@ export default function FaithDashboard({
           grid-cols-2
           gap-2
           sm:grid-cols-2
-          xl:grid-cols-5
+          xl:grid-cols-6
         "
       >
         <button
@@ -1357,6 +1391,24 @@ export default function FaithDashboard({
               </p>
             </div>
             <ChevronRight size={18} className="text-amber-600 transition-transform group-hover:translate-x-1" />
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={openAncientWordRoots}
+          className="group rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/30 dark:to-gray-900 sm:p-4"
+        >
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white sm:h-11 sm:w-11">
+              <BookOpen size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black text-gray-900 dark:text-white">Ancient Word Roots</h3>
+              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
+                Original languages, meanings, and respectful theology.
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-violet-600 transition-transform group-hover:translate-x-1" />
           </div>
         </button>
       </section>
