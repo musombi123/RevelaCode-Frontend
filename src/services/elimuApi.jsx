@@ -660,6 +660,9 @@ export function createElimuApiClient({
     sendSchoolFeeReminder: (data, options) =>
       post("finance/fee-reminders", data, options),
 
+    getSchoolFeeReminders: (params, options) =>
+      get("finance/fee-reminders", params, options),
+
     getSchoolPaymentAccounts: (params, options) =>
       get("finance/payment-accounts", params, options),
 
