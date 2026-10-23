@@ -342,12 +342,12 @@ export default function App() {
 
               <Route
                 path="/jumuiya/biashara"
-                element={<InternalDashboard />}
+                element={<Navigate to="/?hub=biashara" replace />}
               />
 
               <Route
                 path="/jumuiya/shamba"
-                element={<InternalDashboard />}
+                element={<Navigate to="/?hub=shamba" replace />}
               />
 
               <Route
@@ -362,7 +362,7 @@ export default function App() {
 
               <Route
                 path="/jumuiya/elimu"
-                element={<InternalDashboard />}
+                element={<Navigate to="/?hub=education" replace />}
               />
 
               <Route
