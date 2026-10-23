@@ -64,11 +64,10 @@ export default function StudyResourceViewer({ source }) {
           </button>
         </div>
 
-        {frameFailed && <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">This publisher may block embedded viewing. RevelaCode keeps the source information here, but the publisher controls whether its page can appear inside this reader.</div>}
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{frameFailed ? "This publisher reported a display error. " : ""}You remain inside RevelaCode. Some publishers block embedded viewing; use “Copy source link” to keep the exact source address. External pages are not promised to work offline.</div>
         <iframe key={url} src={url} title={source?.title || "Study reference source"} loading="eager" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" onError={() => setFrameFailed(true)} className="h-[72vh] min-h-[420px] w-full bg-white" />
-        <div className="flex flex-col gap-2 border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] leading-5 text-slate-500 dark:text-slate-400"><ShieldCheck size={13} className="mr-1 inline" /> Source page is displayed in RevelaCode where the publisher permits embedding. External pages are not guaranteed to be available offline.</p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 underline dark:text-indigo-300">Publisher page <ExternalLink size={13} /></a>
+        <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+          <p className="text-[11px] leading-5 text-slate-500 dark:text-slate-400"><ShieldCheck size={13} className="mr-1 inline" /> Source identity is preserved. The full text can only be cached when the source provides a downloadable copy or permits it to be read and saved; this viewer does not copy third-party pages behind their terms.</p>
         </div>
       </section>
 
