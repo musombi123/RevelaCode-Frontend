@@ -36,6 +36,49 @@ const INITIAL_CREATE = {
   featuresText: "",
 };
 
+const CHECKOUT_HUBS = new Set([
+  "shamba",
+  "biashara",
+  "elimu",
+  "community",
+  "smart_ai",
+  "marketplace",
+  "faith",
+]);
+
+function getPlanActivation(plan, billingEnabled, billingKnown) {
+  const status = String(plan?.status || "proposed").toLowerCase();
+  const hub = String(plan?.hub || "").toLowerCase();
+  const interval = String(plan?.interval || "").toLowerCase();
+  const amount = Number(plan?.amount);
+
+  if (status === "retired") {
+    return { kind: "retired", label: "Retired", detail: "Retired plans are not offered for checkout." };
+  }
+  if (status !== "available") {
+    return { kind: "proposed", label: "Proposed · not effective", detail: "Set the catalogue status to Available before this plan can be offered." };
+  }
+  if (hub === "all" && amount === 0) {
+    return { kind: "free", label: "Available free plan", detail: "This plan is available without a payment; it is not an M-PESA checkout plan." };
+  }
+  if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
+    return { kind: "invalid", label: "Not checkout-ready", detail: "M-PESA subscription checkout requires a positive whole-KES amount." };
+  }
+  if (!["month", "year"].includes(interval)) {
+    return { kind: "invalid", label: "Not checkout-ready", detail: "Only monthly or yearly hub subscriptions are supported by this checkout." };
+  }
+  if (!CHECKOUT_HUBS.has(hub)) {
+    return { kind: "invalid", label: "Not checkout-ready", detail: "This plan's stream is not supported by the current subscription checkout." };
+  }
+  if (!billingKnown) {
+    return { kind: "unknown", label: "Checkout status unknown", detail: "The admin API has not confirmed production M-PESA readiness." };
+  }
+  if (!billingEnabled) {
+    return { kind: "catalogue_only", label: "Catalogue only", detail: "The plan is marked Available, but production M-PESA checkout is disabled." };
+  }
+  return { kind: "effective", label: "Effective for checkout", detail: "Published plan, valid subscription price, supported hub, and production M-PESA checkout enabled." };
+}
+
 function formatCount(value) {
   const number = Number(value);
   return Number.isFinite(number) ? new Intl.NumberFormat().format(number) : "—";
@@ -77,11 +120,29 @@ function getError(error) {
 
 function StatusPill({ value }) {
   const status = String(value || "unknown").toLowerCase();
-  const style = status === "available" || status === "succeeded"
+  const isPositive = [
+    "available",
+    "succeeded",
+    "effective for checkout",
+    "available free plan",
+    "production checkout enabled",
+  ].includes(status);
+  const isWarning = [
+    "pending",
+    "proposed",
+    "processing",
+    "catalogue only",
+    "checkout status unknown",
+    "billing disabled",
+    "not checkout-ready",
+    "proposed · not effective",
+  ].includes(status);
+  const isNegative = ["retired", "failed", "cancelled"].includes(status);
+  const style = isPositive
     ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
-    : status === "pending" || status === "proposed" || status === "processing"
+    : isWarning
       ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
-      : status === "retired" || status === "failed" || status === "cancelled"
+      : isNegative
         ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
         : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
 
@@ -105,7 +166,7 @@ function MetricCard({ title, value, description, icon: Icon }) {
   );
 }
 
-function EditPlanForm({ plan, saving, onCancel, onSave }) {
+function EditPlanForm({ plan, saving, onCancel, onSave, billingEnabled, billingKnown }) {
   const [form, setForm] = useState(() => ({
     name: plan.name || "",
     amount: String(plan.amount ?? "0.00"),
@@ -160,7 +221,10 @@ function EditPlanForm({ plan, saving, onCancel, onSave }) {
         Plan features (one per line)
         <textarea rows={4} value={form.featuresText} onChange={(event) => update("featuresText", event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
       </label>
-      <p className="text-[11px] leading-5 text-amber-700 dark:text-amber-300">Saving changes the draft catalogue only. Checkout, paid entitlements, wallet credits, and billing remain disabled.</p>
+      <p className="text-[11px] leading-5 text-amber-700 dark:text-amber-300">
+        A plan is effective for customer checkout only when it is Available, has a positive whole-KES price, uses a supported hub and monthly/yearly interval, and production M-PESA checkout is enabled.
+        {!billingKnown ? " The live checkout status is currently unknown." : billingEnabled ? " Production M-PESA checkout is enabled." : " Production M-PESA checkout is currently disabled."}
+      </p>
       <div className="flex flex-wrap gap-2">
         <button disabled={saving} type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"><Save className="h-4 w-4" />{saving ? "Saving..." : "Save plan"}</button>
         <button type="button" onClick={onCancel} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"><X className="h-4 w-4" />Cancel</button>
@@ -174,6 +238,11 @@ export default function AdminRevenueManagement() {
   const [overview, setOverview] = useState(null);
   const [overviewError, setOverviewError] = useState("");
   const [plans, setPlans] = useState([]);
+  const [catalogueMeta, setCatalogueMeta] = useState({
+    pricing_status: null,
+    billing_enabled: null,
+    checkout_enabled: null,
+  });
   const [plansError, setPlansError] = useState("");
   const [plansLoading, setPlansLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
@@ -210,9 +279,15 @@ export default function AdminRevenueManagement() {
     try {
       const response = await adminApi.request("/api/revenue/admin/plans", { signal });
       setPlans(Array.isArray(response?.plans) ? response.plans : []);
+      setCatalogueMeta({
+        pricing_status: response?.pricing_status ?? null,
+        billing_enabled: typeof response?.billing_enabled === "boolean" ? response.billing_enabled : null,
+        checkout_enabled: typeof response?.checkout_enabled === "boolean" ? response.checkout_enabled : null,
+      });
     } catch (error) {
       if (error?.name !== "AbortError") {
         setPlans([]);
+        setCatalogueMeta({ pricing_status: null, billing_enabled: null, checkout_enabled: null });
         setPlansError(getError(error));
       }
     } finally {
@@ -270,12 +345,18 @@ export default function AdminRevenueManagement() {
     setNotice("");
     setActionError("");
     try {
-      await adminApi.request(`/api/revenue/admin/plans/${encodeURIComponent(code)}`, {
+      const response = await adminApi.request(`/api/revenue/admin/plans/${encodeURIComponent(code)}`, {
         method: "PUT",
         body: values,
       });
       setEditingCode("");
-      setNotice(`Plan "${code}" saved to the draft catalogue.`);
+      const savedStatus = response?.plan?.status || values.status;
+      const savedCheckoutEnabled = response?.checkout_enabled === true || catalogueMeta.checkout_enabled === true;
+      setNotice(
+        savedStatus === "available" && !savedCheckoutEnabled
+          ? `Plan "${code}" is marked Available in the catalogue, but is not effective for checkout while production M-PESA is disabled.`
+          : response?.message || `Plan "${code}" saved.`,
+      );
       setReloadKey((value) => value + 1);
     } catch (error) {
       setActionError(getError(error));
@@ -304,7 +385,11 @@ export default function AdminRevenueManagement() {
       });
       setShowCreate(false);
       setCreateForm(INITIAL_CREATE);
-      setNotice(response?.message || "Draft plan created.");
+      setNotice(
+        response?.plan?.status === "available" && response?.checkout_enabled !== true && catalogueMeta.checkout_enabled !== true
+          ? `Plan "${createForm.code.trim().toLowerCase()}" is marked Available in the catalogue, but is not effective for checkout while production M-PESA is disabled.`
+          : response?.message || "Plan saved to the catalogue.",
+      );
       setReloadKey((value) => value + 1);
     } catch (error) {
       setActionError(getError(error));
@@ -321,6 +406,23 @@ export default function AdminRevenueManagement() {
 
   const metrics = overview?.metrics || {};
   const breakdown = Array.isArray(overview?.stream_breakdown) ? overview.stream_breakdown : [];
+  const reportedCheckoutEnabled =
+    typeof catalogueMeta.checkout_enabled === "boolean"
+      ? catalogueMeta.checkout_enabled
+      : typeof overview?.checkout_enabled === "boolean"
+        ? overview.checkout_enabled
+        : typeof overview?.billing_enabled === "boolean"
+          ? overview.billing_enabled
+          : null;
+  const billingKnown = typeof reportedCheckoutEnabled === "boolean";
+  const billingEnabled = reportedCheckoutEnabled === true;
+  const effectivePaidPlans = plans.filter(
+    (plan) => getPlanActivation(plan, billingEnabled, billingKnown).kind === "effective",
+  );
+  const availablePaidPlans = plans.filter(
+    (plan) => plan.status === "available" && Number(plan.amount) > 0 && plan.hub !== "all",
+  );
+  const proposedPlansCount = plans.filter((plan) => plan.status === "proposed").length;
   const totalRows = Number(pagination.total || 0);
   const totalPages = Math.max(1, Number(pagination.pages || 1));
 
@@ -341,22 +443,72 @@ export default function AdminRevenueManagement() {
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <StatusPill value="platform admin only" />
-            <StatusPill value={`pricing ${overview?.pricing_status || "draft"}`} />
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-200"><ShieldCheck className="h-3 w-3" />Billing disabled</span>
+            <StatusPill value={`pricing ${catalogueMeta.pricing_status || overview?.pricing_status || "draft"}`} />
+            <StatusPill value={!billingKnown ? "Checkout status unknown" : billingEnabled ? "Production checkout enabled" : "Billing disabled"} />
           </div>
         </div>
 
         <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-6">
           <MetricCard title="Transaction intents" value={metrics.total_intents} description="All recorded purchase requests" icon={ClipboardList} />
-          <MetricCard title="Pending intents" value={metrics.pending_intents} description="Awaiting any future payment flow" icon={Clock3} />
-          <MetricCard title="Catalogue plans" value={metrics.plan_count} description="Default and admin-created plans" icon={CircleDollarSign} />
-          <MetricCard title="Retired plans" value={metrics.retired_plan_count} description="Hidden from the public catalogue" icon={ShieldCheck} />
+          <MetricCard title="Pending intents" value={metrics.pending_intents} description="Not confirmed revenue" icon={Clock3} />
+          <MetricCard title="Effective paid plans" value={effectivePaidPlans.length} description="Can accept live M-PESA checkout now" icon={CheckCircle2} />
+          <MetricCard title="Available paid plans" value={availablePaidPlans.length} description="Marked Available in the catalogue" icon={CircleDollarSign} />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Effective plans</h3>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">This list is computed from the server's live checkout flag and each plan's status, price, hub, and interval. An Available catalogue status alone does not mean a plan can take payment.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill value={!billingKnown ? "Checkout status unknown" : billingEnabled ? "Production checkout enabled" : "Billing disabled"} />
+            <StatusPill value={`${effectivePaidPlans.length} effective paid plans`} />
+          </div>
+        </div>
+
+        {effectivePaidPlans.length > 0 ? (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {effectivePaidPlans.map((plan) => (
+              <article key={plan.code} className="rounded-xl border border-emerald-200 p-4 dark:border-emerald-900/50">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label(plan.hub)} · {plan.code}</p>
+                    <h4 className="mt-1 font-bold text-slate-900 dark:text-white">{plan.name}</h4>
+                    <p className="mt-2 text-lg font-black text-slate-900 dark:text-white">{formatMoney(plan.amount, plan.currency)} <span className="text-xs font-medium text-slate-400">/ {plan.interval}</span></p>
+                  </div>
+                  <StatusPill value="Effective for checkout" />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{getPlanActivation(plan, billingEnabled, billingKnown).detail}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-dashed border-slate-200 p-5 dark:border-slate-800">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">No paid plan is effective for customer checkout right now.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              {!billingKnown
+                ? "The backend's production checkout status could not be confirmed. Refresh after checking the admin API."
+                : !billingEnabled
+                  ? "The backend reports billing_enabled=false. Paid plans can be reviewed in the catalogue, but none will accept customer payments until production Daraja configuration passes the backend readiness checks."
+                  : "Production checkout is configured, but no paid plan is currently Available with a valid whole-KES price, supported hub, and monthly/yearly interval."}
+            </p>
+          </div>
+        )}
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <span>{formatCount(availablePaidPlans.length)} paid plans marked Available in the catalogue</span>
+          <span>{formatCount(proposedPlansCount)} proposed plans</span>
+          <span>{formatCount(plans.filter((plan) => plan.status === "retired").length)} retired plans</span>
         </div>
       </section>
 
       <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-        <div><p className="font-bold">Intents are not revenue</p><p className="mt-1">These totals describe requested purchases only. The current engine does not charge customers, verify provider payments, activate subscriptions, or settle seller balances. Changing a plan edits the catalogue only.</p></div>
+        <div>
+          <p className="font-bold">Payment intents are not confirmed revenue</p>
+          <p className="mt-1">Confirmed revenue and paid subscriptions must follow the backend's provider verification flow. {billingEnabled ? "Production M-PESA checkout is enabled for eligible published plans." : "Production checkout is currently disabled; no paid plan can accept customer payments until backend readiness checks pass."}</p>
+        </div>
       </div>
 
       {overviewError ? <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">Overview: {overviewError}</div> : null}
@@ -395,7 +547,11 @@ export default function AdminRevenueManagement() {
                   <StatusPill value={plan.status} />
                 </div>
                 <ul className="mt-3 space-y-1.5">{(plan.features || []).slice(0, 5).map((feature) => <li key={feature} className="text-xs leading-5 text-slate-500 dark:text-slate-400">- {feature}</li>)}</ul>
-                {editingCode === plan.code ? <EditPlanForm plan={plan} saving={savingCode === plan.code} onCancel={() => setEditingCode("")} onSave={(values) => savePlan(plan.code, values)} /> : <button type="button" onClick={() => { setEditingCode(plan.code); setNotice(""); setActionError(""); }} className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><Edit3 className="h-3.5 w-3.5" />Edit plan</button>}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <StatusPill value={getPlanActivation(plan, billingEnabled, billingKnown).label} />
+                  <span className="text-[11px] leading-5 text-slate-500 dark:text-slate-400">{getPlanActivation(plan, billingEnabled, billingKnown).detail}</span>
+                </div>
+                {editingCode === plan.code ? <EditPlanForm plan={plan} saving={savingCode === plan.code} billingEnabled={billingEnabled} billingKnown={billingKnown} onCancel={() => setEditingCode("")} onSave={(values) => savePlan(plan.code, values)} /> : <button type="button" onClick={() => { setEditingCode(plan.code); setNotice(""); setActionError(""); }} className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><Edit3 className="h-3.5 w-3.5" />Edit plan</button>}
               </article>
             ))}
           </div>
