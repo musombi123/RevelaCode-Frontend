@@ -49,6 +49,30 @@ import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
 import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirectory.jsx";
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
+import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
+
+// ============================================================
+// TEMPORARY HUB REDIRECTS
+// All hubs continue to share the existing Render frontend until
+// the custom subdomains are configured. Route through the central app.
+// ============================================================
+function redirectToHub(hub) {
+  if (typeof window === "undefined") return;
+
+  const routes = {
+    biashara: "/jumuiya/biashara",
+    shamba: "/jumuiya/shamba",
+    elimu: "/jumuiya/elimu",
+    education: "/jumuiya/elimu",
+  };
+  const path = routes[String(hub || "").trim().toLowerCase()];
+  if (!path) return;
+
+  const hostname = String(window.location.hostname || "").toLowerCase();
+  const isRevelaCodeSubdomain = hostname.endsWith(".revelacode.co.ke");
+  const origin = isRevelaCodeSubdomain ? "https://revelacode.co.ke" : window.location.origin;
+  window.location.assign(`${origin}${path}`);
+}
 
 // ============================================================
 // COMMUNITY PILLARS
@@ -504,6 +528,7 @@ export default function CommunityDashboard({
   const [backMenuOpen, setBackMenuOpen] = useState(false);
   const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [composerCategory, setComposerCategory] = useState("general");
   const [backendHealth, setBackendHealth] = useState("checking");
 
   const navigate = useCallback(
@@ -538,6 +563,14 @@ export default function CommunityDashboard({
           return;
 
         case "community-composer":
+          setEditingPost(null);
+          setComposerCategory("general");
+          setWorkspacePage("composer");
+          return;
+
+        case "community-advertisement":
+          setEditingPost(null);
+          setComposerCategory("advertisement");
           setWorkspacePage("composer");
           return;
 
@@ -576,15 +609,15 @@ export default function CommunityDashboard({
           return;
 
         case "community-hub-biashara":
-          if (typeof onNavigate === "function") onNavigate("biashara");
+          redirectToHub("biashara");
           return;
 
         case "community-hub-shamba":
-          if (typeof onNavigate === "function") onNavigate("shamba");
+          redirectToHub("shamba");
           return;
 
         case "community-hub-elimu":
-          if (typeof onNavigate === "function") onNavigate("education");
+          redirectToHub("elimu");
           return;
 
         case "elimu":
@@ -940,6 +973,15 @@ export default function CommunityDashboard({
     setReloadToken((value) => value + 1);
   }, []);
 
+  const handleIntentTileClick = useCallback((intentTile) => {
+    // Trading and learning go to their existing hubs; Community intents stay here.
+    if (intentTile?.hub && intentTile.hub !== "community") {
+      redirectToHub(intentTile.hub);
+      return;
+    }
+    selectIntent(intentTile?.value || "");
+  }, [selectIntent]);
+
   const selectCommunitySurface = useCallback((surface) => {
     setViewsMenuOpen(false);
     setWorkspacePage("home");
@@ -1131,6 +1173,7 @@ export default function CommunityDashboard({
     return (
       <CommunityComposer
         initialPost={editingPost}
+        initialCategory={composerCategory}
         onNavigate={navigate}
       />
     );
@@ -1248,6 +1291,9 @@ export default function CommunityDashboard({
                       <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
                       {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
                     </div>
+                    <button type="button" onClick={() => navigate("community-advertisement")} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900" aria-label="Create a Community advertisement">
+                      <Megaphone size={14} /> Create an ad
+                    </button>
                   </div>
                   <div className="relative">
                     <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
@@ -1278,9 +1324,9 @@ export default function CommunityDashboard({
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {INTENT_TILES.map((intentTile) => {
                     const TileIcon = intentTile.icon;
-                    const selected = activeSurface === "discovery" && submittedIntent === intentTile.value;
+                    const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
                     return (
-                      <button key={intentTile.value} type="button" onClick={() => selectIntent(intentTile.value)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
+                      <button key={intentTile.value} type="button" onClick={() => handleIntentTileClick(intentTile)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
                         <span className={"absolute inset-x-0 top-0 h-1 " + intentTile.accent} />
                         <span className={"flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white"}>
                           <TileIcon size={19} />
@@ -1392,6 +1438,7 @@ export default function CommunityDashboard({
                   <EmptyState icon={Compass} title="No needs or offers surfaced yet" description={activeSurface === "discovery" ? "The current discovery query returned no matching needs or offers. Try another intent or search term." : "The live Community service has not returned actionable needs or offers for this view. Nothing is fabricated; refresh later or search for a specific intent."} onAction={() => selectIntent("buy")} actionLabel="Explore things to buy" />
                 )}
               </section>
+              <CommunityAdSenseUnit />
             </>
           )}
         </main>
