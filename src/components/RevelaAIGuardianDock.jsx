@@ -104,6 +104,13 @@ function normalizeState(record, response, restricted = false) {
 
 const TOOLS = [
   {
+    key: "guardian",
+    name: "Ecosystem Guardian",
+    role: "Coordinated checks across the live core mesh and defensive tools",
+    icon: ShieldCheck,
+    action: "Run a full Guardian check across the RevelaCode ecosystem. Probe Core Zero, Genesis (Core One) and Infinite Mind (Core Two), run the Sci Defend defensive shield scan, and run Meta Engineer's read-only architecture scan. Report real results and blockers; do not repair, activate, execute candidate code, deploy, or merge anything.",
+  },
+  {
     key: "zero",
     name: "USECT-ZERO",
     role: "Diagnostics & guarded recovery",
@@ -185,6 +192,7 @@ export default function RevelaAIGuardianDock({ onAction }) {
       const twoCore = coreEntry(cores, "two");
       const next = {
         mesh: normalizeState(meshData, mesh),
+        guardian: { label: "On demand", tone: "neutral" },
         zero: normalizeState(zeroCore || zero?.payload?.data || zero?.payload, zero),
         one: oneCore ? normalizeState(oneCore, mesh) : { label: "Unreported", tone: "muted" },
         two: twoCore ? normalizeState(twoCore, mesh) : { label: "Unreported", tone: "muted" },
@@ -305,7 +313,7 @@ export default function RevelaAIGuardianDock({ onAction }) {
                     disabled={!onAction}
                     className="mt-2 inline-flex w-full items-center justify-between gap-2 rounded-lg border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-2 text-left text-[10px] font-bold text-emerald-100 transition hover:border-emerald-300/30 hover:bg-emerald-300/10 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <span>{tool.key === "meta" ? "Run read-only scan" : tool.key === "one" || tool.key === "two" ? "Request proposal" : tool.key === "sci" ? "Run defensive scan" : "Run diagnostics"}</span>
+                    <span>{tool.key === "guardian" ? "Run ecosystem sweep" : tool.key === "meta" ? "Run read-only scan" : tool.key === "one" || tool.key === "two" ? "Request proposal" : tool.key === "sci" ? "Run defensive scan" : "Run diagnostics"}</span>
                     <ChevronRight size={12} />
                   </button>
                 </article>
