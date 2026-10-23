@@ -190,26 +190,26 @@ export default function CommunityComposer({
 
   // The supported Community API accepts up to four uploaded media IDs per post.
   const [attachmentFiles, setAttachmentFiles] = useState([]);
+  const [attachmentPreviews, setAttachmentPreviews] = useState([]);
 
-  const attachmentPreviews = useMemo(
-    () => attachmentFiles.map((file) => ({
+  useEffect(() => {
+    const previews = attachmentFiles.map((file) => ({
       file,
       url: typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
         ? URL.createObjectURL(file)
         : "",
       isVideo: file.type.startsWith("video/"),
-    })),
-    [attachmentFiles],
-  );
+    }));
+    setAttachmentPreviews(previews);
 
-  useEffect(
-    () => () => attachmentPreviews.forEach((preview) => {
-      if (preview.url && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
-        URL.revokeObjectURL(preview.url);
-      }
-    }),
-    [attachmentPreviews],
-  );
+    return () => {
+      previews.forEach((preview) => {
+        if (preview.url && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+          URL.revokeObjectURL(preview.url);
+        }
+      });
+    };
+  }, [attachmentFiles]);
 
   const [externalLink, setExternalLink] =
     useState(() => String(initialPost?.action?.target || ""));
