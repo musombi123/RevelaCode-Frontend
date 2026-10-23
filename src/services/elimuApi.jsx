@@ -629,6 +629,28 @@ export function createElimuApiClient({
     createFeeRecord: (data, options) =>
       post("fees", data, options),
 
+    // School store/inventory operations. Stock levels change only through
+    // the movement ledger, not by overwriting quantities in the UI.
+    getInventoryItems: (params, options) => get("inventory/items", params, options),
+    createInventoryItem: (data, options) => post("inventory/items", data, options),
+    updateInventoryItem: (itemId, data, options) =>
+      patch(`inventory/items/${pathSegment(itemId, "item ID")}`, data, options),
+    recordInventoryMovement: (data, options) => post("inventory/movements", data, options),
+    getInventoryNeeds: (params, options) => get("inventory/needs", params, options),
+    createInventoryNeed: (data, options) => post("inventory/needs", data, options),
+    decideInventoryNeed: (needId, data, options) =>
+      post(`inventory/needs/${pathSegment(needId, "supply request ID")}/decision`, data, options),
+
+    // Optional school library catalogue and book circulation.
+    getLibraryBooks: (params, options) => get("library/books", params, options),
+    createLibraryBook: (data, options) => post("library/books", data, options),
+    updateLibraryBook: (bookId, data, options) =>
+      patch(`library/books/${pathSegment(bookId, "book ID")}`, data, options),
+    getLibraryLoans: (params, options) => get("library/loans", params, options),
+    createLibraryLoan: (data, options) => post("library/loans", data, options),
+    returnLibraryLoan: (loanId, data = {}, options) =>
+      post(`library/loans/${pathSegment(loanId, "loan ID")}/return`, data, options),
+
     getSchoolPaymentAccounts: (params, options) =>
       get("finance/payment-accounts", params, options),
 
