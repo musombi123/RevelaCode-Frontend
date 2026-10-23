@@ -113,7 +113,7 @@ function FeatureCard({ feature }) {
   const Icon = feature.icon;
 
   const accentClasses = {
-    blue: "bg-blue-50 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]",
+    blue: "bg-[#0A74DA]/8 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]",
     green:
       "bg-[#2E8B57]/10 text-[#2E8B57] dark:bg-[#2E8B57]/15 dark:text-[#89D6AB]",
     violet:
@@ -163,7 +163,7 @@ function PortalPreview({ type, onClose }) {
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6 dark:border-slate-800">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#0A74DA]/8 px-3 py-1.5 text-xs font-bold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
               <Sparkles size={14} />
               Preview mode
             </span>
@@ -197,7 +197,7 @@ function PortalPreview({ type, onClose }) {
                 key={title}
                 className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0A74DA]/8 text-sm font-bold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
                   {index + 1}
                 </span>
 
@@ -213,7 +213,7 @@ function PortalPreview({ type, onClose }) {
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="mt-5 rounded-2xl bg-[#D4AF37]/15 p-4 text-sm leading-6 text-[#8B7015] dark:bg-[#D4AF37]/15 dark:text-[#F2D879]">
             This is a preview of planned portal features, not a live account.
             No real student records, documents or financial information are
             displayed here.
@@ -386,7 +386,7 @@ export default function ElimuPublicPage() {
 
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-8 lg:py-28">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#0A74DA]/25 bg-blue-50/80 px-3.5 py-2 text-xs font-bold text-[#075EB0] dark:border-[#0A74DA]/35 dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#0A74DA]/25 bg-[#0A74DA]/5 px-3.5 py-2 text-xs font-bold text-[#075EB0] dark:border-[#0A74DA]/35 dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
               <Sparkles size={15} />
               A connected future for education
             </div>
@@ -432,7 +432,7 @@ export default function ElimuPublicPage() {
                 <span key={item} className="inline-flex items-center gap-2">
                   <CheckCircle2
                     size={16}
-                    className="shrink-0 text-emerald-600"
+                    className="shrink-0 text-[#2E8B57]"
                   />
                   {item}
                 </span>
@@ -455,7 +455,7 @@ export default function ElimuPublicPage() {
                   </h2>
                 </div>
 
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A74DA]/8 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
                   <GraduationCap size={23} />
                 </span>
               </div>
@@ -490,7 +490,7 @@ export default function ElimuPublicPage() {
                       key={item.title}
                       className="rounded-2xl border border-slate-100 p-4 dark:border-slate-800"
                     >
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0A74DA]/8 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
                         <Icon size={20} />
                       </span>
 
@@ -509,7 +509,7 @@ export default function ElimuPublicPage() {
               <div className="mx-5 mb-5 flex items-start gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950 sm:mx-6 sm:mb-6">
                 <ShieldCheck
                   size={20}
-                  className="mt-0.5 shrink-0 text-emerald-600"
+                  className="mt-0.5 shrink-0 text-[#2E8B57]"
                 />
 
                 <div>
@@ -584,7 +584,7 @@ export default function ElimuPublicPage() {
             <div className="mt-7 space-y-5">
               {PUBLIC_SECTIONS.map((item) => (
                 <div key={item.number} className="flex gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-extrabold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0A74DA]/8 text-xs font-extrabold text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
                     {item.number}
                   </span>
 
@@ -604,12 +604,12 @@ export default function ElimuPublicPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2E8B57]/10 text-[#2E8B57] dark:bg-[#2E8B57]/15 dark:text-[#89D6AB]">
                 <Building2 size={24} />
               </span>
 
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#2E8B57] dark:text-[#89D6AB]">
                   Public school website
                 </p>
                 <h3 className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
@@ -632,14 +632,14 @@ export default function ElimuPublicPage() {
                 >
                   <Icon
                     size={18}
-                    className="shrink-0 text-[#0A74DA] dark:text-blue-400"
+                    className="shrink-0 text-[#0A74DA] dark:text-[#8CC6FF]"
                   />
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     {label}
                   </span>
                   <CheckCircle2
                     size={16}
-                    className="ml-auto shrink-0 text-emerald-600"
+                    className="ml-auto shrink-0 text-[#2E8B57]"
                   />
                 </div>
               ))}
@@ -678,7 +678,7 @@ export default function ElimuPublicPage() {
 
           <div className="mt-9 grid gap-5 lg:grid-cols-3">
             <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 sm:p-7">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A74DA]/8 text-[#075EB0] dark:bg-[#0A74DA]/15 dark:text-[#8CC6FF]">
                 <BookOpen size={24} />
               </span>
 
@@ -692,14 +692,14 @@ export default function ElimuPublicPage() {
               <button
                 type="button"
                 onClick={() => setActivePreview("student")}
-                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold transition hover:border-blue-300 hover:bg-[#0A74DA]/5 dark:border-slate-700 dark:hover:bg-slate-900"
+                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold transition hover:border-[#0A74DA]/30 hover:bg-[#0A74DA]/5 dark:border-slate-700 dark:hover:bg-slate-900"
               >
                 Explore student preview <ChevronRight size={16} />
               </button>
             </article>
 
             <article className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 sm:p-7">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2E8B57]/10 text-[#2E8B57] dark:bg-[#2E8B57]/15 dark:text-[#89D6AB]">
                 <HeartHandshake size={24} />
               </span>
 
@@ -713,13 +713,13 @@ export default function ElimuPublicPage() {
               <button
                 type="button"
                 onClick={() => setActivePreview("parent")}
-                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-700 dark:hover:bg-slate-900"
+                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold transition hover:border-[#2E8B57]/30 hover:bg-[#2E8B57]/10 dark:border-slate-700 dark:hover:bg-slate-900"
               >
                 Explore parent preview <ChevronRight size={16} />
               </button>
             </article>
 
-            <article className="flex flex-col rounded-3xl border border-[#0A74DA]/25 bg-gradient-to-br from-blue-50 to-white p-6 dark:border-[#0A74DA]/35/60 dark:from-blue-950/30 dark:to-slate-950 sm:p-7">
+            <article className="flex flex-col rounded-3xl border border-[#0A74DA]/25 bg-gradient-to-br from-[#0A74DA]/5 to-white p-6 dark:border-[#0A74DA]/35 dark:from-[#0A74DA]/15 dark:to-slate-950 sm:p-7">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A74DA] text-white">
                 <GraduationCap size={24} />
               </span>
@@ -746,8 +746,8 @@ export default function ElimuPublicPage() {
       {/* Privacy commitment */}
       <section className="py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-5 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6 dark:border-emerald-900/60 dark:bg-emerald-950/20 sm:flex-row sm:items-start sm:p-8">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 dark:bg-slate-900 dark:text-emerald-300">
+          <div className="flex flex-col gap-5 rounded-3xl border border-emerald-200 bg-[#2E8B57]/10/70 p-6 dark:border-emerald-900/60 dark:bg-emerald-950/20 sm:flex-row sm:items-start sm:p-8">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#2E8B57] dark:bg-slate-900 dark:text-[#89D6AB]">
               <ShieldCheck size={25} />
             </span>
 
