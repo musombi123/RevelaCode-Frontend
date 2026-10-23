@@ -21,12 +21,16 @@ const ROOT_SOURCES = {
     url: "https://cal.huc.edu/",
   },
   lexicalMethod: {
-    label: "Biblical lexicology · lexical meaning and context",
-    url: "https://www.thetbs.org/study-materials/wp-content/uploads/2023/02/Biblical-Lexicology-Hebrew-and-Greek.-Semantics-%E2%80%93-Exegesis-%E2%80%93-Translation-by-Eberhard-Bons-Jan-Joosten-Regine-Hunziker-Rodewald-eds.-z-lib.org_.pdf",
+    label: "Contextual method · Biblical word study",
+    url: "https://bible.org/seriespage/contextual-method-biblical-interpretation",
   },
   quranicArabicCorpus: {
     label: "Quranic Arabic Corpus · word and root analysis",
     url: "https://corpus.quran.com/",
+  },
+  openArabicAyah: {
+    label: "OpenArabic · Qur'anic root ʾ-y-y (āyah)",
+    url: "https://www.openarabic.org/quran-root-ayy/",
   },
 };
 
@@ -384,7 +388,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "The term may be compared with biblical words translated mercy or compassion, but these words have their own histories and doctrinal settings; none is a complete one-word replacement for raḥma." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root r-ḥ-m", url: "https://corpus.quran.com/qurandictionary.jsp?root=rHm" },
     ],
     caveat: "Etymology may suggest a relationship, but the actual contextual use is the primary guide to meaning.",
   },
@@ -408,7 +412,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "It can be compared thematically with reverence, righteousness, or moral vigilance in other traditions, but it is not an exact equivalent of any single Hebrew or Greek term." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root w-q-y", url: "https://corpus.quran.com/qurandictionary.jsp?root=wqy" },
     ],
     caveat: "A single English word such as 'fear' or 'piety' can narrow the meaning if it is used without context.",
   },
@@ -432,7 +436,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "The Arabic root family may be studied beside Hebrew emunah. The forms are linguistically related, but their passages, grammatical uses, and later theological frameworks are not identical." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root ʾ-m-n", url: "https://corpus.quran.com/qurandictionary.jsp?root=Amn" },
     ],
     caveat: "A cognate relationship does not establish that a theological term carries the same scope in different scriptures.",
   },
@@ -456,7 +460,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "The same broad Semitic root family also contains Arabic salām and is related to Hebrew forms such as shalom. Linguistic relatedness does not imply identical theology or prove that all teachings about peace are the same." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root s-l-m", url: "https://corpus.quran.com/qurandictionary.jsp?root=slm" },
     ],
     caveat: "Do not translate Islam simply as 'peace' or use the word's root alone as a complete definition of Islam.",
   },
@@ -480,7 +484,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "The relationship with Hebrew shalom illustrates shared Semitic vocabulary. Neither word should be used to claim that Judaism, Christianity, and Islam have no meaningful doctrinal differences." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root s-l-m", url: "https://corpus.quran.com/qurandictionary.jsp?root=slm" },
       { label: "Hebrew lexicon entry for shalom", url: "https://biblehub.com/hebrew/7965.htm" },
     ],
     related: ["shalom"],
@@ -506,7 +510,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "The English word 'Lord' can translate terms from more than one language. Matching English translations do not make the source words or their full doctrines interchangeable." },
     ],
     sourceLinks: [
-      ROOT_SOURCES.quranicArabicCorpus,
+      { label: "Qur'anic Arabic Corpus · root r-b-b", url: "https://corpus.quran.com/qurandictionary.jsp?root=rbb" },
     ],
     caveat: "Always state which source language and passage you are describing when using a translation such as 'Lord'.",
   },
@@ -517,7 +521,7 @@ const WORD_ROOTS = [
     pronunciation: "AA-yah",
     language: "Qur'anic Arabic",
     era: "Qur'an / Islamic theology",
-    root: "آ־ي־ة · ʾ-y-t (word formation varies)",
+    root: "أ־ي־ي · ʾ-y-y (Qur'anic root analysis)",
     gloss: "Sign, sign of evidence, portent, or Qur'anic verse, depending on context.",
     context: "The Qur'an uses ayah for signs in creation and for its own verses. Translating it only as 'verse' can conceal other uses, while translating every occurrence as 'miracle' can overstate the passage.",
     passages: [
@@ -530,6 +534,7 @@ const WORD_ROOTS = [
       { tradition: "Comparative", note: "Other scriptures have words translated as 'sign' or 'verse', but comparing translations alone is not enough to establish a shared concept." },
     ],
     sourceLinks: [
+      ROOT_SOURCES.openArabicAyah,
       ROOT_SOURCES.quranicArabicCorpus,
     ],
     caveat: "A translated English word such as 'sign' or 'verse' is not itself evidence that source-language terms are synonymous.",
@@ -934,6 +939,10 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin }) {
               <li>State which religious tradition is speaking; don't present one interpretation as every believer's view.</li>
               <li>Recognize genuine differences calmly without insulting people, erasing disagreements, or declaring a winning religion.</li>
             </ol>
+            <h5 className="mt-4 text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">Reference starting points</h5>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[ROOT_SOURCES.yaleBiblicalLanguages, ROOT_SOURCES.comprehensiveAramaicLexicon, ROOT_SOURCES.quranicArabicCorpus, ROOT_SOURCES.lexicalMethod].map((source) => <SourceLink key={source.label} source={source} />)}
+            </div>
           </section>
             </>
           ) : (
