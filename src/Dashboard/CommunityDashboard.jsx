@@ -1270,7 +1270,6 @@ export default function CommunityDashboard({
                     ) : null}
                   </div>
                 </div>
-                </div>
                 <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">Start with an intention. Find nearby needs and offers, connect through the right Jumuiya hub, and take one useful next step.</p>
               </header>
