@@ -342,6 +342,27 @@ export default function MainDashboardV2() {
   }, []);
 
   /* =========================================================
+     Direct Hub Links
+  ========================================================= */
+
+  useEffect(() => {
+    const requestedHub = String(searchParams.get("hub") || "")
+      .trim()
+      .toLowerCase();
+
+    if (!requestedHub) return;
+
+    const isKnownHub = DASHBOARDS.some(
+      (dashboard) => dashboard.key === requestedHub
+    );
+
+    if (!isKnownHub) return;
+
+    setActiveView(requestedHub);
+    setSidebarOpen(false);
+  }, [searchParams]);
+
+  /* =========================================================
      Verse URL Handling
   ========================================================= */
 
@@ -1337,8 +1358,8 @@ const BIASHARA_SECTION_KEYS = new Set(
             </Suspense>
           </section>
 
-          {/* Mobile-first shell footer navigation */}
-          {!sidebarOpen && (
+          {/* Community supplies its own floating intent dock. Keep this shell footer for other hubs only. */}
+          {!sidebarOpen && activeView !== "community" && (
             <nav
               aria-label="Main workspace navigation"
               className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
