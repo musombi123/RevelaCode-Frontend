@@ -13,17 +13,22 @@ import {
   Sparkles,
   ShieldCheck,
   MessageSquarePlus,
+  Info,
+  X,
+  Mic,
+  Camera,
+  CreditCard,
+  WifiOff,
 } from "lucide-react";
 
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
-import RevelaAIGuardianDock from "@/components/RevelaAIGuardianDock.jsx";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
-import { readLocalDocument } from "@/ai/v2-free/localIntelligence";
+import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import { analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
 // Reuse the existing RevelaCode session token for authenticated AI requests.
@@ -358,6 +363,23 @@ export default function AIAssistantDashboard({
 
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
   const [aiRevenueOpen, setAiRevenueOpen] = useState(false);
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const [freeMode, setFreeMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("revelaai.free_mode.v1") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("revelaai.free_mode.v1", freeMode ? "true" : "false");
+    } catch {
+      // Privacy mode or a full browser store must not stop the assistant from working.
+    }
+  }, [freeMode]);
 
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
@@ -718,6 +740,32 @@ export default function AIAssistantDashboard({
       []
     );
 
+  const deleteChat = useCallback((chatId) => {
+    if (!chatId) return;
+    setChats((previous) => previous.filter((chat) => chat.id !== chatId));
+    if (activeChatId === chatId) {
+      controllerRef.current?.abort?.();
+      setActiveChatId(null);
+      setMessages([]);
+    }
+  }, [activeChatId]);
+
+  const renameChat = useCallback((chatId, nextTitle, options = {}) => {
+    if (!chatId) return;
+    const cleaned = String(nextTitle || "").replace(/\s+/g, " ").trim().slice(0, 60);
+    const manual = options?.manual === true;
+    setChats((previous) => previous.map((chat) => {
+      if (chat.id !== chatId) return chat;
+      const firstUserText = chat.messages?.find((message) => message.role === "user")?.text || "";
+      return {
+        ...chat,
+        title: cleaned || String(firstUserText).trim().slice(0, 45) || "New Conversation",
+        titleLocked: manual && Boolean(cleaned),
+        updatedAt: Date.now(),
+      };
+    }));
+  }, []);
+
   /* =======================================================
      ENSURE CHAT
   ======================================================= */
@@ -940,19 +988,21 @@ export default function AIAssistantDashboard({
           };
 
           if (!attachedFile && inputMeta?.visionResult && String(inputMeta.visionResult).trim()) {
-            // The configured vision model has already analyzed an explicitly shared camera frame.
-            // Use its grounded response directly; never re-label pixel math as semantic vision.
+            // Camera analysis may be remote or local pixel math. Keep its real provenance.
             localText = String(inputMeta.visionResult).trim();
             localType = "vision-chat";
+            const localVisionOnly = inputMeta.visionProvider === "local-pixel-math";
             brainMetadata = {
               ...brainMetadata,
-              engine: inputMeta.visionProvider ? String(inputMeta.visionProvider) + "-vision" : "revelaai-vision",
-              provider: inputMeta.visionProvider || "gemini",
-              network: true,
-              networkUsed: true,
+              engine: localVisionOnly ? "revelaai-free-local-vision" : (inputMeta.visionProvider ? String(inputMeta.visionProvider) + "-vision" : "revelaai-vision"),
+              provider: inputMeta.visionProvider || "local-pixel-math",
+              network: !localVisionOnly,
+              networkUsed: !localVisionOnly,
               visionUsed: true,
+              visionFallback: localVisionOnly,
+              freeMode: localVisionOnly,
               mediaRetained: false,
-              memory: "server",
+              memory: localVisionOnly ? "local-only" : "server",
             };
           } else if (attachedFile) {
             if (attachedFile.type?.startsWith("image/")) {
@@ -1004,7 +1054,7 @@ export default function AIAssistantDashboard({
 
           // Interpret free on-device perception with the existing text provider.
           // The image itself is not uploaded to a paid vision provider.
-          if (attachedFile && localText && !attachedFile.type?.startsWith("video/")) {
+          if (attachedFile && localText && !attachedFile.type?.startsWith("video/") && !freeMode) {
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             const tokenHeaders = getRevelaCodeAuthHeaders();
             if (Object.keys(tokenHeaders).length) {
@@ -1051,8 +1101,28 @@ export default function AIAssistantDashboard({
               }
             }
           } else if (!attachedFile && !inputMeta?.visionResult) {
-            // Normal text chat must use the server-side generative model.
-            // Never substitute the local rule engine when the service is unavailable.
+            if (freeMode) {
+              const recentContext = currentMessages
+                .filter((item) => item.role === "user" || item.role === "assistant")
+                .slice(-6)
+                .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
+                .join("\n");
+              localText = answerLocally(cleaned || requestMessage, recentContext);
+              localType = "text";
+              brainMetadata = {
+                ...brainMetadata,
+                engine: "revelaai-free-local-rules",
+                provider: "on-device",
+                network: false,
+                networkUsed: false,
+                freeMode: true,
+                fallback: true,
+                memory: "local-only",
+                limitation: "Local templates and calculations; not a hosted language model.",
+              };
+            } else {
+            // Adaptive mode uses the hosted model. Network failures are recovered below
+            // using the free local engine instead of leaving a dead-end error bubble.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             let response;
             try {
@@ -1145,6 +1215,7 @@ export default function AIAssistantDashboard({
               networkUsed: true,
               memory: "server",
             };
+            }
           }
 
           // Let the existing text model reason over on-device image/video observations.
@@ -1152,7 +1223,8 @@ export default function AIAssistantDashboard({
           if (
             attachedFile &&
             (attachedFile.type?.startsWith("image/") || attachedFile.type?.startsWith("video/")) &&
-            localText
+            localText &&
+            !freeMode
           ) {
             const observations = localText;
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -1335,39 +1407,60 @@ export default function AIAssistantDashboard({
 
           const isNetworkFailure =
             error instanceof TypeError ||
-            /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
-          const visibleError = isNetworkFailure
-            ? "RevelaAI is waking up, please wait 20 seconds..."
+            /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
+          const recentContext = currentMessages
+            .filter((item) => item.role === "user" || item.role === "assistant")
+            .slice(-6)
+            .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
+            .join("\n");
+          const localFallback = (freeMode || isNetworkFailure)
+            ? answerLocally(cleaned || userDisplayText, recentContext)
+            : "";
+          const localFallbackNotice = freeMode
+            ? "Free mode is active. This answer was generated locally without a hosted model."
+            : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
+          const visibleText = localFallback
+            ? localFallback + "\n\n" + localFallbackNotice
             : (error?.message || "Request failed. Please try again.");
 
-          setMessages(
-            (previous) => {
-              const updated =
-                previous.map(
-                  (
-                    message
-                  ) =>
-                    message.id ===
-                    loadingId
-                      ? {
-                          ...message,
+          if (localFallback) {
+            void recordConversationTurn({
+              scope: userScope,
+              userText: userDisplayText,
+              assistantText: visibleText,
+              hub: "general",
+              emotion: "neutral",
+            }).catch((memoryError) => recordLocalDiagnostic("conversation-memory", memoryError));
+          }
 
-                          text: visibleError,
-
-                          status:
-                            "error",
-                        }
-                      : message
-                );
-
-              updateChat(
-                chatId,
-                updated
-              );
-
-              return updated;
-            }
-          );
+          setMessages((previous) => {
+            const updated = previous.map((message) => {
+              if (message.id !== loadingId) return message;
+              if (localFallback) {
+                return {
+                  ...message,
+                  text: visibleText,
+                  status: "done",
+                  contentType: "text",
+                  sourcePrompt: userDisplayText,
+                  metadata: {
+                    engine: "revelaai-free-local-rules",
+                    provider: "on-device",
+                    hub: "general",
+                    hubLabel: "General",
+                    network: false,
+                    networkUsed: false,
+                    freeMode: true,
+                    fallback: true,
+                    limitation: "Local templates and calculations, not a hosted language model.",
+                  },
+                };
+              }
+              return { ...message, text: visibleText, status: "error" };
+            });
+            updateChat(chatId, updated);
+            return updated;
+          });
         } finally {
           sendLockRef.current = false;
           if (
@@ -1389,6 +1482,7 @@ export default function AIAssistantDashboard({
         activeHub,
         userScope,
         user,
+        freeMode,
       ]
     );
 
@@ -1746,15 +1840,17 @@ export default function AIAssistantDashboard({
         open={sidebarOpen}
         setOpen={setSidebarOpen}
         chats={chats}
-        activeChatId={
-          activeChatId
-        }
-        onNewChat={
-          startNewChat
-        }
-        onSelectChat={
-          selectChat
-        }
+        activeChatId={activeChatId}
+        onNewChat={startNewChat}
+        onSelectChat={selectChat}
+        onDeleteChat={deleteChat}
+        onRenameChat={renameChat}
+        onOpenPlans={() => setAiRevenueOpen(true)}
+        onOpenVoice={openVoice}
+        onOpenVision={openVision}
+        onOpenIdentity={() => setIdentityOpen(true)}
+        freeMode={freeMode}
+        onToggleFreeMode={() => setFreeMode((current) => !current)}
       />
 
       {/* ===================================================
@@ -1879,7 +1975,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              AUTO ROUTING ACTIVE
+              {freeMode ? "FREE MODE · LOCAL ONLY" : "ADAPTIVE MODE"}
             </div>
 
             <button
@@ -1991,11 +2087,8 @@ export default function AIAssistantDashboard({
                     onSend={sendMessage}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
+                    freeMode={freeMode}
                   />
-                </div>
-
-                <div className="mt-4 w-full max-w-4xl">
-                  <RevelaAIGuardianDock onAction={sendTextMessage} />
                 </div>
 
                 <p
@@ -2066,12 +2159,136 @@ export default function AIAssistantDashboard({
                   onSend={sendMessage}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
+                  freeMode={freeMode}
                 />
               </div>
             </div>
           </section>
         )}
       </main>
+
+      {aiRevenueOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          role="presentation"
+          onClick={() => setAiRevenueOpen(false)}
+        >
+          <section
+            id="revela-ai-revenue-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revela-ai-revenue-title"
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[94dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-emerald-400/20 bg-slate-950 text-white shadow-2xl"
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-200">
+                  <CreditCard size={17} />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="revela-ai-revenue-title" className="truncate text-sm font-bold">AI trial &amp; plans</h2>
+                  <p className="mt-0.5 text-[10px] text-slate-400">Trial status, subscription and centrally managed offers</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiRevenueOpen(false)}
+                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close AI trial and plans"
+              >
+                <X size={17} />
+              </button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+              <HubRevenueOffers hub="smart_ai" compact />
+            </div>
+          </section>
+        </div>
+      )}
+
+      {identityOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          role="presentation"
+          onClick={() => setIdentityOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revelaai-identity-title"
+            onClick={(event) => event.stopPropagation()}
+            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-emerald-400/20 bg-slate-950 p-4 text-white shadow-2xl sm:p-6"
+          >
+            <header className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-300/20 to-cyan-400/10 text-emerald-200 ring-1 ring-emerald-300/20">
+                  <Sparkles size={24} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-300">RevelaCode · Intelligence</p>
+                  <h2 id="revelaai-identity-title" className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Meet RevelaAI</h2>
+                  <p className="mt-1 text-xs text-slate-400">One adaptive assistant. A local-first fallback. Your conversation workspace.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIdentityOpen(false)}
+                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close RevelaAI Identity"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <p className="mt-5 text-sm leading-6 text-slate-300">
+              RevelaAI routes questions through the configured AI service when Adaptive mode is available. When you choose Free mode—or the service cannot be reached—the dashboard can keep working with on-device rules and local media measurements.
+            </p>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Sparkles size={16} className="text-emerald-300" /> Adaptive intelligence</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><WifiOff size={16} className="text-emerald-300" /> Free mode</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Mic size={16} className="text-emerald-300" /> Voice</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Browser speech recognition plus spoken replies where the device and browser support them.</p>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-white"><Camera size={16} className="text-sky-300" /> Vision</div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
+              </article>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-xs font-bold text-slate-200">Privacy and capability boundary</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">Free mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-emerald-300 px-3 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-emerald-200">
+                Use Free mode
+              </button>
+              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                Adaptive mode
+              </button>
+              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                <Mic size={14} /> Voice
+              </button>
+              <button type="button" onClick={() => { setIdentityOpen(false); openVision(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                <Camera size={14} /> Vision
+              </button>
+            </div>
+            <button type="button" onClick={() => { setIdentityOpen(false); setAiRevenueOpen(true); }} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2.5 text-xs font-bold text-amber-100 transition hover:bg-amber-300/15">
+              <CreditCard size={14} /> View trial and plans
+            </button>
+          </section>
+        </div>
+      )}
 
       {/* ===================================================
           VOICE CHAT
@@ -2084,6 +2301,7 @@ export default function AIAssistantDashboard({
           }
           hub="auto"
           memoryScope={userScope}
+          freeMode={freeMode}
           onVoiceResult={
             handleVoiceResult
           }

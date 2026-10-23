@@ -12,6 +12,11 @@ import {
   Pencil,
   Check,
   X,
+  Info,
+  Mic,
+  Camera,
+  CreditCard,
+  WifiOff,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -39,6 +44,12 @@ export default function Sidebar({
   onSelectChat,
   onDeleteChat,
   onRenameChat, // (chatId, title, { manual: boolean }) => void
+  onOpenPlans,
+  onOpenVoice,
+  onOpenVision,
+  onOpenIdentity,
+  freeMode = false,
+  onToggleFreeMode,
   activeChatId = null,
 }) {
   const [confirmId, setConfirmId] = useState(null);
@@ -193,16 +204,76 @@ export default function Sidebar({
           </Button>
         </div>
 
-        {/* New chat */}
-        <div className="shrink-0 p-3">
+        {/* Primary actions — user-facing capabilities only; internal cores stay hidden. */}
+        <div className="shrink-0 space-y-2 border-b border-white/10 p-3">
           <Button
             type="button"
-            onClick={() => onNewChat?.()}
+            onClick={() => { onNewChat?.(); setOpen(false); }}
             className="flex w-full items-center justify-start gap-2 rounded-xl border border-white/10 bg-revela-secondary px-3 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-revela-secondary/80 active:scale-[0.99]"
           >
             <Plus size={18} />
             New chat
           </Button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { onOpenIdentity?.(); setOpen(false); }}
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-emerald-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              title="What RevelaAI is and how to use it"
+            >
+              <Info size={15} className="shrink-0 text-emerald-300" />
+              <span className="truncate">AI Identity</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onOpenVoice?.(); setOpen(false); }}
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-emerald-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              title="Talk to RevelaAI by voice"
+            >
+              <Mic size={15} className="shrink-0 text-emerald-300" />
+              <span className="truncate">Voice</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onOpenVision?.(); setOpen(false); }}
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-sky-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+              title="Open camera and vision tools"
+            >
+              <Camera size={15} className="shrink-0 text-sky-300" />
+              <span className="truncate">Vision</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { onOpenPlans?.(); setOpen(false); }}
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-amber-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              title="View free trial and available plans"
+            >
+              <CreditCard size={15} className="shrink-0 text-amber-300" />
+              <span className="truncate">Plans</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={freeMode}
+            onClick={() => onToggleFreeMode?.()}
+            className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-black/10 px-3 py-2.5 text-left transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+          >
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${freeMode ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-gray-400"}`}>
+              <WifiOff size={16} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-bold text-gray-200">{freeMode ? "Free mode is on" : "Weak-network free mode"}</span>
+              <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
+                {freeMode ? "Local-only · no model requests" : "Use local tools when data is weak"}
+              </span>
+            </span>
+            <span className={`relative h-5 w-9 shrink-0 rounded-full transition ${freeMode ? "bg-emerald-500" : "bg-gray-700"}`}>
+              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${freeMode ? "left-[18px]" : "left-0.5"}`} />
+            </span>
+          </button>
         </div>
 
         {/* Label */}
