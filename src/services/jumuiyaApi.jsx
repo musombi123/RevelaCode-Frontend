@@ -787,6 +787,21 @@ export function useJumuiyaApi() {
         getData("/biashara/dashboard"),
 
       // ===================================================
+      // BIASHARA — SALES FORECAST AND PRICING REVIEW
+      // ===================================================
+
+      getBiasharaBusinessForecast: ({
+        forecastDays = 7,
+        targetMarginPercent = 25,
+      } = {}) =>
+        getData(
+          withQuery("/biashara/intelligence/business-forecast", {
+            forecast_days: forecastDays,
+            target_margin_percent: targetMarginPercent,
+          }),
+        ),
+
+      // ===================================================
       // BIASHARA — WORKSPACE CONTRACTS
       // ===================================================
 

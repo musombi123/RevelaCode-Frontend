@@ -1,0 +1,122 @@
+name: RevelaCode Android release candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.json"
+      - ".github/workflows/android-release.yml"
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Android version name"
+        required: true
+        default: "2.1.0"
+        type: string
+      version_code:
+        description: "Android version code (must increase for each Play Store release)"
+        required: true
+        default: "3"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Set up Java for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Generate native Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Set Android release version
+        env:
+          ANDROID_VERSION_NAME: ${{ inputs.version_name || '2.1.0' }}
+          ANDROID_VERSION_CODE: ${{ inputs.version_code || '3' }}
+        run: node scripts/set-android-release-version.mjs
+
+      - name: Configure signing when an existing release keystore is supplied
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            export ANDROID_KEYSTORE_PATH="$GITHUB_WORKSPACE/android/revelacode-release.keystore"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+            echo "ANDROID_KEYSTORE_PATH=$ANDROID_KEYSTORE_PATH" >> "$GITHUB_ENV"
+            node scripts/configure-android-release-signing.mjs
+            echo "release_signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_signed=false" >> "$GITHUB_OUTPUT"
+            echo "No release keystore secrets were supplied; building an installable debug APK only."
+          fi
+
+      - name: Build installable debug APK
+        run: cd android && ./gradlew --no-daemon assembleDebug
+
+      - name: Build signed release APK and Play Store AAB
+        if: steps.signing.outputs.release_signed == 'true'
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/revelacode-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: cd android && ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - name: Upload debug APK for device testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: revelacode-android-debug-v2.1.0-code3
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload signed release APK
+        if: steps.signing.outputs.release_signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: revelacode-android-release-v2.1.0-code3
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload signed Play Store App Bundle
+        if: steps.signing.outputs.release_signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: revelacode-android-aab-v2.1.0-code3
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
