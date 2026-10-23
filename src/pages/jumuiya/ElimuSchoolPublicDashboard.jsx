@@ -282,6 +282,7 @@ function ProjectCard({ project }) {
             alt={project.title || "CBC project"}
             className="h-full w-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
@@ -728,6 +729,7 @@ export default function ElimuSchoolPublicDashboard({
               <img
                 src={school.cover_image_url}
                 alt=""
+                fetchPriority="high"
                 className="absolute inset-0 h-full w-full object-cover opacity-30"
               />
             )}
