@@ -756,6 +756,22 @@ const STYLES = `
     }
   }
 
+  .edp-loading-skeleton { display:grid; gap:18px; }
+  .edp-skeleton-intro { display:grid; gap:10px; margin-bottom:2px; }
+  .edp-skeleton-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  .edp-skeleton-card { display:flex; flex-direction:column; gap:13px; min-height:205px; padding:20px; border:1px solid var(--edp-border); border-radius:18px; background:#fff; box-shadow:0 10px 28px rgba(21,38,59,.04); }
+  .edp-skeleton-block { display:block; border-radius:8px; background:linear-gradient(90deg,#edf2f8,#f7f9fc,#edf2f8); background-size:200% 100%; animation:edp-skeleton-shimmer 1.5s ease-in-out infinite; }
+  .edp-skeleton-title { width:min(290px,70%); height:22px; }
+  .edp-skeleton-copy { width:min(450px,90%); height:12px; }
+  .edp-skeleton-icon { width:44px; height:44px; border-radius:13px; }
+  .edp-skeleton-line { width:88%; height:12px; }
+  .edp-skeleton-line.short { width:62%; }
+  .edp-skeleton-button { width:128px; height:35px; margin-top:auto; border-radius:10px; }
+  .edp-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  @keyframes edp-skeleton-shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+  @media(max-width:900px) { .edp-skeleton-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(max-width:640px) { .edp-skeleton-grid { grid-template-columns:minmax(0,1fr); gap:12px; } .edp-skeleton-card { min-height:160px; } }
+  @media (prefers-reduced-motion: reduce) { .edp-skeleton-block { animation:none; } }
   @media (prefers-reduced-motion: reduce) {
     .edp *,
     .edp *::before,
@@ -1521,20 +1537,17 @@ export default function ElimuDocumentsPage() {
           )}
 
           {loading ? (
-            <div
-              className="edp-empty"
-              aria-live="polite"
-            >
-              <div className="edp-empty-icon">
-                <RefreshCw size={22} />
+            <div className="edp-loading-skeleton" aria-live="polite" aria-busy="true">
+              <span className="edp-sr-only">Loading the documents library.</span>
+              <div className="edp-skeleton-intro">
+                <span className="edp-skeleton-block edp-skeleton-title" />
+                <span className="edp-skeleton-block edp-skeleton-copy" />
               </div>
-
-              <h3>Loading the documents library</h3>
-
-              <p>
-                Fetching published documents from the Elimu
-                backend.
-              </p>
+              <div className="edp-skeleton-grid">
+                <div className="edp-skeleton-card"><span className="edp-skeleton-block edp-skeleton-icon" /><span className="edp-skeleton-block edp-skeleton-line" /><span className="edp-skeleton-block edp-skeleton-line short" /><span className="edp-skeleton-block edp-skeleton-button" /></div>
+                <div className="edp-skeleton-card"><span className="edp-skeleton-block edp-skeleton-icon" /><span className="edp-skeleton-block edp-skeleton-line" /><span className="edp-skeleton-block edp-skeleton-line short" /><span className="edp-skeleton-block edp-skeleton-button" /></div>
+                <div className="edp-skeleton-card"><span className="edp-skeleton-block edp-skeleton-icon" /><span className="edp-skeleton-block edp-skeleton-line" /><span className="edp-skeleton-block edp-skeleton-line short" /><span className="edp-skeleton-block edp-skeleton-button" /></div>
+              </div>
             </div>
           ) : !error &&
             filteredDocuments.length > 0 ? (
