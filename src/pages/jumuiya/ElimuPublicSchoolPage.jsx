@@ -1036,7 +1036,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl supports-[backdrop-filter]:bg-white/90">
         <div className="mx-auto flex max-w-[88rem] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
-            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
+            <span className="school-logo-mark relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-white shadow-md sm:h-12 sm:w-12">
               <School size={23} />
               {logo && <img src={logo} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
             </span>
@@ -1048,16 +1048,35 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             </span>
           </Link>
 
-          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <nav aria-label="School website navigation" className="school-desktop-nav hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto px-2 xl:flex">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = canonicalPage === item.path;
+              return (
+                <Link
+                  key={item.path || "home"}
+                  to={pageUrl(item.path)}
+                  aria-current={active ? "page" : undefined}
+                  title={item.label}
+                  className={`school-nav-link group relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:gap-2 2xl:px-2.5 2xl:text-sm ${active ? "text-emerald-700" : "text-slate-600 hover:text-emerald-800"}`}
+                >
+                  <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
+                  <span className="hidden 2xl:inline">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-2 xl:flex">
             <Link
               to={`/jumuiya/elimu/parent?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+              className="school-portal-link inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:px-3.5 2xl:text-sm"
             >
               <Users size={16} /> Parent portal
             </Link>
             <Link
               to={`/jumuiya/elimu/student?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-900/15 transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+              className="school-portal-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:px-3.5 2xl:text-sm"
             >
               <GraduationCap size={16} /> Student portal <ArrowRight size={14} />
             </Link>
@@ -1069,35 +1088,15 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             aria-controls="school-mobile-navigation"
             aria-label={mobileMenuOpen ? "Close school navigation" : "Open school navigation"}
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 xl:hidden"
+            className="school-menu-trigger inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 xl:hidden"
           >
             {mobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
             <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
           </button>
         </div>
 
-        <div className="hidden border-t border-slate-100 bg-slate-50/70 xl:block">
-          <nav aria-label="School website navigation" className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = canonicalPage === item.path;
-              return (
-                <Link
-                  key={item.path || "home"}
-                  to={pageUrl(item.path)}
-                  aria-current={active ? "page" : undefined}
-                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 ${active ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/15" : "text-slate-600 hover:bg-white hover:text-emerald-800 hover:shadow-sm"}`}
-                >
-                  <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
         {mobileMenuOpen && (
-          <div id="school-mobile-navigation" className="border-t border-slate-100 bg-white px-4 py-4 shadow-lg shadow-slate-900/5 xl:hidden sm:px-6">
+          <div id="school-mobile-navigation" className="school-mobile-sheet border-t px-4 py-4 shadow-lg xl:hidden sm:px-6">
             <nav aria-label="Mobile school website navigation" className="mx-auto max-w-7xl">
               <p className="mb-3 px-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500">Explore the school</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1144,11 +1143,36 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         {pageContent}
       </main>
 
-      <footer style={{ backgroundColor: websiteTheme.footer }} className="mt-8 border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[88rem] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div><p className="text-sm font-extrabold text-slate-900">{schoolName}</p><p className="mt-1 text-xs text-slate-500">Official public school website</p></div>
-          <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="text-xs font-semibold text-slate-600 hover:text-emerald-700">{item.label}</Link>)}</nav>
-          <p className="text-xs text-slate-500">Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
+      <footer style={{ backgroundColor: websiteTheme.footer }} className="school-public-footer mt-8 border-t">
+        <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 border-b py-9 sm:py-11 md:grid-cols-[1.15fr_.9fr_1fr] md:gap-10">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                {logo && <img src={logo} alt={schoolName ? schoolName + " logo" : "School logo"} loading="lazy" className="h-12 w-12 shrink-0 rounded-xl object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+                <div className="min-w-0"><p className="break-words text-base font-extrabold tracking-tight text-slate-900">{schoolName}</p><p className="mt-1 text-xs font-semibold">Official public school website</p></div>
+              </div>
+              {motto && <p className="mt-4 max-w-sm border-l-2 pl-4 text-sm italic leading-7" style={{ borderColor: websiteTheme.accent, color: websiteTheme.body }}>“{motto}”</p>}
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em]">Explore</p>
+              <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-4 gap-y-3">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="w-fit text-sm font-semibold text-slate-600 transition hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">{item.label}</Link>)}</nav>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em]">Contact & portals</p>
+              <div className="space-y-3 text-sm">
+                {phone && <a href={"tel:" + phone} className="block break-words font-semibold text-slate-600 hover:text-emerald-700">{phone}</a>}
+                {email && <a href={"mailto:" + email} className="block break-all font-semibold text-slate-600 hover:text-emerald-700">{email}</a>}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link to={"/jumuiya/elimu/parent?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-footer-portal inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><Users size={15} /> Parent portal</Link>
+                  <Link to={"/jumuiya/elimu/student?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-footer-portal school-footer-portal-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"><GraduationCap size={15} /> Student portal</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 py-4 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} {schoolName}. All rights reserved.</p>
+            <p>Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
+          </div>
         </div>
       </footer>
 
