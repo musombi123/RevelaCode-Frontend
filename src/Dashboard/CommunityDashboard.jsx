@@ -12,11 +12,13 @@ import {
   ArrowRight,
   CalendarDays,
   Compass,
+  ChevronDown,
   GraduationCap,
   Home,
   Leaf,
   Megaphone,
   MapPin,
+  Menu,
   MessageCircle,
   Plus,
   RefreshCw,
@@ -145,12 +147,12 @@ const HUBS = [
 ];
 
 const INTENT_TILES = [
-  { value: "buy", label: "Buy", localLabel: "Nunua", detail: "Find useful goods", icon: ShoppingBag, hub: "biashara", accent: "bg-blue-500" },
-  { value: "sell", label: "Sell", localLabel: "Uza", detail: "Offer goods or skills", icon: Target, hub: "biashara", accent: "bg-blue-500" },
-  { value: "learn", label: "Learn", localLabel: "Jifunze", detail: "Find knowledge and skills", icon: GraduationCap, hub: "elimu", accent: "bg-violet-500" },
-  { value: "help", label: "Help", localLabel: "Msaada", detail: "Ask for or offer help", icon: MessageCircle, hub: "community", accent: "bg-cyan-500" },
-  { value: "hire", label: "Hire", localLabel: "Ajiri", detail: "Find people and work", icon: UserPlus, hub: "biashara", accent: "bg-blue-500" },
-  { value: "attend", label: "Events", localLabel: "Tukio", detail: "Find events to attend", icon: CalendarDays, hub: "community", accent: "bg-amber-500" },
+  { value: "buy", label: "Buy", detail: "Find useful goods", icon: ShoppingBag, hub: "biashara", accent: "bg-blue-500" },
+  { value: "sell", label: "Sell", detail: "Offer goods or skills", icon: Target, hub: "biashara", accent: "bg-blue-500" },
+  { value: "learn", label: "Learn", detail: "Find knowledge and skills", icon: GraduationCap, hub: "elimu", accent: "bg-violet-500" },
+  { value: "help", label: "Help", detail: "Ask for or offer help", icon: MessageCircle, hub: "community", accent: "bg-cyan-500" },
+  { value: "hire", label: "Hire", detail: "Find people and work", icon: UserPlus, hub: "biashara", accent: "bg-blue-500" },
+  { value: "attend", label: "Events", detail: "Find events to attend", icon: CalendarDays, hub: "community", accent: "bg-amber-500" },
 ];
 
 const AROUND_YOU_TYPES = new Set([
@@ -480,7 +482,14 @@ export default function CommunityDashboard({
 
   const communityApi = useJumuiyaApi();
   const {
-    get,
+    getCommunityHealth,
+    getCommunityPulse,
+    getCommunityDiscovery,
+    getCommunityNearby,
+    getCommunityOpportunities,
+    getCommunityTrusted,
+    getCommunityExploration,
+    getCommunityFeed,
     getMarketplaceListings,
     reactToCommunityPost,
   } = communityApi;
@@ -491,6 +500,9 @@ export default function CommunityDashboard({
 
   const [workspacePage, setWorkspacePage] = useState("home");
   const [activeSurface, setActiveSurface] = useState("pulse");
+  const [backMenuOpen, setBackMenuOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [backendHealth, setBackendHealth] = useState("checking");
 
   const navigate = useCallback(
     (destination) => {
@@ -600,6 +612,19 @@ export default function CommunityDashboard({
 
   const [reloadToken, setReloadToken] = useState(0);
 
+  useEffect(() => {
+    let active = true;
+    Promise.resolve()
+      .then(() => getCommunityHealth())
+      .then((health) => {
+        if (active) setBackendHealth(String(health?.status || "").toLowerCase() === "online" ? "online" : "unavailable");
+      })
+      .catch(() => {
+        if (active) setBackendHealth("unavailable");
+      });
+    return () => { active = false; };
+  }, [getCommunityHealth]);
+
   const [posts, setPosts] = useState([]);
   const [selectedBoardPost, setSelectedBoardPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -637,58 +662,41 @@ export default function CommunityDashboard({
       setError("");
 
       try {
-        let endpoint = "/community/pulse";
-
-        const params = new URLSearchParams();
-        params.set("limit", "30");
+        const requestOptions = { limit: 30 };
+        let response;
 
         switch (surface) {
           case "pulse":
-            endpoint = "/community/pulse";
-            params.set("mode", mode);
+            response = await getCommunityPulse({ ...requestOptions, mode });
             break;
 
           case "threads":
-            endpoint = "/community/feed";
-            params.set("surface", "threads");
-            params.set("mode", "recent");
+            response = await getCommunityFeed({ ...requestOptions, surface: "threads", mode: "recent" });
             break;
 
           case "discovery":
-            endpoint = "/community/discovery";
-
-            if (query) {
-              params.set("q", query);
-            }
-
-            if (intent) {
-              params.set("intent", intent);
-            }
+            response = await getCommunityDiscovery({ ...requestOptions, query, intent });
             break;
 
           case "nearby":
-            endpoint = "/community/nearby";
+            response = await getCommunityNearby(requestOptions);
             break;
 
           case "actions":
-            endpoint = "/community/opportunities";
+            response = await getCommunityOpportunities(requestOptions);
             break;
 
           case "trust":
-            endpoint = "/community/trusted";
+            response = await getCommunityTrusted(requestOptions);
             break;
 
           case "exploration":
-            endpoint = "/community/exploration";
+            response = await getCommunityExploration(requestOptions);
             break;
 
           default:
-            endpoint = "/community/pulse";
+            response = await getCommunityPulse({ ...requestOptions, mode: "relevant" });
         }
-
-        const response = await get(
-          `${endpoint}?${params.toString()}`,
-        );
 
         if (thisRequest === requestId.current) {
           setPosts(normalizeArray(response));
@@ -714,7 +722,15 @@ export default function CommunityDashboard({
         }
       }
     },
-    [get],
+    [
+      getCommunityPulse,
+      getCommunityDiscovery,
+      getCommunityNearby,
+      getCommunityOpportunities,
+      getCommunityTrusted,
+      getCommunityExploration,
+      getCommunityFeed,
+    ],
   );
 
   // ----------------------------------------------------------
@@ -955,6 +971,7 @@ export default function CommunityDashboard({
   );
 
   const openComposer = useCallback(() => {
+    setEditingPost(null);
     navigate("community-composer");
   }, [navigate]);
 
@@ -1037,36 +1054,84 @@ export default function CommunityDashboard({
   // Existing Community workspaces
   // ----------------------------------------------------------
 
+  const renderBackMenu = () => (
+    <div className="mb-3 flex justify-end">
+      <div className="relative">
+        <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+          <Menu size={14} /> RevelaCode menu <ChevronDown size={12} />
+        </button>
+        {backMenuOpen ? (
+          <>
+            <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
+            <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+              <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
+                <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
+              </button>
+              <div className="my-1 border-t border-slate-100 dark:border-white/10" />
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("education"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+
+
   if (workspacePage === "feed") {
-    return <CommunityFeed onNavigate={navigate} />;
+    return (
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityFeed
+          onNavigate={navigate}
+          onEditPost={(post) => {
+            setEditingPost(post);
+            setWorkspacePage("composer");
+          }}
+        />
+      </div>
+    );
   }
 
   if (workspacePage === "composer") {
-    return <CommunityComposer onNavigate={navigate} />;
+    return (
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityComposer
+          initialPost={editingPost}
+          onNavigate={navigate}
+        />
+      </div>
+    );
   }
 
   if (workspacePage === "notifications") {
-    return <CommunityNotifications onNavigate={navigate} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityNotifications onNavigate={navigate} /></div>;
   }
 
   if (workspacePage === "marketplace") {
-    return <CommunityMarketplace onNavigate={navigate} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityMarketplace onNavigate={navigate} /></div>;
   }
 
   if (workspacePage === "contact-settings") {
     return (
-      <CommunityContactSettings
-        onBack={() => navigate("community")}
-      />
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityContactSettings
+          onBack={() => navigate("community")}
+        />
+      </div>
     );
   }
 
   if (workspacePage === "people") {
-    return <CommunityPeopleDirectory onBack={() => navigate("community")} onInvite={() => navigate("community-invite-members")} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityPeopleDirectory onBack={() => navigate("community")} onInvite={() => navigate("community-invite-members")} /></div>;
   }
 
   if (workspacePage === "invite") {
-    return <CommunityInviteMembers onBack={() => navigate("community")} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityInviteMembers onBack={() => navigate("community")} /></div>;
   }
 
   // ==========================================================
@@ -1118,6 +1183,7 @@ export default function CommunityDashboard({
 
         {/* Main mobile-first surface */}
         <main className="min-w-0">
+          {renderBackMenu()}
           {workspacePage === "chats" ? (
             <CommunityMattersWorkspace api={communityApi} currentUserId={user?.id || user?._id || user?.user_id || null} />
           ) : workspacePage === "groups" ? (
@@ -1148,9 +1214,11 @@ export default function CommunityDashboard({
                   <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">
                     <Sparkles size={13} /> Jumuiya Community
                   </div>
-                  <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (isOnline ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
-                    <span className={"h-1.5 w-1.5 rounded-full " + (isOnline ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
-                    {isOnline ? "Connected" : "Offline"}
+                  <div className="flex items-center gap-2">
+                    <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                      <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
+                      {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
+                    </div>
                   </div>
                 </div>
                 <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
@@ -1169,7 +1237,6 @@ export default function CommunityDashboard({
                           <TileIcon size={19} />
                         </span>
                         <span className="mt-3 block text-sm font-black text-slate-950 dark:text-white">{intentTile.label}</span>
-                        <span className="mt-0.5 block text-[10px] font-black uppercase tracking-[0.1em] text-cyan-700 dark:text-cyan-300">{intentTile.localLabel}</span>
                         <span className="mt-2 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">{intentTile.detail}</span>
                       </button>
                     );
