@@ -180,7 +180,7 @@ function LoadingCard() {
 function PublicBadge({ children, tone = "neutral" }) {
   const styles = {
     neutral: "bg-slate-100 text-slate-700",
-    green: "bg-emerald-50 text-emerald-800",
+    green: "relative text-emerald-800 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-emerald-600",
     blue: "bg-blue-50 text-blue-800",
     amber: "bg-amber-50 text-amber-800",
   };
@@ -282,6 +282,7 @@ function ProjectCard({ project }) {
             alt={project.title || "CBC project"}
             className="h-full w-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
@@ -586,7 +587,7 @@ export default function ElimuSchoolPublicDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/30 text-slate-900">
       <a
         href="#main-content"
         className="sr-only z-50 rounded-lg bg-white p-3 text-emerald-800 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -595,19 +596,21 @@ export default function ElimuSchoolPublicDashboard({
       </a>
 
       {/* Public website header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
+        <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => scrollTo("overview")}
             className="flex min-w-0 items-center gap-3 text-left"
             aria-label="Go to school overview"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-emerald-50 text-emerald-800">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-50 text-emerald-800 ring-1 ring-emerald-700/10">
               {school.logo_url ? (
                 <img
                   src={school.logo_url}
                   alt={`${schoolName} logo`}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -640,7 +643,7 @@ export default function ElimuSchoolPublicDashboard({
                 onClick={() => scrollTo(id)}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                   activeSection === id
-                    ? "bg-emerald-50 text-emerald-800"
+                    ? "relative text-emerald-800 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-emerald-600"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
                 }`}
               >
@@ -653,7 +656,7 @@ export default function ElimuSchoolPublicDashboard({
             <button
               type="button"
               onClick={parentPortal}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               Parent portal
             </button>
@@ -661,7 +664,7 @@ export default function ElimuSchoolPublicDashboard({
             <button
               type="button"
               onClick={studentPortal}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               Student portal
               <ArrowUpRight size={15} />
@@ -670,7 +673,7 @@ export default function ElimuSchoolPublicDashboard({
 
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 sm:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:hidden"
             onClick={() => setMobileMenuOpen((open) => !open)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
@@ -680,7 +683,7 @@ export default function ElimuSchoolPublicDashboard({
         </div>
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-200 bg-white px-4 py-4 sm:hidden">
+          <div className="border-t border-slate-200 bg-white/95 px-4 py-4 shadow-lg shadow-slate-900/[0.06] backdrop-blur-xl sm:hidden">
             <div className="flex flex-col gap-1">
               {[
                 ["overview", "School overview"],
@@ -709,7 +712,7 @@ export default function ElimuSchoolPublicDashboard({
               <button
                 type="button"
                 onClick={studentPortal}
-                className="rounded-xl bg-emerald-700 px-3 py-3 text-left text-sm font-semibold text-white"
+                className="min-h-11 rounded-xl bg-emerald-700 px-3 py-3 text-left text-sm font-semibold text-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
               >
                 Student portal
               </button>
@@ -726,6 +729,7 @@ export default function ElimuSchoolPublicDashboard({
               <img
                 src={school.cover_image_url}
                 alt=""
+                fetchPriority="high"
                 className="absolute inset-0 h-full w-full object-cover opacity-30"
               />
             )}
@@ -1176,8 +1180,8 @@ export default function ElimuSchoolPublicDashboard({
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <footer className="border-t border-slate-200/80 bg-slate-50/80">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-9 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
             <p className="font-bold text-slate-900">{schoolName}</p>
             <p className="mt-1 text-xs text-slate-500">

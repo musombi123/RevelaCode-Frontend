@@ -581,10 +581,10 @@ export default function ElimuStudentPortal({
 
   if (!loading && dashboard?.linked === false) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 text-slate-900">
-        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white"><GraduationCap size={24}/></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Jumuiya Elimu</p><h1 className="text-lg font-bold">Student portal activation</h1></div></div>{onBack && <button type="button" onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">Back</button>}</div></header>
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#0A74DA]/5 text-slate-900">
+        <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 shadow-sm shadow-slate-900/[0.04] backdrop-blur-xl"><div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white"><GraduationCap size={24}/></div><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Jumuiya Elimu</p><h1 className="text-lg font-bold">Student portal activation</h1></div></div>{onBack && <button type="button" onClick={onBack} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">Back</button>}</div></header>
         <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-          <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white shadow-2xl shadow-emerald-950/20 ring-1 ring-emerald-950/10 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-inner"><ShieldCheck size={24}/></div><h2 className="mt-5 text-2xl font-extrabold">Connect your student account</h2><p className="mt-2 text-sm leading-7 text-emerald-50/90">Your school must already have your student record. Enter the published school identifier and your official admission number or school-issued student code. The school will review the link before any private information is available.</p></section>
+          <section className="relative isolate overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#10304B] via-[#0A74DA] to-[#2E8B57] p-6 text-white shadow-2xl shadow-slate-950/15 ring-1 ring-white/10 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-inner"><ShieldCheck size={24}/></div><h2 className="mt-5 text-2xl font-extrabold">Connect your student account</h2><p className="mt-2 text-sm leading-7 text-emerald-50/90">Your school must already have your student record. Enter the published school identifier and your official admission number or school-issued student code. The school will review the link before any private information is available.</p></section>
           {linkMessage && <div role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">{linkMessage}</div>}
           {error && <div role="alert" className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900">{error}</div>}
           {authRequired && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">Sign in with the account you want the school to link to your student record. <button type="button" onClick={handleLogin} className="ml-1 font-bold underline">Sign in</button></div>}
@@ -600,11 +600,11 @@ export default function ElimuStudentPortal({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/60 text-slate-900">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#0A74DA]/5 text-slate-900">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 shadow-sm shadow-slate-900/[0.04] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white shadow-md shadow-emerald-950/15 ring-1 ring-emerald-950/10">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0A74DA] to-[#2E8B57] text-white shadow-md shadow-slate-900/10 ring-1 ring-white/20">
               <GraduationCap size={24} />
             </div>
 
@@ -623,7 +623,7 @@ export default function ElimuStudentPortal({
               type="button"
               onClick={loadDashboard}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:px-4"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A74DA] focus-visible:ring-offset-2 disabled:opacity-50 sm:px-4"
             >
               <RefreshCw
                 size={16}
@@ -636,7 +636,7 @@ export default function ElimuStudentPortal({
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A74DA] focus-visible:ring-offset-2"
               >
                 <ArrowRight size={16} className="rotate-180" />
                 <span className="hidden sm:inline">Back</span>
@@ -704,7 +704,7 @@ export default function ElimuStudentPortal({
         )}
 
         {/* Student welcome banner */}
-        <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-800 via-emerald-900 to-slate-950 p-6 text-white shadow-2xl shadow-emerald-950/20 ring-1 ring-emerald-950/10 sm:p-8 lg:p-10">
+        <section className="relative isolate overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#10304B] via-[#0A74DA] to-[#2E8B57] p-6 text-white shadow-2xl shadow-slate-950/15 ring-1 ring-white/10 sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-emerald-100">
@@ -1172,7 +1172,7 @@ export default function ElimuStudentPortal({
           </section>
         )}
 
-        <footer className="mt-12 border-t border-slate-200 pt-6">
+        <footer className="mt-12 border-t border-slate-200/80 pt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-slate-500">
               Jumuiya Elimu · Student learning workspace

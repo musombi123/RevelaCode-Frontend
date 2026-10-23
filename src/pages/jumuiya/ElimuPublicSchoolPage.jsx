@@ -219,12 +219,12 @@ function absoluteSchoolUrl(slug, page = "") {
 
 function PageHeading({ icon: Icon, eyebrow, title, description }) {
   return (
-    <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.03] sm:mb-10 sm:p-8">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border border-emerald-100/80 shadow-[0_0_0_18px_rgba(16,185,129,0.025),0_0_0_38px_rgba(16,185,129,0.02)]" />
+    <header className="school-page-heading relative mb-8 overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 sm:mb-10 sm:p-8">
+      <div aria-hidden="true" className="school-heading-orb pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border" />
       <div className="relative flex min-w-0 items-start gap-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10 sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
+        <span className="school-section-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-sm sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.17em] text-emerald-700 sm:text-xs"><span className="h-px w-5 bg-emerald-500" />{eyebrow}</div>
+          <div className="school-page-kicker flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.17em] sm:text-xs"><span className="school-kicker-line h-px w-5" />{eyebrow}</div>
           <h1 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 [text-wrap:balance] sm:text-4xl lg:text-[2.65rem]">{title}</h1>
           {description && <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">{description}</p>}
         </div>
@@ -235,9 +235,9 @@ function PageHeading({ icon: Icon, eyebrow, title, description }) {
 
 function EmptyState({ icon: Icon, title, description }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-dashed border-slate-300/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-8 text-center shadow-sm ring-1 ring-slate-950/[0.025] sm:p-12">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10"><Icon size={25} strokeWidth={1.7} /></div>
+    <div className="school-empty-state relative overflow-hidden rounded-3xl border border-dashed bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-8 text-center sm:p-12">
+      <div aria-hidden="true" className="school-empty-line pointer-events-none absolute inset-x-10 top-0 h-px" />
+      <div className="school-section-icon mx-auto flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm"><Icon size={25} strokeWidth={1.7} /></div>
       <h2 className="mt-5 text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</h2>
       <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-slate-500">{description}</p>
     </div>
@@ -254,16 +254,16 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   const Icon = kind === "event" ? CalendarDays : kind === "project" ? BookOpen : FileText;
 
   return (
-    <article className="group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
+    <article className={"school-resource-card school-surface-card group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6 " + (kind === "document" ? "school-document-row" : "")}>
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
+        <div className="school-section-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
         <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 tracking-tight text-slate-900 sm:text-base">{title}</h2>
       </div>
       <p className="mt-4 flex-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>
       {(date || category) && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100/90 pt-4 text-xs text-slate-500">
-          {date && <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} />{formatDate(date) || date}</span>}
-          {category && <span className="capitalize">{category.replace(/[_-]+/g, " ")}</span>}
+        <div className="school-resource-meta mt-4 flex flex-wrap gap-2 border-t pt-4 text-xs text-slate-500">
+          {date && <span className="school-date-badge inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"><CalendarDays size={13} />{formatDate(date) || date}</span>}
+          {category && <span className="school-category-chip rounded-full px-2.5 py-1 capitalize">{category.replace(/[_-]+/g, " ")}</span>}
         </div>
       )}
       {kind === "document" && (
@@ -271,7 +271,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
           type="button"
           disabled={!id || Boolean(downloadingId)}
           onClick={() => onDownload(item)}
-          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="school-download-button mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-extrabold transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {downloading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
           {downloading ? "Preparing download…" : "Download document"}
@@ -289,8 +289,8 @@ function MediaCard({ item, onOpen }) {
   if (!url) return null;
 
   return (
-    <article className="public-media-card group min-w-0 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 motion-safe:hover:shadow-2xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+    <article className="public-media-card school-surface-card group min-w-0 overflow-hidden rounded-3xl border bg-[var(--school-surface)] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)]">
+      <div className="school-media-image-bg relative aspect-[4/3] overflow-hidden">
         {isVideo ? (
           <video className="h-full w-full object-cover" src={url} controls preload="metadata" aria-label={title} />
         ) : (
@@ -308,13 +308,13 @@ function MediaCard({ item, onOpen }) {
               className="h-full w-full object-cover transition duration-700 ease-out motion-safe:group-hover/photo:scale-[1.06]"
               onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
             />
-            <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-bold text-white opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
+            <span className="school-media-overlay pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
               <span>View photo</span><ImageIcon size={15} />
             </span>
           </button>
         )}
       </div>
-      <div className="border-t border-slate-100/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-4 sm:p-5">
+      <div className="school-media-caption border-t p-4 sm:p-5">
         <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
         {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
@@ -326,9 +326,9 @@ function FeatureLink({ href, icon: Icon, title, description }) {
   return (
     <Link
       to={href}
-      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
+      className="public-feature-link school-surface-card group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
+      <span className="school-section-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
         <Icon size={21} strokeWidth={1.8} />
       </span>
       <span className="min-w-0 flex-1">
@@ -348,12 +348,12 @@ function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) 
     .map((item) => String(item || "").trim())
     .filter(Boolean);
   return (
-    <article className="group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-[var(--school-primary)] sm:p-6">
+    <article className="school-surface-card group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] sm:p-6">
       {eyebrow && <p className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-emerald-700 sm:text-xs"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{eyebrow}</p>}
       <h3 className="mt-3 break-words text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">{title}</h3>
       {description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>}
-      {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{tag}</span>)}</div>}
-      {cleanDetails.length > 0 && <dl className="mt-5 space-y-2.5 border-t border-slate-100/90 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="flex items-start gap-2 text-xs leading-6 text-slate-500"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/70" />{detail}</div>)}</dl>}
+      {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="school-tag rounded-full px-2.5 py-1 text-xs font-semibold">{tag}</span>)}</div>}
+      {cleanDetails.length > 0 && <dl className="mt-5 space-y-2.5 border-t border-slate-100/90 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="flex items-start gap-2 text-xs leading-6 text-slate-500"><span className="school-detail-dot mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />{detail}</div>)}</dl>}
     </article>
   );
 }
@@ -758,12 +758,12 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-white"><GraduationCap size={27} /></div>
-          <RefreshCw size={21} className="mx-auto mt-5 animate-spin text-emerald-700" />
-          <h1 className="mt-4 text-lg font-extrabold text-slate-900">Loading school website</h1>
-          <p className="mt-2 text-sm text-slate-500">Retrieving the public school profile and published resources.</p>
+      <main data-school-website="true" className="school-loading-screen min-h-screen p-4 sm:p-8" style={{ "--school-background": DEFAULT_PUBLIC_THEME.background, "--school-surface": DEFAULT_PUBLIC_THEME.surface, "--school-surface-tint": DEFAULT_PUBLIC_THEME.background, "--school-primary": DEFAULT_PUBLIC_THEME.primary, "--school-secondary": DEFAULT_PUBLIC_THEME.secondary, "--school-heading": DEFAULT_PUBLIC_THEME.heading, "--school-body": DEFAULT_PUBLIC_THEME.body }}>
+        <div className="mx-auto max-w-7xl" role="status" aria-busy="true">
+          <span className="sr-only">Loading school website and published resources.</span>
+          <div className="school-skeleton-bar mb-7 flex items-center gap-4 rounded-2xl border p-4 sm:p-5"><div className="school-skeleton-block h-12 w-12 shrink-0 rounded-xl" /><div className="min-w-0 flex-1"><div className="school-skeleton-block h-4 w-48 max-w-full rounded-md" /><div className="school-skeleton-block mt-3 h-3 w-32 max-w-full rounded-md" /></div><div className="hidden gap-2 lg:flex"><div className="school-skeleton-block h-9 w-20 rounded-lg" /><div className="school-skeleton-block h-9 w-24 rounded-lg" /><div className="school-skeleton-block h-9 w-20 rounded-lg" /></div></div>
+          <div className="school-skeleton-block h-64 rounded-3xl sm:h-80 lg:h-[28rem]" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[0, 1, 2, 3].map((item) => <div key={item} className="school-skeleton-card rounded-2xl border p-5"><div className="school-skeleton-block h-10 w-10 rounded-xl" /><div className="school-skeleton-block mt-5 h-4 w-3/4 rounded-md" /><div className="school-skeleton-block mt-3 h-3 w-full rounded-md" /><div className="school-skeleton-block mt-2 h-3 w-2/3 rounded-md" /></div>)}</div>
         </div>
       </main>
     );
@@ -837,15 +837,15 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       pageContent = (
         <>
           <PageHeading icon={BookOpen} eyebrow="Learning and achievement" title="Courses, programs and departments" description="Explore the learning pathways and academic departments offered by this school, alongside its published CBC projects." />
-          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band mb-10 space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">Courses and programs</h2><p className="mt-1 text-sm leading-6 text-slate-500">School-published courses, programs, duration and entry information.</p></div>
             <PublicOfferingGrid items={courses} icon={BookOpen} emptyTitle="Courses will be listed here" emptyDescription="The school has not published course or program details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `course-${index}`} title={text(item, ["name", "title"], "Course / program")} eyebrow={text(item, ["level"], "Course / program")} description={text(item, ["description"])} details={[item.duration ? `Duration: ${item.duration}` : "", item.requirements ? `Entry requirements: ${item.requirements}` : ""]} />} />
           </section>
-          <section className="mb-10 space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band mb-10 space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">Academic departments</h2><p className="mt-1 text-sm leading-6 text-slate-500">Departments and the subjects or learning areas they support.</p></div>
             <PublicOfferingGrid items={departments} icon={School} emptyTitle="Departments will be listed here" emptyDescription="The school has not published department details yet." renderItem={(item, index) => <OfferingCard key={recordId(item) || `department-${index}`} title={text(item, ["name", "title"], "Department")} eyebrow="Academic department" description={text(item, ["description"])} tags={item.subjects || []} />} />
           </section>
-          <section className="space-y-4 rounded-3xl border border-slate-200/70 bg-white/40 p-4 sm:p-5">
+          <section className="school-academic-band space-y-4">
             <div><h2 className="text-xl font-extrabold text-slate-950">CBC projects and academic highlights</h2><p className="mt-1 text-sm leading-6 text-slate-500">Learning projects and highlights approved for public viewing.</p></div>
             {projects.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map((item, index) => <ResourceCard key={recordId(item) || `project-${index}`} item={item} kind="project" />)}</div> : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-sm leading-6 text-slate-500">Published academic projects and learning highlights will appear here when available.</p>}
           </section>
@@ -869,30 +869,30 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       );
       break;
     case "media":
-      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
+      pageContent = <><PageHeading icon={ImageIcon} eyebrow="Our school in pictures" title="Photos and videos" description="View school facilities, activities, events and other media released for public viewing." />{media.length ? <div className="school-media-bento grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={recordId(item) || `media-${index}`} item={item} onOpen={setSelectedMedia} />)}</div> : <EmptyState icon={ImageIcon} title="Gallery coming soon" description="The school has not published photos or videos yet. Approved media will appear here." />}</>;
       break;
     case "documents":
-      pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
+      pageContent = <><PageHeading icon={FileText} eyebrow="School resources" title="Public documents" description="Download school forms, notices, calendars, handbooks and other documents that have been approved for public release." />{downloadError && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">{downloadError}</div>}{documents.length ? <div className="school-documents-list grid gap-3">{documents.map((item, index) => <ResourceCard key={recordId(item) || `document-${index}`} item={item} kind="document" onDownload={handleDownload} downloadingId={downloadingId} />)}</div> : <EmptyState icon={FileText} title="No public documents available" description="School-approved public documents will appear here after they are published." />}<div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>This library is for public documents only. Private student records, report cards and individual fee statements require authenticated, authorized access.</p></div></>;
       break;
     case "contact":
       pageContent = (
         <>
           <PageHeading icon={Mail} eyebrow="Get in touch" title="Contact the school" description="Use the official contact details or send an inquiry to the school administration." />
           <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
+            <section className="school-contact-panel relative overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 transition duration-300 sm:p-8">
               <h2 className="text-lg font-extrabold text-slate-950">Official contact details</h2>
               <div className="mt-6 space-y-5">
-                <div className="flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationText)} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>
-                {phone && <div className="flex items-start gap-3"><Phone size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</p><a className="mt-1 block text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"tel:" + phone}>{phone}</a></div></div>}
-                {email && <div className="flex items-start gap-3"><Mail size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"mailto:" + email}>{email}</a></div></div>}
-                {website && <div className="flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={website.startsWith("http://") || website.startsWith("https://") ? website : "https://" + website} target="_blank" rel="noreferrer">{website}</a></div></div>}
+                <div className="school-contact-detail flex items-start gap-3"><MapPin size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Location</p><p className="mt-1 text-sm font-semibold text-slate-900">{locationText}</p><a className="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline" href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(locationText)} target="_blank" rel="noreferrer">Open map <ArrowRight size={13} className="ml-1" /></a></div></div>
+                {phone && <div className="school-contact-detail flex items-start gap-3"><Phone size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Telephone</p><a className="mt-1 block text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"tel:" + phone}>{phone}</a></div></div>}
+                {email && <div className="school-contact-detail flex items-start gap-3"><Mail size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={"mailto:" + email}>{email}</a></div></div>}
+                {website && <div className="school-contact-detail flex items-start gap-3"><ArrowRight size={20} className="mt-0.5 shrink-0 text-emerald-700" /><div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</p><a className="mt-1 block break-all text-sm font-semibold text-slate-900 hover:text-emerald-700" href={website.startsWith("http://") || website.startsWith("https://") ? website : "https://" + website} target="_blank" rel="noreferrer">{website}</a></div></div>}
               </div>
             </section>
-            <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 hover:shadow-lg sm:p-8">
+            <section className="school-contact-panel relative overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-6 transition duration-300 sm:p-8">
               <h2 className="text-xl font-extrabold text-slate-950">Send a school inquiry</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">For admissions, fees, or general questions, send a message for the school administration to review.</p>
               {inquiryFeedback && <div role={inquiryFeedback.type === "error" ? "alert" : "status"} className={"mt-4 rounded-xl border p-3 text-sm leading-6 " + (inquiryFeedback.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900")}>{inquiryFeedback.message}</div>}
-              <form className="mt-5 space-y-5" onSubmit={submitInquiry}>
+              <form className="school-inquiry-form mt-5 space-y-5" onSubmit={submitInquiry}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-semibold text-slate-700">Your name
                     <input required minLength={2} maxLength={100} autoComplete="name" value={inquiryForm.name} onChange={(event) => setInquiryForm((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[var(--school-primary)] focus:ring-4 focus:ring-emerald-500/10" />
@@ -918,7 +918,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
                   <label htmlFor="school-website-confirmation">Leave this field empty</label>
                   <input id="school-website-confirmation" type="text" tabIndex={-1} autoComplete="off" value={inquiryForm.website_confirmation} onChange={(event) => setInquiryForm((current) => ({ ...current, website_confirmation: event.target.value }))} />
                 </div>
-                <button type="submit" disabled={inquirySubmitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white shadow-md shadow-emerald-950/15 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto">
+                <button type="submit" disabled={inquirySubmitting} className="school-form-submit inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto">
                   {inquirySubmitting ? <><RefreshCw size={16} className="animate-spin" />Submitting...</> : <>Submit inquiry <ArrowRight size={16} /></>}
                 </button>
                 <p className="text-xs leading-5 text-slate-500">Your message is saved for the school administration to review. This form does not send email automatically. Please do not include student ID numbers, passwords, or sensitive documents.</p>
@@ -936,36 +936,46 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       const hasActivities = coCurricularActivities.length > 0;
       pageContent = (
         <div className="school-home-page">
-          <section className="school-home-hero relative isolate overflow-hidden" style={{ backgroundColor: websiteTheme.secondary }}>
+          <section className={"school-home-hero relative isolate overflow-hidden " + (!coverUrl ? "school-hero-no-cover" : "")} style={{ backgroundColor: websiteTheme.secondary }}>
+            {coverUrl && <img src={coverUrl} alt={text(school, ["school_name", "name", "display_name"], "School campus")} fetchPriority="high" className="school-hero-cover absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+            <div className="school-hero-scrim absolute inset-0" aria-hidden="true" />
+            <div className="school-hero-pattern absolute inset-0" aria-hidden="true" />
             <div className="school-home-hero-glow" aria-hidden="true" />
-            <div className="relative z-10 grid min-h-[470px] lg:min-h-[540px] lg:grid-cols-[1.03fr_.97fr]">
-              <div className="relative z-10 flex flex-col justify-center px-6 py-12 text-white sm:px-9 sm:py-16 lg:px-12 lg:py-16 xl:px-16">
-                <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold tracking-wide text-white/90"><ShieldCheck size={15} /> Official school website</div>
-                <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: websiteTheme.accent }}>Welcome to</p>
-                <h1 className="max-w-3xl break-words text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl xl:text-6xl">{text(school, ["homepage_title"], schoolName)}</h1>
-                <p className="mt-6 max-w-2xl whitespace-pre-line text-base leading-7 text-white/85 sm:text-lg sm:leading-8">{about}</p>
-                {motto && <p className="mt-5 text-sm font-semibold italic" style={{ color: websiteTheme.accent }}>“{motto}”</p>}
+            <div className="school-hero-watermark pointer-events-none absolute right-[3%] top-1/2 hidden -translate-y-1/2 opacity-20 lg:block" aria-hidden="true">
+              <School size={248} strokeWidth={0.65} className="school-hero-watermark-icon" />
+              {logo && <img src={logo} alt="" className="school-hero-watermark-logo relative z-10 h-64 w-64 object-contain xl:h-80 xl:w-80" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+            </div>
+            <div className="relative z-10 mx-auto grid min-h-[500px] max-w-[88rem] grid-cols-1 items-center gap-8 px-5 py-14 sm:px-8 sm:py-18 lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_minmax(13rem,.5fr)] lg:px-12 xl:px-16">
+              <div className="school-hero-content relative z-10 flex max-w-4xl flex-col justify-center">
+                <div className="school-hero-badge mb-6 inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold tracking-wide"><ShieldCheck size={15} /> Official school website</div>
+                <p className="school-hero-kicker mb-3 text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: websiteTheme.heading }}>Welcome to</p>
+                <h1 className="school-hero-heading max-w-3xl break-words text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl xl:text-6xl">{text(school, ["homepage_title"], schoolName)}</h1>
+                <p className="school-hero-lead mt-6 max-w-2xl whitespace-pre-line text-base leading-7 sm:text-lg sm:leading-8">{about}</p>
+                {motto && <p className="school-hero-motto mt-5 max-w-2xl border-l-2 pl-4 text-base font-semibold italic leading-7 sm:text-lg" style={{ borderColor: websiteTheme.accent, color: websiteTheme.heading }}>“{motto}”</p>}
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2" style={{ color: websiteTheme.secondary }}>Admissions & enquiries <ArrowRight size={17} /></Link>
-                  <Link to={pageUrl("about")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Discover our school</Link>
-                </div>
-                <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-sm text-white/75">
-                  {locationText && locationText !== "Contact the school for location details." && <span className="inline-flex items-center gap-2"><MapPin size={15} style={{ color: websiteTheme.accent }} />{locationText}</span>}
-                  {text(school, ["curriculum"]) && <span className="inline-flex items-center gap-2"><BookOpen size={15} style={{ color: websiteTheme.accent }} />{text(school, ["curriculum"])}</span>}
+                  <Link to={pageUrl("contact")} className="school-cta-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2">Admissions & enquiries <ArrowRight size={17} /></Link>
+                  <Link to={pageUrl("about")} className="school-cta-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">Discover our school</Link>
                 </div>
               </div>
-              <div className="school-home-visual relative min-h-[280px] overflow-hidden sm:min-h-[360px] lg:min-h-full">
-                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, " + websiteTheme.primary + ", " + websiteTheme.secondary + ")" }} />
-                {coverUrl && <img src={coverUrl} alt={text(school, ["school_name", "name", "display_name"], "School campus")} fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/10" aria-hidden="true" />
-                {!coverUrl && <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
-                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur-sm">{logo ? <img src={logo} alt="" className="h-full w-full object-contain p-2" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <School size={48} strokeWidth={1.25} />}</div>
-                  <p className="mt-5 max-w-sm text-xl font-extrabold">{schoolName}</p><p className="mt-2 text-sm text-white/75">A place to learn, grow and belong</p><span className="mt-6 h-1 w-14 rounded-full" style={{ backgroundColor: websiteTheme.accent }} />
-                </div>}
-                <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 sm:bottom-7 sm:left-7 sm:right-7">
-                  <div className="min-w-0 rounded-xl border border-white/20 bg-black/25 px-4 py-3 text-white backdrop-blur-md"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">School community</p><p className="mt-1 break-words text-sm font-bold">{schoolName}</p></div>
-                  {text(school, ["academic_year"]) && <div className="shrink-0 rounded-xl px-4 py-3 text-sm font-extrabold shadow-lg" style={{ backgroundColor: websiteTheme.accent, color: websiteTheme.secondary }}>{text(school, ["academic_year"])}</div>}
+              <div className="school-hero-aside relative z-10 hidden h-full items-end justify-end pb-3 lg:flex">
+                <div className="school-hero-community max-w-sm rounded-2xl border p-5 backdrop-blur-xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em]">School community</p>
+                  <p className="mt-2 break-words text-lg font-extrabold">{schoolName}</p>
+                  {text(school, ["academic_year"]) && <p className="mt-4 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-sm font-extrabold" style={{ backgroundColor: websiteTheme.surface, color: websiteTheme.heading, border: "1px solid " + websiteTheme.accent }}>{text(school, ["academic_year"])}</p>}
                 </div>
+              </div>
+            </div>
+          </section>
+          <section className="school-facts-strip relative z-20 mx-auto -mt-8 mb-7 max-w-[78rem]" aria-label="School information and quick links">
+            <div className="school-facts-panel grid gap-0 rounded-2xl border shadow-xl sm:grid-cols-2 lg:grid-cols-4">
+              {text(school, ["curriculum"]) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><BookOpen size={18} /></span><div className="min-w-0"><p className="school-fact-label">Curriculum</p><p className="mt-1 break-words text-sm font-bold">{text(school, ["curriculum"])}</p></div></div>}
+              {text(school, ["academic_year"]) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><CalendarDays size={18} /></span><div className="min-w-0"><p className="school-fact-label">Academic year</p><p className="mt-1 break-words text-sm font-bold">{text(school, ["academic_year"])}</p></div></div>}
+              {locationText && locationText !== "Contact the school for location details." && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><MapPin size={18} /></span><div className="min-w-0"><p className="school-fact-label">Location</p><p className="mt-1 break-words text-sm font-bold">{locationText}</p></div></div>}
+              {(phone || email) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><Phone size={18} /></span><div className="min-w-0"><p className="school-fact-label">Get in touch</p>{phone && <a href={"tel:" + phone} className="mt-1 block break-words text-sm font-bold hover:underline">{phone}</a>}{email && <a href={"mailto:" + email} className="mt-1 block break-all text-xs font-semibold hover:underline">{email}</a>}</div></div>}
+              <div className="school-fact-item school-fact-actions flex flex-wrap items-center gap-2 p-4 sm:col-span-2 sm:px-5 lg:col-span-4">
+                <Link to={pageUrl("contact")} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold"><Mail size={15} /> Contact</Link>
+                <Link to={"/jumuiya/elimu/parent?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold"><Users size={15} /> Parent portal</Link>
+                <Link to={"/jumuiya/elimu/student?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold"><GraduationCap size={15} /> Student portal</Link>
               </div>
             </div>
           </section>
@@ -975,7 +985,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             <div className="grid gap-4 sm:grid-cols-2">
               {mission && <article className="school-statement-panel"><span className="school-statement-icon"><ShieldCheck size={21} /></span><h3>Our mission</h3><p>{mission}</p></article>}
               {vision && <article className="school-statement-panel"><span className="school-statement-icon"><ArrowRight size={21} /></span><h3>Our vision</h3><p>{vision}</p></article>}
-              {motto && <article className="school-statement-panel sm:col-span-2"><span className="school-statement-icon"><GraduationCap size={21} /></span><h3>Our motto</h3><p>{motto}</p></article>}
+              {motto && <article className="school-statement-panel school-motto-quote sm:col-span-2"><span className="school-statement-icon"><GraduationCap size={21} /></span><h3>Our motto</h3><p>{motto}</p></article>}
               {!mission && !vision && !motto && <article className="school-profile-panel sm:col-span-2"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: rgbaFromHex(websiteTheme.primary, 0.1), color: websiteTheme.primary }}><School size={24} /></div><div><h3 className="text-lg font-extrabold" style={{ color: websiteTheme.heading }}>Get to know {schoolName}</h3><p className="mt-2 text-sm leading-7" style={{ color: websiteTheme.body }}>Explore the school's published information, learning programmes, events and ways to connect with the school community.</p></div></div></article>}
             </div>
           </section>
@@ -1001,10 +1011,10 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
           {visibleMedia.length > 0 && <section className="school-home-section py-12 sm:py-14">
             <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="school-section-kicker">A glimpse of school life</p><h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl" style={{ color: websiteTheme.heading }}>Around our school</h2><p className="mt-3 text-base leading-7" style={{ color: websiteTheme.body }}>Photos and media approved for public viewing.</p></div><Link to={pageUrl("media")} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-extrabold" style={{ color: websiteTheme.primary }}>View gallery <ArrowRight size={16} /></Link></div>
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || "home-media-" + index} item={item} />)}</div>
+            <div className="school-media-bento grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || "home-media-" + index} item={item} />)}</div>
           </section>}
 
-          <section className="school-home-contact my-10 sm:my-14"><div className="grid gap-6 px-6 py-8 sm:px-9 sm:py-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-12"><div><p className="text-xs font-extrabold uppercase tracking-[0.18em]" style={{ color: websiteTheme.accent }}>Start a conversation</p><h2 className="mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">Thinking about joining our school community?</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">Contact the school for current admissions guidance, requirements and important dates.</p></div><Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 hover:bg-slate-100" style={{ color: websiteTheme.secondary }}>Contact the school <ArrowRight size={17} /></Link></div></section>
+          <section className="school-home-contact my-10 sm:my-14"><div className="grid gap-6 px-6 py-8 sm:px-9 sm:py-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-12"><div><p className="text-xs font-extrabold uppercase tracking-[0.18em]" style={{ color: websiteTheme.accent }}>Start a conversation</p><h2 className="mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">Thinking about joining our school community?</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">Contact the school for current admissions guidance, requirements and important dates.</p></div><Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 hover:bg-slate-100" style={{ color: websiteTheme.heading }}>Contact the school <ArrowRight size={17} /></Link></div></section>
         </div>
       );
 
@@ -1013,30 +1023,190 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
   return (
     <div data-school-website="true" className={"min-h-screen text-slate-900 school-buttons-" + websiteTheme.button_style} style={websiteThemeStyle}>
-      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,white)!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,white)!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:var(--school-primary)!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,white)!important;color:var(--school-primary)!important; } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
+      <style>{'[data-school-website=true] .text-emerald-700, [data-school-website=true] .text-emerald-800, [data-school-website=true] .text-emerald-900, [data-school-website=true] .text-emerald-950 { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important; } [data-school-website=true] .bg-emerald-700, [data-school-website=true] .bg-emerald-800 { background-color:var(--school-primary)!important; } [data-school-website=true] .bg-emerald-900, [data-school-website=true] .bg-emerald-950, [data-school-website=true] .bg-slate-950 { background-color:var(--school-secondary)!important; } [data-school-website=true] .bg-emerald-50, [data-school-website=true] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; } [data-school-website=true] .border-emerald-100, [data-school-website=true] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface))!important; } [data-school-website=true] .text-slate-950, [data-school-website=true] .text-slate-900 { color:var(--school-heading)!important; } [data-school-website=true] .text-slate-700, [data-school-website=true] .text-slate-600 { color:var(--school-body)!important; } [data-school-website=true] .bg-white { background-color:var(--school-surface)!important; } [data-school-website=true] [data-school-header=v2] { background-color:var(--school-header)!important; } [data-school-website=true] footer { background-color:var(--school-footer)!important; } [data-school-website=true].school-buttons-outline a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-outline button.bg-emerald-700 { background:transparent!important;color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important;border:1px solid var(--school-primary)!important; } [data-school-website=true].school-buttons-soft a.bg-emerald-700:not([aria-current=page]),[data-school-website=true].school-buttons-soft button.bg-emerald-700 { background-color:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface))!important;color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading))!important; } @media (prefers-reduced-motion:reduce) { [data-school-website=true] *, [data-school-website=true] *::before, [data-school-website=true] *::after { scroll-behavior:auto!important; animation-duration:0.01ms!important; animation-iteration-count:1!important; transition-duration:0.01ms!important; } }'}</style>
       <style>{`
         [data-school-website="true"] .school-home-page { color:var(--school-body); }
-        [data-school-website="true"] .school-home-hero { border-radius:1.75rem; overflow:hidden; box-shadow:0 28px 70px rgba(15,23,42,.14); }
+        [data-school-website="true"] .school-home-hero { border-radius:0; overflow:hidden; box-shadow:0 28px 70px color-mix(in srgb,var(--school-heading) 16%,transparent); }
         [data-school-website="true"] .school-home-hero-glow { position:absolute; z-index:0; inset:0; pointer-events:none; background:radial-gradient(circle at 12% 15%, color-mix(in srgb,var(--school-primary) 70%,transparent),transparent 48%); opacity:.65; }
         [data-school-website="true"] .school-home-visual img { transition:transform .8s cubic-bezier(.2,.7,.2,1); }
         [data-school-website="true"] .school-home-visual:hover img { transform:scale(1.025); }
         [data-school-website="true"] .school-section-kicker { color:var(--school-primary); font-size:.72rem; font-weight:800; letter-spacing:.16em; line-height:1.4; text-transform:uppercase; }
-        [data-school-website="true"] .school-statement-panel { border-top:3px solid var(--school-primary); border-radius:1rem; padding:1.35rem; background:var(--school-surface); box-shadow:0 12px 32px rgba(15,23,42,.055); }
-        [data-school-website="true"] .school-statement-icon { display:flex; width:2.8rem; height:2.8rem; align-items:center; justify-content:center; border-radius:.85rem; background:color-mix(in srgb,var(--school-primary) 10%,white); color:var(--school-primary); }
+        [data-school-website="true"] .school-statement-panel { border-top:3px solid var(--school-primary); border-radius:1rem; padding:1.35rem; background:var(--school-surface); box-shadow:0 12px 32px color-mix(in srgb,var(--school-heading) 7%,transparent); }
+        [data-school-website="true"] .school-statement-icon { display:flex; width:2.8rem; height:2.8rem; align-items:center; justify-content:center; border-radius:.85rem; background:color-mix(in srgb,var(--school-primary) 10%,var(--school-surface)); color:var(--school-primary); }
         [data-school-website="true"] .school-statement-panel h3 { margin-top:1rem; color:var(--school-heading); font-size:1.05rem; font-weight:800; }
         [data-school-website="true"] .school-statement-panel p { margin-top:.55rem; color:var(--school-body); font-size:.92rem; line-height:1.8; white-space:pre-line; }
-        [data-school-website="true"] .school-profile-panel { border:1px solid color-mix(in srgb,var(--school-primary) 15%,white); border-radius:1rem; background:var(--school-surface); padding:1.5rem; }
-        [data-school-website="true"] .school-home-section { border-top:1px solid color-mix(in srgb,var(--school-primary) 12%,white); }
-        [data-school-website="true"] .school-home-contact { overflow:hidden; border-radius:1.5rem; background:linear-gradient(115deg,var(--school-secondary),var(--school-primary)); box-shadow:0 20px 50px rgba(15,23,42,.12); }
+        [data-school-website="true"] .school-profile-panel { border:1px solid color-mix(in srgb,var(--school-primary) 15%,var(--school-surface)); border-radius:1rem; background:var(--school-surface); padding:1.5rem; }
+        [data-school-website="true"] .school-home-section { border-top:1px solid color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); }
+        [data-school-website="true"] .school-home-contact { overflow:hidden; border-radius:1.5rem; background:linear-gradient(115deg,var(--school-secondary),var(--school-primary)); box-shadow:0 20px 50px color-mix(in srgb,var(--school-heading) 12%,transparent); }
         [data-school-website="true"] .school-home-page article { min-width:0; }
+        [data-school-website="true"] .school-home-page > .school-home-section { margin-top:.5rem; padding:clamp(1.25rem,3vw,2.25rem); border:1px solid color-mix(in srgb,var(--school-heading) 8%,var(--school-surface)); border-radius:1.4rem; background:var(--school-surface); }
+        [data-school-website="true"] .school-home-page > .school-home-section:nth-of-type(odd) { background:var(--school-surface-tint); }
+        [data-school-website="true"] .school-documents-list { grid-template-columns:minmax(0,1fr); }
+        [data-school-website="true"] .school-document-row { width:100%; }
+        [data-school-website="true"] .school-hero-kicker { color:var(--school-heading)!important; }
+        [data-school-website="true"] .school-hero-motto { color:var(--school-heading)!important; }
+        [data-school-website="true"] .school-home-contact { color:var(--school-surface); }
+        [data-school-website="true"] .school-fact-icon { border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface)); }
+        [data-school-website="true"] .school-hero-community { backdrop-filter:blur(18px); }
+        [data-school-website="true"] #school-mobile-navigation a[aria-current="page"] { color:var(--school-surface)!important; background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%)!important; border-color:var(--school-primary)!important; }
+        [data-school-website="true"] .shadow-sm,[data-school-website="true"] .shadow,[data-school-website="true"] .shadow-md,[data-school-website="true"] .shadow-lg,[data-school-website="true"] .shadow-xl,[data-school-website="true"] .shadow-2xl { --tw-shadow-color:color-mix(in srgb,var(--school-heading) 10%,transparent)!important; }
+        [data-school-website="true"] [class*="ring-offset-"] { --tw-ring-offset-color:var(--school-surface)!important; }
+        [data-school-website="true"] [class*="focus-visible:ring-emerald-"]:focus-visible { --tw-ring-color:color-mix(in srgb,var(--school-primary) 50%,transparent)!important; }
+        [data-school-website="true"] [class*="hover:bg-emerald-"]:hover { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="hover:text-emerald-"]:hover { color:var(--school-primary)!important; }
+        [data-school-website="true"] [class*="hover:border-emerald-"]:hover { border-color:color-mix(in srgb,var(--school-primary) 28%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="hover:bg-slate-50"]:hover,[data-school-website="true"] [class*="hover:bg-slate-100"]:hover { background-color:var(--school-surface-tint)!important; }
+        [data-school-website="true"] [class*="hover:text-slate-950"]:hover,[data-school-website="true"] [class*="hover:text-slate-900"]:hover { color:var(--school-heading)!important; }
+        [data-school-website="true"] [class*="hover:border-slate-"]:hover { border-color:color-mix(in srgb,var(--school-heading) 22%,var(--school-surface))!important; }
+        [data-school-website="true"] .text-slate-300,[data-school-website="true"] .text-slate-400,[data-school-website="true"] .text-slate-500 { color:var(--school-body)!important; opacity:.84; }
         @media(max-width:640px) { [data-school-website="true"] .school-home-hero { border-radius:1.1rem; } [data-school-website="true"] .school-home-contact { border-radius:1.1rem; } }
-        @media(prefers-reduced-motion:reduce) { [data-school-website="true"] .school-home-visual img { transition:none; } }
+
+        /* Premium public-school website system: colours are derived from the selected school palette. */
+        [data-school-website="true"] .school-home-hero { width:100vw; max-width:none; margin-left:calc(50% - 50vw); min-height:31rem; border-radius:0; box-shadow:0 28px 70px color-mix(in srgb,var(--school-heading) 16%,transparent); }
+        [data-school-website="true"] .school-hero-cover { object-position:center 45%; }
+        [data-school-website="true"] .school-hero-scrim { z-index:1; background:linear-gradient(90deg,color-mix(in srgb,var(--school-surface) 94%,var(--school-secondary) 6%) 0%,color-mix(in srgb,var(--school-secondary) 68%,transparent) 100%); }
+        [data-school-website="true"] .school-hero-pattern { z-index:2; opacity:.13; background:radial-gradient(circle at 78% 22%,color-mix(in srgb,var(--school-accent) 34%,transparent) 0 1px,transparent 2px),linear-gradient(135deg,color-mix(in srgb,var(--school-primary) 48%,var(--school-secondary)),var(--school-secondary)); background-size:18px 18px,cover; }
+        [data-school-website="true"] .school-hero-no-cover .school-hero-pattern { opacity:1; }
+        [data-school-website="true"] .school-hero-no-cover .school-hero-scrim { background:linear-gradient(105deg,color-mix(in srgb,var(--school-surface) 92%,var(--school-secondary) 8%),color-mix(in srgb,var(--school-surface) 78%,var(--school-primary) 22%)); }
+        [data-school-website="true"] .school-home-hero-glow { background:radial-gradient(circle at 14% 15%,color-mix(in srgb,var(--school-accent) 26%,transparent),transparent 48%); opacity:.85; }
+        [data-school-website="true"] .school-hero-content { color:var(--school-surface); }
+        [data-school-website="true"] .school-hero-heading { color:var(--school-heading); text-wrap:balance; }
+        [data-school-website="true"] .school-hero-lead { color:var(--school-body); opacity:1; }
+        [data-school-website="true"] .school-hero-badge { color:var(--school-heading); background:color-mix(in srgb,var(--school-surface) 88%,transparent); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); }
+        [data-school-website="true"] .school-hero-watermark { color:var(--school-accent); }
+        [data-school-website="true"] .school-hero-watermark-icon { position:absolute; width:15rem; height:15rem; opacity:.4; }
+        [data-school-website="true"] .school-hero-watermark-logo { opacity:.84; }
+        @supports selector(:has(*)) { [data-school-website="true"] .school-home-hero:has(.school-hero-cover[style*="display: none"]) .school-hero-pattern { opacity:.55; } }
+        [data-school-website="true"] .school-hero-community { color:var(--school-heading); background:color-mix(in srgb,var(--school-surface) 88%,transparent); border-color:color-mix(in srgb,var(--school-primary) 22%,var(--school-surface)); box-shadow:0 22px 48px color-mix(in srgb,var(--school-heading) 20%,transparent); }
+        [data-school-website="true"] .school-hero-community p:first-child { color:var(--school-body); opacity:1; }
+        [data-school-website="true"] .school-cta-primary { border:1px solid var(--school-primary); color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); box-shadow:0 12px 26px color-mix(in srgb,var(--school-heading) 18%,transparent); }
+        [data-school-website="true"] .school-cta-secondary { color:var(--school-surface); border-color:color-mix(in srgb,var(--school-surface) 48%,transparent); background:color-mix(in srgb,var(--school-surface) 8%,transparent); }
+        [data-school-website="true"].school-buttons-outline .school-cta-primary,[data-school-website="true"].school-buttons-outline .school-portal-primary,[data-school-website="true"].school-buttons-outline .school-footer-portal-primary { color:var(--school-primary); background:transparent; border:1px solid var(--school-primary); box-shadow:none; }
+        [data-school-website="true"].school-buttons-soft .school-cta-primary,[data-school-website="true"].school-buttons-soft .school-portal-primary,[data-school-website="true"].school-buttons-soft .school-footer-portal-primary { color:var(--school-primary); background:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); border:1px solid color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); box-shadow:none; }
+        [data-school-website="true"].school-buttons-outline .school-cta-secondary { background:transparent; border-color:var(--school-primary); color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); }
+        [data-school-website="true"].school-buttons-soft .school-cta-secondary { background:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface)); border-color:color-mix(in srgb,var(--school-primary) 20%,var(--school-surface)); color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); }
+        [data-school-website="true"] .school-facts-panel { overflow:hidden; border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface)); background:var(--school-surface); box-shadow:0 22px 54px color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-fact-item { min-width:0; color:var(--school-body); border-color:color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); }
+        [data-school-website="true"] .school-fact-item:not(.school-fact-actions) { border-bottom:1px solid color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); }
+        [data-school-website="true"] .school-fact-icon { display:flex; width:2.5rem; height:2.5rem; flex:0 0 auto; align-items:center; justify-content:center; border-radius:.8rem; color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 10%,var(--school-surface)); }
+        [data-school-website="true"] .school-fact-label { color:var(--school-body); font-size:.65rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; opacity:.82; }
+        [data-school-website="true"] .school-fact-actions { border-top:1px solid color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); background:var(--school-surface-tint); }
+        [data-school-website="true"] .school-fact-action { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); background:var(--school-surface); }
+        [data-school-website="true"] .school-fact-actions > .school-fact-action:first-child { color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); border:1px solid var(--school-primary); }
+        [data-school-website="true"].school-buttons-outline .school-fact-actions > .school-fact-action:first-child { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:transparent; border-color:var(--school-primary); }
+        [data-school-website="true"].school-buttons-soft .school-fact-actions > .school-fact-action:first-child { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); }
+        [data-school-website="true"] .text-emerald-100,[data-school-website="true"] .text-emerald-200,[data-school-website="true"] .text-emerald-300 { color:var(--school-heading)!important; }
+        [data-school-website="true"] .text-emerald-500 { color:var(--school-primary)!important; }
+        [data-school-website="true"] .school-statement-panel { border:0; border-top:3px solid var(--school-primary); border-radius:1rem; padding:1.5rem; background:var(--school-surface); box-shadow:0 14px 34px color-mix(in srgb,var(--school-heading) 7%,transparent); }
+        [data-school-website="true"] .school-statement-icon { background:color-mix(in srgb,var(--school-primary) 11%,var(--school-surface)); color:var(--school-primary); }
+        [data-school-website="true"] .school-motto-quote { border-top:0; border-left:3px solid var(--school-accent); background:var(--school-surface-tint); }
+        [data-school-website="true"] .school-motto-quote p { color:var(--school-heading); font-size:clamp(1.1rem,2vw,1.45rem); font-weight:700; line-height:1.65; }
+        [data-school-website="true"] .school-logo-mark { background:var(--school-surface); color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); border:1px solid color-mix(in srgb,var(--school-primary) 22%,var(--school-surface)); }
+        [data-school-website="true"] [data-school-header="v2"] { background-color:color-mix(in srgb,var(--school-header) 88%,transparent)!important; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-color:color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-nav-link { position:relative; color:var(--school-body); }
+        [data-school-website="true"] .school-nav-link:hover { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 7%,transparent); }
+        [data-school-website="true"] .school-nav-link[aria-current="page"] { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); }
+        [data-school-website="true"] .school-nav-link[aria-current="page"]::after { position:absolute; right:.55rem; bottom:.1rem; left:.55rem; height:2px; border-radius:999px; background:var(--school-primary); content:""; animation:school-nav-underline .24s ease-out both; }
+        [data-school-website="true"] .school-portal-link,[data-school-website="true"] .school-menu-trigger { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); border-color:color-mix(in srgb,var(--school-primary) 28%,var(--school-surface)); background:var(--school-surface); }
+        [data-school-website="true"] .school-portal-primary { color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); border:1px solid var(--school-primary); }
+        [data-school-website="true"] .school-mobile-sheet { max-height:min(78vh,42rem); overflow-y:auto; background:var(--school-surface); border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); box-shadow:0 28px 48px color-mix(in srgb,var(--school-heading) 14%,transparent); }
+        [data-school-website="true"] .school-public-footer { color:var(--school-body); border-color:color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-public-footer .border-b { border-color:color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-footer-portal { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:var(--school-surface); border-color:color-mix(in srgb,var(--school-primary) 25%,var(--school-surface)); }
+        [data-school-website="true"] .school-footer-portal-primary { color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); border-color:var(--school-primary); }
+        [data-school-website="true"] .school-loading-screen { background:var(--school-background); color:var(--school-body); }
+        [data-school-website="true"] .school-skeleton-bar,[data-school-website="true"] .school-skeleton-card { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); background:var(--school-surface); }
+        [data-school-website="true"] .school-skeleton-block { background:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); animation:school-skeleton-pulse 1.6s ease-in-out infinite; }
+        /* Keep the existing remap intact while translating remaining fixed Tailwind tones. */
+        [data-school-website="true"] .text-slate-500,[data-school-website="true"] .text-slate-400 { color:var(--school-body)!important; opacity:.82; }
+        [data-school-website="true"] .border-slate-100,[data-school-website="true"] .border-slate-200,[data-school-website="true"] .border-slate-300 { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface))!important; }
+        [data-school-website="true"] .ring-slate-950 { --tw-ring-color:color-mix(in srgb,var(--school-heading) 8%,transparent)!important; }
+        [data-school-website="true"] .ring-emerald-700,[data-school-website="true"] .ring-emerald-600,[data-school-website="true"] .ring-emerald-500 { --tw-ring-color:color-mix(in srgb,var(--school-primary) 35%,transparent)!important; }
+        [data-school-website="true"] .bg-slate-50 { background-color:var(--school-background)!important; }
+        [data-school-website="true"] .bg-slate-100 { background-color:var(--school-surface-tint)!important; }
+        [data-school-website="true"] .bg-emerald-50,[data-school-website="true"] .bg-emerald-100 { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; }
+        [data-school-website="true"] .border-emerald-100,[data-school-website="true"] .border-emerald-200 { border-color:color-mix(in srgb,var(--school-primary) 18%,var(--school-surface))!important; }
+        [data-school-website="true"] .from-emerald-700 { --tw-gradient-from:var(--school-primary) var(--tw-gradient-from-position)!important; --tw-gradient-to:color-mix(in srgb,var(--school-primary) 0%,transparent) var(--tw-gradient-to-position)!important; }
+        [data-school-website="true"] .to-emerald-950 { --tw-gradient-to:var(--school-secondary) var(--tw-gradient-to-position)!important; }
+        [data-school-website="true"] .via-emerald-400 { --tw-gradient-via:color-mix(in srgb,var(--school-accent) 45%,var(--school-primary)) var(--tw-gradient-via-position)!important; }
+        [data-school-website="true"] [class*="shadow-slate-"] { --tw-shadow-color:color-mix(in srgb,var(--school-heading) 10%,transparent)!important; }
+        [data-school-website="true"] [class*="shadow-emerald-"] { --tw-shadow-color:color-mix(in srgb,var(--school-primary) 15%,transparent)!important; }
+        [data-school-website="true"] [class*="text-white/"] { color:var(--school-surface)!important; opacity:.84; }
+        [data-school-website="true"] [class*="border-white/"] { border-color:color-mix(in srgb,var(--school-surface) 24%,transparent)!important; }
+        [data-school-website="true"] [class*="bg-white/"] { background-color:color-mix(in srgb,var(--school-surface) 10%,transparent)!important; }
+        [data-school-website="true"] .school-home-contact { background:linear-gradient(115deg,color-mix(in srgb,var(--school-secondary) 20%,var(--school-heading) 80%),color-mix(in srgb,var(--school-primary) 20%,var(--school-heading) 80%)); box-shadow:0 20px 50px color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .public-media-card img { transition:transform .55s cubic-bezier(.2,.7,.2,1); aspect-ratio:4/3; object-fit:cover; }
+        [data-school-website="true"] .public-media-card:hover img { transform:scale(1.035); }
+        [data-school-website="true"] .school-home-page article,[data-school-website="true"] .public-feature-link { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); box-shadow:0 12px 28px color-mix(in srgb,var(--school-heading) 5%,transparent); }
+        [data-school-website="true"] .school-home-page article:hover,[data-school-website="true"] .public-feature-link:hover { box-shadow:0 22px 38px color-mix(in srgb,var(--school-heading) 10%,transparent); }
+        [data-school-website="true"] .school-public-footer .text-slate-500 { color:var(--school-body)!important; }
+        [data-school-website="true"] .school-public-footer p,[data-school-website="true"] .school-public-footer a { overflow-wrap:anywhere; }
+        @keyframes school-nav-underline { from { transform:scaleX(.45); opacity:.35; } to { transform:scaleX(1); opacity:1; } }
+        @keyframes school-skeleton-pulse { 0%,100% { opacity:.62; } 50% { opacity:1; } }
+        @media(min-width:640px) { [data-school-website="true"] .school-fact-item:not(:nth-child(2n)) { border-right:1px solid color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); } }
+        @media(min-width:1024px) { [data-school-website="true"] .school-fact-item { border-bottom:0!important; } [data-school-website="true"] .school-fact-item:not(.school-fact-actions) { border-right:1px solid color-mix(in srgb,var(--school-heading) 10%,var(--school-surface)); } }
+        @media(max-width:639px) { [data-school-website="true"] .school-home-hero { min-height:0; } [data-school-website="true"] .school-facts-strip { width:calc(100% - 1rem); } }
+        @media(prefers-reduced-motion:reduce) { [data-school-website="true"] .school-nav-link[aria-current="page"]::after,[data-school-website="true"] .school-skeleton-block,[data-school-website="true"] .public-media-card img { animation:none; transition:none; } }
+        [data-school-website="true"] .school-page-heading { border:0; border-bottom:1px solid color-mix(in srgb,var(--school-heading) 14%,var(--school-surface)); border-radius:.75rem 0 0 0; background:linear-gradient(110deg,var(--school-surface),var(--school-surface-tint)); box-shadow:none; }
+        [data-school-website="true"] .school-heading-orb { border-color:color-mix(in srgb,var(--school-primary) 16%,var(--school-surface)); box-shadow:0 0 0 18px color-mix(in srgb,var(--school-primary) 3%,transparent),0 0 0 38px color-mix(in srgb,var(--school-primary) 2%,transparent); }
+        [data-school-website="true"] .school-section-icon { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 9%,var(--school-surface)); border:1px solid color-mix(in srgb,var(--school-primary) 18%,var(--school-surface)); }
+        [data-school-website="true"] .school-page-kicker { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); }
+        [data-school-website="true"] .school-kicker-line { background:var(--school-accent); }
+        [data-school-website="true"] .school-empty-state { border-color:color-mix(in srgb,var(--school-primary) 28%,var(--school-surface)); background:linear-gradient(130deg,var(--school-surface),var(--school-surface-tint)); box-shadow:0 18px 42px color-mix(in srgb,var(--school-heading) 6%,transparent); }
+        [data-school-website="true"] .school-empty-line { background:linear-gradient(90deg,transparent,var(--school-accent),transparent); opacity:.8; }
+        [data-school-website="true"] .school-surface-card { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); background:linear-gradient(135deg,var(--school-surface),var(--school-surface-tint)); box-shadow:0 12px 28px color-mix(in srgb,var(--school-heading) 6%,transparent); }
+        [data-school-website="true"] .school-surface-card:hover { box-shadow:0 22px 42px color-mix(in srgb,var(--school-heading) 12%,transparent); }
+        [data-school-website="true"] .school-resource-meta { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); }
+        [data-school-website="true"] .school-date-badge { color:var(--school-heading); background:color-mix(in srgb,var(--school-accent) 24%,var(--school-surface)); border:1px solid color-mix(in srgb,var(--school-accent) 38%,var(--school-surface)); font-weight:800; }
+        [data-school-website="true"] .school-category-chip,[data-school-website="true"] .school-tag { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 9%,var(--school-surface)); border:1px solid color-mix(in srgb,var(--school-primary) 17%,var(--school-surface)); }
+        [data-school-website="true"] .school-detail-dot { background:var(--school-accent); }
+        [data-school-website="true"] .school-download-button,[data-school-website="true"] .school-form-submit { color:var(--school-surface); background:color-mix(in srgb,var(--school-primary) 40%,var(--school-heading) 60%); border:1px solid var(--school-primary); box-shadow:0 10px 22px color-mix(in srgb,var(--school-heading) 10%,transparent); }
+        [data-school-website="true"].school-buttons-outline .school-download-button,[data-school-website="true"].school-buttons-outline .school-form-submit { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:transparent; border:1px solid var(--school-primary); box-shadow:none; }
+        [data-school-website="true"].school-buttons-soft .school-download-button,[data-school-website="true"].school-buttons-soft .school-form-submit { color:color-mix(in srgb,var(--school-primary) 35%,var(--school-heading)); background:color-mix(in srgb,var(--school-primary) 12%,var(--school-surface)); border:1px solid color-mix(in srgb,var(--school-primary) 24%,var(--school-surface)); box-shadow:none; }
+        [data-school-website="true"] .school-media-image-bg { background:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface-tint)); }
+        [data-school-website="true"] .school-media-overlay { color:var(--school-surface); background:color-mix(in srgb,var(--school-secondary) 88%,transparent); }
+        [data-school-website="true"] .school-media-caption { background:linear-gradient(135deg,var(--school-surface),var(--school-surface-tint)); border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); }
+        [data-school-website="true"] .school-contact-panel { border-color:color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); box-shadow:0 15px 34px color-mix(in srgb,var(--school-heading) 7%,transparent); }
+        [data-school-website="true"] .school-contact-detail { padding:.8rem 0; border-bottom:1px solid color-mix(in srgb,var(--school-heading) 9%,var(--school-surface)); }
+        [data-school-website="true"] .school-contact-detail:last-child { border-bottom:0; }
+        [data-school-website="true"] .school-inquiry-form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),[data-school-website="true"] .school-inquiry-form select,[data-school-website="true"] .school-inquiry-form textarea { width:100%; min-height:2.9rem; border-color:color-mix(in srgb,var(--school-heading) 18%,var(--school-surface)); background:var(--school-surface); color:var(--school-body); border-radius:.85rem; padding:.85rem 1rem; }
+        [data-school-website="true"] .school-inquiry-form textarea { min-height:9rem; }
+        [data-school-website="true"] .school-inquiry-form input::placeholder,[data-school-website="true"] .school-inquiry-form textarea::placeholder { color:var(--school-body); opacity:.68; }
+        [data-school-website="true"] .school-inquiry-form input:focus-visible,[data-school-website="true"] .school-inquiry-form select:focus-visible,[data-school-website="true"] .school-inquiry-form textarea:focus-visible { outline:2px solid var(--school-primary); outline-offset:2px; border-color:var(--school-primary); box-shadow:0 0 0 4px color-mix(in srgb,var(--school-primary) 17%,transparent); }
+        [data-school-website="true"] .school-media-bento > .public-media-card { min-width:0; }
+        @media(min-width:1280px) { [data-school-website="true"] .school-media-bento > .public-media-card:first-child { grid-column:span 2; grid-row:span 2; } [data-school-website="true"] .school-media-bento > .public-media-card:first-child > div:first-child { height:100%; min-height:22rem; aspect-ratio:auto; } }
+        @media(max-width:767px) { [data-school-website="true"] .school-contact-panel { padding:1.15rem; } }
+        [data-school-website="true"] .school-academic-band { padding:1rem 0 2.25rem; border-bottom:1px solid color-mix(in srgb,var(--school-heading) 12%,var(--school-surface)); }
+        [data-school-website="true"] .school-academic-band:last-child { border-bottom:0; }
+        [data-school-website="true"] .school-academic-band > div:first-child h2 { color:var(--school-heading); letter-spacing:-.025em; }
+        [data-school-website="true"] .school-academic-band > div:first-child p { color:var(--school-body); }
+        [data-school-website="true"] .school-document-row { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) auto auto; align-items:center; gap:1rem; padding:1rem 1.2rem; }
+        [data-school-website="true"] .school-document-row > :first-child { align-items:center; }
+        [data-school-website="true"] .school-document-row > p { margin:0; }
+        [data-school-website="true"] .school-document-row .school-resource-meta { margin:0; padding:0; border:0; }
+        [data-school-website="true"] .school-document-row .school-download-button { margin:0; white-space:nowrap; }
+        [data-school-website="true"] .school-document-row .school-date-badge { white-space:nowrap; }
+        @media(max-width:1023px) { [data-school-website="true"] .school-document-row { grid-template-columns:minmax(0,1fr) auto; gap:.65rem 1rem; } [data-school-website="true"] .school-document-row > :first-child,[data-school-website="true"] .school-document-row > p { grid-column:1 / -1; } [data-school-website="true"] .school-document-row .school-resource-meta { grid-column:1; } [data-school-website="true"] .school-document-row .school-download-button { grid-column:2; grid-row:auto; } }
+        @media(max-width:520px) { [data-school-website="true"] .school-document-row { padding:1rem; } [data-school-website="true"] .school-document-row > :first-child { align-items:flex-start; } [data-school-website="true"] .school-document-row .school-resource-meta { flex-wrap:wrap; } [data-school-website="true"] .school-document-row .school-download-button { min-height:44px; padding:.65rem .8rem; } }
+        [data-school-website="true"] .bg-emerald-500 { background-color:var(--school-primary)!important; }
+        [data-school-website="true"] .border-emerald-700 { border-color:var(--school-primary)!important; }
+        [data-school-website="true"] .from-slate-100 { --tw-gradient-from:var(--school-surface-tint) var(--tw-gradient-from-position)!important; --tw-gradient-to:color-mix(in srgb,var(--school-surface-tint) 0%,transparent) var(--tw-gradient-to-position)!important; }
+        [data-school-website="true"] .to-slate-200 { --tw-gradient-to:var(--school-background) var(--tw-gradient-to-position)!important; }
+        [data-school-website="true"] [class~="bg-slate-950/75"] { background-color:color-mix(in srgb,var(--school-heading) 85%,transparent)!important; }
+        [data-school-website="true"] [class~="bg-slate-950/90"] { background-color:color-mix(in srgb,var(--school-heading) 92%,transparent)!important; }
+        [data-school-website="true"] .text-white { color:var(--school-surface)!important; }
+        [data-school-website="true"] [class*="bg-amber-"] { background-color:color-mix(in srgb,var(--school-accent) 12%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="border-amber-"] { border-color:color-mix(in srgb,var(--school-accent) 32%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="text-amber-"] { color:var(--school-heading)!important; }
+        [data-school-website="true"] [class*="bg-red-"],[data-school-website="true"] [class*="bg-rose-"] { background-color:color-mix(in srgb,var(--school-primary) 8%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="border-red-"],[data-school-website="true"] [class*="border-rose-"] { border-color:color-mix(in srgb,var(--school-primary) 24%,var(--school-surface))!important; }
+        [data-school-website="true"] [class*="text-red-"],[data-school-website="true"] [class*="text-rose-"] { color:var(--school-heading)!important; }
       `}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to content</a>
       <header data-school-header="v2" style={{ backgroundColor: websiteTheme.header }} className="sticky top-0 z-30 border-b border-slate-200/80 shadow-sm shadow-slate-900/[0.03] backdrop-blur-xl supports-[backdrop-filter]:bg-white/90">
         <div className="mx-auto flex max-w-[88rem] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <Link to={homeUrl} className="group flex min-w-0 items-center gap-3" aria-label={`${schoolName} home`}>
-            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 text-white shadow-md shadow-emerald-900/15 ring-1 ring-emerald-950/10 sm:h-12 sm:w-12">
+            <span className="school-logo-mark relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-md sm:h-12 sm:w-12">
               <School size={23} />
               {logo && <img src={logo} alt="" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
             </span>
@@ -1048,16 +1218,36 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             </span>
           </Link>
 
-          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <nav aria-label="School website navigation" className="school-desktop-nav hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto px-2 xl:flex">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = canonicalPage === item.path;
+              return (
+                <Link
+                  key={item.path || "home"}
+                  to={pageUrl(item.path)}
+                  aria-current={active ? "page" : undefined}
+                  title={item.label}
+                  className={`school-nav-link group relative inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:gap-2 2xl:px-2.5 2xl:text-sm ${active ? "text-emerald-700" : "text-slate-600 hover:text-emerald-800"}`}
+                  aria-label={item.label}
+                >
+                  <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
+                  <span className="hidden 2xl:inline">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-2 xl:flex">
             <Link
               to={`/jumuiya/elimu/parent?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+              className="school-portal-link inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:px-3.5 2xl:text-sm"
             >
               <Users size={16} /> Parent portal
             </Link>
             <Link
               to={`/jumuiya/elimu/student?school=${encodeURIComponent(publicSchoolSlug || schoolSlug)}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-900/15 transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+              className="school-portal-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 2xl:px-3.5 2xl:text-sm"
             >
               <GraduationCap size={16} /> Student portal <ArrowRight size={14} />
             </Link>
@@ -1069,35 +1259,15 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             aria-controls="school-mobile-navigation"
             aria-label={mobileMenuOpen ? "Close school navigation" : "Open school navigation"}
             onClick={() => setMobileMenuOpen((value) => !value)}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 xl:hidden"
+            className="school-menu-trigger inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-bold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 xl:hidden"
           >
             {mobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
             <span>{mobileMenuOpen ? "Close" : "Menu"}</span>
           </button>
         </div>
 
-        <div className="hidden border-t border-slate-100 bg-slate-50/70 xl:block">
-          <nav aria-label="School website navigation" className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = canonicalPage === item.path;
-              return (
-                <Link
-                  key={item.path || "home"}
-                  to={pageUrl(item.path)}
-                  aria-current={active ? "page" : undefined}
-                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 ${active ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/15" : "text-slate-600 hover:bg-white hover:text-emerald-800 hover:shadow-sm"}`}
-                >
-                  <Icon size={16} strokeWidth={active ? 2.3 : 1.9} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
         {mobileMenuOpen && (
-          <div id="school-mobile-navigation" className="border-t border-slate-100 bg-white px-4 py-4 shadow-lg shadow-slate-900/5 xl:hidden sm:px-6">
+          <div id="school-mobile-navigation" className="school-mobile-sheet border-t px-4 py-4 shadow-lg xl:hidden sm:px-6">
             <nav aria-label="Mobile school website navigation" className="mx-auto max-w-7xl">
               <p className="mb-3 px-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500">Explore the school</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1144,11 +1314,36 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
         {pageContent}
       </main>
 
-      <footer style={{ backgroundColor: websiteTheme.footer }} className="mt-8 border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-[88rem] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div><p className="text-sm font-extrabold text-slate-900">{schoolName}</p><p className="mt-1 text-xs text-slate-500">Official public school website</p></div>
-          <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-4 gap-y-2">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="text-xs font-semibold text-slate-600 hover:text-emerald-700">{item.label}</Link>)}</nav>
-          <p className="text-xs text-slate-500">Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
+      <footer style={{ backgroundColor: websiteTheme.footer }} className="school-public-footer mt-8 border-t">
+        <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 border-b py-9 sm:py-11 md:grid-cols-[1.15fr_.9fr_1fr] md:gap-10">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                {logo && <img src={logo} alt={schoolName ? schoolName + " logo" : "School logo"} loading="lazy" className="h-12 w-12 shrink-0 rounded-xl object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+                <div className="min-w-0"><p className="break-words text-base font-extrabold tracking-tight text-slate-900">{schoolName}</p><p className="mt-1 text-xs font-semibold">Official public school website</p></div>
+              </div>
+              {motto && <p className="mt-4 max-w-sm border-l-2 pl-4 text-sm italic leading-7" style={{ borderColor: websiteTheme.accent, color: websiteTheme.body }}>“{motto}”</p>}
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em]">Explore</p>
+              <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-4 gap-y-3">{NAV_ITEMS.map((item) => <Link key={item.path || "home"} to={pageUrl(item.path)} className="w-fit text-sm font-semibold text-slate-600 transition hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">{item.label}</Link>)}</nav>
+            </div>
+            <div>
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em]">Contact & portals</p>
+              <div className="space-y-3 text-sm">
+                {phone && <a href={"tel:" + phone} className="block break-words font-semibold text-slate-600 hover:text-emerald-700">{phone}</a>}
+                {email && <a href={"mailto:" + email} className="block break-all font-semibold text-slate-600 hover:text-emerald-700">{email}</a>}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link to={"/jumuiya/elimu/parent?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-footer-portal inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><Users size={15} /> Parent portal</Link>
+                  <Link to={"/jumuiya/elimu/student?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-footer-portal school-footer-portal-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"><GraduationCap size={15} /> Student portal</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 py-4 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} {schoolName}. All rights reserved.</p>
+            <p>Powered by <a href="/" className="font-bold text-emerald-700 hover:underline">RevelaCode · Jumuiya Elimu</a></p>
+          </div>
         </div>
       </footer>
 
