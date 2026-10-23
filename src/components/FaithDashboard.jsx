@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock3,
   Globe,
+  GraduationCap,
   History,
   Layers,
   Library,
@@ -24,6 +25,7 @@ import BookmarksPanel from "./study/BookmarksPanel.jsx";
 import RecommendationsPanel from "./study/RecommendationsPanel.jsx";
 import StudyReader from "./study/StudyReader.jsx";
 import FaithAtlas from "./faith/FaithAtlas.jsx";
+import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -254,6 +256,11 @@ export default function FaithDashboard({
   const openFaithAtlas = () => {
     setSelectedMaterial(null);
     setFaithSection("atlas");
+  };
+
+  const openFaithAcademy = () => {
+    setSelectedMaterial(null);
+    setFaithSection("premium");
   };
 
   const openMaterial = (material) => {
@@ -514,6 +521,19 @@ export default function FaithDashboard({
             <Star size={16} />
             Recommended
           </button>
+
+          <button
+            type="button"
+            onClick={openFaithAcademy}
+            className={"inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition " + (
+              faithSection === "premium"
+                ? "bg-indigo-600 text-white"
+                : "border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            )}
+          >
+            <GraduationCap size={16} />
+            Academy
+          </button>
         </div>
       </div>
     </section>
@@ -601,6 +621,23 @@ export default function FaithDashboard({
           closeStudyView
         )}
         <FaithAtlas userId={userId} />
+      </div>
+    );
+  }
+  if (faithSection === "premium") {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+        {renderStudyHeader(
+          "Faith Academy",
+          "Structured courses, source-grounded study assistance, private learning records, church study groups, and trial or subscription access.",
+          closeStudyView
+        )}
+        <FaithPremiumWorkspace
+          user={user}
+          isGuest={isGuest}
+          onLogin={onLogin}
+          onNavigate={navigateTo}
+        />
       </div>
     );
   }
@@ -983,7 +1020,7 @@ export default function FaithDashboard({
           grid-cols-1
           gap-3
           sm:grid-cols-2
-          xl:grid-cols-3
+          xl:grid-cols-4
         "
       >
         <button
@@ -1169,6 +1206,38 @@ export default function FaithDashboard({
                 group-hover:translate-x-1
               "
             />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={openFaithAcademy}
+          className="
+            group
+            rounded-2xl
+            border
+            border-indigo-200
+            bg-indigo-50
+            p-4
+            text-left
+            transition
+            hover:-translate-y-0.5
+            hover:shadow-md
+            dark:border-indigo-900/50
+            dark:bg-indigo-950/20
+          "
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-700 text-white">
+              <GraduationCap size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-black text-gray-900 dark:text-white">Faith Academy</h3>
+              <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                Structured courses, assessments, notes, AI study, and church groups.
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-indigo-500 transition-transform group-hover:translate-x-1" />
           </div>
         </button>
       </section>
