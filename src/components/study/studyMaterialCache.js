@@ -212,6 +212,7 @@ export async function warmFaithStudyCache() {
       if (JSON.stringify(sanitized) !== JSON.stringify(previous.materials)) {
         await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, sanitized);
       }
+      previous = { ...previous, materials: sanitized };
     }
   } catch {
     previous = null;
@@ -244,9 +245,60 @@ export async function warmFaithStudyCache() {
       ? payload
       : [];
 
-    const normalized = normalizeFaithStudyMaterials(raw);
+    let normalized = normalizeFaithStudyMaterials(raw);
+
+    // The catalogue endpoint may contain only lesson summaries. Download the
+    // actual published lesson bodies from the existing material endpoint, in
+    // small batches, so they are ready for the shared offline reader cache.
+    // This is non-blocking for app startup and never creates synthetic lessons.
+    const needsBody = normalized.filter((material) =>
+      material.id && !(typeof material.content === "string" && material.content.trim())
+    ).slice(0, 60);
+    const detailById = new Map();
+
+    for (let offset = 0; offset < needsBody.length; offset += 4) {
+      const batch = needsBody.slice(offset, offset + 4);
+      const results = await Promise.all(batch.map(async (material) => {
+        try {
+          const detailResponse = await fetch(
+            STUDY_API_BASE + "/api/study/material/" + encodeURIComponent(material.id),
+            {
+              method: "GET",
+              headers: { Accept: "application/json" },
+              credentials: "include",
+              cache: "no-store",
+            },
+          );
+          if (!detailResponse.ok) return null;
+          const detailPayload = await detailResponse.json().catch(() => ({}));
+          const body = detailPayload?.material;
+          if (!body || typeof body.content !== "string" || !body.content.trim()) return null;
+          return {
+            ...material,
+            ...body,
+            id: material.id,
+            category: body.category || material.category,
+            subcategory: body.subcategory || material.subcategory,
+            metadata: {
+              ...(material.metadata && typeof material.metadata === "object" ? material.metadata : {}),
+              ...(body.metadata && typeof body.metadata === "object" ? body.metadata : {}),
+            },
+          };
+        } catch {
+          return null;
+        }
+      }));
+      results.filter(Boolean).forEach((material) => detailById.set(material.id, material));
+    }
+
+    normalized = normalized.map((material) => detailById.get(material.id) || material);
+    normalized = normalizeFaithStudyMaterials(normalized);
     await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, normalized);
-    return { source: "network", count: normalized.length };
+    return {
+      source: "network",
+      count: normalized.length,
+      fullTextCached: normalized.filter((material) => typeof material.content === "string" && material.content.trim()).length,
+    };
   } catch {
     return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
   }
