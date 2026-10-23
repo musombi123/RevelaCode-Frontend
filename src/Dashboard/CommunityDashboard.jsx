@@ -43,6 +43,7 @@ import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
+import CommunityMediaCards, { getCommunityMediaItems } from "@/Dashboard/Community/CommunityMediaCards.jsx";
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
@@ -1289,6 +1290,12 @@ export default function CommunityDashboard({
                 </div>
               ) : null}
 
+              <CommunityMediaCards
+                posts={posts}
+                onOpenPost={setSelectedBoardPost}
+                onCreatePost={() => navigate("community-composer")}
+              />
+
               <section className="mt-6">
                 <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                   <div>
@@ -1449,6 +1456,31 @@ export default function CommunityDashboard({
               <button type="button" onClick={() => setSelectedBoardPost(null)} aria-label="Close details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 dark:border-white/10"><X size={16} /></button>
             </div>
             <div className="p-4 sm:p-5">
+              {getCommunityMediaItems(selectedBoardPost).length ? (
+                <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {getCommunityMediaItems(selectedBoardPost).map((media) => (
+                    media.kind === "video" ? (
+                      <video
+                        key={media.id || media.url}
+                        src={media.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="max-h-[420px] w-full rounded-2xl border border-slate-200 bg-black dark:border-white/10"
+                        aria-label={media.fileName || getPostTitle(selectedBoardPost)}
+                      />
+                    ) : (
+                      <img
+                        key={media.id || media.url}
+                        src={media.url}
+                        alt={media.fileName || getPostTitle(selectedBoardPost)}
+                        loading="lazy"
+                        className="max-h-[420px] w-full rounded-2xl border border-slate-200 bg-slate-100 object-contain dark:border-white/10 dark:bg-slate-950"
+                      />
+                    )
+                  ))}
+                </div>
+              ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-600 dark:text-slate-300">{getPostBody(selectedBoardPost) || "No further description was shared."}</p>
               <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400"><MapPin size={14} />{selectedBoardPost?.location || selectedBoardPost?.place || selectedBoardPost?.area || "Location not shared"}</p>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
