@@ -8,6 +8,7 @@ import React, {
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import {
   useLocation,
   useNavigate,
@@ -1031,6 +1032,9 @@ export default function BibleDashboard({
           </span>
         </div>
       </div>
+
+      {/* Faith & Scripture uses the same central per-hub trial and checkout flow. */}
+      <HubRevenueOffers hub="faith" compact />
 
       {/* =====================================================
           SEARCH BAR
