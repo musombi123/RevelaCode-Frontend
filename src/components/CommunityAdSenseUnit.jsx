@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const ADSENSE_CLIENT =
-  String(import.meta.env.VITE_ADSENSE_CLIENT_ID || "ca-pub-5357444506450550").trim();
+const ADSENSE_CLIENT = "ca-pub-5357444506450550";
 const COMMUNITY_AD_SLOT =
   String(import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT || "").trim();
 const COMMUNITY_LAYOUT_KEY = "-6t+ed+2i-1n-4w";
