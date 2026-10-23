@@ -1,0 +1,26 @@
+name: RevelaAI dashboard build and regression checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, feat/revelaai-dashboard-free-mode-voice-vision]
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run authentication regressions
+        run: npm run test:auth
+      - name: Build production frontend
+        run: npm run build
