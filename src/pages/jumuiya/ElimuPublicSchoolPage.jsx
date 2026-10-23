@@ -219,12 +219,12 @@ function absoluteSchoolUrl(slug, page = "") {
 
 function PageHeading({ icon: Icon, eyebrow, title, description }) {
   return (
-    <header className="relative mb-8 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.03] sm:mb-10 sm:p-8">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border border-emerald-100/80 shadow-[0_0_0_18px_rgba(16,185,129,0.025),0_0_0_38px_rgba(16,185,129,0.02)]" />
+    <header className="school-page-heading relative mb-8 overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 sm:mb-10 sm:p-8">
+      <div aria-hidden="true" className="school-heading-orb pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border" />
       <div className="relative flex min-w-0 items-start gap-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10 sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
+        <span className="school-section-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-sm sm:h-12 sm:w-12"><Icon size={21} strokeWidth={1.8} /></span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.17em] text-emerald-700 sm:text-xs"><span className="h-px w-5 bg-emerald-500" />{eyebrow}</div>
+          <div className="school-page-kicker flex flex-wrap items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.17em] sm:text-xs"><span className="school-kicker-line h-px w-5" />{eyebrow}</div>
           <h1 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 [text-wrap:balance] sm:text-4xl lg:text-[2.65rem]">{title}</h1>
           {description && <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">{description}</p>}
         </div>
@@ -235,9 +235,9 @@ function PageHeading({ icon: Icon, eyebrow, title, description }) {
 
 function EmptyState({ icon: Icon, title, description }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-dashed border-slate-300/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-8 text-center shadow-sm ring-1 ring-slate-950/[0.025] sm:p-12">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-700/10"><Icon size={25} strokeWidth={1.7} /></div>
+    <div className="school-empty-state relative overflow-hidden rounded-3xl border border-dashed bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-8 text-center sm:p-12">
+      <div aria-hidden="true" className="school-empty-line pointer-events-none absolute inset-x-10 top-0 h-px" />
+      <div className="school-section-icon mx-auto flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm"><Icon size={25} strokeWidth={1.7} /></div>
       <h2 className="mt-5 text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">{title}</h2>
       <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-slate-500">{description}</p>
     </div>
@@ -254,16 +254,16 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
   const Icon = kind === "event" ? CalendarDays : kind === "project" ? BookOpen : FileText;
 
   return (
-    <article className="group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
+    <article className="school-resource-card school-surface-card group/resource relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] focus-within:ring-2 focus-within:ring-[var(--school-primary)] sm:p-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
+        <div className="school-section-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover/resource:scale-105 group-hover/resource:shadow-md"><Icon size={21} strokeWidth={1.8} /></div>
         <h2 className="min-w-0 break-words pt-1 text-sm font-extrabold leading-6 tracking-tight text-slate-900 sm:text-base">{title}</h2>
       </div>
       <p className="mt-4 flex-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>
       {(date || category) && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100/90 pt-4 text-xs text-slate-500">
-          {date && <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} />{formatDate(date) || date}</span>}
-          {category && <span className="capitalize">{category.replace(/[_-]+/g, " ")}</span>}
+        <div className="school-resource-meta mt-4 flex flex-wrap gap-2 border-t pt-4 text-xs text-slate-500">
+          {date && <span className="school-date-badge inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"><CalendarDays size={13} />{formatDate(date) || date}</span>}
+          {category && <span className="school-category-chip rounded-full px-2.5 py-1 capitalize">{category.replace(/[_-]+/g, " ")}</span>}
         </div>
       )}
       {kind === "document" && (
@@ -271,7 +271,7 @@ function ResourceCard({ item, kind = "event", onDownload, downloadingId }) {
           type="button"
           disabled={!id || Boolean(downloadingId)}
           onClick={() => onDownload(item)}
-          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="school-download-button mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-extrabold transition duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {downloading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
           {downloading ? "Preparing download…" : "Download document"}
@@ -289,8 +289,8 @@ function MediaCard({ item, onOpen }) {
   if (!url) return null;
 
   return (
-    <article className="public-media-card group min-w-0 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md shadow-slate-900/[0.04] ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 motion-safe:hover:shadow-2xl motion-safe:hover:shadow-slate-900/10 hover:border-[var(--school-primary)]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+    <article className="public-media-card school-surface-card group min-w-0 overflow-hidden rounded-3xl border bg-[var(--school-surface)] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)]">
+      <div className="school-media-image-bg relative aspect-[4/3] overflow-hidden">
         {isVideo ? (
           <video className="h-full w-full object-cover" src={url} controls preload="metadata" aria-label={title} />
         ) : (
@@ -308,13 +308,13 @@ function MediaCard({ item, onOpen }) {
               className="h-full w-full object-cover transition duration-700 ease-out motion-safe:group-hover/photo:scale-[1.06]"
               onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
             />
-            <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-bold text-white opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
+            <span className="school-media-overlay pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold opacity-0 backdrop-blur transition group-hover/photo:opacity-100 group-focus-visible/photo:opacity-100">
               <span>View photo</span><ImageIcon size={15} />
             </span>
           </button>
         )}
       </div>
-      <div className="border-t border-slate-100/90 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-4 sm:p-5">
+      <div className="school-media-caption border-t p-4 sm:p-5">
         <h2 className="break-words text-sm font-extrabold leading-6 text-slate-900">{title}</h2>
         {text(item, ["caption", "description"]) && <p className="mt-1.5 text-sm leading-6 text-slate-600">{text(item, ["caption", "description"])}</p>}
       </div>
@@ -326,9 +326,9 @@ function FeatureLink({ href, icon: Icon, title, description }) {
   return (
     <Link
       to={href}
-      className="public-feature-link group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] hover:shadow-xl hover:shadow-slate-900/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
+      className="public-feature-link school-surface-card group relative flex h-full min-w-0 items-start gap-4 overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1.5 hover:border-[var(--school-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2 sm:p-6"
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/10 bg-emerald-50 text-emerald-700 shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
+      <span className="school-section-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition duration-300 group-hover:scale-105 group-hover:shadow-md">
         <Icon size={21} strokeWidth={1.8} />
       </span>
       <span className="min-w-0 flex-1">
@@ -348,12 +348,12 @@ function OfferingCard({ title, eyebrow, description, details = [], tags = [] }) 
     .map((item) => String(item || "").trim())
     .filter(Boolean);
   return (
-    <article className="group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 shadow-sm ring-1 ring-slate-950/[0.025] transition duration-300 ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-slate-900/[0.08] hover:border-[var(--school-primary)] sm:p-6">
+    <article className="school-surface-card group/offering relative flex min-w-0 flex-col overflow-hidden rounded-3xl border bg-[linear-gradient(135deg,var(--school-surface),var(--school-surface-tint))] p-5 transition duration-300 ease-out motion-safe:hover:-translate-y-1 hover:border-[var(--school-primary)] sm:p-6">
       {eyebrow && <p className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-emerald-700 sm:text-xs"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{eyebrow}</p>}
       <h3 className="mt-3 break-words text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">{title}</h3>
       {description && <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{description}</p>}
-      {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{tag}</span>)}</div>}
-      {cleanDetails.length > 0 && <dl className="mt-5 space-y-2.5 border-t border-slate-100/90 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="flex items-start gap-2 text-xs leading-6 text-slate-500"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/70" />{detail}</div>)}</dl>}
+      {cleanTags.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{cleanTags.map((tag, index) => <span key={`${tag}-${index}`} className="school-tag rounded-full px-2.5 py-1 text-xs font-semibold">{tag}</span>)}</div>}
+      {cleanDetails.length > 0 && <dl className="mt-5 space-y-2.5 border-t border-slate-100/90 pt-4">{cleanDetails.map((detail, index) => <div key={`${detail}-${index}`} className="flex items-start gap-2 text-xs leading-6 text-slate-500"><span className="school-detail-dot mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />{detail}</div>)}</dl>}
     </article>
   );
 }
@@ -1010,7 +1010,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
           {visibleMedia.length > 0 && <section className="school-home-section py-12 sm:py-14">
             <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="school-section-kicker">A glimpse of school life</p><h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl" style={{ color: websiteTheme.heading }}>Around our school</h2><p className="mt-3 text-base leading-7" style={{ color: websiteTheme.body }}>Photos and media approved for public viewing.</p></div><Link to={pageUrl("media")} className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-extrabold" style={{ color: websiteTheme.primary }}>View gallery <ArrowRight size={16} /></Link></div>
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || "home-media-" + index} item={item} />)}</div>
+            <div className="school-media-bento grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{visibleMedia.map((item, index) => <MediaCard key={recordId(item) || "home-media-" + index} item={item} />)}</div>
           </section>}
 
           <section className="school-home-contact my-10 sm:my-14"><div className="grid gap-6 px-6 py-8 sm:px-9 sm:py-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-12"><div><p className="text-xs font-extrabold uppercase tracking-[0.18em]" style={{ color: websiteTheme.accent }}>Start a conversation</p><h2 className="mt-3 text-2xl font-black leading-tight text-white sm:text-3xl">Thinking about joining our school community?</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">Contact the school for current admissions guidance, requirements and important dates.</p></div><Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 hover:bg-slate-100" style={{ color: websiteTheme.secondary }}>Contact the school <ArrowRight size={17} /></Link></div></section>
