@@ -645,7 +645,14 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
     delete payload.departments_text;
     delete payload.activities_text;
     delete payload.teacher_services_text;
-    delete payload.website_theme_draft;
+    const publishThemeWithWebsite = publishOverride === true;
+    if (publishThemeWithWebsite) {
+      payload.website_theme_draft = normalizeWebsiteTheme(form.website_theme_draft);
+      payload.publish_website_theme = true;
+    } else {
+      delete payload.website_theme_draft;
+      delete payload.publish_website_theme;
+    }
     try {
       const response = await api.saveWebsiteSettings(payload);
       const data = unwrap(response);
@@ -655,7 +662,9 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
         public_profile_enabled: publish,
       }));
       setNotice(publish
-        ? "Website settings saved and the public school page is published."
+        ? (publishThemeWithWebsite
+          ? "Website settings and selected colours saved; the public school page is published."
+          : "Website settings saved and the public school page is published.")
         : "Website settings saved. The public page remains unpublished.");
     } catch (err) {
       setError(err?.message || "Could not save the public website settings.");
@@ -675,7 +684,7 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-36">
       <section className="overflow-hidden rounded-3xl bg-slate-950 text-white">
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <div className="max-w-2xl">
@@ -968,25 +977,25 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
         </div>
       </section>
 
-      <section className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 sm:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <label className="flex items-start gap-3 text-sm">
+      <section className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-2xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <label className="flex min-w-0 items-start gap-3 text-sm">
             <input
               type="checkbox"
               checked={form.public_profile_enabled}
               onChange={(event) => change("public_profile_enabled", event.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
             />
             <span>
               <span className="block font-semibold text-slate-900 dark:text-white">Publish this school website</span>
-              <span className="mt-0.5 block text-slate-500 dark:text-slate-400">Only the verified school's public fields are displayed. Private student and staff records are not exposed.</span>
+              <span className="mt-0.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">Only the verified school's public fields are displayed. Private student and staff records are not exposed.</span>
             </span>
           </label>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+          <div className="flex shrink-0 flex-wrap gap-2 md:justify-end">
+            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
               {saving ? <Loader className="animate-spin" size={16} /> : <Save size={16} />} Save changes
             </button>
-            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="button" disabled={saving || Boolean(uploadingField)} onClick={() => save(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
               {saving ? <Loader className="animate-spin" size={16} /> : <Globe size={16} />} Save & publish
             </button>
           </div>

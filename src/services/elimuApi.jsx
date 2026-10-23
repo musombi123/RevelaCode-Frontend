@@ -534,6 +534,9 @@ export function createElimuApiClient({
     saveSchool: (data, options) =>
       post("school", data, options),
 
+    deleteSchoolPermanently: (data, options) =>
+      request("school/permanently", { ...options, method: "DELETE", body: data }),
+
     createDemoSchool: (data, options) =>
       post("school/demo", data, options),
 
