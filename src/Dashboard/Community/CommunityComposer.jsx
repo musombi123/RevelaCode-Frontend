@@ -601,7 +601,7 @@ export default function CommunityComposer({
                       dark:text-white
                     "
                   >
-                    Create a community post
+                    {initialPost ? "Edit community post" : "Create a community post"}
                   </h1>
 
                   <p
@@ -612,8 +612,9 @@ export default function CommunityComposer({
                       text-slate-400
                     "
                   >
-                    Share an idea, announcement,
-                    question, opportunity or update.
+                    {initialPost
+                      ? "Update the content of your existing Community post."
+                      : "Share an idea, announcement, question, opportunity or update."}
                   </p>
                 </div>
               </div>
@@ -1306,7 +1307,7 @@ export default function CommunityComposer({
                             dark:text-slate-200
                           "
                         >
-                          Add photo or video
+                          {initialPost ? "Existing attachment" : "Add photo or video"}
                         </div>
 
                         <div
@@ -1317,8 +1318,9 @@ export default function CommunityComposer({
                             text-slate-400
                           "
                         >
-                          {attachmentName ||
-                            "Uploads when you publish · Images 12 MB · Videos 50 MB"}
+                          {initialPost
+                            ? "The current update API does not replace existing attachments."
+                            : attachmentName || "Uploads when you publish · Images 12 MB · Videos 50 MB"}
                         </div>
                       </div>
 
@@ -1329,7 +1331,7 @@ export default function CommunityComposer({
                         onChange={
                           handleAttachment
                         }
-                        disabled={posting}
+                        disabled={posting || Boolean(initialPost)}
                       />
                     </label>
 
@@ -1674,7 +1676,7 @@ export default function CommunityComposer({
                       ) : (
                         <>
                           <Send size={16} />
-                          Save changes
+                          {initialPost ? "Save changes" : "Publish post"}
                         </>
                       )}
                     </button>
