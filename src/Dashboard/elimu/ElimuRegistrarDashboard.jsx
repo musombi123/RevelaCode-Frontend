@@ -694,6 +694,13 @@ export default function ElimuRegistrarDashboard({
           />
 
           <QuickAction
+            icon={ClipboardList}
+            title="Exam Centre"
+            description="Review assessment records, generate report cards and publish official results."
+            onClick={() => navigate("elimu/exams")}
+          />
+
+          <QuickAction
             icon={CalendarDays}
             title="School calendar"
             description="Review school events and important dates."
