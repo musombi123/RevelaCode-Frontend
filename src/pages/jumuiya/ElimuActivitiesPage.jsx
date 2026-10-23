@@ -306,6 +306,22 @@ const styles = `
   .ea-card-banner { min-height: 92px; }
   .ea-card-body { padding: 16px; }
 }
+.elimu-activities .ea-loading-skeleton { display:grid; gap:18px; }
+.elimu-activities .ea-skeleton-intro { display:grid; gap:10px; }
+.elimu-activities .ea-skeleton-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.elimu-activities .ea-skeleton-card { display:flex; flex-direction:column; gap:13px; min-height:245px; padding:16px; border:1px solid var(--ea-border); border-radius:20px; background:var(--ea-surface); box-shadow:0 10px 28px rgba(21,38,59,.04); }
+.elimu-activities .ea-skeleton-block { display:block; border-radius:8px; background:linear-gradient(90deg,#edf2f8,#f7f9fc,#edf2f8); background-size:200% 100%; animation:ea-skeleton-shimmer 1.5s ease-in-out infinite; }
+.elimu-activities .ea-skeleton-title { width:min(280px,70%); height:22px; }
+.elimu-activities .ea-skeleton-copy { width:min(440px,90%); height:12px; }
+.elimu-activities .ea-skeleton-banner { width:100%; height:84px; border-radius:14px; }
+.elimu-activities .ea-skeleton-line { width:90%; height:12px; }
+.elimu-activities .ea-skeleton-line.short { width:65%; }
+.elimu-activities .ea-skeleton-line.tiny { width:45%; }
+.elimu-activities .ea-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@keyframes ea-skeleton-shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+@media(max-width:900px) { .elimu-activities .ea-skeleton-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) { .elimu-activities .ea-skeleton-grid { grid-template-columns:minmax(0,1fr); gap:13px; } .elimu-activities .ea-skeleton-card { min-height:190px; } }
+@media(prefers-reduced-motion:reduce) { .elimu-activities .ea-skeleton-block { animation:none; } }
 @media (prefers-reduced-motion: reduce) {
   .elimu-activities *, .elimu-activities *::before, .elimu-activities *::after {
     transition: none !important;
@@ -1132,16 +1148,14 @@ export default function ElimuActivitiesPage({
           )}
 
           {loading ? (
-            <div className="ea-empty" aria-live="polite">
-              <div className="ea-empty-icon">
-                <RefreshCw size={23} />
+            <div className="ea-loading-skeleton" aria-live="polite" aria-busy="true">
+              <span className="ea-sr-only">Loading school activities and projects.</span>
+              <div className="ea-skeleton-intro"><span className="ea-skeleton-block ea-skeleton-title" /><span className="ea-skeleton-block ea-skeleton-copy" /></div>
+              <div className="ea-skeleton-grid">
+                <div className="ea-skeleton-card"><span className="ea-skeleton-block ea-skeleton-banner" /><span className="ea-skeleton-block ea-skeleton-line" /><span className="ea-skeleton-block ea-skeleton-line short" /><span className="ea-skeleton-block ea-skeleton-line tiny" /></div>
+                <div className="ea-skeleton-card"><span className="ea-skeleton-block ea-skeleton-banner" /><span className="ea-skeleton-block ea-skeleton-line" /><span className="ea-skeleton-block ea-skeleton-line short" /><span className="ea-skeleton-block ea-skeleton-line tiny" /></div>
+                <div className="ea-skeleton-card"><span className="ea-skeleton-block ea-skeleton-banner" /><span className="ea-skeleton-block ea-skeleton-line" /><span className="ea-skeleton-block ea-skeleton-line short" /><span className="ea-skeleton-block ea-skeleton-line tiny" /></div>
               </div>
-
-              <h3>Loading school information</h3>
-
-              <p>
-                Fetching published activities and learning projects.
-              </p>
             </div>
           ) : !activeError && filteredItems.length === 0 ? (
             <EmptyState
