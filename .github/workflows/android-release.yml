@@ -1,16 +1,8 @@
-name: RevelaCode Android release candidate
+name: RevelaCode Android packaging (manual only)
 
+# Android packaging is a deliberate manual action until the Shamba and
+# Community web experience has been reviewed and approved.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "public/**"
-      - "scripts/**"
-      - "package.json"
-      - "package-lock.json"
-      - "capacitor.config.json"
-      - ".github/workflows/android-release.yml"
   workflow_dispatch:
     inputs:
       version_name:
