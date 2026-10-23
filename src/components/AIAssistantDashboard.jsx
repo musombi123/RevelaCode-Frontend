@@ -740,6 +740,32 @@ export default function AIAssistantDashboard({
       []
     );
 
+  const deleteChat = useCallback((chatId) => {
+    if (!chatId) return;
+    setChats((previous) => previous.filter((chat) => chat.id !== chatId));
+    if (activeChatId === chatId) {
+      controllerRef.current?.abort?.();
+      setActiveChatId(null);
+      setMessages([]);
+    }
+  }, [activeChatId]);
+
+  const renameChat = useCallback((chatId, nextTitle, options = {}) => {
+    if (!chatId) return;
+    const cleaned = String(nextTitle || "").replace(/\s+/g, " ").trim().slice(0, 60);
+    const manual = options?.manual === true;
+    setChats((previous) => previous.map((chat) => {
+      if (chat.id !== chatId) return chat;
+      const firstUserText = chat.messages?.find((message) => message.role === "user")?.text || "";
+      return {
+        ...chat,
+        title: cleaned || String(firstUserText).trim().slice(0, 45) || "New Conversation",
+        titleLocked: manual && Boolean(cleaned),
+        updatedAt: Date.now(),
+      };
+    }));
+  }, []);
+
   /* =======================================================
      ENSURE CHAT
   ======================================================= */
@@ -1817,6 +1843,8 @@ export default function AIAssistantDashboard({
         activeChatId={activeChatId}
         onNewChat={startNewChat}
         onSelectChat={selectChat}
+        onDeleteChat={deleteChat}
+        onRenameChat={renameChat}
         onOpenPlans={() => setAiRevenueOpen(true)}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
@@ -1947,7 +1975,7 @@ export default function AIAssistantDashboard({
               "
             >
               <ShieldCheck size={12} />
-              AUTO ROUTING ACTIVE
+              {freeMode ? "FREE MODE · LOCAL ONLY" : "ADAPTIVE MODE"}
             </div>
 
             <button
@@ -2059,6 +2087,7 @@ export default function AIAssistantDashboard({
                     onSend={sendMessage}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
+                    freeMode={freeMode}
                   />
                 </div>
 
@@ -2130,6 +2159,7 @@ export default function AIAssistantDashboard({
                   onSend={sendMessage}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
+                  freeMode={freeMode}
                 />
               </div>
             </div>
@@ -2148,6 +2178,7 @@ export default function AIAssistantDashboard({
           }
           hub="auto"
           memoryScope={userScope}
+          freeMode={freeMode}
           onVoiceResult={
             handleVoiceResult
           }
