@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   ArrowLeft,
@@ -188,13 +188,28 @@ export default function CommunityComposer({
   const [showHubMenu, setShowHubMenu] =
     useState(false);
 
-  // These are intentionally UI-ready states.
-  // The current backend remains title/body/category/hub/location only.
-  const [attachmentName, setAttachmentName] =
-    useState("");
+  // The supported Community API accepts up to four uploaded media IDs per post.
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
 
-  const [attachmentFile, setAttachmentFile] =
-    useState(null);
+  const attachmentPreviews = useMemo(
+    () => attachmentFiles.map((file) => ({
+      file,
+      url: typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+        ? URL.createObjectURL(file)
+        : "",
+      isVideo: file.type.startsWith("video/"),
+    })),
+    [attachmentFiles],
+  );
+
+  useEffect(
+    () => () => attachmentPreviews.forEach((preview) => {
+      if (preview.url && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+        URL.revokeObjectURL(preview.url);
+      }
+    }),
+    [attachmentPreviews],
+  );
 
   const [externalLink, setExternalLink] =
     useState(() => String(initialPost?.action?.target || ""));
@@ -329,26 +344,32 @@ export default function CommunityComposer({
     try {
       setPosting(true);
 
-      let attachments = [];
+      const attachments = [];
 
-      if (initialPost && attachmentFile) {
-        throw new Error("Attachments cannot be replaced by the current post-update contract. Remove the file and save the text changes, or publish a new post.");
+      if (initialPost && attachmentFiles.length) {
+        throw new Error("Attachments cannot be replaced by the current post-update contract. Remove the new files and save the text changes, or publish a new post.");
       }
 
-      if (attachmentFile) {
-        const uploadResult = await uploadCommunityMedia(attachmentFile);
+      if (attachmentFiles.length > 4) {
+        throw new Error("A post can contain no more than four photos or videos.");
+      }
+
+      // Upload sequentially to keep mobile bandwidth and server load predictable.
+      for (const file of attachmentFiles) {
+        const uploadResult = await uploadCommunityMedia(file);
         const uploadedAttachment =
           uploadResult?.attachment ||
           uploadResult?.data?.attachment ||
           null;
+        const mediaId = uploadedAttachment?.id ?? uploadedAttachment?.media_id ?? null;
 
-        if (!uploadedAttachment?.id) {
+        if (!mediaId) {
           throw new Error(
-            "The media upload did not return a valid attachment ID. Please try again."
+            `Media upload for "${file.name}" did not return a valid attachment ID. Please try again.`
           );
         }
 
-        attachments = [{ media_id: String(uploadedAttachment.id) }];
+        attachments.push({ media_id: String(mediaId) });
       }
 
       const normalizedPostType = {
@@ -395,8 +416,7 @@ export default function CommunityComposer({
       setPostCategory("general");
       setPostHub("community");
       setPostLocation("");
-      setAttachmentName("");
-      setAttachmentFile(null);
+      setAttachmentFiles([]);
       setExternalLink("");
 
       window.setTimeout(() => {
@@ -427,38 +447,63 @@ export default function CommunityComposer({
   // ==========================================================
 
   const handleAttachment = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
 
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      setError("Choose an image or video file.");
+    if (initialPost) {
+      setError("The current post-update contract cannot replace attachments. Publish a new post to share new media.");
       event.target.value = "";
       return;
     }
 
-    const maxBytes = isVideo ? 50 * 1024 * 1024 : 12 * 1024 * 1024;
-    if (file.size <= 0 || file.size > maxBytes) {
-      setError(
-        isVideo
-          ? "Video files must be no larger than 50 MB."
-          : "Images must be no larger than 12 MB."
-      );
+    if (attachmentFiles.length + files.length > 4) {
+      setError("Choose up to four photos or videos per post.");
       event.target.value = "";
       return;
+    }
+
+    const imageExtensions = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
+    const videoExtensions = new Set(["mp4", "mov", "m4v", "webm"]);
+    for (const file of files) {
+      const extension = String(file.name.split(".").pop() || "").toLowerCase();
+      const isImage = imageExtensions.has(extension);
+      const isVideo = videoExtensions.has(extension);
+
+      if (!isImage && !isVideo) {
+        setError(`"${file.name}" is not a supported image or video. Use JPG, PNG, WEBP, GIF, MP4, MOV, M4V or WEBM.`);
+        event.target.value = "";
+        return;
+      }
+
+      const maxBytes = isVideo ? 50 * 1024 * 1024 : 12 * 1024 * 1024;
+      if (file.size <= 0 || file.size > maxBytes) {
+        setError(
+          isVideo
+            ? `"${file.name}" is too large. Videos must be no larger than 50 MB each.`
+            : `"${file.name}" is too large. Images must be no larger than 12 MB each.`
+        );
+        event.target.value = "";
+        return;
+      }
     }
 
     setError("");
-    setAttachmentFile(file);
-    setAttachmentName(file.name);
+    setAttachmentFiles((current) => {
+      const seen = new Set(current.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+      const uniqueFiles = files.filter((file) => {
+        const key = `${file.name}:${file.size}:${file.lastModified}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return [...current, ...uniqueFiles].slice(0, 4);
+    });
     event.target.value = "";
   };
 
-  const removeAttachment = () => {
-    setAttachmentName("");
-    setAttachmentFile(null);
+  const removeAttachment = (index) => {
+    setAttachmentFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+    setError("");
   };
 
   // ==========================================================
@@ -1320,20 +1365,46 @@ export default function CommunityComposer({
                         >
                           {initialPost
                             ? "The current update API does not replace existing attachments."
-                            : attachmentName || "Uploads when you publish · Images 12 MB · Videos 50 MB"}
+                            : attachmentFiles.length
+                              ? `${attachmentFiles.length} of 4 selected`
+                              : "Select up to 4 photos or videos · Images 12 MB each · Videos 50 MB each"}
                         </div>
                       </div>
 
                       <input
                         type="file"
-                        accept="image/*,video/mp4,video/quicktime,video/webm"
+                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                        multiple
                         className="hidden"
-                        onChange={
-                          handleAttachment
-                        }
+                        onChange={handleAttachment}
                         disabled={posting || Boolean(initialPost)}
                       />
                     </label>
+
+                    {attachmentPreviews.length ? (
+                      <div className="col-span-full grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {attachmentPreviews.map((preview, index) => (
+                          <div key={`${preview.file.name}-${preview.file.size}-${preview.file.lastModified}`} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
+                            <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-900">
+                              {preview.url ? (
+                                preview.isVideo ? (
+                                  <video src={preview.url} muted playsInline controls preload="metadata" className="h-full w-full object-cover" aria-label={preview.file.name} />
+                                ) : (
+                                  <img src={preview.url} alt={preview.file.name} className="h-full w-full object-cover" />
+                                )
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-slate-400"><Image size={24} /></div>
+                              )}
+                              <span className="absolute left-2 top-2 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-black uppercase text-white">{preview.isVideo ? "Video" : "Photo"}</span>
+                              <button type="button" onClick={() => removeAttachment(index)} disabled={posting} aria-label={`Remove ${preview.file.name}`} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/75 text-white transition hover:bg-rose-600 disabled:opacity-50">
+                                <X size={13} />
+                              </button>
+                            </div>
+                            <p className="truncate px-2.5 py-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300" title={preview.file.name}>{preview.file.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
                     {/* LINK */}
 
@@ -1415,53 +1486,7 @@ export default function CommunityComposer({
                     </button>
                   </div>
 
-                  {attachmentName && (
-                    <div
-                      className="
-                        mt-3
-                        flex
-                        items-center
-                        justify-between
-                        gap-3
-                        rounded-xl
-                        border
-                        border-emerald-100
-                        bg-emerald-50
-                        px-3
-                        py-2
-                        dark:border-emerald-500/10
-                        dark:bg-emerald-950/20
-                      "
-                    >
-                      <span
-                        className="
-                          min-w-0
-                          truncate
-                          text-[10px]
-                          font-semibold
-                          text-emerald-700
-                          dark:text-emerald-400
-                        "
-                      >
-                        {attachmentName}
-                      </span>
 
-                      <button
-                        type="button"
-                        onClick={
-                          removeAttachment
-                        }
-                        className="
-                          shrink-0
-                          text-emerald-600
-                          dark:text-emerald-400
-                        "
-                        aria-label="Remove attachment"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* LINK NOTICE */}
