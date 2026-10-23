@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Send,
   ShieldCheck,
-  UserRound,
+  User,
 } from "lucide-react";
 import { createCommunityMattersAdapter } from "@/Dashboard/Community/mattersAdapter.js";
 
@@ -327,7 +327,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
             <ProgressLine status={matterStatus} />
             {selectedMatter ? (
               <div className="mt-4 flex flex-wrap gap-2 text-[10px]">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1.5 text-slate-500 dark:border-white/10 dark:text-slate-300"><UserRound size={12} /> {presenceLabel(selectedMatter)}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1.5 text-slate-500 dark:border-white/10 dark:text-slate-300"><User size={12} /> {presenceLabel(selectedMatter)}</span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1.5 text-slate-500 dark:border-white/10 dark:text-slate-300"><ShieldCheck size={12} /> {trustLabel(selectedMatter)}</span>
               </div>
             ) : (
