@@ -746,7 +746,7 @@ export default function ElimuPublicPage() {
       {/* Privacy commitment */}
       <section className="py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-5 rounded-3xl border border-emerald-200 bg-[#2E8B57]/10/70 p-6 dark:border-emerald-900/60 dark:bg-emerald-950/20 sm:flex-row sm:items-start sm:p-8">
+          <div className="flex flex-col gap-5 rounded-3xl border border-[#2E8B57]/25 bg-[#2E8B57]/8 p-6 dark:border-[#2E8B57]/35 dark:bg-[#2E8B57]/15 sm:flex-row sm:items-start sm:p-8">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#2E8B57] dark:bg-slate-900 dark:text-[#89D6AB]">
               <ShieldCheck size={25} />
             </span>
