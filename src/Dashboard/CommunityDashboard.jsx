@@ -504,6 +504,7 @@ export default function CommunityDashboard({
   const [backMenuOpen, setBackMenuOpen] = useState(false);
   const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [composerCategory, setComposerCategory] = useState("general");
   const [backendHealth, setBackendHealth] = useState("checking");
 
   const navigate = useCallback(
@@ -538,6 +539,13 @@ export default function CommunityDashboard({
           return;
 
         case "community-composer":
+          setComposerCategory("general");
+          setWorkspacePage("composer");
+          return;
+
+        case "community-advertisement":
+          setEditingPost(null);
+          setComposerCategory("advertisement");
           setWorkspacePage("composer");
           return;
 
@@ -940,6 +948,17 @@ export default function CommunityDashboard({
     setReloadToken((value) => value + 1);
   }, []);
 
+  const handleIntentTileClick = useCallback((intentTile) => {
+    // Use the existing hub dashboards until the custom hub subdomains are configured.
+    // Community-only intentions remain in the live Community discovery surface.
+    if (intentTile?.hub && intentTile.hub !== "community") {
+      navigate(`community-hub-${intentTile.hub}`);
+      return;
+    }
+
+    selectIntent(intentTile?.value || "");
+  }, [navigate, selectIntent]);
+
   const selectCommunitySurface = useCallback((surface) => {
     setViewsMenuOpen(false);
     setWorkspacePage("home");
@@ -1133,6 +1152,7 @@ export default function CommunityDashboard({
         {renderBackMenu()}
         <CommunityComposer
           initialPost={editingPost}
+          initialCategory={composerCategory}
           onNavigate={navigate}
         />
       </div>
@@ -1251,6 +1271,9 @@ export default function CommunityDashboard({
                       <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
                       {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
                     </div>
+                    <button type="button" onClick={() => navigate("community-advertisement")} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-[10px] font-black text-slate-950 shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900" aria-label="Create a Community advertisement">
+                      <Megaphone size={14} /> Create an ad
+                    </button>
                   </div>
                 </div>
                 <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
@@ -1263,7 +1286,7 @@ export default function CommunityDashboard({
                     const TileIcon = intentTile.icon;
                     const selected = activeSurface === "discovery" && submittedIntent === intentTile.value;
                     return (
-                      <button key={intentTile.value} type="button" onClick={() => selectIntent(intentTile.value)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
+                      <button key={intentTile.value} type="button" onClick={() => handleIntentTileClick(intentTile)} aria-pressed={selected} className={"relative min-h-[134px] overflow-hidden rounded-2xl border bg-white p-3.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 sm:min-h-[148px] sm:p-4 sm:pt-5 " + (selected ? "border-cyan-400 ring-2 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10")}>
                         <span className={"absolute inset-x-0 top-0 h-1 " + intentTile.accent} />
                         <span className={"flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white"}>
                           <TileIcon size={19} />
