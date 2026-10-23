@@ -645,7 +645,14 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
     delete payload.departments_text;
     delete payload.activities_text;
     delete payload.teacher_services_text;
-    delete payload.website_theme_draft;
+    const publishThemeWithWebsite = publishOverride === true;
+    if (publishThemeWithWebsite) {
+      payload.website_theme_draft = normalizeWebsiteTheme(form.website_theme_draft);
+      payload.publish_website_theme = true;
+    } else {
+      delete payload.website_theme_draft;
+      delete payload.publish_website_theme;
+    }
     try {
       const response = await api.saveWebsiteSettings(payload);
       const data = unwrap(response);
@@ -655,7 +662,9 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
         public_profile_enabled: publish,
       }));
       setNotice(publish
-        ? "Website settings saved and the public school page is published."
+        ? (publishThemeWithWebsite
+          ? "Website settings and selected colours saved; the public school page is published."
+          : "Website settings saved and the public school page is published.")
         : "Website settings saved. The public page remains unpublished.");
     } catch (err) {
       setError(err?.message || "Could not save the public website settings.");
