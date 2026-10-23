@@ -8,7 +8,7 @@ import React, {
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import { getCachedBibleBook, saveCachedBibleBook } from "./study/studyMaterialCache.js";
 import {
   useLocation,
   useNavigate,
@@ -258,6 +258,11 @@ export default function BibleDashboard({
       throw new Error(`World English Bible data is not mapped for ${bookName}.`);
     }
 
+    // IndexedDB persists full books across platform launches and supports
+    // offline rereading; the browser HTTP cache is only an additional layer.
+    const savedBook = await getCachedBibleBook(bookKey).catch(() => null);
+    if (savedBook?.chapters?.length) return savedBook;
+
     const response = await fetch(
       `https://raw.githubusercontent.com/midvash/bible-data/main/versions/en/web/books/${osisId}.json`,
       { cache: "force-cache" }
@@ -271,6 +276,7 @@ export default function BibleDashboard({
     if (!normalized.chapters.length) {
       throw new Error("World English Bible response contained no chapters.");
     }
+    await saveCachedBibleBook(bookKey, normalized).catch(() => false);
     return normalized;
   };
 
@@ -546,6 +552,7 @@ export default function BibleDashboard({
       .replace(/\bverses?\b/gi, ":")
       .replace(/\bvs\.?\b/gi, ":")
       .replace(/\s*:\s*/g, ":")
+      .replace(/[–—]/g, "-")
       .replace(/\s*-\s*/g, "-");
 
     let match = cleanedReference.match(
@@ -653,14 +660,24 @@ export default function BibleDashboard({
     if (!bookKeys.length || !Object.keys(bibleData).length) return;
 
     const params = new URLSearchParams(location.search);
-    const verse = params.get("verse");
+    const urlVerse = params.get("verse");
+    let pendingVerse = "";
+    try {
+      pendingVerse = window.localStorage.getItem("revelacode_pending_bible_reference") || "";
+    } catch {
+      pendingVerse = "";
+    }
+    const verse = urlVerse || pendingVerse;
     if (!verse) return;
 
     let cancelled = false;
     const openFromUrl = async () => {
       const success = await openVerseReference(verse);
+      if (success && !urlVerse) {
+        try { window.localStorage.removeItem("revelacode_pending_bible_reference"); } catch {}
+      }
       if (!cancelled && !success && bibleVersion === "kjv") {
-        setSearchError("❌ Reference not found. Try John 3:16, John 1:1-3, or John 3:5.");
+        setSearchError("Reference not found. Try a reference such as John 3:16 or Daniel 7:1-8.");
       }
     };
     openFromUrl();
@@ -943,9 +960,6 @@ export default function BibleDashboard({
           </span>
         </div>
       </div>
-
-      {/* Faith & Scripture uses the same central per-hub trial and checkout flow. */}
-      <HubRevenueOffers hub="faith" compact />
 
       {/* =====================================================
           SEARCH BAR
