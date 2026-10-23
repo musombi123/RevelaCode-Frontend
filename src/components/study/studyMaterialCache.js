@@ -19,7 +19,7 @@ const NON_FAITH_TOPIC_PATTERN = /\b(cpa|accounting|entrepreneurship|software dev
 // Common test/admin artefacts are excluded while legitimate studies discussing
 // testing faith, prophecy, or testimony remain eligible.
 const TEST_ARTIFACT_PATTERN = /\b(?:lorem\s+ipsum|placeholder(?:\s+(?:text|content|material|lesson|data))?|dummy(?:\s+(?:data|content|material|lesson|entry))?|mock(?:\s+(?:data|content|material|lesson|entry))?|fake\s+(?:data|content|material|lesson|entry)|test(?:ing)?[-\s]*(?:only|record|material|lesson|entry|document|content|data|item)|(?:record|material|lesson|entry|document|content|data|item)[-\s]*test|sample[-\s]*(?:material|lesson|entry|data|content)|demo[-\s]*(?:data|content|material|lesson|entry)|delete\s+me|do\s+not\s+use|qwerty|asdfghjkl)\b/i;
-const TEST_TITLE_PATTERN = /^(?:untitled(?:\s+material)?|new\s+(?:material|lesson|document)|tests?(?:\s*[-:#]?\s*(?:\d+|[a-z]+))?|testing(?:\s*[-:#]?\s*(?:\d+|only|material|lesson|entry))?|sample(?:\s+.*)?|demo(?:\s+.*)?|dummy(?:\s+.*)?|placeholder(?:\s+.*)?|lorem\s+ipsum.*|temp(?:orary)?(?:\s+.*)?)$/i;
+const TEST_TITLE_PATTERN = /^(?:untitled(?:\s+material)?|new\s+(?:material|lesson|document)|test(?:$|\s+(?:\d+|material|lesson|record|entry|document|content|data|item|only)|[-:#_]\S.*)|testing(?:$|\s+(?:\d+|material|lesson|record|entry|content|data|item|only)|[-:#_]\S.*)|(?:sample|demo)(?:$|\s+(?:\d+|material|lesson|record|entry|content|data|item|only)|[-:#_]\S.*)|dummy(?:$|\s+.*)|mock(?:$|\s+(?:\d+|data|content|material|lesson|entry)|[-:#_]\S.*)|placeholder(?:$|\s+.*)|lorem\s+ipsum.*|temp(?:orary)?(?:$|\s+.*)|asdf\w*|qwerty\w*|foo(?:\s+bar)?|xxx+|123+)$/i;
 const FALLBACK_PREFIX = "revelacode_faith_study_cache_v1::";
 let databasePromise = null;
 
