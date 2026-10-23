@@ -2167,6 +2167,46 @@ export default function AIAssistantDashboard({
         )}
       </main>
 
+      {aiRevenueOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          role="presentation"
+          onClick={() => setAiRevenueOpen(false)}
+        >
+          <section
+            id="revela-ai-revenue-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revela-ai-revenue-title"
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[94dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-emerald-400/20 bg-slate-950 text-white shadow-2xl"
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-200">
+                  <CreditCard size={17} />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="revela-ai-revenue-title" className="truncate text-sm font-bold">AI trial &amp; plans</h2>
+                  <p className="mt-0.5 text-[10px] text-slate-400">Trial status, subscription and centrally managed offers</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiRevenueOpen(false)}
+                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close AI trial and plans"
+              >
+                <X size={17} />
+              </button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+              <HubRevenueOffers hub="smart_ai" compact />
+            </div>
+          </section>
+        </div>
+      )}
+
       {identityOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
