@@ -52,6 +52,44 @@ async function readEndpoint(path, signal) {
   }
 }
 
+// Convert backend error codes into useful, non-sensitive operator language.
+// Never render raw server messages in this user-facing dock.
+function friendlyEndpointError(name, response) {
+  if (!response) return null;
+
+  if (response.status === 401) return `${name}: sign-in is required to check this service.`;
+  if (response.status === 403) return `${name}: administrator access is required for this check.`;
+  if (response.status === 0) {
+    return response.error === "timeout"
+      ? `${name}: the request exceeded the service-check time limit.`
+      : `${name}: the service gateway could not be reached.`;
+  }
+  if (response.ok) return null;
+
+  const code = String(
+    response.payload?.error?.code ||
+    response.payload?.code ||
+    response.payload?.error_code ||
+    ""
+  ).trim().toLowerCase();
+  const safeReasons = {
+    authentication_required: "sign-in is required",
+    jwt_verifier_not_configured: "sign-in verification is temporarily unavailable",
+    core_mesh_status_unavailable: "service status could not be assembled",
+    core_service_not_configured: "the service connection is not ready",
+    core_service_unreachable: "the service could not be reached",
+    core_service_tls_required: "a secure service connection is required",
+    core_redirect_rejected: "the service returned an unexpected redirect",
+    usect_zero_disabled: "diagnostics are currently paused",
+    usect_zero_admin_not_configured: "secure diagnostics are not ready",
+    usect_zero_misconfigured: "the diagnostics connection is invalid",
+    usect_zero_unavailable: "the diagnostics service is temporarily unavailable",
+    usect_zero_brain_credential_missing: "scoped diagnostics access is unavailable",
+  };
+  const reason = safeReasons[code];
+  return `${name}: ${reason || `the request failed (HTTP ${response.status || "unknown"})`}.`;
+}
+
 function coreEntry(cores, name) {
   if (!cores || typeof cores !== "object") return null;
   const aliases = {
@@ -168,7 +206,8 @@ export default function RevelaAIGuardianDock({ onAction }) {
     setLoading(true);
     setRefreshError("");
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10000);
+    // Core Mesh allows ten seconds for hosted private-core probes.
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
     try {
       const paths = [
         "/api/core-mesh/dashboard?refresh=1",
@@ -191,16 +230,16 @@ export default function RevelaAIGuardianDock({ onAction }) {
           ? { label: "Mesh access restricted", tone: "restricted" }
           : { label: "Mesh unavailable", tone: "down" };
       const meshError = meshUnavailable
-        ? (mesh?.status === 0
-          ? (mesh?.error === "timeout" ? "Core Mesh request timed out." : "Core Mesh request could not reach the gateway; check CORS/network access.")
-          : `Core Mesh returned HTTP ${mesh.status}: ${mesh?.payload?.error?.message || mesh?.payload?.message || mesh?.payload?.error?.code || "status details unavailable"}`)
-        : ((!oneCore || !twoCore) ? "Core Mesh responded without all expected core records." : null);
+        ? friendlyEndpointError("Core Mesh", mesh)
+        : ((!zeroCore || !oneCore || !twoCore)
+          ? "Core Mesh response is missing one or more core status records."
+          : null);
       const zeroError = !zero?.ok
-        ? (zero?.payload?.error?.message || zero?.payload?.message || (zero?.status === 0 ? "Health request could not reach the gateway." : `Health endpoint returned HTTP ${zero?.status}.`))
+        ? friendlyEndpointError("USECT-ZERO", zero)
         : null;
-      const sciError = (sci?.status === 401 || sci?.status === 403)
-        ? "This endpoint requires a verified platform-admin session; restricted status does not prove the service is offline."
-        : (!sci?.ok ? (sci?.payload?.error?.message || sci?.payload?.message || `Health endpoint returned HTTP ${sci?.status || "unknown"}.`) : null);
+      const sciError = !sci?.ok
+        ? friendlyEndpointError("Sci Defend", sci)
+        : null;
       const next = {
         mesh: normalizeState(meshData, mesh),
         guardian: { label: "On demand", tone: "neutral" },
@@ -213,11 +252,17 @@ export default function RevelaAIGuardianDock({ onAction }) {
           signedTools: oneCore?.active_signed_tools_count ?? meshData?.active_signed_tools_count,
           meshStatus: meshData?.mesh_status || meshData?.status || null,
           meshReason: meshError,
-          zeroReason: zeroCore?.failure_reason || zero?.payload?.error?.message || zero?.payload?.message || zeroError,
-          oneReason: oneCore?.failure_reason || (meshUnavailable ? meshError : (!oneCore ? "Core One status record is missing." : null)),
-          twoReason: twoCore?.failure_reason || (meshUnavailable ? meshError : (!twoCore ? "Core Two status record is missing." : null)),
+          zeroReason: zeroCore?.reachable === false
+            ? "USECT-ZERO did not pass its health check."
+            : zeroError,
+          oneReason: oneCore?.reachable === false
+            ? "Genesis did not pass its health and status checks."
+            : (meshUnavailable ? meshError : (!oneCore ? "Genesis status was not returned." : null)),
+          twoReason: twoCore?.reachable === false
+            ? "Infinite Mind did not pass its health check."
+            : (meshUnavailable ? meshError : (!twoCore ? "Infinite Mind status was not returned." : null)),
           sciReason: sciError,
-          metaReason: !meta?.ok ? (meta?.payload?.error?.message || meta?.payload?.message || `Health endpoint returned HTTP ${meta?.status || "unknown"}.`) : null,
+          metaReason: !meta?.ok ? friendlyEndpointError("Meta Engineer", meta) : null,
         },
       };
       // A reachable mesh endpoint does not mean a core is healthy. Respect each
@@ -255,6 +300,11 @@ export default function RevelaAIGuardianDock({ onAction }) {
       .filter((item) => item?.tone === "good").length,
     [snapshot]
   );
+  const accessLimitedCount = useMemo(
+    () => [snapshot?.zero, snapshot?.one, snapshot?.two, snapshot?.sci, snapshot?.meta]
+      .filter((item) => item?.tone === "restricted").length,
+    [snapshot]
+  );
 
   return (
     <section className="mt-5 w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 text-slate-100 shadow-xl shadow-black/10">
@@ -271,7 +321,9 @@ export default function RevelaAIGuardianDock({ onAction }) {
               </span>
             </div>
             <p className="mt-0.5 text-[10px] leading-4 text-slate-400 sm:text-xs">
-              {snapshot ? `${onlineCount}/5 operational endpoints confirmed` : "Checking the real service endpoints"}
+              {snapshot
+                ? `${onlineCount}/5 checks healthy${accessLimitedCount ? ` · ${accessLimitedCount} access-limited` : ""}`
+                : "Checking live service status"}
               {checkedAt ? ` · checked ${checkedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
             </p>
           </div>
