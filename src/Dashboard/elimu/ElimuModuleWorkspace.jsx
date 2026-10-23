@@ -26,6 +26,7 @@ import ElimuFinanceControls from "./ElimuFinanceControls";
 import ElimuParentDirectory from "./ElimuParentDirectory";
 import ElimuLegacyImport from "./ElimuLegacyImport.jsx";
 import ElimuTimetableWorkspace from "./ElimuTimetableWorkspace.jsx";
+import ElimuSchoolPermanentDelete from "./ElimuSchoolPermanentDelete.jsx";
 
 
 const MODULES = {
@@ -1213,6 +1214,13 @@ export default function ElimuModuleWorkspace({ path, role, school, access, onNav
             {moduleKey === "settings" && <button type="button" onClick={() => onNavigate?.("elimu/documents")} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800">Open document centre <ArrowUpRight size={15} /></button>}
           </section>
         </div>
+      )}
+
+      {moduleKey === "school" && role === "owner" && !demo && (
+        <ElimuSchoolPermanentDelete
+          school={school}
+          onDeleted={() => { if (typeof window !== "undefined") window.location.reload(); }}
+        />
       )}
 
       {moduleKey === "reports" && payload && numericMetrics.length > 0 && <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{numericMetrics.map(([key, value]) => <article key={key} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{humanize(key)}</p><p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{value.toLocaleString("en-KE")}</p></article>)}</section>}
