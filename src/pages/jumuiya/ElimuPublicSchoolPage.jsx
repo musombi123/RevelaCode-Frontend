@@ -758,12 +758,12 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-white"><GraduationCap size={27} /></div>
-          <RefreshCw size={21} className="mx-auto mt-5 animate-spin text-emerald-700" />
-          <h1 className="mt-4 text-lg font-extrabold text-slate-900">Loading school website</h1>
-          <p className="mt-2 text-sm text-slate-500">Retrieving the public school profile and published resources.</p>
+      <main data-school-website="true" className="school-loading-screen min-h-screen p-4 sm:p-8" style={{ "--school-background": DEFAULT_PUBLIC_THEME.background, "--school-surface": DEFAULT_PUBLIC_THEME.surface, "--school-surface-tint": DEFAULT_PUBLIC_THEME.background, "--school-primary": DEFAULT_PUBLIC_THEME.primary, "--school-secondary": DEFAULT_PUBLIC_THEME.secondary, "--school-heading": DEFAULT_PUBLIC_THEME.heading, "--school-body": DEFAULT_PUBLIC_THEME.body }}>
+        <div className="mx-auto max-w-7xl" role="status" aria-busy="true">
+          <span className="sr-only">Loading school website and published resources.</span>
+          <div className="school-skeleton-bar mb-7 flex items-center gap-4 rounded-2xl border p-4 sm:p-5"><div className="school-skeleton-block h-12 w-12 shrink-0 rounded-xl" /><div className="min-w-0 flex-1"><div className="school-skeleton-block h-4 w-48 max-w-full rounded-md" /><div className="school-skeleton-block mt-3 h-3 w-32 max-w-full rounded-md" /></div><div className="hidden gap-2 lg:flex"><div className="school-skeleton-block h-9 w-20 rounded-lg" /><div className="school-skeleton-block h-9 w-24 rounded-lg" /><div className="school-skeleton-block h-9 w-20 rounded-lg" /></div></div>
+          <div className="school-skeleton-block h-64 rounded-3xl sm:h-80 lg:h-[28rem]" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[0, 1, 2, 3].map((item) => <div key={item} className="school-skeleton-card rounded-2xl border p-5"><div className="school-skeleton-block h-10 w-10 rounded-xl" /><div className="school-skeleton-block mt-5 h-4 w-3/4 rounded-md" /><div className="school-skeleton-block mt-3 h-3 w-full rounded-md" /><div className="school-skeleton-block mt-2 h-3 w-2/3 rounded-md" /></div>)}</div>
         </div>
       </main>
     );
@@ -936,36 +936,45 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
       const hasActivities = coCurricularActivities.length > 0;
       pageContent = (
         <div className="school-home-page">
-          <section className="school-home-hero relative isolate overflow-hidden" style={{ backgroundColor: websiteTheme.secondary }}>
+          <section className={"school-home-hero relative isolate overflow-hidden " + (!coverUrl ? "school-hero-no-cover" : "")} style={{ backgroundColor: websiteTheme.secondary }}>
+            {coverUrl && <img src={coverUrl} alt={text(school, ["school_name", "name", "display_name"], "School campus")} fetchPriority="high" className="school-hero-cover absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+            <div className="school-hero-scrim absolute inset-0" aria-hidden="true" />
+            <div className="school-hero-pattern absolute inset-0" aria-hidden="true" />
             <div className="school-home-hero-glow" aria-hidden="true" />
-            <div className="relative z-10 grid min-h-[470px] lg:min-h-[540px] lg:grid-cols-[1.03fr_.97fr]">
-              <div className="relative z-10 flex flex-col justify-center px-6 py-12 text-white sm:px-9 sm:py-16 lg:px-12 lg:py-16 xl:px-16">
-                <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold tracking-wide text-white/90"><ShieldCheck size={15} /> Official school website</div>
-                <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: websiteTheme.accent }}>Welcome to</p>
-                <h1 className="max-w-3xl break-words text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl xl:text-6xl">{text(school, ["homepage_title"], schoolName)}</h1>
-                <p className="mt-6 max-w-2xl whitespace-pre-line text-base leading-7 text-white/85 sm:text-lg sm:leading-8">{about}</p>
-                {motto && <p className="mt-5 text-sm font-semibold italic" style={{ color: websiteTheme.accent }}>“{motto}”</p>}
+            <div className="school-hero-watermark pointer-events-none absolute right-[3%] top-1/2 hidden -translate-y-1/2 opacity-20 lg:block" aria-hidden="true">
+              {logo ? <img src={logo} alt="" className="h-64 w-64 object-contain xl:h-80 xl:w-80" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <School size={248} strokeWidth={0.65} />}
+            </div>
+            <div className="relative z-10 mx-auto grid min-h-[500px] max-w-[88rem] grid-cols-1 items-center gap-8 px-5 py-14 sm:px-8 sm:py-18 lg:min-h-[560px] lg:grid-cols-[minmax(0,1fr)_minmax(13rem,.5fr)] lg:px-12 xl:px-16">
+              <div className="school-hero-content relative z-10 flex max-w-4xl flex-col justify-center">
+                <div className="school-hero-badge mb-6 inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold tracking-wide"><ShieldCheck size={15} /> Official school website</div>
+                <p className="school-hero-kicker mb-3 text-xs font-extrabold uppercase tracking-[0.2em]" style={{ color: websiteTheme.accent }}>Welcome to</p>
+                <h1 className="school-hero-heading max-w-3xl break-words text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl xl:text-6xl">{text(school, ["homepage_title"], schoolName)}</h1>
+                <p className="school-hero-lead mt-6 max-w-2xl whitespace-pre-line text-base leading-7 sm:text-lg sm:leading-8">{about}</p>
+                {motto && <p className="school-hero-motto mt-5 max-w-2xl border-l-2 pl-4 text-base font-semibold italic leading-7 sm:text-lg" style={{ borderColor: websiteTheme.accent, color: websiteTheme.accent }}>“{motto}”</p>}
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link to={pageUrl("contact")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2" style={{ color: websiteTheme.secondary }}>Admissions & enquiries <ArrowRight size={17} /></Link>
-                  <Link to={pageUrl("about")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Discover our school</Link>
-                </div>
-                <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-sm text-white/75">
-                  {locationText && locationText !== "Contact the school for location details." && <span className="inline-flex items-center gap-2"><MapPin size={15} style={{ color: websiteTheme.accent }} />{locationText}</span>}
-                  {text(school, ["curriculum"]) && <span className="inline-flex items-center gap-2"><BookOpen size={15} style={{ color: websiteTheme.accent }} />{text(school, ["curriculum"])}</span>}
+                  <Link to={pageUrl("contact")} className="school-cta-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)] focus-visible:ring-offset-2">Admissions & enquiries <ArrowRight size={17} /></Link>
+                  <Link to={pageUrl("about")} className="school-cta-secondary inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--school-primary)]">Discover our school</Link>
                 </div>
               </div>
-              <div className="school-home-visual relative min-h-[280px] overflow-hidden sm:min-h-[360px] lg:min-h-full">
-                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, " + websiteTheme.primary + ", " + websiteTheme.secondary + ")" }} />
-                {coverUrl && <img src={coverUrl} alt={text(school, ["school_name", "name", "display_name"], "School campus")} fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/10" aria-hidden="true" />
-                {!coverUrl && <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
-                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur-sm">{logo ? <img src={logo} alt="" className="h-full w-full object-contain p-2" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <School size={48} strokeWidth={1.25} />}</div>
-                  <p className="mt-5 max-w-sm text-xl font-extrabold">{schoolName}</p><p className="mt-2 text-sm text-white/75">A place to learn, grow and belong</p><span className="mt-6 h-1 w-14 rounded-full" style={{ backgroundColor: websiteTheme.accent }} />
-                </div>}
-                <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4 sm:bottom-7 sm:left-7 sm:right-7">
-                  <div className="min-w-0 rounded-xl border border-white/20 bg-black/25 px-4 py-3 text-white backdrop-blur-md"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">School community</p><p className="mt-1 break-words text-sm font-bold">{schoolName}</p></div>
-                  {text(school, ["academic_year"]) && <div className="shrink-0 rounded-xl px-4 py-3 text-sm font-extrabold shadow-lg" style={{ backgroundColor: websiteTheme.accent, color: websiteTheme.secondary }}>{text(school, ["academic_year"])}</div>}
+              <div className="school-hero-aside relative z-10 hidden h-full items-end justify-end pb-3 lg:flex">
+                <div className="school-hero-community max-w-sm rounded-2xl border p-5 backdrop-blur-xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em]">School community</p>
+                  <p className="mt-2 break-words text-lg font-extrabold">{schoolName}</p>
+                  {text(school, ["academic_year"]) && <p className="mt-4 inline-flex min-h-9 items-center rounded-lg px-3 py-2 text-sm font-extrabold" style={{ backgroundColor: websiteTheme.accent, color: websiteTheme.heading }}>{text(school, ["academic_year"])}</p>}
                 </div>
+              </div>
+            </div>
+          </section>
+          <section className="school-facts-strip relative z-20 mx-auto -mt-8 mb-7 max-w-[78rem]" aria-label="School information and quick links">
+            <div className="school-facts-panel grid gap-0 rounded-2xl border shadow-xl sm:grid-cols-2 lg:grid-cols-4">
+              {text(school, ["curriculum"]) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><BookOpen size={18} /></span><div className="min-w-0"><p className="school-fact-label">Curriculum</p><p className="mt-1 break-words text-sm font-bold">{text(school, ["curriculum"])}</p></div></div>}
+              {text(school, ["academic_year"]) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><CalendarDays size={18} /></span><div className="min-w-0"><p className="school-fact-label">Academic year</p><p className="mt-1 break-words text-sm font-bold">{text(school, ["academic_year"])}</p></div></div>}
+              {locationText && locationText !== "Contact the school for location details." && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><MapPin size={18} /></span><div className="min-w-0"><p className="school-fact-label">Location</p><p className="mt-1 break-words text-sm font-bold">{locationText}</p></div></div>}
+              {(phone || email) && <div className="school-fact-item flex items-start gap-3 p-4 sm:p-5"><span className="school-fact-icon"><Phone size={18} /></span><div className="min-w-0"><p className="school-fact-label">Get in touch</p>{phone && <a href={"tel:" + phone} className="mt-1 block break-words text-sm font-bold hover:underline">{phone}</a>}{email && <a href={"mailto:" + email} className="mt-1 block break-all text-xs font-semibold hover:underline">{email}</a>}</div></div>}
+              <div className="school-fact-item school-fact-actions flex flex-wrap items-center gap-2 p-4 sm:col-span-2 sm:px-5 lg:col-span-4">
+                <Link to={pageUrl("contact")} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold"><Mail size={15} /> Contact</Link>
+                <Link to={"/jumuiya/elimu/parent?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold"><Users size={15} /> Parent portal</Link>
+                <Link to={"/jumuiya/elimu/student?school=" + encodeURIComponent(publicSchoolSlug || schoolSlug)} className="school-fact-action inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-extrabold"><GraduationCap size={15} /> Student portal</Link>
               </div>
             </div>
           </section>
@@ -975,7 +984,7 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
             <div className="grid gap-4 sm:grid-cols-2">
               {mission && <article className="school-statement-panel"><span className="school-statement-icon"><ShieldCheck size={21} /></span><h3>Our mission</h3><p>{mission}</p></article>}
               {vision && <article className="school-statement-panel"><span className="school-statement-icon"><ArrowRight size={21} /></span><h3>Our vision</h3><p>{vision}</p></article>}
-              {motto && <article className="school-statement-panel sm:col-span-2"><span className="school-statement-icon"><GraduationCap size={21} /></span><h3>Our motto</h3><p>{motto}</p></article>}
+              {motto && <article className="school-statement-panel school-motto-quote sm:col-span-2"><span className="school-statement-icon"><GraduationCap size={21} /></span><h3>Our motto</h3><p>{motto}</p></article>}
               {!mission && !vision && !motto && <article className="school-profile-panel sm:col-span-2"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: rgbaFromHex(websiteTheme.primary, 0.1), color: websiteTheme.primary }}><School size={24} /></div><div><h3 className="text-lg font-extrabold" style={{ color: websiteTheme.heading }}>Get to know {schoolName}</h3><p className="mt-2 text-sm leading-7" style={{ color: websiteTheme.body }}>Explore the school's published information, learning programmes, events and ways to connect with the school community.</p></div></div></article>}
             </div>
           </section>
