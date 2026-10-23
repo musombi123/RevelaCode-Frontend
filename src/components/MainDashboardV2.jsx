@@ -278,6 +278,8 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
 
+  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
+
   const [aiFullscreenOpen, setAIFullscreenOpen] =
     useState(false);
 
@@ -327,6 +329,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
     setActiveView(view);
     setSidebarOpen(false);
+    setMobileCategoryOpen(null);
   }, []);
 
   /* =========================================================
@@ -514,6 +517,26 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
         return true;
       });
+
+  const navigationGroupSpecs = [
+    { key: "start", label: "Start", keys: ["home"] },
+    { key: "learn", label: "Learn & Faith", keys: ["faith", "education"] },
+    { key: "grow", label: "Work & Grow", keys: ["biashara", "shamba"] },
+    { key: "community", label: "Community & Services", keys: ["community", "payments"] },
+    { key: "account", label: "Account & Settings", keys: ["profile", "settings", "accounts"] },
+  ];
+
+  const navigationGroups = navigationGroupSpecs
+    .map((group) => ({
+      ...group,
+      dashboards: group.keys
+        .map((key) => visibleDashboards.find((dashboard) => dashboard.key === key))
+        .filter(Boolean),
+    }))
+    .filter((group) => group.dashboards.length > 0);
+
+  const groupedDashboardKeys = new Set(navigationGroupSpecs.flatMap((group) => group.keys));
+  const additionalDashboards = visibleDashboards.filter((dashboard) => !groupedDashboardKeys.has(dashboard.key));
 
 /* =========================================================
 BIASHARA INTERNAL SECTIONS
@@ -787,126 +810,58 @@ const BIASHARA_SECTION_KEYS = new Set(
                     </p>
                   </div>
 
-                  <div className="space-y-1">
-                    {visibleDashboards.map(
-                      ({
-                        key,
-                        label,
-                        icon: Icon,
-                        color,
-                      }) => {
-                        const active =
-                          activeView === key;
-
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              handleNavigate(key)
-                            }
-                            className={`
-                              group
-                              relative
-                              flex
-                              w-full
-                              items-center
-                              gap-3
-                              rounded-xl
-                              px-3
-                              py-3
-                              text-left
-                              text-sm
-                              font-medium
-                              transition-all
-                              duration-200
-                              ${
-                                active
-                                  ? "bg-gray-100 text-gray-950 shadow-sm dark:bg-gray-900 dark:text-white"
-                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900/70 dark:hover:text-white"
-                              }
-                            `}
-                          >
-                            {/* Active Indicator */}
-
-                            {active && (
-                              <span
-                                className={`
-                                  absolute
-                                  left-0
-                                  top-1/2
-                                  h-7
-                                  w-1
-                                  -translate-y-1/2
-                                  rounded-r-full
-                                  bg-gradient-to-b
-                                  ${
-                                    color ||
-                                    "from-indigo-500 to-purple-500"
-                                  }
-                                `}
-                              />
-                            )}
-
-                            {/* Icon */}
-
-                            <span
-                              className={`
-                                flex
-                                h-9
-                                w-9
-                                shrink-0
-                                items-center
-                                justify-center
-                                rounded-lg
-                                transition
-                                ${
+                  <div className="space-y-3">
+                    {navigationGroups.map((group) => (
+                      <section key={group.key} className="space-y-1.5">
+                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-gray-400">
+                          {group.label}
+                        </p>
+                        <div className="space-y-0.5">
+                          {group.dashboards.map(({ key, label, icon: Icon, color }) => {
+                            const active = activeView === key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => handleNavigate(key)}
+                                aria-current={active ? "page" : undefined}
+                                className={`group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-semibold transition-colors sm:gap-3 sm:px-3 sm:py-2.5 sm:text-sm ${
                                   active
-                                    ? `bg-gradient-to-br ${
-                                        color ||
-                                        "from-indigo-500 to-purple-500"
-                                      } text-white shadow-md`
-                                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:group-hover:bg-gray-800"
-                                }
-                              `}
-                            >
-                              {Icon ? (
-                                <Icon size={17} />
-                              ) : (
-                                <span className="text-xs">
-                                  •
-                                </span>
-                              )}
-                            </span>
-
-                            {/* Label */}
-
-                            <span
-                              className="
-                                min-w-0
-                                flex-1
-                                truncate
-                              "
-                            >
-                              {label}
-                            </span>
-
-                            {/* Active Dot */}
-
-                            {active && (
-                              <span
-                                className="
-                                  text-xs
-                                  text-gray-400
-                                "
+                                    ? "bg-gray-100 text-gray-950 shadow-sm dark:bg-gray-900 dark:text-white"
+                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900/70 dark:hover:text-white"
+                                }`}
                               >
-                                ●
-                              </span>
-                            )}
-                          </button>
-                        );
-                      }
-                    )}
+                                {active ? (
+                                  <span className={`absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b ${color || "from-indigo-500 to-purple-500"}`} />
+                                ) : null}
+                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition sm:h-9 sm:w-9 ${
+                                  active
+                                    ? `bg-gradient-to-br ${color || "from-indigo-500 to-purple-500"} text-white shadow-sm`
+                                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:group-hover:bg-gray-800"
+                                }`}>
+                                  {Icon ? <Icon size={16} /> : <span className="text-xs">•</span>}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">{label}</span>
+                                {active ? <span className="text-[10px] text-gray-400" aria-hidden="true">●</span> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
+                    {additionalDashboards.length ? (
+                      <section className="space-y-1.5">
+                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-gray-400">More</p>
+                        <div className="space-y-0.5">
+                          {additionalDashboards.map(({ key, label, icon: Icon }) => (
+                            <button key={key} type="button" onClick={() => handleNavigate(key)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-semibold text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900/70">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-400">{Icon ? <Icon size={16} /> : null}</span>
+                              <span className="truncate">{label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    ) : null}
                   </div>
                 </nav>
 
@@ -1290,6 +1245,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           ================================================= */}
 
           <section
+            id="revelacode-dashboard-content"
             className="
               min-w-0
               flex-1
@@ -1363,47 +1319,89 @@ const BIASHARA_SECTION_KEYS = new Set(
             </Suspense>
           </section>
 
-          {/* Community supplies its own floating intent dock. Keep this shell footer for other hubs only. */}
+          {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
           {!sidebarOpen && activeView !== "community" && (
-            <nav
-              aria-label="Main workspace navigation"
-              className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
-            >
-              <div className="mx-auto grid max-w-xl grid-cols-7 gap-0.5">
-                {[
-                  { key: "home", label: "Home", Icon: Home },
-                  { key: "faith", label: "Faith", Icon: BookOpen },
-                  { key: "education", label: "Elimu", Icon: GraduationCap },
-                  { key: "shamba", label: "Shamba", Icon: Leaf },
-                  { key: "biashara", label: "Biashara", Icon: ShoppingCart },
-                  { key: "community", label: "Community", Icon: Users },
-                ].map(({ key, label, Icon }) => {
-                  const active = activeView === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleNavigate(key)}
-                      aria-current={active ? "page" : undefined}
-                      aria-label={`Open ${label}`}
-                      className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold transition active:scale-95 sm:text-[10px] ${active ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"}`}
-                    >
-                      <Icon size={19} strokeWidth={active ? 2.5 : 2} />
-                      <span className="max-w-full truncate">{label}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(true)}
-                  aria-label="Open all navigation options"
-                  className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-[9px] font-bold text-slate-500 transition active:scale-95 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900 sm:text-[10px]"
+            <>
+              {mobileCategoryOpen ? (
+                <section
+                  aria-label={mobileCategoryOpen === "learn" ? "Learning and faith hubs" : "Business and agriculture hubs"}
+                  className="fixed left-2 right-2 z-[85] mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-950/15 dark:border-slate-700 dark:bg-slate-900"
+                  style={{ bottom: "calc(4.25rem + env(safe-area-inset-bottom))" }}
                 >
-                  <Menu size={19} />
-                  <span className="truncate">More</span>
-                </button>
-              </div>
-            </nav>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xs font-black text-slate-900 dark:text-white">
+                        {mobileCategoryOpen === "learn" ? "Learn & Faith" : "Work & Grow"}
+                      </h2>
+                      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                        {mobileCategoryOpen === "learn" ? "Choose your learning space" : "Choose a livelihood space"}
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => setMobileCategoryOpen(null)} aria-label="Close hub categories" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(mobileCategoryOpen === "learn"
+                      ? [
+                          { key: "faith", label: "Faith & Scripture", Icon: BookOpen, detail: "Bible study and faith" },
+                          { key: "education", label: "Elimu", Icon: GraduationCap, detail: "Schools and learning" },
+                        ]
+                      : [
+                          { key: "biashara", label: "Biashara", Icon: ShoppingCart, detail: "Sales and business" },
+                          { key: "shamba", label: "Shamba", Icon: Leaf, detail: "Farms and crops" },
+                        ]
+                    ).map(({ key, label, Icon, detail }) => {
+                      const active = activeView === key;
+                      return (
+                        <button key={key} type="button" onClick={() => handleNavigate(key)} aria-current={active ? "page" : undefined} className={`flex min-w-0 items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+                          active
+                            ? "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                            : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        }`}>
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"><Icon size={18} /></span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-xs font-extrabold">{label}</span>
+                            <span className="mt-0.5 block truncate text-[10px] text-slate-500 dark:text-slate-400">{detail}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
+              <nav
+                aria-label="Main workspace navigation"
+                className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+              >
+                <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
+                  <button type="button" onClick={() => handleNavigate("home")} aria-current={activeView === "home" ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
+                    activeView === "home" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"
+                  }`}>
+                    <Home size={18} /><span>Home</span>
+                  </button>
+                  <button type="button" onClick={() => setMobileCategoryOpen((current) => current === "learn" ? null : "learn")} aria-expanded={mobileCategoryOpen === "learn"} aria-label="Open Learn and Faith hubs" className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
+                    ["faith", "education"].includes(activeView) || mobileCategoryOpen === "learn" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"
+                  }`}>
+                    <BookOpen size={18} /><span>Learn</span>
+                  </button>
+                  <button type="button" onClick={() => setMobileCategoryOpen((current) => current === "grow" ? null : "grow")} aria-expanded={mobileCategoryOpen === "grow"} aria-label="Open Work and Grow hubs" className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
+                    ["biashara", "shamba"].includes(activeView) || mobileCategoryOpen === "grow" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"
+                  }`}>
+                    <Leaf size={18} /><span>Work & Grow</span>
+                  </button>
+                  <button type="button" onClick={() => handleNavigate("community")} aria-current={activeView === "community" ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
+                    activeView === "community" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"
+                  }`}>
+                    <Users size={18} /><span>Community</span>
+                  </button>
+                  <button type="button" onClick={() => { setMobileCategoryOpen(null); setSidebarOpen(true); }} aria-label="Open all navigation options" className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold text-slate-500 transition active:scale-95 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900">
+                    <Menu size={18} /><span>More</span>
+                  </button>
+                </div>
+              </nav>
+            </>
           )}
 
           {/* Context-aware floating RevelaAI widget */}
