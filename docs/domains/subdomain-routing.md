@@ -46,6 +46,8 @@ Use the exact Render-provided target if it differs. A TTL of 300 seconds or the 
 
 4. Return to Render and verify each hostname. Wait until Render shows the domain as verified and its TLS certificate as issued, then test each `https://` URL. Render's custom-domain configuration is required in addition to DNS records; CNAMEs alone are not sufficient.
 
+5. Merge the related backend change ([RevelaCode-Backend PR #26](https://github.com/musombi123/RevelaCode-Backend/pull/26)) so the API explicitly allows the four exact HTTPS origins in its CORS allowlist and serves the public Community read endpoints. This uses an explicit origin list, not a wildcard. The frontend can be built and deployed before DNS is live, but the public pages cannot load data until the backend change is deployed.
+
 If the live frontend is hosted somewhere other than that Render service, add the four hostnames to the actual production frontend host and use its documented DNS target instead. Do not point the subdomains at the Netlify *deploy-preview* hostname.
 
 ## Release checklist
