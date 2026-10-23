@@ -243,7 +243,7 @@ function FullscreenAIAssistant({
    Main Dashboard Shell
 ========================================================= */
 
-export default function MainDashboardV2() {
+export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   /*
    * IMPORTANT:
    *
@@ -266,9 +266,14 @@ export default function MainDashboardV2() {
    */
 
   const defaultDashboard = "home";
+  const initialDashboard = DASHBOARDS.some(
+    (dashboard) => dashboard.key === initialDashboardKey,
+  )
+    ? initialDashboardKey
+    : defaultDashboard;
 
   const [activeView, setActiveView] =
-    useState(defaultDashboard);
+    useState(initialDashboard);
 
   const [sidebarOpen, setSidebarOpen] =
     useState(false);

@@ -25,6 +25,7 @@ import ElimuHub from "./pages/ElimuHub.jsx";
 import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
 import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import UserAccountDashboard from "./components/UserAccountDashboard.jsx";
+import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -49,14 +50,55 @@ function SPAWrapper({ children }) {
   return children;
 }
 
-function InternalDashboard() {
+function InternalDashboard({ initialHub = null }) {
   return (
     <SPAWrapper>
       <Layout>
-        <MainDashboardV2 />
+        <MainDashboardV2 initialDashboardKey={initialHub} />
       </Layout>
     </SPAWrapper>
   );
+}
+
+function resolveRevelaCodeHubHost() {
+  const hostname = String(window.location.hostname || "").trim().toLowerCase();
+  const hubHosts = {
+    "biashara.revelacode.co.ke": "biashara",
+    "elimu.revelacode.co.ke": "education",
+    "shamba.revelacode.co.ke": "shamba",
+    "community.revelacode.co.ke": "community",
+  };
+  return hubHosts[hostname] || null;
+}
+
+function CommunityPublicRoute({ mode }) {
+  const location = useLocation();
+  const isCommunityHost =
+    String(window.location.hostname || "").trim().toLowerCase() ===
+    "community.revelacode.co.ke";
+
+  React.useEffect(() => {
+    if (isCommunityHost) return;
+    const safePath = `${location.pathname}${location.search}${location.hash}`;
+    window.location.replace(`https://community.revelacode.co.ke${safePath}`);
+  }, [isCommunityHost, location.pathname, location.search, location.hash]);
+
+  if (!isCommunityHost) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        Opening the public Community link…
+      </div>
+    );
+  }
+
+  return <CommunityPublicPage mode={mode} />;
+}
+
+function InteractiveWorkspaceRoute() {
+  const location = useLocation();
+  const hostHub = resolveRevelaCodeHubHost();
+  const requestedHub = new URLSearchParams(location.search).get("hub");
+  return <InternalDashboard initialHub={hostHub || requestedHub || null} />;
 }
 
 /*
@@ -90,15 +132,36 @@ function isPlatformHostname() {
     hostname === "127.0.0.1" ||
     hostname === "revelacode.co.ke" ||
     hostname === "www.revelacode.co.ke" ||
+    Boolean(resolveRevelaCodeHubHost()) ||
     hostname.endsWith(".onrender.com") ||
     configured.includes(hostname)
   );
 }
 
 function PlatformHomeRoute() {
+  const domainHub = resolveRevelaCodeHubHost();
+
+  // The Community root is open to anyone; /app opens the signed-in workspace.
+  if (domainHub === "community") {
+    return <CommunityPublicPage mode="feed" />;
+  }
+
+  // Hub hosts open the matching existing dashboard. Existing hub authorization
+  // and verification gates remain the source of access decisions.
+  if (domainHub) {
+    return (
+      <SPAWrapper>
+        <Layout>
+          <MainDashboardV2 initialDashboardKey={domainHub} />
+        </Layout>
+      </SPAWrapper>
+    );
+  }
+
   if (!isPlatformHostname()) {
     return <ElimuPublicSchoolPage customDomainMode />;
   }
+
   return (
     <SPAWrapper>
       <Layout>
@@ -169,6 +232,10 @@ export default function App() {
             <SEOManager />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
+              <Route path="/app" element={<InteractiveWorkspaceRoute />} />
+              <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
+              <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
+              <Route path="/media/:mediaId" element={<CommunityPublicRoute mode="media" />} />
               <Route path="/community" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />

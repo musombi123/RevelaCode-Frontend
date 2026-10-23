@@ -43,6 +43,7 @@ import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
+import CommunityMediaCards, { getCommunityMediaItems } from "@/Dashboard/Community/CommunityMediaCards.jsx";
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
@@ -501,6 +502,7 @@ export default function CommunityDashboard({
   const [workspacePage, setWorkspacePage] = useState("home");
   const [activeSurface, setActiveSurface] = useState("pulse");
   const [backMenuOpen, setBackMenuOpen] = useState(false);
+  const [viewsMenuOpen, setViewsMenuOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [backendHealth, setBackendHealth] = useState("checking");
 
@@ -938,6 +940,17 @@ export default function CommunityDashboard({
     setReloadToken((value) => value + 1);
   }, []);
 
+  const selectCommunitySurface = useCallback((surface) => {
+    setViewsMenuOpen(false);
+    setWorkspacePage("home");
+    setDiscoveryQuery("");
+    setSubmittedQuery("");
+    setDiscoveryIntent("");
+    setSubmittedIntent("");
+    setActiveSurface(surface);
+    setReloadToken((value) => value + 1);
+  }, []);
+
   // ----------------------------------------------------------
   // Post actions
   // ----------------------------------------------------------
@@ -1021,14 +1034,33 @@ export default function CommunityDashboard({
     const matches = posts.filter((post) =>
       AROUND_YOU_TYPES.has(getPostType(post)) || isCommunityPromotion(post)
     );
-    if (matches.length) return matches.slice(0, 14);
-    // Intent search results are already filtered by the backend, so retain
-    // those genuine results even when their type is not in the common board set.
+
+    // Map real listings from the existing Marketplace API into the same tile
+    // vocabulary without pretending they are Community post records.
+    const listingTiles = activeSurface === "pulse"
+      ? marketplaceListings.map((listing, index) => ({
+          ...listing,
+          id: listing?.id ?? listing?._id ?? listing?.listing_id ?? `market-listing-${index}`,
+          title: listing?.title || "Marketplace listing",
+          body: listing?.description || listing?.body || "",
+          type: "offer",
+          hub: String(listing?.hub || "community").toLowerCase(),
+          location: listing?.location || "",
+          __communitySource: "marketplace",
+        }))
+      : [];
+
+    if (matches.length || listingTiles.length) {
+      return [...matches, ...listingTiles].slice(0, 14);
+    }
+
+    // Discovery results are already filtered by the backend, so retain genuine
+    // matches even when a specific result type is outside the tile vocabulary.
     if (activeSurface === "discovery" && (submittedIntent || submittedQuery)) {
       return posts.slice(0, 14);
     }
     return [];
-  }, [posts, activeSurface, submittedIntent, submittedQuery]);
+  }, [posts, marketplaceListings, activeSurface, submittedIntent, submittedQuery]);
 
   const actionPosts = useMemo(
     () =>
@@ -1054,15 +1086,44 @@ export default function CommunityDashboard({
   // Existing Community workspaces
   // ----------------------------------------------------------
 
+  const renderBackMenu = () => (
+    <div className="mb-3 flex justify-end">
+      <div className="relative">
+        <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
+          <Menu size={14} /> RevelaCode menu <ChevronDown size={12} />
+        </button>
+        {backMenuOpen ? (
+          <>
+            <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
+            <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+              <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
+                <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
+              </button>
+              <div className="my-1 border-t border-slate-100 dark:border-white/10" />
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
+              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("education"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+
+
   if (workspacePage === "feed") {
     return (
-      <CommunityFeed
-        onNavigate={navigate}
-        onEditPost={(post) => {
-          setEditingPost(post);
-          setWorkspacePage("composer");
-        }}
-      />
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityFeed
+          onNavigate={navigate}
+          onEditPost={(post) => {
+            setEditingPost(post);
+            setWorkspacePage("composer");
+          }}
+        />
+      </div>
     );
   }
 
@@ -1076,27 +1137,30 @@ export default function CommunityDashboard({
   }
 
   if (workspacePage === "notifications") {
-    return <CommunityNotifications onNavigate={navigate} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityNotifications onNavigate={navigate} /></div>;
   }
 
   if (workspacePage === "marketplace") {
-    return <CommunityMarketplace onNavigate={navigate} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityMarketplace onNavigate={navigate} /></div>;
   }
 
   if (workspacePage === "contact-settings") {
     return (
-      <CommunityContactSettings
-        onBack={() => navigate("community")}
-      />
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityContactSettings
+          onBack={() => navigate("community")}
+        />
+      </div>
     );
   }
 
   if (workspacePage === "people") {
-    return <CommunityPeopleDirectory onBack={() => navigate("community")} onInvite={() => navigate("community-invite-members")} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityPeopleDirectory onBack={() => navigate("community")} onInvite={() => navigate("community-invite-members")} /></div>;
   }
 
   if (workspacePage === "invite") {
-    return <CommunityInviteMembers onBack={() => navigate("community")} />;
+    return <div className="min-w-0">{renderBackMenu()}<CommunityInviteMembers onBack={() => navigate("community")} /></div>;
   }
 
   // ==========================================================
@@ -1148,6 +1212,7 @@ export default function CommunityDashboard({
 
         {/* Main mobile-first surface */}
         <main className="min-w-0">
+          {renderBackMenu()}
           {workspacePage === "chats" ? (
             <CommunityMattersWorkspace api={communityApi} currentUserId={user?.id || user?._id || user?.user_id || null} />
           ) : workspacePage === "groups" ? (
@@ -1179,9 +1244,10 @@ export default function CommunityDashboard({
                     <Sparkles size={13} /> Jumuiya Community
                   </div>
                   <div className="flex items-center gap-2">
-                  <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
-                    <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
-                    {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
+                    <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                      <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
+                      {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
+                    </div>
                   </div>
                   <div className="relative">
                     <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
@@ -1242,29 +1308,67 @@ export default function CommunityDashboard({
                 </div>
               ) : null}
 
+              <CommunityMediaCards
+                posts={posts}
+                onOpenPost={setSelectedBoardPost}
+                onCreatePost={() => navigate("community-composer")}
+              />
+
               <section className="mt-6">
                 <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">{activeSurface === "discovery" && submittedIntent ? "Around you" : "Around you"}</h2>
+                      <h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">Around you</h2>
                       <span className="rounded-full bg-slate-200/70 px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">Needs & offers</span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{activeSurface === "discovery" && submittedIntent ? "Results for your selected intent." : "Useful opportunities from the live Community service."}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{activeSurface === "discovery" && (submittedIntent || submittedQuery) ? "Results for your selected intent or search." : activeSurface === "pulse" ? "Relevant posts, needs, offers and Marketplace listings." : `Showing ${({ discovery: "discovery", nearby: "nearby", actions: "opportunities", trust: "trusted discovery", exploration: "exploration", threads: "discussion threads" })[activeSurface] || "Community"} results.`}</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button type="button" onClick={() => setViewsMenuOpen((open) => !open)} aria-expanded={viewsMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300"><Compass size={13} /> Views <ChevronDown size={12} /></button>
+                      {viewsMenuOpen ? (
+                        <>
+                          <button type="button" aria-label="Close Community views" className="fixed inset-0 z-[95] cursor-default" onClick={() => setViewsMenuOpen(false)} />
+                          <div role="menu" className="absolute right-0 top-11 z-[100] w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-slate-900">
+                            {[
+                              ["pulse", "For you"],
+                              ["discovery", "Discover"],
+                              ["nearby", "Nearby"],
+                              ["actions", "Opportunities"],
+                              ["trust", "Trusted"],
+                              ["exploration", "Explore"],
+                              ["threads", "Threads"],
+                            ].map(([surface, label]) => (
+                              <button key={surface} type="button" role="menuitem" onClick={() => selectCommunitySurface(surface)} className={"flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-bold " + (activeSurface === surface ? "bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5")}>
+                                {label}
+                                {activeSurface === surface ? <span className="text-[9px] font-black">Selected</span> : null}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
                     <button type="button" onClick={() => navigate("community-feed")} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-black text-slate-600 hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">All activity <ArrowRight size={12} /></button>
                     <button type="button" onClick={refresh} disabled={loading || refreshing} aria-label="Refresh Around you" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-slate-900"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /></button>
                   </div>
                 </div>
 
-                {loading ? (
+                {marketplaceError && activeSurface === "pulse" ? (
+                  <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[10px] leading-4 text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-100">{marketplaceError}</p>
+                ) : null}
+                {(loading || (activeSurface === "pulse" && marketplaceLoading && posts.length === 0)) ? (
                   <LoadingState />
                 ) : aroundYouItems.length ? (
                   <div className="columns-2 gap-2.5 sm:gap-3">
                     {aroundYouItems.map((post, index) => {
                       const id = getPostId(post) || (getPostType(post) + "-" + index);
                       const hub = getPostHub(post);
+                      const isMarketplaceListing = post?.__communitySource === "marketplace";
                       const edge = hub === "biashara" ? "bg-blue-500" : hub === "shamba" ? "bg-emerald-500" : hub === "elimu" ? "bg-violet-500" : "bg-cyan-500";
+                      const rawPrice = Number(post?.price);
+                      const priceText = Number.isFinite(rawPrice)
+                        ? `${String(post?.currency || "KES").toUpperCase()} ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 2 }).format(rawPrice)}${post?.unit ? ` / ${post.unit}` : ""}`
+                        : "";
                       return (
                         <article key={id} className="relative mb-3 break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-slate-900">
                           <span className={"absolute inset-x-0 top-0 h-1 " + edge} />
@@ -1274,10 +1378,11 @@ export default function CommunityDashboard({
                           </div>
                           <h3 className="mt-3 line-clamp-2 break-words text-sm font-black leading-5 text-slate-950 dark:text-white">{getPostTitle(post)}</h3>
                           {getPostBody(post) ? <p className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">{getPostBody(post)}</p> : null}
+                          {isMarketplaceListing && priceText ? <p className="mt-3 text-sm font-black text-slate-950 dark:text-white">{priceText}</p> : null}
                           <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400"><MapPin size={12} />{post?.location || post?.place || post?.area || "Location not shared"}</p>
                           <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-                            <button type="button" onClick={() => setSelectedBoardPost(post)} className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-xl bg-slate-950 px-3 py-2 text-left text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
-                              {getAroundYouAction(post)} <ArrowRight size={13} />
+                            <button type="button" onClick={() => { if (isMarketplaceListing) navigate("community-marketplace"); else setSelectedBoardPost(post); }} className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-xl bg-slate-950 px-3 py-2 text-left text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+                              {isMarketplaceListing ? "View listing" : getAroundYouAction(post)} <ArrowRight size={13} />
                             </button>
                           </div>
                         </article>
@@ -1369,6 +1474,31 @@ export default function CommunityDashboard({
               <button type="button" onClick={() => setSelectedBoardPost(null)} aria-label="Close details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 dark:border-white/10"><X size={16} /></button>
             </div>
             <div className="p-4 sm:p-5">
+              {getCommunityMediaItems(selectedBoardPost).length ? (
+                <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {getCommunityMediaItems(selectedBoardPost).map((media) => (
+                    media.kind === "video" ? (
+                      <video
+                        key={media.id || media.url}
+                        src={media.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="max-h-[420px] w-full rounded-2xl border border-slate-200 bg-black dark:border-white/10"
+                        aria-label={media.fileName || getPostTitle(selectedBoardPost)}
+                      />
+                    ) : (
+                      <img
+                        key={media.id || media.url}
+                        src={media.url}
+                        alt={media.fileName || getPostTitle(selectedBoardPost)}
+                        loading="lazy"
+                        className="max-h-[420px] w-full rounded-2xl border border-slate-200 bg-slate-100 object-contain dark:border-white/10 dark:bg-slate-950"
+                      />
+                    )
+                  ))}
+                </div>
+              ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-600 dark:text-slate-300">{getPostBody(selectedBoardPost) || "No further description was shared."}</p>
               <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400"><MapPin size={14} />{selectedBoardPost?.location || selectedBoardPost?.place || selectedBoardPost?.area || "Location not shared"}</p>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
