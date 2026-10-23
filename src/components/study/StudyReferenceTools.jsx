@@ -5,9 +5,10 @@ import { getCachedCrossReferenceDataset, warmCrossReferenceDataset } from "./stu
 
 function openableReference(reference) {
   const value = String(reference || "").trim().replace(/[–—]/g, "-");
-  // This desk's primary passages are single chapters or chapter:verse ranges.
-  // Deliberately reject multi-chapter ranges rather than silently misrouting.
+  // This desk can route a single chapter or a chapter:verse range. Multi-
+  // chapter ranges are not silently reduced to the first chapter.
   if (/^[1-3]?\s?[A-Za-z]+(?:\s+[1-3])?\s+\d+-\d+$/.test(value)) return "";
+  if (/^[1-3]?\s?[A-Za-z]+(?:\s+[A-Za-z]+)?\s+\d+$/.test(value)) return value + ":1";
   return value;
 }
 
