@@ -135,6 +135,7 @@ function getInitials(name) {
 export default function CommunityComposer({
   onNavigate,
   initialPost = null,
+  initialCategory = "general",
 }) {
   const { user } = useAuth();
 
@@ -146,13 +147,18 @@ export default function CommunityComposer({
 
   const initialCategoryChoice = useMemo(() => {
     const supported = new Set(POST_CATEGORIES.map((item) => item.value));
-    return [
+    const existingPostCategory = [
       initialPost?.type,
       initialPost?.post_type,
       initialPost?.category,
     ].map((value) => String(value || "").toLowerCase())
-      .find((value) => supported.has(value)) || "general";
-  }, [initialPost]);
+      .find((value) => supported.has(value));
+
+    if (initialPost) return existingPostCategory || "general";
+
+    const requestedCategory = String(initialCategory || "general").toLowerCase();
+    return supported.has(requestedCategory) ? requestedCategory : "general";
+  }, [initialPost, initialCategory]);
 
   // ==========================================================
   // FORM STATE
