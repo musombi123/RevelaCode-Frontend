@@ -9,6 +9,7 @@ import React, {
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedBibleBook, saveCachedBibleBook } from "./study/studyMaterialCache.js";
+import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import {
   useLocation,
   useNavigate,
@@ -219,6 +220,7 @@ export default function BibleDashboard({
 
   const [bibleData, setBibleData] = useState({});
   const [webData, setWebData] = useState({});
+  const [sourceView, setSourceView] = useState(null);
   const [bibleVersion, setBibleVersion] = useState(() => {
     if (typeof window === "undefined") return "kjv";
     try {
@@ -847,9 +849,34 @@ export default function BibleDashboard({
           )
       );
 
+  useEffect(() => {
+    const handleSavedSource = (event) => {
+      const entry = event?.detail;
+      if (!entry || !/^https?:\/\//i.test(String(entry.url || ""))) return;
+      setSourceView({ url: String(entry.url), title: String(entry.title || entry.url) });
+    };
+    window.addEventListener("revelacode:open-study-source", handleSavedSource);
+    return () => window.removeEventListener("revelacode:open-study-source", handleSavedSource);
+  }, []);
+
   /* =======================================================
      RENDER
   ======================================================= */
+
+  if (sourceView) {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4 p-3 sm:p-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+          <BackButton label="Back to Bible" onClick={() => setSourceView(null)} />
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-black text-gray-900 dark:text-white">Study reference</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Reference opened inside RevelaCode</p>
+          </div>
+        </div>
+        <StudyResourceViewer source={sourceView} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1058,7 +1085,7 @@ export default function BibleDashboard({
       {bibleVersion === "web" && (
         <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
           World English Bible · loads one book at a time and uses browser caching. The KJV remains available offline.
-          {" "}<a href="https://ebible.org/web/" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 underline dark:text-blue-400">About the WEB text</a>
+          {" "}<button type="button" onClick={() => setSourceView({ url: "https://ebible.org/web/", title: "About the World English Bible" })} className="font-semibold text-blue-600 underline dark:text-blue-400">About the WEB text</button>
         </p>
       )}
       {loadingVersionBook && (
