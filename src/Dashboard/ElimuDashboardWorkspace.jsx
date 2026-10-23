@@ -267,29 +267,32 @@ function canAccessRoleRoute(role, path) {
   let normalized = normalizePath(path);
   const marker = normalized.lastIndexOf("elimu");
   if (marker > 0) normalized = normalized.slice(marker);
-  if (!normalized) normalized = "elimu";
-  if (normalized === "dashboard") normalized = "elimu";
-  if (!normalized.startsWith("elimu/") && normalized !== "elimu") normalized = "elimu/" + normalized.replace(/^\\/+/, "");
+  if (!normalized || normalized === "dashboard") normalized = "elimu";
+  if (!normalized.startsWith("elimu/") && normalized !== "elimu") {
+    normalized = "elimu/" + normalized.replace(/^\/+/, "");
+  }
 
   if (!role || role === "owner" || role === "principal") return true;
+  if (normalized === "elimu") return true;
 
   const allowed = {
-    bursar: ["elimu", "elimu/fees", "elimu/reports/fees"],
-    storekeeper: ["elimu", "elimu/inventory"],
-    librarian: ["elimu", "elimu/library"],
+    bursar: ["elimu/fees", "elimu/reports/fees"],
+    storekeeper: ["elimu/inventory"],
+    librarian: ["elimu/library"],
     registrar: [
-      "elimu", "elimu/students", "elimu/classes", "elimu/lessons",
+      "elimu/students", "elimu/classes", "elimu/lessons",
       "elimu/assignments", "elimu/assessments", "elimu/exams",
       "elimu/attendance", "elimu/timetable", "elimu/cbc",
       "elimu/reports", "elimu/documents", "elimu/calendar",
     ],
     teacher: [
-      "elimu", "elimu/students", "elimu/classes", "elimu/lessons",
+      "elimu/students", "elimu/classes", "elimu/lessons",
       "elimu/assignments", "elimu/assessments", "elimu/attendance",
       "elimu/timetable", "elimu/cbc", "elimu/reports", "elimu/documents",
       "elimu/calendar",
     ],
   };
+
   const denied = {
     registrar: ["elimu/fees", "elimu/reports/fees", "elimu/inventory", "elimu/library", "elimu/staff", "elimu/settings", "elimu/sync", "elimu/automation", "elimu/website", "elimu/media", "elimu/portal-requests"],
     teacher: ["elimu/fees", "elimu/reports/fees", "elimu/inventory", "elimu/library", "elimu/staff", "elimu/settings", "elimu/sync", "elimu/automation", "elimu/website", "elimu/media", "elimu/portal-requests"],
@@ -297,8 +300,9 @@ function canAccessRoleRoute(role, path) {
     storekeeper: ["elimu/staff", "elimu/students", "elimu/classes", "elimu/lessons", "elimu/assignments", "elimu/assessments", "elimu/exams", "elimu/attendance", "elimu/timetable", "elimu/cbc", "elimu/fees", "elimu/reports", "elimu/calendar", "elimu/documents", "elimu/library", "elimu/sync", "elimu/automation", "elimu/settings", "elimu/website", "elimu/media", "elimu/portal-requests"],
     librarian: ["elimu/staff", "elimu/students", "elimu/classes", "elimu/lessons", "elimu/assignments", "elimu/assessments", "elimu/exams", "elimu/attendance", "elimu/timetable", "elimu/cbc", "elimu/fees", "elimu/reports", "elimu/calendar", "elimu/documents", "elimu/inventory", "elimu/sync", "elimu/automation", "elimu/settings", "elimu/website", "elimu/media", "elimu/portal-requests"],
   };
+
   if ((denied[role] || []).some((root) => normalized === root || normalized.startsWith(root + "/"))) return false;
-  return (allowed[role] || ["elimu"]).some((root) => normalized === root || normalized.startsWith(root + "/"));
+  return (allowed[role] || []).some((root) => normalized === root || normalized.startsWith(root + "/"));
 }
 
 function getDocumentId(document) {
