@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from "react";
 
 const ENV = import.meta.env || {};
 const PUBLISHER_ID = "ca-pub-5357444506450550";
-const AD_SLOT_ID = String(ENV.VITE_ADSENSE_COMMUNITY_SLOT_ID || "").trim();
-const AD_LAYOUT_KEY = String(ENV.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY || "").trim();
+const AD_SLOT_ID = String(ENV.VITE_ADSENSE_COMMUNITY_SLOT_ID || "8625467538").trim();
+const AD_LAYOUT_KEY = String(ENV.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY || "-6t+ed+2i-1n-4w").trim();
 
 /**
  * Manual Google AdSense In-feed ad.
