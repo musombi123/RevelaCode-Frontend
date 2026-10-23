@@ -1096,6 +1096,28 @@ export function useJumuiyaApi() {
       getCommunityHealth: () =>
         getData("/community/health"),
 
+      // ===================================================
+      // COMMUNITY — PUBLIC SHARE PAGES
+      // Anonymous read-only contracts for public posts,
+      // profiles and media. The backend returns only public
+      // published content and safe profile/media projections.
+      // ===================================================
+
+      getPublicCommunityFeed: ({ search = "", limit = 30 } = {}) =>
+        getData(withQuery("/community/public/feed", { q: search, limit })),
+
+      getPublicCommunityPost: (postId) =>
+        getData(`/community/public/posts/${encodeId(postId, "Post ID")}`),
+
+      getPublicCommunityProfile: (profileId, { limit = 20 } = {}) =>
+        getData(withQuery(
+          `/community/public/profiles/${encodeId(profileId, "Profile ID")}`,
+          { limit },
+        )),
+
+      getPublicCommunityMedia: (mediaId) =>
+        getData(`/community/public/media/${encodeId(mediaId, "Media ID")}`),
+
       getCommunityFeed: (
         {
           category = "",
