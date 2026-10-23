@@ -1114,7 +1114,7 @@ export default function CommunityDashboard({
         {/* Main mobile-first surface */}
         <main className="min-w-0">
           {workspacePage === "chats" ? (
-            <CommunityMattersWorkspace api={communityApi} />
+            <CommunityMattersWorkspace api={communityApi} currentUserId={user?.id || user?._id || user?.user_id || null} />
           ) : workspacePage === "groups" ? (
             <CommunityGroups onNavigate={navigate} />
           ) : workspacePage === "me" ? (
