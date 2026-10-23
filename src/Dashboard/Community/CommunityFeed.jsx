@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
+import CommunityAdCard from "@/Dashboard/Community/CommunityAdCard.jsx";
 
 // ============================================================
 // CONFIG
@@ -1349,7 +1350,7 @@ export default function CommunityFeed({
               </button>
             </div>
           ) : (
-            filteredPosts.map((post) => {
+            filteredPosts.map((post, postIndex) => {
               const postId =
                 getPostId(post);
 
@@ -1378,13 +1379,8 @@ export default function CommunityFeed({
                 getShareCount(post);
 
               return (
+                <React.Fragment key={postId || `${author}-${getTitle(post)}`}>
                 <article
-                  key={
-                    postId ||
-                    `${author}-${getTitle(
-                      post
-                    )}`
-                  }
                   className="
                     overflow-hidden
                     rounded-[24px]
@@ -1768,6 +1764,10 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 </article>
+                {(postIndex + 1) % 8 === 0 ? (
+                  <CommunityAdCard key={`community-feed-ad-${postIndex + 1}`} />
+                ) : null}
+                </React.Fragment>
               );
             })
           )}
