@@ -1,6 +1,7 @@
 // src/components/InputBar.jsx
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { analyzePixels } from "@/ai/v2-free/localIntelligence";
 import {
   ArrowUp,
   Mic,
@@ -83,6 +84,7 @@ export default function InputBar({
   onSend,
   onMic,
   onRegisterVision,
+  freeMode = false,
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
 }) {
@@ -245,23 +247,35 @@ export default function InputBar({
       throw new Error("Camera is still starting. Try again in a moment.");
     }
 
+    const canvas = document.createElement("canvas");
+    const scale = Math.min(1, 768 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("This browser could not prepare the camera frame.");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Free mode keeps camera frames on-device. Pixel measurements are explicitly
+    // labelled as measurements, never as object recognition or scene understanding.
+    if (freeMode) {
+      const result = analyzePixels(context.getImageData(0, 0, canvas.width, canvas.height));
+      return [
+        "RevelaAI Free — local camera analysis",
+        result.summary,
+        "This offline mode measures brightness, colour distribution and edge activity only. It does not identify objects, read text, recognize people or infer scene meaning.",
+        prompt ? "Your question: " + String(prompt).trim().slice(0, 500) : "",
+      ].filter(Boolean).join("\n\n");
+    }
+
     const token =
       localStorage.getItem("revelacode_access_token") ||
       localStorage.getItem("access_token") ||
       localStorage.getItem("token");
     if (!token) {
-      throw new Error("Sign in to RevelaCode to use model-based Live Vision.");
+      throw new Error("Sign in to RevelaCode to use model-based Live Vision, or enable Free mode for on-device pixel analysis.");
     }
 
-    const canvas = document.createElement("canvas");
-    const scale = Math.min(1, 768 / Math.max(video.videoWidth, video.videoHeight));
-    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
-    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("This browser could not prepare the camera frame.");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const image = canvas.toDataURL("image/jpeg", 0.72);
-
     const apiBase = (
       import.meta.env.VITE_REVELAAI_API_URL ||
       import.meta.env.VITE_REVELAAI_API_BASE ||
@@ -295,12 +309,12 @@ export default function InputBar({
       throw error;
     }
 
-    const reply = payload?.data?.reply || payload?.data?.response;
+    const reply = payload?.data?.reply || payload?.data?.response || payload?.data?.content;
     if (typeof reply !== "string" || !reply.trim()) {
       throw new Error("RevelaAI returned no usable description for this frame.");
     }
     return reply.trim();
-  }, []);
+  }, [freeMode]);
 
   const stopLiveVision = useCallback(() => {
     setLiveVisionActive(false);
@@ -321,7 +335,11 @@ export default function InputBar({
       setLiveVisionResult(reply);
       setLiveVisionUpdatedAt(new Date().toLocaleTimeString());
       stopCamera();
-      onSend?.(prompt, null, { visionResult: reply, visionProvider: "gemini", liveVision: false });
+      onSend?.(prompt, null, {
+        visionResult: reply,
+        visionProvider: freeMode ? "local-pixel-math" : "gemini",
+        liveVision: false,
+      });
     } catch (error) {
       if (error?.name !== "AbortError") {
         setCameraError(error?.message || "Could not analyze this camera frame.");
@@ -381,7 +399,7 @@ export default function InputBar({
         visionRequestRef.current = null;
       }
     };
-  }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame]);
+  }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame, freeMode]);
 
   /* =======================================================
      VOICE
@@ -411,7 +429,17 @@ export default function InputBar({
         .join("");
       setText(transcript);
     };
-    recognition.onerror = () => setListening(false);
+    recognition.onerror = (event) => {
+      setListening(false);
+      const code = String(event?.error || "unknown");
+      setCameraError(
+        code === "not-allowed" || code === "service-not-allowed"
+          ? "Microphone permission was denied. Allow it in browser settings and try again."
+          : code === "no-speech"
+            ? "No speech was detected. Try speaking a little closer to the microphone."
+            : "Voice dictation failed (" + code + "). You can still type or use the Voice action."
+      );
+    };
     recognition.onend = () => {
       setListening(false);
       textareaRef.current?.focus();
