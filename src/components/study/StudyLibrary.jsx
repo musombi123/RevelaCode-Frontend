@@ -23,9 +23,12 @@ import {
 } from "@/components/ui/Card";
 
 import {
+  FAITH_LIBRARY_CACHE_SCOPE,
   getCachedLibrary,
+  normalizeFaithStudyMaterials,
   saveCachedLibrary,
 } from "./studyMaterialCache.js";
+import StudyReferenceTools from "./StudyReferenceTools.jsx";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -33,8 +36,9 @@ const API = (
   import.meta.env.VITE_BACKEND_URL ||
   "https://revelacode-backend.onrender.com"
 ).replace(/\/+$/, "");
-// Versioned cache prevents an old mixed-hub/demo library from resurfacing.
-const CACHE_SCOPE = `${API}/faith-library-v2`;
+// Shared versioned scope lets startup preloading, library cards, and the reader
+// open the same saved materials instead of maintaining separate caches.
+const CACHE_SCOPE = FAITH_LIBRARY_CACHE_SCOPE;
 
 /* =========================================================
    NORMALIZE MATERIAL ID
@@ -98,6 +102,9 @@ const TOPIC_FILTERS = [
 export default function StudyLibrary({
   onOpen,
   initialTopicFilter = "all",
+  onOpenReference,
+  onOpenAtlas,
+  onOpenWordRoots,
 }) {
   const [materials, setMaterials] =
     useState([]);
@@ -138,7 +145,7 @@ export default function StudyLibrary({
 
       // Normal navigation is cache-first: no repeated download when a saved
       // library exists. The user can explicitly refresh to check the backend.
-      if (!force && savedCopy && Array.isArray(savedCopy.materials) && savedCopy.materials.length > 0) {
+      if (!force && savedCopy && Array.isArray(savedCopy.materials)) {
         setMaterials(savedCopy.materials);
         setCacheStatus("saved");
         setLastUpdated(savedCopy.savedAt || "");
@@ -194,15 +201,7 @@ export default function StudyLibrary({
           ? data
           : [];
 
-        const normalized = rawMaterials
-          .map((material) => {
-            const id = material?.id ?? material?._id ?? material?.material_id ?? material?.materialId ?? null;
-            return { ...material, id: id == null ? null : String(id) };
-          })
-          // Faith's public catalogue shows only content explicitly published by
-          // an administrator or the versioned editorial catalogue. This keeps
-          // legacy demo/test uploads out of the learner-facing experience.
-          .filter((material) => material.id && (material.published === true || (material.published !== false && Boolean(material?.metadata?.catalog_slug))));
+        const normalized = normalizeFaithStudyMaterials(rawMaterials);
 
         setMaterials(normalized);
         const savedAt = await saveCachedLibrary(CACHE_SCOPE, normalized);
@@ -248,34 +247,19 @@ export default function StudyLibrary({
       return materials;
     }
 
-    return materials.filter(
-      (material) => {
-        if (topicFilter !== "all" && String(material.subcategory || "").toLowerCase() !== topicFilter) return false;
-
-        const title =
-          String(
-            material.title || ""
-          ).toLowerCase();
-
-        const description =
-          String(
-            material.description ||
-              material.content ||
-              ""
-          ).toLowerCase();
-
-        const category =
-          String(
-            material.category || ""
-          ).toLowerCase();
-
-        return (
-          title.includes(query) ||
-          description.includes(query) ||
-          category.includes(query)
-        );
+    return materials.filter((material) => {
+      if (topicFilter !== "all" && String(material.subcategory || material?.metadata?.subcategory || "").toLowerCase() !== topicFilter) {
+        return false;
       }
-    );
+      if (!query) return true;
+
+      const title = String(material.title || "").toLowerCase();
+      const description = String(material.description || material.summary || material.content || "").toLowerCase();
+      const category = String(material.category || material.subcategory || "").toLowerCase();
+      const subject = String(material.subject || material?.metadata?.subject || "").toLowerCase();
+
+      return title.includes(query) || description.includes(query) || category.includes(query) || subject.includes(query);
+    });
   }, [materials, search, topicFilter]);
 
   /* =======================================================
@@ -416,6 +400,12 @@ export default function StudyLibrary({
           </div>
         </div>
       )}
+
+      <StudyReferenceTools
+        onOpenReference={onOpenReference}
+        onOpenAtlas={onOpenAtlas}
+        onOpenWordRoots={onOpenWordRoots}
+      />
 
       {/* TOPIC FILTERS */}
       <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter Faith studies">

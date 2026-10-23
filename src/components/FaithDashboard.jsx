@@ -1,6 +1,6 @@
 // src/components/FaithDashboard.jsx
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   ArrowLeft,
@@ -29,6 +29,7 @@ import FaithAtlas from "./faith/FaithAtlas.jsx";
 import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
 import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
+import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -81,6 +82,8 @@ export default function FaithDashboard({
   const [studyTopic, setStudyTopic] = useState("all");
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [studyReturnSection, setStudyReturnSection] = useState("study");
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [sourceReturnSection, setSourceReturnSection] = useState("study");
 
   /* =======================================================
      LOCAL ACTIVITY
@@ -237,6 +240,49 @@ export default function FaithDashboard({
     onNavigate(key);
   };
 
+  const openBibleReference = (reference) => {
+    const value = String(reference || "").trim();
+    if (!value) return;
+    try {
+      window.localStorage.setItem("revelacode_pending_bible_reference", value);
+    } catch {
+      // Cross-component navigation still works when storage is restricted.
+    }
+    navigateTo("bible");
+  };
+
+  const handleStudyLinkCapture = (event) => {
+    const anchor = event.target?.closest?.("a[href]");
+    if (!anchor) return;
+    let destination;
+    try {
+      destination = new URL(anchor.href, window.location.href);
+    } catch {
+      return;
+    }
+    if (!["http:", "https:"].includes(destination.protocol) || destination.origin === window.location.origin) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setSourceReturnSection(faithSection === "source-viewer" ? sourceReturnSection : faithSection);
+    setSelectedSource({
+      url: destination.href,
+      title: anchor.textContent?.trim() || destination.hostname,
+    });
+    setFaithSection("source-viewer");
+  };
+
+  useEffect(() => {
+    const openSavedSource = (event) => {
+      const entry = event?.detail;
+      if (!entry || !/^https?:\/\//i.test(String(entry.url || ""))) return;
+      setSourceReturnSection(faithSection === "source-viewer" ? sourceReturnSection : faithSection);
+      setSelectedSource({ url: String(entry.url), title: String(entry.title || entry.url) });
+      setFaithSection("source-viewer");
+    };
+    window.addEventListener("revelacode:open-study-source", openSavedSource);
+    return () => window.removeEventListener("revelacode:open-study-source", openSavedSource);
+  }, [faithSection, sourceReturnSection]);
+
   /* =======================================================
      INTERNAL STUDY NAVIGATION
   ======================================================= */
@@ -343,7 +389,7 @@ export default function FaithDashboard({
         dark:bg-gray-900
       "
     >
-      <div
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
         className="
           flex
           flex-col
@@ -580,9 +626,22 @@ export default function FaithDashboard({
      INTERNAL STUDY VIEWS
   ======================================================= */
 
+  if (faithSection === "source-viewer") {
+    return (
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
+        {renderStudyHeader(
+          selectedSource?.title || "Study Reference",
+          "Read the selected research source inside RevelaCode where the publisher permits it, and return directly to your lesson.",
+          () => { setSelectedSource(null); setFaithSection(sourceReturnSection || "study"); }
+        )}
+        <StudyResourceViewer source={selectedSource} />
+      </div>
+    );
+  }
+
   if (faithSection === "study") {
     return (
-      <div
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
         className="
           mx-auto
           w-full
@@ -596,14 +655,14 @@ export default function FaithDashboard({
           closeStudyView
         )}
 
-        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} />
+        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} />
       </div>
     );
   }
 
   if (faithSection === "bookmarks") {
     return (
-      <div
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
         className="
           mx-auto
           w-full
@@ -627,7 +686,7 @@ export default function FaithDashboard({
 
   if (faithSection === "recommendations") {
     return (
-      <div
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
         className="
           mx-auto
           w-full
@@ -651,19 +710,19 @@ export default function FaithDashboard({
 
   if (faithSection === "atlas") {
     return (
-      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
         {renderStudyHeader(
           "Faith Atlas",
           "Explore connected passages and investigate the difference between textual observations and theological interpretations.",
           closeStudyView
         )}
-        <FaithAtlas userId={userId} />
+        <FaithAtlas userId={userId} onOpenReference={openBibleReference} />
       </div>
     );
   }
   if (faithSection === "premium") {
     return (
-      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
         {renderStudyHeader(
           "Faith Academy",
           "Structured courses, source-grounded study assistance, private learning records, church study groups, and trial or subscription access.",
@@ -680,7 +739,7 @@ export default function FaithDashboard({
   }
   if (faithSection === "quarterly") {
     return (
-      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
         {renderStudyHeader(
           "SDA Quarterly",
           "Sabbath School lessons in the Faith hub. Choose a quarter, read imported daily lessons, or open the official quarterly source.",
@@ -693,7 +752,7 @@ export default function FaithDashboard({
 
   if (faithSection === "word-roots") {
     return (
-      <div className="mx-auto w-full max-w-[1500px] space-y-4">
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
         {renderStudyHeader(
           "Ancient Word Roots",
           "Explore Hebrew, Aramaic, Koine Greek, and Qur'anic Arabic in context—with respectful, source-aware theological perspectives.",
@@ -709,7 +768,7 @@ export default function FaithDashboard({
 
   if (faithSection === "reader") {
     return (
-      <div
+      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
         className="
           mx-auto
           w-full
@@ -727,6 +786,7 @@ export default function FaithDashboard({
 
         {selectedMaterial ? (
           <StudyReader
+            onOpenReference={openBibleReference}
             initialMaterial={selectedMaterial}
             materialId={
               selectedMaterial?.id ||

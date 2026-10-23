@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/Card";
 
 import AIStudyPanel from "./AIStudyPanel";
-import { getCachedMaterial, saveCachedMaterial } from "./studyMaterialCache.js";
+import { FAITH_LIBRARY_CACHE_SCOPE, getCachedMaterial, saveCachedMaterial } from "./studyMaterialCache.js";
 
 /* =========================================================
    API
@@ -40,7 +40,7 @@ const API = (
   import.meta.env.VITE_BACKEND_URL ||
   "https://revelacode-backend.onrender.com"
 ).replace(/\/+$/, "");
-const CACHE_SCOPE = API;
+const CACHE_SCOPE = FAITH_LIBRARY_CACHE_SCOPE;
 
 /* =========================================================
    MATERIAL ID
@@ -824,6 +824,29 @@ function renderStudyContent(content) {
   );
 }
 
+
+const SCRIPTURE_BOOKS = "(?:Song of Solomon|Song of Songs|1\\s*Samuel|2\\s*Samuel|1\\s*Kings|2\\s*Kings|1\\s*Chronicles|2\\s*Chronicles|1\\s*Corinthians|2\\s*Corinthians|1\\s*Thessalonians|2\\s*Thessalonians|1\\s*Timothy|2\\s*Timothy|1\\s*Peter|2\\s*Peter|1\\s*John|2\\s*John|3\\s*John|Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|Galatians|Ephesians|Philippians|Colossians|Titus|Philemon|Hebrews|James|Jude|Revelation)";
+
+function extractScriptureReferences(content) {
+  const raw = normalizeContent(content);
+  if (!raw) return [];
+  const expression = new RegExp("\\b" + SCRIPTURE_BOOKS + "\\s+\\d+(?::\\s*\\d+(?:\\s*[–—-]\\s*\\d+)?)?", "gi");
+  const seen = new Set();
+  const output = [];
+  for (const match of raw.matchAll(expression)) {
+    let reference = match[0].replace(/\s*:\s*/g, ":").replace(/[–—]/g, "-").replace(/\s*-\s*/g, "-").trim();
+    // Whole-chapter references are useful study destinations too; the Bible
+    // reader requires a verse, so open the first verse of that chapter.
+    if (!reference.includes(":")) reference += ":1";
+    const key = reference.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(reference);
+    if (output.length >= 24) break;
+  }
+  return output;
+}
+
 /* =========================================================
    COMPONENT
 ========================================================= */
@@ -833,6 +856,7 @@ export default function StudyReader({
   userId = "guest",
   initialMaterial = null,
   onBack,
+  onOpenReference,
 }) {
   const [
     material,
@@ -879,6 +903,11 @@ export default function StudyReader({
         getReadingTime(content),
     };
   }, [material?.content]);
+
+  const scriptureReferences = useMemo(
+    () => extractScriptureReferences(material?.content || ""),
+    [material?.content],
+  );
 
   const materialIdString =
     resolveMaterialId(material);
@@ -1603,6 +1632,25 @@ export default function StudyReader({
 
                   {renderStudyContent(
                     material.content
+                  )}
+
+                  {onOpenReference && scriptureReferences.length > 0 && (
+                    <section className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white"><BookOpenText size={17} /></div>
+                        <div className="min-w-0">
+                          <h2 className="text-sm font-black text-slate-900 dark:text-white">Scripture references in this lesson</h2>
+                          <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">Open a cited passage directly in the RevelaCode Bible reader. Chapter-only citations open at verse 1.</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {scriptureReferences.map((reference) => (
+                          <button key={reference} type="button" onClick={() => onOpenReference(reference)} className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900/60 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/50">
+                            {reference} <span aria-hidden="true">→</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
                   )}
 
                   {(material.tradition || material.metadata?.tradition) && (

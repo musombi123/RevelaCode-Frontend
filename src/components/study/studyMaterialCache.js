@@ -4,6 +4,18 @@
 const DB_NAME = "revelacode-faith-study-cache";
 const STORE_NAME = "records";
 const DB_VERSION = 1;
+
+const STUDY_API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_REVELACODE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://revelacode-backend.onrender.com"
+).replace(/\/+$/, "");
+
+export const FAITH_LIBRARY_CACHE_SCOPE = STUDY_API_BASE + "/faith-library-v3";
+
+const FAITH_TOPIC_PATTERN = /\b(faith|scripture|bible|biblical|christian|theolog(?:y|ical|ian)?|religious? studies|devotional|prophecy|adventist|sda|catholic|interfaith|jewish|judaism|islam|qur['’]?an|muslim|spiritual|church|worship|sanctuary|gospel|prayer|comparative|daily[\s-]+life|faith[\s-]+academy)\b/i;
+const NON_FAITH_TOPIC_PATTERN = /\b(cpa|accounting|entrepreneurship|software development|technology(?:\s*&\s*innovation)?|business|inventory|finance|stock management|computer science|programming|agriculture|farming|chemistry|physics|biology|mathematics|economics)\b/i;
 const FALLBACK_PREFIX = "revelacode_faith_study_cache_v1::";
 let databasePromise = null;
 
@@ -129,6 +141,231 @@ async function writeRecord(key, value) {
   } catch {
     return null;
   }
+}
+
+
+/* =========================================================
+   FAITH CATALOGUE NORMALIZATION
+========================================================= */
+
+function plainText(value) {
+  if (Array.isArray(value)) return value.map(plainText).filter(Boolean).join(" ");
+  if (value == null || typeof value === "object") return "";
+  return String(value).replace(/\s+/g, " ").trim();
+}
+
+export function normalizeFaithStudyMaterials(rawMaterials) {
+  const rows = Array.isArray(rawMaterials) ? rawMaterials : [];
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
+  const output = [];
+
+  for (const raw of rows) {
+    if (!raw || typeof raw !== "object") continue;
+    const id = getMaterialId(raw);
+    if (!id || seenIds.has(id) || raw.published === false) continue;
+
+    const metadata = raw.metadata && typeof raw.metadata === "object" ? raw.metadata : {};
+    const taxonomicFields = [
+      raw.category, raw.subcategory, raw.subject, raw.topic, raw.hub,
+      raw.discipline, raw.tags, metadata.category, metadata.subcategory,
+      metadata.subject, metadata.topic, metadata.hub, metadata.discipline,
+      metadata.tags,
+    ].map(plainText).filter(Boolean);
+
+    if (taxonomicFields.some((field) => NON_FAITH_TOPIC_PATTERN.test(field))) continue;
+
+    const hasFaithClassification = taxonomicFields.some((field) => FAITH_TOPIC_PATTERN.test(field));
+    const hasCuratedEditorialSlug = Boolean(plainText(metadata.catalog_slug));
+    const isPublishedCatalogue = raw.published === true || (raw.published !== false && hasCuratedEditorialSlug);
+    const titleAndDescription = [
+      raw.title, raw.description, raw.summary,
+      metadata.editorial_summary, metadata.tradition,
+    ].map(plainText).join(" ");
+    if (NON_FAITH_TOPIC_PATTERN.test(titleAndDescription)) continue;
+    if (!isPublishedCatalogue) continue;
+    if (!hasFaithClassification && !hasCuratedEditorialSlug) continue;
+
+    const title = plainText(raw.title).toLowerCase();
+    const description = plainText(raw.description || raw.summary || metadata.editorial_summary).toLowerCase();
+    const content = plainText(raw.content).slice(0, 1400).toLowerCase();
+    const taxonomy = taxonomicFields.join("|").toLowerCase();
+    const fingerprint = [title, taxonomy, description, content].join("::");
+    if (seenFingerprints.has(fingerprint)) continue;
+
+    seenIds.add(id);
+    seenFingerprints.add(fingerprint);
+    output.push({ ...raw, id: String(id) });
+  }
+
+  return output;
+}
+
+/**
+ * Refresh the Faith library in the background after the platform opens.
+ * The application remains usable while cached material is being warmed.
+ */
+export async function warmFaithStudyCache() {
+  let previous = null;
+  try {
+    previous = await getCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE);
+    if (previous && Array.isArray(previous.materials)) {
+      const sanitized = normalizeFaithStudyMaterials(previous.materials);
+      if (JSON.stringify(sanitized) !== JSON.stringify(previous.materials)) {
+        await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, sanitized);
+      }
+      previous = { ...previous, materials: sanitized };
+    }
+  } catch {
+    previous = null;
+  }
+
+  if (typeof fetch !== "function" || !STUDY_API_BASE) {
+    return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+  }
+
+  try {
+    const response = await fetch(
+      STUDY_API_BASE + "/api/study/materials?category=faith&limit=100",
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) {
+      return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+    }
+
+    const payload = await response.json().catch(() => ({}));
+    const raw = Array.isArray(payload?.materials)
+      ? payload.materials
+      : Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+      ? payload
+      : [];
+
+    let normalized = normalizeFaithStudyMaterials(raw);
+
+    // The catalogue endpoint may contain only lesson summaries. Download the
+    // actual published lesson bodies from the existing material endpoint, in
+    // small batches, so they are ready for the shared offline reader cache.
+    // This is non-blocking for app startup and never creates synthetic lessons.
+    const needsBody = normalized.filter((material) =>
+      material.id && !(typeof material.content === "string" && material.content.trim())
+    ).slice(0, 60);
+    const detailById = new Map();
+
+    for (let offset = 0; offset < needsBody.length; offset += 4) {
+      const batch = needsBody.slice(offset, offset + 4);
+      const results = await Promise.all(batch.map(async (material) => {
+        try {
+          const detailResponse = await fetch(
+            STUDY_API_BASE + "/api/study/material/" + encodeURIComponent(material.id),
+            {
+              method: "GET",
+              headers: { Accept: "application/json" },
+              credentials: "include",
+              cache: "no-store",
+            },
+          );
+          if (!detailResponse.ok) return null;
+          const detailPayload = await detailResponse.json().catch(() => ({}));
+          const body = detailPayload?.material;
+          if (!body || typeof body.content !== "string" || !body.content.trim()) return null;
+          return {
+            ...material,
+            ...body,
+            id: material.id,
+            category: body.category || material.category,
+            subcategory: body.subcategory || material.subcategory,
+            metadata: {
+              ...(material.metadata && typeof material.metadata === "object" ? material.metadata : {}),
+              ...(body.metadata && typeof body.metadata === "object" ? body.metadata : {}),
+            },
+          };
+        } catch {
+          return null;
+        }
+      }));
+      results.filter(Boolean).forEach((material) => detailById.set(material.id, material));
+    }
+
+    normalized = normalized.map((material) => detailById.get(material.id) || material);
+    normalized = normalizeFaithStudyMaterials(normalized);
+    await saveCachedLibrary(FAITH_LIBRARY_CACHE_SCOPE, normalized);
+    return {
+      source: "network",
+      count: normalized.length,
+      fullTextCached: normalized.filter((material) => typeof material.content === "string" && material.content.trim()).length,
+    };
+  } catch {
+    return { source: previous ? "cache" : "unavailable", count: previous?.materials?.length || 0 };
+  }
+}
+
+
+const CROSS_REFERENCE_DATASET_URL = "https://raw.githubusercontent.com/midvash/bible-cross-references/main/cross-references.json";
+const CROSS_REFERENCE_DATASET_KEY = "cross-reference-dataset::midvash-v1";
+let crossReferenceWarmPromise = null;
+
+export async function getCachedCrossReferenceDataset() {
+  try {
+    const record = await readRecord(CROSS_REFERENCE_DATASET_KEY);
+    const data = record?.value;
+    return data && Array.isArray(data.references) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Downloads the openly licensed Midvash verse cross-reference dataset once,
+ * stores it in the existing IndexedDB record store, and falls back offline.
+ * Dataset attribution is displayed in the Study Reference Desk.
+ */
+export function warmCrossReferenceDataset() {
+  if (crossReferenceWarmPromise) return crossReferenceWarmPromise;
+
+  crossReferenceWarmPromise = (async () => {
+    const saved = await getCachedCrossReferenceDataset();
+    try {
+      const response = await fetch(CROSS_REFERENCE_DATASET_URL, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "force-cache",
+      });
+      if (!response.ok) {
+        return { source: saved ? "cache" : "unavailable", dataset: saved, count: saved?.references?.length || 0 };
+      }
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.references) || !payload.indexed || typeof payload.indexed !== "object") {
+        throw new Error("Cross-reference dataset schema was not recognized.");
+      }
+      await writeRecord(CROSS_REFERENCE_DATASET_KEY, payload);
+      return { source: "network", dataset: payload, count: payload.references.length };
+    } catch {
+      return { source: saved ? "cache" : "unavailable", dataset: saved, count: saved?.references?.length || 0 };
+    }
+  })().finally(() => {
+    crossReferenceWarmPromise = null;
+  });
+
+  return crossReferenceWarmPromise;
+}
+
+export async function getCachedBibleBook(bookKey) {
+  if (!bookKey) return null;
+  const record = await readRecord("bible::web::" + String(bookKey).trim());
+  return record?.value && typeof record.value === "object" ? record.value : null;
+}
+
+export async function saveCachedBibleBook(bookKey, book) {
+  if (!bookKey || !book || typeof book !== "object") return false;
+  const record = await writeRecord("bible::web::" + String(bookKey).trim(), book);
+  return Boolean(record);
 }
 
 export async function getCachedLibrary(scope) {

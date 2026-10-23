@@ -8,7 +8,8 @@ import React, {
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import { getCachedBibleBook, saveCachedBibleBook } from "./study/studyMaterialCache.js";
+import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import {
   useLocation,
   useNavigate,
@@ -219,6 +220,7 @@ export default function BibleDashboard({
 
   const [bibleData, setBibleData] = useState({});
   const [webData, setWebData] = useState({});
+  const [sourceView, setSourceView] = useState(null);
   const [bibleVersion, setBibleVersion] = useState(() => {
     if (typeof window === "undefined") return "kjv";
     try {
@@ -258,6 +260,11 @@ export default function BibleDashboard({
       throw new Error(`World English Bible data is not mapped for ${bookName}.`);
     }
 
+    // IndexedDB persists full books across platform launches and supports
+    // offline rereading; the browser HTTP cache is only an additional layer.
+    const savedBook = await getCachedBibleBook(bookKey).catch(() => null);
+    if (savedBook?.chapters?.length) return savedBook;
+
     const response = await fetch(
       `https://raw.githubusercontent.com/midvash/bible-data/main/versions/en/web/books/${osisId}.json`,
       { cache: "force-cache" }
@@ -271,6 +278,7 @@ export default function BibleDashboard({
     if (!normalized.chapters.length) {
       throw new Error("World English Bible response contained no chapters.");
     }
+    await saveCachedBibleBook(bookKey, normalized).catch(() => false);
     return normalized;
   };
 
@@ -512,6 +520,8 @@ export default function BibleDashboard({
       deut: "deuteronomy",
       ps: "psalms",
       psa: "psalms",
+      psalm: "psalms",
+      "song of songs": "song of solomon",
       prov: "proverbs",
       matt: "matthew",
       mk: "mark",
@@ -546,6 +556,7 @@ export default function BibleDashboard({
       .replace(/\bverses?\b/gi, ":")
       .replace(/\bvs\.?\b/gi, ":")
       .replace(/\s*:\s*/g, ":")
+      .replace(/[–—]/g, "-")
       .replace(/\s*-\s*/g, "-");
 
     let match = cleanedReference.match(
@@ -653,14 +664,24 @@ export default function BibleDashboard({
     if (!bookKeys.length || !Object.keys(bibleData).length) return;
 
     const params = new URLSearchParams(location.search);
-    const verse = params.get("verse");
+    const urlVerse = params.get("verse");
+    let pendingVerse = "";
+    try {
+      pendingVerse = window.localStorage.getItem("revelacode_pending_bible_reference") || "";
+    } catch {
+      pendingVerse = "";
+    }
+    const verse = urlVerse || pendingVerse;
     if (!verse) return;
 
     let cancelled = false;
     const openFromUrl = async () => {
       const success = await openVerseReference(verse);
+      if (success && !urlVerse) {
+        try { window.localStorage.removeItem("revelacode_pending_bible_reference"); } catch {}
+      }
       if (!cancelled && !success && bibleVersion === "kjv") {
-        setSearchError("❌ Reference not found. Try John 3:16, John 1:1-3, or John 3:5.");
+        setSearchError("Reference not found. Try a reference such as John 3:16 or Daniel 7:1-8.");
       }
     };
     openFromUrl();
@@ -828,9 +849,34 @@ export default function BibleDashboard({
           )
       );
 
+  useEffect(() => {
+    const handleSavedSource = (event) => {
+      const entry = event?.detail;
+      if (!entry || !/^https?:\/\//i.test(String(entry.url || ""))) return;
+      setSourceView({ url: String(entry.url), title: String(entry.title || entry.url) });
+    };
+    window.addEventListener("revelacode:open-study-source", handleSavedSource);
+    return () => window.removeEventListener("revelacode:open-study-source", handleSavedSource);
+  }, []);
+
   /* =======================================================
      RENDER
   ======================================================= */
+
+  if (sourceView) {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4 p-3 sm:p-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+          <BackButton label="Back to Bible" onClick={() => setSourceView(null)} />
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-black text-gray-900 dark:text-white">Study reference</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Reference opened inside RevelaCode</p>
+          </div>
+        </div>
+        <StudyResourceViewer source={sourceView} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -944,9 +990,6 @@ export default function BibleDashboard({
         </div>
       </div>
 
-      {/* Faith & Scripture uses the same central per-hub trial and checkout flow. */}
-      <HubRevenueOffers hub="faith" compact />
-
       {/* =====================================================
           SEARCH BAR
       ===================================================== */}
@@ -1042,7 +1085,7 @@ export default function BibleDashboard({
       {bibleVersion === "web" && (
         <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
           World English Bible · loads one book at a time and uses browser caching. The KJV remains available offline.
-          {" "}<a href="https://ebible.org/web/" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 underline dark:text-blue-400">About the WEB text</a>
+          {" "}<button type="button" onClick={() => setSourceView({ url: "https://ebible.org/web/", title: "About the World English Bible" })} className="font-semibold text-blue-600 underline dark:text-blue-400">About the WEB text</button>
         </p>
       )}
       {loadingVersionBook && (
