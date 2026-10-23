@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
@@ -472,6 +473,10 @@ export default function CommunityDashboard({
   onNavigate,
 }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  // The Community experience defaults to its navy system skin; an explicit
+  // platform Light selection remains authoritative.
+  const communityDark = theme !== "light";
 
   const communityApi = useJumuiyaApi();
   const {
@@ -1069,7 +1074,7 @@ export default function CommunityDashboard({
   // ==========================================================
 
   return (
-    <div className="min-h-[70vh] w-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className={"min-h-[70vh] w-full " + (communityDark ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900")}>
       <div className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-3 px-3 pb-28 pt-3 sm:px-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[184px_minmax(0,1fr)_272px]">
         {/* Desktop left rail */}
         <aside className="hidden min-w-0 lg:block">
@@ -1204,7 +1209,7 @@ export default function CommunityDashboard({
                 {loading ? (
                   <LoadingState />
                 ) : aroundYouItems.length ? (
-                  <div className="columns-1 gap-3 sm:columns-2">
+                  <div className="columns-2 gap-2.5 sm:gap-3">
                     {aroundYouItems.map((post, index) => {
                       const id = getPostId(post) || (getPostType(post) + "-" + index);
                       const hub = getPostHub(post);
