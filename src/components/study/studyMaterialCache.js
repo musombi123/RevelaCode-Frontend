@@ -177,11 +177,13 @@ export function normalizeFaithStudyMaterials(rawMaterials) {
 
     const hasFaithClassification = taxonomicFields.some((field) => FAITH_TOPIC_PATTERN.test(field));
     const hasCuratedEditorialSlug = Boolean(plainText(metadata.catalog_slug));
+    const isPublishedCatalogue = raw.published === true || (raw.published !== false && hasCuratedEditorialSlug);
     const titleAndDescription = [
       raw.title, raw.description, raw.summary,
       metadata.editorial_summary, metadata.tradition,
     ].map(plainText).join(" ");
     if (NON_FAITH_TOPIC_PATTERN.test(titleAndDescription)) continue;
+    if (!isPublishedCatalogue) continue;
     if (!hasFaithClassification && !hasCuratedEditorialSlug) continue;
 
     const title = plainText(raw.title).toLowerCase();
