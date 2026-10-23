@@ -88,6 +88,7 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [findingStudent, setFindingStudent] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -175,6 +176,7 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
     setFindingStudent(true);
     setError("");
     setNotice("");
+    setManualWhatsAppUrl("");
     setSelectedStudent(null);
     try {
       if (typeof api.getFinanceFeeStatus !== "function") throw new Error("The finance fee-status endpoint is not available. Update the frontend deployment.");
@@ -195,6 +197,7 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
     setSelectedStudent(student);
     setError("");
     setNotice("");
+    setManualWhatsAppUrl("");
   };
 
   const sendReminder = async () => {
@@ -226,17 +229,27 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
     setSendingReminder(true);
     setError("");
     setNotice("");
+    setManualWhatsAppUrl("");
     try {
       if (typeof api.sendSchoolFeeReminder !== "function") throw new Error("The parent-reminder endpoint is not available. Update the frontend deployment.");
       const payload = unwrap(await api.sendSchoolFeeReminder({ student_id: selectedStudent.student_id })) || {};
       const channels = Array.isArray(payload.channels_sent) ? payload.channels_sent : [];
       const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
+      const manualUrl = typeof payload.manual_whatsapp_url === "string" ? payload.manual_whatsapp_url : "";
+      setManualWhatsAppUrl(manualUrl);
       await load();
-      setNotice(
-        "Fee reminder sent to the recorded parent/guardian contact by "
-        + (channels.length ? channels.map((channel) => channel.toUpperCase()).join(" and ") : "the configured channel")
-        + ". " + warnings.join(" ")
-      );
+      if (channels.length) {
+        setNotice(
+          "Fee reminder sent to the recorded parent/guardian contact by "
+          + channels.map((channel) => channel.toUpperCase()).join(" and ")
+          + (manualUrl ? ". WhatsApp has not been sent automatically; use the manual WhatsApp link below if you also want to send it there." : ".")
+          + (warnings.length ? " " + warnings.join(" ") : "")
+        );
+      } else if (manualUrl) {
+        setNotice("The fee reminder is prepared, but WhatsApp has not been sent yet. Open WhatsApp below and press Send to deliver it to the recorded parent/guardian.");
+      } else {
+        setNotice("The reminder request completed, but no delivery channel confirmed sending. Please review the setup warnings.");
+      }
     } catch (sendError) {
       setError(errorText(sendError));
     } finally {
@@ -387,7 +400,7 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
         <form onSubmit={(event) => void findStudent(event)} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Student ID / admission number <span className="text-rose-600">*</span></span>
-            <input required value={studentIdentifier} onChange={(event) => { setStudentIdentifier(event.target.value); setSelectedStudent(null); setNotice(""); }} placeholder="Enter the exact school Student ID" autoComplete="off" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900" />
+            <input required value={studentIdentifier} onChange={(event) => { setStudentIdentifier(event.target.value); setSelectedStudent(null); setNotice(""); setManualWhatsAppUrl(""); }} placeholder="Enter the exact school Student ID" autoComplete="off" className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900" />
           </label>
           <button type="submit" disabled={findingStudent || !studentIdentifier.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
             {findingStudent ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}Find fee statement
@@ -439,6 +452,11 @@ export default function ElimuBursarDashboard({ school, onRefresh, refreshing = f
               <button type="button" onClick={() => void sendReminder()} disabled={sendingReminder || findingStudent || Number(selectedStudent.balance || 0) <= 0 || Number(selectedStudent.fee_records || 0) <= 0 || selectedStudent.parent_contact_available === false} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
                 {sendingReminder ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}{sendingReminder ? "Sending reminder…" : "Send reminder to parent"}
               </button>
+              {manualWhatsAppUrl && (
+                <a href={manualWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/30">
+                  <MessageSquare size={16} />Open WhatsApp and press Send
+                </a>
+              )}
             </div>
           </div>
         )}
