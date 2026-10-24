@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   HERO_ROTATE_MS,
+  contrastColor,
   isDirectVideo,
   safeHttpsMedia,
   usePrefersReducedMotion,
@@ -235,7 +236,7 @@ export default function Hero({
               </a>
             ) : null}
             {safeWhatsApp ? (
-              <a href={safeWhatsApp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transform-none" style={{ backgroundColor: accent }}>
+              <a href={safeWhatsApp} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transform-none" style={{ backgroundColor: accent, color: theme?.accentInk || contrastColor(accent) }}>
                 <MessageCircle size={17} /> WhatsApp
               </a>
             ) : null}
