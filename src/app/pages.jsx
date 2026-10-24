@@ -21,13 +21,15 @@ export default function PagesLoader({ initialAdminTab = "overview" }) {
     );
   }
 
-  // ADMIN FLOW
-  if (user.role === "admin") {
+  // Platform owner/administrator roles use the full RevelaCode console.
+  const role = String(user.role || "").trim().toLowerCase();
+  if (["admin", "platform_admin", "super_admin", "revelacode_admin"].includes(role)) {
     return <AdminDashboard initialTab={initialAdminTab} />;
   }
 
-  // SUPPORT FLOW (ONLY IF ADMIN APPROVED)
-  if (user.role === "support") {
+  // Support roles are limited to the ticket workspace and any specifically
+  // delegated Support Administrator sections.
+  if (["support", "support_admin"].includes(role)) {
     return <SupportDashboard />;
   }
 

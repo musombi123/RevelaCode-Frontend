@@ -21,6 +21,7 @@ import {
   Building2,
 } from "lucide-react";
 
+
 // =========================================================
 // ADMIN NAVIGATION
 // =========================================================
@@ -106,6 +107,12 @@ const tabs = [
     label: "Scriptures",
     description: "Scripture datasets",
     icon: BookMarked,
+  },
+  {
+    key: "operations",
+    label: "Operations Handbook",
+    description: "System orientation, incidents and operational duties",
+    icon: BookOpen,
   },
   {
     key: "settings",

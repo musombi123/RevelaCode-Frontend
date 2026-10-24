@@ -29,6 +29,7 @@ import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 import AdminBiasharaVerification from "./AdminBiasharaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
+import AdminOperationsHandbook from "./AdminOperationsHandbook.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
 import UsectZeroConsole from "@/pages/UsectZeroConsole.jsx";
@@ -135,6 +136,13 @@ const adminPages = {
       "Manage scripture resources and datasets.",
     icon: BookMarked,
     component: AdminScriptureManagement,
+  },
+
+  operations: {
+    title: "Operations Handbook",
+    description: "Learn the whole ecosystem, role boundaries, incident procedures and safe operating controls.",
+    icon: BookOpen,
+    component: AdminOperationsHandbook,
   },
 
   settings: {

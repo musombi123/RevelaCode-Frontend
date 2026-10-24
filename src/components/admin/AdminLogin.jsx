@@ -125,9 +125,12 @@ export default function AdminLogin() {
       // Never assign the administrator role in the browser.
       const role = getRole(payload);
 
-      if (role !== "admin" && role !== "support") {
+      const platformAdminRoles = ["admin", "platform_admin", "super_admin", "revelacode_admin"];
+      const supportRoles = ["support", "support_admin"];
+
+      if (!platformAdminRoles.includes(role) && !supportRoles.includes(role)) {
         throw new Error(
-          "This account does not have platform administrator or support access. Contact the platform administrator if you need access.",
+          "This account does not have platform administrator or support access. Contact the RevelaCode Administrator if you need access.",
         );
       }
 
@@ -160,7 +163,7 @@ export default function AdminLogin() {
 
       // Do not accept arbitrary redirects supplied by the response.
       navigate(
-        role === "admin"
+        platformAdminRoles.includes(role)
           ? "/admin/dashboard"
           : "/support/dashboard",
         { replace: true },

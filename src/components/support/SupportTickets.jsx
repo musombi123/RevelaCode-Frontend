@@ -19,7 +19,8 @@ function statusClass(status) {
 }
 
 export default function SupportTickets() {
-  const { getAccessToken, getTokenType } = useAuth();
+  const { user, getAccessToken, getTokenType } = useAuth();
+  const supportAdmin = String(user?.role || "").toLowerCase() === "support_admin";
   const [tickets, setTickets] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: PAGE_SIZE });
   const [page, setPage] = useState(1);
@@ -164,7 +165,7 @@ export default function SupportTickets() {
                       <td className="px-5 py-4 text-sm text-slate-600">{isAssigned ? <span className="font-medium text-emerald-700">Support team</span> : <span className="text-slate-400">Unassigned</span>}</td>
                       <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-500">{ticket.created_at && ticket.created_at !== "None" ? ticket.created_at : "—"}</td>
                       <td className="px-5 py-4 sm:px-6"><div className="flex justify-end gap-2">
-                        {!isAssigned && ticket.status !== "resolved" && <Button size="sm" variant="outline" onClick={() => assignToTeam(ticket)} disabled={Boolean(assigningId)} title="Assign this ticket to the shared support team"><UserPlus size={15} />{assigningId === ticket.id ? "Assigning…" : "Assign"}</Button>}
+                        {!supportAdmin && !isAssigned && ticket.status !== "resolved" && <Button size="sm" variant="outline" onClick={() => assignToTeam(ticket)} disabled={Boolean(assigningId)} title="Assign this ticket to the shared support team"><UserPlus size={15} />{assigningId === ticket.id ? "Assigning…" : "Assign"}</Button>}
                         <Button size="sm" variant="outline" onClick={() => openDetails(ticket)}><Eye size={15} /> View</Button>
                         {ticket.status !== "resolved" && <Button size="sm" onClick={() => openResolve(ticket)}><CheckCircle2 size={15} /> Resolve</Button>}
                       </div></td>

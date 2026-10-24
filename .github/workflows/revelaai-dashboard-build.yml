@@ -13,10 +13,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Node.js 20
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
       - name: Install locked dependencies
         run: npm ci
@@ -28,5 +28,7 @@ jobs:
         run: node --test tests/revelaai-dashboard-contract.test.mjs
       - name: Run hub plans visibility contracts
         run: node --test tests/hub-plans-visibility.test.mjs
+      - name: Run admin operations contracts
+        run: node --test tests/admin-operations-contract.test.mjs
       - name: Build production frontend
         run: npm run build
