@@ -36,6 +36,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
 import BiasharaInternalWorkspace from "@/Dashboard/Biashara/BiasharaInternalWorkspace.jsx";
 import BiasharaShell from "@/Dashboard/Biashara/BiasharaShell.jsx";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 /* =========================================================
    HELPERS
@@ -1485,9 +1486,12 @@ export default function BiasharaDashboard({
     !business
   ) {
     return (
-      <CreateBusinessState
-        onCreated={handleBusinessCreated}
-      />
+      <>
+        <CreateBusinessState onCreated={handleBusinessCreated} />
+        <div className="mx-auto w-full max-w-4xl px-3 pb-8 sm:px-6">
+          <HubRevenueOffers hub="biashara" compact />
+        </div>
+      </>
     );
   }
 
@@ -1501,20 +1505,30 @@ export default function BiasharaDashboard({
 
     if (editingApplication && canResubmit) {
       return (
-        <BiasharaBusinessOnboarding
-          initialBusiness={business}
-          resubmitting
-          onCreated={handleBusinessCreated}
-        />
+        <>
+          <BiasharaBusinessOnboarding
+            initialBusiness={business}
+            resubmitting
+            onCreated={handleBusinessCreated}
+          />
+          <div className="mx-auto w-full max-w-4xl px-3 pb-8 sm:px-6">
+            <HubRevenueOffers hub="biashara" compact />
+          </div>
+        </>
       );
     }
 
     return (
-      <BusinessVerificationState
-        business={business}
-        onRefresh={handleRetryBusiness}
-        onResubmit={() => setEditingApplication(true)}
-      />
+      <div className="min-h-screen space-y-4 bg-[#f4f7fb] p-3 sm:p-6">
+        <BusinessVerificationState
+          business={business}
+          onRefresh={handleRetryBusiness}
+          onResubmit={() => setEditingApplication(true)}
+        />
+        <div className="mx-auto w-full max-w-4xl">
+          <HubRevenueOffers hub="biashara" compact />
+        </div>
+      </div>
     );
   }
 
@@ -1689,6 +1703,8 @@ export default function BiasharaDashboard({
             </div>
           </div>
         </section>
+
+        <HubRevenueOffers hub="biashara" compact />
 
         {/* =================================================
             BUSINESS PROFILE / LEGAL IDENTITY
