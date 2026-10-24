@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, LoaderCircle, ShieldCheck, UserRoundPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, UserRoundPlus } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
 
 export default function SupportInvitationPage() {
