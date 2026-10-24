@@ -25,11 +25,14 @@ test("user management uses authenticated APIs for bans, delete and support invit
 test("support invitation acceptance uses the public preview and single-use accept API", () => {
   const page = source("src/pages/SupportInvitationPage.jsx");
   const routes = source("src/App.jsx");
+  const login = source("src/components/admin/AdminLogin.jsx");
   assert.match(page, /\/api\/admin\/invitations\/preview/);
   assert.match(page, /\/api\/admin\/invitations\/accept/);
   assert.match(page, /confirm_password/);
   assert.match(page, /At least 12 characters/);
   assert.match(routes, /path="\/support-invitation"/);
+  assert.match(login, /"support_admin"/);
+  assert.match(login, /platformAdminRoles\.includes\(role\)/);
 });
 
 test("Support Admin receives a separate oversight, Study, policy and handbook workspace", () => {
