@@ -236,6 +236,12 @@ Use the [Elimu Automation & Synchronization Centre Guide](docs/ELIMU_AUTOMATION_
 
 ---
 
+## Biashara Operations
+
+Use the [Biashara Automation & Sync Centre Guide](docs/BIASHARA_AUTOMATION_AND_SYNC_GUIDE.md) for how to use business automations and synchronization requests, where products/orders/customers/sales/inventory/finance records belong, verification steps, and the current worker/import limitations.
+
+---
+
 # Contributing
 
 Contributions are welcome from **developers, researchers, designers, and writers**.
