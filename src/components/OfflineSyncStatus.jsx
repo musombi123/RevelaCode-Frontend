@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Activity, CloudOff, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import {
+  clearFailedOfflineMutation,
   flushOfflineQueue,
   getOfflineQueueStatus,
   getRecentOfflineActivity,
   isBrowserOffline,
   offlineScopeForUser,
+  retryFailedOfflineMutation,
   subscribeOfflineSync,
 } from "@/services/offlineHubSync.js";
 
@@ -45,6 +47,16 @@ export default function OfflineSyncStatus() {
     setRecentActivity(nextActivity);
     setOffline(isBrowserOffline());
   }, [scope, authFetch]);
+
+  const retryFailed = useCallback(async (id) => {
+    const queued = await retryFailedOfflineMutation(scope, id);
+    if (queued) await refresh();
+  }, [scope, refresh]);
+
+  const dismissFailed = useCallback(async (id) => {
+    const ok = await clearFailedOfflineMutation(scope, id);
+    if (ok) await refresh();
+  }, [scope, refresh]);
 
   useEffect(() => {
     refresh();
@@ -125,6 +137,12 @@ export default function OfflineSyncStatus() {
                 <div key={item.id} className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
                   <p className="font-bold">{item.method} request not accepted</p>
                   <p>{item.lastError || "Reopen the relevant workspace and review this change."}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => retryFailed(item.id)} disabled={offline || syncing} className="min-h-8 rounded-lg border border-amber-700/30 px-2 font-bold disabled:opacity-50">Retry</button>
+                    <button type="button" onClick={() => {
+                      if (window.confirm("Remove this rejected change from this device? The server did not accept it, and removing it deletes the saved offline copy.")) dismissFailed(item.id);
+                    }} className="min-h-8 rounded-lg border border-amber-700/30 px-2 font-bold">Remove saved copy</button>
+                  </div>
                 </div>
               ))}
             </div>
