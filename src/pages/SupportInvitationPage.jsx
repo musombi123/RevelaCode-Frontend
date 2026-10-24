@@ -97,7 +97,7 @@ export default function SupportInvitationPage() {
 
         <div className="space-y-5 p-5 sm:p-8">
           {loading ? (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300"><LoaderCircle size={18} className="animate-spin" /> Verifying your invitation…</div>
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300"><Loader2 size={18} className="animate-spin" /> Verifying your invitation…</div>
           ) : null}
 
           {invitation ? (
