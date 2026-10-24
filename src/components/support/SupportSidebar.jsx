@@ -8,6 +8,10 @@ import {
   BarChart3,
   X,
   Headphones,
+  Users,
+  BookOpen,
+  ShieldCheck,
+  BookOpenCheck,
 } from "lucide-react";
 
 const views = [
@@ -22,7 +26,17 @@ export default function SupportSidebar({
   setActiveView,
   sidebarOpen = false,
   setSidebarOpen,
+  role = "support",
 }) {
+  const supportAdmin = String(role || "").toLowerCase() === "support_admin";
+  const navigation = supportAdmin ? [
+    ...views,
+    { key: "team", label: "Team operations", icon: Users },
+    { key: "study", label: "Study Hub management", icon: BookOpen },
+    { key: "policies", label: "Policies and terms", icon: ShieldCheck },
+    { key: "handbook", label: "System handbook", icon: BookOpenCheck },
+  ] : views;
+
   return (
     <>
       {sidebarOpen && (
@@ -44,7 +58,7 @@ export default function SupportSidebar({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">RevelaCode</p>
-            <h1 className="truncate text-base font-bold text-slate-900">Support workspace</h1>
+            <h1 className="truncate text-base font-bold text-slate-900">{supportAdmin ? "Support Admin workspace" : "Support workspace"}</h1>
           </div>
           <button
             type="button"
@@ -58,7 +72,7 @@ export default function SupportSidebar({
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Workspace</p>
-          {views.map(({ key, label, icon: Icon }) => {
+          {navigation.map(({ key, label, icon: Icon }) => {
             const active = activeView === key;
             return (
               <button
@@ -80,7 +94,7 @@ export default function SupportSidebar({
         </nav>
 
         <div className="border-t border-slate-100 p-4">
-          <p className="text-xs leading-5 text-slate-500">Use the ticket queue to review, assign, and resolve requests from RevelaCode users.</p>
+          <p className="text-xs leading-5 text-slate-500">{supportAdmin ? "Supervise ticket operations and support staff. Study/policy tools are delegated; user sanctions and financial operations remain with RevelaCode Admin." : "Use the ticket queue to review, assign, and resolve requests from RevelaCode users."}</p>
         </div>
       </aside>
     </>
