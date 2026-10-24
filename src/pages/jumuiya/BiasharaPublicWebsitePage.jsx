@@ -181,9 +181,11 @@ export default function BiasharaPublicWebsitePage() {
         .map(([key, value]) => ({ key, label: SOCIAL_LABELS[key], url: safeHttpsMedia(value) }))
   ), [website.show_social_links, website.social_links]);
 
-  const primary = website.primary_color || "#1d4ed8";
-  const accent = website.accent_color || "#0f766e";
-  const theme = useMemo(() => createBrandTheme(primary, accent), [primary, accent]);
+  const requestedPrimary = website.primary_color || "#1d4ed8";
+  const requestedAccent = website.accent_color || "#0f766e";
+  const theme = useMemo(() => createBrandTheme(requestedPrimary, requestedAccent), [requestedPrimary, requestedAccent]);
+  const primary = theme.primary;
+  const accent = theme.accent;
   const logo = safeHttpsMedia(website.logo_url || business.logo_url);
   const currentHeroSlides = useMemo(() => {
     const configured = Array.isArray(website.hero_slides) ? website.hero_slides : [];
