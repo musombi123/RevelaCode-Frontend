@@ -38,7 +38,6 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
@@ -1387,7 +1386,13 @@ export default function CommunityDashboard({
                 onCreatePost={() => navigate("community-composer")}
               />
 
-              <HubRevenueOffers hub="community" compact />
+              <div className="mb-4 flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white/80 px-3 py-3 text-xs dark:border-white/10 dark:bg-slate-900/70">
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">✓</span>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 dark:text-slate-100">Community is free for everyone</p>
+                  <p className="mt-0.5 leading-5 text-slate-500 dark:text-slate-400">Sponsored advertisements help keep Community open. You never need a paid membership or subscription to participate.</p>
+                </div>
+              </div>
 
               <section className="mt-6">
                 <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
