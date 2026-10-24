@@ -75,6 +75,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [notice, setNotice] = useState("");
   const [submittingCode, setSubmittingCode] = useState("");
   const [trial, setTrial] = useState(null);
+  const trialDays = Number(trial?.trial_days) > 0 ? Number(trial.trial_days) : 30;
   const [trialLoading, setTrialLoading] = useState(true);
   const [trialStarting, setTrialStarting] = useState(false);
   const [trialError, setTrialError] = useState("");
@@ -269,7 +270,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     try {
       const response = await revenueApi.startTrial(apiHub);
       setTrial(response?.trial || null);
-      setNotice(response?.message || `Your 30-day ${label} trial is active.`);
+      setNotice(response?.message || `Your ${trialDays}-day ${label} trial is active.`);
     } catch (error) {
       setTrialError(messageForError(error));
     } finally {
@@ -309,7 +310,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Platform-admin managed</p>
             <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">{label} plans</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Review plans published by the platform team and register interest. This does not initiate a payment or activate a subscription.
+              Compare this hub’s plans. Published paid plans can start M-Pesa checkout when live billing is enabled; proposed plans only record interest. Paid access activates only after provider-confirmed payment.
             </p>
           </div>
         </div>
