@@ -112,6 +112,22 @@ body,
   word-break: normal;
 }
 
+/* Inside cards, wrap complete copy instead of clipping it with
+   single-line truncation or multi-line clamps. */
+.shamba-workspace :where(article, section, [role="dialog"]) :where(h1, h2, h3, h4, h5, h6, p, span, strong, em, small, label, li, dt, dd, td, th, a, button) {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+.shamba-workspace [class*="line-clamp-"] {
+  display: block !important;
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  white-space: normal !important;
+}
+
 .dark .shamba-workspace {
   color: #E2E8F0 !important;
   background-color: #0B1220 !important;
