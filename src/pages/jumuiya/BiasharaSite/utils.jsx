@@ -98,7 +98,7 @@ function relativeLuminance(hex) {
 }
 
 export function contrastColor(hex) {
-  return relativeLuminance(hex) > 0.42 ? "#111827" : "#ffffff";
+  return relativeLuminance(hex) > 0.179 ? "#111827" : "#ffffff";
 }
 
 export function readableBrandText(hex) {
