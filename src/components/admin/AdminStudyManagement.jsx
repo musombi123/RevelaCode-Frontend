@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertCircle, BookOpen, CheckCircle2, FileUp, Sparkles } from "lucide-react";
+import { AlertCircle, BookOpen, CheckCircle2, FileText, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card.jsx";
 import { useAdminApi } from "@/services/adminApi.jsx";
 
@@ -124,11 +124,11 @@ export default function AdminStudyManagement() {
           <label className="block"><span className="mb-1.5 block text-sm font-semibold">Tags (comma separated)</span><input value={form.tags} onChange={(event) => updateField("tags", event.target.value)} placeholder="scripture, reference, beginner" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label>
           <label className="block"><span className="mb-1.5 block text-sm font-semibold">Text content</span><textarea rows={9} value={form.content} onChange={(event) => updateField("content", event.target.value)} placeholder="Paste or write the source-grounded lesson text…" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label>
           <div className="rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
-            <label className="flex items-center gap-2 text-sm font-semibold"><FileUp size={16} /> Or upload PDF / DOCX / TXT</label>
+            <label className="flex items-center gap-2 text-sm font-semibold"><FileText size={16} /> Or upload PDF / DOCX / TXT</label>
             <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={(event) => setFile(event.target.files?.[0] || null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-bold dark:text-slate-300 dark:file:bg-slate-800" />
             {file ? <p className="mt-2 text-xs text-slate-500">Selected: {file.name}. When a file is chosen, the upload uses its contents and metadata.</p> : null}
           </div>
-          <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"><FileUp size={16} />{loading ? "Submitting material…" : "Upload study material"}</button>
+          <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"><FileText size={16} />{loading ? "Submitting material…" : "Upload study material"}</button>
         </form>
       </CardContent></Card>
     </div>
