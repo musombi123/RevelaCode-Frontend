@@ -17,6 +17,7 @@ import {
   Search,
   ShoppingBasket,
   User,
+  Users,
   X,
 } from "lucide-react";
 
@@ -147,7 +148,7 @@ function BuyerCard({
                     items-center
                     gap-1
                     text-[13px]
-                    text-slate-400
+                    text-slate-600
                   "
                 >
                   <MapPin size={10} />
@@ -213,7 +214,7 @@ function BuyerCard({
                 font-black
                 uppercase
                 tracking-wide
-                text-slate-400
+                text-slate-600
               "
             >
               Looking for
@@ -236,7 +237,7 @@ function BuyerCard({
             className="
               mt-1
               text-[13px]
-              text-slate-400
+              text-slate-600
             "
           >
             {getCategory(listing)}
@@ -306,7 +307,7 @@ function BuyerCard({
         "
       >
 
-        <div className="text-[13px] text-slate-400">
+        <div className="text-[13px] text-slate-600">
           Connect with this market participant.
         </div>
 
@@ -420,7 +421,7 @@ function ContactModal({
                 className="
                   mt-0.5
                   text-[13px]
-                  text-slate-400
+                  text-slate-600
                 "
               >
                 {getBuyerName(
@@ -442,7 +443,7 @@ function ContactModal({
               justify-center
               rounded-xl
               bg-slate-100
-              text-slate-500
+              text-slate-600
               hover:bg-slate-200
             "
             aria-label="Close"
@@ -495,7 +496,7 @@ function ContactModal({
                 mt-1
                 text-[13px]
                 leading-5
-                text-slate-500
+                text-slate-600
               "
             >
               {listing?.description ||
@@ -525,7 +526,7 @@ function ContactModal({
                 mt-1
                 text-[13px]
                 leading-5
-                text-slate-400
+                text-slate-600
               "
             >
               Direct messaging, contact details,
@@ -749,8 +750,8 @@ export default function ShambaBuyersDashboard({
   return (
     <ShambaDashboardFrame
       embedded={embedded}
-      title="Buyers"
-      subtitle="Find people and opportunities for your produce."
+      title="Manage Buyers"
+      subtitle="Review buyer opportunities and contact people looking for your produce."
       activeHub="shamba"
       user={user}
       onNavigate={onNavigate}
@@ -792,7 +793,7 @@ export default function ShambaBuyersDashboard({
               gap-1.5
               text-[13px]
               font-black
-              text-slate-500
+              text-slate-600
               transition
               hover:text-[#087F5B]
             "
@@ -872,7 +873,7 @@ export default function ShambaBuyersDashboard({
               <h1
                 className="font-black tracking-tight text-slate-900 text-[clamp(26px,2.3vw,30px)] leading-tight tracking-tight text-[#172B25]"
               >
-                Buyers
+                Manage Buyers
               </h1>
 
               <p
@@ -881,7 +882,7 @@ export default function ShambaBuyersDashboard({
                   max-w-xl
                   text-[13px]
                   leading-5
-                  text-slate-500
+                  text-slate-600
                 "
               >
                 Discover market opportunities
@@ -925,7 +926,7 @@ export default function ShambaBuyersDashboard({
 
             <Search
               size={16}
-              className="shrink-0 text-slate-400"
+              className="shrink-0 text-slate-600"
             />
 
             <input
@@ -945,7 +946,7 @@ export default function ShambaBuyersDashboard({
                 text-sm
                 text-slate-800
                 outline-none
-                placeholder:text-slate-400
+                placeholder:text-slate-600
               "
             />
 
@@ -964,7 +965,7 @@ export default function ShambaBuyersDashboard({
                   justify-center
                   rounded-lg
                   bg-white
-                  text-slate-400
+                  text-slate-600
                   shadow-sm
                 "
                 aria-label="Clear search"
@@ -995,7 +996,7 @@ export default function ShambaBuyersDashboard({
 
             <Filter
               size={13}
-              className="text-slate-400"
+              className="text-slate-600"
             />
 
             <span
@@ -1004,7 +1005,7 @@ export default function ShambaBuyersDashboard({
                 font-black
                 uppercase
                 tracking-wide
-                text-slate-500
+                text-slate-600
               "
             >
               Produce Categories
@@ -1046,7 +1047,7 @@ export default function ShambaBuyersDashboard({
                       category ===
                       item
                         ? "bg-[#087F5B] text-white"
-                        : "border border-[#DCE5E1] bg-white text-slate-500 hover:bg-emerald-50 hover:text-[#075E46]"
+                        : "border border-[#DCE5E1] bg-white text-slate-600 hover:bg-emerald-50 hover:text-[#075E46]"
                     }
                   `}
                 >
@@ -1117,7 +1118,7 @@ export default function ShambaBuyersDashboard({
                 font-black
                 uppercase
                 tracking-wide
-                text-slate-400
+                text-slate-600
               "
             >
               Opportunities
@@ -1154,7 +1155,7 @@ export default function ShambaBuyersDashboard({
                 font-black
                 uppercase
                 tracking-wide
-                text-slate-400
+                text-slate-600
               "
             >
               Categories
@@ -1197,7 +1198,7 @@ export default function ShambaBuyersDashboard({
                 font-black
                 uppercase
                 tracking-wide
-                text-slate-400
+                text-slate-600
               "
             >
               Farmer
@@ -1248,7 +1249,7 @@ export default function ShambaBuyersDashboard({
               className="
                 mt-0.5
                 text-[13px]
-                text-slate-400
+                text-slate-600
               "
             >
               {loading
@@ -1363,7 +1364,7 @@ export default function ShambaBuyersDashboard({
                 max-w-sm
                 text-[13px]
                 leading-5
-                text-slate-400
+                text-slate-600
               "
             >
               Try changing your search or
@@ -1454,7 +1455,7 @@ export default function ShambaBuyersDashboard({
                 mt-1
                 text-[13px]
                 leading-5
-                text-[#075E46]/75
+                text-[#075E46]
               "
             >
               Buyer opportunities currently use
