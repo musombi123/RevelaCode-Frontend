@@ -1,11 +1,11 @@
 import React from "react";
 import { Clock3, MapPin, MessageCircle, PackageCheck } from "lucide-react";
-import { Reveal } from "./utils.jsx";
+import { readableBrandText, Reveal } from "./utils.jsx";
 
 function TrustItem({ icon: Icon, label, value, primary }) {
   return (
     <div className="flex min-w-0 items-center gap-3 px-3 py-3 sm:px-5 sm:py-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: primary + "10", color: primary }}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: primary + "10", color: readableBrandText(primary) }}>
         <Icon size={18} strokeWidth={1.8} />
       </span>
       <span className="min-w-0">
