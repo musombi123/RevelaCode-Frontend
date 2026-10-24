@@ -101,6 +101,12 @@ export function contrastColor(hex) {
   return relativeLuminance(hex) > 0.42 ? "#111827" : "#ffffff";
 }
 
+export function readableBrandText(hex) {
+  const luminance = relativeLuminance(hex);
+  const contrastAgainstWhite = 1.05 / (luminance + 0.05);
+  return contrastAgainstWhite >= 4.5 ? normalizeHex(hex, DEFAULT_PRIMARY) : "#334155";
+}
+
 export function createBrandTheme(primaryValue, accentValue) {
   const primary = normalizeHex(primaryValue, DEFAULT_PRIMARY);
   const accent = normalizeHex(accentValue, DEFAULT_ACCENT);
@@ -109,6 +115,8 @@ export function createBrandTheme(primaryValue, accentValue) {
     accent,
     primaryInk: contrastColor(primary),
     accentInk: contrastColor(accent),
+    primaryTextOnLight: readableBrandText(primary),
+    accentTextOnLight: readableBrandText(accent),
     primarySoft: hexToRgba(primary, 0.075),
     primaryBorder: hexToRgba(primary, 0.2),
     primaryGlow: hexToRgba(primary, 0.24),
