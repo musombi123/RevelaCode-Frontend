@@ -1,4 +1,4 @@
-const CACHE_NAME = "revelacode-app-shell-v1";
+const CACHE_NAME = "revelacode-app-shell-v2";
 const ROOT_URL = "/";
 
 self.addEventListener("install", (event) => {
