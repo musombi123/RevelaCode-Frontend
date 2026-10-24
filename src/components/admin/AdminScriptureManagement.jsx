@@ -3,12 +3,10 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button.jsx";
-import { useAuth } from "@/context/AuthContext.jsx";
-
-const API = import.meta.env.VITE_API_URL;
+import { useAdminApi } from "@/services/adminApi.jsx";
 
 export default function AdminScriptureManagement() {
-  const { user } = useAuth();
+  const adminApi = useAdminApi();
 
   const [scriptureId, setScriptureId] = useState("");
   const [content, setContent] = useState("");
@@ -31,28 +29,10 @@ export default function AdminScriptureManagement() {
     setMessage("");
 
     try {
-      const response = await fetch(
-        `${API}/api/admin/update-scripture`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-
-            // Uses the stored API key after admin login
-            "X-API-KEY": user?.apiKey || "",
-          },
-          body: JSON.stringify({
-            id: scriptureId,
-            content,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update scripture.");
-      }
+      const data = await adminApi.post("/api/admin/update-scripture", {
+        id: scriptureId.trim(),
+        content: content.trim(),
+      });
 
       setMessage(data.message || "Scripture updated successfully.");
 
@@ -60,8 +40,7 @@ export default function AdminScriptureManagement() {
       setScriptureId("");
       setContent("");
     } catch (err) {
-      console.error(err);
-      setMessage(err.message || "Something went wrong.");
+      setMessage(err?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
