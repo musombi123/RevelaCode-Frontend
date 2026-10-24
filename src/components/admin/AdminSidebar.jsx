@@ -19,6 +19,7 @@ import {
   Brain,
   Cpu,
   Building2,
+  Sprout,
 } from "lucide-react";
 
 
@@ -78,6 +79,12 @@ const tabs = [
     label: "Business Verification",
     description: "Approve Biashara applications",
     icon: Building2,
+  },
+  {
+    key: "shambaVerification",
+    label: "Shamba Verification",
+    description: "Review farmer profiles",
+    icon: Sprout,
   },
   {
     key: "revenue",
