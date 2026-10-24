@@ -1,6 +1,14 @@
 
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import {
+  createOfflineQueuedError,
+  isBrowserOffline,
+  offlineScopeForUser,
+  queueOfflineMutation,
+  readCachedApiResponse,
+  writeCachedApiResponse,
+} from "@/services/offlineHubSync.js";
 
 /**
  * RevelaCode / Jumuiya Elimu API client.
@@ -293,6 +301,7 @@ function isNativeBody(body) {
 export function createElimuApiClient({
   baseUrl = resolveElimuBackendUrl(),
   token = null,
+  offlineScope = "",
   fetchImpl = globalThis.fetch,
 } = {}) {
   const origin = normalizeBaseUrl(baseUrl);
@@ -313,6 +322,7 @@ export function createElimuApiClient({
       credentials = "include",
       includeAuth = true,
       responseType = "json",
+      offlineScope: requestScope = offlineScope,
     } = options;
 
     const verb = String(method || "GET").toUpperCase();
@@ -322,6 +332,16 @@ export function createElimuApiClient({
       `${origin}${API_PREFIX}` +
       (normalizedPath ? `/${normalizedPath}` : "") +
       buildQuery(params);
+
+    if (requestScope && verb === "GET" && responseType === "json" && isBrowserOffline()) {
+      const cached = await readCachedApiResponse(requestScope, url);
+      if (cached.hit) return cached.payload;
+    }
+
+    if (requestScope && verb !== "GET" && isBrowserOffline()) {
+      const queued = await queueOfflineMutation({ scope: requestScope, url, method: verb, body });
+      if (queued) throw createOfflineQueuedError();
+    }
 
     const headers = new Headers({
       Accept:
@@ -400,6 +420,16 @@ export function createElimuApiClient({
         throw error;
       }
 
+      if (requestScope && verb === "GET" && responseType === "json") {
+        const cached = await readCachedApiResponse(requestScope, url);
+        if (cached.hit) return cached.payload;
+      }
+
+      if (requestScope && verb !== "GET" && isBrowserOffline()) {
+        const queued = await queueOfflineMutation({ scope: requestScope, url, method: verb, body });
+        if (queued) throw createOfflineQueuedError();
+      }
+
       throw createApiError(
         "Unable to reach the Elimu service. Check your connection and try again.",
         0,
@@ -443,8 +473,9 @@ export function createElimuApiClient({
     ).toLowerCase();
 
     if (contentType.includes("json")) {
+      let payload;
       try {
-        return await response.json();
+        payload = await response.json();
       } catch {
         throw createApiError(
           "The Elimu service returned invalid JSON.",
@@ -453,6 +484,10 @@ export function createElimuApiClient({
           { url, method: verb, requestId },
         );
       }
+      if (requestScope && verb === "GET" && response.ok) {
+        await writeCachedApiResponse(requestScope, url, payload);
+      }
+      return payload;
     }
 
     const text = await response.text();
@@ -1360,6 +1395,7 @@ export function createElimuApiClient({
 export function useElimuApi() {
   const auth = useAuth();
   const baseUrl = resolveElimuBackendUrl();
+  const offlineScope = offlineScopeForUser(auth?.user);
 
   const accessToken = auth?.accessToken;
   const access_token = auth?.access_token;
@@ -1408,8 +1444,9 @@ export function useElimuApi() {
       createElimuApiClient({
         baseUrl,
         token: tokenProvider,
+        offlineScope,
       }),
-    [baseUrl, tokenProvider],
+    [baseUrl, tokenProvider, offlineScope],
   );
 }
 
