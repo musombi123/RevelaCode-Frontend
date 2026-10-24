@@ -247,6 +247,23 @@ export async function getOfflineQueueStatus(scope) {
   return { pending, failed, total: rows.length, latest: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5) };
 }
 
+export async function recordOfflineActivity(scope, activity = {}) {
+  const owner = safeScope(scope);
+  if (!owner) return false;
+  const id = "activity:" + owner + ":" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2));
+  const entry = {
+    id,
+    scope: owner,
+    kind: String(activity.kind || "platform_activity").slice(0, 80),
+    title: String(activity.title || "Platform activity").slice(0, 160),
+    detail: String(activity.detail || "").slice(0, 400),
+    createdAt: Date.now(),
+  };
+  const saved = await storePut(ACTIVITY_STORE, entry);
+  if (saved) emitChange();
+  return saved;
+}
+
 export async function getRecentOfflineActivity(scope, limit = 12) {
   const owner = safeScope(scope);
   if (!owner) return [];
