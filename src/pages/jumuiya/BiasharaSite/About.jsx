@@ -70,14 +70,14 @@ export default function About({
               <div className="mt-6 flex flex-col gap-2.5">
                 {phoneHref ? (
                   <a href={phoneHref} className="group flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 px-3.5 py-3 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2" style={{ "--tw-ring-color": primary }}>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ color: primary, backgroundColor: primary + "10" }}><Phone size={16} /></span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ color: readableBrandText(primary), backgroundColor: primary + "10" }}><Phone size={16} /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[.13em] text-slate-400">Call the business</span><span className="mt-0.5 block break-all text-sm font-semibold text-slate-800">{business.phone}</span></span>
                     <ArrowUpRight size={15} className="shrink-0 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </a>
                 ) : null}
                 {emailHref ? (
                   <a href={emailHref} className="group flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 px-3.5 py-3 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2" style={{ "--tw-ring-color": primary }}>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ color: primary, backgroundColor: primary + "10" }}><Mail size={16} /></span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ color: readableBrandText(primary), backgroundColor: primary + "10" }}><Mail size={16} /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[.13em] text-slate-400">Send an email</span><span className="mt-0.5 block break-all text-sm font-semibold text-slate-800">{business.email}</span></span>
                     <ArrowUpRight size={15} className="shrink-0 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </a>
@@ -108,7 +108,7 @@ export default function About({
                     const today = entry.key === todayKey;
                     return (
                       <div key={entry.key} className={"flex items-start justify-between gap-4 px-3.5 py-3 text-xs " + (today ? "font-semibold" : "font-medium") + (today ? " bg-slate-50" : " bg-white")} style={today ? { boxShadow: "inset 3px 0 0 " + primary } : undefined}>
-                        <span className={"shrink-0 " + (today ? "text-slate-950" : "text-slate-500")}>{entry.day}{today ? <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wide" style={{ color: primary }}>Today</span> : null}</span>
+                        <span className={"shrink-0 " + (today ? "text-slate-950" : "text-slate-500")}>{entry.day}{today ? <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wide" style={{ color: readableBrandText(primary) }}>Today</span> : null}</span>
                         <span className={"text-right " + (entry.closed ? "text-slate-400" : "text-slate-700")}>{entry.hours}</span>
                       </div>
                     );
