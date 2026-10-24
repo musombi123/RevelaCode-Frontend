@@ -199,7 +199,7 @@ export default function Hero({
           key={activeImage}
           src={activeImage}
           alt={slide.alt || ""}
-          fetchPriority="high"
+          loading="eager"
           decoding="async"
           className="pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover opacity-25"
         />
