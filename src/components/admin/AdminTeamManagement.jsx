@@ -5,12 +5,12 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
-  MailPlus,
+  UserPlus,
   RefreshCw,
   ShieldAlert,
   UserCheck,
   UserPlus,
-  UserX,
+  XCircle,
   Users,
   XCircle,
 } from "lucide-react";
@@ -228,7 +228,7 @@ export default function AdminTeamManagement() {
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><MailPlus size={21} /></div>
+          <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><UserPlus size={21} /></div>
           <div><h3 className="font-black text-slate-950 dark:text-white">Invite support team members</h3><p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">Send a single-use invitation to the registered email. The invitee chooses their own password. The link expires after seven days and is invalidated after acceptance or revocation.</p></div>
         </div>
         <form onSubmit={sendInvitation} className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -261,7 +261,7 @@ export default function AdminTeamManagement() {
                     {privileged && cannotOperate ? <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ShieldAlert size={12} />Protected platform role</span> : deleted ? <span className="text-xs font-bold text-rose-700 dark:text-rose-300">Deleted access</span> : (
                       <>
                         <button type="button" onClick={() => changeAccountStatus(item)} disabled={Boolean(busyAction)} className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50 ${banned ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-300" : "border-amber-200 text-amber-800 hover:bg-amber-50 dark:border-amber-900/50 dark:text-amber-300"}`}>{statusBusy ? <RefreshCw size={13} className="animate-spin" /> : banned ? <UserCheck size={13} /> : <ShieldAlert size={13} />}{banned ? "Unban / reactivate" : "Ban user"}</button>
-                        <button type="button" onClick={() => deleteAccount(item)} disabled={Boolean(busyAction) || deleting} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/50 dark:text-rose-300"><UserX size={13} />{deleting ? "Deleting…" : "Delete"}</button>
+                        <button type="button" onClick={() => deleteAccount(item)} disabled={Boolean(busyAction) || deleting} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/50 dark:text-rose-300"><XCircle size={13} />{deleting ? "Deleting…" : "Delete"}</button>
                       </>
                     )}
                   </div>
