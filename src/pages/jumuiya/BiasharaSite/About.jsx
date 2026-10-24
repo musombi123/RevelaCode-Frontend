@@ -5,6 +5,8 @@ import {
   normalizeOpeningHours,
   safeEmailHref,
   safeTelephoneHref,
+  contrastColor,
+  readableBrandText,
   Reveal,
   SectionEyebrow,
 } from "./utils.jsx";
@@ -58,7 +60,7 @@ export default function About({
                 <SectionEyebrow primary={primary}>Here to help</SectionEyebrow>
                 <h3 className="mt-3 text-2xl font-semibold tracking-[-.04em] text-slate-950 sm:text-3xl">Questions start here.</h3>
               </div>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ color: primary, backgroundColor: primary + "10" }}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ color: readableBrandText(primary), backgroundColor: primary + "10" }}>
                 <ArrowUpRight size={20} />
               </span>
             </div>
@@ -96,7 +98,7 @@ export default function About({
             {hours.length ? (
               <div className="mt-6 border-t border-slate-100 pt-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800"><Clock3 size={16} style={{ color: primary }} /> Opening hours</h4>
+                  <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800"><Clock3 size={16} style={{ color: readableBrandText(primary) }} /> Opening hours</h4>
                   <span className={"rounded-full px-2.5 py-1.5 text-[10px] font-bold " + (openingStatus?.isOpen === true ? "bg-emerald-50 text-emerald-700" : openingStatus?.isOpen === false ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600")}>
                     {openingStatus?.label || "Hours listed"}
                   </span>
@@ -117,7 +119,7 @@ export default function About({
               <p className="mt-6 border-t border-slate-100 pt-5 text-xs leading-5 text-slate-400">Opening hours have not been published.</p>
             )}
             {canContact ? (
-              <a href="#contact" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ backgroundColor: primary }}>
+              <a href="#contact" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ backgroundColor: primary, color: contrastColor(primary) }}>
                 Send an inquiry <ArrowUpRight size={16} />
               </a>
             ) : null}
