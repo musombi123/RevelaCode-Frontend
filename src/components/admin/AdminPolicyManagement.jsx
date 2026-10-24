@@ -18,6 +18,7 @@ export default function AdminPolicyManagement() {
   const [mode, setMode] = useState("legal");
   const [documentType, setDocumentType] = useState("terms");
   const [version, setVersion] = useState("");
+  const [publishedVersion, setPublishedVersion] = useState("");
   const [content, setContent] = useState("");
   const [policyId, setPolicyId] = useState("");
   const [legacyContent, setLegacyContent] = useState("");
@@ -32,12 +33,14 @@ export default function AdminPolicyManagement() {
     try {
       const result = await adminApi.platform.getLegalDocument(documentType);
       setContent(String(result?.content || ""));
-      setVersion(String(result?.version || ""));
+      setPublishedVersion(String(result?.version || ""));
+      setVersion("");
       setMessageType("info");
-      setMessage(result?.content ? `Loaded the published ${DOCUMENTS.find((item) => item.value === documentType)?.label || documentType} document (version ${result.version || "unversioned"}).` : "No published version was returned.");
+      setMessage(result?.content ? `Loaded published version ${result.version || "unversioned"}. Leave the new-version field blank to let the backend increment it.` : "No published version was returned.");
     } catch (error) {
       setContent("");
       setVersion("");
+      setPublishedVersion("");
       if (error?.status === 404) {
         setMessageType("info");
         setMessage("No published version exists yet. Add the approved document text and publish its first version.");
@@ -134,10 +137,10 @@ export default function AdminPolicyManagement() {
             <div><h3 className="text-lg font-black text-slate-950 dark:text-white">{activeDoc.label}</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{activeDoc.description}</p></div>
             <button type="button" onClick={loadDocument} disabled={loadingDocument} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-50 dark:border-slate-700"><RefreshCw size={14} className={loadingDocument ? "animate-spin" : ""} /> Reload published version</button>
           </div>
-          <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Document type</span><select value={documentType} onChange={(event) => { setDocumentType(event.target.value); setContent(""); setVersion(""); }} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">{DOCUMENTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+          <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Document type</span><select value={documentType} onChange={(event) => { setDocumentType(event.target.value); setContent(""); setVersion(""); setPublishedVersion(""); }} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">{DOCUMENTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_2fr]">
             <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Version (optional)</span><input maxLength={40} value={version} onChange={(event) => setVersion(event.target.value)} placeholder="e.g. 1.0" className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><span className="mt-1 block text-xs text-slate-500">Leave blank to auto-increment.</span></label>
-            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200"><FileText size={16} className="mb-1" />Public documents should be reviewed before publishing. The prior version is retained; confirm legal wording and effective dates before release.</div>
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200"><FileText size={16} className="mb-1" />Current published version: <strong>{publishedVersion || "None"}</strong>. Leave the new-version field blank to auto-increment. Public documents should be reviewed before publishing; the prior version is retained.</div>
           </div>
           <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Document content</span><textarea required rows={18} maxLength={250000} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write or paste the approved document text…" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></label>
           <button type="button" onClick={saveLegalDocument} disabled={saving || loadingDocument || !content.trim()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Publishing…" : "Publish new version"}</button>
