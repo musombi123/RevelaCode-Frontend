@@ -255,6 +255,7 @@ export default function AdminRevenueManagement() {
   const [transactionsError, setTransactionsError] = useState("");
   const [editingCode, setEditingCode] = useState("");
   const [savingCode, setSavingCode] = useState("");
+  const [publishingPlans, setPublishingPlans] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState(INITIAL_CREATE);
@@ -366,6 +367,78 @@ export default function AdminRevenueManagement() {
     }
   };
 
+  const publishEligiblePlans = async () => {
+    setNotice("");
+    setActionError("");
+
+    if (!billingKnown) {
+      setActionError("The backend has not confirmed production Daraja readiness. Refresh the Revenue Management page and check the billing status.");
+      return;
+    }
+    if (!billingEnabled) {
+      setActionError("Paid plans cannot be published for checkout until the backend confirms production Daraja credentials, callback configuration, and M-Pesa provider enablement.");
+      return;
+    }
+
+    const eligible = plans.filter((plan) => {
+      const amount = Number(plan.amount);
+      const status = String(plan.status || "proposed").toLowerCase();
+      return status !== "available" &&
+        status !== "retired" &&
+        CHECKOUT_HUBS.has(String(plan.hub || "").toLowerCase()) &&
+        Number.isInteger(amount) &&
+        amount > 0 &&
+        ["month", "year"].includes(String(plan.interval || "").toLowerCase());
+    });
+
+    if (!eligible.length) {
+      setNotice("No unpublished paid subscription plans meet the current M-Pesa rules. Check the price, hub, interval, and plan status.");
+      return;
+    }
+
+    const description = eligible.map((plan) => plan.name + " (" + formatMoney(plan.amount, plan.currency || "KES") + "/" + plan.interval + ")").join("\n");
+    if (!window.confirm("Publish these " + eligible.length + " paid plans for live M-Pesa checkout? This makes their listed prices purchasable.\n\n" + description)) {
+      return;
+    }
+
+    setPublishingPlans(true);
+    const published = [];
+    const failures = [];
+    try {
+      for (const plan of eligible) {
+        try {
+          await adminApi.request("/api/revenue/admin/plans/" + encodeURIComponent(plan.code), {
+            method: "PUT",
+            body: {
+              name: plan.name,
+              amount: String(plan.amount),
+              interval: plan.interval,
+              status: "available",
+              features: Array.isArray(plan.features) ? plan.features : [],
+            },
+          });
+          published.push(plan.code);
+        } catch (error) {
+          failures.push(plan.code + ": " + getError(error));
+        }
+      }
+
+      if (published.length) setReloadKey((value) => value + 1);
+      if (failures.length) {
+        setActionError(
+          (published.length ? "Published " + published.length + " plan(s). " : "") +
+          "Could not publish " + failures.length + " plan(s): " + failures.slice(0, 3).join(" · "),
+        );
+      } else if (published.length) {
+        setNotice("Published " + published.length + " eligible paid plan(s). Customer checkout remains protected by Daraja's verified payment result.");
+      } else {
+        setActionError("No plans were published. Review the backend error and the plan catalogue.");
+      }
+    } finally {
+      setPublishingPlans(false);
+    }
+  };
+
   const createPlan = async (event) => {
     event.preventDefault();
     setCreating(true);
@@ -427,6 +500,16 @@ export default function AdminRevenueManagement() {
     (plan) => plan.status === "available" && Number(plan.amount) > 0 && plan.hub !== "all",
   );
   const proposedPlansCount = plans.filter((plan) => plan.status === "proposed").length;
+  const publishablePlansCount = plans.filter((plan) => {
+    const amount = Number(plan.amount);
+    const status = String(plan.status || "proposed").toLowerCase();
+    return status !== "available" &&
+      status !== "retired" &&
+      CHECKOUT_HUBS.has(String(plan.hub || "").toLowerCase()) &&
+      Number.isInteger(amount) &&
+      amount > 0 &&
+      ["month", "year"].includes(String(plan.interval || "").toLowerCase());
+  }).length;
   const totalRows = Number(pagination.total || 0);
   const totalPages = Math.max(1, Number(pagination.pages || 1));
 
@@ -522,8 +605,23 @@ export default function AdminRevenueManagement() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div><h3 className="text-base font-bold text-slate-900 dark:text-white">Pricing catalogue</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Create or edit plan proposals for any supported hub. Retire plans instead of deleting their history.</p></div>
-          <button type="button" onClick={() => setShowCreate((value) => !value)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700"><Plus className="h-4 w-4" />{showCreate ? "Close form" : "Create plan"}</button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={publishEligiblePlans}
+              disabled={plansLoading || publishingPlans || !billingKnown || !billingEnabled || publishablePlansCount === 0}
+              title={!billingKnown ? "Live checkout readiness has not been confirmed." : !billingEnabled ? "Production M-Pesa checkout is not enabled by the backend." : "Publish all eligible, unpublished paid subscription plans."}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <CheckCircle2 className={"h-4 w-4 " + (publishingPlans ? "animate-pulse" : "")} />
+              {publishingPlans ? "Publishing plans..." : "Publish " + publishablePlansCount + " eligible plans"}
+            </button>
+            <button type="button" onClick={() => setShowCreate((value) => !value)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700"><Plus className="h-4 w-4" />{showCreate ? "Close form" : "Create plan"}</button>
+          </div>
         </div>
+        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          Bulk publishing is enabled only after the backend confirms live Daraja readiness. It skips free, retired, non-hub, fractional-KES and unsupported-interval plans.
+        </p>
 
         {showCreate ? (
           <form onSubmit={createPlan} className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900/40 dark:bg-blue-950/10 sm:p-5">
