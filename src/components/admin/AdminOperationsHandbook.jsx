@@ -1,20 +1,20 @@
 import React from "react";
 import {
-  BookOpenCheck,
+  BookOpen,
   CircleDollarSign,
   ClipboardCheck,
   GraduationCap,
   Headphones,
-  LockKeyhole,
-  ServerCog,
   ShieldCheck,
-  Workflow,
+  Database,
+  ShieldCheck,
+  ClipboardCheck,
 } from "lucide-react";
 
 const MODULES = [
   {
     title: "1. Identity, roles and account safety",
-    icon: LockKeyhole,
+    icon: ShieldCheck,
     items: [
       "RevelaCode login and the existing users collection establish the person's identity. Browser role labels are not the source of authorization; protected operations re-check the current account role on the backend.",
       "RevelaCode Administrator owns ecosystem-wide access decisions. Support Administrator supervises support and maintains delegated study/policy content. Support Agents work assigned tickets. School and business roles remain scoped to their own workspaces.",
@@ -23,7 +23,7 @@ const MODULES = [
   },
   {
     title: "2. Ecosystem architecture",
-    icon: ServerCog,
+    icon: Database,
     items: [
       "One RevelaCode backend and shared identity sit underneath the ecosystem. Jumuiya modules are added to the existing backend and reuse its database and authentication bridge; do not create a second account or database system.",
       "Biashara handles business profiles and operations. Shamba handles farmer profiles, farm-rights reviews and agricultural work. Elimu handles school accounts and role-scoped school operations. Community is the shared connection and discovery layer.",
@@ -68,7 +68,7 @@ const MODULES = [
   },
   {
     title: "7. Release and incident discipline",
-    icon: Workflow,
+    icon: ClipboardCheck,
     items: [
       "Use repository pull requests and passing CI to validate changes. A green GitHub build does not prove a Render deployment or external email/payment provider is live; check the deployed service and a real, safe test path.",
       "For an incident: capture timestamp, affected user/workspace, request ID and exact error; protect private data; reproduce with minimum access; record the action; escalate high-risk issues instead of improvising production database edits.",
@@ -83,7 +83,7 @@ export default function AdminOperationsHandbook({ supervisorView = false }) {
       <section className="relative overflow-hidden rounded-2xl bg-slate-950 p-5 text-white sm:p-7">
         <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-emerald-500/15 blur-3xl" />
         <div className="relative flex items-start gap-3">
-          <div className="rounded-xl border border-white/10 bg-white/10 p-3"><BookOpenCheck size={24} /></div>
+          <div className="rounded-xl border border-white/10 bg-white/10 p-3"><BookOpen size={24} /></div>
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">{supervisorView ? "Support Admin Orientation" : "RevelaCode Operations Manual"}</p>
             <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{supervisorView ? "Learn the system from the ground up" : "Ecosystem control handbook"}</h2>
