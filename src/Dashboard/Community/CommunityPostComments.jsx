@@ -10,64 +10,17 @@ import {
 
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-
-function readPostId(post) {
-  let value = post?.id ?? post?._id ?? post?.post_id ?? post?.postId;
-  if (value && typeof value === "object") value = value.$oid ?? value.oid ?? value.id ?? "";
-  if (value === undefined || value === null) return "";
-  return String(value).trim();
-}
-
-function asCommentList(value, depth = 0) {
-  if (Array.isArray(value)) return value;
-  if (!value || typeof value !== "object" || depth > 4) return [];
-
-  // Some deployments wrap the comments array in one or more data/result
-  // envelopes. Walk only known collection keys and leave metadata untouched.
-  const keys = ["comments", "items", "results", "rows", "records", "data", "payload", "result"];
-  for (const key of keys) {
-    if (Array.isArray(value[key])) return value[key];
-  }
-  for (const key of keys) {
-    const nested = value[key];
-    if (nested && typeof nested === "object") {
-      const found = asCommentList(nested, depth + 1);
-      if (found.length) return found;
-    }
-  }
-  return [];
-}
+import {
+  asCommunityCommentList,
+  extractSavedCommunityComment,
+  normalizeCommunityComment,
+  readCommunityPostId,
+} from "@/Dashboard/Community/communityCommentsData.mjs";
 
 function textValue(value, fallback = "") {
   if (typeof value !== "string" && typeof value !== "number") return fallback;
   const text = String(value).trim();
   return text || fallback;
-}
-
-function normalizeComment(comment, index = 0) {
-  if (!comment || typeof comment !== "object" || Array.isArray(comment)) return null;
-
-  const author = comment.author && typeof comment.author === "object"
-    ? comment.author
-    : comment.user && typeof comment.user === "object"
-      ? comment.user
-      : {};
-
-  const id = comment.id ?? comment._id ?? comment.comment_id ?? `comment-${index}`;
-  const avatarValue = author.avatar_url || author.avatar || author.profile_image || author.profileImage;
-
-  return {
-    ...comment,
-    id: String(id),
-    body: textValue(comment.body ?? comment.text ?? comment.content),
-    authorName: textValue(
-      author.name || author.full_name || author.fullName ||
-      comment.author_name || comment.user_name || comment.username,
-      "Community member",
-    ),
-    authorAvatar: typeof avatarValue === "string" && avatarValue.trim() ? avatarValue.trim() : "",
-    createdAt: comment.created_at || comment.createdAt || comment.timestamp || null,
-  };
 }
 
 function normalizeDate(value) {
@@ -96,7 +49,7 @@ export default function CommunityPostComments({
   const { user } = useAuth();
   const { getCommunityComments, addCommunityComment } = useJumuiyaApi();
 
-  const postId = useMemo(() => readPostId(post), [post]);
+  const postId = useMemo(() => readCommunityPostId(post), [post]);
   const postTitle = textValue(post?.title || post?.headline, "Community post");
   const [comments, setComments] = useState([]);
   const [commentBody, setCommentBody] = useState("");
@@ -132,7 +85,7 @@ export default function CommunityPostComments({
       }
 
       const response = await getCommunityComments(postId, 100);
-      setComments(asCommentList(response).map(normalizeComment).filter(Boolean));
+      setComments(asCommunityCommentList(response).map(normalizeCommunityComment).filter(Boolean));
     } catch (requestError) {
       console.error("[Community comments] Load failed:", requestError);
       setError(getErrorMessage(requestError, "Comments could not be loaded. Please try again."));
@@ -202,23 +155,15 @@ export default function CommunityPostComments({
       }
 
       const result = await addCommunityComment(postId, body);
-      const returnedComment =
-        result?.comment ||
-        result?.data?.comment ||
-        (result && typeof result === "object" && !Array.isArray(result) &&
-          (result.body || result.text || result.content) ? result : null);
+      const returnedComment = extractSavedCommunityComment(result);
+      const normalized = returnedComment
+        ? normalizeCommunityComment(returnedComment, comments.length)
+        : null;
 
-      const normalized = normalizeComment(
-        returnedComment || {
-          id: `local-${Date.now()}`,
-          body,
-          author_name: currentUserName,
-          created_at: new Date().toISOString(),
-        },
-        comments.length,
-      );
-
-      if (normalized) {
+      // Only render a comment record returned by the backend. A successful
+      // submit still triggers a server refresh, but never inserts a fabricated
+      // local record when a deployment returns an unfamiliar response shape.
+      if (normalized?.body) {
         setComments((current) => {
           if (current.some((item) => String(item.id) === String(normalized.id))) return current;
           return [...current, normalized];
