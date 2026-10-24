@@ -28,5 +28,7 @@ jobs:
         run: node --test tests/revelaai-dashboard-contract.test.mjs
       - name: Run hub plans visibility contracts
         run: node --test tests/hub-plans-visibility.test.mjs
+      - name: Run admin operations contracts
+        run: node --test tests/admin-operations-contract.test.mjs
       - name: Build production frontend
         run: npm run build
