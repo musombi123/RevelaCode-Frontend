@@ -208,7 +208,10 @@ export function shouldQueueOfflineMutation(url, method, body) {
     "/api/jumuiya/marketplace/",
   ].some((prefix) => path.startsWith(prefix));
   const profileWrite = path === "/api/jumuiya/identity/profile";
-  return (allowed || profileWrite) && Boolean(path);
+  // User history is a small JSON mutation with a stable entry ID. The backend
+  // deduplicates it by ID, so replay after reconnect is safe.
+  const historyWrite = path === "/api/user/history" && verb === "POST";
+  return (allowed || profileWrite || historyWrite) && Boolean(path);
 }
 
 export function createOfflineQueuedError() {
