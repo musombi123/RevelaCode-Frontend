@@ -87,3 +87,106 @@ body,
     overscroll-behavior-x: none;
   }
 }
+
+
+/* =========================================================
+   SHAMBA WORKSPACE — DARK MODE CONTRAST + SAFE TEXT FLOW
+   Keeps light mode unchanged. In dark mode the workspace,
+   cards, nested surfaces, and their text use coordinated
+   colours so text outside cards remains visible as well.
+========================================================= */
+
+.shamba-workspace :where(article, section, [role="dialog"]) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.shamba-workspace :where(h1, h2, h3, h4, h5, h6, p, span, strong, em, small, label, li, dt, dd, td, th, a, button) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.dark .shamba-workspace {
+  color: #E2E8F0 !important;
+  background-color: #0B1220 !important;
+}
+
+.dark .shamba-workspace main {
+  color: #E2E8F0 !important;
+  background-color: #0B1220 !important;
+}
+
+/* Adapt cards and pale utility surfaces throughout Shamba,
+   including sub-dashboards which were previously light-only. */
+.dark .shamba-workspace [class~="bg-white"],
+.dark .shamba-workspace [class~="bg-slate-50"],
+.dark .shamba-workspace [class~="bg-slate-100"],
+.dark .shamba-workspace [class~="bg-slate-200"],
+.dark .shamba-workspace [class~="bg-gray-50"],
+.dark .shamba-workspace [class~="bg-gray-100"],
+.dark .shamba-workspace [class*="bg-emerald-50"],
+.dark .shamba-workspace [class*="bg-emerald-100"],
+.dark .shamba-workspace [class*="bg-green-50"],
+.dark .shamba-workspace [class*="bg-green-100"],
+.dark .shamba-workspace [class*="bg-lime-50"],
+.dark .shamba-workspace [class*="bg-amber-50"],
+.dark .shamba-workspace [class*="bg-amber-100"],
+.dark .shamba-workspace [class*="bg-yellow-50"],
+.dark .shamba-workspace [class*="bg-orange-50"],
+.dark .shamba-workspace [class*="bg-red-50"],
+.dark .shamba-workspace [class*="bg-rose-50"],
+.dark .shamba-workspace [class*="bg-sky-50"],
+.dark .shamba-workspace [class*="bg-blue-50"],
+.dark .shamba-workspace [class*="bg-violet-50"],
+.dark .shamba-workspace [class*="bg-cyan-50"],
+.dark .shamba-workspace [class*="bg-[#F"],
+.dark .shamba-workspace [class*="bg-[#E"] {
+  background-color: #111827 !important;
+}
+
+/* Replace pale gradient panels with a neutral dark surface. */
+.dark .shamba-workspace [class*="bg-gradient-"] {
+  background-image: none !important;
+  background-color: #111827 !important;
+}
+
+/* High-contrast body copy and headings, including labels outside cards. */
+.dark .shamba-workspace [class*="text-slate-900"],
+.dark .shamba-workspace [class*="text-slate-800"],
+.dark .shamba-workspace [class*="text-slate-700"],
+.dark .shamba-workspace [class*="text-slate-600"],
+.dark .shamba-workspace [class*="text-slate-500"],
+.dark .shamba-workspace [class*="text-slate-400"],
+.dark .shamba-workspace [class*="text-gray-900"],
+.dark .shamba-workspace [class*="text-gray-800"],
+.dark .shamba-workspace [class*="text-gray-700"],
+.dark .shamba-workspace [class*="text-gray-600"],
+.dark .shamba-workspace [class*="text-gray-500"],
+.dark .shamba-workspace [class*="text-[#172B25"],
+.dark .shamba-workspace [class*="text-[#123D2F"] {
+  color: #E2E8F0 !important;
+}
+
+/* Keep Shamba's green accent legible on dark backgrounds. */
+.dark .shamba-workspace [class*="text-[#075E46"],
+.dark .shamba-workspace [class*="text-[#087F5B"],
+.dark .shamba-workspace [class*="text-[#286947"],
+.dark .shamba-workspace [class*="text-[#2B8058"],
+.dark .shamba-workspace [class*="text-emerald-800"],
+.dark .shamba-workspace [class*="text-emerald-700"],
+.dark .shamba-workspace [class*="text-green-800"] {
+  color: #6EE7B7 !important;
+}
+
+.dark .shamba-workspace [class*="text-red-700"],
+.dark .shamba-workspace [class*="text-red-600"],
+.dark .shamba-workspace [class*="text-rose-800"] {
+  color: #FCA5A5 !important;
+}
+
+.dark .shamba-workspace [class*="text-amber-800"],
+.dark .shamba-workspace [class*="text-amber-700"],
+.dark .shamba-workspace [class*="text-yellow-800"] {
+  color: #FCD34D !important;
+}
