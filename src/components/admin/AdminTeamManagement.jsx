@@ -61,6 +61,9 @@ export default function AdminTeamManagement() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [search, setSearch] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, pages: 1 });
   const [form, setForm] = useState(EMPTY_FORM);
 
   const loadAll = useCallback(async ({ refresh = false } = {}) => {
@@ -69,10 +72,11 @@ export default function AdminTeamManagement() {
     setMessage("");
     try {
       const [userResponse, inviteResponse] = await Promise.all([
-        adminApi.platform.listUsers({ page: 1, limit: 100 }),
+        adminApi.platform.listUsers({ page, limit: 50, ...(activeSearch ? { search: activeSearch } : {}) }),
         adminApi.platform.listInvitations({ limit: 100 }),
       ]);
       setUsers(Array.isArray(userResponse?.users) ? userResponse.users : []);
+      setPagination(userResponse?.pagination || { page, limit: 50, total: 0, pages: 1 });
       setInvitations(Array.isArray(inviteResponse?.invitations) ? inviteResponse.invitations : []);
     } catch (error) {
       setMessageType("error");
@@ -81,17 +85,11 @@ export default function AdminTeamManagement() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [adminApi]);
+  }, [adminApi, page, activeSearch]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const filteredUsers = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return users;
-    return users.filter((user) => [
-      user.full_name, user.contact, user.email, user.role, user.status, user.id,
-    ].some((value) => String(value || "").toLowerCase().includes(query)));
-  }, [users, search]);
+  const filteredUsers = useMemo(() => users, [users]);
 
   async function sendInvitation(event) {
     event.preventDefault();
@@ -244,7 +242,7 @@ export default function AdminTeamManagement() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><div className="flex items-center gap-3"><Users size={20} className="text-slate-600 dark:text-slate-300" /><div><h3 className="font-black text-slate-950 dark:text-white">Registered accounts</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Ban blocks sign-in. Delete is a soft-delete that retains audit and ecosystem references.</p></div></div><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, role, status or ID…" className="mt-4 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" /></div>
+        <div className="border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><div className="flex items-center gap-3"><Users size={20} className="text-slate-600 dark:text-slate-300" /><div><h3 className="font-black text-slate-950 dark:text-white">Registered accounts</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Ban blocks sign-in. Delete is a soft-delete that retains audit and ecosystem references.</p></div></div><form onSubmit={(event) => { event.preventDefault(); setPage(1); setActiveSearch(search.trim()); }} className="mt-4 flex flex-col gap-2 sm:flex-row"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, role, status or ID…" className="min-h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-950">Search accounts</button><button type="button" onClick={() => { setSearch(""); setActiveSearch(""); setPage(1); }} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">Clear</button></form><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Showing {users.length} account(s) on page {pagination.page || page} of {Math.max(1, pagination.pages || 1)} · {pagination.total ?? users.length} matched overall.</p></div>
         {loading ? <div className="p-6 text-sm text-slate-500">Loading registered accounts…</div> : filteredUsers.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No accounts matched this search.</div> : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredUsers.map((item) => {
@@ -273,6 +271,7 @@ export default function AdminTeamManagement() {
             })}
           </div>
         )}
+        {!loading && (pagination.pages || 1) > 1 ? <div className="flex items-center justify-between gap-3 border-t border-slate-100 p-4 dark:border-slate-800"><button type="button" disabled={page <= 1 || refreshing} onClick={() => setPage((value) => Math.max(1, value - 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Previous</button><span className="text-xs text-slate-500">Page {page} of {pagination.pages}</span><button type="button" disabled={page >= pagination.pages || refreshing} onClick={() => setPage((value) => Math.min(pagination.pages, value + 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Next</button></div> : null}
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
