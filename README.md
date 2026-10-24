@@ -230,6 +230,12 @@ RevelaCode is built with a few guiding principles:
 
 ---
 
+## Elimu Operations
+
+Use the [Elimu Automation & Synchronization Centre Guide](docs/ELIMU_AUTOMATION_AND_SYNCHRONIZATION_GUIDE.md) for step-by-step operation, supported structured imports, record destinations, troubleshooting, and currently identified document-routing gaps.
+
+---
+
 # Contributing
 
 Contributions are welcome from **developers, researchers, designers, and writers**.
