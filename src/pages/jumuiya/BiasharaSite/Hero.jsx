@@ -136,17 +136,16 @@ export default function Hero({
     if (paused || reducedMotion || slideCount < 2) return undefined;
     const increment = 100 / (HERO_ROTATE_MS / 100);
     const timer = window.setInterval(() => {
-      setProgress((current) => {
-        const next = current + increment;
-        if (next >= 100) {
-          setIndex((currentIndex) => (currentIndex + 1) % slideCount);
-          return 0;
-        }
-        return next;
-      });
+      setProgress((current) => Math.min(100, current + increment));
     }, 100);
     return () => window.clearInterval(timer);
-  }, [paused, reducedMotion, setIndex, slideCount, index]);
+  }, [paused, reducedMotion, setIndex, slideCount]);
+
+  useEffect(() => {
+    if (progress < 100 || paused || reducedMotion || slideCount < 2) return;
+    setProgress(0);
+    setIndex((currentIndex) => (currentIndex + 1) % slideCount);
+  }, [progress, paused, reducedMotion, setIndex, slideCount]);
 
   const move = (direction) => {
     if (slideCount < 2) return;
