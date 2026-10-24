@@ -75,7 +75,8 @@ export function resolveAdminBackendUrl() {
 
   return String(value)
     .trim()
-    .replace(/\/+$/, "");
+    .replace(/\/+$/, "")
+    .replace(/\/api$/i, "");
 }
 
 // =========================================================
