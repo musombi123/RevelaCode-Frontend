@@ -308,7 +308,7 @@ export function usePrefersReducedMotion() {
 
 export function SectionEyebrow({ children, primary, className = "" }) {
   return (
-    <p className={"text-[11px] font-bold uppercase tracking-[0.2em] sm:text-xs " + className} style={{ color: primary }}>
+    <p className={"text-[11px] font-bold uppercase tracking-[0.2em] sm:text-xs " + className} style={{ color: readableBrandText(primary) }}>
       {children}
     </p>
   );
