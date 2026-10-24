@@ -1,95 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  ArrowUpRight, ChevronLeft, ChevronRight, Globe, Loader2, Mail,
-  MapPin, MessageCircle, Phone, Play, Sparkles,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Globe,
+  Loader2,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Package,
+  Phone,
+  Play,
+  Sparkles,
 } from "lucide-react";
 import { API_ROOT, BASE_URL } from "@/services/jumuiyaApi.jsx";
-
-const ROTATE_MS = 30000;
-
-function safeHttpsMedia(value) {
-  const raw = String(value || "");
-  if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) return raw;
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" && !url.username && !url.password ? url.href : "";
-  } catch {
-    return "";
-  }
-}
-
-function isDirectVideo(value) {
-  try {
-    return /\.(?:mp4|webm|ogg)$/i.test(new URL(String(value || "")).pathname);
-  } catch {
-    return false;
-  }
-}
-
-function videoEmbedUrl(value) {
-  try {
-    const url = new URL(String(value || ""));
-    if (url.protocol !== "https:") return "";
-    const host = url.hostname.toLowerCase().replace(/^www\./, "");
-    let id = "";
-    if (host === "youtu.be") id = url.pathname.split("/").filter(Boolean)[0] || "";
-    if (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") {
-      id = url.searchParams.get("v") || url.pathname.match(/\/(?:embed|shorts)\/([^/]+)/)?.[1] || "";
-    }
-    if (id && /^[A-Za-z0-9_-]{6,20}$/.test(id)) {
-      return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) + "?rel=0";
-    }
-    if (host === "vimeo.com" || host === "player.vimeo.com") {
-      const match = url.pathname.match(/\/(?:video\/)?(\d{5,})/);
-      if (match) return "https://player.vimeo.com/video/" + match[1];
-    }
-    return "";
-  } catch {
-    return "";
-  }
-}
-
-function formatPrice(value, currency) {
-  try {
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: String(currency || "KES").toUpperCase(),
-      maximumFractionDigits: 2,
-    }).format(Number(value || 0));
-  } catch {
-    return String(currency || "KES") + " " + Number(value || 0).toLocaleString("en-KE");
-  }
-}
-
-function VideoFrame({ url, title }) {
-  const safeUrl = safeHttpsMedia(url);
-  if (!safeUrl) return null;
-  const embed = videoEmbedUrl(safeUrl);
-  if (embed) {
-    return (
-      <iframe
-        src={embed}
-        title={title || "Business video"}
-        loading="lazy"
-        allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-        className="h-full min-h-[220px] w-full rounded-2xl border-0 bg-slate-950 sm:min-h-[300px]"
-      />
-    );
-  }
-  if (isDirectVideo(safeUrl)) {
-    return <video src={safeUrl} controls playsInline preload="metadata" className="h-full max-h-[440px] min-h-[220px] w-full rounded-2xl bg-slate-950 object-contain sm:min-h-[300px]" />;
-  }
-  return (
-    <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-2xl bg-slate-950 p-6 text-center text-white sm:min-h-[300px]">
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15"><Play size={24} fill="currentColor" /></span>
-      <span className="text-sm font-bold">Watch video</span>
-      <span className="break-all text-xs text-white/70">Opens the business video in a new tab</span>
-    </a>
-  );
-}
+import About from "./BiasharaSite/About.jsx";
+import Header, { AnnouncementBar } from "./BiasharaSite/Header.jsx";
+import Hero from "./BiasharaSite/Hero.jsx";
+import TrustStrip from "./BiasharaSite/TrustStrip.jsx";
+import {
+  createBrandTheme,
+  formatPrice,
+  getOpeningStatus,
+  HERO_ROTATE_MS,
+  safeEmailHref,
+  safeHttpsMedia,
+  safeTelephoneHref,
+  videoEmbedUrl,
+  isDirectVideo,
+  contrastColor,
+  readableBrandText,
+} from "./BiasharaSite/utils.jsx";
 
 const SOCIAL_LABELS = {
   facebook: "Facebook",
@@ -120,6 +63,34 @@ const SOCIAL_LABELS = {
   other: "More links",
 };
 
+function PublicMedia({ item, businessName }) {
+  const safeUrl = safeHttpsMedia(item?.url || item?.image_url || item?.video_url);
+  if (!safeUrl) {
+    return <div className="flex min-h-48 items-center justify-center bg-slate-100 text-slate-300"><Globe size={32} /></div>;
+  }
+  if (item?.type === "video" || item?.video_url) {
+    const embed = videoEmbedUrl(safeUrl);
+    if (embed) {
+      return <iframe src={embed} title={item?.caption || (businessName || "Business") + " video"} loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation" allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="no-referrer" className="h-full min-h-48 w-full border-0 bg-slate-950" />;
+    }
+    if (isDirectVideo(safeUrl)) {
+      return <video src={safeUrl} title={item?.caption || (businessName || "Business") + " video"} controls playsInline preload="metadata" className="h-full min-h-48 w-full bg-slate-950 object-contain" />;
+    }
+    return <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-48 flex-col items-center justify-center gap-3 bg-slate-950 p-5 text-white"><Play size={24} /><span className="text-sm font-bold">Open video</span><span className="text-xs text-white/60">Opens in a new tab</span></a>;
+  }
+  return <img src={safeUrl} alt={item?.alt || item?.caption || businessName || "Business media"} loading="lazy" decoding="async" className="h-full min-h-48 w-full object-cover transition duration-700 group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none" />;
+}
+
+function SectionHeading({ eyebrow, title, description, primary, centered = false }) {
+  return (
+    <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: readableBrandText(primary) }}>{eyebrow}</p>
+      <h2 className="mt-3 break-words text-3xl font-semibold leading-[1.08] tracking-[-.045em] text-slate-950 sm:text-4xl lg:text-5xl">{title}</h2>
+      {description ? <p className="mt-4 break-words text-sm leading-7 text-slate-600 sm:text-base">{description}</p> : null}
+    </div>
+  );
+}
+
 export default function BiasharaPublicWebsitePage() {
   const { businessSlug } = useParams();
   const [site, setSite] = useState(null);
@@ -130,13 +101,17 @@ export default function BiasharaPublicWebsitePage() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [productIndex, setProductIndex] = useState(0);
+  const [minutePulse, setMinutePulse] = useState(0);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", website: "" });
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
     setLoading(true);
     setError("");
+    setNotice("");
     setSite(null);
+
     if (!BASE_URL) {
       setError("This website is not connected to the Biashara API yet.");
       setLoading(false);
@@ -153,6 +128,8 @@ export default function BiasharaPublicWebsitePage() {
         return payload?.data !== undefined ? payload.data : payload;
       })
       .then((payload) => {
+        if (!active) return;
+        if (!payload || typeof payload !== "object") throw new Error("This business website did not return usable content.");
         setSite(payload);
         setHeroIndex(0);
         setGalleryIndex(0);
@@ -165,74 +142,110 @@ export default function BiasharaPublicWebsitePage() {
           meta.name = "description";
           document.head.appendChild(meta);
         }
-        meta.content = description;
+        meta.content = String(description || "").slice(0, 320);
       })
       .catch((err) => {
-        if (err?.name !== "AbortError") setError(err?.message || "Unable to load this business website.");
+        if (active && err?.name !== "AbortError") setError(err?.message || "Unable to load this business website.");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [businessSlug]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setMinutePulse((current) => current + 1), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const business = site?.business || {};
   const website = site?.website || {};
-  const products = Array.isArray(site?.products) ? site.products : [];
-  const serviceItems = website.show_services === false || !Array.isArray(website.service_items)
-    ? []
-    : website.service_items.filter((item) => item && String(item.title || "").trim());
-  const openingHoursEntries = Object.entries(business.opening_hours && typeof business.opening_hours === "object" ? business.opening_hours : {})
-    .map(([day, value]) => ({
-      day: day.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
-      hours: typeof value === "string" ? value.trim() : value && typeof value === "object"
-        ? (value.closed === true ? "Closed" : [value.open, value.close].filter(Boolean).join(" – "))
-        : String(value || ""),
-    }))
-    .filter((item) => item.hours);
-  const primary = website.primary_color || "#1d4ed8";
-  const accent = website.accent_color || "#0f766e";
+  const products = useMemo(() => Array.isArray(site?.products) ? site.products : [], [site?.products]);
+  const serviceItems = useMemo(() => (
+    website.show_services === false || !Array.isArray(website.service_items)
+      ? []
+      : website.service_items.filter((item) => item && String(item.title || "").trim())
+  ), [website.show_services, website.service_items]);
+  const galleryItems = useMemo(() => (
+    website.show_gallery === false || !Array.isArray(website.gallery_items)
+      ? []
+      : website.gallery_items.filter((item) => item && item.url && (item.type === "image" || item.type === "video"))
+  ), [website.show_gallery, website.gallery_items]);
+  const socialLinks = useMemo(() => (
+    website.show_social_links === false
+      ? []
+      : Object.entries(website.social_links && typeof website.social_links === "object" ? website.social_links : {})
+        .filter(([key, value]) => SOCIAL_LABELS[key] && safeHttpsMedia(value))
+        .map(([key, value]) => ({ key, label: SOCIAL_LABELS[key], url: safeHttpsMedia(value) }))
+  ), [website.show_social_links, website.social_links]);
+
+  const requestedPrimary = website.primary_color || "#1d4ed8";
+  const requestedAccent = website.accent_color || "#0f766e";
+  const theme = useMemo(() => createBrandTheme(requestedPrimary, requestedAccent), [requestedPrimary, requestedAccent]);
+  const primary = theme.primary;
+  const accent = theme.accent;
   const logo = safeHttpsMedia(website.logo_url || business.logo_url);
-  const currentHeroSlides = Array.isArray(website.hero_slides) && website.hero_slides.length
-    ? website.hero_slides.filter((item) => item && (item.image_url || item.video_url))
-    : ((website.cover_image_url || website.hero_image_url || website.hero_video_url)
-      ? [{ image_url: website.cover_image_url || website.hero_image_url || "", video_url: website.hero_video_url || "", title: "", subtitle: "", alt: "" }]
-      : []);
+  const currentHeroSlides = useMemo(() => {
+    const configured = Array.isArray(website.hero_slides) ? website.hero_slides : [];
+    const valid = configured.filter((item) => item && (safeHttpsMedia(item.image_url) || safeHttpsMedia(item.video_url)));
+    if (valid.length) return valid;
+    if (website.cover_image_url || website.hero_image_url || website.hero_video_url) {
+      return [{
+        image_url: website.cover_image_url || website.hero_image_url || "",
+        video_url: website.hero_video_url || "",
+        title: "",
+        subtitle: "",
+        alt: "",
+      }];
+    }
+    return [{ image_url: "", video_url: "", title: "", subtitle: "", alt: "" }];
+  }, [website.hero_slides, website.cover_image_url, website.hero_image_url, website.hero_video_url]);
   const heroSlides = currentHeroSlides.length ? currentHeroSlides : [{ image_url: "", video_url: "", title: "", subtitle: "", alt: "" }];
   const heroSlide = heroSlides[((heroIndex % heroSlides.length) + heroSlides.length) % heroSlides.length] || heroSlides[0];
   const heroImage = safeHttpsMedia(heroSlide?.image_url || (heroIndex === 0 ? website.cover_image_url || website.hero_image_url : ""));
-  const heroVideo = heroSlide?.video_url || (heroIndex === 0 ? website.hero_video_url : "");
+  const heroVideo = safeHttpsMedia(heroSlide?.video_url || (heroIndex === 0 ? website.hero_video_url : ""));
   const whatsappDigits = String(website.whatsapp_number || "").replace(/\D/g, "");
   const canContact = website.contact_enabled !== false;
-  const socialLinks = website.show_social_links === false ? [] : Object.entries(website.social_links || {})
-    .filter(([key, value]) => SOCIAL_LABELS[key] && safeHttpsMedia(value))
-    .map(([key, value]) => ({ key, label: SOCIAL_LABELS[key], url: safeHttpsMedia(value) }));
-  const galleryItems = website.show_gallery === false || !Array.isArray(website.gallery_items)
-    ? []
-    : website.gallery_items.filter((item) => item && item.url && (item.type === "image" || item.type === "video"));
-  const productCardsVisible = Math.min(3, products.length);
-  const canRotateHero = heroSlides.length > 1;
-  const canRotateGallery = galleryItems.length > 1;
-  const canRotateProducts = products.length > 3;
+  const productCount = website.show_products === false ? 0 : products.length;
+  const serviceCount = website.show_services === false ? 0 : serviceItems.length;
+  const mediaCount = website.show_gallery === false ? 0 : galleryItems.length;
+  const socialCount = website.show_social_links === false ? 0 : socialLinks.length;
+  const openingStatus = useMemo(() => getOpeningStatus(business.opening_hours, new Date()), [business.opening_hours, minutePulse]);
+  const navItems = useMemo(() => {
+    const items = [{ id: "about", label: "Our story" }];
+    if (serviceCount) items.push({ id: "services", label: "Services" });
+    if (website.show_products !== false) items.push({ id: "products", label: "Products" });
+    if (mediaCount) items.push({ id: "gallery", label: "Gallery" });
+    if (socialCount) items.push({ id: "socials", label: "Socials" });
+    if (canContact) items.push({ id: "contact", label: "Contact" });
+    return items;
+  }, [serviceCount, website.show_products, mediaCount, socialCount, canContact]);
 
   useEffect(() => {
-    if (!canRotateHero) return undefined;
-    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroSlides.length), ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [canRotateHero, heroSlides.length, businessSlug]);
+    if (heroSlides.length < 2) return undefined;
+    setHeroIndex((current) => current % heroSlides.length);
+    return undefined;
+  }, [heroSlides.length]);
 
   useEffect(() => {
-    if (!canRotateGallery) return undefined;
-    const timer = window.setInterval(() => setGalleryIndex((index) => (index + 1) % galleryItems.length), ROTATE_MS);
+    if (galleryItems.length < 2) return undefined;
+    const timer = window.setInterval(() => setGalleryIndex((index) => (index + 1) % galleryItems.length), HERO_ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [canRotateGallery, galleryItems.length, businessSlug]);
+  }, [galleryItems.length, businessSlug]);
 
   useEffect(() => {
-    if (!canRotateProducts) return undefined;
-    const timer = window.setInterval(() => setProductIndex((index) => (index + 1) % products.length), ROTATE_MS);
+    if (products.length < 4) return undefined;
+    const timer = window.setInterval(() => setProductIndex((index) => (index + 1) % products.length), HERO_ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [canRotateProducts, products.length, businessSlug]);
+  }, [products.length, businessSlug]);
 
-  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const setField = useCallback((key, value) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  }, []);
 
   const submitInquiry = async (event) => {
     event.preventDefault();
@@ -256,128 +269,116 @@ export default function BiasharaPublicWebsitePage() {
     }
   };
 
+  const askAbout = (name, kind) => {
+    setField("message", "Hello, I would like to know more about " + kind + ": " + name + ".");
+  };
+
   if (loading) {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-sm text-slate-500"><Loader2 className="mr-2 animate-spin" size={18} />Loading business website…</main>;
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6" aria-label="Loading business website">
+        <div className="mx-auto max-w-7xl animate-pulse motion-reduce:animate-none">
+          <div className="h-16 rounded-2xl bg-white shadow-sm" />
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <div className="min-h-[360px] rounded-[2rem] bg-slate-200" />
+            <div className="min-h-[360px] rounded-[2rem] bg-slate-200" />
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="h-28 rounded-2xl bg-white" /><div className="h-28 rounded-2xl bg-white" /><div className="h-28 rounded-2xl bg-white" />
+          </div>
+          <p className="mt-5 text-center text-xs font-medium text-slate-500"><Loader2 className="mr-2 inline animate-spin motion-reduce:animate-none" size={15} />Loading business website…</p>
+        </div>
+      </main>
+    );
   }
 
   if (error && !site) {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6"><section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm"><Globe className="mx-auto text-slate-400" size={30} /><h1 className="mt-4 text-xl font-bold text-slate-900">Website unavailable</h1><p className="mt-2 text-sm leading-6 text-slate-600">{error}</p><a href="/" className="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">Go to RevelaCode</a></section></main>;
+    return (
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-12 sm:px-6">
+        <div aria-hidden="true" className="absolute inset-0 opacity-80" style={{ background: "radial-gradient(circle at 15% 15%, #1d4ed855 0, transparent 35%), radial-gradient(circle at 85% 80%, #0f766e44 0, transparent 35%)" }} />
+        <section className="relative w-full max-w-xl rounded-[2rem] border border-white/10 bg-white/[.06] p-7 text-center text-white shadow-2xl backdrop-blur-xl sm:p-10">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white/80"><Globe size={26} /></span>
+          <p className="mt-6 text-[10px] font-bold uppercase tracking-[.2em] text-white/50">Biashara public website</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">This page is unavailable.</h1>
+          <p className="mt-4 break-words text-sm leading-7 text-white/65">{error}</p>
+          <a href="/" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            Return to RevelaCode <ArrowUpRight size={16} />
+          </a>
+        </section>
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white text-slate-900" style={{ scrollBehavior: "smooth" }}>
-      {website.announcement ? <div className="px-4 py-2.5 text-center text-xs font-bold tracking-wide text-white sm:text-sm" style={{ backgroundColor: accent }}>{website.announcement}</div> : null}
+    <main id="main-content" tabIndex={-1} className="biashara-public-site min-h-screen overflow-x-clip bg-white text-slate-900" style={{ scrollBehavior: "smooth" }}>
+      <style>{'@media (prefers-reduced-motion: reduce) { .biashara-public-site, .biashara-public-site *, .biashara-public-site *::before, .biashara-public-site *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }'}</style>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-xl">Skip to content</a>
+      <AnnouncementBar announcement={website.announcement} primary={primary} accent={accent} />
+      <Header
+        business={business}
+        website={website}
+        logo={logo}
+        primary={primary}
+        accent={accent}
+        navItems={navItems}
+        canContact={canContact}
+        whatsappDigits={whatsappDigits}
+        openingStatus={openingStatus}
+      />
 
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-3 px-4 py-3 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
-          <a href={"/b/" + (business.slug || "")} className="flex min-w-0 max-w-full items-center justify-center gap-3 sm:justify-start">
-            {logo
-              ? <img src={logo} alt={(business.name || "Business") + " logo"} className="h-11 w-11 shrink-0 rounded-xl bg-white object-contain ring-1 ring-slate-200 sm:h-12 sm:w-12" />
-              : <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm sm:h-12 sm:w-12" style={{ backgroundColor: primary }}><Globe size={20} /></span>}
-            <span className="min-w-0 text-center sm:text-left">
-              <span className="block break-words text-base font-black tracking-tight text-slate-950 sm:text-lg">{business.name || "Local business"}</span>
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-500 sm:text-xs">{business.category || business.business_type || "Official business website"}</span>
-            </span>
-          </a>
-          <nav aria-label="Website navigation" className="flex max-w-full flex-wrap items-center justify-center gap-1.5 sm:justify-end">
-            {serviceItems.length ? <a href="#services" className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:text-sm">Services</a> : null}
-            {website.show_products !== false && products.length ? <a href="#products" className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:text-sm">Products</a> : null}
-            {galleryItems.length ? <a href="#gallery" className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:text-sm">Gallery</a> : null}
-            {socialLinks.length ? <a href="#socials" className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:text-sm">Socials</a> : null}
-            {canContact ? <a href="#contact" className="rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 sm:text-sm" style={{ backgroundColor: primary }}>Contact us</a> : null}
-          </nav>
-        </div>
-      </header>
+      <Hero
+        business={business}
+        website={website}
+        slides={heroSlides}
+        index={heroIndex}
+        setIndex={setHeroIndex}
+        heroImage={heroImage}
+        heroVideo={heroVideo}
+        productCount={productCount}
+        serviceCount={serviceCount}
+        mediaCount={mediaCount}
+        socialCount={socialCount}
+        canContact={canContact}
+        whatsappDigits={whatsappDigits}
+        primary={theme.primary}
+        accent={theme.accent}
+        theme={theme}
+      />
 
-      <section className="relative isolate overflow-hidden text-white" style={{ backgroundColor: primary }}>
-        {heroImage ? <img key={heroImage} src={heroImage} alt={heroSlide?.alt || ""} className="absolute inset-0 -z-20 h-full w-full object-cover opacity-40 transition-opacity duration-700 motion-reduce:transition-none" /> : null}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950/45 via-slate-950/25 to-black/25" />
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 py-12 text-center sm:px-6 sm:py-16 md:py-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)] lg:gap-12 lg:px-8 lg:text-left">
-          <div className="mx-auto w-full max-w-3xl lg:mx-0">
-            <p className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur sm:text-xs"><Sparkles size={14} />{business.category || "Welcome to our business"}</p>
-            <h1 className="mt-5 break-words text-3xl font-black leading-[1.06] tracking-tight sm:text-5xl md:text-6xl lg:text-6xl">{heroSlide?.title || website.headline || business.name || "Welcome"}</h1>
-            {(heroSlide?.subtitle || website.tagline) ? <p className="mx-auto mt-5 max-w-2xl break-words text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:mx-0">{heroSlide?.subtitle || website.tagline}</p> : null}
-            {business.location || business.county ? <p className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-white/80 sm:text-sm lg:justify-start"><MapPin size={15} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3 sm:mt-8 lg:justify-start">
-              {products.length && website.show_products !== false ? <a href="#products" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950 shadow-lg transition duration-300 hover:-translate-y-0.5 hover:bg-slate-100 motion-reduce:transform-none">Explore products <ArrowUpRight size={16} /></a> : null}
-              {canContact ? <a href="#contact" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/35 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10">Talk to us</a> : null}
-              {whatsappDigits ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 motion-reduce:transform-none" style={{ backgroundColor: accent }}><MessageCircle size={17} />WhatsApp us</a> : null}
-            </div>
-            {canRotateHero ? (
-              <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
-                <button type="button" aria-label="Previous hero slide" onClick={() => setHeroIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 transition hover:bg-white/20"><ChevronLeft size={18} /></button>
-                <div className="flex items-center gap-2" aria-label={"Slide " + (heroIndex + 1) + " of " + heroSlides.length}>
-                  {heroSlides.map((_, index) => <button key={index} type="button" onClick={() => setHeroIndex(index)} aria-label={"Go to slide " + (index + 1)} aria-current={index === heroIndex ? "true" : undefined} className={"h-2.5 rounded-full transition-all " + (index === heroIndex ? "w-7 bg-white" : "w-2.5 bg-white/45 hover:bg-white/75")} />)}
-                </div>
-                <button type="button" aria-label="Next hero slide" onClick={() => setHeroIndex((index) => (index + 1) % heroSlides.length)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 transition hover:bg-white/20"><ChevronRight size={18} /></button>
-                <span className="ml-1 text-[10px] font-semibold text-white/65 sm:text-xs">Auto changes every 30 seconds</span>
-              </div>
-            ) : null}
-          </div>
-          <div className="mx-auto w-full max-w-xl lg:max-w-none">
-            <div className="relative rounded-[1.8rem] border border-white/20 bg-white/10 p-2.5 shadow-2xl shadow-black/20 backdrop-blur-sm transition duration-500 hover:-translate-y-1 motion-reduce:transform-none">
-              <div className="relative min-h-[230px] overflow-hidden rounded-[1.3rem] bg-slate-950 sm:min-h-[330px]">
-                {heroVideo ? <VideoFrame url={heroVideo} title={(business.name || "Business") + " hero video"} /> : heroImage ? <img src={heroImage} alt={heroSlide?.alt || (business.name || "Business") + " featured image"} className="absolute inset-0 h-full w-full object-cover transition duration-700 motion-reduce:transition-none" /> : (
-                  <div className="flex min-h-[230px] flex-col items-center justify-center p-8 text-center sm:min-h-[330px]">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-white"><Globe size={30} /></span>
-                    <p className="mt-4 text-xl font-black">{business.name || "Your business"}</p>
-                    <p className="mt-2 max-w-xs text-sm leading-6 text-white/65">{website.tagline || "Quality, service and care for every customer."}</p>
-                  </div>
-                )}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-3 text-left">
-                  <span className="truncate rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">{business.name || "Business showcase"}</span>
-                  {canRotateHero ? <span className="shrink-0 rounded-full bg-white/90 px-2.5 py-1.5 text-[10px] font-bold text-slate-900">{heroIndex + 1}/{heroSlides.length}</span> : null}
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center sm:gap-3">
-              {[
-                [products.length + "", "Products listed"],
-                [galleryItems.length + "", "Media showcases"],
-                [socialLinks.length + "", "Social links"],
-              ].map(([value, label]) => <div key={label} className="rounded-2xl border border-white/10 bg-black/10 px-2 py-3 backdrop-blur-sm"><p className="text-lg font-black sm:text-xl">{value}</p><p className="mt-1 text-[9px] font-semibold text-white/65 sm:text-[10px]">{label}</p></div>)}
-            </div>
-          </div>
-        </div>
-        <div aria-hidden="true" className="absolute -bottom-24 left-[-4rem] -z-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-      </section>
+      <TrustStrip
+        business={business}
+        openingStatus={openingStatus}
+        whatsappEnabled={/^\d{7,15}$/.test(whatsappDigits)}
+        productCount={products.length}
+        showProducts={website.show_products !== false}
+        primary={theme.primary}
+      />
 
-      <section className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-10 text-center sm:px-6 sm:py-14 md:grid-cols-2 md:text-left lg:px-8">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none sm:p-7">
-          <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>Our story</p>
-          <h2 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">A business built around you</h2>
-          <p className="mt-4 whitespace-pre-line break-words text-sm leading-7 text-slate-600">{website.about || business.description || "We are glad you are here. Explore our catalogue and contact us for details about our products and services."}</p>
-        </div>
-        <div className="rounded-[1.75rem] border border-slate-200 p-5 shadow-sm sm:p-7" style={{ backgroundColor: primary + "0A" }}>
-          <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>Here to help</p>
-          <h2 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Real people. Clear answers.</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">Need a recommendation, availability or more information? Reach out directly using the contact option that suits you.</p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            {business.phone && canContact ? <span className="inline-flex max-w-full items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200"><Phone size={14} />{business.phone}</span> : null}
-            {business.email && canContact ? <span className="inline-flex max-w-full items-center gap-2 break-all rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200"><Mail size={14} />{business.email}</span> : null}
-          </div>
-          {openingHoursEntries.length ? <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 text-left"><h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-700">Opening hours</h3><div className="mt-3 space-y-2">{openingHoursEntries.map((item) => <div key={item.day} className="flex items-start justify-between gap-3 text-xs"><span className="font-semibold text-slate-600">{item.day}</span><span className="text-right text-slate-800">{item.hours}</span></div>)}</div></div> : null}
-        </div>
-      </section>
+      <About
+        business={business}
+        website={website}
+        openingStatus={openingStatus}
+        canContact={canContact}
+        primary={theme.primary}
+        accent={theme.accent}
+      />
 
-      {serviceItems.length ? (
-        <section id="services" className="scroll-mt-28 border-y border-slate-100 bg-white">
-          <div className="mx-auto w-full max-w-7xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>What we do</p>
-            <h2 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Services made for your needs</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">Explore the services this business offers. Contact the team for availability, a tailored quote or booking details.</p>
-            <div className="mt-8 grid gap-4 text-left sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
+      {serviceCount > 0 ? (
+        <section id="services" className="scroll-mt-24 border-y border-slate-100 bg-slate-50/70 py-16 sm:py-20">
+          <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="Services" title="What this business offers" description="Explore the services published by the business and contact the team for current details." primary={primary} />
+            <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {serviceItems.map((service, index) => {
                 const image = safeHttpsMedia(service.image_url);
                 return (
-                  <article key={(service.title || "service") + ":" + index} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
-                    {image ? <div className="h-44 overflow-hidden bg-slate-100"><img src={image} alt={service.title || "Service"} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" /></div> : <div className="flex h-32 items-center justify-center" style={{ background: "linear-gradient(135deg, " + primary + "15, " + accent + "25)" }}><Sparkles size={28} style={{ color: primary }} /></div>}
+                  <article key={(service.title || "service") + ":" + index} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
+                    <div className="relative flex h-40 items-center justify-center overflow-hidden bg-slate-100">
+                      {image ? <img src={image} alt={service.title || "Service"} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] motion-reduce:transform-none motion-reduce:transition-none" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ color: readableBrandText(primary), background: "linear-gradient(140deg, " + primary + "12, " + accent + "24)" }}><Sparkles size={26} /></span>}
+                    </div>
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
-                      <h3 className="break-words text-lg font-extrabold leading-6 text-slate-950">{service.title}</h3>
-                      {service.price_label ? <p className="mt-3 inline-flex w-fit max-w-full rounded-xl px-3 py-2 text-sm font-black" style={{ color: primary, backgroundColor: primary + "0A" }}>{service.price_label}</p> : null}
-                      {service.description ? <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{service.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact us to discuss this service and your requirements.</p>}
-                      <div className="mt-auto pt-5">{canContact ? <a href="#contact" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:opacity-90" style={{ backgroundColor: primary }}>Ask about service <ArrowUpRight size={15} /></a> : <span className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-500">Contact options unavailable</span>}</div>
+                      <h3 className="break-words text-lg font-semibold tracking-tight text-slate-950">{service.title}</h3>
+                      {service.price_label ? <p className="mt-3 w-fit max-w-full rounded-xl px-3 py-2 text-sm font-bold" style={{ color: readableBrandText(primary), backgroundColor: primary + "0A" }}>{service.price_label}</p> : null}
+                      {service.description ? <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{service.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business to discuss this service.</p>}
+                      <a href="#contact" onClick={() => askAbout(service.title, "the service")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about service <ArrowUpRight size={15} /></a>
                     </div>
                   </article>
                 );
@@ -388,127 +389,144 @@ export default function BiasharaPublicWebsitePage() {
       ) : null}
 
       {website.show_products !== false ? (
-        <section id="products" className="scroll-mt-28 border-y border-slate-100 bg-slate-50/80">
-          <div className="mx-auto w-full max-w-7xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>The catalogue</p>
-            <h2 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Made for your everyday</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">See product details, current prices and availability from the business catalogue.</p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-slate-500"><span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{products.length} listed product(s)</span>{canRotateProducts ? <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Cards slide every 30 seconds</span> : null}</div>
+        <section id="products" className="scroll-mt-24 border-b border-slate-200 bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              <SectionHeading eyebrow="The catalogue" title="Products, at a glance" description="Published catalogue details are shown as provided by the business." primary={primary} />
+              {products.length ? <span className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-600">{products.length} listed {products.length === 1 ? "product" : "products"}</span> : null}
+            </div>
             {products.length ? (
               <>
-                <div className="mt-8 grid gap-4 text-center sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
-                  {Array.from({ length: productCardsVisible }, (_, offset) => {
-                    const index = (productIndex + offset) % products.length;
-                    const product = products[index];
+                <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: Math.min(3, products.length) }, (_, offset) => {
+                    const product = products[(productIndex + offset) % products.length];
                     const image = safeHttpsMedia(product.image_url);
                     return (
-                      <article key={product.id} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-center shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
+                      <article key={product.id || productIndex + ":" + offset} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
                         <div className="relative flex h-56 items-center justify-center overflow-hidden bg-slate-100 sm:h-64">
-                          {image ? <img src={image} alt={product.name || "Product"} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" /> : <div className="flex h-full w-full items-center justify-center text-4xl font-black" style={{ color: primary }}>{String(product.name || "P").slice(0, 1).toUpperCase()}</div>}
-                          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm">{product.available ? "Available" : "Out of stock"}</span>
+                          {image ? <img src={image} alt={product.name || "Product"} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] motion-reduce:transform-none motion-reduce:transition-none" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-400"><Package size={24} /></span>}
+                          <span className="absolute left-3 top-3 rounded-full border border-white/80 bg-white/95 px-3 py-1.5 text-[10px] font-bold text-slate-600 shadow-sm">{product.available === true ? "Available" : product.available === false ? "Out of stock" : "Ask for availability"}</span>
                         </div>
-                        <div className="flex flex-1 flex-col items-center p-5 sm:p-6">
-                          {product.category ? <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{product.category}</p> : null}
-                          <h3 className="mt-2 break-words text-lg font-extrabold leading-6 text-slate-950">{product.name || "Product"}</h3>
-                          <p className="mt-3 w-full rounded-xl px-3 py-2.5 text-lg font-black" style={{ color: primary, backgroundColor: primary + "0A" }}>{formatPrice(product.price, product.currency || business.currency)}</p>
-                          {product.description ? <p className="mt-3 line-clamp-3 break-words text-sm leading-6 text-slate-600">{product.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact us for more details about this item.</p>}
-                          <div className="mt-auto w-full pt-5">
-                            {canContact ? <a href="#contact" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:opacity-90" style={{ backgroundColor: primary }}>Ask about product <ArrowUpRight size={15} /></a> : <span className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-500">Contact options unavailable</span>}
-                          </div>
+                        <div className="flex flex-1 flex-col p-5 sm:p-6">
+                          {product.category ? <p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{product.category}</p> : null}
+                          <h3 className="mt-2 break-words text-lg font-semibold tracking-tight text-slate-950">{product.name || "Product"}</h3>
+                          <p className="mt-3 text-xl font-bold tracking-tight" style={{ color: readableBrandText(primary) }}>{formatPrice(product.price, product.currency || business.currency)}</p>
+                          {product.description ? <p className="mt-3 line-clamp-3 break-words text-sm leading-6 text-slate-600">{product.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business for more details about this item.</p>}
+                          <a href="#contact" onClick={() => askAbout(product.name || "this product", "the product")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about product <ArrowUpRight size={15} /></a>
                         </div>
                       </article>
                     );
                   })}
                 </div>
-                {canRotateProducts ? (
-                  <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                    <button type="button" onClick={() => setProductIndex((index) => (index - 1 + products.length) % products.length)} aria-label="Previous products" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100"><ChevronLeft size={17} /></button>
-                    {products.map((product, index) => <button key={product.id} type="button" onClick={() => setProductIndex(index)} aria-label={"Show product set starting at " + product.name} aria-current={index === productIndex ? "true" : undefined} className={"h-2.5 rounded-full transition-all " + (index === productIndex ? "w-7" : "w-2.5")} style={{ backgroundColor: index === productIndex ? primary : "#cbd5e1" }} />)}
-                    <button type="button" onClick={() => setProductIndex((index) => (index + 1) % products.length)} aria-label="Next products" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100"><ChevronRight size={17} /></button>
+                {products.length > 3 ? (
+                  <div className="mt-6 flex items-center justify-center gap-3">
+                    <button type="button" aria-label="Previous products" onClick={() => setProductIndex((index) => (index - 1 + products.length) % products.length)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2" style={{ "--tw-ring-color": primary }}><ChevronLeft size={18} /></button>
+                    <span className="text-xs font-semibold text-slate-500">{productIndex + 1} / {products.length}</span>
+                    <button type="button" aria-label="Next products" onClick={() => setProductIndex((index) => (index + 1) % products.length)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2" style={{ "--tw-ring-color": primary }}><ChevronRight size={18} /></button>
                   </div>
                 ) : null}
               </>
             ) : (
-              <div className="mx-auto mt-8 max-w-xl rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center"><h3 className="font-bold text-slate-800">Catalogue coming soon</h3><p className="mt-2 text-sm leading-6 text-slate-500">The business has not published active products yet. Check back soon or use the contact option above.</p></div>
+              <div className="mt-8 rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:px-8">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200"><Package size={22} /></span>
+                <h3 className="mt-4 text-lg font-semibold tracking-tight text-slate-900">The catalogue is not published yet.</h3>
+                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Check back later, or contact the business for details about its current offering.</p>
+              </div>
             )}
           </div>
         </section>
       ) : null}
 
-      {galleryItems.length ? (
-        <section id="gallery" className="scroll-mt-28 mx-auto w-full max-w-7xl px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>Inside the business</p>
-          <h2 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">A closer look</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">Photos and videos from the team, products, services or the work behind the scenes.</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: Math.min(3, galleryItems.length) }, (_, offset) => {
-              const index = (galleryIndex + offset) % galleryItems.length;
-              const item = galleryItems[index];
-              const image = item.type === "image" ? safeHttpsMedia(item.url) : "";
-              return (
-                <article key={index + ":" + item.url} className="group min-w-0 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-center shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
-                  <div className="flex min-h-[230px] items-center justify-center overflow-hidden bg-slate-950 sm:min-h-[280px]">
-                    {item.type === "video" ? <VideoFrame url={item.url} title={item.caption || (business.name || "Business") + " gallery video"} /> : image ? <img src={image} alt={item.alt || item.caption || "Business gallery"} loading="lazy" className="h-60 w-full object-cover transition duration-700 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none sm:h-72" /> : null}
-                  </div>
-                  {item.caption ? <div className="p-4"><p className="break-words text-sm font-bold text-slate-800">{item.caption}</p></div> : null}
-                </article>
-              );
-            })}
+      {mediaCount > 0 ? (
+        <section id="gallery" className="scroll-mt-24 bg-slate-50/70 py-16 sm:py-20">
+          <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="Inside the business" title="A closer look" description="Explore the images and videos published by the business." primary={primary} />
+            <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: Math.min(3, galleryItems.length) }, (_, offset) => {
+                const index = (galleryIndex + offset) % galleryItems.length;
+                const item = galleryItems[index];
+                return (
+                  <article key={index + ":" + item.url} className="group min-w-0 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                    <div className="flex min-h-48 items-center justify-center overflow-hidden bg-slate-100">
+                      <PublicMedia item={item} businessName={business.name} />
+                    </div>
+                    {item.caption ? <p className="break-words p-4 text-sm font-semibold text-slate-700">{item.caption}</p> : null}
+                  </article>
+                );
+              })}
+            </div>
+            {galleryItems.length > 3 ? (
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button type="button" aria-label="Previous gallery items" onClick={() => setGalleryIndex((index) => (index - 1 + galleryItems.length) % galleryItems.length)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50"><ChevronLeft size={18} /></button>
+                <span className="text-xs font-semibold text-slate-500">{galleryIndex + 1} / {galleryItems.length} · Auto-advance</span>
+                <button type="button" aria-label="Next gallery items" onClick={() => setGalleryIndex((index) => (index + 1) % galleryItems.length)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50"><ChevronRight size={18} /></button>
+              </div>
+            ) : null}
           </div>
-          {canRotateGallery ? <div className="mt-6 flex items-center justify-center gap-2"><button type="button" aria-label="Previous gallery items" onClick={() => setGalleryIndex((index) => (index - 1 + galleryItems.length) % galleryItems.length)} className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"><ChevronLeft size={17} /></button><span className="text-xs font-semibold text-slate-500">{galleryIndex + 1} / {galleryItems.length} · Auto changes every 30 seconds</span><button type="button" aria-label="Next gallery items" onClick={() => setGalleryIndex((index) => (index + 1) % galleryItems.length)} className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"><ChevronRight size={17} /></button></div> : null}
         </section>
       ) : null}
 
-      {socialLinks.length ? (
-        <section id="socials" className="scroll-mt-28 border-y border-slate-100 bg-white">
-          <div className="mx-auto w-full max-w-7xl px-4 py-10 text-center sm:px-6 sm:py-12 lg:px-8">
-            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>Stay connected</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Find us around the web</h2>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-              {socialLinks.map((item) => <a key={item.key} href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md motion-reduce:transform-none"><Globe size={14} style={{ color: primary }} />{item.label}<ArrowUpRight size={13} /></a>)}
+      {socialCount > 0 ? (
+        <section id="socials" className="scroll-mt-24 border-y border-slate-200 bg-white py-12 sm:py-14">
+          <div className="mx-auto max-w-[1240px] px-4 text-center sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="Stay connected" title="Find the business online" description="These links are provided by the business." primary={primary} centered />
+            <div className="mt-7 flex flex-wrap justify-center gap-2.5">
+              {socialLinks.map((item) => <a key={item.key} href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ "--tw-ring-color": primary }}><Globe size={15} style={{ color: readableBrandText(primary) }} />{item.label}<ArrowUpRight size={14} /></a>)}
             </div>
           </div>
         </section>
       ) : null}
 
       {canContact ? (
-        <section id="contact" className="scroll-mt-28 border-t border-slate-200 bg-slate-50">
-          <div className="mx-auto grid w-full max-w-7xl items-start gap-8 px-4 py-12 text-center sm:px-6 sm:py-16 lg:grid-cols-[0.8fr_1.2fr] lg:px-8 lg:text-left">
-            <div className="mx-auto w-full max-w-xl lg:mx-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>Get in touch</p>
-              <h2 className="mt-2 break-words text-3xl font-black tracking-tight sm:text-4xl">How can we help?</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-600">Send a message directly to the business. Please do not include passwords, payment card details or other sensitive information.</p>
-              <div className="mt-6 flex flex-col items-center gap-3 text-sm text-slate-700 lg:items-start">
-                {business.phone ? <p className="flex max-w-full items-center justify-center gap-2 break-all lg:justify-start"><Phone size={16} style={{ color: primary }} />{business.phone}</p> : null}
-                {business.email ? <p className="flex max-w-full items-center justify-center gap-2 break-all lg:justify-start"><Mail size={16} style={{ color: primary }} />{business.email}</p> : null}
-                {business.location || business.county ? <p className="flex max-w-full items-center justify-center gap-2 lg:justify-start"><MapPin size={16} style={{ color: primary }} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
+        <section id="contact" className="scroll-mt-24 border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
+          <div className="mx-auto grid w-full max-w-[1240px] items-start gap-8 px-4 sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:gap-14 lg:px-8">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: readableBrandText(primary) }}>Get in touch</p>
+              <h2 className="mt-3 break-words text-3xl font-semibold leading-tight tracking-[-.045em] text-slate-950 sm:text-4xl">Let's start a conversation.</h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">Send a message to the business. Please do not include passwords, payment card details or other sensitive information.</p>
+              <div className="mt-6 flex flex-col gap-3 text-sm text-slate-700">
+                {business.phone && safeTelephoneHref(business.phone) ? <a href={safeTelephoneHref(business.phone)} className="flex min-w-0 items-center gap-3 break-words hover:underline"><Phone size={16} style={{ color: readableBrandText(primary) }} />{business.phone}</a> : null}
+                {business.email && safeEmailHref(business.email) ? <a href={safeEmailHref(business.email)} className="flex min-w-0 items-center gap-3 break-all hover:underline"><Mail size={16} style={{ color: readableBrandText(primary) }} />{business.email}</a> : null}
+                {business.location || business.county ? <p className="flex min-w-0 items-start gap-3 break-words"><MapPin size={16} className="mt-0.5 shrink-0" style={{ color: readableBrandText(primary) }} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
+                {openingStatus?.todayHours ? <p className="flex min-w-0 items-start gap-3"><Clock3 size={16} className="mt-0.5 shrink-0" style={{ color: readableBrandText(primary) }} /><span>Today's hours: {openingStatus.todayHours}</span></p> : null}
               </div>
-              {whatsappDigits ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:opacity-90" style={{ backgroundColor: accent }}><MessageCircle size={16} />Continue on WhatsApp</a> : null}
+              {/^\d{7,15}$/.test(whatsappDigits) ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: accent, color: contrastColor(accent) }}><MessageCircle size={16} /> Continue on WhatsApp</a> : null}
             </div>
-            <div className="mx-auto w-full max-w-2xl rounded-[1.75rem] border border-slate-200 bg-white p-4 text-left shadow-sm sm:p-7">
-              {notice ? <p role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p> : null}
-              {error ? <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p> : null}
+
+            <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-[0_16px_50px_rgba(15,23,42,.06)] sm:p-7">
+              {notice ? <p role="status" aria-live="polite" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm text-emerald-800">{notice}</p> : null}
+              {error ? <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">{error}</p> : null}
               <form onSubmit={submitInquiry} className="space-y-4">
-                <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"><label>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => setField("website", event.target.value)} /></label></div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Your name *</span><input required maxLength={80} value={form.name} onChange={(event) => setField("name", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" /></label>
-                  <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Email</span><input type="email" maxLength={254} value={form.email} onChange={(event) => setField("email", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" /></label>
+                <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                  <label>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(event) => setField("website", event.target.value)} /></label>
                 </div>
-                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Phone (optional)</span><input type="tel" maxLength={32} value={form.phone} onChange={(event) => setField("phone", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" /></label>
-                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Message *</span><textarea required rows={4} maxLength={2000} value={form.message} onChange={(event) => setField("message", event.target.value)} className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" /></label>
-                <button type="submit" disabled={sending} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60" style={{ backgroundColor: primary }}>{sending ? "Sending…" : "Send inquiry"}{sending ? <Loader2 className="animate-spin" size={16} /> : <ArrowUpRight size={16} />}</button>
-                <p className="text-xs leading-5 text-slate-500">Messages are stored for the business owner in Biashara. Sending a message does not initiate a payment or order.</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Your name *</span><input name="name" required maxLength={80} value={form.name} onChange={(event) => setField("name", event.target.value)} autoComplete="name" className="min-h-12 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                  <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Email</span><input name="email" type="email" maxLength={254} value={form.email} onChange={(event) => setField("email", event.target.value)} autoComplete="email" className="min-h-12 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                </div>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Phone (optional)</span><input name="phone" type="tel" maxLength={32} value={form.phone} onChange={(event) => setField("phone", event.target.value)} autoComplete="tel" className="min-h-12 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Message *</span><textarea name="message" required rows={4} maxLength={2000} value={form.message} onChange={(event) => setField("message", event.target.value)} className="w-full resize-y rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                  <p className="max-w-xs text-[11px] leading-5 text-slate-400">A message is an inquiry only. It does not initiate an order or payment.</p>
+                  <button type="submit" disabled={sending} className="inline-flex min-h-12 min-w-44 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ backgroundColor: primary, color: contrastColor(primary) }}>
+                    {sending ? "Sending…" : "Send inquiry"}{sending ? <Loader2 className="animate-spin motion-reduce:animate-none" size={16} /> : <ArrowUpRight size={16} />}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
         </section>
       ) : null}
 
-      <footer className="border-t border-slate-800 bg-slate-950 px-4 py-8 text-center text-white sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          {website.footer_message ? <p className="mb-3 break-words text-sm font-medium text-white/80">{website.footer_message}</p> : null}
-          <p className="break-words text-xs leading-6 text-white/75">© {new Date().getFullYear()} {business.name || "Business"}. All rights reserved.</p>
-          <p className="mt-1 text-[11px] leading-5 text-white/50">Built with RevelaCode Jumuiya · Business website and storefront</p>
+      <footer className="border-t border-slate-800 bg-slate-950 px-4 py-8 text-white sm:px-6 sm:py-10">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="break-words text-lg font-semibold tracking-tight">{business.name || "Business"}</p>
+            {website.footer_message ? <p className="mt-2 max-w-2xl break-words text-sm leading-6 text-white/65">{website.footer_message}</p> : null}
+            <p className="mt-3 text-xs leading-5 text-white/45">© {new Date().getFullYear()} {business.name || "Business"}. All rights reserved.</p>
+            <p className="mt-1 text-[11px] leading-5 text-white/35">Built with RevelaCode Jumuiya</p>
+          </div>
+          <a href="#main-content" className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-white/15 px-4 py-2.5 text-xs font-semibold text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:self-auto">Back to top <ArrowUpRight size={14} /></a>
         </div>
       </footer>
     </main>
