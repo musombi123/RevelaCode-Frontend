@@ -166,12 +166,13 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   }, [apiHub, revenueApi]);
 
   useEffect(() => {
+    if (!apiHub || apiHub === "community") return undefined;
     const controller = new AbortController();
     loadPlans(controller.signal);
     loadTrial(controller.signal);
     loadSubscription(controller.signal);
     return () => controller.abort();
-  }, [loadPlans, loadTrial, loadSubscription]);
+  }, [apiHub, loadPlans, loadTrial, loadSubscription]);
 
   const startCheckout = async (plan) => {
     if (subscriptionLoading || subscriptionLoadError) {
@@ -298,6 +299,15 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   };
 
   if (!apiHub) return null;
+
+  if (apiHub === "community") {
+    return (
+      <section className={`w-full rounded-2xl border border-emerald-200/80 bg-white p-4 shadow-sm dark:border-emerald-900/60 dark:bg-slate-900 ${compact ? "sm:p-5" : "sm:p-6"}`}>
+        <p className="text-sm font-black text-slate-900 dark:text-white">Community is permanently free</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Sponsored advertisements support this open hub. Community membership, posts, discovery and participation never require a paid subscription.</p>
+      </section>
+    );
+  }
 
   return (
     <section className={`w-full rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900 ${compact ? "p-4 sm:p-5" : "p-5 sm:p-6"}`}>
