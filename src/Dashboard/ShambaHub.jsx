@@ -228,7 +228,7 @@ const SHAMBA_SECTIONS = {
   },
 
   buyers: {
-    label: "Buyers",
+    label: "Manage Buyers",
     shortLabel: "Buyers",
     icon: Users,
     component: ShambaBuyersDashboard,
@@ -283,7 +283,8 @@ function normalizeSection(target) {
     .toLowerCase()
     .split("#")[0]
     .split("?")[0]
-    .replace(/^\/+|\/+$/g, "");
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/[\s_]+/g, "-");
 
   const aliases = {
     "": "home",
@@ -315,7 +316,21 @@ function normalizeSection(target) {
 
     buyer: "buyers",
     buyers: "buyers",
+    "manage-buyer": "buyers",
+    "manage-buyers": "buyers",
+    "buyer-management": "buyers",
+    "buyer-management-dashboard": "buyers",
+    "buyers-dashboard": "buyers",
+    "buyer-dashboard": "buyers",
+    "shamba/buyer": "buyers",
     "shamba/buyers": "buyers",
+    "shamba/manage-buyer": "buyers",
+    "shamba/manage-buyers": "buyers",
+    "shamba/buyer-management": "buyers",
+    "shamba/buyer-management-dashboard": "buyers",
+    "shamba/buyers-dashboard": "buyers",
+    "shamba/buyer-dashboard": "buyers",
+    "shamba-manage-buyers": "buyers",
 
     order: "orders",
     orders: "orders",
@@ -942,11 +957,25 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         .toLowerCase()
         .split("#")[0]
         .split("?")[0]
-        .replace(/^\/+|\/+$/g, "");
+        .replace(/^\/+|\/+$/g, "")
+        .replace(/[\s_]+/g, "-");
+
+      const buyerSectionAliases = new Set([
+        "buyer",
+        "buyers",
+        "manage-buyer",
+        "manage-buyers",
+        "buyer-management",
+        "buyer-management-dashboard",
+        "buyers-dashboard",
+        "buyer-dashboard",
+        "shamba-manage-buyers",
+      ]);
 
       const isShambaTarget =
         normalized === "shamba" ||
         normalized.startsWith("shamba/") ||
+        buyerSectionAliases.has(normalized) ||
         Object.prototype.hasOwnProperty.call(
           SHAMBA_SECTIONS,
           normalized,
