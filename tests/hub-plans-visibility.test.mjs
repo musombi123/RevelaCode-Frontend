@@ -10,13 +10,12 @@ function source(relativePath) {
   return readFileSync(path.join(repositoryRoot, relativePath), "utf8");
 }
 
-test("each paid hub renders its own plans in its primary workspace", () => {
+test("each subscription hub renders its own plans in its primary workspace", () => {
   const contracts = [
     ["src/Dashboard/BiasharaDashboard.jsx", '<HubRevenueOffers hub="biashara" compact />'],
     ["src/Dashboard/ShambaDashboard.jsx", '<HubRevenueOffers hub="shamba" compact />'],
     ["src/Dashboard/ElimuDashboardWorkspace.jsx", '<HubRevenueOffers hub="elimu" compact />'],
     ["src/components/FaithDashboard.jsx", '<HubRevenueOffers hub="faith" compact />'],
-    ["src/Dashboard/CommunityDashboard.jsx", '<HubRevenueOffers hub="community" compact />'],
     ["src/Dashboard/Community/CommunityMarketplace.jsx", '<HubRevenueOffers hub="marketplace" compact />'],
     ["src/components/AIAssistantDashboard.jsx", '<HubRevenueOffers hub="smart_ai" compact />'],
   ];
@@ -27,6 +26,17 @@ test("each paid hub renders its own plans in its primary workspace", () => {
       `Expected the ${marker} plan panel in ${file}`,
     );
   }
+});
+
+test("Community is permanently free and does not render membership subscription offers", () => {
+  const dashboard = source("src/Dashboard/CommunityDashboard.jsx");
+  const widget = source("src/Dashboard/HubRevenueOffers.jsx");
+
+  assert.match(dashboard, /Community is free for everyone/);
+  assert.match(dashboard, /Sponsored advertisements help keep Community open/);
+  assert.doesNotMatch(dashboard, /HubRevenueOffers/);
+  assert.match(widget, /apiHub === "community"/);
+  assert.match(widget, /Community is permanently free/);
 });
 
 test("hub plan cards load the central catalogue, show per-hub trial status, and gate payment", () => {
