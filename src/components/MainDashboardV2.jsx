@@ -3,6 +3,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   Suspense,
   useCallback,
 } from "react";
@@ -37,6 +38,13 @@ import StartModal from "./StartModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
+import OfflineSyncStatus from "@/components/OfflineSyncStatus.jsx";
+import {
+  offlineScopeForUser,
+  readOfflineSession,
+  recordOfflineActivity,
+  saveOfflineSession,
+} from "@/services/offlineHubSync.js";
 
 function RevelaAIIcon({ size = 32, className = "" }) {
   return (
@@ -274,6 +282,8 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const [activeView, setActiveView] =
     useState(initialDashboard);
+  const [sessionRestoreAttempted, setSessionRestoreAttempted] = useState(false);
+  const sessionLoadedScopeRef = useRef("");
 
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
@@ -295,11 +305,105 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const { theme, setTheme } =
     useTheme();
 
-  const { user, logout } =
+  const { user, logout, isAuthenticated } =
     useAuth();
+  const offlineScope = isAuthenticated ? offlineScopeForUser(user) : "";
+  const currentSearch = searchParams.toString();
 
   const isGuest =
     user?.role === "guest";
+
+  // Restore the last active hub only when a direct hub link did not request
+  // a different workspace. IndexedDB survives tab closure and app restarts.
+  useEffect(() => {
+    let cancelled = false;
+    sessionLoadedScopeRef.current = "";
+    setSessionRestoreAttempted(false);
+
+    if (!offlineScope) {
+      setSessionRestoreAttempted(true);
+      return () => { cancelled = true; };
+    }
+
+    readOfflineSession(offlineScope).then((savedSession) => {
+      if (cancelled) return;
+      const explicitHub = Boolean(initialDashboardKey || new URLSearchParams(currentSearch).get("hub"));
+      if (!explicitHub && savedSession?.activeHub && DASHBOARDS.some((dashboard) => dashboard.key === savedSession.activeHub)) {
+        setActiveView(savedSession.activeHub);
+      }
+      if (
+        savedSession &&
+        savedSession.pathname === window.location.pathname &&
+        savedSession.search === window.location.search &&
+        Number.isFinite(Number(savedSession.scrollY)) &&
+        Number(savedSession.scrollY) > 0
+      ) {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            if (!cancelled) window.scrollTo({ top: Number(savedSession.scrollY), behavior: "auto" });
+          });
+        });
+      }
+      sessionLoadedScopeRef.current = offlineScope;
+      setSessionRestoreAttempted(true);
+    }).catch(() => {
+      if (!cancelled) {
+        sessionLoadedScopeRef.current = offlineScope;
+        setSessionRestoreAttempted(true);
+      }
+    });
+
+    return () => { cancelled = true; };
+  }, [offlineScope, initialDashboardKey, currentSearch]);
+
+  // Save the location and active hub during use, on scroll, and when the
+  // browser closes. Do not overwrite the saved session before it is restored.
+  useEffect(() => {
+    if (!offlineScope || !sessionRestoreAttempted || sessionLoadedScopeRef.current !== offlineScope) return undefined;
+
+    let timer = null;
+    const persist = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        saveOfflineSession(offlineScope, {
+          activeHub: activeView,
+          pathname: window.location.pathname,
+          search: window.location.search,
+          scrollY: window.scrollY,
+        });
+      }, 300);
+    };
+    const persistNow = () => {
+      if (timer) window.clearTimeout(timer);
+      saveOfflineSession(offlineScope, {
+        activeHub: activeView,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        scrollY: window.scrollY,
+      });
+    };
+
+    persistNow();
+    window.addEventListener("scroll", persist, { passive: true });
+    window.addEventListener("pagehide", persistNow);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener("scroll", persist);
+      window.removeEventListener("pagehide", persistNow);
+    };
+  }, [offlineScope, activeView, currentSearch, sessionRestoreAttempted]);
+
+  // Keep a small local activity trail so the reopened dashboard can explain
+  // which workspace was last being used, even before the network is back.
+  useEffect(() => {
+    if (!offlineScope || !sessionRestoreAttempted || sessionLoadedScopeRef.current !== offlineScope) return;
+    const dashboard = DASHBOARDS.find((item) => item.key === activeView);
+    recordOfflineActivity(offlineScope, {
+      kind: "hub_opened",
+      title: (dashboard?.title || activeView) + " opened",
+      detail: "Workspace position and recent local changes are saved on this device.",
+    });
+  }, [offlineScope, activeView, sessionRestoreAttempted]);
 
   /* =========================================================
      Sidebar Scroll Lock
@@ -1475,6 +1579,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           </button>
         </main>
       </div>
+      <OfflineSyncStatus />
     </>
   );
 }
