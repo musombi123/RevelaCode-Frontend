@@ -376,7 +376,7 @@ export default function BiasharaPublicWebsitePage() {
                     </div>
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
                       <h3 className="break-words text-lg font-semibold tracking-tight text-slate-950">{service.title}</h3>
-                      {service.price_label ? <p className="mt-3 w-fit max-w-full rounded-xl px-3 py-2 text-sm font-bold" style={{ color: primary, backgroundColor: primary + "0A" }}>{service.price_label}</p> : null}
+                      {service.price_label ? <p className="mt-3 w-fit max-w-full rounded-xl px-3 py-2 text-sm font-bold" style={{ color: readableBrandText(primary), backgroundColor: primary + "0A" }}>{service.price_label}</p> : null}
                       {service.description ? <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{service.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business to discuss this service.</p>}
                       <a href="#contact" onClick={() => askAbout(service.title, "the service")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about service <ArrowUpRight size={15} /></a>
                     </div>
@@ -471,7 +471,7 @@ export default function BiasharaPublicWebsitePage() {
           <div className="mx-auto max-w-[1240px] px-4 text-center sm:px-6 lg:px-8">
             <SectionHeading eyebrow="Stay connected" title="Find the business online" description="These links are provided by the business." primary={primary} centered />
             <div className="mt-7 flex flex-wrap justify-center gap-2.5">
-              {socialLinks.map((item) => <a key={item.key} href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ "--tw-ring-color": primary }}><Globe size={15} style={{ color: primary }} />{item.label}<ArrowUpRight size={14} /></a>)}
+              {socialLinks.map((item) => <a key={item.key} href={item.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ "--tw-ring-color": primary }}><Globe size={15} style={{ color: readableBrandText(primary) }} />{item.label}<ArrowUpRight size={14} /></a>)}
             </div>
           </div>
         </section>
@@ -481,14 +481,14 @@ export default function BiasharaPublicWebsitePage() {
         <section id="contact" className="scroll-mt-24 border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
           <div className="mx-auto grid w-full max-w-[1240px] items-start gap-8 px-4 sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:gap-14 lg:px-8">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: primary }}>Get in touch</p>
+              <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: readableBrandText(primary) }}>Get in touch</p>
               <h2 className="mt-3 break-words text-3xl font-semibold leading-tight tracking-[-.045em] text-slate-950 sm:text-4xl">Let's start a conversation.</h2>
               <p className="mt-4 text-sm leading-7 text-slate-600">Send a message to the business. Please do not include passwords, payment card details or other sensitive information.</p>
               <div className="mt-6 flex flex-col gap-3 text-sm text-slate-700">
-                {business.phone && safeTelephoneHref(business.phone) ? <a href={safeTelephoneHref(business.phone)} className="flex min-w-0 items-center gap-3 break-words hover:underline"><Phone size={16} style={{ color: primary }} />{business.phone}</a> : null}
-                {business.email && safeEmailHref(business.email) ? <a href={safeEmailHref(business.email)} className="flex min-w-0 items-center gap-3 break-all hover:underline"><Mail size={16} style={{ color: primary }} />{business.email}</a> : null}
-                {business.location || business.county ? <p className="flex min-w-0 items-start gap-3 break-words"><MapPin size={16} className="mt-0.5 shrink-0" style={{ color: primary }} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
-                {openingStatus?.todayHours ? <p className="flex min-w-0 items-start gap-3"><Clock3 size={16} className="mt-0.5 shrink-0" style={{ color: primary }} /><span>Today's hours: {openingStatus.todayHours}</span></p> : null}
+                {business.phone && safeTelephoneHref(business.phone) ? <a href={safeTelephoneHref(business.phone)} className="flex min-w-0 items-center gap-3 break-words hover:underline"><Phone size={16} style={{ color: readableBrandText(primary) }} />{business.phone}</a> : null}
+                {business.email && safeEmailHref(business.email) ? <a href={safeEmailHref(business.email)} className="flex min-w-0 items-center gap-3 break-all hover:underline"><Mail size={16} style={{ color: readableBrandText(primary) }} />{business.email}</a> : null}
+                {business.location || business.county ? <p className="flex min-w-0 items-start gap-3 break-words"><MapPin size={16} className="mt-0.5 shrink-0" style={{ color: readableBrandText(primary) }} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
+                {openingStatus?.todayHours ? <p className="flex min-w-0 items-start gap-3"><Clock3 size={16} className="mt-0.5 shrink-0" style={{ color: readableBrandText(primary) }} /><span>Today's hours: {openingStatus.todayHours}</span></p> : null}
               </div>
               {/^\d{7,15}$/.test(whatsappDigits) ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: accent, color: contrastColor(accent) }}><MessageCircle size={16} /> Continue on WhatsApp</a> : null}
             </div>
