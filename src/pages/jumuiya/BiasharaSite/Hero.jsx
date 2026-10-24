@@ -205,7 +205,7 @@ export default function Hero({
           className="pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover opacity-25"
         />
       ) : null}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(105deg,rgba(2,6,23,.78)_0%,rgba(2,6,23,.56)_50%,rgba(2,6,23,.34)_100%)]" />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(105deg,rgba(2,6,23,.82)_0%,rgba(2,6,23,.66)_50%,rgba(2,6,23,.56)_100%)]" />
       <div className="mx-auto grid w-full max-w-[1440px] items-center gap-10 px-4 pb-14 pt-12 sm:px-6 sm:pb-16 sm:pt-16 md:pt-20 lg:grid-cols-[minmax(0,1.06fr)_minmax(330px,.94fr)] lg:gap-14 lg:px-8 lg:pb-20 lg:pt-20">
         <div className="mx-auto w-full max-w-3xl text-center lg:mx-0 lg:text-left">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/[0.09] px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.18em] text-white/85 shadow-sm backdrop-blur sm:text-xs">
