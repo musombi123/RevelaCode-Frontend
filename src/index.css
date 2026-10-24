@@ -96,6 +96,11 @@ body,
    colours so text outside cards remains visible as well.
 ========================================================= */
 
+.shamba-workspace {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .shamba-workspace :where(article, section, [role="dialog"]) {
   min-width: 0;
   max-width: 100%;
