@@ -54,13 +54,13 @@ function itemTitle(item) {
 }
 
 function itemLocation(item) {
-  return (
-    item?.linked_post?.location ||
-    item?.post?.location ||
-    item?.location ||
-    item?.place ||
-    "Location not shared"
-  );
+  const location = item?.linked_post?.location || item?.post?.location || item?.location || item?.place;
+  if (location) return location;
+  return item?.linked_post || item?.post || item?.linked_post_id
+    ? "Location not shared"
+    : item?.counterparty || item?.other_participant
+      ? "Direct conversation"
+      : "Location not shared";
 }
 
 function messageText(message) {
@@ -446,6 +446,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
                         <button type="button" key={itemId(matter)} onClick={() => setSelectedMatter(matter)} className={"w-full rounded-xl border p-3 text-left transition " + (active ? "border-cyan-400/60 bg-cyan-50 dark:bg-cyan-950/25" : "border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20")}>
                           <span className="block truncate text-xs font-black text-slate-900 dark:text-white">{itemTitle(matter)}</span>
                           <span className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400"><Clock3 size={11} />{itemLocation(matter)}</span>
+                          {matter?.last_message ? <span className="mt-2 block truncate text-[10px] leading-4 text-slate-500 dark:text-slate-400">{matter.last_message}</span> : null}
                           <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-cyan-700 dark:text-cyan-300">Open matter <ArrowRight size={11} /></span>
                         </button>
                       );
