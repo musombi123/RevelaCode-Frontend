@@ -27,6 +27,7 @@ import AdminPolicyManagement from "./AdminPolicyManagement.jsx";
 import AdminScriptureManagement from "./AdminScriptureManagement.jsx";
 import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 import AdminBiasharaVerification from "./AdminBiasharaVerification.jsx";
+import AdminShambaVerification from "./AdminShambaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import AdminOperationsHandbook from "./AdminOperationsHandbook.jsx";
@@ -98,6 +99,13 @@ const adminPages = {
       "Review business applications and unlock workspace access after approval.",
     icon: ClipboardCheck,
     component: AdminBiasharaVerification,
+  },
+
+  shambaVerification: {
+    title: "Shamba Verification",
+    description: "Review farmer profiles, confirm required details, and approve or return applications for correction.",
+    icon: ClipboardCheck,
+    component: AdminShambaVerification,
   },
 
   revenue: {
