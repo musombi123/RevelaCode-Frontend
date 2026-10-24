@@ -1026,7 +1026,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
   // ==========================================================
 
   return (
-    <div className="isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
+    <div className="shamba-workspace isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
       <div className="mx-auto flex w-full min-w-0 max-w-none">
         {/* ==================================================
             DESKTOP SIDEBAR
