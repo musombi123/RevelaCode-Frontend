@@ -63,8 +63,13 @@ async function storeGet(storeName, key) {
       };
     });
   } catch (error) {
-    console.warn("[Offline workspace] Read failed:", error);
-    return null;
+    try {
+      const raw = localStorage.getItem(localFallbackKey(storeName, key));
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      console.warn("[Offline workspace] IndexedDB and fallback read failed:", error);
+      return null;
+    }
   }
 }
 
@@ -85,8 +90,13 @@ async function storePut(storeName, item) {
     db.close();
     return true;
   } catch (error) {
-    console.warn("[Offline workspace] Write failed:", error);
-    return false;
+    try {
+      localStorage.setItem(localFallbackKey(storeName, item.key || item.id), JSON.stringify(item));
+      return true;
+    } catch {
+      console.warn("[Offline workspace] IndexedDB and fallback write failed:", error);
+      return false;
+    }
   }
 }
 
@@ -105,7 +115,11 @@ async function storeDelete(storeName, key) {
     });
     db.close();
   } catch (error) {
-    console.warn("[Offline workspace] Delete failed:", error);
+    try {
+      localStorage.removeItem(localFallbackKey(storeName, key));
+    } catch {
+      console.warn("[Offline workspace] IndexedDB and fallback delete failed:", error);
+    }
   }
 }
 
@@ -131,8 +145,19 @@ async function storeAll(storeName) {
       request.onerror = () => reject(request.error);
     });
   } catch (error) {
-    console.warn("[Offline workspace] List failed:", error);
-    return [];
+    try {
+      const prefix = "revelacode_offline_v1:" + storeName + ":";
+      const values = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key || !key.startsWith(prefix)) continue;
+        try { values.push(JSON.parse(localStorage.getItem(key))); } catch { /* Ignore corrupted entries. */ }
+      }
+      return values;
+    } catch {
+      console.warn("[Offline workspace] IndexedDB and fallback list failed:", error);
+      return [];
+    }
   }
 }
 
@@ -144,15 +169,29 @@ function emitChange() {
 
 function isSensitiveOrUnsafePath(url) {
   let path = "";
-  try { path = new URL(url, window.location.origin).pathname.toLowerCase(); }
-  catch { path = String(url || "").toLowerCase(); }
-  return /\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|fees|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|media|upload|documents?\/upload)(\/|$)/i.test(path);
+  try {
+    path = new URL(url, typeof window !== "undefined" ? window.location.origin : "https://localhost").pathname.toLowerCase();
+  } catch {
+    path = String(url || "").toLowerCase();
+  }
+  return /\\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|entitlement|entitlements|fees|invoice|invoices|receipt|receipts|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|media|upload|documents?\\/upload)(\\/|$)/i.test(path);
 }
+
+function hasSensitivePayload(value, depth = 0) {
+  if (!value || typeof value !== "object" || depth > 8) return false;
+  if (Array.isArray(value)) return value.some((item) => hasSensitivePayload(item, depth + 1));
+  return Object.entries(value).some(([key, item]) =>
+    /password|passkey|token|secret|otp|pin|credential|authorization|auth_code|private_key/i.test(key) ||
+    hasSensitivePayload(item, depth + 1)
+  );
+}
+
 
 export function shouldQueueOfflineMutation(url, method, body) {
   const verb = String(method || "GET").toUpperCase();
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(verb)) return false;
   if (body === undefined || body === null || typeof body === "string") return false;
+  if (hasSensitivePayload(body)) return false;
   if (typeof FormData !== "undefined" && body instanceof FormData) return false;
   if (body instanceof Blob || body instanceof ArrayBuffer || body instanceof URLSearchParams) return false;
   let path = "";
