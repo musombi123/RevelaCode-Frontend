@@ -39,7 +39,6 @@ const CHECKOUT_HUBS = new Set([
   "shamba",
   "biashara",
   "elimu",
-  "community",
   "smart_ai",
   "marketplace",
   "faith",
@@ -53,6 +52,13 @@ function getPlanActivation(plan, billingEnabled, billingKnown) {
 
   if (status === "retired") {
     return { kind: "retired", label: "Retired", detail: "Retired plans are not offered for checkout." };
+  }
+  if (hub === "community") {
+    return {
+      kind: "free",
+      label: "Permanent free hub",
+      detail: "Community membership cannot be sold. The open hub is supported by sponsored advertisements and separate advertising campaigns.",
+    };
   }
   if (status !== "available") {
     return { kind: "proposed", label: "Proposed · not effective", detail: "Set the catalogue status to Available before this plan can be offered." };
@@ -497,7 +503,8 @@ export default function AdminRevenueManagement() {
     (plan) => getPlanActivation(plan, billingEnabled, billingKnown).kind === "effective",
   );
   const availablePaidPlans = plans.filter(
-    (plan) => plan.status === "available" && Number(plan.amount) > 0 && plan.hub !== "all",
+    (plan) => plan.status === "available" && Number(plan.amount) > 0 &&
+      plan.hub !== "all" && plan.hub !== "community",
   );
   const proposedPlansCount = plans.filter((plan) => plan.status === "proposed").length;
   const publishablePlansCount = plans.filter((plan) => {
