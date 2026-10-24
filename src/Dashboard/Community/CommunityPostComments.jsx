@@ -115,7 +115,7 @@ export default function CommunityPostComments({
           throw new Error("The comments service is unavailable. Reload Community and try again.");
         }
         const response = await getCommunityComments(postId, 100);
-        if (active) setComments(asCommentList(response).map(normalizeComment).filter(Boolean));
+        if (active) setComments(asCommunityCommentList(response).map(normalizeCommunityComment).filter(Boolean));
       } catch (requestError) {
         console.error("[Community comments] Load failed:", requestError);
         if (active) setError(getErrorMessage(requestError, "Comments could not be loaded. Please try again."));
