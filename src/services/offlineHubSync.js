@@ -174,7 +174,7 @@ function isSensitiveOrUnsafePath(url) {
   } catch {
     path = String(url || "").toLowerCase();
   }
-  return /\\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|entitlement|entitlements|fees|invoice|invoices|receipt|receipts|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|media|upload|documents?\\/upload)(\\/|$)/i.test(path);
+  return /\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|entitlement|entitlements|fees|invoice|invoices|receipt|receipts|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|media|upload|documents?\/upload)(\/|$)/i.test(path);
 }
 
 function hasSensitivePayload(value, depth = 0) {
