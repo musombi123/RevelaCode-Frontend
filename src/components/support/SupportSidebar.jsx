@@ -11,8 +11,8 @@ import {
   Users,
   BookOpen,
   ShieldCheck,
-  BookOpen,
 } from "lucide-react";
+
 
 const views = [
   { key: "dashboard", label: "Overview", icon: LayoutDashboard },
