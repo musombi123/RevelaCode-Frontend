@@ -30,6 +30,8 @@ import {
   safeTelephoneHref,
   videoEmbedUrl,
   isDirectVideo,
+  contrastColor,
+  readableBrandText,
 } from "./BiasharaSite/utils.jsx";
 
 const SOCIAL_LABELS = {
@@ -82,7 +84,7 @@ function PublicMedia({ item, businessName }) {
 function SectionHeading({ eyebrow, title, description, primary, centered = false }) {
   return (
     <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: primary }}>{eyebrow}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[.2em]" style={{ color: readableBrandText(primary) }}>{eyebrow}</p>
       <h2 className="mt-3 break-words text-3xl font-semibold leading-[1.08] tracking-[-.045em] text-slate-950 sm:text-4xl lg:text-5xl">{title}</h2>
       {description ? <p className="mt-4 break-words text-sm leading-7 text-slate-600 sm:text-base">{description}</p> : null}
     </div>
@@ -307,7 +309,8 @@ export default function BiasharaPublicWebsitePage() {
   }
 
   return (
-    <main id="main-content" className="min-h-screen overflow-x-clip bg-white text-slate-900" style={{ scrollBehavior: "smooth" }}>
+    <main id="main-content" tabIndex={-1} className="biashara-public-site min-h-screen overflow-x-clip bg-white text-slate-900" style={{ scrollBehavior: "smooth" }}>
+      <style>{'@media (prefers-reduced-motion: reduce) { .biashara-public-site *, .biashara-public-site *::before, .biashara-public-site *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }'}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-xl">Skip to content</a>
       <AnnouncementBar announcement={website.announcement} primary={primary} accent={accent} />
       <Header
@@ -369,13 +372,13 @@ export default function BiasharaPublicWebsitePage() {
                 return (
                   <article key={(service.title || "service") + ":" + index} className="group flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none">
                     <div className="relative flex h-40 items-center justify-center overflow-hidden bg-slate-100">
-                      {image ? <img src={image} alt={service.title || "Service"} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] motion-reduce:transform-none motion-reduce:transition-none" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ color: primary, background: "linear-gradient(140deg, " + primary + "12, " + accent + "24)" }}><Sparkles size={26} /></span>}
+                      {image ? <img src={image} alt={service.title || "Service"} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] motion-reduce:transform-none motion-reduce:transition-none" /> : <span className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ color: readableBrandText(primary), background: "linear-gradient(140deg, " + primary + "12, " + accent + "24)" }}><Sparkles size={26} /></span>}
                     </div>
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
                       <h3 className="break-words text-lg font-semibold tracking-tight text-slate-950">{service.title}</h3>
                       {service.price_label ? <p className="mt-3 w-fit max-w-full rounded-xl px-3 py-2 text-sm font-bold" style={{ color: primary, backgroundColor: primary + "0A" }}>{service.price_label}</p> : null}
                       {service.description ? <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{service.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business to discuss this service.</p>}
-                      <a href="#contact" onClick={() => askAbout(service.title, "the service")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary }}>Ask about service <ArrowUpRight size={15} /></a>
+                      <a href="#contact" onClick={() => askAbout(service.title, "the service")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about service <ArrowUpRight size={15} /></a>
                     </div>
                   </article>
                 );
@@ -407,9 +410,9 @@ export default function BiasharaPublicWebsitePage() {
                         <div className="flex flex-1 flex-col p-5 sm:p-6">
                           {product.category ? <p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">{product.category}</p> : null}
                           <h3 className="mt-2 break-words text-lg font-semibold tracking-tight text-slate-950">{product.name || "Product"}</h3>
-                          <p className="mt-3 text-xl font-bold tracking-tight" style={{ color: primary }}>{formatPrice(product.price, product.currency || business.currency)}</p>
+                          <p className="mt-3 text-xl font-bold tracking-tight" style={{ color: readableBrandText(primary) }}>{formatPrice(product.price, product.currency || business.currency)}</p>
                           {product.description ? <p className="mt-3 line-clamp-3 break-words text-sm leading-6 text-slate-600">{product.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business for more details about this item.</p>}
-                          <a href="#contact" onClick={() => askAbout(product.name || "this product", "the product")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary }}>Ask about product <ArrowUpRight size={15} /></a>
+                          <a href="#contact" onClick={() => askAbout(product.name || "this product", "the product")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about product <ArrowUpRight size={15} /></a>
                         </div>
                       </article>
                     );
@@ -487,7 +490,7 @@ export default function BiasharaPublicWebsitePage() {
                 {business.location || business.county ? <p className="flex min-w-0 items-start gap-3 break-words"><MapPin size={16} className="mt-0.5 shrink-0" style={{ color: primary }} />{[business.location, business.county].filter(Boolean).join(", ")}</p> : null}
                 {openingStatus?.todayHours ? <p className="flex min-w-0 items-start gap-3"><Clock3 size={16} className="mt-0.5 shrink-0" style={{ color: primary }} /><span>Today's hours: {openingStatus.todayHours}</span></p> : null}
               </div>
-              {/^\d{7,15}$/.test(whatsappDigits) ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: accent }}><MessageCircle size={16} /> Continue on WhatsApp</a> : null}
+              {/^\d{7,15}$/.test(whatsappDigits) ? <a href={"https://wa.me/" + whatsappDigits} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: accent, color: contrastColor(accent) }}><MessageCircle size={16} /> Continue on WhatsApp</a> : null}
             </div>
 
             <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-[0_16px_50px_rgba(15,23,42,.06)] sm:p-7">
@@ -505,7 +508,7 @@ export default function BiasharaPublicWebsitePage() {
                 <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Message *</span><textarea name="message" required rows={4} maxLength={2000} value={form.message} onChange={(event) => setField("message", event.target.value)} className="w-full resize-y rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                   <p className="max-w-xs text-[11px] leading-5 text-slate-400">A message is an inquiry only. It does not initiate an order or payment.</p>
-                  <button type="submit" disabled={sending} className="inline-flex min-h-12 min-w-44 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ backgroundColor: primary }}>
+                  <button type="submit" disabled={sending} className="inline-flex min-h-12 min-w-44 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none" style={{ backgroundColor: primary, color: contrastColor(primary) }}>
                     {sending ? "Sending…" : "Send inquiry"}{sending ? <Loader2 className="animate-spin motion-reduce:animate-none" size={16} /> : <ArrowUpRight size={16} />}
                   </button>
                 </div>
