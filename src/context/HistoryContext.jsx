@@ -521,10 +521,12 @@ export function HistoryProvider({ children }) {
             /* Ignore invalid JSON */
           }
 
-          throw new Error(
+          const saveError = new Error(
             serverMessage ||
               `Failed to save history. HTTP ${response.status}.`
           );
+          saveError.status = response.status;
+          throw saveError;
         }
 
         /*
@@ -577,7 +579,13 @@ export function HistoryProvider({ children }) {
 
         // If connectivity dropped while the request was in flight, queue the
         // same stable entry ID. The backend handles duplicate IDs idempotently.
-        if (offlineScope && isBrowserOffline()) {
+        const failureStatus = Number(error?.status);
+        const shouldQueue =
+          isBrowserOffline() ||
+          !Number.isFinite(failureStatus) ||
+          failureStatus >= 500;
+
+        if (offlineScope && shouldQueue) {
           const queued = await queueOfflineMutation({
             scope: offlineScope,
             url: historyURL,
