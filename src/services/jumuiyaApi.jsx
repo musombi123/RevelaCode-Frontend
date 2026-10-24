@@ -1205,6 +1205,34 @@ export function useJumuiyaApi() {
       },
 
       // ===================================================
+      // COMMUNITY — MATTERS AND DIRECT MESSAGES
+      // ===================================================
+
+      getCommunityMatters: ({ limit = 30 } = {}) =>
+        getData(withQuery("/community/matters", { limit })),
+
+      createCommunityMatter: (data) =>
+        postData("/community/matters", data),
+
+      getCommunityMatterMessages: (matterId, { limit = 100 } = {}) =>
+        getData(withQuery(
+          `/community/matters/${encodeId(matterId, "Matter ID")}/messages`,
+          { limit },
+        )),
+
+      sendCommunityMatterMessage: (matterId, data) =>
+        postData(
+          `/community/matters/${encodeId(matterId, "Matter ID")}/messages`,
+          data,
+        ),
+
+      updateCommunityMatterStatus: (matterId, data) =>
+        patchData(
+          `/community/matters/${encodeId(matterId, "Matter ID")}/status`,
+          data,
+        ),
+
+      // ===================================================
       // COMMUNITY — GROUPS
       // ===================================================
 

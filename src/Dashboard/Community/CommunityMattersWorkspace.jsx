@@ -13,6 +13,7 @@ import {
   Info,
   MessageCircle,
   Mic,
+  Plus,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -53,13 +54,13 @@ function itemTitle(item) {
 }
 
 function itemLocation(item) {
-  return (
-    item?.linked_post?.location ||
-    item?.post?.location ||
-    item?.location ||
-    item?.place ||
-    "Location not shared"
-  );
+  const location = item?.linked_post?.location || item?.post?.location || item?.location || item?.place;
+  if (location) return location;
+  return item?.linked_post || item?.post || item?.linked_post_id
+    ? "Location not shared"
+    : item?.counterparty || item?.other_participant
+      ? "Direct conversation"
+      : "Location not shared";
 }
 
 function messageText(message) {
@@ -126,9 +127,9 @@ function ProgressLine({ status }) {
 export default function CommunityMattersWorkspace({ api, currentUserId }) {
   const adapter = useMemo(() => createCommunityMattersAdapter(api), [api]);
   const [matterResult, setMatterResult] = useState({
-    supported: false,
+    supported: true,
     items: [],
-    message: "Checking the available Community conversation contract…",
+    message: "",
   });
   const [selectedMatter, setSelectedMatter] = useState(null);
   const [messageResult, setMessageResult] = useState({
@@ -139,6 +140,11 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [newMatterOpen, setNewMatterOpen] = useState(false);
+  const [recipients, setRecipients] = useState([]);
+  const [recipientId, setRecipientId] = useState("");
+  const [linkLatestPost, setLinkLatestPost] = useState(false);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
 
   const loadMatters = useCallback(async () => {
     setBusy(true);
@@ -205,6 +211,109 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
     }));
   }, [matterResult.items]);
 
+  const loadRecipients = useCallback(async () => {
+    setLoadingRecipients(true);
+    setActionError("");
+    try {
+      if (typeof api?.getCommunityFeed !== "function") {
+        throw new Error("The Community feed API is not available in this session.");
+      }
+      const response = await api.getCommunityFeed({ limit: 100, mode: "recent" });
+      const payload = response?.data ?? response;
+      const posts = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.posts)
+          ? payload.posts
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : Array.isArray(payload?.results)
+              ? payload.results
+              : [];
+      const byId = new Map();
+      for (const post of posts) {
+        const author = post?.author || post?.user || {};
+        const rawId = author.user_id || author.member_id || author.id || author._id ||
+          post?.author_user_id || post?.user_id;
+        if (rawId === undefined || rawId === null) continue;
+        const id = String(rawId).trim();
+        if (!id || (currentUserId && id === String(currentUserId))) continue;
+        const title = String(post?.title || post?.post_title || post?.need_title || post?.offer_title || "Community post").trim();
+        const candidate = {
+          id,
+          name: String(author.full_name || author.name || author.fullName || author.username || post?.author_name || "Community member").trim(),
+          avatar_url: author.avatar_url || author.avatar || author.profile_image || null,
+          latestPostId: post?.id || post?._id || post?.post_id || "",
+          latestPostTitle: title,
+          latestPostCreatedAt: post?.created_at || post?.createdAt || null,
+        };
+        const current = byId.get(id);
+        if (!current) {
+          byId.set(id, candidate);
+        } else if (new Date(candidate.latestPostCreatedAt || 0) > new Date(current.latestPostCreatedAt || 0)) {
+          byId.set(id, candidate);
+        }
+      }
+      const found = [...byId.values()].sort((left, right) => left.name.localeCompare(right.name));
+      setRecipients(found);
+      setRecipientId((current) => found.some((item) => item.id === current) ? current : (found[0]?.id || ""));
+      if (!found.length) {
+        setActionError("No other Community members with visible posts were found. The directory currently discovers participants from Community activity; it does not expose every registered account.");
+      }
+    } catch (error) {
+      setRecipients([]);
+      setRecipientId("");
+      setActionError(error?.message || "Could not load Community members.");
+    } finally {
+      setLoadingRecipients(false);
+    }
+  }, [api, currentUserId]);
+
+  const openNewMatter = () => {
+    const willOpen = !newMatterOpen;
+    setNewMatterOpen(willOpen);
+    setActionError("");
+    if (willOpen && !recipients.length) void loadRecipients();
+  };
+
+  const startConversation = async (event) => {
+    event.preventDefault();
+    const recipient = recipients.find((item) => item.id === recipientId);
+    if (!recipient || !adapter.capabilities.create || busy) return;
+    setBusy(true);
+    setActionError("");
+    try {
+      const createdMatter = await adapter.create(recipient.id, {
+        title: linkLatestPost ? recipient.latestPostTitle : "",
+        linkedPostId: linkLatestPost ? recipient.latestPostId : "",
+      });
+      const matterId = itemId(createdMatter);
+      const refreshed = await adapter.list();
+      const found = refreshed.items.find((item) => itemId(item) === matterId);
+      const selected = found || createdMatter;
+      setMatterResult(refreshed.supported
+        ? {
+            ...refreshed,
+            items: refreshed.items.some((item) => itemId(item) === matterId)
+              ? refreshed.items
+              : [selected, ...refreshed.items],
+          }
+        : { supported: true, items: [selected], message: "" });
+      setSelectedMatter(selected);
+      setMessageResult({
+        supported: true,
+        items: [],
+        message: "No messages yet. Send the first message below.",
+      });
+      setDraft("");
+      setNewMatterOpen(false);
+      setLinkLatestPost(false);
+    } catch (error) {
+      setActionError(error?.message || "The conversation could not be created.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const sendMessage = async (event) => {
     event.preventDefault();
     const body = draft.trim();
@@ -220,6 +329,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
       ]);
       setMessageResult(messages);
       setMatterResult(matters);
+      setSelectedMatter(matters.items.find((item) => itemId(item) === itemId(selectedMatter)) || selectedMatter);
     } catch (error) {
       setActionError(error?.message || "The message could not be sent.");
     } finally {
@@ -262,10 +372,16 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
             Each matter should stay attached to the need or offer that started it, with an explicit Open → Agreed → Done progress.
           </p>
         </div>
-        <button type="button" onClick={loadMatters} disabled={busy} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-white/5">
-          <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={openNewMatter} disabled={!adapter.capabilities.create || busy} className="inline-flex h-10 items-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 hover:bg-cyan-400 disabled:opacity-50">
+            <Plus size={14} />
+            {newMatterOpen ? "Close" : "New conversation"}
+          </button>
+          <button type="button" onClick={loadMatters} disabled={busy} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-white/5">
+            <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </header>
 
       {!matterResult.supported ? (
@@ -279,6 +395,34 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
         </div>
       ) : matterResult.message ? (
         <div role="status" className="mt-5 rounded-xl border border-rose-300/30 bg-rose-50 px-4 py-3 text-xs text-rose-800 dark:bg-rose-950/20 dark:text-rose-200">{matterResult.message}</div>
+      ) : null}
+
+      {newMatterOpen ? (
+        <form onSubmit={startConversation} className="mt-5 rounded-2xl border border-cyan-500/20 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 dark:text-white">Start a real conversation</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Choose a member found through visible Community posts. No demo conversations are created.</p>
+            </div>
+            <button type="button" onClick={() => setNewMatterOpen(false)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 dark:border-white/10 dark:text-slate-300">Close</button>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <label className="block min-w-0 text-xs font-bold text-slate-600 dark:text-slate-300">
+              Community member
+              <select required value={recipientId} onChange={(event) => setRecipientId(event.target.value)} disabled={loadingRecipients || !recipients.length} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none focus:border-cyan-400 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950 dark:text-white">
+                {!recipients.length ? <option value="">{loadingRecipients ? "Loading members…" : "No eligible members found"}</option> : null}
+                {recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipient.name}{recipient.latestPostTitle ? " · " + recipient.latestPostTitle : ""}</option>)}
+              </select>
+            </label>
+            <button type="submit" disabled={busy || loadingRecipients || !recipientId || !adapter.capabilities.create} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-xs font-black text-slate-950 disabled:opacity-50">
+              <MessageCircle size={14} /> {busy ? "Opening…" : "Start conversation"}
+            </button>
+          </div>
+          <label className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+            <input type="checkbox" checked={linkLatestPost} onChange={(event) => setLinkLatestPost(event.target.checked)} disabled={!recipients.find((item) => item.id === recipientId)?.latestPostId} className="mt-1" />
+            <span>Link this matter to the selected member’s latest visible Community post when it represents the need or offer being discussed.</span>
+          </label>
+        </form>
       ) : null}
 
       <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[minmax(230px,0.78fr)_minmax(0,1.5fr)]">
@@ -302,6 +446,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
                         <button type="button" key={itemId(matter)} onClick={() => setSelectedMatter(matter)} className={"w-full rounded-xl border p-3 text-left transition " + (active ? "border-cyan-400/60 bg-cyan-50 dark:bg-cyan-950/25" : "border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20")}>
                           <span className="block truncate text-xs font-black text-slate-900 dark:text-white">{itemTitle(matter)}</span>
                           <span className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400"><Clock3 size={11} />{itemLocation(matter)}</span>
+                          {matter?.last_message ? <span className="mt-2 block truncate text-[10px] leading-4 text-slate-500 dark:text-slate-400">{matter.last_message}</span> : null}
                           <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-cyan-700 dark:text-cyan-300">Open matter <ArrowRight size={11} /></span>
                         </button>
                       );
@@ -356,8 +501,8 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
             ) : (
               <div className="m-auto max-w-sm py-7 text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm dark:bg-slate-900 dark:text-slate-300"><MessageCircle size={21} /></div>
-                <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">{selectedMatter ? "Thread not available" : "Every conversation starts with a real need or offer"}</h3>
-                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{selectedMatter ? messageResult.message : "Select a matter from the list when the backend provides one. Community post comments continue to work separately."}</p>
+                <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">{selectedMatter ? (canLoadMessages ? "No messages yet" : "Thread not available") : "Every conversation starts with a real need or offer"}</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{selectedMatter ? (canLoadMessages ? (messageResult.message || "This conversation is stored in Community. Send the first message below.") : messageResult.message) : "Start a conversation from a member’s visible Community activity. Existing post comments remain separate from private matter messages."}</p>
               </div>
             )}
           </div>
