@@ -133,7 +133,7 @@ export default function Header({
           {logo ? (
             <img src={logo} alt="" loading="eager" decoding="async" className="h-10 w-10 shrink-0 rounded-xl bg-white object-contain ring-1 ring-slate-200 sm:h-11 sm:w-11" />
           ) : (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm sm:h-11 sm:w-11" style={{ backgroundColor: primary }}>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm sm:h-11 sm:w-11" style={{ backgroundColor: primary, color: contrastColor(primary) }}>
               <Globe size={19} />
             </span>
           )}
