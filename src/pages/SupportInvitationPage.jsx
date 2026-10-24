@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, UserRoundPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, UserPlus } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
 
 export default function SupportInvitationPage() {
@@ -121,7 +121,7 @@ export default function SupportInvitationPage() {
               <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Create password</span><input required minLength={12} maxLength={256} type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" className="min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
               <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Confirm password</span><input required minLength={12} maxLength={256} type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" className="min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
               <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Use a unique password. RevelaCode stores a password hash; neither the inviting administrator nor the support team will see this password.</p>
-              <button type="submit" disabled={accepting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"><UserRoundPlus size={17} />{accepting ? "Activating account…" : "Accept invitation and activate account"}</button>
+              <button type="submit" disabled={accepting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"><UserPlus size={17} />{accepting ? "Activating account…" : "Accept invitation and activate account"}</button>
             </form>
           ) : null}
 
