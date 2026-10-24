@@ -15,12 +15,18 @@ import {
   XCircle,
 } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 const EMPTY_FORM = { full_name: "", contact: "", role: "support" };
 
+function isDeleted(user) {
+  return String(user?.status || "").toLowerCase() === "deleted";
+}
+
 function isBanned(user) {
+  if (isDeleted(user)) return false;
   const status = String(user?.status || "").toLowerCase();
-  return status === "banned" || status === "suspended" || user?.is_active === false;
+  return ["banned", "suspended", "blocked", "disabled", "inactive"].includes(status) || user?.is_active === false;
 }
 
 function dateLabel(value) {
@@ -43,6 +49,9 @@ function StatusPill({ value }) {
 
 export default function AdminTeamManagement() {
   const adminApi = useAdminApi();
+  const { user: currentUser } = useAuth();
+  const currentUserId = String(currentUser?.id || currentUser?._id || currentUser?.user_id || "");
+  const isTopLevelAdmin = ["revelacode_admin", "super_admin"].includes(String(currentUser?.role || "").toLowerCase());
   const [users, setUsers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -241,6 +250,8 @@ export default function AdminTeamManagement() {
             {filteredUsers.map((item) => {
               const id = String(item.id || "");
               const privileged = ["admin", "platform_admin", "super_admin", "revelacode_admin"].includes(String(item.role || "").toLowerCase());
+              const cannotOperate = privileged && (!isTopLevelAdmin || id === currentUserId);
+              const deleted = isDeleted(item);
               const banned = isBanned(item);
               const deleting = busyAction === `delete:${id}`;
               const statusBusy = busyAction === `status:${id}`;
@@ -250,7 +261,7 @@ export default function AdminTeamManagement() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold capitalize text-slate-700 dark:bg-slate-800 dark:text-slate-200">{item.role || "unknown"}</span>
                     <StatusPill value={item.status || (item.verified ? "verified" : "unverified")} />
-                    {privileged ? <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ShieldAlert size={12} />Platform role</span> : (
+                    {privileged && cannotOperate ? <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ShieldAlert size={12} />Protected platform role</span> : deleted ? <span className="text-xs font-bold text-rose-700 dark:text-rose-300">Deleted access</span> : (
                       <>
                         <button type="button" onClick={() => changeAccountStatus(item)} disabled={Boolean(busyAction)} className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50 ${banned ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/50 dark:text-emerald-300" : "border-amber-200 text-amber-800 hover:bg-amber-50 dark:border-amber-900/50 dark:text-amber-300"}`}>{statusBusy ? <RefreshCw size={13} className="animate-spin" /> : banned ? <UserCheck size={13} /> : <ShieldAlert size={13} />}{banned ? "Unban / reactivate" : "Ban user"}</button>
                         <button type="button" onClick={() => deleteAccount(item)} disabled={Boolean(busyAction) || deleting} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/50 dark:text-rose-300"><UserRoundX size={13} />{deleting ? "Deleting…" : "Delete"}</button>
