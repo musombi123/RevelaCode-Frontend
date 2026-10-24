@@ -2,6 +2,14 @@
 
 import { useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import {
+  createOfflineQueuedError,
+  isBrowserOffline,
+  offlineScopeForUser,
+  queueOfflineMutation,
+  readCachedApiResponse,
+  writeCachedApiResponse,
+} from "@/services/offlineHubSync.js";
 
 // =========================================================
 // BACKEND CONFIGURATION
@@ -266,8 +274,20 @@ async function performRequest(
   const {
     body,
     headers = {},
+    offlineScope = "",
     ...rest
   } = options;
+  const method = String(rest.method || "GET").toUpperCase();
+
+  if (offlineScope && method === "GET" && isBrowserOffline()) {
+    const cached = await readCachedApiResponse(offlineScope, url);
+    if (cached.hit) return cached.payload;
+  }
+
+  if (offlineScope && method !== "GET" && isBrowserOffline()) {
+    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+    if (queued) throw createOfflineQueuedError();
+  }
 
   const requestHeaders = new Headers(headers);
 
@@ -322,19 +342,33 @@ async function performRequest(
         "Check the configured backend URL, server availability, CORS, TLS, network connectivity, and backend logs.",
     });
 
+    if (offlineScope && method === "GET") {
+      const cached = await readCachedApiResponse(offlineScope, url);
+      if (cached.hit) return cached.payload;
+    }
+
+    if (offlineScope && method !== "GET" && isBrowserOffline()) {
+      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+      if (queued) throw createOfflineQueuedError();
+    }
+
     throw new JumuiyaAPIError(
       `Unable to reach the Jumuiya backend at ${url}. The browser received no HTTP response. Check the backend URL, availability, and CORS configuration.`,
       0,
       "network_error",
       {
         url,
-        method: rest.method || "GET",
+        method,
         cause: originalMessage,
       },
     );
   }
 
-  return parseResponse(response);
+  const payload = await parseResponse(response);
+  if (offlineScope && method === "GET" && response.ok) {
+    await writeCachedApiResponse(offlineScope, url, payload);
+  }
+  return payload;
 }
 
 // =========================================================
@@ -358,7 +392,9 @@ export function useJumuiyaApi() {
     getAccessToken,
     isAuthenticated,
     isGuest,
+    user,
   } = useAuth();
+  const offlineScope = offlineScopeForUser(user);
 
   // -------------------------------------------------------
   // REQUEST
@@ -366,8 +402,8 @@ export function useJumuiyaApi() {
 
   const request = useCallback(
     (path, options = {}) =>
-      performRequest(authFetch, path, options),
-    [authFetch],
+      performRequest(authFetch, path, { ...options, offlineScope }),
+    [authFetch, offlineScope],
   );
 
   // -------------------------------------------------------
