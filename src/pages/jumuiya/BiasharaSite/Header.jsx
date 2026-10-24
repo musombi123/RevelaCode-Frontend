@@ -19,7 +19,7 @@ export function AnnouncementBar({ announcement, primary, accent }) {
       role="region"
       aria-label="Business announcement"
       className="relative isolate overflow-hidden px-12 py-2.5 text-center text-xs font-semibold text-white sm:px-14 sm:text-sm"
-      style={{ background: "linear-gradient(105deg, " + primary + ", " + accent + ")" }}
+      style={{ background: "linear-gradient(105deg, " + primary + ", " + accent + ")", color: contrastColor(primary) }}
     >
       {isLong ? (
         <span
