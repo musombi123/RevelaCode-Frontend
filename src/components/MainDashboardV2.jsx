@@ -83,7 +83,7 @@ function FullscreenAIAssistant({
           className="
             fixed
             inset-0
-            z-[9998]
+            z-[10050]
             flex
             flex-col
             bg-gray-100
