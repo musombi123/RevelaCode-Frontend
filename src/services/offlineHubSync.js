@@ -56,8 +56,18 @@ async function storeGet(storeName, key) {
     return await new Promise((resolve, reject) => {
       const request = db.transaction(storeName, "readonly").objectStore(storeName).get(key);
       request.onsuccess = () => {
-        resolve(request.result || null);
+        const value = request.result || null;
         db.close();
+        if (value) {
+          resolve(value);
+          return;
+        }
+        try {
+          const raw = localStorage.getItem(localFallbackKey(storeName, key));
+          resolve(raw ? JSON.parse(raw) : null);
+        } catch {
+          resolve(null);
+        }
       };
       request.onerror = () => {
         db.close();
@@ -90,6 +100,7 @@ async function storePut(storeName, item) {
       transaction.onabort = () => reject(transaction.error || new Error("Offline storage transaction aborted."));
     });
     db.close();
+    try { localStorage.removeItem(localFallbackKey(storeName, item.key || item.id)); } catch { /* IndexedDB is the durable primary store. */ }
     return true;
   } catch (error) {
     try {
@@ -116,6 +127,7 @@ async function storeDelete(storeName, key) {
       transaction.onerror = () => reject(transaction.error);
     });
     db.close();
+    try { localStorage.removeItem(localFallbackKey(storeName, key)); } catch { /* Fall back is optional when storage is restricted. */ }
   } catch (error) {
     try {
       localStorage.removeItem(localFallbackKey(storeName, key));
@@ -141,10 +153,26 @@ async function storeAll(storeName) {
     return await new Promise((resolve, reject) => {
       const request = db.transaction(storeName, "readonly").objectStore(storeName).getAll();
       request.onsuccess = () => {
-        resolve(Array.isArray(request.result) ? request.result : []);
+        const indexed = Array.isArray(request.result) ? request.result : [];
         db.close();
+        const prefix = "revelacode_offline_v1:" + storeName + ":";
+        const localRows = [];
+        try {
+          for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index);
+            if (!key || !key.startsWith(prefix)) continue;
+            try { localRows.push(JSON.parse(localStorage.getItem(key))); } catch { /* Ignore corrupted local entries. */ }
+          }
+        } catch { /* IndexedDB rows remain available if localStorage is blocked. */ }
+        const merged = new Map();
+        localRows.forEach((item) => merged.set(item?.key || item?.id, item));
+        indexed.forEach((item) => merged.set(item?.key || item?.id, item));
+        resolve(Array.from(merged.values()).filter(Boolean));
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
     });
   } catch (error) {
     try {
