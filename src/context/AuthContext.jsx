@@ -294,15 +294,10 @@ export function AuthProvider({
               false
             ),
 
-          apiKey:
-            u?.apiKey ||
-            u?.api_key ||
-            "",
-
-          api_key:
-            u?.api_key ||
-            u?.apiKey ||
-            "",
+          // Privileged API keys must never be retained by browser sessions.
+          // Admin and support operations use authenticated JWT requests.
+          apiKey: "",
+          api_key: "",
 
           history:
             Array.isArray(
