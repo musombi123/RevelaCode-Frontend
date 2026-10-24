@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 function finiteNumber(value) {
   if (value === "" || value === null || value === undefined) return null;
@@ -248,6 +249,7 @@ export default function ShambaDashboard({ onNavigate, onOpenAI, location: device
       <div className="min-w-0 flex-1"><h2 id="shamba-rights-gate" className="text-sm font-black text-slate-900 dark:text-white">Farm-rights review required</h2><p className="mt-1.5 text-sm leading-5 text-slate-600 dark:text-slate-300">Your farmer profile and this farm are reviewed separately. Farm-linked activities, weather, market signals, recommendations and alerts remain protected until the farm’s ownership, lease, authorized-management or community-land reference has been reviewed. Open Trust & Safety to submit the appropriate reference.</p><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">This platform review is not a government title search or legal adjudication.</p></div>
       <button type="button" onClick={() => go("shamba/trust")} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-black text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-slate-950 dark:text-amber-200">Open Trust & Safety<ArrowRight size={14}/></button>
     </section>}
+    <HubRevenueOffers hub="shamba" compact />
     {error && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"><AlertCircle size={15} className="mt-0.5 shrink-0"/>{error}</div>}
 
     <section className="mb-4 grid min-w-0 grid-cols-1 gap-4 min-[900px]:grid-cols-[minmax(0,1.5fr)_minmax(270px,.9fr)]">

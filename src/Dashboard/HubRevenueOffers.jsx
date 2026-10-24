@@ -75,6 +75,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [notice, setNotice] = useState("");
   const [submittingCode, setSubmittingCode] = useState("");
   const [trial, setTrial] = useState(null);
+  const trialDays = Number(trial?.trial_days) > 0 ? Number(trial.trial_days) : 30;
   const [trialLoading, setTrialLoading] = useState(true);
   const [trialStarting, setTrialStarting] = useState(false);
   const [trialError, setTrialError] = useState("");
@@ -269,7 +270,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     try {
       const response = await revenueApi.startTrial(apiHub);
       setTrial(response?.trial || null);
-      setNotice(response?.message || `Your 30-day ${label} trial is active.`);
+      setNotice(response?.message || `Your ${trialDays}-day ${label} trial is active.`);
     } catch (error) {
       setTrialError(messageForError(error));
     } finally {
@@ -309,7 +310,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Platform-admin managed</p>
             <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">{label} plans</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Review plans published by the platform team and register interest. This does not initiate a payment or activate a subscription.
+              Compare this hub’s plans. Published paid plans can start M-Pesa checkout when live billing is enabled; proposed plans only record interest. Paid access activates only after provider-confirmed payment.
             </p>
           </div>
         </div>
@@ -327,9 +328,9 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/60 dark:bg-blue-950/25">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900 dark:text-white">30-day free {label} trial</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{trialDays}-day free {label} trial</p>
             <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-              Each hub has its own one-time 30-day trial. Premium access is checked by the backend. Paid checkout appears only after production Daraja credentials and the registered HTTPS callback are configured.
+              Each hub has its own one-time trial. The displayed duration comes from the Revenue Engine, and premium access is checked by the backend. Paid checkout appears only after production Daraja credentials and the registered HTTPS callback are configured.
             </p>
             {!subscriptionLoading && subscription?.status === "active" ? (
               <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Paid subscription active · {subscription.plan_code || "premium"} · access through {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : "renewal date unavailable"}</p>
@@ -356,7 +357,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
           ) : (
             <button type="button" onClick={startTrial} disabled={trialStarting || Boolean(checkout && ["initiating", "pending", "callback_received", "awaiting_verification", "verified_activation_failed", "submission_unknown"].includes(checkout.status))} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">
               {trialStarting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {trialStarting ? "Starting trial…" : "Start free month"}
+              {trialStarting ? "Starting trial…" : `Start ${trialDays}-day free trial`}
             </button>
           )}
         </div>

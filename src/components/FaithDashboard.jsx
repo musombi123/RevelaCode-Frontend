@@ -30,6 +30,7 @@ import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
 import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -1200,6 +1201,8 @@ export default function FaithDashboard({
           </div>
         </div>
       </section>
+
+      <HubRevenueOffers hub="faith" compact />
 
       {/* =====================================================
           STUDY QUICK ACCESS
