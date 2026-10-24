@@ -622,6 +622,36 @@ export default function AdminRevenueManagement() {
         <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
           Bulk publishing is enabled only after the backend confirms live Daraja readiness. It skips free, retired, non-hub, fractional-KES and unsupported-interval plans.
         </p>
+        {!billingKnown || !billingEnabled ? (
+          <section role="status" className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-100">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-extrabold">Live M-Pesa checkout readiness</h3>
+                <p className="mt-1 leading-6">
+                  {!billingKnown
+                    ? "The latest backend readiness status could not be confirmed. Refresh this screen before changing plan availability."
+                    : "The backend has not enabled production charges yet. A Daraja connection alone is not enough; all production readiness checks must pass before live checkout is published."}
+                </p>
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-5">
+                  <li><code>MPESA_ENV=production</code></li>
+                  <li><code>REVENUE_PAYMENT_PROVIDERS</code> includes <code>mpesa</code></li>
+                  <li><code>MPESA_CALLBACK_URL</code> is the exact HTTPS callback URL below, with no query string or fragment.</li>
+                  <li>Production Daraja API base URL, consumer key, consumer secret, numeric shortcode, and passkey are set in the backend's environment settings.</li>
+                </ul>
+                <p className="mt-2 break-all rounded-lg border border-amber-300/70 bg-white/60 px-3 py-2 font-mono text-[11px] dark:border-amber-800/50 dark:bg-black/20">
+                  https://revelacode-backend.onrender.com/api/revenue/providers/mpesa/callback
+                </p>
+                <p className="mt-2 text-xs leading-5">
+                  Keep credentials in the backend host's private environment settings; never paste secrets into the dashboard or source code.
+                </p>
+                <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-amber-500/70 px-3 text-xs font-extrabold hover:bg-amber-100 dark:hover:bg-amber-900/40">
+                  <RefreshCw className="h-3.5 w-3.5" /> Recheck checkout readiness
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {showCreate ? (
           <form onSubmit={createPlan} className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900/40 dark:bg-blue-950/10 sm:p-5">
