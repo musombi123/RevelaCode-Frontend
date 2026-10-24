@@ -38,6 +38,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
+import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
@@ -1385,6 +1386,8 @@ export default function CommunityDashboard({
                 onOpenPost={setSelectedBoardPost}
                 onCreatePost={() => navigate("community-composer")}
               />
+
+              <HubRevenueOffers hub="community" compact />
 
               <section className="mt-6">
                 <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
