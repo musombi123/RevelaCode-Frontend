@@ -19,7 +19,7 @@ import {
   Brain,
   Cpu,
   Building2,
-  BookOpenCheck,
+  BookOpen,
 } from "lucide-react";
 
 // =========================================================
@@ -112,7 +112,7 @@ const tabs = [
     key: "operations",
     label: "Operations Handbook",
     description: "System orientation, incidents and operational duties",
-    icon: BookOpenCheck,
+    icon: BookOpen,
   },
   {
     key: "settings",
