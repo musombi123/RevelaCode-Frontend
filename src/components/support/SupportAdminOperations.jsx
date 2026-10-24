@@ -28,6 +28,9 @@ export default function SupportAdminOperations() {
   const [overview, setOverview] = useState(null);
   const [team, setTeam] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [ticketPage, setTicketPage] = useState(1);
+  const [ticketPagination, setTicketPagination] = useState({ page: 1, limit: 50, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -40,21 +43,24 @@ export default function SupportAdminOperations() {
     else setLoading(true);
     setError("");
     try {
-      const [overviewResult, teamResult, activityResult] = await Promise.all([
+      const [overviewResult, teamResult, activityResult, ticketResult] = await Promise.all([
         adminApi.platform.getSupportAdminOverview(),
         adminApi.platform.getSupportAdminTeam(),
         adminApi.platform.getSupportAdminActivity({ limit: 30 }),
+        adminApi.platform.listSupportTickets({ page: ticketPage, limit: 50 }),
       ]);
       setOverview(overviewResult || {});
       setTeam(Array.isArray(teamResult?.team) ? teamResult.team : []);
       setActivity(Array.isArray(activityResult?.activity) ? activityResult.activity : []);
+      setTickets(Array.isArray(ticketResult?.tickets) ? ticketResult.tickets : []);
+      setTicketPagination(ticketResult?.pagination || { page: ticketPage, limit: 50, total: 0, pages: 1 });
     } catch (err) {
       setError(err?.message || "Unable to load support operations. Confirm the current support-admin role and backend deployment.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [adminApi]);
+  }, [adminApi, ticketPage]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -80,7 +86,7 @@ export default function SupportAdminOperations() {
   }
 
   const stats = overview?.stats || {};
-  const recent = Array.isArray(overview?.recent) ? overview.recent : [];
+  const recent = tickets;
   const supportAgents = team.filter((item) => String(item.role).toLowerCase() === "support");
 
   const metrics = [
@@ -133,7 +139,7 @@ export default function SupportAdminOperations() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <div className="border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><h3 className="font-black text-slate-950 dark:text-white">Recent tickets and assignment</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Assign unassigned work or move open tickets to an active Support Agent.</p></div>
-        {loading ? <div className="p-5 text-sm text-slate-500">Loading recent tickets…</div> : recent.length === 0 ? <div className="p-6 text-sm text-slate-500">No tickets were returned by the support service.</div> : (
+        {loading ? <div className="p-5 text-sm text-slate-500">Loading support ticket queue…</div> : recent.length === 0 ? <div className="p-6 text-sm text-slate-500">No tickets were returned by the support service.</div> : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {recent.map((ticket) => (
               <article key={ticket.id} className="flex flex-col gap-3 p-4 sm:p-5">
@@ -154,6 +160,11 @@ export default function SupportAdminOperations() {
             ))}
           </div>
         )}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 p-4 dark:border-slate-800">
+          <button type="button" disabled={ticketPage <= 1 || loading || refreshing} onClick={() => setTicketPage((current) => Math.max(1, current - 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Previous page</button>
+          <span className="text-xs text-slate-500">Page {ticketPage} / {Math.max(1, ticketPagination.pages || 1)}</span>
+          <button type="button" disabled={ticketPage >= (ticketPagination.pages || 1) || loading || refreshing} onClick={() => setTicketPage((current) => Math.min(ticketPagination.pages || 1, current + 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Next page</button>
+        </div>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
