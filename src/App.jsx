@@ -16,6 +16,7 @@ import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
+import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
@@ -111,7 +112,9 @@ function InteractiveWorkspaceRoute() {
 function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) {
   const requiredRoles = requiredRole === "admin"
     ? ["admin", "platform_admin", "super_admin", "revelacode_admin"]
-    : [requiredRole];
+    : requiredRole === "support"
+      ? ["support", "support_admin"]
+      : [requiredRole];
 
   return (
     <AuthGate requiredRoles={requiredRoles}>
@@ -330,6 +333,9 @@ export default function App() {
                 path="/support/*"
                 element={<Navigate to="/support/dashboard" replace />}
               />
+
+              {/* Support invitations are public, single-use token routes; acceptance sets the invitee's password. */}
+              <Route path="/support-invitation" element={<SupportInvitationPage />} />
 
               {/* Platform legal pages must never be interpreted as public school slugs. */}
               <Route path="/legal" element={<LegalDocumentsPage />} />
