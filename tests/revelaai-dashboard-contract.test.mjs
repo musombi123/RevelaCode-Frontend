@@ -9,6 +9,8 @@ const sidebar = read("../src/components/Sidebar.jsx");
 const composer = read("../src/components/InputBar.jsx");
 const voice = read("../src/ai/RevelaAIVoiceChat.jsx");
 const message = read("../src/components/Message.jsx");
+const appShell = read("../src/components/MainDashboardV2.jsx");
+const offlineStatus = read("../src/components/OfflineSyncStatus.jsx");
 
 test("AI sidebar exposes user actions and a persistent weak-network mode toggle", () => {
   for (const label of [
@@ -53,6 +55,19 @@ test("plans opens the existing authoritative trial/subscription/checkout compone
   assert.match(dashboard, /id="revela-ai-revenue-panel"/);
   assert.match(dashboard, /aria-controls="revela-ai-revenue-panel"/);
   assert.match(dashboard, /<HubRevenueOffers hub="smart_ai" compact \/>/);
+});
+
+test("fullscreen AI close button stays above the Workspace saved status pill", () => {
+  assert.match(appShell, /function FullscreenAIAssistant/);
+  assert.match(appShell, /z-\[10050\]/);
+  assert.match(appShell, /aria-label="Close AI"/);
+  assert.match(appShell, /onClick=\{onClose\}/);
+  assert.match(offlineStatus, /z-\[10000\]/);
+  assert.ok(
+    appShell.indexOf("z-[10050]") >= 0 &&
+      offlineStatus.indexOf("z-[10000]") >= 0,
+    "Fullscreen AI must render above the global Workspace saved status pill.",
+  );
 });
 
 test("the identity panel describes local mode and distinguishes its limitations", () => {
