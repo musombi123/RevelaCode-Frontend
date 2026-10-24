@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
-  ClipboardList,
+  ClipboardCheck,
   RefreshCw,
   Users,
   UserCheck,
@@ -85,7 +85,7 @@ export default function SupportAdminOperations() {
 
   const metrics = [
     { label: "All tickets", value: stats.total, icon: Ticket },
-    { label: "Open", value: stats.open, icon: ClipboardList },
+    { label: "Open", value: stats.open, icon: ClipboardCheck },
     { label: "Pending", value: stats.pending, icon: Clock3 },
     { label: "Unassigned", value: stats.unassigned, icon: AlertCircle },
     { label: "Resolved", value: stats.resolved, icon: CheckCircle2 },
@@ -157,7 +157,7 @@ export default function SupportAdminOperations() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><ClipboardList size={19} className="text-slate-500" /><div><h3 className="font-black text-slate-950 dark:text-white">Recorded support activity</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Audit entries returned by the support operation logs.</p></div></div>
+        <div className="flex items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800 sm:p-5"><ClipboardCheck size={19} className="text-slate-500" /><div><h3 className="font-black text-slate-950 dark:text-white">Recorded support activity</h3><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Audit entries returned by the support operation logs.</p></div></div>
         {activity.length === 0 ? <div className="p-5 text-sm text-slate-500">No matching activity entries were returned.</div> : <div className="divide-y divide-slate-100 dark:divide-slate-800">{activity.map((item) => <div key={item.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="break-words text-sm font-semibold text-slate-900 dark:text-white">{String(item.action || "Operation").replaceAll("_", " ")}</p><p className="mt-1 break-words text-xs text-slate-500">Actor {item.actor || "Unknown"} · Resource {item.resource || "—"}</p></div><time className="shrink-0 text-xs text-slate-400">{dateLabel(item.timestamp)}</time></div>)}</div>}
       </section>
     </div>
