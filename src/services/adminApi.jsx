@@ -42,6 +42,7 @@ export const ADMIN_ROUTES = Object.freeze({
   userStatus: (userId) => `/api/admin/users/${encodeURIComponent(String(userId))}/status`,
   user: (userId) => `/api/admin/users/${encodeURIComponent(String(userId))}`,
   legalDocumentPublic: (docType) => `/api/legal/${encodeURIComponent(docType)}`,
+  supportTickets: "/api/support/tickets",
   supportAdminOverview: "/api/support/admin/overview",
   supportAdminTeam: "/api/support/admin/team",
   supportAdminActivity: "/api/support/admin/activity",
@@ -521,6 +522,9 @@ export function createAdminApiClient({
 
     getLegalDocument: (docType, options = {}) =>
       get(ADMIN_ROUTES.legalDocumentPublic(validateId(docType, "Document type")), undefined, options),
+
+    listSupportTickets: (params = {}, options = {}) =>
+      get(ADMIN_ROUTES.supportTickets, params, options),
 
     getSupportAdminOverview: (options = {}) =>
       get(ADMIN_ROUTES.supportAdminOverview, undefined, options),
