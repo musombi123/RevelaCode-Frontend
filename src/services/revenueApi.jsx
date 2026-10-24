@@ -1,5 +1,11 @@
 import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import {
+  isBrowserOffline,
+  offlineScopeForUser,
+  readCachedApiResponse,
+  writeCachedApiResponse,
+} from "@/services/offlineHubSync.js";
 
 const DEFAULT_BACKEND_URL = "https://revelacode-backend.onrender.com";
 const ENV = import.meta.env || {};
@@ -72,6 +78,7 @@ function apiError(response, payload, url, method) {
 export function createRevenueApiClient({
   baseUrl = resolveRevenueBackendUrl(),
   authFetch = null,
+  offlineScope = "",
   fetchImpl = globalThis.fetch,
 } = {}) {
   const origin = String(baseUrl || DEFAULT_BACKEND_URL).trim().replace(/\/+$/, "");
@@ -89,9 +96,16 @@ export function createRevenueApiClient({
       headers: customHeaders = {},
       signal,
       credentials = "include",
+      requestScope = offlineScope,
     } = options;
     const verb = String(method).toUpperCase();
     const url = `${origin}/api/revenue${path}${queryString(params)}`;
+
+    if (requestScope && verb === "GET" && isBrowserOffline()) {
+      const cached = await readCachedApiResponse(requestScope, url);
+      if (cached.hit) return cached.payload;
+    }
+
     const headers = new Headers(customHeaders);
     if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
@@ -106,6 +120,10 @@ export function createRevenueApiClient({
       response = await transport(url, init);
     } catch (cause) {
       if (cause?.name === "AbortError") throw cause;
+      if (requestScope && verb === "GET") {
+        const cached = await readCachedApiResponse(requestScope, url);
+        if (cached.hit) return cached.payload;
+      }
       const error = new Error(
         "Cannot reach the Revenue Engine. Check the backend URL, CORS, and network connection.",
       );
@@ -119,6 +137,9 @@ export function createRevenueApiClient({
     const payload = await readPayload(response);
     if (!response.ok) throw apiError(response, payload, url, verb);
     if (payload?.success === false) throw apiError(response, payload, url, verb);
+    if (requestScope && verb === "GET") {
+      await writeCachedApiResponse(requestScope, url, payload);
+    }
     return payload;
   }
 
@@ -229,10 +250,11 @@ export function createRevenueApiClient({
 export function useRevenueApi() {
   const auth = useAuth();
   const authFetch = auth?.authFetch;
+  const offlineScope = offlineScopeForUser(auth?.user);
 
   return useMemo(
-    () => createRevenueApiClient({ authFetch }),
-    [authFetch],
+    () => createRevenueApiClient({ authFetch, offlineScope }),
+    [authFetch, offlineScope],
   );
 }
 
