@@ -55,11 +55,13 @@ async function storeGet(storeName, key) {
     }
     return await new Promise((resolve, reject) => {
       const request = db.transaction(storeName, "readonly").objectStore(storeName).get(key);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         resolve(request.result || null);
         db.close();
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
       };
     });
   } catch (error) {
@@ -392,6 +394,15 @@ export async function flushOfflineQueue({ scope, authFetch }) {
   const status = await getOfflineQueueStatus(owner);
   emitChange();
   return { synced, pending: status.pending, failed: status.failed };
+}
+
+export async function retryFailedOfflineMutation(scope, id) {
+  const owner = safeScope(scope);
+  const item = await storeGet(QUEUE_STORE, id);
+  if (!owner || !item || item.scope !== owner || !["failed", "blocked"].includes(item.status)) return false;
+  const saved = await storePut(QUEUE_STORE, { ...item, status: "pending", lastError: "" });
+  if (saved) emitChange();
+  return saved;
 }
 
 export async function clearFailedOfflineMutation(scope, id) {
