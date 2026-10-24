@@ -69,7 +69,6 @@ export default function AdminTeamManagement() {
   const loadAll = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
-    setMessage("");
     try {
       const [userResponse, inviteResponse] = await Promise.all([
         adminApi.platform.listUsers({ page, limit: 50, ...(activeSearch ? { search: activeSearch } : {}) }),
@@ -216,7 +215,7 @@ export default function AdminTeamManagement() {
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900"><p className="text-xs text-slate-500">Accounts in current list</p><p className="mt-1 text-2xl font-black">{users.length}</p></div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900"><p className="text-xs text-slate-500">Not banned/deleted</p><p className="mt-1 text-2xl font-black">{activeUsers}</p></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900"><p className="text-xs text-slate-500">Active on this page</p><p className="mt-1 text-2xl font-black">{activeUsers}</p></div>
           <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900"><p className="text-xs text-slate-500">Pending invitations</p><p className="mt-1 text-2xl font-black">{pendingInvitations}</p></div>
         </div>
       </section>
