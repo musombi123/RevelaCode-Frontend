@@ -7,9 +7,8 @@ import {
   Headphones,
   ShieldCheck,
   Database,
-  ShieldCheck,
-  ClipboardCheck,
 } from "lucide-react";
+
 
 const MODULES = [
   {
