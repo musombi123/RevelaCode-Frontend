@@ -81,7 +81,7 @@ function Detail({ icon: Icon, label, value }) {
 }
 
 export default function AdminShambaVerification() {
-  const api = useJumuiyaApi();
+  const { getFarmerVerificationQueue, reviewFarmerProfile } = useJumuiyaApi();
   const [applications, setApplications] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [search, setSearch] = useState("");
@@ -97,7 +97,7 @@ export default function AdminShambaVerification() {
     if (!silent) setLoading(true);
     setLoadError("");
     try {
-      const result = await api.getFarmerVerificationQueue();
+      const result = await getFarmerVerificationQueue();
       const rows = Array.isArray(result?.items)
         ? result.items
         : Array.isArray(result?.data?.items)
@@ -114,7 +114,7 @@ export default function AdminShambaVerification() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [api]);
+  }, [getFarmerVerificationQueue]);
 
   useEffect(() => { loadQueue(); }, [loadQueue]);
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function AdminShambaVerification() {
     setReviewError("");
     setNotice(null);
     try {
-      const result = await api.reviewFarmerProfile(idOf(selected), {
+      const result = await reviewFarmerProfile(idOf(selected), {
         decision,
         review_notes: notes.trim(),
       });
