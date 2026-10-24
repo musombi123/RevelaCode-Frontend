@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Activity, CloudOff, CloudUpload, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Activity, CloudOff, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import {
   flushOfflineQueue,
@@ -86,7 +86,7 @@ export default function OfflineSyncStatus() {
         aria-label={title + ". " + description}
         className="flex min-h-10 items-center gap-2 rounded-full border border-slate-300 bg-white/95 px-3 py-2 text-xs font-bold text-slate-800 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-100"
       >
-        {offline ? <CloudOff size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : queue.failed ? <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : syncing ? <RefreshCw size={15} className="shrink-0 animate-spin text-blue-600 dark:text-blue-300" /> : queue.pending ? <CloudUpload size={15} className="shrink-0 text-blue-600 dark:text-blue-300" /> : <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />}
+        {offline ? <CloudOff size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : queue.failed ? <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : syncing ? <RefreshCw size={15} className="shrink-0 animate-spin text-blue-600 dark:text-blue-300" /> : queue.pending ? <RefreshCw size={15} className="shrink-0 text-blue-600 dark:text-blue-300" /> : <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />}
         <span className="max-w-[245px] truncate">{offline ? "Offline" : syncing ? "Syncing" : queue.failed ? queue.failed + " need attention" : queue.pending ? queue.pending + " waiting to sync" : "Workspace saved"}</span>
         {(queue.pending || queue.failed) ? <span className="rounded-full bg-slate-100 px-2 py-0.5 tabular-nums dark:bg-slate-800">{queue.pending + queue.failed}</span> : null}
       </button>
