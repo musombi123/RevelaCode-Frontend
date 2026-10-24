@@ -11,7 +11,7 @@ import {
   Users,
   BookOpen,
   ShieldCheck,
-  BookOpenCheck,
+  BookOpen,
 } from "lucide-react";
 
 const views = [
@@ -34,7 +34,7 @@ export default function SupportSidebar({
     { key: "team", label: "Team operations", icon: Users },
     { key: "study", label: "Study Hub management", icon: BookOpen },
     { key: "policies", label: "Policies and terms", icon: ShieldCheck },
-    { key: "handbook", label: "System handbook", icon: BookOpenCheck },
+    { key: "handbook", label: "System handbook", icon: BookOpen },
   ] : views;
 
   return (
