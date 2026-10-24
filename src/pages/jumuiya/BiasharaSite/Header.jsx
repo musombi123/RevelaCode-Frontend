@@ -6,7 +6,7 @@ import {
   MessageCircle,
   X,
 } from "lucide-react";
-import { formatBusinessLocation } from "./utils.jsx";
+import { contrastColor, formatBusinessLocation, readableBrandText } from "./utils.jsx";
 
 export function AnnouncementBar({ announcement, primary, accent }) {
   const [dismissed, setDismissed] = useState(false);
@@ -112,7 +112,7 @@ export default function Header({
       href="#contact"
       onClick={closeMenu}
       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none sm:text-sm"
-      style={{ backgroundColor: primary, boxShadow: "0 8px 24px " + primary + "28" }}
+      style={{ backgroundColor: primary, color: contrastColor(primary), boxShadow: "0 8px 24px " + primary + "28" }}
     >
       Contact us <ArrowUpRight size={15} />
     </a>
@@ -152,7 +152,7 @@ export default function Header({
               href={"#" + item.id}
               aria-current={activeSection === item.id ? "location" : undefined}
               className={"rounded-full px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " + (activeSection === item.id ? "text-slate-950" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950")}
-              style={activeSection === item.id ? { backgroundColor: primary + "12", color: primary } : undefined}
+              style={activeSection === item.id ? { backgroundColor: primary + "12", color: readableBrandText(primary) } : undefined}
             >
               {item.label}
             </a>
@@ -168,7 +168,7 @@ export default function Header({
               rel="noopener noreferrer"
               aria-label="Message this business on WhatsApp"
               className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none"
-              style={{ color: accent }}
+              style={{ color: readableBrandText(accent) }}
             >
               <MessageCircle size={18} />
             </a>
@@ -206,7 +206,7 @@ export default function Header({
               aria-current={activeSection === item.id ? "location" : undefined}
               onClick={closeMenu}
               className={"flex min-h-11 items-center justify-between rounded-xl px-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 " + (activeSection === item.id ? "bg-slate-50" : "text-slate-700 hover:bg-slate-50")}
-              style={activeSection === item.id ? { color: primary } : undefined}
+              style={activeSection === item.id ? { color: readableBrandText(primary) } : undefined}
             >
               {item.label}
               <ArrowUpRight size={15} className="text-slate-400" />
@@ -214,12 +214,12 @@ export default function Header({
           ))}
           <div className="flex flex-wrap gap-2 pt-2">
             {canContact ? (
-              <a href="#contact" tabIndex={mobileOpen ? 0 : -1} onClick={closeMenu} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary }}>
+              <a href="#contact" tabIndex={mobileOpen ? 0 : -1} onClick={closeMenu} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>
                 Contact us <ArrowUpRight size={16} />
               </a>
             ) : null}
             {safeWhatsApp ? (
-              <a href={safeWhatsApp} target="_blank" rel="noopener noreferrer" tabIndex={mobileOpen ? 0 : -1} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2" style={{ color: accent, borderColor: accent + "44", backgroundColor: accent + "0A" }}>
+              <a href={safeWhatsApp} target="_blank" rel="noopener noreferrer" tabIndex={mobileOpen ? 0 : -1} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2" style={{ color: readableBrandText(accent), borderColor: accent + "44", backgroundColor: accent + "0A" }}>
                 <MessageCircle size={16} /> WhatsApp
               </a>
             ) : null}
