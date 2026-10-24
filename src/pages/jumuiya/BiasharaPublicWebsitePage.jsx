@@ -310,7 +310,7 @@ export default function BiasharaPublicWebsitePage() {
 
   return (
     <main id="main-content" tabIndex={-1} className="biashara-public-site min-h-screen overflow-x-clip bg-white text-slate-900" style={{ scrollBehavior: "smooth" }}>
-      <style>{'@media (prefers-reduced-motion: reduce) { .biashara-public-site *, .biashara-public-site *::before, .biashara-public-site *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }'}</style>
+      <style>{'@media (prefers-reduced-motion: reduce) { .biashara-public-site, .biashara-public-site *, .biashara-public-site *::before, .biashara-public-site *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }'}</style>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-xl">Skip to content</a>
       <AnnouncementBar announcement={website.announcement} primary={primary} accent={accent} />
       <Header
