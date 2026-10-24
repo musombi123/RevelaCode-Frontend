@@ -141,8 +141,17 @@ body,
 .dark .shamba-workspace [class*="bg-violet-50"],
 .dark .shamba-workspace [class*="bg-cyan-50"],
 .dark .shamba-workspace [class*="bg-[#F"],
-.dark .shamba-workspace [class*="bg-[#E"] {
+.dark .shamba-workspace [class*="bg-[#E"],
+.dark .shamba-workspace [class*="bg-[#D"] {
   background-color: #111827 !important;
+}
+
+/* Preserve the Shamba lime brand tile and its dark icon foreground. */
+.dark .shamba-workspace [class*="bg-[#C8EF79"] {
+  background-color: #C8EF79 !important;
+}
+.dark .shamba-workspace [class*="bg-[#C8EF79"][class*="text-[#123D2F"] {
+  color: #123D2F !important;
 }
 
 /* Replace pale gradient panels with a neutral dark surface. */
