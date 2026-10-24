@@ -8,6 +8,12 @@ import React, {
   useState,
 } from "react";
 import { useAuth } from "@/context/AuthContext.jsx";
+import {
+  isBrowserOffline,
+  offlineScopeForUser,
+  queueOfflineMutation,
+  recordOfflineActivity,
+} from "@/services/offlineHubSync.js";
 
 /* =========================================================
    History Context
@@ -151,6 +157,7 @@ export function HistoryProvider({ children }) {
     hydrated,
     authFetch,
   } = useAuth();
+  const offlineScope = offlineScopeForUser(user);
 
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -464,6 +471,23 @@ export function HistoryProvider({ children }) {
         return newEntry;
       }
 
+      if (offlineScope && isBrowserOffline()) {
+        const queued = await queueOfflineMutation({
+          scope: offlineScope,
+          url: historyURL,
+          method: "POST",
+          body: newEntry,
+        });
+        if (queued) {
+          await recordOfflineActivity(offlineScope, {
+            kind: "history_queued",
+            title: "Activity saved for sync",
+            detail: "A user activity record is saved on this device and will sync when online.",
+          });
+          return newEntry;
+        }
+      }
+
       try {
         const response = await authFetch(historyURL, {
           method: "POST",
@@ -551,10 +575,27 @@ export function HistoryProvider({ children }) {
           error
         );
 
+        // If connectivity dropped while the request was in flight, queue the
+        // same stable entry ID. The backend handles duplicate IDs idempotently.
+        if (offlineScope && isBrowserOffline()) {
+          const queued = await queueOfflineMutation({
+            scope: offlineScope,
+            url: historyURL,
+            method: "POST",
+            body: newEntry,
+          });
+          if (queued) {
+            await recordOfflineActivity(offlineScope, {
+              kind: "history_queued",
+              title: "Activity saved for sync",
+              detail: "A user activity record is saved on this device and will sync when online.",
+            });
+          }
+        }
+
         /*
-         * Keep the optimistic local entry.
-         * This means the user does not lose history merely
-         * because the network is temporarily unavailable.
+         * The localStorage history always retains the optimistic entry.
+         * If the queue cannot persist the POST, local history remains usable.
          */
       }
 
@@ -565,6 +606,7 @@ export function HistoryProvider({ children }) {
       historyURL,
       isGuest,
       normalizedBackendURL,
+      offlineScope,
       user,
     ]
   );
