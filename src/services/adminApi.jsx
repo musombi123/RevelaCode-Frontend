@@ -35,6 +35,17 @@ export const ADMIN_ROUTES = Object.freeze({
   updateScripture: "/api/admin/update-scripture",
   legalDocument: (docType) =>
     `/api/admin/legal/${encodeURIComponent(docType)}`,
+  invitations: "/api/admin/invitations",
+  invitation: (invitationId) => `/api/admin/invitations/${encodeURIComponent(String(invitationId))}`,
+  invitationPreview: "/api/admin/invitations/preview",
+  invitationAccept: "/api/admin/invitations/accept",
+  userStatus: (userId) => `/api/admin/users/${encodeURIComponent(String(userId))}/status`,
+  user: (userId) => `/api/admin/users/${encodeURIComponent(String(userId))}`,
+  legalDocumentPublic: (docType) => `/api/legal/${encodeURIComponent(docType)}`,
+  supportAdminOverview: "/api/support/admin/overview",
+  supportAdminTeam: "/api/support/admin/team",
+  supportAdminActivity: "/api/support/admin/activity",
+  supportAdminAssignTicket: (ticketId) => `/api/support/admin/tickets/${encodeURIComponent(String(ticketId))}/assign`,
 
   schoolApplications:
     "/api/jumuiya/elimu/verification/applications",
@@ -485,6 +496,44 @@ export function createAdminApiClient({
   const platform = {
     getDashboard: (options = {}) =>
       get(ADMIN_ROUTES.dashboard, undefined, options),
+
+    createInvitation: (data, options = {}) =>
+      post(ADMIN_ROUTES.invitations, data, options),
+
+    listInvitations: (params = {}, options = {}) =>
+      get(ADMIN_ROUTES.invitations, params, options),
+
+    revokeInvitation: (invitationId, options = {}) =>
+      request(ADMIN_ROUTES.invitation(validateId(invitationId, "Invitation ID")), {
+        ...options,
+        method: "DELETE",
+      }),
+
+    updateUserStatus: (userId, action, options = {}) =>
+      patch(ADMIN_ROUTES.userStatus(validateId(userId, "User ID")), { action }, options),
+
+    deleteUser: (userId, options = {}) =>
+      request(ADMIN_ROUTES.user(validateId(userId, "User ID")), {
+        ...options,
+        method: "DELETE",
+      }),
+
+    getLegalDocument: (docType, options = {}) =>
+      get(ADMIN_ROUTES.legalDocumentPublic(validateId(docType, "Document type")), undefined, options),
+
+    getSupportAdminOverview: (options = {}) =>
+      get(ADMIN_ROUTES.supportAdminOverview, undefined, options),
+
+    getSupportAdminTeam: (options = {}) =>
+      get(ADMIN_ROUTES.supportAdminTeam, undefined, options),
+
+    getSupportAdminActivity: (params = {}, options = {}) =>
+      get(ADMIN_ROUTES.supportAdminActivity, params, options),
+
+    assignSupportTicket: (ticketId, supportUserId, options = {}) =>
+      post(ADMIN_ROUTES.supportAdminAssignTicket(validateId(ticketId, "Ticket ID")), {
+        support_user_id: validateId(supportUserId, "Support user ID"),
+      }, options),
 
     listUsers: (params = {}, options = {}) =>
       get(ADMIN_ROUTES.users, params, options),
