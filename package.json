@@ -8,12 +8,15 @@
     "preview": "vite preview",
     "vision:assets": "node scripts/fetch-free-vision-assets.mjs",
     "test:auth": "node --test tests/token-storage.test.mjs tests/session-identity.test.mjs tests/start-modal-jwt.test.mjs",
-    "test:community": "node --test tests/community-comments.test.mjs"
+    "test:community": "node --test tests/community-comments.test.mjs",
+    "admob:configure:android": "node scripts/configure-admob-android.mjs",
+    "android:sync:admob": "npx cap sync android && node scripts/configure-admob-android.mjs"
   },
   "engines": {
     "node": "22.x"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.2.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
