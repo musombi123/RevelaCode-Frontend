@@ -21,7 +21,7 @@ const initialIntegrations = [
 ];
 
 export default function AccountDashboard() {
-  const { user, authFetch } = useAuth(); // use the existing central RevelaCode session
+  const { user, authFetch, login } = useAuth(); // use the existing central RevelaCode session
   const [integrations, setIntegrations] = useState(
     initialIntegrations.map((i) => ({ ...i, connected: false }))
   );
@@ -127,6 +127,15 @@ export default function AccountDashboard() {
       const result = await mfaRequest("/api/auth/mfa/enable", { code: mfaCode.trim() });
       setMfaStatus({ enabled: true, recovery_codes_remaining: result.recovery_codes_remaining || result.recovery_codes?.length || 0 });
       setMfaRecoveryCodes(Array.isArray(result.recovery_codes) ? result.recovery_codes : []);
+      // Replace the existing session with the backend-issued JWT that records
+      // this newly verified second factor.
+      if (result.access_token && typeof login === "function") {
+        login({
+          user,
+          access_token: result.access_token,
+          token_type: result.token_type || "Bearer",
+        });
+      }
       setMfaSetup(null);
       setMfaCode("");
       setMfaPassword("");
