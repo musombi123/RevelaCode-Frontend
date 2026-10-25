@@ -533,6 +533,32 @@ export default function BiasharaInternalWorkspace({
     }
   };
 
+  const addProductStock = async (product) => {
+    const id = idOf(product);
+    if (!id) { setError("This product has no valid ID."); return; }
+    const raw = typeof window !== "undefined" ? window.prompt("How many units should be added to stock?", "1") : null;
+    if (raw === null) return;
+    const quantity = Number(raw);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setError("Enter a stock quantity greater than zero.");
+      return;
+    }
+    setSaving(true); setError(""); setNotice("");
+    try {
+      if (typeof api.adjustBiasharaInventory !== "function") throw new Error("The inventory adjustment API helper is unavailable.");
+      await api.adjustBiasharaInventory(id, {
+        movement_type: "add",
+        quantity,
+        reason: "Restock recorded from Biashara product catalogue",
+      });
+      setNotice("Stock updated. Remaining stock was recalculated.");
+      await reload();
+      await onRefresh?.();
+    } catch (err) {
+      setError(err?.message || "Unable to add stock to this product.");
+    } finally { setSaving(false); }
+  };
+
   const deleteProduct = async (product) => {
     const id = idOf(product);
     if (!id) { setError("This product has no valid ID."); return; }
@@ -671,7 +697,7 @@ export default function BiasharaInternalWorkspace({
               <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><Package size={16} />{saving ? "Saving…" : "Create product"}</button>
             </form>
             <ListPanel title="Product catalogue" loading={loading} rows={filteredRows} empty="No products were returned for this business yet." onSearch={setQuery} query={query}>
-              {(product) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{product.name || product.product_name || "Unnamed product"}</p><p className="mt-1 text-xs text-slate-500">{product.sku || "No SKU"}{product.category ? ` · ${product.category}` : ""}</p></div><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-900">{money(product.price, product.currency || currency)}</span><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (number(product.stock_quantity ?? product.quantity ?? product.stock) <= number(product.low_stock_threshold ?? 5) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>Remaining: {number(product.stock_quantity ?? product.quantity ?? product.stock)}</span><button type="button" disabled={saving} onClick={() => deleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
+              {(product) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{product.name || product.product_name || "Unnamed product"}</p><p className="mt-1 text-xs text-slate-500">{product.sku || "No SKU"}{product.category ? ` · ${product.category}` : ""}</p></div><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-900">{money(product.price, product.currency || currency)}</span><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (number(product.stock_quantity ?? product.quantity ?? product.stock) <= number(product.low_stock_threshold ?? 5) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>Remaining: {number(product.stock_quantity ?? product.quantity ?? product.stock)}</span><button type="button" disabled={saving} onClick={() => addProductStock(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95 disabled:opacity-50"><Plus size={14} /> Add stock</button><button type="button" disabled={saving} onClick={() => deleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
             </ListPanel>
           </>
         ) : null}
