@@ -18,6 +18,7 @@ import {
   ChevronDown,
   CloudSun,
   Leaf,
+  Home,
   LocateFixed,
   MapPin,
   MoreHorizontal,
@@ -173,7 +174,7 @@ function hasFarmerReviewAccess(user) {
 const SHAMBA_SECTIONS = {
   home: {
     label: "Overview",
-    shortLabel: "Home",
+    shortLabel: "Overview",
     icon: Leaf,
     component: ShambaDashboard,
     primary: true,
@@ -1338,6 +1339,19 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#DCE5E1] bg-white/95 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-lg min-[1200px]:hidden dark:border-slate-800 dark:bg-slate-950/95">
         <div className="mx-auto flex max-w-[600px] items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpen(false);
+              onNavigate?.("home");
+            }}
+            aria-label="Return to main home dashboard"
+            title="Return to main home dashboard"
+            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-[#087F5B] active:scale-95 dark:text-slate-400 dark:hover:bg-slate-900"
+          >
+            <Home size={18} />
+            <span className="max-w-full truncate text-[12px] font-black">Home</span>
+          </button>
           {MOBILE_PRIMARY_KEYS.map((key) => {
             const item = SHAMBA_SECTIONS[key];
 
