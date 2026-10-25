@@ -16,7 +16,7 @@ export default function CommunityAdSenseUnit() {
   const pushAttempted = useRef(false);
 
   useEffect(() => {
-    if (!COMMUNITY_AD_SLOT || !adRef.current || pushAttempted.current) return;
+    if (!/^\d+$/.test(COMMUNITY_AD_SLOT) || !adRef.current || pushAttempted.current) return;
     if (typeof window === "undefined") return;
 
     pushAttempted.current = true;
@@ -28,7 +28,7 @@ export default function CommunityAdSenseUnit() {
     }
   }, []);
 
-  if (!COMMUNITY_AD_SLOT || !ADSENSE_CLIENT) return null;
+  if (!/^\d+$/.test(COMMUNITY_AD_SLOT) || !ADSENSE_CLIENT) return null;
 
   return (
     <aside
