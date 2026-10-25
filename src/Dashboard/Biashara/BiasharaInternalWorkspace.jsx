@@ -351,6 +351,7 @@ export default function BiasharaInternalWorkspace({
     unit: "service",
     duration_minutes: "0",
   }));
+  const [editingServiceId, setEditingServiceId] = useState("");
   const [profileForm, setProfileForm] = useState(() => profileFields(business));
 
   const currency = String(dashboard?.currency || metricSet(dashboard)?.currency || business?.currency || "KES").toUpperCase();
@@ -448,8 +449,7 @@ export default function BiasharaInternalWorkspace({
         setForm((current) => ({ ...current, name: "", sku: "", category: "", price: "", stock_quantity: "0" }));
         setNotice("Product created successfully.");
       } else if (route === "services") {
-        if (typeof api.createBiasharaService !== "function") throw new Error("The business services API helper is missing.");
-        response = await api.createBiasharaService({
+        const servicePayload = {
           name: form.name.trim(),
           description: form.description.trim(),
           category: form.category.trim(),
@@ -459,7 +459,14 @@ export default function BiasharaInternalWorkspace({
           unit: form.unit.trim() || "service",
           duration_minutes: Number(form.duration_minutes || 0),
           status: "active",
-        });
+        };
+        if (editingServiceId) {
+          if (typeof api.updateBiasharaService !== "function") throw new Error("The business service update API helper is missing.");
+          response = await api.updateBiasharaService(editingServiceId, servicePayload);
+        } else {
+          if (typeof api.createBiasharaService !== "function") throw new Error("The business services API helper is missing.");
+          response = await api.createBiasharaService(servicePayload);
+        }
         setForm((current) => ({
           ...current,
           name: "",
@@ -467,8 +474,11 @@ export default function BiasharaInternalWorkspace({
           category: "",
           price: "",
           duration_minutes: "0",
+          service_type: "general",
+          unit: "service",
         }));
-        setNotice("Service created successfully.");
+        setNotice(editingServiceId ? "Service updated successfully." : "Service created successfully.");
+        setEditingServiceId("");
       } else if (route === "customers") {
         if (typeof api.createBiasharaCustomer !== "function") throw new Error("The customer creation API helper is missing.");
         response = await api.createBiasharaCustomer({
@@ -580,6 +590,38 @@ export default function BiasharaInternalWorkspace({
     } catch (err) {
       setError(err?.message || "Unable to archive this product.");
     } finally { setSaving(false); }
+  };
+
+  const editService = (service) => {
+    const id = idOf(service);
+    if (!id) { setError("This service has no valid ID."); return; }
+    setEditingServiceId(id);
+    setForm((current) => ({
+      ...current,
+      name: String(service.name || ""),
+      description: String(service.description || ""),
+      category: String(service.category || ""),
+      price: String(service.price ?? ""),
+      service_type: String(service.service_type || "general"),
+      unit: String(service.unit || "service"),
+      duration_minutes: String(service.duration_minutes ?? "0"),
+    }));
+    setError("");
+    setNotice("Editing " + (service.name || "service") + ". Save or cancel your changes above.");
+  };
+
+  const cancelServiceEdit = () => {
+    setEditingServiceId("");
+    setForm((current) => ({
+      ...current,
+      name: "",
+      description: "",
+      category: "",
+      price: "",
+      service_type: "general",
+      unit: "service",
+      duration_minutes: "0",
+    }));
   };
 
   const deleteService = async (service) => {
@@ -712,7 +754,7 @@ export default function BiasharaInternalWorkspace({
         {route === "services" ? (
           <>
             <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
-              <div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Wrench size={19} /></span><div><h2 className="text-lg font-bold text-slate-900">Add a business service</h2><p className="mt-1 text-sm text-slate-500">Services are stored against this business account and do not affect product stock.</p></div></div>
+              <div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Wrench size={19} /></span><div><h2 className="text-lg font-bold text-slate-900">{editingServiceId ? "Edit business service" : "Add a business service"}</h2><p className="mt-1 text-sm text-slate-500">Services are stored against this business account and do not affect product stock.</p></div></div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field label="Service name" required value={form.name} onChange={(v) => updateField("name", v)} />
                 <Field label="Category" value={form.category} onChange={(v) => updateField("category", v)} placeholder="Consulting, repair…" />
@@ -722,10 +764,10 @@ export default function BiasharaInternalWorkspace({
                 <Field label="Pricing unit" value={form.unit} onChange={(v) => updateField("unit", v)} placeholder="per visit, hour…" />
                 <div className="sm:col-span-2"><Field label="Description" value={form.description} onChange={(v) => updateField("description", v)} placeholder="Describe the service and what is included" /></div>
               </div>
-              <button type="submit" disabled={saving} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 active:scale-95 disabled:opacity-60"><Plus size={16} />{saving ? "Saving…" : "Add service"}</button>
+              <div className="mt-4 flex flex-wrap gap-2"><button type="submit" disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 active:scale-95 disabled:opacity-60"><Plus size={16} />{saving ? "Saving…" : editingServiceId ? "Save service" : "Add service"}</button>{editingServiceId ? <button type="button" disabled={saving} onClick={cancelServiceEdit} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-95 disabled:opacity-60">Cancel edit</button> : null}</div>
             </form>
             <ListPanel title="Services offered by this business" loading={loading} rows={filteredRows} empty="Add a service above to build this business's service catalogue." onSearch={setQuery} query={query}>
-              {(service) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{service.name || "Unnamed service"}</p><p className="mt-1 text-xs text-slate-500">{service.category || service.service_type || "General service"}{service.duration_minutes ? " · " + number(service.duration_minutes) + " min" : ""}</p><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{service.description || "No description supplied."}</p></div><div className="flex shrink-0 items-center gap-3"><span className="font-bold text-slate-900">{money(service.price, service.currency || currency)} <span className="text-xs font-normal text-slate-500">/ {service.unit || "service"}</span></span><button type="button" disabled={saving} onClick={() => deleteService(service)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
+              {(service) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{service.name || "Unnamed service"}</p><p className="mt-1 text-xs text-slate-500">{service.category || service.service_type || "General service"}{service.duration_minutes ? " · " + number(service.duration_minutes) + " min" : ""}</p><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{service.description || "No description supplied."}</p></div><div className="flex shrink-0 items-center gap-3"><span className="font-bold text-slate-900">{money(service.price, service.currency || currency)} <span className="text-xs font-normal text-slate-500">/ {service.unit || "service"}</span></span><button type="button" disabled={saving} onClick={() => editService(service)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 active:scale-95 disabled:opacity-50"><Save size={14} /> Edit</button><button type="button" disabled={saving} onClick={() => deleteService(service)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
             </ListPanel>
           </>
         ) : null}
