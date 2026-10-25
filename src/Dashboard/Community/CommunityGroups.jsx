@@ -740,6 +740,99 @@ function GroupDetailsModal({
           </div>
         ) : null}
 
+        <section className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <FileText size={16} className="text-emerald-600 dark:text-emerald-400" />
+                <h3 className="text-sm font-black">Shared PDF library</h3>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Share lesson notes, guides, meeting documents and other PDFs with group members.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{group.joined ? files.length + " files" : "Members only"}</span>
+          </div>
+
+          {!group.joined ? (
+            <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-800/70 dark:text-slate-300">Join this group to view its shared documents and contribute PDFs.</p>
+          ) : (
+            <>
+              <form className="mt-4 space-y-3" onSubmit={async (event) => {
+                event.preventDefault();
+                setFileSubmitError("");
+                if (!selectedPdf) {
+                  setFileSubmitError("Choose a PDF document first.");
+                  return;
+                }
+                try {
+                  const success = await onShareFile?.(selectedPdf, fileCaption);
+                  if (success) {
+                    setSelectedPdf(null);
+                    setFileCaption("");
+                  }
+                } catch (caught) {
+                  setFileSubmitError(caught?.message || "The PDF could not be shared.");
+                }
+              }}>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 transition hover:border-emerald-400 dark:border-white/15 dark:bg-slate-950">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"><FileText size={19} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-black text-slate-800 dark:text-white">{selectedPdf?.name || "Choose a PDF to share"}</span>
+                    <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">PDF only · Up to 25 MB</span>
+                  </span>
+                  <UploadCloud size={16} className="text-emerald-600 dark:text-emerald-400" />
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    disabled={uploadingFile}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      event.target.value = "";
+                      setFileSubmitError("");
+                      if (!file) return;
+                      if (!/\.pdf$/i.test(file.name || "") || (file.type && file.type !== "application/pdf" && file.type !== "application/x-pdf" && file.type !== "application/octet-stream")) {
+                        setSelectedPdf(null);
+                        setFileSubmitError("Choose a valid PDF document.");
+                        return;
+                      }
+                      if (file.size > 25 * 1024 * 1024) {
+                        setSelectedPdf(null);
+                        setFileSubmitError("PDF documents must be 25 MB or smaller.");
+                        return;
+                      }
+                      setSelectedPdf(file);
+                    }}
+                  />
+                </label>
+                <input value={fileCaption} onChange={(event) => setFileCaption(event.target.value)} maxLength={500} placeholder="Add a short note (optional)" disabled={uploadingFile} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white" />
+                {fileSubmitError ? <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-300">{fileSubmitError}</p> : null}
+                <button type="submit" disabled={!selectedPdf || uploadingFile} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+                  {uploadingFile ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                  {uploadingFile ? "Uploading and sharing…" : "Share PDF with group"}
+                </button>
+              </form>
+
+              <div className="mt-4 space-y-2">
+                {filesLoading ? (
+                  <div className="flex items-center gap-2 py-4 text-xs text-slate-500 dark:text-slate-400"><Loader2 size={14} className="animate-spin" /> Loading shared files…</div>
+                ) : files.length ? files.map((file) => (
+                  <article key={file.id || file.url} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"><FileText size={18} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-black text-slate-900 dark:text-white">{file.file_name || "Shared PDF"}</span>
+                      {file.caption ? <span className="mt-1 block break-words text-[10px] leading-4 text-slate-500 dark:text-slate-400">{file.caption}</span> : null}
+                      <span className="mt-1 block text-[10px] text-slate-400">{file.size_bytes ? (file.size_bytes / (1024 * 1024)).toFixed(1) + " MB · " : ""}PDF</span>
+                    </span>
+                    {file.url ? <a href={file.url} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-[10px] font-black text-slate-700 transition hover:border-emerald-400 dark:border-white/10 dark:text-slate-200" aria-label={"Open " + (file.file_name || "PDF")}><Download size={13} /> Open</a> : null}
+                  </article>
+                )) : (
+                  <p className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-800/70 dark:text-slate-400">No PDFs have been shared yet. Add the first useful document for this group.</p>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
