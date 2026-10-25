@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
+import AdminPageErrorBoundary from "./AdminPageErrorBoundary.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 
 import AdminOverview from "./AdminOverview.jsx";
@@ -348,7 +349,9 @@ export default function AdminDashboard({ initialTab = "overview" }) {
               aria-label={activePage.title}
               className="admin-page-motion min-w-0 overflow-x-auto rounded-[24px] border border-slate-200/80 bg-white/70 p-3 shadow-[0_18px_55px_-46px_rgba(15,23,42,0.35)] [animation:admin-page-enter_220ms_ease-out_both] dark:border-slate-800 dark:bg-slate-900/45 sm:rounded-[28px] sm:p-5 lg:p-6 motion-reduce:animate-none"
             >
-              <ActiveComponent />
+              <AdminPageErrorBoundary pageTitle={activePage.title} key={activeTab}>
+                <ActiveComponent />
+              </AdminPageErrorBoundary>
             </section>
           </div>
         </main>

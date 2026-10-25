@@ -137,6 +137,78 @@ function getError(error) {
   return error?.message || "The request failed. Please retry.";
 }
 
+function normalizePlanFeatures(value) {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+function normalizePlans(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((plan) => plan && typeof plan === "object" && !Array.isArray(plan))
+    .map((plan) => ({
+      ...plan,
+      code: String(plan.code ?? "").trim(),
+      name: String(plan.name ?? plan.code ?? "Unnamed plan"),
+      hub: String(plan.hub ?? "unknown").trim().toLowerCase(),
+      amount: plan.amount ?? "0.00",
+      currency: String(plan.currency ?? "KES"),
+      interval: String(plan.interval ?? "month").trim().toLowerCase(),
+      status: String(plan.status ?? "proposed").trim().toLowerCase(),
+      features: normalizePlanFeatures(plan.features),
+    }))
+    .filter((plan) => plan.code);
+}
+
+function normalizeTransactions(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => ({
+      ...item,
+      id: String(item.id ?? ""),
+      stream: String(item.stream ?? "unknown"),
+      user_id: String(item.user_id ?? ""),
+      amount: item.amount ?? "0.00",
+      currency: String(item.currency ?? "KES"),
+      status: String(item.status ?? "pending"),
+      description: String(item.description ?? ""),
+      created_at: item.created_at ?? null,
+    }));
+}
+
+function normalizePagination(value, fallbackPage = 1) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { page: fallbackPage, per_page: 25, total: 0, pages: 0 };
+  }
+
+  const wholeNumber = (input, fallback, minimum = 0) => {
+    const parsed = Number(input);
+    return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed >= minimum
+      ? parsed
+      : fallback;
+  };
+
+  return {
+    page: wholeNumber(value.page, fallbackPage, 1),
+    per_page: wholeNumber(value.per_page, 25, 1),
+    total: wholeNumber(value.total, 0),
+    pages: wholeNumber(value.pages, 0),
+  };
+}
+
 function StatusPill({ value }) {
   const status = String(value || "unknown").toLowerCase();
   const isPositive = [
@@ -289,7 +361,7 @@ export default function AdminRevenueManagement() {
     setOverviewError("");
     try {
       const response = await adminApi.request("/api/revenue/admin/overview", { signal });
-      setOverview(response);
+      setOverview(response && typeof response === "object" && !Array.isArray(response) ? response : null);
     } catch (error) {
       if (error?.name !== "AbortError") setOverviewError(getError(error));
     }
@@ -309,7 +381,7 @@ export default function AdminRevenueManagement() {
       const checkoutEnabled = typeof billingStatus?.checkout_enabled === "boolean"
         ? billingStatus.checkout_enabled
         : typeof response?.checkout_enabled === "boolean" ? response.checkout_enabled : null;
-      setPlans(Array.isArray(response?.plans) ? response.plans : []);
+      setPlans(normalizePlans(response?.plans));
       setCatalogueMeta({
         pricing_status: response?.pricing_status ?? null,
         billing_enabled: typeof billingStatus?.billing_enabled === "boolean"
@@ -352,8 +424,8 @@ export default function AdminRevenueManagement() {
         },
         signal,
       });
-      setTransactions(Array.isArray(response?.items) ? response.items : []);
-      setPagination(response?.pagination || { page, per_page: 25, total: 0, pages: 0 });
+      setTransactions(normalizeTransactions(response?.items));
+      setPagination(normalizePagination(response?.pagination, page));
     } catch (error) {
       if (error?.name !== "AbortError") {
         setTransactions([]);
