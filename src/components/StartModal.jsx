@@ -1291,7 +1291,7 @@ const completeLogin = (data = {}) => {
                   <img
                     src="/Logo.png"
                     alt="RevelaCode logo"
-                    className="h-[38px] w-[38px] shrink-0 rounded-xl border border-white/15 bg-white/5 object-contain p-1 shadow-lg shadow-emerald-900/30"
+                    className="h-[38px] w-[38px] shrink-0 rounded-2xl border border-white/15 bg-white/5 object-contain p-1 shadow-lg shadow-emerald-900/30"
                   />
                   <span className="truncate text-[15px] font-bold tracking-tight">RevelaCode</span>
                 </div>
@@ -1779,8 +1779,8 @@ const completeLogin = (data = {}) => {
                               rounded-xl
                               border
                               border-slate-200
-                              bg-white
-                              py-3
+                              bg-[#f4f8f6]
+                              py-4
                               pl-10
                               pr-3
                               outline-none
@@ -1882,6 +1882,10 @@ const completeLogin = (data = {}) => {
                         </span>
 
                         <div className="relative">
+                          <LockKeyhole
+                            size={17}
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
                           <input
                             type={
                               showPassword
@@ -1904,12 +1908,12 @@ const completeLogin = (data = {}) => {
                             }
                             className="
                               w-full
-                              rounded-xl
+                              rounded-2xl
                               border
                               border-slate-200
-                              bg-white
-                              py-3
-                              pl-3
+                              bg-[#f4f8f6]
+                              py-4
+                              pl-10
                               pr-11
                               outline-none
                               transition
@@ -1989,12 +1993,12 @@ const completeLogin = (data = {}) => {
                           autoComplete="new-password"
                           className="
                             w-full
-                            rounded-xl
+                            rounded-2xl
                             border
                             border-slate-200
-                            bg-white
+                            bg-[#f4f8f6]
                             px-3
-                            py-3
+                            py-4
                             outline-none
                             transition
                             focus:border-emerald-500
