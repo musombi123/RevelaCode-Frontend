@@ -15,6 +15,8 @@ import {
   KeyRound,
   LockKeyhole,
   Mail,
+  Moon,
+  Sun,
   ShieldCheck,
   Sparkles,
   UserPlus,
@@ -34,6 +36,25 @@ export default function StartModal() {
     getAccessToken,
   } = useAuth();
   const location = useLocation();
+  const [modalDark, setModalDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
+
+  const toggleModalTheme = () => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const nextDark = !root.classList.contains("dark");
+    root.classList.toggle("dark", nextDark);
+    root.classList.toggle("light", !nextDark);
+    root.dataset.theme = nextDark ? "dark" : "light";
+    root.style.colorScheme = nextDark ? "dark" : "light";
+    setModalDark(nextDark);
+    try {
+      localStorage.setItem("theme", nextDark ? "dark" : "light");
+    } catch {
+      // Theme remains active for this session if storage is unavailable.
+    }
+  };
 
   const baseUrl =
     String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
@@ -42,7 +63,7 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState("login");
   // null | login | register | forgot
 
   const [step, setStep] = useState("form");
