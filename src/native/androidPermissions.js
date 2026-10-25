@@ -13,6 +13,7 @@ const permissionMethods = {
   camera: "requestCamera",
   location: "requestLocation",
   microphone: "requestMicrophone",
+  notifications: "requestNotifications",
 };
 
 export async function requestDevicePermission(permission) {
