@@ -6,7 +6,6 @@ import {
   FileText,
   Image as ImageIcon,
   Pencil,
-  ShieldCheck,
   Users,
   Video,
 } from "lucide-react";
@@ -68,6 +67,7 @@ export default function CommunityIdentityHero({
     "";
   const cover = profile?.cover_url || "";
   const location = [profile?.town, profile?.county].filter(Boolean).join(", ");
+  const username = String(profile?.username || user?.username || "").trim();
   const bio = String(profile?.bio || "").trim();
 
   return (
@@ -138,10 +138,10 @@ export default function CommunityIdentityHero({
             <div className="min-w-0 pb-1">
               <div className="flex flex-wrap items-center gap-1.5">
                 <h1 className="max-w-full break-words text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-2xl">{name}</h1>
-                <ShieldCheck size={16} className="shrink-0 text-cyan-600 dark:text-cyan-300" aria-label="RevelaCode identity" />
+                <span title="Community member" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"><Users size={11} /></span>
               </div>
               <p className="mt-0.5 truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
-                @{String(user?.username || name).toLowerCase().replace(/[^a-z0-9._-]+/g, ".").replace(/^\.+|\.+$/g, "")}
+                {username ? "@" + username : "Community member"}
                 {location ? ` · ${location}` : " · RevelaCode Community"}
               </p>
               <p className="mt-1 line-clamp-2 max-w-xl text-xs leading-5 text-slate-600 dark:text-slate-300">
