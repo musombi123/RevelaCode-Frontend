@@ -1631,6 +1631,28 @@ const completeLogin = (data = {}) => {
             )}
 
 
+            {mode && step === "form" && (mode === "login" || mode === "register") && (
+              <div className={`relative grid grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-white/[0.05] ${mode === "register" ? "is-register" : ""}`}>
+                <div className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.12)] transition-transform duration-300 dark:bg-white/10 ${mode === "register" ? "translate-x-full" : ""}`} />
+                <button
+                  type="button"
+                  onClick={() => { setMode("login"); setStep("form"); setError(""); setMessage(""); }}
+                  aria-pressed={mode === "login"}
+                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "login" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode("register"); setStep("form"); setError(""); setMessage(""); }}
+                  aria-pressed={mode === "register"}
+                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "register" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
+
             {/* =================================================
                 ACTIVE FORM
             ================================================= */}
@@ -1691,21 +1713,15 @@ const completeLogin = (data = {}) => {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={
-                      backToStart
-                    }
-                    className="
-                      text-xs
-                      font-medium
-                      text-emerald-700
-                      hover:underline
-                      dark:text-emerald-400
-                    "
-                  >
-                    Change
-                  </button>
+                  {mode === "forgot" && (
+                    <button
+                      type="button"
+                      onClick={backToStart}
+                      className="text-xs font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+                    >
+                      Back
+                    </button>
+                  )}
                 </div>
 
 
@@ -2327,21 +2343,15 @@ const completeLogin = (data = {}) => {
                           loading
                         }
                         className="
-                          flex
-                          w-full
-                          items-center
-                          justify-center
-                          gap-2
-                          rounded-xl
-                          bg-emerald-600
-                          px-4
-                          py-3.5
-                          font-semibold
-                          text-white
-                          transition
-                          hover:bg-emerald-700
-                          disabled:cursor-not-allowed
-                          disabled:opacity-60
+                          relative flex
+                          min-h-[56px] w-full items-center justify-center
+                          gap-2 overflow-hidden rounded-2xl
+                          bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700
+                          px-4 py-4 font-bold text-white
+                          shadow-[0_14px_30px_-10px_rgba(5,150,105,0.65)]
+                          transition active:scale-[0.98]
+                          hover:brightness-105
+                          disabled:cursor-not-allowed disabled:opacity-60
                         "
                       >
                         {loading ? (
@@ -2403,6 +2413,25 @@ const completeLogin = (data = {}) => {
                           />
                           Forgot your password?
                         </button>
+                      )}
+
+                      {mode === "login" && (
+                        <>
+                          <div className="flex items-center gap-3 py-1 text-xs text-slate-400">
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                            <span>or</span>
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGuestLogin}
+                            disabled={loading}
+                            className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-100 dark:hover:bg-white/[0.04]"
+                          >
+                            <Users size={17} className="text-emerald-600 dark:text-emerald-400" />
+                            Continue as guest
+                          </button>
+                        </>
                       )}
                     </>
                   )}
