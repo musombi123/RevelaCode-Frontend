@@ -8,7 +8,7 @@ Before publishing this branch, set the following **build-time** environment vari
 VITE_ADSENSE_COMMUNITY_SLOT=YOUR_REAL_AD_UNIT_SLOT_ID
 ```
 
-Use the numeric **Ad unit ID** from Google AdSense (Ads → By ad unit → create/select an in-feed or responsive ad unit → copy the `data-ad-slot` value). Do not use the publisher ID in this variable. The publisher loader in `index.html` already uses RevelaCode's configured publisher ID.
+Use the numeric **Ad unit ID** from Google AdSense (Ads → By ad unit → create/select a responsive display ad unit → copy the `data-ad-slot` value). Do not use the publisher ID in this variable. The publisher loader in `index.html` already uses RevelaCode's configured publisher ID.
 
 After setting the value, trigger a fresh frontend build/deploy because Vite embeds `VITE_*` variables at build time. Then verify that the AdSense site is approved, the ad unit is active, and the browser console has no AdSense errors. Ads may not fill immediately, even when configured correctly.
 
