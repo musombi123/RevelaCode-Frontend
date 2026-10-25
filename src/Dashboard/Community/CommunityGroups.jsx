@@ -1141,6 +1141,11 @@ export default function CommunityGroups({
               ? `You joined ${updated.name}.`
               : `You left ${updated.name}.`,
           );
+          if (updated.joined) {
+            await loadGroupFiles(updated.id);
+          } else {
+            setGroupFiles([]);
+          }
         }
 
         await loadGroups({ quiet: true });
@@ -1162,6 +1167,7 @@ export default function CommunityGroups({
       joinCommunityGroup,
       leaveCommunityGroup,
       loadGroups,
+      loadGroupFiles,
     ],
   );
 
