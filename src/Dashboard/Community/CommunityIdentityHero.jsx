@@ -7,7 +7,6 @@ import {
   Image as ImageIcon,
   Pencil,
   Users,
-  Video,
 } from "lucide-react";
 
 function initials(name) {
