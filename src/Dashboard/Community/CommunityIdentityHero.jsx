@@ -47,7 +47,6 @@ function DefaultCoverArtwork() {
 export default function CommunityIdentityHero({
   profile,
   user,
-  visiblePostCount = 0,
   onEditProfile,
   onCreatePost,
   onOpenFeed,
@@ -171,7 +170,6 @@ export default function CommunityIdentityHero({
         <div className="mt-4 flex items-center gap-2 overflow-x-auto border-t border-slate-100 py-2.5 dark:border-white/10">
           <button type="button" onClick={onOpenFeed} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-cyan-500/10 px-3 py-2 text-xs font-extrabold text-cyan-800 dark:text-cyan-200">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" /> Posts
-            <span className="rounded-md bg-cyan-500/10 px-1.5 py-0.5 text-[10px] tabular-nums">{visiblePostCount}</span>
           </button>
           <button type="button" onClick={onEditProfile} className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">
             About <ChevronRight size={13} />
