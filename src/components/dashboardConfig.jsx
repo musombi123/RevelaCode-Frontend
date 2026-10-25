@@ -1101,6 +1101,7 @@ function recordHomeHubUsage(key) {
 function HomeDashboard({
   onNavigate,
   onOpenAI,
+  onRequestSignIn,
   user,
 }) {
   const { language, t } = usePreferences();
