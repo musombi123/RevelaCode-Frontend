@@ -895,9 +895,12 @@ export default function CommunityGroups({
   const {
     getCommunityGroups,
     getCommunityGroup,
+    getCommunityGroupFiles,
     createCommunityGroup,
     joinCommunityGroup,
     leaveCommunityGroup,
+    uploadCommunityMedia,
+    shareCommunityGroupFile,
   } = useJumuiyaApi();
 
   const [groups, setGroups] = useState([]);
@@ -918,6 +921,9 @@ export default function CommunityGroups({
   const [detailError, setDetailError] = useState("");
 
   const [busyGroupId, setBusyGroupId] = useState("");
+  const [groupFiles, setGroupFiles] = useState([]);
+  const [groupFilesLoading, setGroupFilesLoading] = useState(false);
+  const [uploadingGroupFile, setUploadingGroupFile] = useState(false);
 
   const hasLoadedRef = useRef(false);
 
@@ -1006,6 +1012,60 @@ export default function CommunityGroups({
     };
   }, [loadGroups]);
 
+  const loadGroupFiles = useCallback(async (groupId) => {
+    if (!groupId) return;
+    setGroupFilesLoading(true);
+    try {
+      const result = await getCommunityGroupFiles(groupId, { limit: 50 });
+      const rows = Array.isArray(result?.files)
+        ? result.files
+        : Array.isArray(result?.data?.files)
+          ? result.data.files
+          : [];
+      setGroupFiles(rows);
+    } catch (caught) {
+      setGroupFiles([]);
+      setDetailError(caught?.message || "Shared group files could not be loaded.");
+    } finally {
+      setGroupFilesLoading(false);
+    }
+  }, [getCommunityGroupFiles]);
+
+  const handleShareGroupFile = useCallback(async (file, caption) => {
+    const groupId = String(activeGroup?.id || "");
+    if (!groupId) {
+      setDetailError("Open a group before sharing a file.");
+      return false;
+    }
+    if (!file || !/\.pdf$/i.test(file.name || "") || file.size > 25 * 1024 * 1024) {
+      setDetailError("Choose a PDF document up to 25 MB.");
+      return false;
+    }
+
+    setUploadingGroupFile(true);
+    setDetailError("");
+    try {
+      const uploaded = await uploadCommunityMedia(file);
+      const attachment = uploaded?.attachment || uploaded?.data?.attachment || null;
+      const mediaId = attachment?.id ?? attachment?.media_id ?? null;
+      if (!mediaId) throw new Error("The media service did not return a PDF attachment ID.");
+      const shared = await shareCommunityGroupFile(groupId, {
+        media_id: String(mediaId),
+        caption: String(caption || "").trim(),
+      });
+      const item = shared?.file || shared?.data?.file || null;
+      if (!item?.url) throw new Error("The group service did not confirm the shared PDF.");
+      setGroupFiles((current) => [item, ...current.filter((entry) => entry.id !== item.id)]);
+      setNotice("PDF shared with " + (activeGroup?.name || "the group") + ".");
+      return true;
+    } catch (caught) {
+      setDetailError(caught?.message || "The PDF could not be shared.");
+      return false;
+    } finally {
+      setUploadingGroupFile(false);
+    }
+  }, [activeGroup, shareCommunityGroupFile, uploadCommunityMedia]);
+
   // ----------------------------------------------------------
   // FETCH ONE GROUP'S LATEST DETAILS
   // ----------------------------------------------------------
@@ -1013,6 +1073,7 @@ export default function CommunityGroups({
   const handleOpenGroup = useCallback(
     async (group) => {
       setActiveGroup(group);
+      setGroupFiles([]);
       setDetailError("");
       setDetailLoading(true);
 
@@ -1024,6 +1085,11 @@ export default function CommunityGroups({
 
         if (latest) {
           setActiveGroup(latest);
+          if (latest.joined) {
+            await loadGroupFiles(latest.id);
+          } else {
+            setGroupFiles([]);
+          }
         }
       } catch (error) {
         setDetailError(getApiErrorMessage(error));
@@ -1031,7 +1097,7 @@ export default function CommunityGroups({
         setDetailLoading(false);
       }
     },
-    [getCommunityGroup],
+    [getCommunityGroup, loadGroupFiles],
   );
 
   // ----------------------------------------------------------
@@ -1620,6 +1686,10 @@ export default function CommunityGroups({
             setDetailError("");
           }}
           onToggleMembership={handleToggleMembership}
+          files={groupFiles}
+          filesLoading={groupFilesLoading}
+          uploadingFile={uploadingGroupFile}
+          onShareFile={handleShareGroupFile}
         />
       )}
     </>
