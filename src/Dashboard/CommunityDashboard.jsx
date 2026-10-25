@@ -1374,6 +1374,40 @@ export default function CommunityDashboard({
                 onOpenPost={setSelectedBoardPost}
                 onCreatePost={() => navigate("community-composer")}
               />
+
+              <section aria-label="Latest Community posts" className="mb-5 mt-5">
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">Community stream</p>
+                    <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">Latest from your community</h2>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Real posts and conversations from the connected Community service.</p>
+                  </div>
+                  <button type="button" onClick={() => navigate("community-feed")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">View all <ArrowRight size={12} /></button>
+                </div>
+                {loading ? (
+                  <LoadingState />
+                ) : posts.length ? (
+                  <div className="space-y-3">
+                    {posts.slice(0, 4).map((post, index) => (
+                      <CommunityPostCard
+                        key={getPostId(post) || ("community-post-" + index)}
+                        post={post}
+                        currentUser={user}
+                        onOpen={() => navigate("community-feed")}
+                        onLike={handleLike}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={MessageCircle}
+                    title="Your Community feed is ready"
+                    description="There are no posts in this view yet. Start a conversation or choose another feed view to discover updates."
+                    onAction={openComposer}
+                    actionLabel="Create a post"
+                  />
+                )}
+              </section>
               <CommunityAdSenseUnit />
 
               <div className="mb-4 flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white/80 px-3 py-3 text-xs dark:border-white/10 dark:bg-slate-900/70">
