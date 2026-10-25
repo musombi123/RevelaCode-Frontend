@@ -1283,7 +1283,7 @@ export default function CommunityDashboard({
           ) : workspacePage === "groups" ? (
             <CommunityGroups onNavigate={navigate} />
           ) : workspacePage === "me" ? (
-            <CommunityProfileWorkspace onNavigate={navigate} />
+            <CommunityProfileWorkspace onNavigate={navigate} onProfileUpdated={setCommunityProfile} />
           ) : (
             <>
               <header className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-6">
