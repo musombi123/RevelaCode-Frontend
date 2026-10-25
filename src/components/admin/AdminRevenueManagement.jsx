@@ -11,6 +11,8 @@ import {
   RefreshCw,
   Save,
   Search,
+  Smartphone,
+  Send,
   X,
 } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
@@ -371,6 +373,10 @@ export default function AdminRevenueManagement() {
   const [checkoutsLoading, setCheckoutsLoading] = useState(true);
   const [checkoutsError, setCheckoutsError] = useState("");
   const [refreshingCheckout, setRefreshingCheckout] = useState("");
+  const [stkPhone, setStkPhone] = useState("");
+  const [stkPlanCode, setStkPlanCode] = useState("");
+  const [stkSubmitting, setStkSubmitting] = useState(false);
+  const [stkResponse, setStkResponse] = useState(null);
   const [stream, setStream] = useState("all");
   const [status, setStatus] = useState("all");
   const [searchInput, setSearchInput] = useState("");
@@ -510,6 +516,60 @@ export default function AdminRevenueManagement() {
     loadCheckouts(controller.signal);
     return () => controller.abort();
   }, [loadCheckouts, reloadKey]);
+
+  const sendStkPush = async (event) => {
+    event.preventDefault();
+    if (stkSubmitting) return;
+    if (!billingEnabled) {
+      setActionError("Live M-PESA checkout is disabled by the backend. Fix the displayed Daraja readiness blockers before sending an STK Push.");
+      return;
+    }
+    const plan = effectivePaidPlans.find((item) => item.code === stkPlanCode);
+    if (!plan) {
+      setActionError("Choose an effective paid plan before sending an STK Push.");
+      return;
+    }
+    if (!stkPhone.trim()) {
+      setActionError("Enter the Kenyan M-PESA phone number that should receive the prompt.");
+      return;
+    }
+
+    setStkSubmitting(true);
+    setStkResponse(null);
+    setNotice("");
+    setActionError("");
+    try {
+      const requestKey = typeof globalThis.crypto?.randomUUID === "function"
+        ? globalThis.crypto.randomUUID()
+        : "stk-" + Date.now() + "-" + Math.random().toString(36).slice(2, 14);
+      const response = await adminApi.request("/api/revenue/checkout", {
+        method: "POST",
+        headers: { "Idempotency-Key": requestKey },
+        body: { plan_code: plan.code, phone: stkPhone.trim() },
+      });
+      const checkout = response?.checkout || null;
+      setStkResponse({
+        status: checkout?.status || "submitted",
+        message: checkout?.message || response?.message || "Daraja accepted the checkout request. Check the selected phone for an M-PESA prompt.",
+        checkout,
+      });
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      const checkout = error?.payload?.checkout || null;
+      setStkResponse({
+        status: checkout?.status || "request_failed",
+        message: checkout?.message || error?.message || "The STK Push result could not be confirmed.",
+        checkout,
+      });
+      setActionError(
+        checkout?.status === "submission_unknown"
+          ? "The STK submission result is unknown. Do not retry this payment until the checkout has been reconciled."
+          : getError(error),
+      );
+    } finally {
+      setStkSubmitting(false);
+    }
+  };
 
   const reconcileCheckout = async (checkout) => {
     if (!checkout?.checkout_request_id || refreshingCheckout) return;
@@ -797,6 +857,53 @@ export default function AdminRevenueManagement() {
           <span>{formatCount(proposedPlansCount)} proposed plans</span>
           <span>{formatCount(plans.filter((plan) => plan.status === "retired").length)} retired plans</span>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-slate-900 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><Smartphone className="h-5 w-5" /></span>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Send M-PESA STK Push</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Starts a live checkout for the signed-in account. Select an effective paid plan and enter the phone that should receive the PIN prompt. No charge is made until the customer approves on the phone.</p>
+          </div>
+        </div>
+
+        <form onSubmit={sendStkPush} className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+            Paid plan
+            <select required value={stkPlanCode} onChange={(event) => setStkPlanCode(event.target.value)} disabled={!billingEnabled || effectivePaidPlans.length === 0 || stkSubmitting} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+              <option value="">Choose an effective plan</option>
+              {effectivePaidPlans.map((plan) => <option key={plan.code} value={plan.code}>{plan.name} · {formatMoney(plan.amount, plan.currency)} / {plan.interval}</option>)}
+            </select>
+          </label>
+          <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+            M-PESA phone number
+            <input required type="tel" inputMode="tel" autoComplete="tel" maxLength={16} value={stkPhone} onChange={(event) => setStkPhone(event.target.value)} placeholder="0712345678" disabled={!billingEnabled || stkSubmitting} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal text-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+          </label>
+          <button type="submit" disabled={!billingEnabled || effectivePaidPlans.length === 0 || !stkPlanCode || !stkPhone.trim() || stkSubmitting} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
+            <Send className={"h-4 w-4 " + (stkSubmitting ? "animate-pulse" : "")} />{stkSubmitting ? "Sending prompt..." : "Send STK Push"}
+          </button>
+        </form>
+
+        {!billingEnabled ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">STK Push is disabled because the backend has not confirmed production checkout readiness. Resolve the configuration checks above; this button will not bypass the backend payment safeguards.</p>
+        ) : effectivePaidPlans.length === 0 ? (
+          <p className="mt-3 text-xs leading-5 text-amber-700 dark:text-amber-300">No published paid plan is currently effective for live checkout.</p>
+        ) : null}
+
+        {stkResponse ? (
+          <div role="status" className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-extrabold text-slate-900 dark:text-white">STK Push result</p>
+              <StatusPill value={stkResponse.status} />
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-700 dark:text-slate-300">{stkResponse.message}</p>
+            {stkResponse.checkout?.checkout_request_id ? <p className="mt-2 break-all font-mono text-[11px] text-slate-500">Checkout ID: {stkResponse.checkout.checkout_request_id}</p> : null}
+            {stkResponse.checkout?.merchant_request_id ? <p className="mt-1 break-all font-mono text-[11px] text-slate-500">Merchant ID: {stkResponse.checkout.merchant_request_id}</p> : null}
+            {["pending", "callback_received", "awaiting_verification"].includes(stkResponse.status) ? <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Check the phone now and approve the prompt only if the displayed amount and business details are correct.</p> : null}
+            {stkResponse.status === "submission_unknown" ? <p className="mt-2 text-xs font-bold text-amber-700 dark:text-amber-300">Do not send another request until this checkout has been reconciled.</p> : null}
+          </div>
+        ) : null}
       </section>
 
       <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
