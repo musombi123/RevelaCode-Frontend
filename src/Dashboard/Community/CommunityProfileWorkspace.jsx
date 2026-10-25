@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   Sparkles,
   UploadCloud,
-  UserRound,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
@@ -277,7 +277,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
                 <h3 className="mt-2 break-words text-base font-black text-slate-950 dark:text-white">{profile.full_name || "Your name"}</h3>
                 <p className="mt-1 flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400"><MapPin size={11} />{[profile.town, profile.county].filter(Boolean).join(", ") || "Add your location"}</p>
                 {profile.bio ? <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-xs leading-5 text-slate-600 dark:text-slate-300">{profile.bio}</p> : <p className="mt-3 text-xs leading-5 text-slate-400">Your introduction will appear here.</p>}
-                <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-400"><UserRound size={12} /> RevelaCode member <span className="ml-auto text-cyan-600 dark:text-cyan-300">Profile preview</span></div>
+                <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:text-slate-400"><User size={12} /> RevelaCode member <span className="ml-auto text-cyan-600 dark:text-cyan-300">Profile preview</span></div>
               </div>
             </div>
           </section>
