@@ -1058,6 +1058,7 @@ export default function BiasharaDashboard({
       const internalRoutes = new Set([
         "overview",
         "products",
+        "services",
         "orders",
         "customers",
         "sales",
