@@ -566,10 +566,10 @@ export default function CommunityComposer({
             className="
               text-xs
               font-bold
-              text-emerald-600
+              text-cyan-600
               transition
-              hover:text-emerald-700
-              dark:text-emerald-400
+              hover:text-cyan-700
+              dark:text-cyan-400
             "
           >
             Community Home
@@ -633,10 +633,10 @@ export default function CommunityComposer({
                     items-center
                     justify-center
                     rounded-2xl
-                    bg-emerald-100
-                    text-emerald-700
-                    dark:bg-emerald-950/40
-                    dark:text-emerald-400
+                    bg-cyan-100
+                    text-cyan-700
+                    dark:bg-cyan-950/40
+                    dark:text-cyan-400
                   "
                 >
                   <Sparkles size={20} />
@@ -701,12 +701,12 @@ export default function CommunityComposer({
                       items-center
                       justify-center
                       rounded-full
-                      bg-emerald-100
+                      bg-cyan-100
                       text-xs
                       font-black
-                      text-emerald-700
-                      dark:bg-emerald-950/40
-                      dark:text-emerald-400
+                      text-cyan-700
+                      dark:bg-cyan-950/40
+                      dark:text-cyan-400
                     "
                   >
                     {initials}
@@ -797,10 +797,10 @@ export default function CommunityComposer({
                       outline-none
                       transition
                       placeholder:text-slate-400
-                      focus:border-emerald-500
+                      focus:border-cyan-500
                       focus:bg-white
                       focus:ring-4
-                      focus:ring-emerald-500/10
+                      focus:ring-cyan-500/10
                       disabled:cursor-not-allowed
                       disabled:opacity-60
                       dark:border-white/10
@@ -872,10 +872,10 @@ export default function CommunityComposer({
                       outline-none
                       transition
                       placeholder:text-slate-400
-                      focus:border-emerald-500
+                      focus:border-cyan-500
                       focus:bg-white
                       focus:ring-4
-                      focus:ring-emerald-500/10
+                      focus:ring-cyan-500/10
                       disabled:cursor-not-allowed
                       disabled:opacity-60
                       dark:border-white/10
@@ -941,8 +941,8 @@ export default function CommunityComposer({
                               transition
                               ${
                                 active
-                                  ? "border-emerald-500 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-950/20"
-                                  : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40 dark:border-white/10 dark:bg-slate-950 dark:hover:bg-white/[0.025]"
+                                  ? "border-cyan-500 bg-cyan-50 dark:border-cyan-500/50 dark:bg-cyan-950/20"
+                                  : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40 dark:border-white/10 dark:bg-slate-950 dark:hover:bg-white/[0.025]"
                               }
                             `}
                           >
@@ -956,7 +956,7 @@ export default function CommunityComposer({
                                 rounded-xl
                                 ${
                                   active
-                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                    ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400"
                                     : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"
                                 }
                               `}
@@ -971,7 +971,7 @@ export default function CommunityComposer({
                                 font-black
                                 ${
                                   active
-                                    ? "text-emerald-700 dark:text-emerald-400"
+                                    ? "text-cyan-700 dark:text-cyan-400"
                                     : "text-slate-800 dark:text-slate-100"
                                 }
                               `}
@@ -1061,10 +1061,10 @@ export default function CommunityComposer({
                             items-center
                             justify-center
                             rounded-xl
-                            bg-emerald-100
-                            text-emerald-700
-                            dark:bg-emerald-950/40
-                            dark:text-emerald-400
+                            bg-cyan-100
+                            text-cyan-700
+                            dark:bg-cyan-950/40
+                            dark:text-cyan-400
                           "
                         >
                           <selectedHub.icon
@@ -1157,7 +1157,7 @@ export default function CommunityComposer({
                                   transition
                                   ${
                                     active
-                                      ? "bg-emerald-50 dark:bg-emerald-950/20"
+                                      ? "bg-cyan-50 dark:bg-cyan-950/20"
                                       : "hover:bg-slate-50 dark:hover:bg-white/5"
                                   }
                                 `}
@@ -1166,7 +1166,7 @@ export default function CommunityComposer({
                                   size={16}
                                   className={
                                     active
-                                      ? "text-emerald-600"
+                                      ? "text-cyan-600"
                                       : "text-slate-400"
                                   }
                                 />
@@ -1178,7 +1178,7 @@ export default function CommunityComposer({
                                       font-bold
                                       ${
                                         active
-                                          ? "text-emerald-700 dark:text-emerald-400"
+                                          ? "text-cyan-700 dark:text-cyan-400"
                                           : "text-slate-700 dark:text-slate-200"
                                       }
                                     `}
@@ -1265,10 +1265,10 @@ export default function CommunityComposer({
                           outline-none
                           transition
                           placeholder:text-slate-400
-                          focus:border-emerald-500
+                          focus:border-cyan-500
                           focus:bg-white
                           focus:ring-4
-                          focus:ring-emerald-500/10
+                          focus:ring-cyan-500/10
                           dark:border-white/10
                           dark:bg-slate-950
                           dark:text-white
@@ -1325,8 +1325,8 @@ export default function CommunityComposer({
                         bg-white
                         p-3
                         transition
-                        hover:border-emerald-200
-                        hover:bg-emerald-50/40
+                        hover:border-cyan-200
+                        hover:bg-cyan-50/40
                         dark:border-white/10
                         dark:bg-slate-950
                         dark:hover:bg-white/[0.025]
@@ -1441,8 +1441,8 @@ export default function CommunityComposer({
                         p-3
                         text-left
                         transition
-                        hover:border-emerald-200
-                        hover:bg-emerald-50/40
+                        hover:border-cyan-200
+                        hover:bg-cyan-50/40
                         dark:border-white/10
                         dark:bg-slate-950
                         dark:hover:bg-white/[0.025]
@@ -1524,7 +1524,7 @@ export default function CommunityComposer({
                     >
                       <Link2
                         size={14}
-                        className="shrink-0 text-emerald-500"
+                        className="shrink-0 text-cyan-500"
                       />
 
                       <span
@@ -1587,17 +1587,17 @@ export default function CommunityComposer({
                     className="
                       rounded-2xl
                       border
-                      border-emerald-100
-                      bg-emerald-50
+                      border-cyan-100
+                      bg-cyan-50
                       px-4
                       py-3
                       text-xs
                       font-semibold
                       leading-5
-                      text-emerald-700
-                      dark:border-emerald-500/10
-                      dark:bg-emerald-950/20
-                      dark:text-emerald-400
+                      text-cyan-700
+                      dark:border-cyan-500/10
+                      dark:bg-cyan-950/20
+                      dark:text-cyan-400
                     "
                   >
                     {success}
@@ -1681,16 +1681,16 @@ export default function CommunityComposer({
                         justify-center
                         gap-2
                         rounded-xl
-                        bg-emerald-600
+                        bg-cyan-600
                         px-5
                         py-3
                         text-sm
                         font-bold
                         text-white
                         shadow-sm
-                        shadow-emerald-900/10
+                        shadow-cyan-900/10
                         transition
-                        hover:bg-emerald-700
+                        hover:bg-cyan-700
                         active:scale-[0.98]
                         disabled:cursor-not-allowed
                         disabled:opacity-50
@@ -1750,7 +1750,7 @@ export default function CommunityComposer({
               >
                 <Sparkles
                   size={16}
-                  className="text-emerald-500"
+                  className="text-cyan-500"
                 />
                 Post preview
               </div>
@@ -1777,12 +1777,12 @@ export default function CommunityComposer({
                       items-center
                       justify-center
                       rounded-full
-                      bg-emerald-100
+                      bg-cyan-100
                       text-[10px]
                       font-black
-                      text-emerald-700
-                      dark:bg-emerald-950/40
-                      dark:text-emerald-400
+                      text-cyan-700
+                      dark:bg-cyan-950/40
+                      dark:text-cyan-400
                     "
                   >
                     {initials}
@@ -1853,14 +1853,14 @@ export default function CommunityComposer({
                   <span
                     className="
                       rounded-full
-                      bg-emerald-50
+                      bg-cyan-50
                       px-2.5
                       py-1
                       text-[9px]
                       font-bold
-                      text-emerald-700
-                      dark:bg-emerald-950/30
-                      dark:text-emerald-400
+                      text-cyan-700
+                      dark:bg-cyan-950/30
+                      dark:text-cyan-400
                     "
                   >
                     {selectedCategory.label}
@@ -1938,7 +1938,7 @@ export default function CommunityComposer({
                         w-1.5
                         shrink-0
                         rounded-full
-                        bg-emerald-500
+                        bg-cyan-500
                       "
                     />
 
@@ -1963,11 +1963,11 @@ export default function CommunityComposer({
               className="
                 rounded-[26px]
                 border
-                border-emerald-100
-                bg-emerald-50
+                border-cyan-100
+                bg-cyan-50
                 p-5
-                dark:border-emerald-500/10
-                dark:bg-emerald-950/15
+                dark:border-cyan-500/10
+                dark:bg-cyan-950/15
               "
             >
               <div
@@ -1977,8 +1977,8 @@ export default function CommunityComposer({
                   gap-2
                   text-sm
                   font-black
-                  text-emerald-800
-                  dark:text-emerald-300
+                  text-cyan-800
+                  dark:text-cyan-300
                 "
               >
                 <Plus size={16} />
@@ -1990,8 +1990,8 @@ export default function CommunityComposer({
                   mt-2
                   text-xs
                   leading-5
-                  text-emerald-700/80
-                  dark:text-emerald-400/80
+                  text-cyan-700/80
+                  dark:text-cyan-400/80
                 "
               >
                 Your Community post can reach
