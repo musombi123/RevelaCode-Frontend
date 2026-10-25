@@ -14,6 +14,7 @@ import MainDashboardV2 from "./components/MainDashboardV2.jsx";
 import Pages from "./app/pages.jsx";
 import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
+import AndroidPermissionSetup from "./components/AndroidPermissionSetup.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
@@ -233,6 +234,7 @@ export default function App() {
         <HistoryProvider>
           <BrowserRouter>
             <SEOManager />
+            <AndroidPermissionSetup />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
