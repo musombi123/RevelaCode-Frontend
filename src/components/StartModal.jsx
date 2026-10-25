@@ -64,7 +64,7 @@ export default function StartModal() {
   // =======================================================
 
   const [mode, setMode] = useState("login");
-  // null | login | register | forgot
+  // login | register | forgot; null opens the entry-choice screen
 
   const [step, setStep] = useState("form");
   // form | verify | reset
@@ -2363,7 +2363,7 @@ const completeLogin = (data = {}) => {
                         ) : (
                           <>
                             {mode === "login" &&
-                              "Login"}
+                              "Sign in"}
 
                             {mode ===
                               "register" &&
