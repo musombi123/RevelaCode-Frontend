@@ -84,12 +84,14 @@ function getAuthorInitials(name) {
 
 function getAuthorAvatar(post) {
   const candidate =
-    post?.author?.avatar ||
     post?.author?.avatar_url ||
+    post?.author?.avatarUrl ||
+    post?.author?.avatar ||
     post?.author?.profile_image ||
     post?.author?.profileImage ||
-    post?.user?.avatar ||
     post?.user?.avatar_url ||
+    post?.user?.avatar ||
+    post?.avatar_url ||
     post?.avatar ||
     null;
   return typeof candidate === "string" && candidate.trim()
