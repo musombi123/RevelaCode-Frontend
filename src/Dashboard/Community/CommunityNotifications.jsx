@@ -175,7 +175,7 @@ function NotificationIcon({
       "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
 
     group:
-      "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400",
+      "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/30 dark:text-cyan-400",
 
     follow:
       "bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400",
@@ -464,10 +464,10 @@ export default function CommunityNotifications({
                   items-center
                   justify-center
                   rounded-2xl
-                  bg-emerald-100
-                  text-emerald-700
-                  dark:bg-emerald-950/40
-                  dark:text-emerald-400
+                  bg-cyan-100
+                  text-cyan-700
+                  dark:bg-cyan-950/40
+                  dark:text-cyan-400
                 "
               >
                 <Bell size={22} />
@@ -509,8 +509,8 @@ export default function CommunityNotifications({
                     font-bold
                     uppercase
                     tracking-[0.14em]
-                    text-emerald-600
-                    dark:text-emerald-400
+                    text-cyan-600
+                    dark:text-cyan-400
                   "
                 >
                   Community Center
@@ -614,14 +614,14 @@ export default function CommunityNotifications({
                   justify-center
                   gap-2
                   rounded-xl
-                  bg-emerald-600
+                  bg-cyan-600
                   px-4
                   py-2.5
                   text-xs
                   font-bold
                   text-white
                   transition
-                  hover:bg-emerald-700
+                  hover:bg-cyan-700
                   disabled:cursor-not-allowed
                   disabled:opacity-50
                   sm:flex-none
@@ -804,10 +804,10 @@ export default function CommunityNotifications({
                 items-center
                 justify-center
                 rounded-xl
-                bg-emerald-50
-                text-emerald-600
-                dark:bg-emerald-950/30
-                dark:text-emerald-400
+                bg-cyan-50
+                text-cyan-600
+                dark:bg-cyan-950/30
+                dark:text-cyan-400
               "
             >
               <Users size={16} />
@@ -956,10 +956,10 @@ export default function CommunityNotifications({
                   outline-none
                   transition
                   placeholder:text-slate-400
-                  focus:border-emerald-500
+                  focus:border-cyan-500
                   focus:bg-white
                   focus:ring-4
-                  focus:ring-emerald-500/10
+                  focus:ring-cyan-500/10
                   dark:border-white/10
                   dark:bg-slate-950
                   dark:text-white
@@ -1031,7 +1031,7 @@ export default function CommunityNotifications({
                         transition
                         ${
                           active
-                            ? "bg-emerald-600 text-white"
+                            ? "bg-cyan-600 text-white"
                             : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         }
                       `}
@@ -1183,14 +1183,14 @@ export default function CommunityNotifications({
                   className="
                     mt-4
                     rounded-xl
-                    bg-emerald-600
+                    bg-cyan-600
                     px-4
                     py-2.5
                     text-xs
                     font-bold
                     text-white
                     transition
-                    hover:bg-emerald-700
+                    hover:bg-cyan-700
                   "
                 >
                   Clear filters
@@ -1217,7 +1217,7 @@ export default function CommunityNotifications({
                       dark:hover:bg-white/[0.025]
                       ${
                         !notification.read
-                          ? "bg-emerald-50/30 dark:bg-emerald-950/[0.08]"
+                          ? "bg-cyan-50/30 dark:bg-cyan-950/[0.08]"
                           : ""
                       }
                     `}
@@ -1233,7 +1233,7 @@ export default function CommunityNotifications({
                           h-2
                           w-2
                           rounded-full
-                          bg-emerald-500
+                          bg-cyan-500
                         "
                       />
                     )}
@@ -1343,15 +1343,15 @@ export default function CommunityNotifications({
                           <span
                             className="
                               rounded-full
-                              bg-emerald-50
+                              bg-cyan-50
                               px-2
                               py-1
                               text-[9px]
                               font-bold
                               capitalize
-                              text-emerald-600
-                              dark:bg-emerald-950/30
-                              dark:text-emerald-400
+                              text-cyan-600
+                              dark:bg-cyan-950/30
+                              dark:text-cyan-400
                             "
                           >
                             {
@@ -1369,7 +1369,7 @@ export default function CommunityNotifications({
                           text-slate-300
                           transition
                           group-hover:translate-x-0.5
-                          group-hover:text-emerald-500
+                          group-hover:text-cyan-500
                         "
                       />
                     </button>
@@ -1441,7 +1441,7 @@ export default function CommunityNotifications({
                             py-1.5
                             text-[9px]
                             font-bold
-                            text-emerald-600
+                            text-cyan-600
                             shadow-sm
                             ring-1
                             ring-slate-200
@@ -1631,8 +1631,8 @@ export default function CommunityNotifications({
               text-xs
               font-bold
               text-slate-400
-              hover:text-emerald-600
-              dark:hover:text-emerald-400
+              hover:text-cyan-600
+              dark:hover:text-cyan-400
             "
           >
             <ArrowLeft size={14} />
@@ -1657,8 +1657,8 @@ export default function CommunityNotifications({
               text-xs
               font-bold
               text-slate-400
-              hover:text-emerald-600
-              dark:hover:text-emerald-400
+              hover:text-cyan-600
+              dark:hover:text-cyan-400
             "
           >
             <Activity size={14} />
@@ -1683,8 +1683,8 @@ export default function CommunityNotifications({
               text-xs
               font-bold
               text-slate-400
-              hover:text-emerald-600
-              dark:hover:text-emerald-400
+              hover:text-cyan-600
+              dark:hover:text-cyan-400
             "
           >
             <Users size={14} />

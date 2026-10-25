@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from "react";
 const ADSENSE_CLIENT = "ca-pub-5357444506450550";
 const COMMUNITY_AD_SLOT =
   String(import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT || "").trim();
-const COMMUNITY_LAYOUT_KEY = "-6t+ed+2i-1n-4w";
 
 /**
  * Explicit, labelled Community in-feed ad unit.
@@ -17,7 +16,7 @@ export default function CommunityAdSenseUnit() {
   const pushAttempted = useRef(false);
 
   useEffect(() => {
-    if (!COMMUNITY_AD_SLOT || !adRef.current || pushAttempted.current) return;
+    if (!/^\d+$/.test(COMMUNITY_AD_SLOT) || !adRef.current || pushAttempted.current) return;
     if (typeof window === "undefined") return;
 
     pushAttempted.current = true;
@@ -29,7 +28,7 @@ export default function CommunityAdSenseUnit() {
     }
   }, []);
 
-  if (!COMMUNITY_AD_SLOT || !ADSENSE_CLIENT) return null;
+  if (!/^\d+$/.test(COMMUNITY_AD_SLOT) || !ADSENSE_CLIENT) return null;
 
   return (
     <aside
@@ -46,8 +45,8 @@ export default function CommunityAdSenseUnit() {
         ref={adRef}
         className="adsbygoogle"
         style={{ display: "block", width: "100%", minHeight: "100px" }}
-        data-ad-format="fluid"
-        data-ad-layout-key={COMMUNITY_LAYOUT_KEY}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
         data-ad-client={ADSENSE_CLIENT}
         data-ad-slot={COMMUNITY_AD_SLOT}
       />

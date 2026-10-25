@@ -216,7 +216,7 @@ export default function CommunityPostComments({
         className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:rounded-3xl"
       >
         <header className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 dark:border-white/10 sm:px-6">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
             <MessageCircle size={20} />
           </div>
           <div className="min-w-0 flex-1">
@@ -283,7 +283,7 @@ export default function CommunityPostComments({
                   {comment.authorAvatar ? (
                     <img src={comment.authorAvatar} alt="" loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-xs font-black text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
                       {comment.authorName.slice(0, 1).toUpperCase()}
                     </div>
                   )}
@@ -301,7 +301,7 @@ export default function CommunityPostComments({
         </div>
 
         <form onSubmit={handleSubmit} className="border-t border-slate-100 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-5">
-          {notice ? <p role="status" className="mb-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{notice}</p> : null}
+          {notice ? <p role="status" className="mb-3 rounded-xl bg-cyan-50 px-3 py-2.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200">{notice}</p> : null}
           {submitError ? <p role="alert" className="mb-3 rounded-xl bg-rose-50 px-3 py-2.5 text-xs leading-5 text-rose-800 dark:bg-rose-950/30 dark:text-rose-200">{submitError}</p> : null}
           <label htmlFor="community-new-comment" className="mb-2 block text-xs font-black text-slate-800 dark:text-slate-100">Add a comment</label>
           <textarea
@@ -312,11 +312,11 @@ export default function CommunityPostComments({
             maxLength={3000}
             rows={3}
             placeholder="Write something helpful or thoughtful…"
-            className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+            className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
           />
           <div className="mt-3 flex flex-col-reverse items-stretch justify-between gap-3 sm:flex-row sm:items-center">
             <p className="text-[10px] text-slate-400">{commentBody.length}/3000 characters · Posting as {currentUserName}</p>
-            <button type="submit" disabled={submitting || !commentBody.trim() || !postId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" disabled={submitting || !commentBody.trim() || !postId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 text-xs font-black text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
               {submitting ? "Publishing…" : "Post comment"}
             </button>

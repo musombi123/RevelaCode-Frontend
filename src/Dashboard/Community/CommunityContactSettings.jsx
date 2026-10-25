@@ -145,7 +145,7 @@ export default function CommunityContactSettings({ onBack }) {
           <ArrowLeft size={17} />
         </button>
         <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
             Community preferences
           </p>
           <h1 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-white sm:text-2xl">
@@ -155,10 +155,10 @@ export default function CommunityContactSettings({ onBack }) {
       </div>
 
       <div className="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-7">
-        <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-400/10 blur-3xl" />
 
         <div className="relative flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
             <MessageCircle size={22} />
           </div>
           <div className="min-w-0">
@@ -178,7 +178,7 @@ export default function CommunityContactSettings({ onBack }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="relative mt-6 space-y-5">
-            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-emerald-200 dark:border-white/10 dark:hover:border-emerald-500/30">
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 dark:border-white/10 dark:hover:border-cyan-500/30">
               <input
                 type="checkbox"
                 checked={enabled}
@@ -187,7 +187,7 @@ export default function CommunityContactSettings({ onBack }) {
                   setSuccess("");
                   setError("");
                 }}
-                className="mt-1 h-4 w-4 accent-emerald-600"
+                className="mt-1 h-4 w-4 accent-cyan-600"
               />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-extrabold text-slate-900 dark:text-white">
@@ -199,7 +199,7 @@ export default function CommunityContactSettings({ onBack }) {
                     : "Your posts will not offer WhatsApp contact while this is off."}
                 </span>
               </span>
-              <span className={`rounded-full px-2.5 py-1 text-[9px] font-black ${enabled ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+              <span className={`rounded-full px-2.5 py-1 text-[9px] font-black ${enabled ? "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
                 {enabled ? "ON" : "OFF"}
               </span>
             </label>
@@ -222,7 +222,7 @@ export default function CommunityContactSettings({ onBack }) {
                   setError("");
                 }}
                 placeholder="+254712345678"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
               <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
                 Use your full international number, including the country code. Example: +254712345678. Only enable contact if you are comfortable receiving messages from other members.
@@ -230,7 +230,7 @@ export default function CommunityContactSettings({ onBack }) {
             </div>
 
             <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
               <p>
                 You can turn this off at any time. RevelaCode will not store WhatsApp messages; conversations take place in WhatsApp.
               </p>
@@ -250,7 +250,7 @@ export default function CommunityContactSettings({ onBack }) {
             ) : null}
 
             {success ? (
-              <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs font-semibold leading-5 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/20 dark:text-emerald-300">
+              <div role="status" className="flex items-start gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-3 text-xs font-semibold leading-5 text-cyan-800 dark:border-cyan-500/20 dark:bg-cyan-950/20 dark:text-cyan-300">
                 <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
                 <span>{success}</span>
               </div>
@@ -267,7 +267,7 @@ export default function CommunityContactSettings({ onBack }) {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 text-xs font-black text-white transition hover:bg-cyan-700 disabled:cursor-wait disabled:opacity-60"
               >
                 {saving ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
                 {saving ? "Saving preferences…" : "Save contact preferences"}

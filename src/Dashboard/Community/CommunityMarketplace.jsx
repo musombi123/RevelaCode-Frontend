@@ -99,9 +99,9 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
   const location = String(listing?.location || "").trim();
 
   return (
-    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900 dark:hover:border-emerald-700/50 sm:p-5">
+    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900 dark:hover:border-cyan-700/50 sm:p-5">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
           <ShoppingBag size={19} />
         </div>
         <div className="min-w-0 flex-1">
@@ -111,7 +111,7 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
               {category}
             </span>
             {isOwner ? (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+              <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
                 Your listing
               </span>
             ) : null}
@@ -127,7 +127,7 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
       </p>
 
       <div className="mt-4 flex items-center gap-2 text-base font-black tracking-tight text-slate-950 dark:text-white">
-        <CircleDollarSign size={17} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <CircleDollarSign size={17} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
         <span className="break-words">{formatPrice(listing)}</span>
       </div>
 
@@ -182,7 +182,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
               Community exchange
             </p>
             <h2 id="community-marketplace-form-title" className="mt-1 text-xl font-black text-slate-950 dark:text-white">
@@ -216,7 +216,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.title}
               onChange={(event) => { if (typeof onChange === "function") onChange("title", event.target.value); }}
               placeholder="What are you offering?"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
           </div>
 
@@ -232,7 +232,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.description}
               onChange={(event) => { if (typeof onChange === "function") onChange("description", event.target.value); }}
               placeholder="Describe condition, what is included, delivery options or the service you provide."
-              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
             />
             <p className="mt-1 text-right text-[10px] text-slate-400">{form.description.length}/2000</p>
           </div>
@@ -246,7 +246,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 id="marketplace-category"
                 value={form.category}
                 onChange={(event) => { if (typeof onChange === "function") onChange("category", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               >
                 {CATEGORIES.filter((item) => item.value).map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
@@ -264,7 +264,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.location}
                 onChange={(event) => { if (typeof onChange === "function") onChange("location", event.target.value); }}
                 placeholder="e.g. Mombasa or Online"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
           </div>
@@ -282,7 +282,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.price}
                 onChange={(event) => { if (typeof onChange === "function") onChange("price", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
             <div>
@@ -297,7 +297,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.quantity_available}
                 onChange={(event) => { if (typeof onChange === "function") onChange("quantity_available", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -310,7 +310,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.unit}
                 onChange={(event) => { if (typeof onChange === "function") onChange("unit", event.target.value); }}
                 placeholder="piece, hour, kg…"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
               />
             </div>
           </div>
@@ -333,7 +333,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Publishing…" : "Publish listing"}
               <ArrowLeft className="rotate-180" size={14} />
@@ -521,7 +521,7 @@ export default function CommunityMarketplace({ onNavigate }) {
   return (
     <div className="min-w-0 space-y-5 pb-24 lg:pb-8">
       <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:p-7">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 h-60 w-60 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="relative">
           <button
@@ -535,7 +535,7 @@ export default function CommunityMarketplace({ onNavigate }) {
 
           <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">
                 <Sparkles size={13} />
                 Community marketplace
               </div>
@@ -550,7 +550,7 @@ export default function CommunityMarketplace({ onNavigate }) {
             <button
               type="button"
               onClick={openCreateForm}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-xs font-black text-emerald-950 shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-300 active:scale-[0.98]"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-xs font-black text-cyan-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300 active:scale-[0.98]"
             >
               <Plus size={16} />
               Sell or offer
@@ -577,7 +577,7 @@ export default function CommunityMarketplace({ onNavigate }) {
       <HubRevenueOffers hub="marketplace" compact />
 
       {notice ? (
-        <div role="status" className="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+        <div role="status" className="flex items-start gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs leading-5 text-cyan-800 dark:border-cyan-900/50 dark:bg-cyan-950/30 dark:text-cyan-200">
           <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
           <span className="flex-1">{notice}</span>
           <button type="button" onClick={() => setNotice("")} aria-label="Dismiss message"><X size={14} /></button>
@@ -605,7 +605,7 @@ export default function CommunityMarketplace({ onNavigate }) {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search products, skills, services or places…"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950"
             />
           </label>
           <button
@@ -627,7 +627,7 @@ export default function CommunityMarketplace({ onNavigate }) {
               type="button"
               aria-pressed={selectedCategory === category.value}
               onClick={() => setSelectedCategory(category.value)}
-              className={`shrink-0 rounded-full px-3.5 py-2.5 text-[10px] font-bold transition ${selectedCategory === category.value ? "bg-emerald-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}
+              className={`shrink-0 rounded-full px-3.5 py-2.5 text-[10px] font-bold transition ${selectedCategory === category.value ? "bg-cyan-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}
             >
               {category.label}
             </button>
@@ -644,8 +644,8 @@ export default function CommunityMarketplace({ onNavigate }) {
                 ? "Looking for active listings…"
                 : `${filteredListings.length} ${filteredListings.length === 1 ? "listing" : "listings"} to explore`}
               {!loading ? (
-                <span className="ml-2 inline-flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                <span className="ml-2 inline-flex items-center gap-1.5 text-[10px] text-cyan-600 dark:text-cyan-400">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500" />
                   Live inventory
                 </span>
               ) : null}
@@ -685,7 +685,7 @@ export default function CommunityMarketplace({ onNavigate }) {
           </div>
         ) : (
           <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center dark:border-white/10 dark:bg-slate-900">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
               <ShoppingBag size={23} />
             </div>
             <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">
@@ -703,7 +703,7 @@ export default function CommunityMarketplace({ onNavigate }) {
               } else {
                 openCreateForm();
               }
-            }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-emerald-700">
+            }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-cyan-700">
               {searchTerm || selectedCategory ? "Clear filters" : "Create first listing"}
               <Plus size={14} />
             </button>

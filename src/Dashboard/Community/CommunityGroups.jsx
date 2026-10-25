@@ -166,8 +166,8 @@ function EmptyState({
       <div
         className="
           flex h-14 w-14 items-center justify-center
-          rounded-2xl bg-emerald-50 text-emerald-600
-          dark:bg-emerald-950/40 dark:text-emerald-400
+          rounded-2xl bg-cyan-50 text-cyan-600
+          dark:bg-cyan-950/40 dark:text-cyan-400
         "
       >
         <Users size={25} />
@@ -187,8 +187,8 @@ function EmptyState({
           onClick={onAction}
           className="
             mt-5 inline-flex items-center gap-2 rounded-xl
-            bg-emerald-600 px-4 py-3 text-xs font-bold
-            text-white transition hover:bg-emerald-700
+            bg-cyan-600 px-4 py-3 text-xs font-bold
+            text-white transition hover:bg-cyan-700
           "
         >
           <Plus size={15} />
@@ -224,8 +224,8 @@ function GroupCard({
         <div
           className="
             flex h-12 w-12 shrink-0 items-center justify-center
-            rounded-2xl bg-emerald-50 text-emerald-700
-            dark:bg-emerald-950/40 dark:text-emerald-400
+            rounded-2xl bg-cyan-50 text-cyan-700
+            dark:bg-cyan-950/40 dark:text-cyan-400
           "
         >
           <GroupIcon size={21} />
@@ -314,7 +314,7 @@ function GroupCard({
             ${
               group.joined
                 ? "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
+                : "bg-cyan-600 text-white hover:bg-cyan-700"
             }
           `}
         >
@@ -410,7 +410,7 @@ function CreateGroupModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
               Community
             </p>
 
@@ -462,8 +462,8 @@ function CreateGroupModal({
                 w-full rounded-xl border border-slate-200
                 bg-white px-4 py-3 text-sm text-slate-900
                 outline-none transition
-                focus:border-emerald-500 focus:ring-2
-                focus:ring-emerald-500/15
+                focus:border-cyan-500 focus:ring-2
+                focus:ring-cyan-500/15
                 dark:border-white/10 dark:bg-slate-950
                 dark:text-white
               "
@@ -488,7 +488,7 @@ function CreateGroupModal({
               className="
                 w-full rounded-xl border border-slate-200
                 bg-white px-4 py-3 text-sm text-slate-900
-                outline-none focus:border-emerald-500
+                outline-none focus:border-cyan-500
                 dark:border-white/10 dark:bg-slate-950
                 dark:text-white
               "
@@ -520,7 +520,7 @@ function CreateGroupModal({
               className="
                 w-full rounded-xl border border-slate-200
                 bg-white px-4 py-3 text-sm text-slate-900
-                outline-none focus:border-emerald-500
+                outline-none focus:border-cyan-500
                 dark:border-white/10 dark:bg-slate-950
                 dark:text-white
               "
@@ -549,8 +549,8 @@ function CreateGroupModal({
                 w-full resize-y rounded-xl border
                 border-slate-200 bg-white px-4 py-3
                 text-sm text-slate-900 outline-none
-                focus:border-emerald-500 focus:ring-2
-                focus:ring-emerald-500/15
+                focus:border-cyan-500 focus:ring-2
+                focus:ring-cyan-500/15
                 dark:border-white/10 dark:bg-slate-950
                 dark:text-white
               "
@@ -596,9 +596,9 @@ function CreateGroupModal({
               disabled={saving}
               className="
                 inline-flex flex-1 items-center justify-center
-                gap-2 rounded-xl bg-emerald-600 px-4 py-3
+                gap-2 rounded-xl bg-cyan-600 px-4 py-3
                 text-xs font-bold text-white transition
-                hover:bg-emerald-700 disabled:opacity-60
+                hover:bg-cyan-700 disabled:opacity-60
               "
             >
               {saving ? (
@@ -660,8 +660,8 @@ function GroupDetailsModal({
           <div
             className="
               flex h-14 w-14 items-center justify-center
-              rounded-2xl bg-emerald-50 text-emerald-700
-              dark:bg-emerald-950/40 dark:text-emerald-400
+              rounded-2xl bg-cyan-50 text-cyan-700
+              dark:bg-cyan-950/40 dark:text-cyan-400
             "
           >
             <GroupIcon size={25} />
@@ -682,7 +682,7 @@ function GroupDetailsModal({
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+          <span className="rounded-full bg-cyan-50 px-2.5 py-1.5 text-[10px] font-bold text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400">
             {formatCategory(group.category)}
           </span>
 
@@ -706,7 +706,7 @@ function GroupDetailsModal({
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
-            <Users size={17} className="text-emerald-600 dark:text-emerald-400" />
+            <Users size={17} className="text-cyan-600 dark:text-cyan-400" />
             <p className="mt-3 text-lg font-black text-slate-900 dark:text-white">
               {formatNumber(group.members)}
             </p>
@@ -716,7 +716,7 @@ function GroupDetailsModal({
           </div>
 
           <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
-            <MapPin size={17} className="text-emerald-600 dark:text-emerald-400" />
+            <MapPin size={17} className="text-cyan-600 dark:text-cyan-400" />
             <p className="mt-3 break-words text-sm font-black text-slate-900 dark:text-white">
               {group.location}
             </p>
@@ -740,6 +740,99 @@ function GroupDetailsModal({
           </div>
         ) : null}
 
+        <section className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-white/10">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <FileText size={16} className="text-cyan-600 dark:text-cyan-400" />
+                <h3 className="text-sm font-black">Shared PDF library</h3>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Share lesson notes, guides, meeting documents and other PDFs with group members.</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{group.joined ? files.length + " files" : "Members only"}</span>
+          </div>
+
+          {!group.joined ? (
+            <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-800/70 dark:text-slate-300">Join this group to view its shared documents and contribute PDFs.</p>
+          ) : (
+            <>
+              <form className="mt-4 space-y-3" onSubmit={async (event) => {
+                event.preventDefault();
+                setFileSubmitError("");
+                if (!selectedPdf) {
+                  setFileSubmitError("Choose a PDF document first.");
+                  return;
+                }
+                try {
+                  const success = await onShareFile?.(selectedPdf, fileCaption);
+                  if (success) {
+                    setSelectedPdf(null);
+                    setFileCaption("");
+                  }
+                } catch (caught) {
+                  setFileSubmitError(caught?.message || "The PDF could not be shared.");
+                }
+              }}>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 transition hover:border-cyan-400 dark:border-white/15 dark:bg-slate-950">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"><FileText size={19} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-black text-slate-800 dark:text-white">{selectedPdf?.name || "Choose a PDF to share"}</span>
+                    <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">PDF only · Up to 25 MB</span>
+                  </span>
+                  <UploadCloud size={16} className="text-cyan-600 dark:text-cyan-400" />
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    disabled={uploadingFile}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      event.target.value = "";
+                      setFileSubmitError("");
+                      if (!file) return;
+                      if (!/\.pdf$/i.test(file.name || "") || (file.type && file.type !== "application/pdf" && file.type !== "application/x-pdf" && file.type !== "application/octet-stream")) {
+                        setSelectedPdf(null);
+                        setFileSubmitError("Choose a valid PDF document.");
+                        return;
+                      }
+                      if (file.size > 25 * 1024 * 1024) {
+                        setSelectedPdf(null);
+                        setFileSubmitError("PDF documents must be 25 MB or smaller.");
+                        return;
+                      }
+                      setSelectedPdf(file);
+                    }}
+                  />
+                </label>
+                <input value={fileCaption} onChange={(event) => setFileCaption(event.target.value)} maxLength={500} placeholder="Add a short note (optional)" disabled={uploadingFile} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white" />
+                {fileSubmitError ? <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-300">{fileSubmitError}</p> : null}
+                <button type="submit" disabled={!selectedPdf || uploadingFile} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
+                  {uploadingFile ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                  {uploadingFile ? "Uploading and sharing…" : "Share PDF with group"}
+                </button>
+              </form>
+
+              <div className="mt-4 space-y-2">
+                {filesLoading ? (
+                  <div className="flex items-center gap-2 py-4 text-xs text-slate-500 dark:text-slate-400"><Loader2 size={14} className="animate-spin" /> Loading shared files…</div>
+                ) : files.length ? files.map((file) => (
+                  <article key={file.id || file.url} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"><FileText size={18} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-black text-slate-900 dark:text-white">{file.file_name || "Shared PDF"}</span>
+                      {file.caption ? <span className="mt-1 block break-words text-[10px] leading-4 text-slate-500 dark:text-slate-400">{file.caption}</span> : null}
+                      <span className="mt-1 block text-[10px] text-slate-400">{file.size_bytes ? (file.size_bytes / (1024 * 1024)).toFixed(1) + " MB · " : ""}PDF</span>
+                    </span>
+                    {file.url ? <a href={file.url} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-2 text-[10px] font-black text-slate-700 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-200" aria-label={"Open " + (file.file_name || "PDF")}><Download size={13} /> Open</a> : null}
+                  </article>
+                )) : (
+                  <p className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-800/70 dark:text-slate-400">No PDFs have been shared yet. Add the first useful document for this group.</p>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
@@ -752,7 +845,7 @@ function GroupDetailsModal({
               ${
                 group.joined
                   ? "border border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "bg-cyan-600 text-white hover:bg-cyan-700"
               }
             `}
           >
@@ -802,9 +895,12 @@ export default function CommunityGroups({
   const {
     getCommunityGroups,
     getCommunityGroup,
+    getCommunityGroupFiles,
     createCommunityGroup,
     joinCommunityGroup,
     leaveCommunityGroup,
+    uploadCommunityMedia,
+    shareCommunityGroupFile,
   } = useJumuiyaApi();
 
   const [groups, setGroups] = useState([]);
@@ -825,6 +921,9 @@ export default function CommunityGroups({
   const [detailError, setDetailError] = useState("");
 
   const [busyGroupId, setBusyGroupId] = useState("");
+  const [groupFiles, setGroupFiles] = useState([]);
+  const [groupFilesLoading, setGroupFilesLoading] = useState(false);
+  const [uploadingGroupFile, setUploadingGroupFile] = useState(false);
 
   const hasLoadedRef = useRef(false);
 
@@ -913,6 +1012,60 @@ export default function CommunityGroups({
     };
   }, [loadGroups]);
 
+  const loadGroupFiles = useCallback(async (groupId) => {
+    if (!groupId) return;
+    setGroupFilesLoading(true);
+    try {
+      const result = await getCommunityGroupFiles(groupId, { limit: 50 });
+      const rows = Array.isArray(result?.files)
+        ? result.files
+        : Array.isArray(result?.data?.files)
+          ? result.data.files
+          : [];
+      setGroupFiles(rows);
+    } catch (caught) {
+      setGroupFiles([]);
+      setDetailError(caught?.message || "Shared group files could not be loaded.");
+    } finally {
+      setGroupFilesLoading(false);
+    }
+  }, [getCommunityGroupFiles]);
+
+  const handleShareGroupFile = useCallback(async (file, caption) => {
+    const groupId = String(activeGroup?.id || "");
+    if (!groupId) {
+      setDetailError("Open a group before sharing a file.");
+      return false;
+    }
+    if (!file || !/\.pdf$/i.test(file.name || "") || file.size > 25 * 1024 * 1024) {
+      setDetailError("Choose a PDF document up to 25 MB.");
+      return false;
+    }
+
+    setUploadingGroupFile(true);
+    setDetailError("");
+    try {
+      const uploaded = await uploadCommunityMedia(file);
+      const attachment = uploaded?.attachment || uploaded?.data?.attachment || null;
+      const mediaId = attachment?.id ?? attachment?.media_id ?? null;
+      if (!mediaId) throw new Error("The media service did not return a PDF attachment ID.");
+      const shared = await shareCommunityGroupFile(groupId, {
+        media_id: String(mediaId),
+        caption: String(caption || "").trim(),
+      });
+      const item = shared?.file || shared?.data?.file || null;
+      if (!item?.url) throw new Error("The group service did not confirm the shared PDF.");
+      setGroupFiles((current) => [item, ...current.filter((entry) => entry.id !== item.id)]);
+      setNotice("PDF shared with " + (activeGroup?.name || "the group") + ".");
+      return true;
+    } catch (caught) {
+      setDetailError(caught?.message || "The PDF could not be shared.");
+      return false;
+    } finally {
+      setUploadingGroupFile(false);
+    }
+  }, [activeGroup, shareCommunityGroupFile, uploadCommunityMedia]);
+
   // ----------------------------------------------------------
   // FETCH ONE GROUP'S LATEST DETAILS
   // ----------------------------------------------------------
@@ -920,6 +1073,7 @@ export default function CommunityGroups({
   const handleOpenGroup = useCallback(
     async (group) => {
       setActiveGroup(group);
+      setGroupFiles([]);
       setDetailError("");
       setDetailLoading(true);
 
@@ -931,6 +1085,11 @@ export default function CommunityGroups({
 
         if (latest) {
           setActiveGroup(latest);
+          if (latest.joined) {
+            await loadGroupFiles(latest.id);
+          } else {
+            setGroupFiles([]);
+          }
         }
       } catch (error) {
         setDetailError(getApiErrorMessage(error));
@@ -938,7 +1097,7 @@ export default function CommunityGroups({
         setDetailLoading(false);
       }
     },
-    [getCommunityGroup],
+    [getCommunityGroup, loadGroupFiles],
   );
 
   // ----------------------------------------------------------
@@ -982,6 +1141,11 @@ export default function CommunityGroups({
               ? `You joined ${updated.name}.`
               : `You left ${updated.name}.`,
           );
+          if (updated.joined) {
+            await loadGroupFiles(updated.id);
+          } else {
+            setGroupFiles([]);
+          }
         }
 
         await loadGroups({ quiet: true });
@@ -1003,6 +1167,7 @@ export default function CommunityGroups({
       joinCommunityGroup,
       leaveCommunityGroup,
       loadGroups,
+      loadGroupFiles,
     ],
   );
 
@@ -1088,12 +1253,12 @@ export default function CommunityGroups({
         <section
           className="
             overflow-hidden rounded-[28px]
-            border border-emerald-200/70
-            bg-gradient-to-br from-emerald-600
-            via-emerald-600 to-teal-700
+            border border-cyan-200/70
+            bg-gradient-to-br from-cyan-600
+            via-cyan-600 to-teal-700
             px-5 py-6 text-white shadow-xl
-            shadow-emerald-900/10
-            dark:border-emerald-500/20
+            shadow-cyan-900/10
+            dark:border-cyan-500/20
             sm:px-7 sm:py-8
           "
         >
@@ -1104,7 +1269,7 @@ export default function CommunityGroups({
                   <Users size={21} />
                 </div>
 
-                <span className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-50/90">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-50/90">
                   Community Groups
                 </span>
               </div>
@@ -1113,7 +1278,7 @@ export default function CommunityGroups({
                 Find communities where you belong.
               </h1>
 
-              <p className="mt-3 max-w-xl text-sm leading-6 text-emerald-50/90">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-cyan-50/90">
                 Connect with people, exchange knowledge and
                 build something meaningful together across
                 RevelaCode and Jumuiya.
@@ -1130,8 +1295,8 @@ export default function CommunityGroups({
                     inline-flex min-h-11 items-center
                     justify-center gap-2 rounded-xl
                     bg-white px-4 py-3 text-xs
-                    font-black text-emerald-700
-                    transition hover:bg-emerald-50
+                    font-black text-cyan-700
+                    transition hover:bg-cyan-50
                   "
                 >
                   <Plus size={16} />
@@ -1202,7 +1367,7 @@ export default function CommunityGroups({
                   dark:border-white/10 dark:bg-slate-900
                 "
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400">
                   <Icon size={18} />
                 </div>
 
@@ -1244,9 +1409,9 @@ export default function CommunityGroups({
                   min-h-12 w-full rounded-xl border
                   border-slate-200 bg-slate-50 pl-11
                   pr-4 text-sm text-slate-900 outline-none
-                  transition focus:border-emerald-500
+                  transition focus:border-cyan-500
                   focus:bg-white focus:ring-2
-                  focus:ring-emerald-500/15
+                  focus:ring-cyan-500/15
                   dark:border-white/10 dark:bg-slate-950
                   dark:text-white dark:focus:bg-slate-950
                 "
@@ -1265,7 +1430,7 @@ export default function CommunityGroups({
                     font-bold transition
                     ${
                       selectedCategory === category.value
-                        ? "bg-emerald-600 text-white"
+                        ? "bg-cyan-600 text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     }
                   `}
@@ -1304,11 +1469,11 @@ export default function CommunityGroups({
             role="status"
             className="
               flex items-start justify-between gap-4
-              rounded-2xl border border-emerald-200
-              bg-emerald-50 px-4 py-3
-              text-xs leading-5 text-emerald-800
-              dark:border-emerald-900/50
-              dark:bg-emerald-950/30 dark:text-emerald-300
+              rounded-2xl border border-cyan-200
+              bg-cyan-50 px-4 py-3
+              text-xs leading-5 text-cyan-800
+              dark:border-cyan-900/50
+              dark:bg-cyan-950/30 dark:text-cyan-300
             "
           >
             <span className="flex items-start gap-2">
@@ -1356,7 +1521,7 @@ export default function CommunityGroups({
 
         {loading && (
           <div className="flex items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-12 text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
-            <Loader2 size={20} className="animate-spin text-emerald-600" />
+            <Loader2 size={20} className="animate-spin text-cyan-600" />
             Loading community groups...
           </div>
         )}
@@ -1367,7 +1532,7 @@ export default function CommunityGroups({
           <section className="space-y-4">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
                   Your communities
                 </p>
 
@@ -1400,7 +1565,7 @@ export default function CommunityGroups({
         {!loading && featuredGroups.length > 0 && (
           <section className="space-y-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
                 Recommended
               </p>
 
@@ -1428,7 +1593,7 @@ export default function CommunityGroups({
         {!loading && remainingGroups.length > 0 && (
           <section className="space-y-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
                 Explore
               </p>
 
@@ -1478,7 +1643,7 @@ export default function CommunityGroups({
             className="
               inline-flex items-center gap-2 text-xs
               font-bold text-slate-500 transition
-              hover:text-emerald-600 dark:hover:text-emerald-400
+              hover:text-cyan-600 dark:hover:text-cyan-400
             "
           >
             <ArrowLeft size={14} />
@@ -1493,7 +1658,7 @@ export default function CommunityGroups({
             className="
               inline-flex items-center gap-2 text-xs
               font-bold text-slate-500 transition
-              hover:text-emerald-600 dark:hover:text-emerald-400
+              hover:text-cyan-600 dark:hover:text-cyan-400
             "
           >
             <Bell size={14} />
@@ -1527,6 +1692,10 @@ export default function CommunityGroups({
             setDetailError("");
           }}
           onToggleMembership={handleToggleMembership}
+          files={groupFiles}
+          filesLoading={groupFilesLoading}
+          uploadingFile={uploadingGroupFile}
+          onShareFile={handleShareGroupFile}
         />
       )}
     </>
