@@ -46,7 +46,7 @@ function cleanPosition(value) {
   return `${Math.max(0, Math.min(100, Number.isFinite(parsed) ? parsed : 50))}%`;
 }
 
-export default function CommunityProfileWorkspace({ onNavigate }) {
+export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated }) {
   const { user } = useAuth();
   const { getIdentity, updateIdentityProfile, uploadCommunityMedia } = useJumuiyaApi();
   const avatarInput = useRef(null);
@@ -155,6 +155,7 @@ export default function CommunityProfileWorkspace({ onNavigate }) {
       if (!payload.full_name) throw new Error("Enter the name you want members to see.");
       await updateIdentityProfile(payload);
       setProfile((current) => ({ ...current, ...payload }));
+      onProfileUpdated?.(payload);
       setSaved(true);
       setNotice("Your Community profile has been saved.");
     } catch (caught) {
