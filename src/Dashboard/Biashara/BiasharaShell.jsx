@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe, ArrowLeftRight,
   LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
-  RefreshCw, Settings, Sparkles, Store, Users, Zap, X,
+  RefreshCw, Settings, Sparkles, Store, Users, Wrench, Zap, X,
 } from "lucide-react";
 
 const PRIMARY_NAV = [
@@ -10,6 +10,7 @@ const PRIMARY_NAV = [
   { key: "website", label: "Website", route: "website", icon: Globe, available: true },
   { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
+  { key: "services", label: "Manage services", route: "services", icon: Wrench, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
   { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
   { key: "automations", label: "Automations", route: "automations", icon: Zap, available: true },
