@@ -15,6 +15,8 @@ import {
   KeyRound,
   LockKeyhole,
   Mail,
+  Moon,
+  Sun,
   ShieldCheck,
   Sparkles,
   UserPlus,
@@ -34,6 +36,25 @@ export default function StartModal() {
     getAccessToken,
   } = useAuth();
   const location = useLocation();
+  const [modalDark, setModalDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
+
+  const toggleModalTheme = () => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const nextDark = !root.classList.contains("dark");
+    root.classList.toggle("dark", nextDark);
+    root.classList.toggle("light", !nextDark);
+    root.dataset.theme = nextDark ? "dark" : "light";
+    root.style.colorScheme = nextDark ? "dark" : "light";
+    setModalDark(nextDark);
+    try {
+      localStorage.setItem("theme", nextDark ? "dark" : "light");
+    } catch {
+      // Theme remains active for this session if storage is unavailable.
+    }
+  };
 
   const baseUrl =
     String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
@@ -42,8 +63,8 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState(null);
-  // null | login | register | forgot
+  const [mode, setMode] = useState("login");
+  // login | register | forgot; null opens the entry-choice screen
 
   const [step, setStep] = useState("form");
   // form | verify | reset
@@ -1226,136 +1247,107 @@ const completeLogin = (data = {}) => {
       <div
         className="
           fixed inset-0 z-[100]
-          flex items-center justify-center
-          bg-slate-950/75
-          backdrop-blur-md
-          px-4 py-6
+          flex items-end justify-center
+          bg-[#e9f1ee]/95 backdrop-blur-xl
+          dark:bg-[#030907]/95
+          sm:items-center sm:px-4 sm:py-6
         "
       >
+        <div className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 -right-24 h-80 w-80 rounded-full bg-teal-400/20 blur-3xl" />
+
         <div
           className="
-            relative
-            w-full max-w-lg
-            max-h-[92vh]
-            overflow-y-auto
-            rounded-3xl
-            border border-white/10
-            bg-white
-            shadow-2xl
-            dark:bg-slate-950
+            relative flex w-full max-w-[440px] flex-col
+            max-h-[94dvh] overflow-hidden
+            rounded-t-[30px] border border-emerald-500/25
+            bg-white shadow-[0_30px_80px_-24px_rgba(4,60,45,0.4)]
+            dark:bg-[#08110e]
+            sm:max-h-[calc(100dvh-48px)] sm:rounded-[30px]
           "
+          role="dialog"
+          aria-modal="true"
+          aria-label="RevelaCode account access"
         >
-          {/* =================================================
-              CLOSE
-          ================================================= */}
-
-          <button
-            type="button"
-            onClick={resetAll}
+          <header
             className="
-              absolute
-              right-4 top-4
-              z-20
-              rounded-full
-              p-2
-              text-slate-400
-              transition
-              hover:bg-slate-100
-              hover:text-slate-900
-              dark:hover:bg-white/10
-              dark:hover:text-white
-            "
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
-
-
-          {/* =================================================
-              HEADER
-          ================================================= */}
-
-          <div
-            className="
-              border-b
-              border-slate-200
-              bg-gradient-to-br
-              from-slate-950
-              via-slate-900
-              to-emerald-950
-              px-6
-              pb-7
-              pt-8
-              text-white
-              dark:border-white/10
+              relative isolate shrink-0 overflow-hidden
+              border-b border-white/10 bg-[#04130f]
+              px-5 pb-5 pt-5 text-white
+              sm:px-6 sm:pb-6 sm:pt-6
             "
           >
             <div
-              className="
-                mb-4
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                border border-white/10
-                bg-white/10
-                px-3
-                py-1.5
-                text-xs
-                font-medium
-                text-emerald-100
-              "
-            >
-              <Sparkles
-                size={14}
-              />
+              className="pointer-events-none absolute inset-0 opacity-90"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),radial-gradient(ellipse at 90% 0%,rgba(16,185,129,.38),transparent 65%),radial-gradient(ellipse at 0% 100%,rgba(45,212,191,.18),transparent 65%)",
+                backgroundSize: "28px 28px,28px 28px,auto,auto",
+              }}
+            />
+            <div className="relative z-10">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <img
+                    src="/Logo.png"
+                    alt="RevelaCode logo"
+                    className="h-[38px] w-[38px] shrink-0 rounded-2xl border border-white/15 bg-white/5 object-contain p-1 shadow-lg shadow-emerald-900/30"
+                  />
+                  <span className="truncate text-[15px] font-bold tracking-tight">RevelaCode</span>
+                </div>
 
-              RevelaCode
-              Ecosystem
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleModalTheme}
+                    aria-label={modalDark ? "Switch to light theme" : "Switch to dark theme"}
+                    title={modalDark ? "Light theme" : "Dark theme"}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
+                  >
+                    {modalDark ? <Sun size={17} /> : <Moon size={17} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAll}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
+                    aria-label="Close"
+                    title="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <h2 className="pr-2 text-[clamp(27px,7vw,32px)] font-extrabold leading-[1.12] tracking-[-0.03em]">
+                Your account.<br />
+                <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">Your ecosystem.</span>
+              </h2>
+              <p className="mt-2.5 max-w-[340px] text-[13.5px] leading-6 text-[#a9bdb6]">
+                One secure identity for Bible, study, business, farming, education, marketplace and community.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {["Biashara", "Shamba", "Elimu", "Jumuiya"].map((name) => (
+                  <span key={name} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-emerald-100">
+                    <span className="h-[5px] w-[5px] rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                    {name}
+                  </span>
+                ))}
+              </div>
             </div>
+          </header>
 
-            <h2
-              className="
-                pr-8
-                text-2xl
-                font-bold
-                tracking-tight
-                sm:text-3xl
-              "
-            >
-              Your account.
-              <br />
-              Your ecosystem.
-            </h2>
-
-            <p
-              className="
-                mt-2
-                max-w-md
-                text-sm
-                leading-6
-                text-slate-300
-              "
-            >
-              One RevelaCode identity for
-              Bible, study, business,
-              farming, education,
-              marketplace and community.
-            </p>
-          </div>
-
-
+          <div
+            className="
+              min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain
+              px-5 py-5 pb-[calc(20px+env(safe-area-inset-bottom))]
+              sm:px-6 sm:py-6
+            "
+          >
           {/* =================================================
               CONTENT
           ================================================= */}
 
-          <div
-            className="
-              space-y-5
-              p-5
-              sm:p-6
-            "
-          >
+
 
             {/* =================================================
                 START SCREEN
@@ -1633,6 +1625,28 @@ const completeLogin = (data = {}) => {
             )}
 
 
+            {mode && step === "form" && (mode === "login" || mode === "register") && (
+              <div className={`relative grid grid-cols-2 rounded-2xl bg-slate-100 p-1 dark:bg-white/[0.05] ${mode === "register" ? "is-register" : ""}`}>
+                <div className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.12)] transition-transform duration-300 dark:bg-white/10 ${mode === "register" ? "translate-x-full" : ""}`} />
+                <button
+                  type="button"
+                  onClick={() => { setMode("login"); setStep("form"); setError(""); setMessage(""); }}
+                  aria-pressed={mode === "login"}
+                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "login" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode("register"); setStep("form"); setError(""); setMessage(""); }}
+                  aria-pressed={mode === "register"}
+                  className={`relative z-10 h-11 rounded-xl text-sm font-semibold transition ${mode === "register" ? "text-slate-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
+
             {/* =================================================
                 ACTIVE FORM
             ================================================= */}
@@ -1693,21 +1707,15 @@ const completeLogin = (data = {}) => {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={
-                      backToStart
-                    }
-                    className="
-                      text-xs
-                      font-medium
-                      text-emerald-700
-                      hover:underline
-                      dark:text-emerald-400
-                    "
-                  >
-                    Change
-                  </button>
+                  {mode === "forgot" && (
+                    <button
+                      type="button"
+                      onClick={backToStart}
+                      className="text-xs font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+                    >
+                      Back
+                    </button>
+                  )}
                 </div>
 
 
@@ -1765,8 +1773,8 @@ const completeLogin = (data = {}) => {
                               rounded-xl
                               border
                               border-slate-200
-                              bg-white
-                              py-3
+                              bg-[#f4f8f6]
+                              py-4
                               pl-10
                               pr-3
                               outline-none
@@ -1868,6 +1876,10 @@ const completeLogin = (data = {}) => {
                         </span>
 
                         <div className="relative">
+                          <LockKeyhole
+                            size={17}
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
                           <input
                             type={
                               showPassword
@@ -1890,12 +1902,12 @@ const completeLogin = (data = {}) => {
                             }
                             className="
                               w-full
-                              rounded-xl
+                              rounded-2xl
                               border
                               border-slate-200
-                              bg-white
-                              py-3
-                              pl-3
+                              bg-[#f4f8f6]
+                              py-4
+                              pl-10
                               pr-11
                               outline-none
                               transition
@@ -1975,12 +1987,12 @@ const completeLogin = (data = {}) => {
                           autoComplete="new-password"
                           className="
                             w-full
-                            rounded-xl
+                            rounded-2xl
                             border
                             border-slate-200
-                            bg-white
+                            bg-[#f4f8f6]
                             px-3
-                            py-3
+                            py-4
                             outline-none
                             transition
                             focus:border-emerald-500
@@ -2329,21 +2341,15 @@ const completeLogin = (data = {}) => {
                           loading
                         }
                         className="
-                          flex
-                          w-full
-                          items-center
-                          justify-center
-                          gap-2
-                          rounded-xl
-                          bg-emerald-600
-                          px-4
-                          py-3.5
-                          font-semibold
-                          text-white
-                          transition
-                          hover:bg-emerald-700
-                          disabled:cursor-not-allowed
-                          disabled:opacity-60
+                          relative flex
+                          min-h-[56px] w-full items-center justify-center
+                          gap-2 overflow-hidden rounded-2xl
+                          bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700
+                          px-4 py-4 font-bold text-white
+                          shadow-[0_14px_30px_-10px_rgba(5,150,105,0.65)]
+                          transition active:scale-[0.98]
+                          hover:brightness-105
+                          disabled:cursor-not-allowed disabled:opacity-60
                         "
                       >
                         {loading ? (
@@ -2351,7 +2357,7 @@ const completeLogin = (data = {}) => {
                         ) : (
                           <>
                             {mode === "login" &&
-                              "Login"}
+                              "Sign in"}
 
                             {mode ===
                               "register" &&
@@ -2405,6 +2411,25 @@ const completeLogin = (data = {}) => {
                           />
                           Forgot your password?
                         </button>
+                      )}
+
+                      {mode === "login" && (
+                        <>
+                          <div className="flex items-center gap-3 py-1 text-xs text-slate-400">
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                            <span>or</span>
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGuestLogin}
+                            disabled={loading}
+                            className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-transparent px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-100 dark:hover:bg-white/[0.04]"
+                          >
+                            <Users size={17} className="text-emerald-600 dark:text-emerald-400" />
+                            Continue as guest
+                          </button>
+                        </>
                       )}
                     </>
                   )}
