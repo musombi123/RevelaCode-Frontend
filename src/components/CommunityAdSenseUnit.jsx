@@ -1,4 +1,5 @@
 import React, { createElement, useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import {
   AdMob,
   AdmobConsentStatus,
@@ -33,13 +34,8 @@ const NATIVE_SLOT_KEY = "community-sponsored-placement";
 let admobInitializePromise = null;
 
 function isAndroidNativeApp() {
-  if (typeof window === "undefined") return false;
-
   try {
-    return (
-      window.Capacitor?.isNativePlatform?.() === true &&
-      window.Capacitor?.getPlatform?.() === "android"
-    );
+    return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
   } catch {
     return false;
   }
