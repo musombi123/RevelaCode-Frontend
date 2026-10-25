@@ -50,6 +50,7 @@ import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSett
 import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirectory.jsx";
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
+import CommunityProfileWorkspace from "@/Dashboard/Community/CommunityProfileWorkspace.jsx";
 
 // ============================================================
 // TEMPORARY HUB REDIRECTS
@@ -1267,24 +1268,7 @@ export default function CommunityDashboard({
           ) : workspacePage === "groups" ? (
             <CommunityGroups onNavigate={navigate} />
           ) : workspacePage === "me" ? (
-            <section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900 sm:p-7">
-              <div className="flex items-start gap-4">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center bg-cyan-500 text-lg font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
-                  {displayName.slice(0, 2).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">Your Community space</p>
-                  <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-slate-950 dark:text-white">{displayName}</h1>
-                  <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{user?.email || "Email not provided by the active account."}</p>
-                </div>
-              </div>
-              <p className="mt-5 text-sm leading-6 text-slate-500 dark:text-slate-400">Manage the contact details you share with other members, discover people, or invite someone into Jumuiya.</p>
-              <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                <button type="button" onClick={() => navigate("community-contact-settings")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Contact settings <ArrowRight size={13} className="ml-1 inline" /></button>
-                <button type="button" onClick={() => navigate("community-people")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Member directory <ArrowRight size={13} className="ml-1 inline" /></button>
-                <button type="button" onClick={() => navigate("community-invite-members")} className="rounded-xl border border-slate-200 px-3 py-3 text-left text-xs font-black hover:border-cyan-400 dark:border-white/10">Invite members <ArrowRight size={13} className="ml-1 inline" /></button>
-              </div>
-            </section>
+            <CommunityProfileWorkspace onNavigate={navigate} />
           ) : (
             <>
               <header className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-6">
