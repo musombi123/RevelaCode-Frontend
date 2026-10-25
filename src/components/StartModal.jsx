@@ -112,6 +112,11 @@ export default function StartModal() {
     setVerificationCode,
   ] = useState("");
 
+  const [mfaChallengeToken, setMfaChallengeToken] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaSetupData, setMfaSetupData] = useState(null);
+  const [mfaRecoveryCodes, setMfaRecoveryCodes] = useState([]);
+
   const [
     resetNewPassword,
     setResetNewPassword,
@@ -148,6 +153,10 @@ export default function StartModal() {
     setConfirmPassword("");
 
     setVerificationCode("");
+    setMfaChallengeToken("");
+    setMfaCode("");
+    setMfaSetupData(null);
+    setMfaRecoveryCodes([]);
 
     setResetNewPassword("");
     setResetConfirmPassword("");
@@ -727,6 +736,115 @@ const completeLogin = (data = {}) => {
 
 
   // =======================================================
+  // SECOND-FACTOR SIGN-IN
+  // =======================================================
+
+  const processLoginResponse = async (data = {}) => {
+    if (data?.mfa_required) {
+      if (!data.challenge_token) {
+        throw new Error("The backend did not provide an MFA challenge.");
+      }
+      setMfaChallengeToken(data.challenge_token);
+      setMfaCode("");
+      setMfaSetupData(null);
+      setStep("mfa");
+      setMessage("Enter the current code from your authenticator app. Recovery codes also work here.");
+      return null;
+    }
+
+    if (data?.mfa_setup_required) {
+      if (!data.challenge_token) {
+        throw new Error("The backend did not provide an enrollment challenge.");
+      }
+      setMfaChallengeToken(data.challenge_token);
+      setMfaCode("");
+      const setup = await apiPost("/api/auth/mfa/setup", {
+        challenge_token: data.challenge_token,
+      });
+      setMfaSetupData(setup);
+      setStep("mfa-setup");
+      setMessage("Privileged accounts must enable authenticator verification before continuing.");
+      return null;
+    }
+
+    const authResult = completeLogin(data);
+    goHomeByRole(authResult.role);
+    return authResult;
+  };
+
+
+  const handleMfaVerification = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    const code = String(mfaCode || "").trim();
+    if (!mfaChallengeToken || !code) {
+      setError("Enter your authenticator or recovery code.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await apiPost("/api/auth/mfa/login-verify", {
+        challenge_token: mfaChallengeToken,
+        code,
+      });
+      setMfaChallengeToken("");
+      setMfaCode("");
+      const authResult = completeLogin(data);
+      goHomeByRole(authResult.role);
+    } catch (err) {
+      setError(err?.message || "Authenticator verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleMfaEnrollment = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!/^\d{6}$/.test(String(mfaCode || "").trim())) {
+      setError("Enter the current 6-digit code from your authenticator app.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await apiPost("/api/auth/mfa/enable", {
+        challenge_token: mfaChallengeToken,
+        code: String(mfaCode).trim(),
+      });
+      setMfaRecoveryCodes(Array.isArray(data.recovery_codes) ? data.recovery_codes : []);
+      setMfaChallengeToken("");
+      setMfaCode("");
+      setMfaSetupData(null);
+      setStep("mfa-recovery");
+      setMessage(data.message || "Authenticator verification enabled.");
+    } catch (err) {
+      setError(err?.message || "Could not enable authenticator verification.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const finishMfaEnrollment = () => {
+    setStep("form");
+    setPassword("");
+    setMfaChallengeToken("");
+    setMfaCode("");
+    setMfaSetupData(null);
+    setMfaRecoveryCodes([]);
+    setMessage("Authenticator verification is enabled. Sign in again with your password and current authenticator code.");
+    setError("");
+  };
+
+
+  // =======================================================
   // REGISTRATION VERIFICATION
   // =======================================================
 
@@ -744,12 +862,7 @@ const completeLogin = (data = {}) => {
           password
         );
 
-      const authResult =
-        completeLogin(data);
-
-        goHomeByRole(
-          authResult.role
-        );
+      await processLoginResponse(data);
     };
 
 
@@ -802,12 +915,7 @@ const completeLogin = (data = {}) => {
           resetNewPassword
         );
 
-      const authResult =
-        completeLogin(data);
-      
-        goHomeByRole(
-          authResult.role
-        );
+      await processLoginResponse(data);
 
     };
 
@@ -991,13 +1099,7 @@ const completeLogin = (data = {}) => {
               password
             );
 
-          const authResult =
-            completeLogin(data);
-
-            goHomeByRole(
-              authResult.role
-            );
-
+          await processLoginResponse(data);
           return;
         }
 
@@ -1693,7 +1795,7 @@ const completeLogin = (data = {}) => {
                       "
                     >
                       {mode === "login" &&
-                        "Sign in to continue"}
+                        (step === "mfa" ? "Confirm it's you" : step === "mfa-setup" ? "Add an authenticator app" : step === "mfa-recovery" ? "Finish securing your account" : "Sign in to continue")}
 
                       {mode === "register" &&
                         "Start with one RevelaCode identity"}
@@ -1723,7 +1825,11 @@ const completeLogin = (data = {}) => {
                   onSubmit={
                     step === "verify"
                       ? handleVerify
-                      : handleSubmit
+                      : step === "mfa"
+                        ? handleMfaVerification
+                        : step === "mfa-setup"
+                          ? handleMfaEnrollment
+                          : handleSubmit
                   }
                   className="space-y-4"
                 >
@@ -1796,6 +1902,9 @@ const completeLogin = (data = {}) => {
                   ================================================= */}
 
                   {step !== "reset" &&
+                    step !== "mfa" &&
+                    step !== "mfa-setup" &&
+                    step !== "mfa-recovery" &&
                     mode !== null && (
                       <label className="block">
                         <span
@@ -2165,6 +2274,112 @@ const completeLogin = (data = {}) => {
                     </>
                   )}
 
+
+                  {/* =================================================
+                      AUTHENTICATOR VERIFICATION
+                  ================================================= */}
+
+                  {step === "mfa" && mode === "login" && (
+                    <section className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                          <ShieldCheck size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-slate-900 dark:text-white">Two-step verification</h3>
+                          <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">Open your authenticator app, or use one unused recovery code.</p>
+                        </div>
+                      </div>
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium">Authenticator or recovery code</span>
+                        <input
+                          value={mfaCode}
+                          onChange={(event) => setMfaCode(event.target.value)}
+                          autoComplete="one-time-code"
+                          autoFocus
+                          inputMode="text"
+                          maxLength={32}
+                          placeholder="6-digit code or recovery code"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 font-mono text-lg tracking-[0.12em] outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5"
+                        />
+                      </label>
+                      <button type="submit" disabled={loading} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        {loading ? "Verifying..." : "Verify and sign in"}
+                      </button>
+                      <button type="button" disabled={loading} onClick={() => { setStep("form"); setMfaChallengeToken(""); setMfaCode(""); setMessage(""); setError(""); }} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5">
+                        Cancel sign-in
+                      </button>
+                    </section>
+                  )}
+
+                  {/* =================================================
+                      PRIVILEGED ACCOUNT MFA ENROLLMENT
+                  ================================================= */}
+
+                  {step === "mfa-setup" && mode === "login" && (
+                    <section className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                          <ShieldCheck size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-white">Protect your administrator account</h3>
+                          <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">Scan the QR code with a free authenticator app, then enter its 6-digit code.</p>
+                        </div>
+                      </div>
+                      {mfaSetupData?.qr_code_data_url && (
+                        <div className="flex justify-center rounded-xl bg-white p-3">
+                          <img src={mfaSetupData.qr_code_data_url} alt="Authenticator setup QR code" className="h-44 w-44 max-w-full object-contain" />
+                        </div>
+                      )}
+                      {mfaSetupData?.secret && (
+                        <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-black/20">
+                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Manual setup key</p>
+                          <p className="mt-1 break-all font-mono text-sm font-bold tracking-wider text-slate-900 dark:text-white">{mfaSetupData.secret}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Keep this key private. Anyone who has it can generate your sign-in codes.</p>
+                        </div>
+                      )}
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium">6-digit authenticator code</span>
+                        <input
+                          value={mfaCode}
+                          onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                          autoComplete="one-time-code"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="000000"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-center font-mono text-2xl tracking-[0.35em] outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5"
+                        />
+                      </label>
+                      <button type="submit" disabled={loading} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        {loading ? "Enabling protection..." : "Enable and continue"}
+                      </button>
+                    </section>
+                  )}
+
+                  {/* =================================================
+                      ONE-TIME RECOVERY CODES
+                  ================================================= */}
+
+                  {step === "mfa-recovery" && mode === "login" && (
+                    <section className="space-y-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+                          <KeyRound size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-white">Save your recovery codes</h3>
+                          <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">Each code works once if you lose access to your authenticator. This list is shown only now.</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {mfaRecoveryCodes.map((code) => (
+                          <code key={code} className="rounded-lg border border-amber-200 bg-white px-2 py-2 text-center font-mono text-xs font-semibold tracking-wider text-slate-900 dark:border-amber-900/60 dark:bg-black/20 dark:text-amber-100">{code}</code>
+                        ))}
+                      </div>
+                      <button type="button" onClick={finishMfaEnrollment} className="w-full rounded-xl bg-emerald-600 px-4 py-3.5 font-semibold text-white transition hover:bg-emerald-700">I have saved these codes — return to sign in</button>
+                    </section>
+                  )}
 
                   {/* =================================================
                       RESET PASSWORD
