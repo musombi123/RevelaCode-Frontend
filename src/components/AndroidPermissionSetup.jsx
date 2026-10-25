@@ -130,7 +130,9 @@ export default function AndroidPermissionSetup() {
       }
 
       const latest = await updateStatuses();
-      if (latest && allGranted(latest)) {
+      const requestedItems = PERMISSION_ITEMS.filter((item) => selected[item.key]);
+      const allRequestedGranted = latest && requestedItems.every((item) => isGranted(latest[item.key]));
+      if (allRequestedGranted) {
         try {
           window.localStorage.setItem(STORAGE_KEY, "complete");
         } catch {
