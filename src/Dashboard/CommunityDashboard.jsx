@@ -10,9 +10,12 @@ import React, {
 
 import {
   ArrowRight,
+  Bell,
   CalendarDays,
   Compass,
   ChevronDown,
+  FileText,
+  Image as ImageIcon,
   GraduationCap,
   Home,
   Leaf,
@@ -51,6 +54,7 @@ import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirec
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import CommunityProfileWorkspace from "@/Dashboard/Community/CommunityProfileWorkspace.jsx";
+import CommunityIdentityHero from "@/Dashboard/Community/CommunityIdentityHero.jsx";
 
 // ============================================================
 // TEMPORARY HUB REDIRECTS
@@ -1240,9 +1244,7 @@ export default function CommunityDashboard({
           <div className="sticky top-4 space-y-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
               <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center bg-cyan-500 text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
-                  <Users size={16} />
-                </span>
+                <img src="/Logo.png" alt="RevelaCode" className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 object-contain p-1 dark:border-white/10" />
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-black">Jumuiya</span>
                   <span className="block text-xs text-slate-400">Community</span>
@@ -1277,7 +1279,7 @@ export default function CommunityDashboard({
 
         {/* Main mobile-first surface */}
         <main className="min-w-0">
-          {renderBackMenu()}
+          {workspacePage === "home" ? null : renderBackMenu()}
           {workspacePage === "chats" ? (
             <CommunityMattersWorkspace api={communityApi} currentUserId={user?.id || user?._id || user?.user_id || null} />
           ) : workspacePage === "groups" ? (
@@ -1286,91 +1288,79 @@ export default function CommunityDashboard({
             <CommunityProfileWorkspace onNavigate={navigate} onProfileUpdated={setCommunityProfile} />
           ) : (
             <>
-              <header className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.15em] text-cyan-700 dark:text-cyan-300">
-                    <Sparkles size={13} /> Jumuiya Community
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div role="status" aria-live="polite" className={"inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
-                      <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "animate-pulse bg-emerald-500" : "bg-amber-500")} />
-                      {backendHealth === "checking" ? "Checking Community API" : backendHealth === "online" ? "Community API online" : "Community API unavailable"}
+              
+              <header className="mb-3 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm shadow-slate-950/[0.03] dark:border-white/10 dark:bg-[#0d1729] sm:p-3.5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-2.5">
+                    <img src="/Logo.png" alt="RevelaCode" className="h-9 w-9 rounded-xl border border-slate-200 object-contain p-1 dark:border-white/10 sm:h-10 sm:w-10" />
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">RevelaCode</p>
+                      <p className="text-sm font-black tracking-tight text-slate-950 dark:text-white sm:text-base">Community</p>
                     </div>
-                    <button type="button" onClick={() => navigate("community-advertisement")} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900" aria-label="Create a Community advertisement">
-                      <Megaphone size={14} /> Create an ad
-                    </button>
                   </div>
-                  <div className="relative">
-                    <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
-                      <Menu size={14} /> Menu <ChevronDown size={12} />
+                  <form onSubmit={submitDiscovery} className="order-3 flex min-w-0 w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-950 md:order-none md:ml-2 md:w-auto md:flex-1 md:px-3">
+                    <Search size={16} className="shrink-0 text-slate-400" />
+                    <input type="search" value={discoveryQuery} maxLength={100} onChange={(event) => setDiscoveryQuery(event.target.value)} placeholder="Search people, groups, posts, files or topics…" aria-label="Search Community" className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-slate-400 dark:text-white" />
+                    {discoveryQuery ? <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"><X size={13} /></button> : null}
+                    <button type="submit" className="hidden h-8 shrink-0 items-center gap-1 rounded-lg bg-slate-950 px-2.5 text-[10px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 sm:inline-flex"><Search size={12} /> Search</button>
+                  </form>
+                  <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <div role="status" aria-live="polite" title={backendHealth === "online" ? "Community service is online" : backendHealth === "checking" ? "Checking Community service" : "Community service is unavailable"} className={"hidden 2xl:inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                      <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "bg-emerald-500" : "bg-amber-500")} />
+                      {backendHealth === "checking" ? "Checking" : backendHealth === "online" ? "Online" : "Offline"}
+                    </div>
+                    <button type="button" onClick={() => navigate("community-notifications")} aria-label="Open notifications" title="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 hover:text-cyan-700 dark:border-white/10 dark:text-slate-300 dark:hover:text-cyan-200"><Bell size={16} /></button>
+                    <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-2.5 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-cyan-300 sm:px-3"><Plus size={14} /> <span className="hidden sm:inline">Create post</span><span className="sm:hidden">Post</span></button>
+                    <button type="button" onClick={() => navigate("community-advertisement")} aria-label="Create a Community advertisement" title="Create an ad" className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-amber-400 hover:text-amber-600 dark:border-white/10 dark:text-slate-300 sm:flex"><Megaphone size={15} /></button>
+                    <div className="relative">
+                      <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" aria-label="Open RevelaCode menu" title="RevelaCode menu" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300"><Menu size={16} /></button>
+                      {backMenuOpen ? (
+                        <>
+                          <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
+                          <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
+                            <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
+                            <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5"><ArrowRight size={14} className="rotate-180" /> Back to RevelaCode</button>
+                            <div className="my-1 border-t border-slate-100 dark:border-white/10" />
+                            <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
+                            <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
+                            <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("elimu"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                    <button type="button" onClick={() => navigate("community-me")} aria-label="Open my profile" title="My profile" className="hidden h-9 w-9 overflow-hidden rounded-full border-2 border-cyan-500/50 bg-slate-100 dark:bg-slate-800 sm:block">
+                      {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>}
                     </button>
-                    {backMenuOpen ? (
-                      <>
-                        <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
-                        <div role="menu" className="absolute right-0 top-11 z-[100] w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
-                          <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
-                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
-                            <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
-                          </button>
-                          <div className="my-1 border-t border-slate-100 dark:border-white/10" />
-                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
-                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
-                          <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("elimu"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
-                        </div>
-                      </>
-                    ) : null}
                   </div>
                 </div>
-                <h1 className="mt-5 text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-3xl">What do you need today?</h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">Start with an intention. Find nearby needs and offers, connect through the right Jumuiya hub, and take one useful next step.</p>
               </header>
 
-              <section aria-label="Community actions by category" className="mt-3 grid grid-cols-1 gap-3 sm:mt-4 sm:grid-cols-3">
-                {INTENT_GROUPS.map((group) => {
-                  const groupTiles = group.values
-                    .map((value) => INTENT_TILES.find((tile) => tile.value === value))
-                    .filter(Boolean);
+              <CommunityIdentityHero
+                profile={communityProfile}
+                user={user}
+                onEditProfile={() => navigate("community-me")}
+                onCreatePost={openComposer}
+                onOpenFeed={() => navigate("community-feed")}
+                onOpenGroups={() => navigate("community-circles")}
+              />
 
-                  return (
-                    <section key={group.key} className="min-w-0">
-                      <div className="mb-1.5 px-0.5">
-                        <h2 className="text-xs font-black text-slate-900 dark:text-white sm:text-xs">{group.label}</h2>
-                        <p className="mt-0.5 text-xs leading-4 text-slate-500 dark:text-slate-400">{group.detail}</p>
-                      </div>
-                      <div className={"grid gap-1.5 " + group.layout}>
-                        {groupTiles.map((intentTile) => {
-                          const TileIcon = intentTile.icon;
-                          const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
-                          const compactLayout = group.key === "learning";
-
-                          return (
-                            <button
-                              key={intentTile.value}
-                              type="button"
-                              onClick={() => handleIntentTileClick(intentTile)}
-                              aria-pressed={selected}
-                              className={"group flex min-w-0 items-center gap-2 rounded-xl border bg-white p-2 text-left transition active:scale-[0.99] dark:bg-slate-900 " + (compactLayout ? "min-h-[48px]" : "min-h-[54px] flex-col justify-center") + " " + (selected ? "border-cyan-400 ring-1 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20")}
-                            >
-                              <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white " + (compactLayout ? "" : "mx-auto")}>
-                                <TileIcon size={15} />
-                              </span>
-                              <span className={"min-w-0 text-xs font-extrabold leading-4 text-slate-900 dark:text-white " + (compactLayout ? "flex-1 truncate" : "w-full truncate text-center")}>{intentTile.label}</span>
-                              {compactLayout ? <ArrowRight size={13} className="shrink-0 text-slate-400" /> : null}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  );
-                })}
+              <section aria-label="Create a Community post" className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+                <div className="flex items-center gap-3 p-3.5 sm:p-4">
+                  {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? (
+                    <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-white/10" />
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-700 text-xs font-black text-white">{displayName.slice(0, 2).toUpperCase()}</span>
+                  )}
+                  <button type="button" onClick={openComposer} className="flex min-h-11 min-w-0 flex-1 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-left text-xs font-semibold text-slate-500 transition hover:border-cyan-400 hover:bg-cyan-50/60 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-white/5">Share something useful with your community…</button>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 px-3 py-2.5 dark:border-white/10 sm:gap-2 sm:px-4">
+                  <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ImageIcon size={15} className="text-emerald-600 dark:text-emerald-300" /> Photo / video</button>
+                  <button type="button" onClick={() => navigate("community-circles")} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><FileText size={15} className="text-violet-600 dark:text-violet-300" /> Share PDF to a group</button>
+                  <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={15} className="text-cyan-600 dark:text-cyan-300" /> Start a discussion</button>
+                </div>
               </section>
 
-              <form onSubmit={submitDiscovery} className="mt-4 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 dark:border-white/10 dark:bg-slate-900">
-                <Search size={17} className="ml-2 shrink-0 text-slate-400" />
-                <input type="search" value={discoveryQuery} maxLength={100} onChange={(event) => setDiscoveryQuery(event.target.value)} placeholder="Search needs, offers, skills or places…" className="h-10 min-w-0 flex-1 bg-transparent px-1 text-xs outline-none placeholder:text-slate-400 dark:text-white" />
-                {discoveryQuery ? <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"><X size={14} /></button> : null}
-                <button type="submit" className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-xs font-black text-white hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"><Compass size={14} /> Search</button>
-              </form>
+              
 
               {error ? (
                 <div role="alert" className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-rose-300/30 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:bg-rose-950/20 dark:text-rose-300">
@@ -1384,6 +1374,41 @@ export default function CommunityDashboard({
                 onOpenPost={setSelectedBoardPost}
                 onCreatePost={() => navigate("community-composer")}
               />
+
+              <section aria-label="Latest Community posts" className="mb-5 mt-5">
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">Community stream</p>
+                    <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">Latest from your community</h2>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Real posts and conversations from the connected Community service.</p>
+                  </div>
+                  <button type="button" onClick={() => navigate("community-feed")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">View all <ArrowRight size={12} /></button>
+                </div>
+                {loading ? (
+                  <LoadingState />
+                ) : posts.length ? (
+                  <div className="space-y-3">
+                    {posts.slice(0, 4).map((post, index) => (
+                      <CommunityPostCard
+                        key={getPostId(post) || ("community-post-" + index)}
+                        post={post}
+                        currentUser={user}
+                        onOpen={() => navigate("community-feed")}
+                        onLike={handleLike}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={MessageCircle}
+                    title="Your Community feed is ready"
+                    description="There are no posts in this view yet. Start a conversation or choose another feed view to discover updates."
+                    onAction={openComposer}
+                    actionLabel="Create a post"
+                  />
+                )}
+              </section>
+              <CommunityAdSenseUnit />
 
               <div className="mb-4 flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white/80 px-3 py-3 text-xs dark:border-white/10 dark:bg-slate-900/70">
                 <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">✓</span>
@@ -1472,7 +1497,53 @@ export default function CommunityDashboard({
                   <EmptyState icon={Compass} title="No needs or offers surfaced yet" description={activeSurface === "discovery" ? "The current discovery query returned no matching needs or offers. Try another intent or search term." : "The live Community service has not returned actionable needs or offers for this view. Nothing is fabricated; refresh later or search for a specific intent."} onAction={() => selectIntent("buy")} actionLabel="Explore things to buy" />
                 )}
               </section>
-              <CommunityAdSenseUnit />
+
+              <section className="mt-8 border-t border-slate-200 pt-5 dark:border-white/10" aria-label="Quick explore">
+                <div className="mb-3">
+                  <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">Explore by intention</h2>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Find the right people, knowledge, services and opportunities across Jumuiya.</p>
+                </div>
+                <section aria-label="Community actions by category" className="mt-3 grid grid-cols-1 gap-3 sm:mt-4 sm:grid-cols-3">
+                {INTENT_GROUPS.map((group) => {
+                  const groupTiles = group.values
+                    .map((value) => INTENT_TILES.find((tile) => tile.value === value))
+                    .filter(Boolean);
+
+                  return (
+                    <section key={group.key} className="min-w-0">
+                      <div className="mb-1.5 px-0.5">
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white sm:text-xs">{group.label}</h2>
+                        <p className="mt-0.5 text-xs leading-4 text-slate-500 dark:text-slate-400">{group.detail}</p>
+                      </div>
+                      <div className={"grid gap-1.5 " + group.layout}>
+                        {groupTiles.map((intentTile) => {
+                          const TileIcon = intentTile.icon;
+                          const selected = intentTile.hub === "community" && activeSurface === "discovery" && submittedIntent === intentTile.value;
+                          const compactLayout = group.key === "learning";
+
+                          return (
+                            <button
+                              key={intentTile.value}
+                              type="button"
+                              onClick={() => handleIntentTileClick(intentTile)}
+                              aria-pressed={selected}
+                              className={"group flex min-w-0 items-center gap-2 rounded-xl border bg-white p-2 text-left transition active:scale-[0.99] dark:bg-slate-900 " + (compactLayout ? "min-h-[48px]" : "min-h-[54px] flex-col justify-center") + " " + (selected ? "border-cyan-400 ring-1 ring-cyan-400/20 dark:border-cyan-400" : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20")}
+                            >
+                              <span className={"flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-white " + (compactLayout ? "" : "mx-auto")}>
+                                <TileIcon size={15} />
+                              </span>
+                              <span className={"min-w-0 text-xs font-extrabold leading-4 text-slate-900 dark:text-white " + (compactLayout ? "flex-1 truncate" : "w-full truncate text-center")}>{intentTile.label}</span>
+                              {compactLayout ? <ArrowRight size={13} className="shrink-0 text-slate-400" /> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </section>
+              </section>
+
             </>
           )}
         </main>
