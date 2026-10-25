@@ -1247,125 +1247,102 @@ const completeLogin = (data = {}) => {
       <div
         className="
           fixed inset-0 z-[100]
-          flex items-center justify-center
-          bg-slate-950/75
-          backdrop-blur-md
-          px-4 py-6
+          flex items-end justify-center
+          bg-[#e9f1ee]/95 backdrop-blur-xl
+          dark:bg-[#030907]/95
+          sm:items-center sm:px-4 sm:py-6
         "
       >
+        <div className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 -right-24 h-80 w-80 rounded-full bg-teal-400/20 blur-3xl" />
+
         <div
           className="
-            relative
-            w-full max-w-lg
-            max-h-[92vh]
-            overflow-y-auto
-            rounded-3xl
-            border border-white/10
-            bg-white
-            shadow-2xl
-            dark:bg-slate-950
+            relative flex w-full max-w-[440px] flex-col
+            max-h-[94dvh] overflow-hidden
+            rounded-t-[30px] border border-emerald-500/25
+            bg-white shadow-[0_30px_80px_-24px_rgba(4,60,45,0.4)]
+            dark:bg-[#08110e]
+            sm:max-h-[calc(100dvh-48px)] sm:rounded-[30px]
           "
+          role="dialog"
+          aria-modal="true"
+          aria-label="RevelaCode account access"
         >
-          {/* =================================================
-              CLOSE
-          ================================================= */}
-
-          <button
-            type="button"
-            onClick={resetAll}
+          <header
             className="
-              absolute
-              right-4 top-4
-              z-20
-              rounded-full
-              p-2
-              text-slate-400
-              transition
-              hover:bg-slate-100
-              hover:text-slate-900
-              dark:hover:bg-white/10
-              dark:hover:text-white
-            "
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
-
-
-          {/* =================================================
-              HEADER
-          ================================================= */}
-
-          <div
-            className="
-              border-b
-              border-slate-200
-              bg-gradient-to-br
-              from-slate-950
-              via-slate-900
-              to-emerald-950
-              px-6
-              pb-7
-              pt-8
-              text-white
-              dark:border-white/10
+              relative isolate shrink-0 overflow-hidden
+              border-b border-white/10 bg-[#04130f]
+              px-5 pb-5 pt-5 text-white
+              sm:px-6 sm:pb-6 sm:pt-6
             "
           >
             <div
-              className="
-                mb-4
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                border border-white/10
-                bg-white/10
-                px-3
-                py-1.5
-                text-xs
-                font-medium
-                text-emerald-100
-              "
-            >
-              <Sparkles
-                size={14}
-              />
+              className="pointer-events-none absolute inset-0 opacity-90"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),radial-gradient(ellipse at 90% 0%,rgba(16,185,129,.38),transparent 65%),radial-gradient(ellipse at 0% 100%,rgba(45,212,191,.18),transparent 65%)",
+                backgroundSize: "28px 28px,28px 28px,auto,auto",
+              }}
+            />
+            <div className="relative z-10">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <img
+                    src="/Logo.png"
+                    alt="RevelaCode logo"
+                    className="h-[38px] w-[38px] shrink-0 rounded-xl border border-white/15 bg-white/5 object-contain p-1 shadow-lg shadow-emerald-900/30"
+                  />
+                  <span className="truncate text-[15px] font-bold tracking-tight">RevelaCode</span>
+                </div>
 
-              RevelaCode
-              Ecosystem
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleModalTheme}
+                    aria-label={modalDark ? "Switch to light theme" : "Switch to dark theme"}
+                    title={modalDark ? "Light theme" : "Dark theme"}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
+                  >
+                    {modalDark ? <Sun size={17} /> : <Moon size={17} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAll}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-slate-300 backdrop-blur transition hover:bg-white/[0.14] hover:text-white"
+                    aria-label="Close"
+                    title="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <h2 className="pr-2 text-[clamp(27px,7vw,32px)] font-extrabold leading-[1.12] tracking-[-0.03em]">
+                Your account.<br />
+                <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">Your ecosystem.</span>
+              </h2>
+              <p className="mt-2.5 max-w-[340px] text-[13.5px] leading-6 text-[#a9bdb6]">
+                One secure identity for Bible, study, business, farming, education, marketplace and community.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {["Biashara", "Shamba", "Elimu", "Jumuiya"].map((name) => (
+                  <span key={name} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-emerald-100">
+                    <span className="h-[5px] w-[5px] rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                    {name}
+                  </span>
+                ))}
+              </div>
             </div>
+          </header>
 
-            <h2
-              className="
-                pr-8
-                text-2xl
-                font-bold
-                tracking-tight
-                sm:text-3xl
-              "
-            >
-              Your account.
-              <br />
-              Your ecosystem.
-            </h2>
-
-            <p
-              className="
-                mt-2
-                max-w-md
-                text-sm
-                leading-6
-                text-slate-300
-              "
-            >
-              One RevelaCode identity for
-              Bible, study, business,
-              farming, education,
-              marketplace and community.
-            </p>
-          </div>
-
-
+          <div
+            className="
+              min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain
+              px-5 py-5 pb-[calc(20px+env(safe-area-inset-bottom))]
+              sm:px-6 sm:py-6
+            "
+          >
           {/* =================================================
               CONTENT
           ================================================= */}
