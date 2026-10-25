@@ -453,6 +453,14 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     setShowStartModal(false);
   }, []);
 
+  // Keep the floating AI utility out of the sign-in/onboarding layer.
+  useEffect(() => {
+    if (showStartModal || !user) {
+      setAIWidgetOpen(false);
+      setAIWidgetMinimized(false);
+    }
+  }, [showStartModal, user]);
+
   /* =========================================================
      Direct Hub Links
   ========================================================= */
@@ -780,6 +788,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                   flex
                   w-[min(18rem,88vw)]
                   flex-col
+                  pt-[env(safe-area-inset-top)]
+                  pb-[env(safe-area-inset-bottom)]
                   overflow-hidden
                   border-r
                   border-gray-200
@@ -1207,31 +1217,34 @@ const BIASHARA_SECTION_KEYS = new Set(
                   }
                   className="
                     flex
-                    h-10
-                    w-10
+                    h-11
+                    w-11
                     shrink-0
                     items-center
                     justify-center
                     rounded-xl
                     border
-                    border-gray-200
+                    border-slate-200
                     bg-white
-                    text-gray-700
+                    text-slate-700
                     shadow-sm
                     transition-all
                     duration-200
-                    hover:bg-gray-100
+                    hover:bg-slate-50
                     hover:shadow-md
                     active:scale-95
-                    dark:border-gray-800
-                    dark:bg-gray-900
-                    dark:text-gray-200
-                    dark:hover:bg-gray-800
+                    focus:outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-blue-500
+                    dark:border-slate-800
+                    dark:bg-slate-900
+                    dark:text-slate-200
+                    dark:hover:bg-slate-800
                   "
                   aria-label={
                     sidebarOpen
-                      ? "Close navigation"
-                      : "Open navigation"
+                      ? "Close menu"
+                      : "Open menu"
                   }
                   title={
                     sidebarOpen
@@ -1245,6 +1258,12 @@ const BIASHARA_SECTION_KEYS = new Set(
                     <Menu size={20} />
                   )}
                 </button>
+
+                <img
+                  src="/Logo.png"
+                  alt="RevelaCode"
+                  className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                />
 
                 {/* Dashboard Title */}
 
@@ -1381,6 +1400,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                         setAIFullscreenOpen(
                           true
                         ),
+                      onRequestSignIn: () =>
+                        setShowStartModal(true),
                     }
                   )
                 ) : (
@@ -1510,7 +1531,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           {/* Context-aware floating RevelaAI widget */}
           <AnimatePresence>
-            {aiWidgetOpen && (
+            {aiWidgetOpen && !showStartModal && Boolean(user) && (
               <motion.section
                 key="revela-ai-floating-widget"
                 initial={{ opacity: 0, y: 18, scale: 0.97 }}
@@ -1567,6 +1588,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             )}
           </AnimatePresence>
 
+          {!showStartModal && user && (
           <button
             type="button"
             onClick={openAIWidget}
@@ -1577,6 +1599,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             <RevelaAIIcon size={34} />
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
           </button>
+          )}
         </main>
       </div>
       <OfflineSyncStatus />
