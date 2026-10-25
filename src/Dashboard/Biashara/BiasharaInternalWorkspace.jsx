@@ -419,6 +419,28 @@ export default function BiasharaInternalWorkspace({
         });
         setForm((current) => ({ ...current, name: "", description: "", category: "", price: "", duration_minutes: "0" }));
         setNotice("Service created successfully.");
+      } else if (route === "services") {
+        if (typeof api.createBiasharaService !== "function") throw new Error("The business services API helper is missing.");
+        response = await api.createBiasharaService({
+          name: form.name.trim(),
+          description: form.description.trim(),
+          category: form.category.trim(),
+          service_type: form.service_type,
+          price: Number(form.price),
+          currency,
+          unit: form.unit.trim() || "service",
+          duration_minutes: Number(form.duration_minutes || 0),
+          status: "active",
+        });
+        setForm((current) => ({
+          ...current,
+          name: "",
+          description: "",
+          category: "",
+          price: "",
+          duration_minutes: "0",
+        }));
+        setNotice("Service created successfully.");
       } else if (route === "customers") {
         if (typeof api.getBiasharaCustomers !== "function") throw new Error("The customers API helper is missing from useJumuiyaApi.");
         response = await api.getBiasharaCustomers({ limit: 100, search: query });
