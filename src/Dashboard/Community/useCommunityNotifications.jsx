@@ -58,6 +58,7 @@ export function useCommunityNotifications(refreshInterval = 12000) {
   const {
     getJumuiyaNotifications,
     markJumuiyaNotificationRead,
+    markAllJumuiyaNotificationsRead,
   } = useJumuiyaApi();
 
   const [notifications, setNotifications] = useState([]);
@@ -143,24 +144,32 @@ export function useCommunityNotifications(refreshInterval = 12000) {
       if (unread.length === 0) return true;
 
       try {
+        if (typeof markAllJumuiyaNotificationsRead === "function") {
+          await markAllJumuiyaNotificationsRead();
+          setNotifications((current) => current.map((item) => ({
+            ...item,
+            read: true,
+            is_read: true,
+          })));
+          setError(null);
+          return true;
+        }
+
+        // Compatibility path for older API adapters.
         if (typeof markJumuiyaNotificationRead !== "function") {
           throw new Error("The notification read service is unavailable. Refresh Community and try again.");
         }
-
         const results = await Promise.allSettled(
           unread.map((item) => markJumuiyaNotificationRead(item.id)),
         );
-
         const succeededIds = unread
           .filter((item, index) => results[index].status === "fulfilled")
           .map((item) => String(item.id));
-
         setNotifications((current) => current.map((item) => (
           succeededIds.includes(String(item.id))
             ? { ...item, read: true, is_read: true }
             : item
         )));
-
         const allSucceeded = results.every((result) => result.status === "fulfilled");
         setError(allSucceeded ? null : "Some notifications could not be marked as read. Please retry.");
         return allSucceeded;
@@ -170,7 +179,7 @@ export function useCommunityNotifications(refreshInterval = 12000) {
         return false;
       }
     },
-    [notifications, markJumuiyaNotificationRead],
+    [notifications, markJumuiyaNotificationRead, markAllJumuiyaNotificationsRead],
   );
 
   return {

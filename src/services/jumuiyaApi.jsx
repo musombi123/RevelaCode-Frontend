@@ -654,6 +654,22 @@ export function useJumuiyaApi() {
         ),
 
       // ===================================================
+      // BIASHARA — SERVICES
+      // ===================================================
+
+      getBiasharaServices: ({ status = "", search = "", limit = 100 } = {}) =>
+        getData(withQuery("/biashara/services", { status, search, limit })),
+
+      createBiasharaService: (data) =>
+        postData("/biashara/services", data),
+
+      updateBiasharaService: (serviceId, data) =>
+        putData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, data),
+
+      deleteBiasharaService: (serviceId) =>
+        deleteData(`/biashara/services/${encodeId(serviceId, "Service ID")}`),
+
+      // ===================================================
       // BIASHARA — INVENTORY
       // ===================================================
 
@@ -1383,6 +1399,9 @@ export function useJumuiyaApi() {
         putData(
           `/notifications/${encodeId(notificationId, "Notification ID")}/read`,
         ),
+
+      markAllJumuiyaNotificationsRead: () =>
+        putData("/notifications/read-all"),
 
       // ===================================================
       // COMMUNITY — WHATSAPP PREFERENCES
