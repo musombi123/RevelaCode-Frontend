@@ -787,7 +787,7 @@ export default function CommunityPostCard({
               overflow-hidden
               rounded-full
               bg-gradient-to-br
-              from-emerald-500
+              from-cyan-500
               to-teal-700
               text-xs
               font-black
@@ -846,9 +846,9 @@ export default function CommunityPostCard({
                   text-xs
                   font-black
                   text-slate-900
-                  hover:text-emerald-600
+                  hover:text-cyan-600
                   dark:text-white
-                  dark:hover:text-emerald-400
+                  dark:hover:text-cyan-400
                 "
               >
                 {authorName}
@@ -864,7 +864,7 @@ export default function CommunityPostCard({
                     items-center
                     justify-center
                     rounded-full
-                    bg-emerald-500
+                    bg-cyan-500
                     text-white
                   "
                   title="Verified member"
@@ -1114,16 +1114,16 @@ export default function CommunityPostCard({
         <span
           className="
             rounded-full
-            bg-emerald-50
+            bg-cyan-50
             px-2.5
             py-1
             text-[9px]
             font-black
             uppercase
             tracking-wide
-            text-emerald-700
-            dark:bg-emerald-950/30
-            dark:text-emerald-400
+            text-cyan-700
+            dark:bg-cyan-950/30
+            dark:text-cyan-400
           "
         >
           {category}
@@ -1220,7 +1220,7 @@ export default function CommunityPostCard({
           href={actionUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-2.5 text-xs font-extrabold text-cyan-800 transition hover:bg-cyan-100 dark:border-cyan-900/50 dark:bg-cyan-950/30 dark:text-cyan-300 dark:hover:bg-cyan-950/50"
         >
           {post?.action?.label || "Open resource"}
           <ExternalLink size={13} />
@@ -1287,9 +1287,9 @@ export default function CommunityPostCard({
             gap-1
             text-[10px]
             font-black
-            text-emerald-600
-            hover:text-emerald-700
-            dark:text-emerald-400
+            text-cyan-600
+            hover:text-cyan-700
+            dark:text-cyan-400
           "
         >
           {expanded ? (
@@ -1535,7 +1535,7 @@ export default function CommunityPostCard({
             text-slate-400
             transition
             hover:bg-slate-50
-            hover:text-emerald-500
+            hover:text-cyan-500
             dark:hover:bg-white/5
           "
         >
