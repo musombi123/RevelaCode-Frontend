@@ -137,8 +137,11 @@ function getAuthor(post) {
 
 function getAvatar(post) {
   return (
+    post?.author?.avatar_url ||
+    post?.author?.avatarUrl ||
     post?.author?.avatar ||
     post?.author?.profile_image ||
+    post?.avatar_url ||
     post?.avatar ||
     post?.profile_image ||
     null
@@ -601,10 +604,10 @@ export default function CommunityFeed({
                   items-center
                   justify-center
                   rounded-2xl
-                  bg-emerald-100
-                  text-emerald-700
-                  dark:bg-emerald-950/40
-                  dark:text-emerald-400
+                  bg-cyan-100
+                  text-cyan-700
+                  dark:bg-cyan-950/40
+                  dark:text-cyan-400
                 "
               >
                 <MessageCircle size={21} />
@@ -633,7 +636,7 @@ export default function CommunityFeed({
                   <Sparkles
                     size={15}
                     className="
-                      text-emerald-500
+                      text-cyan-500
                     "
                   />
                 </div>
@@ -675,7 +678,7 @@ export default function CommunityFeed({
                   justify-center
                   gap-2
                   rounded-xl
-                  bg-emerald-600
+                  bg-cyan-600
                   px-4
                   py-3
                   text-sm
@@ -683,7 +686,7 @@ export default function CommunityFeed({
                   text-white
                   shadow-sm
                   transition
-                  hover:bg-emerald-700
+                  hover:bg-cyan-700
                   active:scale-[0.98]
                 "
               >
@@ -759,10 +762,10 @@ export default function CommunityFeed({
                   outline-none
                   transition
                   placeholder:text-slate-400
-                  focus:border-emerald-500
+                  focus:border-cyan-500
                   focus:bg-white
                   focus:ring-4
-                  focus:ring-emerald-500/10
+                  focus:ring-cyan-500/10
                   dark:border-white/10
                   dark:bg-slate-950
                   dark:text-white
@@ -844,7 +847,7 @@ export default function CommunityFeed({
                     items-center
                     justify-center
                     rounded-full
-                    bg-emerald-600
+                    bg-cyan-600
                     px-1.5
                     text-[10px]
                     font-black
@@ -975,7 +978,7 @@ export default function CommunityFeed({
                               transition
                               ${
                                 active
-                                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500/50 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                  ? "border-cyan-500 bg-cyan-50 text-cyan-700 dark:border-cyan-500/50 dark:bg-cyan-950/30 dark:text-cyan-400"
                                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-white/5"
                               }
                             `}
@@ -1036,9 +1039,9 @@ export default function CommunityFeed({
                         font-semibold
                         text-slate-700
                         outline-none
-                        focus:border-emerald-500
+                        focus:border-cyan-500
                         focus:ring-4
-                        focus:ring-emerald-500/10
+                        focus:ring-cyan-500/10
                         dark:border-white/10
                         dark:bg-slate-950
                         dark:text-slate-200
@@ -1094,8 +1097,8 @@ export default function CommunityFeed({
                     font-bold
                     text-slate-400
                     transition
-                    hover:text-emerald-600
-                    dark:hover:text-emerald-400
+                    hover:text-cyan-600
+                    dark:hover:text-cyan-400
                   "
                 >
                   <X size={14} />
@@ -1107,7 +1110,7 @@ export default function CommunityFeed({
         </section>
 
         {notice ? (
-          <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200">{notice}</div>
+          <div role="status" className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs font-bold text-cyan-800 dark:border-cyan-900/50 dark:bg-cyan-950/20 dark:text-cyan-200">{notice}</div>
         ) : null}
         {serverSearchError ? (
           <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/20 dark:text-amber-100">{serverSearchError}</div>
@@ -1153,14 +1156,14 @@ export default function CommunityFeed({
             <div
               className="
                 rounded-full
-                bg-emerald-50
+                bg-cyan-50
                 px-3
                 py-1.5
                 text-[10px]
                 font-bold
-                text-emerald-700
-                dark:bg-emerald-950/30
-                dark:text-emerald-400
+                text-cyan-700
+                dark:bg-cyan-950/30
+                dark:text-cyan-400
               "
             >
               {formatLabel(selectedHub)}
@@ -1363,10 +1366,10 @@ export default function CommunityFeed({
                   items-center
                   justify-center
                   rounded-2xl
-                  bg-emerald-50
-                  text-emerald-600
-                  dark:bg-emerald-950/30
-                  dark:text-emerald-400
+                  bg-cyan-50
+                  text-cyan-600
+                  dark:bg-cyan-950/30
+                  dark:text-cyan-400
                 "
               >
                 <Search size={22} />
@@ -1515,12 +1518,12 @@ export default function CommunityFeed({
                             items-center
                             justify-center
                             rounded-full
-                            bg-emerald-100
+                            bg-cyan-100
                             text-xs
                             font-black
-                            text-emerald-700
-                            dark:bg-emerald-950/40
-                            dark:text-emerald-400
+                            text-cyan-700
+                            dark:bg-cyan-950/40
+                            dark:text-cyan-400
                           "
                         >
                           {getInitials(
@@ -1558,8 +1561,8 @@ export default function CommunityFeed({
                             className="
                               text-[10px]
                               font-bold
-                              text-emerald-600
-                              dark:text-emerald-400
+                              text-cyan-600
+                              dark:text-cyan-400
                             "
                           >
                             {formatLabel(hub)}
@@ -1808,11 +1811,11 @@ export default function CommunityFeed({
                         text-slate-500
                         transition
                         hover:bg-slate-50
-                        hover:text-emerald-600
+                        hover:text-cyan-600
                         dark:border-white/5
                         dark:text-slate-400
                         dark:hover:bg-white/[0.025]
-                        dark:hover:text-emerald-400
+                        dark:hover:text-cyan-400
                       "
                     >
                       <MessageCircle
@@ -1843,10 +1846,10 @@ export default function CommunityFeed({
                         text-slate-500
                         transition
                         hover:bg-slate-50
-                        hover:text-emerald-600
+                        hover:text-cyan-600
                         dark:text-slate-400
                         dark:hover:bg-white/[0.025]
-                        dark:hover:text-emerald-400
+                        dark:hover:text-cyan-400
                       "
                     >
                       <Share2 size={16} />
@@ -1922,8 +1925,8 @@ export default function CommunityFeed({
                   gap-1
                   text-xs
                   font-bold
-                  text-emerald-600
-                  dark:text-emerald-400
+                  text-cyan-600
+                  dark:text-cyan-400
                 "
               >
                 Discover more
@@ -1960,12 +1963,12 @@ export default function CommunityFeed({
               items-center
               justify-center
               rounded-full
-              bg-emerald-100
+              bg-cyan-100
               text-xs
               font-black
-              text-emerald-700
-              dark:bg-emerald-950/40
-              dark:text-emerald-400
+              text-cyan-700
+              dark:bg-cyan-950/40
+              dark:text-cyan-400
             "
           >
             {initials}
