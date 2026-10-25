@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
+import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 
 // ============================================================
 // CONFIG
@@ -1860,6 +1861,9 @@ export default function CommunityFeed({
             })
           )}
         </section>
+
+        {/* In-feed AdSense placement; the unit renders only with a real configured slot. */}
+        <CommunityAdSenseUnit />
 
         {/* ====================================================
             END OF FEED
