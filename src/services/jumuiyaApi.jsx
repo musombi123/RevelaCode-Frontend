@@ -1289,6 +1289,17 @@ export function useJumuiyaApi() {
           `/community/groups/${encodeId(groupId, "Group ID")}`,
         ),
 
+      getCommunityGroupFiles: (groupId, { limit = 50 } = {}) =>
+        getData(
+          withQuery(`/community/groups/${encodeId(groupId, "Group ID")}/files`, { limit }),
+        ),
+
+      shareCommunityGroupFile: (groupId, data) =>
+        postData(
+          `/community/groups/${encodeId(groupId, "Group ID")}/files`,
+          data,
+        ),
+
       createCommunityGroup: (data) =>
         postData("/community/groups", data),
 
