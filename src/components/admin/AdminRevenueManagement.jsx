@@ -44,6 +44,20 @@ const CHECKOUT_HUBS = new Set([
   "faith",
 ]);
 
+const MPESA_READINESS_CHECKS = [
+  ["production_environment", "MPESA_ENV is production"],
+  ["mpesa_provider_enabled", "REVENUE_PAYMENT_PROVIDERS includes mpesa"],
+  ["consumer_key_present", "Daraja consumer key is present"],
+  ["consumer_secret_present", "Daraja consumer secret is present"],
+  ["shortcode_numeric", "Live shortcode is numeric"],
+  ["passkey_present", "Daraja STK passkey is present"],
+  ["callback_https", "Callback uses HTTPS"],
+  ["callback_host_present", "Callback has a hostname"],
+  ["callback_path_matches", "Callback path matches the backend route"],
+  ["callback_has_no_credentials", "Callback URL has no embedded credentials"],
+  ["callback_has_no_query_or_fragment", "Callback URL has no query string or fragment"],
+];
+
 function getPlanActivation(plan, billingEnabled, billingKnown) {
   const status = String(plan?.status || "proposed").toLowerCase();
   const hub = String(plan?.hub || "").toLowerCase();
@@ -247,6 +261,8 @@ export default function AdminRevenueManagement() {
     pricing_status: null,
     billing_enabled: null,
     checkout_enabled: null,
+    mpesa_readiness: null,
+    blocking_reasons: [],
   });
   const [plansError, setPlansError] = useState("");
   const [plansLoading, setPlansLoading] = useState(true);
@@ -283,17 +299,38 @@ export default function AdminRevenueManagement() {
     setPlansLoading(true);
     setPlansError("");
     try {
-      const response = await adminApi.request("/api/revenue/admin/plans", { signal });
+      const [response, billingStatus] = await Promise.all([
+        adminApi.request("/api/revenue/admin/plans", { signal }),
+        adminApi.request("/api/revenue/admin/billing/status", { signal }).catch((error) => {
+          if (error?.name === "AbortError") throw error;
+          return null;
+        }),
+      ]);
+      const checkoutEnabled = typeof billingStatus?.checkout_enabled === "boolean"
+        ? billingStatus.checkout_enabled
+        : typeof response?.checkout_enabled === "boolean" ? response.checkout_enabled : null;
       setPlans(Array.isArray(response?.plans) ? response.plans : []);
       setCatalogueMeta({
         pricing_status: response?.pricing_status ?? null,
-        billing_enabled: typeof response?.billing_enabled === "boolean" ? response.billing_enabled : null,
-        checkout_enabled: typeof response?.checkout_enabled === "boolean" ? response.checkout_enabled : null,
+        billing_enabled: typeof billingStatus?.billing_enabled === "boolean"
+          ? billingStatus.billing_enabled
+          : typeof response?.billing_enabled === "boolean" ? response.billing_enabled : null,
+        checkout_enabled: checkoutEnabled,
+        mpesa_readiness: billingStatus?.mpesa_readiness ?? null,
+        blocking_reasons: Array.isArray(billingStatus?.blocking_reasons)
+          ? billingStatus.blocking_reasons
+          : [],
       });
     } catch (error) {
       if (error?.name !== "AbortError") {
         setPlans([]);
-        setCatalogueMeta({ pricing_status: null, billing_enabled: null, checkout_enabled: null });
+        setCatalogueMeta({
+          pricing_status: null,
+          billing_enabled: null,
+          checkout_enabled: null,
+          mpesa_readiness: null,
+          blocking_reasons: [],
+        });
         setPlansError(getError(error));
       }
     } finally {
@@ -649,6 +686,43 @@ export default function AdminRevenueManagement() {
                 <p className="mt-2 break-all rounded-lg border border-amber-300/70 bg-white/60 px-3 py-2 font-mono text-[11px] dark:border-amber-800/50 dark:bg-black/20">
                   https://revelacode-backend.onrender.com/api/revenue/providers/mpesa/callback
                 </p>
+                {catalogueMeta.mpesa_readiness?.checks ? (
+                  <div className="mt-4 rounded-xl border border-amber-300/70 bg-white/60 p-3 dark:border-amber-800/50 dark:bg-black/20">
+                    <h4 className="text-xs font-extrabold">Live configuration checks</h4>
+                    <p className="mt-1 text-[11px] leading-5 text-amber-900/80 dark:text-amber-100/80">
+                      These checks show which backend settings are present, without exposing any credential values. They do not make a test charge or prove the callback is reachable.
+                    </p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {MPESA_READINESS_CHECKS.map(([key, text]) => {
+                        const passed = catalogueMeta.mpesa_readiness.checks[key] === true;
+                        return (
+                          <div
+                            key={key}
+                            className={passed
+                              ? "flex min-w-0 items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 text-[11px] leading-4 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-200"
+                              : "flex min-w-0 items-start gap-2 rounded-lg border border-rose-200 bg-rose-50/80 px-2.5 py-2 text-[11px] leading-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200"}
+                          >
+                            {passed ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                            <span>{text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {catalogueMeta.blocking_reasons.length > 0 ? (
+                      <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-200">
+                        <p className="font-extrabold">What is blocking checkout?</p>
+                        <ul className="mt-1 list-disc space-y-1 pl-4">
+                          {catalogueMeta.blocking_reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs leading-5 text-amber-900/80 dark:text-amber-100/80">
+                    Detailed checks are unavailable from this backend version. Confirm the backend deployment includes the latest Revenue Engine diagnostics.
+                  </p>
+                )}
+
                 <p className="mt-2 text-xs leading-5">
                   Keep credentials in the backend host's private environment settings; never paste secrets into the dashboard or source code.
                 </p>
