@@ -1355,6 +1355,7 @@ export default function UserAccountDashboard({
           <details className="relative h-14 min-w-0">
             <summary
               aria-label="More account options"
+              aria-current={moreIsActive ? "page" : undefined}
               className={moreIsActive
                 ? "relative flex h-14 min-w-0 cursor-pointer list-none touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-emerald-700 outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:text-emerald-300 motion-reduce:transition-none [&::-webkit-details-marker]:hidden"
                 : "relative flex h-14 min-w-0 cursor-pointer list-none touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-slate-500 outline-none transition duration-150 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 dark:text-slate-400 dark:hover:text-slate-100 motion-reduce:transition-none [&::-webkit-details-marker]:hidden"}
