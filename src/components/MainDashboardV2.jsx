@@ -453,6 +453,14 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     setShowStartModal(false);
   }, []);
 
+  // Keep the floating AI utility out of the sign-in/onboarding layer.
+  useEffect(() => {
+    if (showStartModal || !user) {
+      setAIWidgetOpen(false);
+      setAIWidgetMinimized(false);
+    }
+  }, [showStartModal, user]);
+
   /* =========================================================
      Direct Hub Links
   ========================================================= */
@@ -708,9 +716,9 @@ const BIASHARA_SECTION_KEYS = new Set(
           min-h-0
           min-w-0
           overflow-hidden
-          bg-gray-100
+          bg-slate-50
           transition-colors
-          dark:bg-gray-950
+          dark:bg-slate-950
         "
       >
         {/* ===================================================
@@ -780,14 +788,16 @@ const BIASHARA_SECTION_KEYS = new Set(
                   flex
                   w-[min(18rem,88vw)]
                   flex-col
+                  pt-[env(safe-area-inset-top)]
+                  pb-[env(safe-area-inset-bottom)]
                   overflow-hidden
                   border-r
-                  border-gray-200
+                  border-slate-200
                   bg-white
-                  text-gray-900
+                  text-slate-900
                   shadow-2xl
-                  dark:border-gray-800
-                  dark:bg-gray-950
+                  dark:border-slate-800
+                  dark:bg-slate-950
                   dark:text-white
                   lg:relative
                   lg:z-30
@@ -805,9 +815,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                     items-center
                     justify-between
                     border-b
-                    border-gray-200
+                    border-slate-200
                     px-4
-                    dark:border-gray-800
+                    dark:border-slate-800
                   "
                 >
                   <div
@@ -855,8 +865,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                         className="
                           truncate
                           text-[11px]
-                          text-gray-500
-                          dark:text-gray-400
+                          text-slate-500
+                          dark:text-slate-400
                         "
                       >
                         AI-Powered Technology Ecosystem
@@ -872,12 +882,12 @@ const BIASHARA_SECTION_KEYS = new Set(
                     className="
                       rounded-xl
                       p-2
-                      text-gray-500
+                      text-slate-500
                       transition
-                      hover:bg-gray-100
-                      hover:text-gray-900
-                      dark:text-gray-400
-                      dark:hover:bg-gray-800
+                      hover:bg-slate-100
+                      hover:text-slate-900
+                      dark:text-slate-400
+                      dark:hover:bg-slate-800
                       dark:hover:text-white
                       lg:hidden
                     "
@@ -907,7 +917,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                         font-bold
                         uppercase
                         tracking-[0.16em]
-                        text-gray-400
+                        text-slate-400
                       "
                     >
                       Workspace
@@ -917,7 +927,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   <div className="space-y-3">
                     {navigationGroups.map((group) => (
                       <section key={group.key} className="space-y-1.5">
-                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-gray-400">
+                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
                           {group.label}
                         </p>
                         <div className="space-y-0.5">
@@ -931,8 +941,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                                 aria-current={active ? "page" : undefined}
                                 className={`group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-semibold transition-colors sm:gap-3 sm:px-3 sm:py-2.5 sm:text-sm ${
                                   active
-                                    ? "bg-gray-100 text-gray-950 shadow-sm dark:bg-gray-900 dark:text-white"
-                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900/70 dark:hover:text-white"
+                                    ? "bg-slate-100 text-slate-950 shadow-sm dark:bg-slate-900 dark:text-white"
+                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900/70 dark:hover:text-white"
                                 }`}
                               >
                                 {active ? (
@@ -941,12 +951,12 @@ const BIASHARA_SECTION_KEYS = new Set(
                                 <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition sm:h-9 sm:w-9 ${
                                   active
                                     ? `bg-gradient-to-br ${color || "from-indigo-500 to-purple-500"} text-white shadow-sm`
-                                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:group-hover:bg-gray-800"
+                                    : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:group-hover:bg-slate-800"
                                 }`}>
                                   {Icon ? <Icon size={16} /> : <span className="text-xs">•</span>}
                                 </span>
                                 <span className="min-w-0 flex-1 truncate">{label}</span>
-                                {active ? <span className="text-[10px] text-gray-400" aria-hidden="true">●</span> : null}
+                                {active ? <span className="text-[10px] text-slate-400" aria-hidden="true">●</span> : null}
                               </button>
                             );
                           })}
@@ -955,11 +965,11 @@ const BIASHARA_SECTION_KEYS = new Set(
                     ))}
                     {additionalDashboards.length ? (
                       <section className="space-y-1.5">
-                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-gray-400">More</p>
+                        <p className="px-2 text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-400">More</p>
                         <div className="space-y-0.5">
                           {additionalDashboards.map(({ key, label, icon: Icon }) => (
-                            <button key={key} type="button" onClick={() => handleNavigate(key)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-semibold text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900/70">
-                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-400">{Icon ? <Icon size={16} /> : null}</span>
+                            <button key={key} type="button" onClick={() => handleNavigate(key)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-900/70">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400">{Icon ? <Icon size={16} /> : null}</span>
                               <span className="truncate">{label}</span>
                             </button>
                           ))}
@@ -977,9 +987,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                   className="
                     shrink-0
                     border-t
-                    border-gray-200
+                    border-slate-200
                     p-3
-                    dark:border-gray-800
+                    dark:border-slate-800
                   "
                 >
                   {/* User */}
@@ -988,9 +998,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                     className="
                       mb-3
                       rounded-xl
-                      bg-gray-50
+                      bg-slate-50
                       p-3
-                      dark:bg-gray-900
+                      dark:bg-slate-900
                     "
                   >
                     <div className="flex items-center gap-3">
@@ -1004,14 +1014,14 @@ const BIASHARA_SECTION_KEYS = new Set(
                           justify-center
                           rounded-full
                           bg-gradient-to-br
-                          from-gray-700
-                          to-gray-900
+                          from-slate-700
+                          to-slate-900
                           text-xs
                           font-bold
                           text-white
-                          dark:from-gray-200
+                          dark:from-slate-200
                           dark:to-white
-                          dark:text-gray-900
+                          dark:text-slate-900
                         "
                       >
                         {(
@@ -1046,8 +1056,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                           className="
                             truncate
                             text-[11px]
-                            text-gray-500
-                            dark:text-gray-400
+                            text-slate-500
+                            dark:text-slate-400
                           "
                         >
                           {isGuest
@@ -1080,17 +1090,17 @@ const BIASHARA_SECTION_KEYS = new Set(
                         gap-2
                         rounded-xl
                         border
-                        border-gray-200
+                        border-slate-200
                         px-3
                         py-2.5
                         text-xs
                         font-semibold
-                        text-gray-700
+                        text-slate-700
                         transition
-                        hover:bg-gray-100
-                        dark:border-gray-800
-                        dark:text-gray-300
-                        dark:hover:bg-gray-900
+                        hover:bg-slate-100
+                        dark:border-slate-800
+                        dark:text-slate-300
+                        dark:hover:bg-slate-900
                       "
                       aria-label="Toggle theme"
                     >
@@ -1168,10 +1178,10 @@ const BIASHARA_SECTION_KEYS = new Set(
               z-40
               shrink-0
               border-b
-              border-gray-200
+              border-slate-200
               bg-white
-              dark:border-gray-800
-              dark:bg-gray-950
+              dark:border-slate-800
+              dark:bg-slate-950
             "
           >
             <div
@@ -1207,31 +1217,34 @@ const BIASHARA_SECTION_KEYS = new Set(
                   }
                   className="
                     flex
-                    h-10
-                    w-10
+                    h-11
+                    w-11
                     shrink-0
                     items-center
                     justify-center
                     rounded-xl
                     border
-                    border-gray-200
+                    border-slate-200
                     bg-white
-                    text-gray-700
+                    text-slate-700
                     shadow-sm
                     transition-all
                     duration-200
-                    hover:bg-gray-100
+                    hover:bg-slate-50
                     hover:shadow-md
                     active:scale-95
-                    dark:border-gray-800
-                    dark:bg-gray-900
-                    dark:text-gray-200
-                    dark:hover:bg-gray-800
+                    focus:outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-blue-500
+                    dark:border-slate-800
+                    dark:bg-slate-900
+                    dark:text-slate-200
+                    dark:hover:bg-slate-800
                   "
                   aria-label={
                     sidebarOpen
-                      ? "Close navigation"
-                      : "Open navigation"
+                      ? "Close menu"
+                      : "Open menu"
                   }
                   title={
                     sidebarOpen
@@ -1246,6 +1259,12 @@ const BIASHARA_SECTION_KEYS = new Set(
                   )}
                 </button>
 
+                <img
+                  src="/Logo.png"
+                  alt="RevelaCode"
+                  className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                />
+
                 {/* Dashboard Title */}
 
                 <div className="min-w-0">
@@ -1254,7 +1273,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                       truncate
                       text-sm
                       font-bold
-                      text-gray-900
+                      text-slate-900
                       dark:text-white
                       sm:text-base
                       lg:text-lg
@@ -1291,12 +1310,12 @@ const BIASHARA_SECTION_KEYS = new Set(
                     justify-center
                     rounded-xl
                     border
-                    border-gray-200
+                    border-slate-200
                     bg-white
                     px-1
                     shadow-sm
-                    dark:border-gray-800
-                    dark:bg-gray-900
+                    dark:border-slate-800
+                    dark:bg-slate-900
                   "
                 >
                   <AvatarMenu user={user} />
@@ -1355,11 +1374,11 @@ const BIASHARA_SECTION_KEYS = new Set(
               flex-1
               overflow-y-auto
               overscroll-contain
-              bg-gray-100
+              bg-slate-100
               px-3
               pt-3
               pb-24
-              dark:bg-gray-950
+              dark:bg-slate-950
               sm:px-4
               sm:py-4
               lg:px-6
@@ -1381,6 +1400,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                         setAIFullscreenOpen(
                           true
                         ),
+                      onRequestSignIn: () =>
+                        setShowStartModal(true),
                     }
                   )
                 ) : (
@@ -1510,7 +1531,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           {/* Context-aware floating RevelaAI widget */}
           <AnimatePresence>
-            {aiWidgetOpen && (
+            {aiWidgetOpen && !showStartModal && Boolean(user) && (
               <motion.section
                 key="revela-ai-floating-widget"
                 initial={{ opacity: 0, y: 18, scale: 0.97 }}
@@ -1567,6 +1588,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             )}
           </AnimatePresence>
 
+          {!showStartModal && user && (
           <button
             type="button"
             onClick={openAIWidget}
@@ -1577,6 +1599,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             <RevelaAIIcon size={34} />
             <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
           </button>
+          )}
         </main>
       </div>
       <OfflineSyncStatus />
