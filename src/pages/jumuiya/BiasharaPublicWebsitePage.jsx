@@ -14,6 +14,7 @@ import {
   Phone,
   Play,
   Sparkles,
+  X,
 } from "lucide-react";
 import { API_ROOT, BASE_URL } from "@/services/jumuiyaApi.jsx";
 import About from "./BiasharaSite/About.jsx";
@@ -103,6 +104,9 @@ export default function BiasharaPublicWebsitePage() {
   const [productIndex, setProductIndex] = useState(0);
   const [minutePulse, setMinutePulse] = useState(0);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", website: "" });
+  const [cart, setCart] = useState([]);
+  const [checkoutForm, setCheckoutForm] = useState({ name: "", email: "", phone: "", notes: "", website: "" });
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -165,11 +169,29 @@ export default function BiasharaPublicWebsitePage() {
   const business = site?.business || {};
   const website = site?.website || {};
   const products = useMemo(() => Array.isArray(site?.products) ? site.products : [], [site?.products]);
-  const serviceItems = useMemo(() => (
+  const cartLines = useMemo(() => cart.map((entry) => {
+    const product = products.find((item) => String(item.id || item._id || "") === String(entry.product_id));
+    return product ? { ...product, quantity: entry.quantity } : null;
+  }).filter(Boolean), [cart, products]);
+  const cartTotal = useMemo(() => cartLines.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0), [cartLines]);
+  const catalogueServices = useMemo(() => (
+    website.show_services === false || !Array.isArray(site?.services)
+      ? []
+      : site.services.filter((item) => item && String(item.name || "").trim()).map((item) => ({
+          ...item,
+          title: item.name,
+          price_label: Number.isFinite(Number(item.price))
+            ? formatPrice(item.price, item.currency || business.currency) + (item.unit ? " / " + item.unit : "")
+            : "",
+          is_catalogue_service: true,
+        }))
+  ), [website.show_services, site?.services, business.currency]);
+  const configuredServiceItems = useMemo(() => (
     website.show_services === false || !Array.isArray(website.service_items)
       ? []
       : website.service_items.filter((item) => item && String(item.title || "").trim())
   ), [website.show_services, website.service_items]);
+  const serviceItems = useMemo(() => [...configuredServiceItems, ...catalogueServices], [configuredServiceItems, catalogueServices]);
   const galleryItems = useMemo(() => (
     website.show_gallery === false || !Array.isArray(website.gallery_items)
       ? []
@@ -266,6 +288,96 @@ export default function BiasharaPublicWebsitePage() {
       setError(err?.message || "Unable to send your inquiry.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const updateCheckoutField = (key, value) => {
+    setCheckoutForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const addToCart = (product) => {
+    const productId = String(product?.id || product?._id || "").trim();
+    if (!productId) {
+      setError("This product cannot be ordered because its catalogue ID is missing.");
+      return;
+    }
+    const remaining = Number(product?.stock_quantity ?? (product?.available === false ? 0 : Number.POSITIVE_INFINITY));
+    if (!Number.isFinite(remaining) || remaining <= 0) {
+      setError("This product is currently out of stock.");
+      return;
+    }
+    setError("");
+    setNotice("");
+    setCart((current) => {
+      const existing = current.find((item) => String(item.product_id) === productId);
+      if (existing) {
+        return current.map((item) => String(item.product_id) === productId
+          ? { ...item, quantity: Math.min(remaining, item.quantity + 1) }
+          : item);
+      }
+      return [...current, { product_id: productId, quantity: 1 }];
+    });
+  };
+
+  const updateCartQuantity = (productId, value) => {
+    const product = products.find((item) => String(item.id || item._id || "") === String(productId));
+    const remaining = Number(product?.stock_quantity ?? Number.POSITIVE_INFINITY);
+    const requested = Math.floor(Number(value));
+    if (!Number.isFinite(requested) || requested < 1) {
+      setCart((current) => current.filter((item) => String(item.product_id) !== String(productId)));
+      return;
+    }
+    const quantity = Number.isFinite(remaining) ? Math.min(requested, remaining) : requested;
+    setCart((current) => current.map((item) => String(item.product_id) === String(productId)
+      ? { ...item, quantity: Math.max(1, quantity) }
+      : item));
+  };
+
+  const submitOrder = async (event) => {
+    event.preventDefault();
+    if (!cartLines.length) {
+      setError("Add at least one available product before placing your order.");
+      return;
+    }
+    setPlacingOrder(true);
+    setNotice("");
+    setError("");
+    try {
+      const response = await fetch(API_ROOT + "/biashara/public/" + encodeURIComponent(businessSlug || "") + "/orders", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...checkoutForm,
+          items: cartLines.map((item) => ({
+            product_id: String(item.id || item._id),
+            quantity: item.quantity,
+          })),
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error?.message || payload?.message || payload?.error || "Unable to place this order.");
+      }
+      const result = payload?.data?.order || payload?.order || payload?.data || payload;
+      const reference = result?.order_number || result?.id || "received";
+      const quantities = new Map(cartLines.map((item) => [String(item.id || item._id), item.quantity]));
+      setSite((current) => current ? {
+        ...current,
+        products: (current.products || []).map((item) => {
+          const key = String(item.id || item._id || "");
+          if (!quantities.has(key)) return item;
+          const remaining = Math.max(0, Number(item.stock_quantity || 0) - quantities.get(key));
+          return { ...item, stock_quantity: remaining, available: remaining > 0 };
+        }),
+      } : current);
+      setCart([]);
+      setCheckoutForm({ name: "", email: "", phone: "", notes: "", website: "" });
+      setNotice("Order received successfully. Reference: " + reference + ". The business has been notified and stock has been reserved.");
+      document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (err) {
+      setError(err?.message || "Unable to place this order. Please check stock and try again.");
+    } finally {
+      setPlacingOrder(false);
     }
   };
 
@@ -412,12 +524,60 @@ export default function BiasharaPublicWebsitePage() {
                           <h3 className="mt-2 break-words text-lg font-semibold tracking-tight text-slate-950">{product.name || "Product"}</h3>
                           <p className="mt-3 text-xl font-bold tracking-tight" style={{ color: readableBrandText(primary) }}>{formatPrice(product.price, product.currency || business.currency)}</p>
                           {product.description ? <p className="mt-3 line-clamp-3 break-words text-sm leading-6 text-slate-600">{product.description}</p> : <p className="mt-3 text-sm leading-6 text-slate-500">Contact the business for more details about this item.</p>}
-                          <a href="#contact" onClick={() => askAbout(product.name || "this product", "the product")} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>Ask about product <ArrowUpRight size={15} /></a>
+                          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                            <button type="button" disabled={product.available === false || Number(product.stock_quantity ?? 0) <= 0} onClick={() => addToCart(product)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}><Package size={15} /> Add to order</button>
+                            <a href="#contact" onClick={() => askAbout(product.name || "this product", "the product")} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">Ask a question <ArrowUpRight size={15} /></a>
+                          </div>
+                          {Number.isFinite(Number(product.stock_quantity)) ? <p className="mt-2 text-xs font-semibold text-slate-500">{Number(product.stock_quantity)} remaining</p> : null}
                         </div>
                       </article>
                     );
                   })}
                 </div>
+                {cartLines.length ? (
+                  <section aria-label="Customer checkout" className="mt-8 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50 shadow-sm">
+                    <div className="grid gap-0 lg:grid-cols-[.85fr_1.15fr]">
+                      <div className="bg-slate-950 p-5 text-white sm:p-7">
+                        <p className="text-[11px] font-bold uppercase tracking-[.18em] text-cyan-300">Your order</p>
+                        <h3 className="mt-2 text-2xl font-semibold tracking-tight">Review before you place it.</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">Your order is sent to this business. Inventory is reserved only after the system accepts your order.</p>
+                        <div className="mt-5 space-y-3">
+                          {cartLines.map((item) => (
+                            <div key={item.id || item._id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="break-words text-sm font-semibold">{item.name}</p>
+                                <p className="mt-1 text-xs text-slate-300">{formatPrice(item.price, item.currency || business.currency)} each</p>
+                              </div>
+                              <label className="block w-20 shrink-0">
+                                <span className="sr-only">Quantity for {item.name}</span>
+                                <input aria-label={"Quantity for " + item.name} type="number" min="1" max={Number.isFinite(Number(item.stock_quantity)) ? item.stock_quantity : undefined} value={item.quantity} onChange={(event) => updateCartQuantity(item.id || item._id, event.target.value)} className="min-h-10 w-full rounded-lg border border-white/20 bg-slate-900 px-2 text-center text-sm font-bold text-white outline-none focus:border-cyan-300" />
+                              </label>
+                              <button type="button" onClick={() => setCart((current) => current.filter((line) => String(line.product_id) !== String(item.id || item._id)))} aria-label={"Remove " + item.name + " from order"} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"><X size={16} /></button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-5 flex items-center justify-between border-t border-white/15 pt-4">
+                          <span className="text-sm font-semibold text-slate-300">Estimated total</span>
+                          <strong className="text-xl font-bold">{formatPrice(cartTotal, business.currency || "KES")}</strong>
+                        </div>
+                      </div>
+                      <form onSubmit={submitOrder} className="space-y-4 p-5 sm:p-7">
+                        <h4 className="text-lg font-semibold text-slate-900">Customer details</h4>
+                        <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                          <label>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" value={checkoutForm.website} onChange={(event) => updateCheckoutField("website", event.target.value)} /></label>
+                        </div>
+                        <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Full name *</span><input required maxLength={160} autoComplete="name" value={checkoutForm.name} onChange={(event) => updateCheckoutField("name", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Email</span><input type="email" maxLength={254} autoComplete="email" value={checkoutForm.email} onChange={(event) => updateCheckoutField("email", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Phone</span><input type="tel" maxLength={40} autoComplete="tel" value={checkoutForm.phone} onChange={(event) => updateCheckoutField("phone", event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                        </div>
+                        <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-700">Order notes (optional)</span><textarea rows={3} maxLength={1000} value={checkoutForm.notes} onChange={(event) => updateCheckoutField("notes", event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-500/10" /></label>
+                        <p className="text-xs leading-5 text-slate-500">No payment is taken here. The business will receive your order and contact details.</p>
+                        <button type="submit" disabled={placingOrder || !cartLines.length} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ backgroundColor: primary, color: contrastColor(primary) }}>{placingOrder ? "Placing order…" : "Place order"}{placingOrder ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpRight size={16} />}</button>
+                      </form>
+                    </div>
+                  </section>
+                ) : null}
                 {products.length > 3 ? (
                   <div className="mt-6 flex items-center justify-center gap-3">
                     <button type="button" aria-label="Previous products" onClick={() => setProductIndex((index) => (index - 1 + products.length) % products.length)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2" style={{ "--tw-ring-color": primary }}><ChevronLeft size={18} /></button>
