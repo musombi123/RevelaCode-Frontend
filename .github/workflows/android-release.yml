@@ -49,6 +49,7 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+          node scripts/configure-android-permissions.mjs
 
       - name: Set Android release version
         env:
