@@ -190,6 +190,28 @@ function normalizeTransactions(value) {
     }));
 }
 
+function normalizeCheckouts(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => ({
+      ...item,
+      id: String(item.id ?? ""),
+      user_id: String(item.user_id ?? ""),
+      hub: String(item.hub ?? "unknown"),
+      plan_code: String(item.plan_code ?? ""),
+      amount: item.amount ?? "0.00",
+      currency: String(item.currency ?? "KES"),
+      status: String(item.status ?? "unknown").toLowerCase(),
+      checkout_request_id: String(item.checkout_request_id ?? ""),
+      merchant_request_id: String(item.merchant_request_id ?? ""),
+      receipt: String(item.receipt ?? ""),
+      message: String(item.message ?? ""),
+      created_at: item.created_at ?? null,
+      updated_at: item.updated_at ?? null,
+    }));
+}
+
 function normalizePagination(value, fallbackPage = 1) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { page: fallbackPage, per_page: 25, total: 0, pages: 0 };
@@ -341,6 +363,14 @@ export default function AdminRevenueManagement() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, per_page: 25, total: 0, pages: 0 });
+  const [checkouts, setCheckouts] = useState([]);
+  const [checkoutPagination, setCheckoutPagination] = useState({ page: 1, per_page: 25, total: 0, pages: 0 });
+  const [checkoutPage, setCheckoutPage] = useState(1);
+  const [checkoutStatus, setCheckoutStatus] = useState("all");
+  const [checkoutSearch, setCheckoutSearch] = useState("");
+  const [checkoutsLoading, setCheckoutsLoading] = useState(true);
+  const [checkoutsError, setCheckoutsError] = useState("");
+  const [refreshingCheckout, setRefreshingCheckout] = useState("");
   const [stream, setStream] = useState("all");
   const [status, setStatus] = useState("all");
   const [searchInput, setSearchInput] = useState("");
@@ -411,6 +441,31 @@ export default function AdminRevenueManagement() {
     }
   }, [adminApi]);
 
+  const loadCheckouts = useCallback(async (signal) => {
+    setCheckoutsLoading(true);
+    setCheckoutsError("");
+    try {
+      const response = await adminApi.request("/api/revenue/admin/checkouts", {
+        params: {
+          page: checkoutPage,
+          per_page: 25,
+          status: checkoutStatus === "all" ? undefined : checkoutStatus,
+        },
+        signal,
+      });
+      setCheckouts(normalizeCheckouts(response?.items));
+      setCheckoutPagination(normalizePagination(response?.pagination, checkoutPage));
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setCheckouts([]);
+        setCheckoutPagination({ page: checkoutPage, per_page: 25, total: 0, pages: 0 });
+        setCheckoutsError(getError(error));
+      }
+    } finally {
+      if (!signal?.aborted) setCheckoutsLoading(false);
+    }
+  }, [adminApi, checkoutPage, checkoutStatus]);
+
   const loadTransactions = useCallback(async (signal) => {
     setTransactionsLoading(true);
     setTransactionsError("");
@@ -449,6 +504,43 @@ export default function AdminRevenueManagement() {
     loadTransactions(controller.signal);
     return () => controller.abort();
   }, [loadTransactions, reloadKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadCheckouts(controller.signal);
+    return () => controller.abort();
+  }, [loadCheckouts, reloadKey]);
+
+  const reconcileCheckout = async (checkout) => {
+    if (!checkout?.checkout_request_id || refreshingCheckout) return;
+    setRefreshingCheckout(checkout.id || checkout.checkout_request_id);
+    setNotice("");
+    setActionError("");
+    try {
+      const response = await adminApi.request(
+        "/api/revenue/admin/checkouts/" + encodeURIComponent(checkout.checkout_request_id) + "/refresh",
+        { method: "POST", body: {} },
+      );
+      const updated = normalizeCheckouts(response?.checkout ? [response.checkout] : [])[0];
+      if (updated) {
+        setCheckouts((current) => current.map((item) =>
+          item.id === updated.id || item.checkout_request_id === updated.checkout_request_id
+            ? { ...item, ...updated }
+            : item
+        ));
+      }
+      setNotice(
+        response?.verified
+          ? "Daraja verification succeeded. The backend has processed the verified checkout; confirm the subscription and payment records below."
+          : "Daraja reconciliation completed, but a final verified payment was not confirmed. The checkout remains unconfirmed until the provider returns a matching final result."
+      );
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      setActionError("Could not reconcile this checkout: " + getError(error));
+    } finally {
+      setRefreshingCheckout("");
+    }
+  };
 
   const refresh = () => {
     setNotice("");
@@ -842,6 +934,51 @@ export default function AdminRevenueManagement() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-slate-200 p-5 dark:border-slate-800 sm:p-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">M-PESA checkout reconciliation</h3>
+              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">Actual STK Push checkout records from the provider checkout store, separate from purchase intents. Refresh an unresolved checkout to query Daraja; only a matching final provider result can confirm payment.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select aria-label="Filter M-PESA checkouts by status" value={checkoutStatus} onChange={(event) => { setCheckoutStatus(event.target.value); setCheckoutPage(1); }} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+                <option value="all">All checkout statuses</option>
+                {["initiating", "pending", "callback_received", "awaiting_verification", "submission_unknown", "succeeded", "failed", "initiation_failed", "verified_activation_failed", "sandbox_verified"].map((value) => <option key={value} value={value}>{label(value)}</option>)}
+              </select>
+              <button type="button" onClick={() => setReloadKey((value) => value + 1)} disabled={checkoutsLoading} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><RefreshCw className={`h-3.5 w-3.5 ${checkoutsLoading ? "animate-spin" : ""}`} />Refresh list</button>
+            </div>
+          </div>
+          <form onSubmit={(event) => { event.preventDefault(); setCheckoutPage(1); }} className="mt-4 flex gap-2">
+            <input aria-label="Filter loaded M-PESA checkouts" value={checkoutSearch} onChange={(event) => setCheckoutSearch(event.target.value)} placeholder="Filter this page by user, plan, checkout or receipt" className="min-h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+            {checkoutSearch ? <button type="button" onClick={() => setCheckoutSearch("")} className="min-h-10 rounded-xl border border-slate-200 px-3 text-xs dark:border-slate-700 dark:text-slate-200">Clear</button> : null}
+          </form>
+        </div>
+        {checkoutsError ? <div className="m-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"><p className="font-bold">Checkout queue unavailable</p><p className="mt-1">{checkoutsError}</p><p className="mt-1">This queue is separate from transaction intents. Confirm the deployed backend exposes GET /api/revenue/admin/checkouts and that your session has platform-admin permissions.</p></div> : null}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1120px] text-left">
+            <thead><tr className="border-b border-slate-200 dark:border-slate-800">{["Checkout / user", "Hub / plan", "Amount", "Provider status", "Receipt", "Last updated", "Action"].map((item) => <th key={item} className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:px-5">{item}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {checkoutsLoading ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400"><RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin" />Loading M-PESA checkout records...</td></tr> : null}
+              {!checkoutsLoading && !checkoutsError && checkouts.filter((item) => !checkoutSearch.trim() || [item.user_id, item.hub, item.plan_code, item.checkout_request_id, item.merchant_request_id, item.receipt].some((value) => String(value || "").toLowerCase().includes(checkoutSearch.trim().toLowerCase()))).length === 0 ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">{checkoutPagination.total ? "No checkout records on this page match the search." : "No M-PESA checkout records match this status filter."}</td></tr> : null}
+              {!checkoutsLoading && checkouts.filter((item) => !checkoutSearch.trim() || [item.user_id, item.hub, item.plan_code, item.checkout_request_id, item.merchant_request_id, item.receipt].some((value) => String(value || "").toLowerCase().includes(checkoutSearch.trim().toLowerCase()))).map((item) => <tr key={item.id || item.checkout_request_id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td className="px-4 py-4 sm:px-5"><p className="font-semibold text-slate-800 dark:text-slate-100">{item.checkout_request_id ? item.checkout_request_id.slice(-12) : item.id.slice(-12) || "—"}</p><p className="mt-1 text-[10px] text-slate-400">User {item.user_id || "—"}</p><p className="mt-1 text-[10px] text-slate-400">Checkout ref: {item.checkout_request_id || "not assigned"}</p></td>
+                <td className="px-4 py-4"><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label(item.hub)}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.plan_code || "—"}</p></td>
+                <td className="whitespace-nowrap px-4 py-4 text-sm font-bold text-slate-900 dark:text-white">{formatMoney(item.amount, item.currency)}</td>
+                <td className="px-4 py-4"><StatusPill value={item.status} />{item.message ? <p className="mt-2 max-w-[260px] whitespace-normal text-[11px] leading-5 text-slate-500 dark:text-slate-400">{item.message}</p> : null}<p className="mt-1 text-[10px] text-slate-400">Merchant ref: {item.merchant_request_id || "—"}</p></td>
+                <td className="px-4 py-4 text-xs font-semibold text-slate-700 dark:text-slate-200">{item.receipt || (item.status === "succeeded" ? "Verified, receipt not returned" : "Not confirmed")}</td>
+                <td className="whitespace-nowrap px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(item.updated_at || item.created_at)}</td>
+                <td className="px-4 py-4">{item.status === "succeeded" ? <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4" />Provider verified</span> : ["pending", "callback_received", "awaiting_verification", "submission_unknown", "verified_activation_failed", "initiating"].includes(item.status) && item.checkout_request_id ? <button type="button" disabled={Boolean(refreshingCheckout)} onClick={() => reconcileCheckout(item)} className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${refreshingCheckout === (item.id || item.checkout_request_id) ? "animate-spin" : ""}`} />{refreshingCheckout === (item.id || item.checkout_request_id) ? "Checking..." : "Refresh from Daraja"}</button> : <span className="text-xs text-slate-400">No provider refresh</span>}</td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-xs text-slate-500 dark:text-slate-400">{checkoutPagination.total ? `Showing page ${checkoutPage} of ${Math.max(1, checkoutPagination.pages)} · ${formatCount(checkoutPagination.total)} checkout records` : "No checkout records"}</p>
+          <div className="flex items-center gap-3"><button type="button" disabled={checkoutPage <= 1 || checkoutsLoading} onClick={() => setCheckoutPage((value) => Math.max(1, value - 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold disabled:opacity-40 dark:border-slate-700">Previous</button><button type="button" disabled={checkoutPage >= Math.max(1, checkoutPagination.pages) || checkoutsLoading} onClick={() => setCheckoutPage((value) => Math.min(Math.max(1, checkoutPagination.pages), value + 1))} className="min-h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold disabled:opacity-40 dark:border-slate-700">Next</button></div>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
