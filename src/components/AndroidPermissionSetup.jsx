@@ -17,7 +17,7 @@ import {
   requestDevicePermission,
 } from "../native/androidPermissions.js";
 
-const STORAGE_KEY = "revelacode.android-permission-setup.v1";
+const STORAGE_KEY = "revelacode.android-permission-setup.v2";
 
 const PERMISSION_ITEMS = [
   {
