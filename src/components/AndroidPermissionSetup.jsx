@@ -3,6 +3,7 @@ import {
   Camera,
   Check,
   FileUp,
+  BellRing,
   MapPin,
   Mic,
   ShieldCheck,
@@ -16,7 +17,7 @@ import {
   requestDevicePermission,
 } from "../native/androidPermissions.js";
 
-const STORAGE_KEY = "revelacode.android-permission-setup.v1";
+const STORAGE_KEY = "revelacode.android-permission-setup.v2";
 
 const PERMISSION_ITEMS = [
   {
@@ -36,6 +37,12 @@ const PERMISSION_ITEMS = [
     title: "Microphone",
     description: "Allow voice input and audio features when you choose to use them.",
     Icon: Mic,
+  },
+  {
+    key: "notifications",
+    title: "Notifications",
+    description: "Receive important account, order, school, and community updates. You can change this anytime in Android settings.",
+    Icon: BellRing,
   },
 ];
 
@@ -63,6 +70,7 @@ export default function AndroidPermissionSetup() {
     camera: true,
     location: true,
     microphone: true,
+    notifications: true,
   });
   const [message, setMessage] = React.useState("");
 
@@ -92,6 +100,7 @@ export default function AndroidPermissionSetup() {
           camera: !isGranted(current.camera),
           location: !isGranted(current.location),
           microphone: !isGranted(current.microphone),
+          notifications: !isGranted(current.notifications),
         });
         setVisible(true);
       })
