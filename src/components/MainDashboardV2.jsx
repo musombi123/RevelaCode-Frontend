@@ -716,9 +716,9 @@ const BIASHARA_SECTION_KEYS = new Set(
           min-h-0
           min-w-0
           overflow-hidden
-          bg-gray-100
+          bg-slate-50
           transition-colors
-          dark:bg-gray-950
+          dark:bg-slate-950
         "
       >
         {/* ===================================================
