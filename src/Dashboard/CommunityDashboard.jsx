@@ -514,6 +514,7 @@ export default function CommunityDashboard({
 
   const communityApi = useJumuiyaApi();
   const {
+    getIdentity,
     getCommunityHealth,
     getCommunityPulse,
     getCommunityDiscovery,
@@ -537,6 +538,20 @@ export default function CommunityDashboard({
   const [editingPost, setEditingPost] = useState(null);
   const [composerCategory, setComposerCategory] = useState("general");
   const [backendHealth, setBackendHealth] = useState("checking");
+  const [communityProfile, setCommunityProfile] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getIdentity()
+      .then((result) => {
+        if (!active) return;
+        setCommunityProfile(result?.profile || result?.data?.profile || null);
+      })
+      .catch(() => {
+        if (active) setCommunityProfile(null);
+      });
+    return () => { active = false; };
+  }, [getIdentity]);
 
   const navigate = useCallback(
     (destination) => {
@@ -1468,7 +1483,7 @@ export default function CommunityDashboard({
             <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Your space</p>
               <div className="mt-3 flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center bg-cyan-500 text-sm font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>{displayName.slice(0, 2).toUpperCase()}</span>
+                {communityProfile?.avatar_url ? (<img src={communityProfile.avatar_url} alt={displayName} className="h-11 w-11 shrink-0 rounded-xl border border-slate-200 object-cover dark:border-white/10" />) : (<span className="flex h-11 w-11 shrink-0 items-center justify-center bg-cyan-500 text-sm font-black text-slate-950" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>{displayName.slice(0, 2).toUpperCase()}</span>)}
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-black text-slate-950 dark:text-white">{displayName}</span>
                   <span className="mt-0.5 block text-xs text-slate-400">Jumuiya member</span>
