@@ -1462,6 +1462,8 @@ export default function CommunityDashboard({
                 ) : (
                   <EmptyState icon={Compass} title="No needs or offers surfaced yet" description={activeSurface === "discovery" ? "The current discovery query returned no matching needs or offers. Try another intent or search term." : "The live Community service has not returned actionable needs or offers for this view. Nothing is fabricated; refresh later or search for a specific intent."} onAction={() => selectIntent("buy")} actionLabel="Explore things to buy" />
                 )}
+              </section>
+
               <section className="mt-8 border-t border-slate-200 pt-5 dark:border-white/10" aria-label="Quick explore">
                 <div className="mb-3">
                   <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">Explore by intention</h2>
@@ -1506,8 +1508,6 @@ export default function CommunityDashboard({
                   );
                 })}
               </section>
-              </section>
-
               </section>
 
             </>
