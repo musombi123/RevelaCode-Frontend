@@ -1338,7 +1338,6 @@ export default function CommunityDashboard({
               <CommunityIdentityHero
                 profile={communityProfile}
                 user={user}
-                visiblePostCount={posts.length}
                 onEditProfile={() => navigate("community-me")}
                 onCreatePost={openComposer}
                 onOpenFeed={() => navigate("community-feed")}
