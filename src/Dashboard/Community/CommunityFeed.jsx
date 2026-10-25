@@ -1432,7 +1432,7 @@ export default function CommunityFeed({
               </button>
             </div>
           ) : (
-            filteredPosts.map((post) => {
+            filteredPosts.map((post, index) => {
               const postId = getPostId(post);
               const authorUserId = post?.author_user_id ?? post?.author_id ?? post?.user_id ?? post?.author?.id ?? post?.author?._id ?? post?.user?.id ?? post?.user?._id ?? null;
               const currentUserIds = [user?.id, user?._id, user?.user_id, user?.userId, user?.sub]
@@ -1466,6 +1466,7 @@ export default function CommunityFeed({
                 getShareCount(post);
 
               return (
+                <React.Fragment key={menuKey}>
                 <article
                   key={
                     postId ||
@@ -1860,13 +1861,15 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 </article>
+                {(index + 1) % 5 === 0 && index < filteredPosts.length - 1 ? <CommunityAdSenseUnit key={"feed-ad-" + index} /> : null}
+                </React.Fragment>
               );
             })
           )}
         </section>
 
-        {/* In-feed AdSense placement; the unit renders only with a real configured slot. */}
-        <CommunityAdSenseUnit />
+        {/* Keep a single ad visible on short feeds; longer feeds receive placements between posts. */}
+        {!loading && !error && filteredPosts.length < 5 ? <CommunityAdSenseUnit /> : null}
 
         {/* ====================================================
             END OF FEED
