@@ -1364,7 +1364,7 @@ export default function UserAccountDashboard({
               <span className="max-w-full truncate text-[11px] font-semibold leading-4">More</span>
             </summary>
 
-            <section className="fixed inset-x-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-[70] mx-auto max-h-[90dvh] max-w-xl overflow-y-auto overscroll-contain rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.55)] dark:border-slate-700 dark:bg-slate-900 sm:inset-x-auto sm:right-4 sm:w-[min(94vw,26rem)] sm:p-5">
+            <section className="absolute bottom-[calc(100%+0.5rem)] right-[-0.25rem] z-[70] max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-xl overflow-y-auto overscroll-contain rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-28px_rgba(15,23,42,0.55)] dark:border-slate-700 dark:bg-slate-900 sm:right-[-0.25rem] sm:w-[min(94vw,26rem)] sm:p-5">
               <div className="mb-4 flex items-start justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">More account tools</h2>
