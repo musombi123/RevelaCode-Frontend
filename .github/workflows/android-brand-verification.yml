@@ -70,6 +70,37 @@ jobs:
       - name: Verify APK exists and is non-empty
         run: test -s android/app/build/outputs/apk/debug/app-debug.apk
 
+      # A successful Gradle build does not prove the app can launch. Run it on
+      # a real Android emulator and retain logcat when the process crashes.
+      - name: Smoke test APK launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell monkey -p com.revelacode.app 1
+            sleep 20
+            adb logcat -d -v threadtime > android-launch-logcat.txt
+            if ! adb shell pidof com.revelacode.app; then
+              echo "RevelaCode process exited after launch. Relevant crash lines:"
+              grep -Ei "FATAL EXCEPTION|AndroidRuntime|Fatal signal|SIGABRT|SIGSEGV|Process: com.revelacode.app|chromium.*(ERROR|FATAL)" android-launch-logcat.txt || true
+              exit 1
+            fi
+
+      - name: Upload Android launch diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: revelacode-android-launch-diagnostics
+          path: android-launch-logcat.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
