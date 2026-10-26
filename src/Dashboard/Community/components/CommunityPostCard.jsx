@@ -82,18 +82,90 @@ function getAuthorInitials(name) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function getAuthorAvatar(post) {
+function getProfileAvatar(source) {
   const candidate =
-    post?.author?.avatar_url ||
-    post?.author?.avatarUrl ||
-    post?.author?.avatar ||
-    post?.author?.profile_image ||
-    post?.author?.profileImage ||
-    post?.user?.avatar_url ||
-    post?.user?.avatar ||
-    post?.avatar_url ||
-    post?.avatar ||
+    source?.avatar_url ||
+    source?.avatarUrl ||
+    source?.avatar ||
+    source?.profile_image ||
+    source?.profileImage ||
+    source?.profile_picture ||
+    source?.profilePicture ||
+    source?.profile_picture_url ||
+    source?.profilePictureUrl ||
+    source?.photo_url ||
+    source?.photoUrl ||
+    source?.picture ||
+    source?.image_url ||
+    source?.imageUrl ||
+    source?.dp ||
+    source?.profile?.avatar_url ||
+    source?.profile?.avatarUrl ||
+    source?.profile?.avatar ||
+    source?.profile?.profile_image ||
+    source?.profile?.profile_picture ||
+    source?.community_profile?.avatar_url ||
+    source?.communityProfile?.avatar_url;
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
+}
+
+function isPostByUser(post, user) {
+  if (!post || !user) return false;
+  const authorId =
+    post?.author_user_id ??
+    post?.author_id ??
+    post?.user_id ??
+    post?.created_by_user_id ??
+    post?.author?.user_id ??
+    post?.author?.id ??
+    post?.author?._id ??
+    post?.user?.user_id ??
+    post?.user?.id ??
+    post?.user?._id ??
+    post?.created_by ??
+    post?.createdBy ??
     null;
+  if (authorId === null || authorId === undefined || String(authorId).trim() === "") return false;
+  const userIds = [
+    user?.id,
+    user?._id,
+    user?.user_id,
+    user?.userId,
+    user?.sub,
+    user?.account_id,
+    user?.accountId,
+  ].filter((value) => value !== undefined && value !== null && String(value).trim()).map(String);
+  return userIds.includes(String(authorId));
+}
+
+function getUserProfileAvatar(user) {
+  return (
+    getProfileAvatar(user?.community_profile) ||
+    getProfileAvatar(user?.communityProfile) ||
+    getProfileAvatar(user?.profile) ||
+    getProfileAvatar(user)
+  );
+}
+
+function getAuthorAvatar(post, currentUser = null) {
+  const ownPostAvatar = isPostByUser(post, currentUser)
+    ? getUserProfileAvatar(currentUser)
+    : null;
+  const candidate =
+    ownPostAvatar ||
+    getProfileAvatar(post?.author?.community_profile) ||
+    getProfileAvatar(post?.author?.communityProfile) ||
+    getProfileAvatar(post?.author_profile) ||
+    getProfileAvatar(post?.authorProfile) ||
+    getProfileAvatar(post?.author) ||
+    getProfileAvatar(post?.user?.community_profile) ||
+    getProfileAvatar(post?.user_profile) ||
+    getProfileAvatar(post?.userProfile) ||
+    getProfileAvatar(post?.user) ||
+    getProfileAvatar(post?.creator) ||
+    getProfileAvatar(post);
   return typeof candidate === "string" && candidate.trim()
     ? candidate.trim()
     : null;
@@ -465,8 +537,8 @@ export default function CommunityPostCard({
     );
 
   const avatar = useMemo(
-    () => getAuthorAvatar(post),
-    [post]
+    () => getAuthorAvatar(post, currentUser),
+    [post, currentUser]
   );
 
   const title = useMemo(
