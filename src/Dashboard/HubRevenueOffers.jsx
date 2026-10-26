@@ -125,6 +125,8 @@ export default function HubRevenueOffers({ hub, compact = false }) {
 
     setLoading(true);
     setLoadError("");
+    // Never keep an old "checkout enabled" signal active while revalidating.
+    setCheckoutEnabled(false);
     try {
       const streams = RELATED_STREAMS[apiHub] || [apiHub];
       const responses = await Promise.all(
@@ -160,7 +162,12 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         return plan?.status !== "retired" && Number.isFinite(amount) && amount > 0;
       }));
     } catch (error) {
-      if (error?.name !== "AbortError") setLoadError(messageForError(error));
+      if (error?.name !== "AbortError") {
+        setLoadError(messageForError(error));
+        setPlans([]);
+        setCheckoutEnabled(false);
+        setCatalogCached(false);
+      }
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
