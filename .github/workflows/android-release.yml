@@ -1,7 +1,7 @@
-name: RevelaCode Android packaging (manual only)
+name: RevelaCode Android packaging (manual release)
 
-# Android packaging is a deliberate manual action until the Shamba and
-# Community web experience has been reviewed and approved.
+# Signed release packaging remains a deliberate manual action until the
+# Shamba and Community web experience has been reviewed and approved.
 on:
   workflow_dispatch:
     inputs:
@@ -46,8 +46,17 @@ jobs:
         run: npm run build
 
       - name: Generate native Android project
+        run: npx cap add android
+
+      - name: Generate Android launcher icons and splash from public/Logo.png
         run: |
-          npx cap add android
+          test -s public/Logo.png
+          mkdir -p .android-brand-assets
+          cp public/Logo.png .android-brand-assets/logo.png
+          npx capacitor-assets generate --android --assetPath .android-brand-assets --iconBackgroundColor '#08111F' --iconBackgroundColorDark '#08111F' --splashBackgroundColor '#08111F' --splashBackgroundColorDark '#08111F'
+
+      - name: Sync and configure native Android project
+        run: |
           npx cap sync android
           node scripts/configure-android-permissions.mjs
 
