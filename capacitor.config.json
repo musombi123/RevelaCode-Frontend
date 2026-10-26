@@ -8,8 +8,8 @@
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": true,
-      "launchShowDuration": 900,
-      "launchFadeOutDuration": 180,
+      "launchShowDuration": 1800,
+      "launchFadeOutDuration": 250,
       "backgroundColor": "#08111F",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_INSIDE",
