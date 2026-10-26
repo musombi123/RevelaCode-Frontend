@@ -70,6 +70,14 @@ jobs:
       - name: Verify APK exists and is non-empty
         run: test -s android/app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: revelacode-android-logo-splash-v2.1.0-code3
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
       # A successful Gradle build does not prove the app can launch. Run it on
       # a real Android emulator and retain logcat when the process crashes.
       - name: Smoke test APK launch on Android emulator
@@ -102,10 +110,3 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: revelacode-android-logo-splash-v2.1.0-code3
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 14
