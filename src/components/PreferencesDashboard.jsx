@@ -451,6 +451,21 @@ export default function PreferencesDashboard({
         </section>
 
         {/* ===================================================
+            OFFLINE WORKSPACE & SYNC
+        =================================================== */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="border-b border-slate-200 px-5 py-5 dark:border-slate-800 sm:px-6">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Workspace storage &amp; sync</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Check offline status, queued changes, failed syncs, and recent local activity here. This status no longer floats over your workspace.
+            </p>
+          </div>
+          <div className="p-4 sm:p-5">
+            <OfflineSyncStatus />
+          </div>
+        </section>
+
+        {/* ===================================================
             APPEARANCE
         =================================================== */}
 
