@@ -90,13 +90,13 @@ export default function OfflineSyncStatus() {
           : "Your last hub and recent activity are saved on this device.";
 
   return (
-    <div className="fixed right-3 top-[calc(env(safe-area-inset-top,0px)+12px)] z-[10000] max-w-[min(94vw,360px)]">
+    <div className="w-full min-w-0">
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
         aria-label={title + ". " + description}
-        className="flex min-h-10 items-center gap-2 rounded-full border border-slate-300 bg-white/95 px-3 py-2 text-xs font-bold text-slate-800 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-950/95 dark:text-slate-100"
+        className="flex min-h-10 w-full items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-left text-xs font-bold text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
       >
         {offline ? <CloudOff size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : queue.failed ? <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-300" /> : syncing ? <RefreshCw size={15} className="shrink-0 animate-spin text-blue-600 dark:text-blue-300" /> : queue.pending ? <RefreshCw size={15} className="shrink-0 text-blue-600 dark:text-blue-300" /> : <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />}
         <span className="max-w-[245px] truncate">{offline ? "Offline" : syncing ? "Syncing" : queue.failed ? queue.failed + " need attention" : queue.pending ? queue.pending + " waiting to sync" : "Workspace saved"}</span>
