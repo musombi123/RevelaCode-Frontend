@@ -47,6 +47,24 @@ const HUB_LABELS = {
   all: "Jumuiya",
 };
 
+const CHECKOUT_AUTO_WAIT_MS = 15 * 60 * 1000;
+const CHECKOUT_POLL_START_MS = 10 * 1000;
+const CHECKOUT_POLL_MAX_MS = 30 * 1000;
+const TERMINAL_CHECKOUT_STATUSES = new Set([
+  "succeeded",
+  "failed",
+  "initiation_failed",
+  "sandbox_verified",
+  "verified_activation_failed",
+]);
+
+function formatWaitTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
+
 function money(amount, currency = "KES") {
   const value = Number(amount);
   if (!Number.isFinite(value)) return `${currency} —`;
@@ -75,6 +93,7 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [catalogCached, setCatalogCached] = useState(false);
   const [actionError, setActionError] = useState("");
   const [notice, setNotice] = useState("");
   const [submittingCode, setSubmittingCode] = useState("");
@@ -90,7 +109,12 @@ export default function HubRevenueOffers({ hub, compact = false }) {
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [checkout, setCheckout] = useState(null);
   const [checkoutRefreshing, setCheckoutRefreshing] = useState(false);
+  const [checkoutAutoWaitLeftMs, setCheckoutAutoWaitLeftMs] = useState(0);
+  const [checkoutAutoWindowFinished, setCheckoutAutoWindowFinished] = useState(false);
   const checkoutKeys = useRef({});
+  const checkoutStateRef = useRef(null);
+  const refreshCheckoutRef = useRef(null);
+  const checkoutRefreshInFlightRef = useRef(false);
 
   const loadPlans = useCallback(async (signal) => {
     if (!apiHub) {
@@ -106,7 +130,15 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       const responses = await Promise.all(
         streams.map((stream) => revenueApi.listPlans(stream, { signal })),
       );
-      setCheckoutEnabled(responses.some((response) => response?.checkout_enabled === true));
+      // Cached prices may be displayed offline, but they are never sufficient
+      // authority to enable a paid checkout. A fresh backend response is required.
+      const cachedCatalogue = responses.some(
+        (response) => response?.__revenue_offline_cache === true,
+      );
+      setCatalogCached(cachedCatalogue);
+      setCheckoutEnabled(
+        !cachedCatalogue && responses.some((response) => response?.checkout_enabled === true),
+      );
       const uniquePlans = new Map();
       responses.forEach((response) => {
         (Array.isArray(response?.plans) ? response.plans : []).forEach((plan) => {
@@ -162,13 +194,27 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         revenueApi.listSubscriptions({ signal }),
         revenueApi.getCurrentCheckout(apiHub, { signal }),
       ]);
+      if (
+        response?.__revenue_offline_cache === true ||
+        checkoutResponse?.__revenue_offline_cache === true
+      ) {
+        setSubscription(null);
+        setSubscriptionLoadError(
+          "Subscription and checkout status are available only from an offline cache. Reconnect and reload before starting a payment.",
+        );
+        return;
+      }
       const active = (Array.isArray(response?.items) ? response.items : [])
         .filter((item) => item?.hub === apiHub && item?.status === "active")
         .sort((a, b) => new Date(b.ends_at || 0).getTime() - new Date(a.ends_at || 0).getTime())[0] || null;
       setSubscription(active);
-      setCheckout((previous) => checkoutResponse?.checkout || (
-        previous?.hub === apiHub && previous?.status === "succeeded" ? previous : null
-      ));
+      const nextCheckout = checkoutResponse?.checkout || (
+        checkoutStateRef.current?.hub === apiHub && checkoutStateRef.current?.status === "succeeded"
+          ? checkoutStateRef.current
+          : null
+      );
+      checkoutStateRef.current = nextCheckout;
+      setCheckout(nextCheckout);
     } catch (error) {
       if (error?.name !== "AbortError") {
         setSubscription(null);
@@ -188,7 +234,29 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     return () => controller.abort();
   }, [apiHub, loadPlans, loadTrial, loadSubscription]);
 
+  useEffect(() => {
+    checkoutStateRef.current = checkout;
+  }, [checkout]);
+
+  useEffect(() => {
+    refreshCheckoutRef.current = refreshCheckout;
+  });
+
   const startCheckout = async (plan) => {
+    if (catalogCached || !checkoutEnabled) {
+      setActionError(
+        "Current plan pricing and live checkout readiness must be verified online. Reconnect and refresh plans before paying.",
+      );
+      return;
+    }
+    if (
+      plan?.status !== "available" ||
+      !["month", "year"].includes(String(plan?.interval || "").toLowerCase()) ||
+      !(Number(plan?.amount) > 0)
+    ) {
+      setActionError("This plan is not currently approved for paid checkout.");
+      return;
+    }
     if (subscriptionLoading || subscriptionLoadError) {
       setActionError("The current subscription status could not be verified. Reload this hub before making a payment.");
       return;
@@ -218,7 +286,12 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         { idempotencyKey },
       );
       const started = response?.checkout || null;
+      checkoutStateRef.current = started;
       setCheckout(started);
+      setCheckoutAutoWindowFinished(false);
+      setCheckoutAutoWaitLeftMs(
+        started?.checkout_request_id ? CHECKOUT_AUTO_WAIT_MS : 0,
+      );
       if (started?.status === "submission_unknown" || started?.status === "initiating" && !started?.checkout_request_id) {
         setActionError("The backend could not confirm whether Daraja accepted this request. No retry was sent. Do not pay again until finance reconciles the checkout.");
       } else if (started?.status === "initiation_failed" || started?.status === "failed") {
@@ -235,22 +308,33 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         delete checkoutKeys.current[keyScope];
       }
     } catch (error) {
-      if (error?.payload?.checkout) setCheckout(error.payload.checkout);
+      if (error?.payload?.checkout) {
+        checkoutStateRef.current = error.payload.checkout;
+        setCheckout(error.payload.checkout);
+      }
       setActionError(messageForError(error));
     } finally {
       setSubmittingCode("");
     }
   };
 
-  const refreshCheckout = async () => {
-    const checkoutId = checkout?.checkout_request_id;
-    if (!checkoutId) return;
-    setCheckoutRefreshing(true);
-    setActionError("");
+  const refreshCheckout = useCallback(async ({ automatic = false } = {}) => {
+    const currentCheckout = checkoutStateRef.current;
+    const checkoutId = currentCheckout?.checkout_request_id;
+    if (!checkoutId || checkoutRefreshInFlightRef.current) return null;
+
+    checkoutRefreshInFlightRef.current = true;
+    if (!automatic) {
+      setCheckoutRefreshing(true);
+      setActionError("");
+    }
     try {
       const response = await revenueApi.refreshCheckout(checkoutId);
       const updated = response?.checkout || null;
-      setCheckout(updated);
+      if (updated) {
+        checkoutStateRef.current = updated;
+        setCheckout(updated);
+      }
       if (updated?.status === "succeeded") {
         setNotice("Payment verified. Your subscription is active.");
         setSubscription(updated?.subscription || null);
@@ -268,15 +352,96 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         setActionError("The payment was verified but access needs administrator reconciliation. Do not pay again; contact support.");
       } else if (updated?.status === "sandbox_verified") {
         setNotice("Daraja sandbox test succeeded. No live subscription or revenue was created; switch to production Daraja to enable paid checkout.");
-      } else {
-        setNotice("M-Pesa status is still being verified. Refresh again shortly; do not submit another payment.");
+      } else if (!automatic) {
+        setNotice("M-Pesa status is still being verified. Automatic checks will continue for up to 15 minutes; do not submit another payment.");
       }
+      return updated;
     } catch (error) {
-      setActionError(messageForError(error));
+      if (!automatic) setActionError(messageForError(error));
+      return null;
     } finally {
-      setCheckoutRefreshing(false);
+      checkoutRefreshInFlightRef.current = false;
+      if (!automatic) setCheckoutRefreshing(false);
     }
-  };
+  }, [apiHub, label, loadSubscription, revenueApi]);
+
+  // Daraja may take several minutes to return a final result. Query on a paced
+  // schedule for at most 15 minutes from checkout creation. The backend remains
+  // authoritative; unknown/pending states never activate a subscription.
+  useEffect(() => {
+    const checkoutId = checkout?.checkout_request_id;
+    const initialCheckout = checkoutStateRef.current;
+    if (
+      !checkoutId ||
+      initialCheckout?.checkout_request_id !== checkoutId ||
+      (initialCheckout?.hub && initialCheckout.hub !== apiHub) ||
+      TERMINAL_CHECKOUT_STATUSES.has(initialCheckout?.status)
+    ) {
+      setCheckoutAutoWaitLeftMs(0);
+      setCheckoutAutoWindowFinished(false);
+      return undefined;
+    }
+
+    const createdAt = Date.parse(initialCheckout?.created_at || "");
+    const startedAt = Number.isFinite(createdAt) ? createdAt : Date.now();
+    let cancelled = false;
+    let timer = null;
+    let attempts = 0;
+
+    const poll = async () => {
+      const latest = checkoutStateRef.current;
+      if (cancelled || latest?.checkout_request_id !== checkoutId) return;
+
+      const remainingBefore = Math.max(0, CHECKOUT_AUTO_WAIT_MS - (Date.now() - startedAt));
+      setCheckoutAutoWaitLeftMs(remainingBefore);
+      if (remainingBefore <= 0) {
+        setCheckoutAutoWindowFinished(true);
+        setCheckoutAutoWaitLeftMs(0);
+        return;
+      }
+      if (TERMINAL_CHECKOUT_STATUSES.has(latest?.status)) {
+        setCheckoutAutoWindowFinished(false);
+        setCheckoutAutoWaitLeftMs(0);
+        return;
+      }
+
+      await refreshCheckoutRef.current?.({ automatic: true });
+      if (cancelled) return;
+
+      const after = checkoutStateRef.current;
+      if (after?.checkout_request_id !== checkoutId) return;
+      const remainingAfter = Math.max(0, CHECKOUT_AUTO_WAIT_MS - (Date.now() - startedAt));
+      setCheckoutAutoWaitLeftMs(remainingAfter);
+      if (TERMINAL_CHECKOUT_STATUSES.has(after?.status)) {
+        setCheckoutAutoWindowFinished(false);
+        setCheckoutAutoWaitLeftMs(0);
+        return;
+      }
+      if (remainingAfter <= 0) {
+        setCheckoutAutoWindowFinished(true);
+        setCheckoutAutoWaitLeftMs(0);
+        return;
+      }
+
+      attempts += 1;
+      const nextDelay = Math.min(
+        CHECKOUT_POLL_MAX_MS,
+        CHECKOUT_POLL_START_MS + Math.min(attempts - 1, 4) * 5 * 1000,
+        remainingAfter,
+      );
+      timer = setTimeout(poll, Math.max(1000, nextDelay));
+    };
+
+    const initialRemaining = Math.max(0, CHECKOUT_AUTO_WAIT_MS - (Date.now() - startedAt));
+    setCheckoutAutoWaitLeftMs(initialRemaining);
+    setCheckoutAutoWindowFinished(initialRemaining <= 0);
+    if (initialRemaining > 0) timer = setTimeout(poll, Math.min(8 * 1000, initialRemaining));
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [apiHub, checkout?.checkout_request_id]);
 
   const startTrial = async () => {
     if (subscriptionLoading || subscriptionLoadError) {
@@ -318,7 +483,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       });
       setNotice(response?.message || "Your plan-interest request was recorded. No payment was initiated.");
     } catch (error) {
-      if (error?.payload?.checkout) setCheckout(error.payload.checkout);
+      if (error?.payload?.checkout) {
+        checkoutStateRef.current = error.payload.checkout;
+        setCheckout(error.payload.checkout);
+      }
       setActionError(messageForError(error));
     } finally {
       setSubmittingCode("");
@@ -426,11 +594,21 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       {checkout ? (
         <div className="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-bold text-slate-900 dark:text-white">M-Pesa checkout · {checkout.status?.replaceAll("_", " ")}</p>
               <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{checkout.message || checkout.result_description || "Waiting for the provider's final confirmation."}</p>
               {checkout.checkout_request_id ? <p className="mt-2 break-all font-mono text-[10px] text-slate-500">Reference: {checkout.checkout_request_id}</p> : null}
               {checkout.receipt ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Receipt: {checkout.receipt}</p> : null}
+              {checkout.checkout_request_id && !TERMINAL_CHECKOUT_STATUSES.has(checkout.status) && checkoutAutoWaitLeftMs > 0 ? (
+                <p className="mt-2 text-[11px] font-semibold leading-5 text-emerald-700 dark:text-emerald-300">
+                  Automatically checking payment status · {formatWaitTime(checkoutAutoWaitLeftMs)} remaining. Do not submit another payment.
+                </p>
+              ) : null}
+              {checkout.checkout_request_id && !TERMINAL_CHECKOUT_STATUSES.has(checkout.status) && checkoutAutoWindowFinished ? (
+                <p className="mt-2 text-[11px] font-semibold leading-5 text-amber-700 dark:text-amber-300">
+                  The 15-minute automatic-check window has ended, but this transaction is still unresolved. The checkout is retained; do not pay again. Use manual refresh or contact support for reconciliation.
+                </p>
+              ) : null}
             </div>
             {checkout.status === "succeeded" ? (
               <span className="rounded-lg bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">Subscription active</span>
@@ -445,6 +623,13 @@ export default function HubRevenueOffers({ hub, compact = false }) {
               </button>
             )}
           </div>
+        </div>
+      ) : null}
+
+      {catalogCached ? (
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>These prices are cached for offline viewing only. Paid checkout is disabled until the backend confirms current plans and payment readiness online.</span>
         </div>
       ) : null}
 
@@ -502,7 +687,17 @@ export default function HubRevenueOffers({ hub, compact = false }) {
                   ))}
                 </ul>
               ) : null}
-              {subscriptionLoading || subscriptionLoadError ? (
+              {catalogCached ? (
+                <button
+                  type="button"
+                  onClick={() => loadPlans()}
+                  disabled={loading}
+                  className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 text-xs font-bold text-amber-800 disabled:opacity-50 dark:border-amber-800 dark:text-amber-200"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                  {loading ? "Verifying catalogue…" : "Reconnect to verify plan"}
+                </button>
+              ) : subscriptionLoading || subscriptionLoadError ? (
                 <div className="mt-4 rounded-xl border border-amber-200 px-3 py-2.5 text-xs leading-5 text-amber-800 dark:border-amber-900/50 dark:text-amber-200">
                   Verify existing subscription status before starting another payment.
                 </div>
