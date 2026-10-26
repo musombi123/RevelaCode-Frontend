@@ -238,10 +238,6 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     checkoutStateRef.current = checkout;
   }, [checkout]);
 
-  useEffect(() => {
-    refreshCheckoutRef.current = refreshCheckout;
-  });
-
   const startCheckout = async (plan) => {
     if (catalogCached || !checkoutEnabled) {
       setActionError(
@@ -263,6 +259,17 @@ export default function HubRevenueOffers({ hub, compact = false }) {
     }
     if (subscription?.status === "active") {
       setActionError("This hub already has an active paid subscription. No second payment was started.");
+      return;
+    }
+    if (checkout && [
+      "initiating",
+      "pending",
+      "callback_received",
+      "awaiting_verification",
+      "verified_activation_failed",
+      "submission_unknown",
+    ].includes(checkout.status)) {
+      setActionError("A payment for this hub is still unresolved. Refresh its status before making another payment.");
       return;
     }
     const phone = checkoutPhone.trim();
@@ -364,6 +371,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       if (!automatic) setCheckoutRefreshing(false);
     }
   }, [apiHub, label, loadSubscription, revenueApi]);
+
+  useEffect(() => {
+    refreshCheckoutRef.current = refreshCheckout;
+  }, [refreshCheckout]);
 
   // Daraja may take several minutes to return a final result. Query on a paced
   // schedule for at most 15 minutes from checkout creation. The backend remains
@@ -521,8 +532,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
         </div>
         <button
           type="button"
-          onClick={() => loadPlans()}
-          disabled={loading}
+          onClick={() => {
+            void Promise.all([loadPlans(), loadSubscription()]);
+          }}
+          disabled={loading || subscriptionLoading}
           className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -690,8 +703,10 @@ export default function HubRevenueOffers({ hub, compact = false }) {
               {catalogCached ? (
                 <button
                   type="button"
-                  onClick={() => loadPlans()}
-                  disabled={loading}
+                  onClick={() => {
+                    void Promise.all([loadPlans(), loadSubscription()]);
+                  }}
+                  disabled={loading || subscriptionLoading}
                   className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 text-xs font-bold text-amber-800 disabled:opacity-50 dark:border-amber-800 dark:text-amber-200"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
