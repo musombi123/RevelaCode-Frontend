@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, { useEffect, useState } from "react";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import {
   ArrowLeft,
@@ -9,7 +9,9 @@ import {
   Leaf,
   Menu,
   ShoppingCart,
+  Sparkles,
   Users,
+  X,
 } from "lucide-react";
 
 /* =========================================================
@@ -183,6 +185,25 @@ export default function JumuiyaDashboardShell({
   const normalizedActiveHub = normalizeHubKey(activeHub);
   const theme = getHubTheme(activeHub);
   const HubIcon = theme.icon;
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const canOpenUpgrade = Boolean(
+    normalizedActiveHub &&
+    !["home", "payments", "community"].includes(normalizedActiveHub)
+  );
+
+  useEffect(() => {
+    if (!upgradeOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setUpgradeOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [upgradeOpen]);
 
   const navigate = (key) => {
     if (typeof onNavigate === "function") {
@@ -336,6 +357,40 @@ export default function JumuiyaDashboardShell({
 
           {/* RIGHT */}
           <div className="flex shrink-0 items-center gap-2">
+            {canOpenUpgrade ? (
+              <button
+                type="button"
+                onClick={() => setUpgradeOpen(true)}
+                className="
+                  inline-flex
+                  h-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  border
+                  border-emerald-200
+                  bg-emerald-50
+                  px-3
+                  text-xs
+                  font-bold
+                  text-emerald-800
+                  transition
+                  hover:bg-emerald-100
+                  dark:border-emerald-900/60
+                  dark:bg-emerald-950/30
+                  dark:text-emerald-200
+                  dark:hover:bg-emerald-950/60
+                "
+                aria-label="Upgrade plan"
+                title="Compare plans and upgrade"
+              >
+                <Sparkles size={16} />
+                <span className="hidden sm:inline">Upgrade</span>
+              </button>
+            ) : null}
+
             <div
               className="
                 hidden
@@ -579,8 +634,51 @@ export default function JumuiyaDashboardShell({
         {children}
       </main>
 
-      {normalizedActiveHub && !["home", "payments"].includes(normalizedActiveHub) ? (
-        <HubRevenueOffers hub={normalizedActiveHub} />
+      {normalizedActiveHub === "community" ? (
+        <HubRevenueOffers hub={normalizedActiveHub} compact />
+      ) : null}
+
+      {canOpenUpgrade ? (
+        <div
+          className={upgradeOpen
+            ? "fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 p-2 backdrop-blur-sm sm:p-5"
+            : "hidden"}
+          aria-hidden={!upgradeOpen}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setUpgradeOpen(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${title} plan upgrades`}
+            className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-950"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10 sm:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+                  <Sparkles size={17} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-black text-slate-950 dark:text-white">Plans and upgrade</h2>
+                  <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">Backend-approved pricing · secure M-Pesa checkout</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUpgradeOpen(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+                aria-label="Close plans"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="min-h-0 overflow-y-auto p-3 sm:p-5">
+              <HubRevenueOffers hub={normalizedActiveHub} compact />
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   );
