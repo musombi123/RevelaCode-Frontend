@@ -135,17 +135,55 @@ function getAuthor(post) {
   );
 }
 
-function getAvatar(post) {
-  return (
-    post?.author?.avatar_url ||
-    post?.author?.avatarUrl ||
-    post?.author?.avatar ||
-    post?.author?.profile_image ||
-    post?.avatar_url ||
-    post?.avatar ||
-    post?.profile_image ||
-    null
-  );
+function getProfileAvatar(source) {
+  const candidate =
+    source?.avatar_url ||
+    source?.avatarUrl ||
+    source?.avatar ||
+    source?.profile_image ||
+    source?.profileImage ||
+    source?.profile_picture ||
+    source?.profilePicture ||
+    source?.profile_picture_url ||
+    source?.profilePictureUrl ||
+    source?.photo_url ||
+    source?.photoUrl ||
+    source?.picture ||
+    source?.image_url ||
+    source?.imageUrl ||
+    source?.dp ||
+    source?.profile?.avatar_url ||
+    source?.profile?.avatarUrl ||
+    source?.profile?.avatar ||
+    source?.profile?.profile_image ||
+    source?.profile?.profile_picture ||
+    source?.community_profile?.avatar_url ||
+    source?.communityProfile?.avatar_url;
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
+}
+
+function getAvatar(post, fallbackUser = null) {
+  const candidate =
+    getProfileAvatar(fallbackUser?.community_profile) ||
+    getProfileAvatar(fallbackUser?.communityProfile) ||
+    getProfileAvatar(fallbackUser?.profile) ||
+    getProfileAvatar(fallbackUser) ||
+    getProfileAvatar(post?.author?.community_profile) ||
+    getProfileAvatar(post?.author?.communityProfile) ||
+    getProfileAvatar(post?.author_profile) ||
+    getProfileAvatar(post?.authorProfile) ||
+    getProfileAvatar(post?.author) ||
+    getProfileAvatar(post?.user?.community_profile) ||
+    getProfileAvatar(post?.user_profile) ||
+    getProfileAvatar(post?.userProfile) ||
+    getProfileAvatar(post?.user) ||
+    getProfileAvatar(post?.creator) ||
+    getProfileAvatar(post);
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
 }
 
 function getHub(post) {
@@ -261,6 +299,7 @@ function isReacted(post) {
 export default function CommunityFeed({
   onNavigate,
   onEditPost,
+  currentUser: suppliedCurrentUser = null,
 }) {
   const { user } = useAuth();
 
@@ -1445,7 +1484,7 @@ export default function CommunityFeed({
                 getAuthor(post);
 
               const avatar =
-                getAvatar(post);
+                getAvatar(post, isOwnPost ? (suppliedCurrentUser || user) : null);
 
               const hub =
                 getHub(post);
