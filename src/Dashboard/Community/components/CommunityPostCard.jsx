@@ -83,20 +83,25 @@ function getAuthorInitials(name) {
 }
 
 function getAuthorAvatar(post) {
-  const candidate =
-    post?.author?.avatar_url ||
-    post?.author?.avatarUrl ||
-    post?.author?.avatar ||
-    post?.author?.profile_image ||
-    post?.author?.profileImage ||
-    post?.user?.avatar_url ||
-    post?.user?.avatar ||
-    post?.avatar_url ||
-    post?.avatar ||
-    null;
-  return typeof candidate === "string" && candidate.trim()
-    ? candidate.trim()
-    : null;
+  const candidates = [
+    post?.author?.avatar_url, post?.author?.avatarUrl, post?.author?.avatar,
+    post?.author?.profile_picture, post?.author?.profilePicture,
+    post?.author?.profile_image, post?.author?.profileImage,
+    post?.author?.profile_photo, post?.author?.profilePhoto,
+    post?.author?.photo_url, post?.author?.photoUrl, post?.author?.picture,
+    post?.author?.image_url, post?.author?.imageUrl,
+    post?.user?.avatar_url, post?.user?.avatarUrl, post?.user?.avatar,
+    post?.user?.profile_picture, post?.user?.profilePicture,
+    post?.user?.profile_image, post?.user?.profileImage,
+    post?.user?.profile_photo, post?.user?.profilePhoto,
+    post?.user?.photo_url, post?.user?.photoUrl, post?.user?.picture,
+    post?.avatar_url, post?.avatarUrl, post?.avatar,
+    post?.profile_picture, post?.profilePicture, post?.profile_image,
+    post?.profileImage, post?.profile_photo, post?.profilePhoto,
+    post?.photo_url, post?.photoUrl, post?.picture,
+  ];
+  const candidate = candidates.find((value) => typeof value === "string" && value.trim());
+  return candidate ? candidate.trim() : null;
 }
 
 function getPostTitle(post) {
