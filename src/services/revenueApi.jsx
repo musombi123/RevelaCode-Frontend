@@ -58,6 +58,11 @@ async function readPayload(response) {
   }
 }
 
+function markOfflineCachedPayload(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  return { ...payload, __revenue_offline_cache: true };
+}
+
 function apiError(response, payload, url, method) {
   const rawError = payload?.error;
   const error = new Error(
@@ -103,7 +108,7 @@ export function createRevenueApiClient({
 
     if (requestScope && verb === "GET" && isBrowserOffline()) {
       const cached = await readCachedApiResponse(requestScope, url);
-      if (cached.hit) return cached.payload;
+      if (cached.hit) return markOfflineCachedPayload(cached.payload);
     }
 
     const headers = new Headers(customHeaders);
@@ -122,7 +127,7 @@ export function createRevenueApiClient({
       if (cause?.name === "AbortError") throw cause;
       if (requestScope && verb === "GET") {
         const cached = await readCachedApiResponse(requestScope, url);
-        if (cached.hit) return cached.payload;
+        if (cached.hit) return markOfflineCachedPayload(cached.payload);
       }
       const error = new Error(
         "Cannot reach the Revenue Engine. Check the backend URL, CORS, and network connection.",
