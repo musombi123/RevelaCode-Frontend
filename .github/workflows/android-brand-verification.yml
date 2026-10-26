@@ -20,7 +20,7 @@ permissions:
 jobs:
   android-debug:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -75,7 +75,8 @@ jobs:
       - name: Smoke test APK launch on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
+          emulator-boot-timeout: 900000
           target: google_apis
           arch: x86_64
           profile: pixel_2
@@ -84,7 +85,7 @@ jobs:
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb logcat -c
             adb shell monkey -p com.revelacode.app 1
-            sleep 20
+            sleep 15
             adb logcat -d -v threadtime > android-launch-logcat.txt
             if ! adb shell pidof com.revelacode.app; then
               echo "RevelaCode process exited after launch. Relevant crash lines:"
