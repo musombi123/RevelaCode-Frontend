@@ -38,7 +38,6 @@ import StartModal from "./StartModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
-import OfflineSyncStatus from "@/components/OfflineSyncStatus.jsx";
 import {
   offlineScopeForUser,
   readOfflineSession,
@@ -1602,7 +1601,6 @@ const BIASHARA_SECTION_KEYS = new Set(
           )}
         </main>
       </div>
-      <OfflineSyncStatus />
     </>
   );
 }
