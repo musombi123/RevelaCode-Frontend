@@ -57,10 +57,14 @@ function money(amount, currency = "KES") {
 }
 
 function messageForError(error) {
-  if (error?.status === 401) return "Sign in to submit a plan-interest request.";
-  if (error?.status === 403) return "Your account is not permitted to submit this request.";
-  if (error?.status === 404) return "The Revenue Engine is not available on the deployed backend yet.";
-  return error?.message || "Unable to complete the request. Please try again.";
+  if (error?.status === 401) return "Your session has expired or is not authenticated. Sign in again before starting checkout.";
+  if (error?.status === 403) return "Your account is not permitted to perform this checkout.";
+  if (error?.status === 404) return "The Revenue Engine checkout endpoint is not available on the deployed backend yet.";
+  if (error?.code === "mpesa_live_checkout_not_configured") return "Live M-PESA checkout is disabled by the backend's production-readiness checks. No payment prompt was sent.";
+  if (error?.code === "mpesa_auth_unavailable") return "Daraja authentication failed before the STK request was submitted. Check the backend's live Daraja credentials.";
+  if (error?.code === "mpesa_request_rejected") return "Daraja rejected the STK request. No phone prompt was accepted; review the checkout status and backend configuration.";
+  if (error?.code === "mpesa_submission_unknown") return "Daraja's response could not be confirmed. Do not retry or pay again until finance reconciles this checkout.";
+  return error?.message || "Unable to complete the request. Please review the checkout status before retrying.";
 }
 
 export default function HubRevenueOffers({ hub, compact = false }) {
@@ -106,7 +110,17 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       const uniquePlans = new Map();
       responses.forEach((response) => {
         (Array.isArray(response?.plans) ? response.plans : []).forEach((plan) => {
-          if (plan?.code && !uniquePlans.has(plan.code)) uniquePlans.set(plan.code, plan);
+          if (!plan?.code || uniquePlans.has(plan.code)) return;
+          // Normalize API values at the boundary so catalogue casing or
+          // whitespace cannot silently turn a published plan into an
+          // interest-only button with no phone field.
+          uniquePlans.set(plan.code, {
+            ...plan,
+            code: String(plan.code).trim(),
+            hub: String(plan.hub || "").trim().toLowerCase(),
+            status: String(plan.status || "proposed").trim().toLowerCase(),
+            interval: String(plan.interval || "month").trim().toLowerCase(),
+          });
         });
       });
       setPlans([...uniquePlans.values()].filter((plan) => {
@@ -205,8 +219,21 @@ export default function HubRevenueOffers({ hub, compact = false }) {
       );
       const started = response?.checkout || null;
       setCheckout(started);
-      delete checkoutKeys.current[keyScope];
-      setNotice(response?.message || "M-Pesa prompt started. Confirm payment on your phone.");
+      if (started?.status === "submission_unknown" || started?.status === "initiating" && !started?.checkout_request_id) {
+        setActionError("The backend could not confirm whether Daraja accepted this request. No retry was sent. Do not pay again until finance reconciles the checkout.");
+      } else if (started?.status === "initiation_failed" || started?.status === "failed") {
+        setActionError(started?.message || started?.result_description || "Daraja rejected this checkout. No payment prompt was accepted.");
+        delete checkoutKeys.current[keyScope];
+      } else if (response?.replayed) {
+        setNotice("An existing checkout was returned; no second STK prompt was sent. Check the status below.");
+      } else if (started?.checkout_request_id) {
+        setNotice("Daraja accepted the STK request. Check the selected phone for the M-PESA PIN prompt; this page will not display the PIN screen.");
+      } else {
+        setNotice(response?.message || "Checkout response received. Review the status below before taking any further action.");
+      }
+      if (started?.status !== "submission_unknown" && started?.status !== "initiating") {
+        delete checkoutKeys.current[keyScope];
+      }
     } catch (error) {
       if (error?.payload?.checkout) setCheckout(error.payload.checkout);
       setActionError(messageForError(error));
