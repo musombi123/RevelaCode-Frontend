@@ -31,6 +31,7 @@ import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -1203,6 +1204,9 @@ export default function FaithDashboard({
       </section>
 
       <HubRevenueOffers hub="faith" compact />
+
+      {/* Clearly labelled sponsored placement; study access never depends on ad clicks. */}
+      <CommunityAdSenseUnit />
 
       {/* =====================================================
           STUDY QUICK ACCESS
