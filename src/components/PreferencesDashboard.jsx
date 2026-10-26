@@ -29,6 +29,7 @@ import { toast } from "react-hot-toast";
 
 import usePreferences from "./hooks/usePreferences.jsx";
 import { useTheme } from "./hooks/useTheme.jsx";
+import OfflineSyncStatus from "@/components/OfflineSyncStatus.jsx";
 
 /* =========================================================
    Constants
@@ -410,6 +411,8 @@ export default function PreferencesDashboard({
       </div>
 
       <div className="space-y-5">
+        <OfflineSyncStatus embedded />
+
         {/* ===================================================
             PROFILE SNAPSHOT
         =================================================== */}
