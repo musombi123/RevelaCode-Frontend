@@ -82,26 +82,93 @@ function getAuthorInitials(name) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function getAuthorAvatar(post) {
-  const candidates = [
-    post?.author?.avatar_url, post?.author?.avatarUrl, post?.author?.avatar,
-    post?.author?.profile_picture, post?.author?.profilePicture,
-    post?.author?.profile_image, post?.author?.profileImage,
-    post?.author?.profile_photo, post?.author?.profilePhoto,
-    post?.author?.photo_url, post?.author?.photoUrl, post?.author?.picture,
-    post?.author?.image_url, post?.author?.imageUrl,
-    post?.user?.avatar_url, post?.user?.avatarUrl, post?.user?.avatar,
-    post?.user?.profile_picture, post?.user?.profilePicture,
-    post?.user?.profile_image, post?.user?.profileImage,
-    post?.user?.profile_photo, post?.user?.profilePhoto,
-    post?.user?.photo_url, post?.user?.photoUrl, post?.user?.picture,
-    post?.avatar_url, post?.avatarUrl, post?.avatar,
-    post?.profile_picture, post?.profilePicture, post?.profile_image,
-    post?.profileImage, post?.profile_photo, post?.profilePhoto,
-    post?.photo_url, post?.photoUrl, post?.picture,
-  ];
-  const candidate = candidates.find((value) => typeof value === "string" && value.trim());
-  return candidate ? candidate.trim() : null;
+function getProfileAvatar(source) {
+  const candidate =
+    source?.avatar_url ||
+    source?.avatarUrl ||
+    source?.avatar ||
+    source?.profile_image ||
+    source?.profileImage ||
+    source?.profile_picture ||
+    source?.profilePicture ||
+    source?.profile_picture_url ||
+    source?.profilePictureUrl ||
+    source?.photo_url ||
+    source?.photoUrl ||
+    source?.picture ||
+    source?.image_url ||
+    source?.imageUrl ||
+    source?.dp ||
+    source?.profile?.avatar_url ||
+    source?.profile?.avatarUrl ||
+    source?.profile?.avatar ||
+    source?.profile?.profile_image ||
+    source?.profile?.profile_picture ||
+    source?.community_profile?.avatar_url ||
+    source?.communityProfile?.avatar_url;
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
+}
+
+function isPostByUser(post, user) {
+  if (!post || !user) return false;
+  const authorId =
+    post?.author_user_id ??
+    post?.author_id ??
+    post?.user_id ??
+    post?.created_by_user_id ??
+    post?.author?.user_id ??
+    post?.author?.id ??
+    post?.author?._id ??
+    post?.user?.user_id ??
+    post?.user?.id ??
+    post?.user?._id ??
+    post?.created_by ??
+    post?.createdBy ??
+    null;
+  if (authorId === null || authorId === undefined || String(authorId).trim() === "") return false;
+  const userIds = [
+    user?.id,
+    user?._id,
+    user?.user_id,
+    user?.userId,
+    user?.sub,
+    user?.account_id,
+    user?.accountId,
+  ].filter((value) => value !== undefined && value !== null && String(value).trim()).map(String);
+  return userIds.includes(String(authorId));
+}
+
+function getUserProfileAvatar(user) {
+  return (
+    getProfileAvatar(user?.community_profile) ||
+    getProfileAvatar(user?.communityProfile) ||
+    getProfileAvatar(user?.profile) ||
+    getProfileAvatar(user)
+  );
+}
+
+function getAuthorAvatar(post, currentUser = null) {
+  const ownPostAvatar = isPostByUser(post, currentUser)
+    ? getUserProfileAvatar(currentUser)
+    : null;
+  const candidate =
+    ownPostAvatar ||
+    getProfileAvatar(post?.author?.community_profile) ||
+    getProfileAvatar(post?.author?.communityProfile) ||
+    getProfileAvatar(post?.author_profile) ||
+    getProfileAvatar(post?.authorProfile) ||
+    getProfileAvatar(post?.author) ||
+    getProfileAvatar(post?.user?.community_profile) ||
+    getProfileAvatar(post?.user_profile) ||
+    getProfileAvatar(post?.userProfile) ||
+    getProfileAvatar(post?.user) ||
+    getProfileAvatar(post?.creator) ||
+    getProfileAvatar(post);
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
 }
 
 function getPostTitle(post) {
@@ -470,8 +537,8 @@ export default function CommunityPostCard({
     );
 
   const avatar = useMemo(
-    () => getAuthorAvatar(post),
-    [post]
+    () => getAuthorAvatar(post, currentUser),
+    [post, currentUser]
   );
 
   const title = useMemo(

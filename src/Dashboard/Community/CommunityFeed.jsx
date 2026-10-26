@@ -135,25 +135,55 @@ function getAuthor(post) {
   );
 }
 
-function getAvatar(post) {
-  const candidates = [
-    post?.author?.avatar_url, post?.author?.avatarUrl, post?.author?.avatar,
-    post?.author?.profile_picture, post?.author?.profilePicture,
-    post?.author?.profile_image, post?.author?.profileImage,
-    post?.author?.profile_photo, post?.author?.profilePhoto,
-    post?.author?.photo_url, post?.author?.photoUrl, post?.author?.picture,
-    post?.author?.image_url, post?.author?.imageUrl,
-    post?.user?.avatar_url, post?.user?.avatarUrl, post?.user?.avatar,
-    post?.user?.profile_picture, post?.user?.profilePicture,
-    post?.user?.profile_image, post?.user?.profileImage,
-    post?.user?.profile_photo, post?.user?.profilePhoto,
-    post?.user?.photo_url, post?.user?.photoUrl, post?.user?.picture,
-    post?.avatar_url, post?.avatarUrl, post?.avatar,
-    post?.profile_picture, post?.profilePicture, post?.profile_image,
-    post?.profileImage, post?.profile_photo, post?.profilePhoto,
-    post?.photo_url, post?.photoUrl, post?.picture,
-  ];
-  return candidates.find((value) => typeof value === "string" && value.trim())?.trim() || null;
+function getProfileAvatar(source) {
+  const candidate =
+    source?.avatar_url ||
+    source?.avatarUrl ||
+    source?.avatar ||
+    source?.profile_image ||
+    source?.profileImage ||
+    source?.profile_picture ||
+    source?.profilePicture ||
+    source?.profile_picture_url ||
+    source?.profilePictureUrl ||
+    source?.photo_url ||
+    source?.photoUrl ||
+    source?.picture ||
+    source?.image_url ||
+    source?.imageUrl ||
+    source?.dp ||
+    source?.profile?.avatar_url ||
+    source?.profile?.avatarUrl ||
+    source?.profile?.avatar ||
+    source?.profile?.profile_image ||
+    source?.profile?.profile_picture ||
+    source?.community_profile?.avatar_url ||
+    source?.communityProfile?.avatar_url;
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
+}
+
+function getAvatar(post, fallbackUser = null) {
+  const candidate =
+    getProfileAvatar(fallbackUser?.community_profile) ||
+    getProfileAvatar(fallbackUser?.communityProfile) ||
+    getProfileAvatar(fallbackUser?.profile) ||
+    getProfileAvatar(fallbackUser) ||
+    getProfileAvatar(post?.author?.community_profile) ||
+    getProfileAvatar(post?.author?.communityProfile) ||
+    getProfileAvatar(post?.author_profile) ||
+    getProfileAvatar(post?.authorProfile) ||
+    getProfileAvatar(post?.author) ||
+    getProfileAvatar(post?.user?.community_profile) ||
+    getProfileAvatar(post?.user_profile) ||
+    getProfileAvatar(post?.userProfile) ||
+    getProfileAvatar(post?.user) ||
+    getProfileAvatar(post?.creator) ||
+    getProfileAvatar(post);
+  return typeof candidate === "string" && candidate.trim()
+    ? candidate.trim()
+    : null;
 }
 
 function getHub(post) {
@@ -269,6 +299,7 @@ function isReacted(post) {
 export default function CommunityFeed({
   onNavigate,
   onEditPost,
+  currentUser: suppliedCurrentUser = null,
 }) {
   const { user } = useAuth();
 
@@ -1453,7 +1484,7 @@ export default function CommunityFeed({
                 getAuthor(post);
 
               const avatar =
-                getAvatar(post);
+                getAvatar(post, isOwnPost ? (suppliedCurrentUser || user) : null);
 
               const hub =
                 getHub(post);

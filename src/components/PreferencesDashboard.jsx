@@ -411,6 +411,8 @@ export default function PreferencesDashboard({
       </div>
 
       <div className="space-y-5">
+        <OfflineSyncStatus embedded />
+
         {/* ===================================================
             PROFILE SNAPSHOT
         =================================================== */}

@@ -1012,6 +1012,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                           items-center
                           justify-center
                           rounded-full
+                          overflow-hidden
                           bg-gradient-to-br
                           from-slate-700
                           to-slate-900
@@ -1023,34 +1024,14 @@ const BIASHARA_SECTION_KEYS = new Set(
                           dark:text-slate-900
                         "
                       >
-                        {(
-                          user?.fullName ||
-                          user?.full_name ||
-                          user?.name ||
-                          user?.display_name ||
-                          user?.contact ||
-                          "G"
-                         )
-                          .charAt(0)
-                          .toUpperCase()}
+                        {user?.avatar_url || user?.avatarUrl || user?.avatar || user?.profile_image || user?.profileImage || user?.profile_picture || user?.profilePicture || user?.profile_picture_url || user?.profilePictureUrl || user?.photo_url || user?.photoUrl || user?.picture || user?.profile?.avatar_url || user?.profile?.avatar || user?.profile?.profile_image ? (
+                          <img src={user?.avatar_url || user?.avatarUrl || user?.avatar || user?.profile_image || user?.profileImage || user?.profile_picture || user?.profilePicture || user?.profile_picture_url || user?.profilePictureUrl || user?.photo_url || user?.photoUrl || user?.picture || user?.profile?.avatar_url || user?.profile?.avatar || user?.profile?.profile_image} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          (user?.fullName || user?.full_name || user?.name || user?.display_name || user?.contact || "G").charAt(0).toUpperCase()
+                        )}
                       </div>
 
                       <div className="min-w-0">
-                        <p
-                          className="
-                            truncate
-                            text-sm
-                            font-semibold
-                          "
-                        >
-                          {user?.fullName ||
-                            user?.full_name ||
-                            user?.name ||
-                            user?.display_name ||
-                            user?.contact ||
-                          "Guest"}
-                        </p>
-
                         <p
                           className="
                             truncate
