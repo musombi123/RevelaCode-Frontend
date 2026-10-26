@@ -95,11 +95,7 @@ jobs:
             adb shell monkey -p com.revelacode.app 1
             sleep 15
             adb logcat -d -v threadtime > android-launch-logcat.txt
-            if ! adb shell pidof com.revelacode.app; then
-              echo "RevelaCode process exited after launch. Relevant crash lines:"
-              grep -Ei "FATAL EXCEPTION|AndroidRuntime|Fatal signal|SIGABRT|SIGSEGV|Process: com.revelacode.app|chromium.*(ERROR|FATAL)" android-launch-logcat.txt || true
-              exit 1
-            fi
+            if ! adb shell pidof com.revelacode.app; then echo "RevelaCode process exited after launch. Relevant crash lines:"; grep -Ei "FATAL EXCEPTION|AndroidRuntime|Fatal signal|SIGABRT|SIGSEGV|Process: com.revelacode.app|chromium.*(ERROR|FATAL)" android-launch-logcat.txt || true; exit 1; fi
 
       - name: Upload Android launch diagnostics
         if: always()
