@@ -8,11 +8,11 @@ export default function AvatarMenu() {
   const { user, logout, updateUser } = useAuth();
 
   // Sync local avatar with AuthContext (this was MISSING before)
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [avatar, setAvatar] = useState(user?.avatar || user?.avatar_url || user?.avatarUrl || user?.profile_picture || user?.profilePicture || user?.profile_image || user?.profileImage || null);
 
   useEffect(() => {
-    setAvatar(user?.avatar || null);
-  }, [user?.avatar]);
+    setAvatar(user?.avatar || user?.avatar_url || user?.avatarUrl || user?.profile_picture || user?.profilePicture || user?.profile_image || user?.profileImage || null);
+  }, [user?.avatar, user?.avatar_url, user?.avatarUrl, user?.profile_picture, user?.profilePicture, user?.profile_image, user?.profileImage]);
 
   const isGuest = user?.role === "guest";
 
@@ -59,7 +59,7 @@ export default function AvatarMenu() {
       // Critical: update global auth state properly
       updateUser?.({
         ...user,
-        avatar: data.avatar,
+        avatar: data.avatar || data.avatar_url || data.avatarUrl || data.profile_picture || data.profilePicture || data.profile_image || data.profileImage || avatar,
       });
     } catch (err) {
       console.error("❌ Failed to upload avatar:", err);
@@ -91,10 +91,6 @@ export default function AvatarMenu() {
           />
         )}
       </label>
-
-      <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-        {displayName}
-      </span>
 
       {user?.role && (
         <Badge className="ml-1">
