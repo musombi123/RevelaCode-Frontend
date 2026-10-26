@@ -1185,6 +1185,7 @@ export default function CommunityDashboard({
       <div className="min-w-0">
         {renderBackMenu()}
         <CommunityFeed
+          currentUser={{ ...(user || {}), community_profile: communityProfile }}
           onNavigate={navigate}
           onEditPost={(post) => {
             setEditingPost(post);
@@ -1392,7 +1393,7 @@ export default function CommunityDashboard({
                       <CommunityPostCard
                         key={getPostId(post) || ("community-post-" + index)}
                         post={post}
-                        currentUser={user}
+                        currentUser={{ ...(user || {}), community_profile: communityProfile }}
                         onOpen={() => navigate("community-feed")}
                         onLike={handleLike}
                       />
