@@ -1309,10 +1309,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                     onClick={() =>
                       setShowStartModal(true)
                     }
-                    className="
-                      hidden
-                      rounded-xl
-                      bg-indigo-600
+                    className="\n                        inline-flex\n                        rounded-xl\n                        bg-indigo-600
                       px-3
                       py-2
                       text-xs
@@ -1366,6 +1363,21 @@ const BIASHARA_SECTION_KEYS = new Set(
               lg:pb-6
             "
           >
+            {isGuest && (
+              <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">You’re exploring RevelaCode as a guest</p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-800 dark:text-emerald-200">Browse the platform hubs and public features. Sign in or create an account when you need personal account tools or work saved to your account.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowStartModal(true)}
+                  className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
+                >
+                  Sign in / Create account
+                </button>
+              </div>
+            )}
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {activeComponent ? (
