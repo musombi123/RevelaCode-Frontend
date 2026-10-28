@@ -1309,7 +1309,10 @@ const BIASHARA_SECTION_KEYS = new Set(
                     onClick={() =>
                       setShowStartModal(true)
                     }
-                    className="\n                        inline-flex\n                        rounded-xl\n                        bg-indigo-600
+                    className="
+                        inline-flex
+                        rounded-xl
+                        bg-indigo-600
                       px-3
                       py-2
                       text-xs
