@@ -1246,6 +1246,18 @@ const completeLogin = (data = {}) => {
         }
 
         if (
+          mode === "login"
+        ) {
+          // The login-unverified flow keeps the entered password in state.
+          // Verify the email code first, then resume the normal MFA-aware login.
+          await verifyCode(cleanCode);
+          setVerificationCode("");
+          const loginData = await loginUser(contact, password);
+          await processLoginResponse(loginData);
+          return;
+        }
+
+        if (
           mode === "forgot"
         ) {
           await handleVerifyReset(
