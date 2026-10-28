@@ -265,11 +265,14 @@ export default function StartModal() {
       !res.ok ||
       data.success === false
     ) {
-      throw new Error(
+      const requestError = new Error(
         data.message ||
           data.error?.message ||
           "Request failed."
       );
+      requestError.code = data.code || data.error?.code || "";
+      requestError.status = res.status;
+      throw requestError;
     }
 
     return data;
@@ -1093,11 +1096,19 @@ const completeLogin = (data = {}) => {
         if (
           mode === "login"
         ) {
-          const data =
-            await loginUser(
-              contact,
-              password
-            );
+          let data;
+          try {
+            data = await loginUser(contact, password);
+          } catch (loginError) {
+            if (loginError?.code === "account_not_verified" || /account not verified/i.test(loginError?.message || "")) {
+              setStep("verify");
+              setVerificationCode("");
+              setMessage("This account is not verified yet. Request a fresh email verification code below, then enter it here.");
+              setError("");
+              return;
+            }
+            throw loginError;
+          }
 
           await processLoginResponse(data);
           return;
@@ -2221,6 +2232,28 @@ const completeLogin = (data = {}) => {
                           "
                         />
                       </label>
+
+                      {(mode === "register" || mode === "login") && (
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={async () => {
+                            setLoading(true);
+                            setError("");
+                            try {
+                              const data = await requestVerificationCode();
+                              setMessage(data.message || "A new verification code has been sent. Check your inbox and spam folder.");
+                            } catch (requestError) {
+                              setError(requestError?.message || "We could not send a new verification code. Please try again.");
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          className="w-full rounded-xl border border-emerald-300 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                        >
+                          {loading ? "Sending code..." : "Resend verification code"}
+                        </button>
+                      )}
 
                       <div
                         className="
