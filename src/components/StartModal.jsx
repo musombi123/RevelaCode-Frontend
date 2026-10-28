@@ -2222,6 +2222,29 @@ const completeLogin = (data = {}) => {
                         />
                       </label>
 
+                      {mode === "register" && (
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={async () => {
+                            setLoading(true);
+                            setError("");
+                            setMessage("");
+                            try {
+                              const data = await requestVerificationCode();
+                              setMessage(data.message || "A new verification code has been sent. Check your inbox and spam folder.");
+                            } catch (requestError) {
+                              setError(requestError?.message || "We could not send a new verification code. Check the email address and try again.");
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          className="w-full rounded-xl border border-emerald-300 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                        >
+                          {loading ? "Sending code..." : "Didn't receive a code? Resend verification code"}
+                        </button>
+                      )}
+
                       <div
                         className="
                           flex
