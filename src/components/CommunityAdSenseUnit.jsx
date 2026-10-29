@@ -9,8 +9,21 @@ import {
 } from "@capacitor-community/admob";
 
 const ADSENSE_CLIENT = "ca-pub-5357444506450550";
-const COMMUNITY_AD_SLOT = String(
-  import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT || "",
+// Reuse the Community feed slot already present in this repository, while
+// allowing deployment-specific overrides without changing source.
+// In-feed slot already used by CommunityAdCard.jsx; deployments can override it.
+const COMMUNITY_FEED_AD_SLOT = String(
+  import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT_ID || "8625467538",
+).trim();
+// Keep the previous Faith/display configuration working independently.
+const FAITH_DISPLAY_AD_SLOT = String(
+  import.meta.env.VITE_ADSENSE_FAITH_SLOT ||
+    import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT ||
+    "",
+).trim();
+const COMMUNITY_AD_LAYOUT_KEY = String(
+  import.meta.env.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY ||
+    "-6t+ed+2i-1n-4w",
 ).trim();
 
 const ADMOB_APP_ID = String(
@@ -189,13 +202,16 @@ function CommunityNativeAdMobUnit() {
   );
 }
 
-function CommunityWebAdSenseUnit() {
+function CommunityWebAdSenseUnit({ placement = "display" }) {
   const adRef = useRef(null);
   const pushAttempted = useRef(false);
+  const adSlot = placement === "feed"
+    ? COMMUNITY_FEED_AD_SLOT
+    : FAITH_DISPLAY_AD_SLOT;
 
   useEffect(() => {
     if (
-      !/^\d+$/.test(COMMUNITY_AD_SLOT) ||
+      !/^\d+$/.test(adSlot) ||
       !adRef.current ||
       pushAttempted.current
     ) {
@@ -210,9 +226,9 @@ function CommunityWebAdSenseUnit() {
       pushAttempted.current = false;
       console.warn("Community AdSense unit could not be initialized.", error);
     }
-  }, []);
+  }, [adSlot]);
 
-  if (!/^\d+$/.test(COMMUNITY_AD_SLOT) || !ADSENSE_CLIENT) return null;
+  if (!/^\d+$/.test(adSlot) || !ADSENSE_CLIENT) return null;
 
   return (
     <aside
@@ -229,19 +245,22 @@ function CommunityWebAdSenseUnit() {
         ref={adRef}
         className="adsbygoogle"
         style={{ display: "block", width: "100%", minHeight: "100px" }}
-        data-ad-format="auto"
+        data-ad-format={placement === "feed" ? "fluid" : "auto"}
+        data-ad-layout-key={
+          placement === "feed" ? COMMUNITY_AD_LAYOUT_KEY : undefined
+        }
         data-full-width-responsive="true"
         data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={COMMUNITY_AD_SLOT}
+        data-ad-slot={adSlot}
       />
     </aside>
   );
 }
 
-export default function CommunityAdSenseUnit() {
+export default function CommunityAdSenseUnit({ placement = "display" }) {
   return isAndroidNativeApp() ? (
     <CommunityNativeAdMobUnit />
   ) : (
-    <CommunityWebAdSenseUnit />
+    <CommunityWebAdSenseUnit placement={placement} />
   );
 }
