@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
+import { getCommunityMediaItems } from "@/Dashboard/Community/CommunityMediaCards.jsx";
 
 // ============================================================
 // CONFIG
@@ -1479,6 +1480,7 @@ export default function CommunityFeed({
                 .map(String);
               const isOwnPost = authorUserId !== null && currentUserIds.includes(String(authorUserId));
               const menuKey = String(postId || `${getAuthor(post)}-${getTitle(post)}`);
+              const mediaItems = getCommunityMediaItems(post);
 
               const author =
                 getAuthor(post);
@@ -1514,16 +1516,21 @@ export default function CommunityFeed({
                     )}`
                   }
                   className="
+                    group/feed-card
                     overflow-hidden
-                    rounded-[24px]
+                    rounded-[26px]
                     border
-                    border-slate-200
+                    border-slate-200/90
                     bg-white
-                    shadow-sm
-                    transition
-                    hover:shadow-md
-                    dark:border-white/10
-                    dark:bg-slate-900
+                    shadow-[0_8px_30px_-18px_rgba(15,23,42,0.28)]
+                    transition-all
+                    duration-300
+                    hover:-translate-y-0.5
+                    hover:border-cyan-200
+                    hover:shadow-[0_18px_45px_-22px_rgba(8,145,178,0.28)]
+                    dark:border-white/[0.09]
+                    dark:bg-slate-900/95
+                    dark:hover:border-cyan-400/30
                   "
                 >
                   {/* POST HEADER */}
@@ -1728,6 +1735,41 @@ export default function CommunityFeed({
                         </p>
                       )}
                     </button>
+
+                    {mediaItems.length > 0 ? (
+                      <div className={`mt-4 grid gap-2 overflow-hidden rounded-2xl ${mediaItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                        {mediaItems.map((media, mediaIndex) => (
+                          <div
+                            key={media.id || media.url}
+                            className={`relative block w-full overflow-hidden rounded-xl bg-slate-100 text-left ring-1 ring-black/5 dark:bg-slate-800 dark:ring-white/10 ${mediaItems.length === 1 ? "max-h-[520px]" : "aspect-[4/3]"}`}
+                          >
+                            {media.kind === "video" ? (
+                              <video
+                                src={media.url}
+                                controls
+                                playsInline
+                                preload="metadata"
+                                className={`w-full object-cover ${mediaItems.length === 1 ? "max-h-[520px]" : "h-full"}`}
+                              />
+                            ) : (
+                              <img
+                                src={media.url}
+                                alt={media.fileName || getTitle(post)}
+                                loading="lazy"
+                                decoding="async"
+                                className={`w-full object-cover ${mediaItems.length === 1 ? "max-h-[520px]" : "h-full"}`}
+                                onError={(event) => {
+                                  event.currentTarget.closest("button")?.classList.add("hidden");
+                                }}
+                              />
+                            )}
+                            {media.kind === "video" ? (
+                              <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-slate-950/75 px-2 py-1 text-[10px] font-bold text-white">VIDEO</span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* POST STATS */}
