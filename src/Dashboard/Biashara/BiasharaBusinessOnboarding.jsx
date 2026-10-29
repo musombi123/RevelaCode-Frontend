@@ -142,7 +142,11 @@ export default function BiasharaBusinessOnboarding({
             form.category.trim(),
           industry_template: form.industry_template,
           business_scale: form.business_scale,
-          workspace_mode: form.workspace_mode,
+          workspace_mode:
+            form.industry_template === "factory" ||
+            ["growing", "enterprise"].includes(form.business_scale)
+              ? "advanced"
+              : "simple",
           business_type:
             form.business_type.trim(),
           phone:
@@ -384,7 +388,7 @@ export default function BiasharaBusinessOnboarding({
               <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                 <p className="text-sm font-semibold text-emerald-950">Small Biashara mode</p>
                 <p className="mt-1 text-xs leading-5 text-emerald-800">
-                  Micro and small businesses start with a simpler workspace for daily sales, stock, customers, finance and sync. Growing companies and factories can use the advanced workspace. You can change the business size in a future settings update.
+                  Micro and small businesses start with a simpler workspace for daily sales, stock, customer records, finance tools and sync. Factory templates and growing or enterprise businesses use the advanced workspace. You can change the business size in a future settings update.
                 </p>
               </div>
 
