@@ -41,6 +41,7 @@ import ElimuInventoryWorkspace from "@/Dashboard/elimu/ElimuInventoryWorkspace.j
 import ElimuLibraryWorkspace from "@/Dashboard/elimu/ElimuLibraryWorkspace.jsx";
 import ElimuExamCentre from "@/Dashboard/elimu/ElimuExamCentre.jsx";
 import ElimuFinanceReportsWorkspace from "@/Dashboard/elimu/ElimuFinanceReportsWorkspace.jsx";
+import ElimuIntelligenceWorkspace from "@/Dashboard/elimu/ElimuIntelligenceWorkspace.jsx";
 import { ElimuLibrarianDashboard, ElimuStorekeeperDashboard } from "@/Dashboard/elimu/ElimuResourceRoleDashboards.jsx";
 
 import { useElimuApi } from "@/services/elimuApi.jsx";
@@ -278,11 +279,11 @@ function canAccessRoleRoute(role, path) {
   if (normalized === "elimu") return true;
 
   const allowed = {
-    bursar: ["elimu/fees", "elimu/reports/fees"],
+    bursar: ["elimu/fees", "elimu/reports/fees", "elimu/intelligence"],
     storekeeper: ["elimu/inventory"],
     librarian: ["elimu/library"],
     registrar: [
-      "elimu/students", "elimu/classes", "elimu/lessons",
+      "elimu/intelligence", "elimu/students", "elimu/classes", "elimu/lessons",
       "elimu/assignments", "elimu/assessments", "elimu/exams",
       "elimu/attendance", "elimu/timetable", "elimu/cbc",
       "elimu/reports", "elimu/documents", "elimu/calendar",
@@ -1293,6 +1294,7 @@ export default function ElimuDashboardWorkspace({
   const isInventoryCenter = normalizedPath === "elimu/inventory" || normalizedPath === "inventory" || normalizedPath.endsWith("/elimu/inventory");
   const isLibraryCenter = normalizedPath === "elimu/library" || normalizedPath === "library" || normalizedPath.endsWith("/elimu/library");
   const isFinanceReportsCenter = normalizedPath === "elimu/reports/fees" || normalizedPath === "reports/fees" || normalizedPath.endsWith("/elimu/reports/fees");
+  const isIntelligenceCenter = normalizedPath === "elimu/intelligence" || normalizedPath === "intelligence" || normalizedPath.endsWith("/elimu/intelligence");
   const isBursarFinanceWorkspace = role === "bursar" && [
     "elimu",
     "elimu/fees",
@@ -1348,12 +1350,14 @@ export default function ElimuDashboardWorkspace({
   // The workspace supports dedicated pages as well as role dashboards.
   // Never fall through to the same dashboard when a module path is active.
   const isSpecialCenter = !isBursarFinanceWorkspace && (
-    isRoleAccessDenied || isDocumentCenter || isMediaCenter || isWebsiteCenter || isPortalRequestsCenter || isExamCenter || isInventoryCenter || isLibraryCenter || isFinanceReportsCenter || isModuleCenter
+    isRoleAccessDenied || isDocumentCenter || isMediaCenter || isWebsiteCenter || isPortalRequestsCenter || isExamCenter || isInventoryCenter || isLibraryCenter || isFinanceReportsCenter || isIntelligenceCenter || isModuleCenter
   );
 
   const centerTitle = isRoleAccessDenied
     ? "Workspace access restricted"
-    : isFinanceReportsCenter
+    : isIntelligenceCenter
+      ? "Elimu Intelligence"
+      : isFinanceReportsCenter
       ? "Financial reports"
       : isExamCenter
         ? "Exam Centre"
@@ -1373,7 +1377,9 @@ export default function ElimuDashboardWorkspace({
 
   const centerDescription = isRoleAccessDenied
     ? "This page is outside the permissions assigned to your active school role."
-    : isFinanceReportsCenter
+    : isIntelligenceCenter
+      ? "Explainable fee follow-up signals, votehead summaries and school register exports."
+      : isFinanceReportsCenter
       ? "View school fee totals, recorded payments and outstanding balances only."
       : isExamCenter
         ? "Access assessment records, report-card generation and publication controls."
@@ -1634,6 +1640,10 @@ export default function ElimuDashboardWorkspace({
                     </div>
                   </section>
                 )
+              )}
+
+              {isIntelligenceCenter && role && canAccessCurrentPath && (
+                <ElimuIntelligenceWorkspace role={role} school={school} />
               )}
 
               {isFinanceReportsCenter && role && canAccessCurrentPath && !isBursarFinanceWorkspace && (
