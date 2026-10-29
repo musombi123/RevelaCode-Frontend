@@ -1206,7 +1206,7 @@ export default function FaithDashboard({
       <HubRevenueOffers hub="faith" compact />
 
       {/* Clearly labelled sponsored placement; study access never depends on ad clicks. */}
-      <CommunityAdSenseUnit />
+      <CommunityAdSenseUnit placement="faith" />
 
       {/* =====================================================
           STUDY QUICK ACCESS
