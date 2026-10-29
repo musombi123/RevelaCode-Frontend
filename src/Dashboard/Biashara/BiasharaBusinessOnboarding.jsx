@@ -38,6 +38,23 @@ const BUSINESS_TYPES = [
   "Other",
 ];
 
+const INDUSTRY_TEMPLATES = [
+  { value: "general", label: "General business" },
+  { value: "retail_shop", label: "Retail shop / kiosk" },
+  { value: "hardware", label: "Hardware and building supplies" },
+  { value: "factory", label: "Factory / manufacturing" },
+  { value: "salon", label: "Salon / beauty business" },
+  { value: "professional_services", label: "Professional services" },
+  { value: "school", label: "School / education provider" },
+];
+
+const BUSINESS_SCALES = [
+  { value: "micro", label: "Micro / Jua Kali — solo or family-run" },
+  { value: "small", label: "Small biashara — small team" },
+  { value: "growing", label: "Growing company — multiple staff" },
+  { value: "enterprise", label: "Enterprise / factory" },
+];
+
 
 export default function BiasharaBusinessOnboarding({
   onCreated,
@@ -51,6 +68,9 @@ export default function BiasharaBusinessOnboarding({
   const [form, setForm] = useState(() => ({
     name: initialBusiness?.name || initialBusiness?.business_name || "",
     category: initialBusiness?.category || "",
+    industry_template: initialBusiness?.industry_template || "general",
+    business_scale: initialBusiness?.business_scale || "micro",
+    workspace_mode: initialBusiness?.workspace_mode || "simple",
     business_type: initialBusiness?.business_type || "",
     phone: initialBusiness?.phone || "",
     email: initialBusiness?.email || "",
@@ -120,6 +140,9 @@ export default function BiasharaBusinessOnboarding({
           name: form.name.trim(),
           category:
             form.category.trim(),
+          industry_template: form.industry_template,
+          business_scale: form.business_scale,
+          workspace_mode: form.workspace_mode,
           business_type:
             form.business_type.trim(),
           phone:
@@ -335,6 +358,34 @@ export default function BiasharaBusinessOnboarding({
                   placeholder="Select business type"
                 />
 
+                <SelectField
+                  label="Industry template"
+                  required
+                  value={form.industry_template}
+                  onChange={(value) => updateField("industry_template", value)}
+                  options={INDUSTRY_TEMPLATES}
+                  placeholder="Choose your industry"
+                />
+
+                <SelectField
+                  label="Business size"
+                  required
+                  value={form.business_scale}
+                  onChange={(value) => {
+                    updateField("business_scale", value);
+                    updateField("workspace_mode", ["micro", "small"].includes(value) ? "simple" : "advanced");
+                  }}
+                  options={BUSINESS_SCALES}
+                  placeholder="Choose business size"
+                />
+
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                <p className="text-sm font-semibold text-emerald-950">Small Biashara mode</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-800">
+                  Micro and small businesses start with a simpler workspace for daily sales, stock, customers, finance and sync. Growing companies and factories can use the advanced workspace. You can change the business size in a future settings update.
+                </p>
               </div>
 
             </section>
@@ -711,16 +762,15 @@ function SelectField({
           {placeholder}
         </option>
 
-        {options.map(
-          (option) => (
-            <option
-              key={option}
-              value={option}
-            >
-              {option}
+        {options.map((option) => {
+          const optionValue = typeof option === "string" ? option : option.value;
+          const optionLabel = typeof option === "string" ? option : option.label;
+          return (
+            <option key={optionValue} value={optionValue}>
+              {optionLabel}
             </option>
-          ),
-        )}
+          );
+        })}
 
       </select>
 
