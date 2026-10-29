@@ -563,6 +563,17 @@ export function createElimuApiClient({
     getHealth: (options) =>
       get("health", undefined, options),
 
+    getFeeRiskSignals: (params, options) =>
+      get("intelligence/fee-risk", params, options),
+
+    getStudentRegisterExport: (params, options) =>
+      get("intelligence/student-register-export", params, options),
+    downloadStudentAdmissionLetter: (studentId, options = {}) =>
+      request(
+        `intelligence/students/${pathSegment(studentId, "student ID")}/admission-letter.pdf`,
+        { ...options, method: "GET", responseType: "blob" },
+      ),
+
     getSchool: (options) =>
       get("school", undefined, options),
 
