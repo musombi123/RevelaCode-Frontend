@@ -563,6 +563,12 @@ export function createElimuApiClient({
     getHealth: (options) =>
       get("health", undefined, options),
 
+    getFeeRiskSignals: (params, options) =>
+      get("intelligence/fee-risk", params, options),
+
+    getStudentRegisterExport: (params, options) =>
+      get("intelligence/student-register-export", params, options),
+
     getSchool: (options) =>
       get("school", undefined, options),
 
