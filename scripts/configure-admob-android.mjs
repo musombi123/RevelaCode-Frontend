@@ -135,7 +135,7 @@ async function main() {
       ? hasAnyProductionUnit
         ? "AdMob Android manifest configured with your app ID. Each configured native ad slot uses its production unit; any missing slot uses Google's test unit."
         : "AdMob Android manifest configured with your app ID. Native ad slots still use Google's test units until unit IDs are set."
-      : "AdMob Android manifest configured with Google's test application ID. Set VITE_ADMOB_ANDROID_APP_ID and the native unit IDs for production ads.");
+      : "AdMob Android manifest configured with Google's test application ID. Set VITE_ADMOB_ANDROID_APP_ID and native unit IDs for production ads.",
   );
 }
 
