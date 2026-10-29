@@ -1900,7 +1900,7 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 </article>
-                {(index + 1) % 5 === 0 && index < filteredPosts.length - 1 ? <CommunityAdSenseUnit key={"feed-ad-" + index} /> : null}
+                {(index + 1) % 5 === 0 && index < filteredPosts.length - 1 ? <CommunityAdSenseUnit placement="feed" key={"feed-ad-" + index} /> : null}
                 </React.Fragment>
               );
             })
@@ -1908,7 +1908,7 @@ export default function CommunityFeed({
         </section>
 
         {/* Keep a single ad visible on short feeds; longer feeds receive placements between posts. */}
-        {!loading && !error && filteredPosts.length < 5 ? <CommunityAdSenseUnit /> : null}
+        {!loading && !error && filteredPosts.length < 5 ? <CommunityAdSenseUnit placement="feed" /> : null}
 
         {/* ====================================================
             END OF FEED
