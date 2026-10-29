@@ -29,20 +29,15 @@ const COMMUNITY_AD_LAYOUT_KEY = String(
 const ADMOB_APP_ID = String(
   import.meta.env.VITE_ADMOB_ANDROID_APP_ID || "",
 ).trim();
-const ADMOB_NATIVE_UNIT_ID = String(
+const COMMUNITY_NATIVE_AD_UNIT_ID = String(
   import.meta.env.VITE_ADMOB_COMMUNITY_NATIVE_AD_UNIT_ID || "",
+).trim();
+const FAITH_NATIVE_AD_UNIT_ID = String(
+  import.meta.env.VITE_ADMOB_FAITH_NATIVE_AD_UNIT_ID || "",
 ).trim();
 
 const TEST_ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713";
 const TEST_NATIVE_AD_UNIT_ID = "ca-app-pub-3940256099942544/2247696110";
-const HAS_PRODUCTION_ADMOB_IDS = Boolean(ADMOB_APP_ID && ADMOB_NATIVE_UNIT_ID);
-const NATIVE_AD_UNIT_ID = HAS_PRODUCTION_ADMOB_IDS
-  ? ADMOB_NATIVE_UNIT_ID
-  : TEST_NATIVE_AD_UNIT_ID;
-const IS_TESTING_ADS = !HAS_PRODUCTION_ADMOB_IDS;
-
-const NATIVE_FEED_ID = "revelacode-community-feed";
-const NATIVE_SLOT_KEY = "community-sponsored-placement";
 
 let admobInitializePromise = null;
 
@@ -84,8 +79,18 @@ async function initializeAdMobWithConsent() {
  * only inside the Android APK; the existing AdSense unit remains the web path.
  * Without BOTH real AdMob IDs, it deliberately uses Google's official demo IDs.
  */
-function CommunityNativeAdMobUnit() {
+function CommunityNativeAdMobUnit({ placement = "community" }) {
   const [status, setStatus] = useState("idle");
+  const productionUnitId = placement === "faith"
+    ? FAITH_NATIVE_AD_UNIT_ID
+    : COMMUNITY_NATIVE_AD_UNIT_ID;
+  const hasProductionIds = Boolean(ADMOB_APP_ID && productionUnitId);
+  const nativeAdUnitId = hasProductionIds
+    ? productionUnitId
+    : TEST_NATIVE_AD_UNIT_ID;
+  const isTestingAds = !hasProductionIds;
+  const nativeFeedId = `revelacode-${placement}-native-feed`;
+  const nativeSlotKey = `${placement}-sponsored-placement`;
 
   useEffect(() => {
     let active = true;
@@ -112,10 +117,10 @@ function CommunityNativeAdMobUnit() {
         }
 
         feed = await NativeAdFeed.create({
-          feedId: NATIVE_FEED_ID,
-          adId: NATIVE_AD_UNIT_ID,
+          feedId: nativeFeedId,
+          adId: nativeAdUnitId,
           template: NativeAdTemplate.Small,
-          isTesting: IS_TESTING_ADS,
+          isTesting: isTestingAds,
           style: {
             backgroundColor: "#0b1220",
             cornerRadius: 12,
@@ -132,13 +137,13 @@ function CommunityNativeAdMobUnit() {
         loadedHandle = await feed.addListener(
           NativeAdPluginEvents.Loaded,
           (event) => {
-            if (event.slotKey === NATIVE_SLOT_KEY) settle("loaded");
+            if (event.slotKey === nativeSlotKey) settle("loaded");
           },
         );
         failedHandle = await feed.addListener(
           NativeAdPluginEvents.FailedToLoad,
           (event) => {
-            if (event.slotKey === NATIVE_SLOT_KEY) settle("failed");
+            if (event.slotKey === nativeSlotKey) settle("failed");
           },
         );
 
@@ -192,8 +197,8 @@ function CommunityNativeAdMobUnit() {
         <span className="text-[9px] text-slate-400">Sponsored</span>
       </div>
       {createElement("capacitor-admob-native", {
-        "feed-id": NATIVE_FEED_ID,
-        "slot-key": NATIVE_SLOT_KEY,
+        "feed-id": nativeFeedId,
+        "slot-key": nativeSlotKey,
       })}
       {status === "loading" && (
         <span className="sr-only">Loading advertisement</span>
@@ -259,7 +264,7 @@ function CommunityWebAdSenseUnit({ placement = "display" }) {
 
 export default function CommunityAdSenseUnit({ placement = "display" }) {
   return isAndroidNativeApp() ? (
-    <CommunityNativeAdMobUnit />
+    <CommunityNativeAdMobUnit placement={placement === "faith" ? "faith" : "community"} />
   ) : (
     <CommunityWebAdSenseUnit placement={placement} />
   );
