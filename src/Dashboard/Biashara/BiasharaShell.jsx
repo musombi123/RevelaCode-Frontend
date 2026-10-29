@@ -199,7 +199,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
           <div className="my-3 border-t border-white/10" />
           <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
           <div className="space-y-1">
-            {MORE_TOOLS.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
+            {moreNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
           </div>
           <p className="px-3 pt-3 text-[11px] leading-4 text-slate-500">Unavailable sections are marked with a lock until their backend API is ready. No plan or role restriction is inferred here.</p>
         </div>
