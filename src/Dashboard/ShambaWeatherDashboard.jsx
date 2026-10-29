@@ -767,6 +767,9 @@ export default function ShambaWeatherDashboard({
                       {weatherLoading ? "Refreshing…" : "Refresh weather"}
                     </button>
                   </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Device location is optional. Share it only when the device is at this farm; it saves the current coordinates for this farm. Saved town or county works without GPS.
+                  </p>
                   {locationMessage && <p className="mt-2 text-xs leading-5 text-slate-500">{locationMessage}</p>}
                 </>
               ) : (
