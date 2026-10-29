@@ -26,9 +26,28 @@ For compatibility, the Faith display placement also accepts the existing `VITE_A
 
 After changing any `VITE_*` variable, trigger a fresh frontend build/deploy because Vite embeds these values at build time. Confirm in AdSense that `revelacode.co.ke` is approved, the configured units are active, and the site has no policy or consent blockers. Ad fill is not guaranteed immediately and a correctly inserted unit may still return no ad.
 
-## Android advertising
+## Android AdMob placements
 
-Android uses the separate native AdMob path; the AdSense JavaScript is for the web frontend. The native component falls back to Google's test ad IDs until both production AdMob IDs are configured. Test ads do not generate production revenue. Configure and verify the Android AdMob app ID and native ad-unit ID separately before expecting Android revenue.
+Android uses the Capacitor AdMob native feed API; the AdSense JavaScript is web-only. The same reusable placement component selects separate native units for Faith and Community:
+
+```env
+VITE_ADMOB_ANDROID_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY
+VITE_ADMOB_FAITH_NATIVE_AD_UNIT_ID=ca-app-pub-XXXXXXXXXXXXXXXX/FAITH_UNIT_ID
+VITE_ADMOB_COMMUNITY_NATIVE_AD_UNIT_ID=ca-app-pub-XXXXXXXXXXXXXXXX/COMMUNITY_UNIT_ID
+```
+
+Use the app ID from your AdMob Android app registration and create two **Native** ad units, one for Faith and one for Community. Replace the example strings with the real IDs from AdMob. The app ID is applied to the generated Android manifest by `npm run android:sync:admob`; this helper now validates either native unit independently. Each slot uses Google's official test native ID until both the app ID and that specific slot's production unit ID are configured. Test ads do not generate production revenue.
+
+After changing the local `.env`, run:
+
+```powershell
+npm run build
+npm run android:sync:admob
+cd android
+.\\gradlew.bat assembleDebug
+```
+
+Set the same `VITE_*` values in your native APK build environment as well. A web-only Render deployment does not alter an APK already installed on a device. Never click live production ads while testing.
 
 ## Verification checklist
 
