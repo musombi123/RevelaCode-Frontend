@@ -945,6 +945,14 @@ export function useJumuiyaApi() {
       getFarms: () =>
         getData("/shamba/farms"),
 
+      getFarmWeather: (farmId, { refresh = false } = {}) =>
+        getData(
+          withQuery(
+            `/shamba/farms/${encodeId(farmId, "Farm ID")}/weather`,
+            { refresh: refresh ? "true" : "" },
+          ),
+        ),
+
       createFarm: (data) =>
         postData("/shamba/farms", data),
 
