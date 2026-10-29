@@ -195,6 +195,13 @@ const NAVIGATION = [
         path: "elimu/reports/fees",
         roles: ["owner", "principal", "bursar"],
       },
+      {
+        id: "intelligence",
+        label: "Elimu Intelligence",
+        icon: Activity,
+        path: "elimu/intelligence",
+        roles: ["owner", "principal", "bursar", "registrar"],
+      },
     ],
   },
 
