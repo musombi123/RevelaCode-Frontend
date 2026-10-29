@@ -32,9 +32,11 @@ import {
   Construction,
 } from "lucide-react";
 
+import { API_ROOT } from "@/services/jumuiyaApi.jsx";
 import {
-  useJumuiyaApi,
-} from "@/services/jumuiyaApi.jsx";
+  offlineScopeForUser,
+  readCachedApiResponse,
+} from "@/services/offlineHubSync.js";
 
 import {
   useNotifications,
@@ -1108,14 +1110,6 @@ function HomeDashboard({
   const { history: userHistory = [] } = useHistory();
 
   const {
-    getWalletLedger,
-    getBiasharaDashboard,
-    getShambaDashboard,
-    getElimuDashboard,
-    getCommunityFeed,
-  } = useJumuiyaApi();
-
-  const {
     notifications,
     unreadCount,
     loading:
@@ -1215,117 +1209,75 @@ function HomeDashboard({
     .trim() ||
     "Guest User";
 
-  /* ====================================================
-     LOAD CONNECTED ECOSYSTEM SERVICES
-  ==================================================== */
+  /*
+   * Home is the offline-first shell, not a hub aggregator. Never fan out to
+   * every hub dashboard during startup. Render only eligible, user-scoped
+   * snapshots already stored by the shared API cache; each hub fetches live
+   * data when the user opens that hub. Wallet/payment data is intentionally
+   * excluded from this cache path by the shared offline safety rules.
+   */
+  const offlineScope = offlineScopeForUser(user);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
-    async function loadEcosystem() {
-      if (
-        !user ||
-        isGuest
-      ) {
-        setEcosystemData({
-          wallet: null,
-          biashara: null,
-          shamba: null,
-          education: null,
-          community: [],
-        });
-
-        return;
-      }
-
-      setEcosystemLoading(
-        true,
-      );
-
-      const results =
-        await Promise.allSettled([
-          getWalletLedger(),
-
-          getBiasharaDashboard(),
-
-          getShambaDashboard(),
-
-          getElimuDashboard(),
-
-          getCommunityFeed({
-            limit: 30,
-          }),
-        ]);
-
-      if (!mounted) {
-        return;
-      }
-
-      const [
-        walletResult,
-        biasharaResult,
-        shambaResult,
-        educationResult,
-        communityResult,
-      ] = results;
-
+    if (!offlineScope || isGuest) {
       setEcosystemData({
-        wallet:
-          walletResult.status ===
-          "fulfilled"
-            ? walletResult.value ||
-              null
-            : null,
-
-        biashara:
-          biasharaResult.status ===
-          "fulfilled"
-            ? biasharaResult.value ||
-              null
-            : null,
-
-        shamba:
-          shambaResult.status ===
-          "fulfilled"
-            ? shambaResult.value ||
-              null
-            : null,
-
-        education:
-          educationResult.status ===
-          "fulfilled"
-            ? educationResult.value ||
-              null
-            : null,
-
-        community:
-          communityResult.status ===
-          "fulfilled"
-            ? normalizeCommunityFeed(
-                communityResult.value,
-              )
-            : [],
+        wallet: null,
+        biashara: null,
+        shamba: null,
+        education: null,
+        community: [],
       });
-
-      setEcosystemLoading(
-        false,
-      );
+      setEcosystemLoading(false);
+      return () => {
+        cancelled = true;
+      };
     }
 
-    loadEcosystem();
+    const readSnapshot = async (path) => {
+      try {
+        const cached = await readCachedApiResponse(
+          offlineScope,
+          `${API_ROOT}${path}`,
+        );
+        if (!cached.hit) return null;
+        const payload = cached.payload;
+        return payload && typeof payload === "object" &&
+          Object.prototype.hasOwnProperty.call(payload, "data")
+          ? payload.data
+          : payload;
+      } catch {
+        return null;
+      }
+    };
+
+    async function loadCachedOverview() {
+      const [biashara, shamba, community] = await Promise.all([
+        readSnapshot("/biashara/dashboard"),
+        readSnapshot("/shamba/dashboard"),
+        readSnapshot("/community/feed?limit=30"),
+      ]);
+
+      if (cancelled) return;
+
+      setEcosystemData({
+        wallet: null,
+        biashara,
+        shamba,
+        education: null,
+        community: normalizeCommunityFeed(community),
+      });
+      setEcosystemLoading(false);
+    }
+
+    // Cache reads are local-only and must never delay the shell on network I/O.
+    loadCachedOverview();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [
-    user,
-    isGuest,
-    getWalletLedger,
-    getBiasharaDashboard,
-    getShambaDashboard,
-    getElimuDashboard,
-    getCommunityFeed,
-  ]);
+  }, [offlineScope, isGuest]);
 
   /* ====================================================
      NORMALIZED SERVICE DATA
