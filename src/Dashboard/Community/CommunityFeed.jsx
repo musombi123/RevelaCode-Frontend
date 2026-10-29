@@ -1908,7 +1908,7 @@ export default function CommunityFeed({
         </section>
 
         {/* Keep a single ad visible on short feeds; longer feeds receive placements between posts. */}
-        {!loading && !error && filteredPosts.length < 5 ? <CommunityAdSenseUnit placement="feed" /> : null}
+        {!loading && !error && filteredPosts.length > 0 && filteredPosts.length < 5 ? <CommunityAdSenseUnit placement="feed" /> : null}
 
         {/* ====================================================
             END OF FEED
