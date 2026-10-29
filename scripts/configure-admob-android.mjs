@@ -4,7 +4,10 @@ import { resolve } from "node:path";
 const ROOT = process.cwd();
 const TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713";
 const APP_ID_KEY = "VITE_ADMOB_ANDROID_APP_ID";
-const UNIT_ID_KEY = "VITE_ADMOB_COMMUNITY_NATIVE_AD_UNIT_ID";
+const UNIT_ID_KEYS = [
+  "VITE_ADMOB_COMMUNITY_NATIVE_AD_UNIT_ID",
+  "VITE_ADMOB_FAITH_NATIVE_AD_UNIT_ID",
+];
 
 function parseDotEnv(text, key) {
   for (const line of text.split(/\r?\n/)) {
@@ -49,9 +52,10 @@ function escapeXml(value) {
 
 async function main() {
   const configuredAppId = await readConfigValue(APP_ID_KEY);
-  const configuredUnitId = await readConfigValue(UNIT_ID_KEY);
-  const useProductionIds = Boolean(configuredAppId && configuredUnitId);
-  const appId = useProductionIds ? configuredAppId : TEST_APP_ID;
+  const configuredUnitIds = await Promise.all(UNIT_ID_KEYS.map(readConfigValue));
+  const hasAnyProductionUnit = configuredUnitIds.some(Boolean);
+  const useProductionAppId = Boolean(configuredAppId);
+  const appId = useProductionAppId ? configuredAppId : TEST_APP_ID;
 
   if (!/^ca-app-pub-\d+~\d+$/.test(appId)) {
     throw new Error(
@@ -127,9 +131,11 @@ async function main() {
   await writeFile(stringsPath, stringsXml, "utf8");
 
   console.log(
-    useProductionIds
-      ? "AdMob Android manifest configured with your AdMob application ID."
-      : "AdMob Android manifest configured with Google's test application ID. No revenue ads will be requested until both production IDs are configured.",
+    useProductionAppId
+      ? hasAnyProductionUnit
+        ? "AdMob Android manifest configured with your app ID. Each configured native ad slot uses its production unit; any missing slot uses Google's test unit."
+        : "AdMob Android manifest configured with your app ID. Native ad slots still use Google's test units until unit IDs are set."
+      : "AdMob Android manifest configured with Google's test application ID. Set VITE_ADMOB_ANDROID_APP_ID and the native unit IDs for production ads.");
   );
 }
 
