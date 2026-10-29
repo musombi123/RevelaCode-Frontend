@@ -29,6 +29,12 @@ const MORE_TOOLS = [
 
 const MOBILE_NAV_KEYS = ["overview", "orders", "products", "website"];
 
+const SIMPLE_PRIMARY_KEYS = new Set([
+  "overview", "website", "orders", "products", "services",
+  "customers", "finance", "sync", "settings",
+]);
+const SIMPLE_TOOL_KEYS = new Set(["sales", "notifications"]);
+
 function isActive(item, activeSection) {
   if (item.route === activeSection) return true;
   return item.key === "insights" && activeSection === "biashara-intelligence";
@@ -69,16 +75,24 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
 export default function BiasharaShell({ business, activeSection = "overview", onNavigate, onRefresh, children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const businessName = business?.name || business?.business_name || "Current business";
-  const activeLabel = PRIMARY_NAV.find((item) => isActive(item, activeSection))?.label ||
-    MORE_TOOLS.find((item) => item.route === activeSection)?.label || "Biashara";
+  const simpleMode = business?.workspace_mode === "simple" ||
+    (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
+  const primaryNav = simpleMode
+    ? PRIMARY_NAV.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
+    : PRIMARY_NAV;
+  const moreNav = simpleMode
+    ? MORE_TOOLS.filter((item) => SIMPLE_TOOL_KEYS.has(item.key))
+    : MORE_TOOLS;
+  const activeLabel = primaryNav.find((item) => isActive(item, activeSection))?.label ||
+    moreNav.find((item) => item.route === activeSection)?.label || "Biashara";
 
   const navigateTo = (route) => {
     setMobileMenuOpen(false);
     if (route && typeof onNavigate === "function") onNavigate(route);
   };
 
-  const visibleMobileItems = PRIMARY_NAV.filter((item) => MOBILE_NAV_KEYS.includes(item.key));
-  const moreItems = PRIMARY_NAV.filter((item) => !MOBILE_NAV_KEYS.includes(item.key));
+  const visibleMobileItems = primaryNav.filter((item) => MOBILE_NAV_KEYS.includes(item.key));
+  const moreItems = primaryNav.filter((item) => !MOBILE_NAV_KEYS.includes(item.key));
 
   return (
     <div className="min-h-screen bg-revela-dark text-slate-100 lg:flex">
@@ -116,16 +130,16 @@ export default function BiasharaShell({ business, activeSection = "overview", on
 
         <nav aria-label="Biashara primary navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">Workspace</p>
-          {PRIMARY_NAV.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
+          {primaryNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
           <div className="my-4 border-t border-white/10" />
           <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
-          {MORE_TOOLS.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
+          {moreNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
         </nav>
 
         <div className="border-t border-white/10 p-4">
           <div className="rounded-xl border border-white/10 bg-revela-dark/70 p-3">
-            <p className="text-xs font-semibold text-slate-200">Access and plans</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-500">Owner-scoped workspace contracts are available. Team invitations remain pending until delivery and acceptance are implemented.</p>
+            <p className="text-xs font-semibold text-slate-200">{simpleMode ? "Small Biashara workspace" : "Business OS workspace"}</p>
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">{simpleMode ? "A focused workspace for day-to-day sales, stock, customers and cash flow. Advanced automation and team administration are hidden to keep the workflow simple." : "Industry-ready workspace with advanced operational tools. Features remain subject to the connected backend capabilities and permissions."}</p>
           </div>
         </div>
       </aside>
