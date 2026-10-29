@@ -166,6 +166,8 @@ export default function ShambaWeatherDashboard({
 
   const {
     getFarms,
+    getFarmWeather,
+    updateFarmLocation,
   } = useJumuiyaApi();
 
   const [farms, setFarms] =
@@ -182,6 +184,12 @@ export default function ShambaWeatherDashboard({
 
   const [error, setError] =
     useState("");
+
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+  const [locationSaving, setLocationSaving] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
 
 
   // =======================================================
@@ -247,6 +255,73 @@ export default function ShambaWeatherDashboard({
     loadFarms();
   }, [loadFarms]);
 
+
+  const loadWeather = useCallback(async (forceRefresh = false, farmId = selectedFarmId) => {
+    if (!farmId) {
+      setWeather(null);
+      setWeatherError("");
+      return;
+    }
+
+    try {
+      setWeatherLoading(true);
+      setWeatherError("");
+      const result = await getFarmWeather(farmId, { refresh: forceRefresh });
+      setWeather(result?.weather || result || null);
+    } catch (err) {
+      setWeather(null);
+      setWeatherError(
+        err?.message || "Live weather is temporarily unavailable. Please try again.",
+      );
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [getFarmWeather, selectedFarmId]);
+
+  useEffect(() => {
+    if (selectedFarmId) loadWeather(false, selectedFarmId);
+    else setWeather(null);
+  }, [selectedFarmId, loadWeather]);
+
+  const shareDeviceLocation = useCallback(() => {
+    if (!selectedFarmId) {
+      setLocationMessage("Select a farm before saving its location.");
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocationMessage("This device does not support location sharing. You can still use the farm's saved town or county.");
+      return;
+    }
+
+    setLocationSaving(true);
+    setLocationMessage("");
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        await updateFarmLocation(selectedFarmId, {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          source: "browser_gps",
+          county: selectedFarm?.county || "",
+          town: selectedFarm?.town || "",
+          location: selectedFarm?.location || "",
+        });
+        setLocationMessage("Farm GPS location saved. Refreshing local weather…");
+        await loadFarms();
+        await loadWeather(true, selectedFarmId);
+      } catch (err) {
+        setLocationMessage(err?.message || "Could not save this farm's location.");
+      } finally {
+        setLocationSaving(false);
+      }
+    }, (geoError) => {
+      setLocationSaving(false);
+      const message = geoError?.code === 1
+        ? "Location permission was denied. You can continue using the saved town or county."
+        : "Device location could not be read. You can continue using the saved town or county.";
+      setLocationMessage(message);
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+  }, [loadFarms, loadWeather, selectedFarm, selectedFarmId, updateFarmLocation]);
 
   // =======================================================
   // SELECT FARM
@@ -684,6 +759,18 @@ export default function ShambaWeatherDashboard({
                       {location}
                     </span>
                   </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={shareDeviceLocation} disabled={locationSaving} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800 disabled:opacity-50">
+                      {locationSaving ? "Saving location…" : "Use device location"}
+                    </button>
+                    <button type="button" onClick={() => loadWeather(true)} disabled={weatherLoading || !selectedFarmId} className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-black text-sky-800 disabled:opacity-50">
+                      {weatherLoading ? "Refreshing…" : "Refresh weather"}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Device location is optional. Share it only when the device is at this farm; it saves the current coordinates for this farm. Saved town or county works without GPS.
+                  </p>
+                  {locationMessage && <p className="mt-2 text-xs leading-5 text-slate-500">{locationMessage}</p>}
                 </>
               ) : (
                 <div className="mt-1">
@@ -800,25 +887,18 @@ export default function ShambaWeatherDashboard({
 
                   <div>
 
-                    <div
-                      className="
-                        text-2xl
-                        font-black
-                        text-slate-900
-                      "
-                    >
-                      —
+                    <div className="text-2xl font-black text-slate-900">
+                      {weatherLoading ? "Loading…" : weather?.current?.temperature_c != null ? `${Math.round(weather.current.temperature_c)}°C` : "—"}
                     </div>
 
-                    <div
-                      className="
-                        text-[13px]
-                        font-bold
-                        text-slate-500
-                      "
-                    >
-                      Live weather unavailable
+                    <div className="text-[13px] font-bold text-slate-600">
+                      {weatherLoading ? "Fetching live conditions…" : weather?.current?.condition || "Live weather unavailable"}
                     </div>
+                    {weather?.current?.time && (
+                      <div className="mt-1 text-xs text-slate-400">
+                        Updated {new Date(weather.current.time).toLocaleString()}
+                      </div>
+                    )}
 
                   </div>
 
@@ -867,43 +947,22 @@ export default function ShambaWeatherDashboard({
             </div>
 
 
-            <div
-              className="
-                mt-5
-                rounded-2xl
-                border
-                border-amber-100
-                bg-amber-50/70
-                p-4
-              "
-            >
-
-              <div
-                className="
-                  text-[13px]
-                  font-black
-                  text-amber-800
-                "
-              >
-                Live weather integration
+            {weatherError && (
+              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <div className="font-black">Weather update unavailable</div>
+                <p className="mt-1">{weatherError}</p>
+                <button type="button" onClick={() => loadWeather(true)} className="mt-3 rounded-lg bg-amber-100 px-3 py-2 font-bold hover:bg-amber-200">
+                  Try again
+                </button>
               </div>
-
-              <p
-                className="
-                  mt-1
-                  text-[13px]
-                  leading-5
-                  text-amber-700/80
-                "
-              >
-                This dashboard is ready for live
-                weather data. A weather provider/API
-                still needs to be connected before
-                temperature, rainfall, wind and
-                forecasts can be shown here.
-              </p>
-
-            </div>
+            )}
+            {weather && (
+              <div className="mt-5 rounded-2xl border border-sky-100 bg-sky-50/70 p-4 text-sm text-sky-900">
+                <div className="font-black">Live weather connected · {weather.provider || "Weather provider"}</div>
+                <p className="mt-1">Current conditions and a seven-day forecast are available for {weather.location?.label || location}. Forecasts are guidance, not a guarantee of rainfall at the farm.</p>
+                <p className="mt-1 text-xs text-sky-700">Source: <a className="underline" href={weather.provider_url || "https://open-meteo.com/"} target="_blank" rel="noreferrer">Open-Meteo</a>{weather.cached ? " · Cached for up to 10 minutes" : ""}</p>
+              </div>
+            )}
 
           </div>
 
@@ -950,29 +1009,29 @@ export default function ShambaWeatherDashboard({
             <WeatherMetric
               icon={ThermometerSun}
               label="Temperature"
-              value="—"
-              description="Not connected"
+              value={weather?.current?.temperature_c != null ? `${weather.current.temperature_c} °C` : "—"}
+              description={weather?.current?.feels_like_c != null ? `Feels like ${weather.current.feels_like_c} °C` : weatherLoading ? "Loading live data" : "Live reading"}
             />
 
             <WeatherMetric
               icon={Droplets}
               label="Humidity"
-              value="—"
-              description="Not connected"
+              value={weather?.current?.humidity_percent != null ? `${weather.current.humidity_percent}%` : "—"}
+              description="Relative humidity"
             />
 
             <WeatherMetric
               icon={Umbrella}
               label="Rainfall"
-              value="—"
-              description="Not connected"
+              value={weather?.current?.precipitation_mm != null ? `${weather.current.precipitation_mm} mm` : "—"}
+              description={weather?.current?.rain_mm != null ? `Rain ${weather.current.rain_mm} mm` : "Current precipitation"}
             />
 
             <WeatherMetric
               icon={Wind}
               label="Wind"
-              value="—"
-              description="Not connected"
+              value={weather?.current?.wind_speed_kmh != null ? `${weather.current.wind_speed_kmh} km/h` : "—"}
+              description={weather?.current?.wind_direction_degrees != null ? `Direction ${weather.current.wind_direction_degrees}°` : "Wind speed"}
             />
 
           </div>
@@ -994,15 +1053,8 @@ export default function ShambaWeatherDashboard({
               Weather Planning
             </h2>
 
-            <p
-              className="
-                mt-0.5
-                text-[13px]
-                text-slate-400
-              "
-            >
-              Weather intelligence will eventually
-              support these farming decisions.
+            <p className="mt-0.5 text-[13px] text-slate-400">
+              {weather?.daily?.length ? "Use the local forecast to plan field work. Check conditions again before spraying, irrigating or harvesting." : "A seven-day outlook will appear here when weather is available for the selected farm."}
             </p>
 
           </div>
@@ -1122,6 +1174,22 @@ export default function ShambaWeatherDashboard({
             </div>
 
           </div>
+
+          {weather?.daily?.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-[#DCE5E1] bg-white p-4">
+              <h3 className="font-black text-slate-800">7-day forecast</h3>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {weather.daily.slice(0, 7).map((day) => (
+                  <div key={day.date} className="rounded-xl bg-slate-50 p-3">
+                    <div className="text-xs font-black text-slate-500">{new Date(day.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</div>
+                    <div className="mt-1 text-sm font-black text-slate-800">{day.condition}</div>
+                    <div className="mt-1 text-sm text-slate-700">{day.temperature_min_c != null ? Math.round(day.temperature_min_c) : "—"}° / {day.temperature_max_c != null ? Math.round(day.temperature_max_c) : "—"}°C</div>
+                    <div className="mt-1 text-xs text-sky-700">Rain: {day.rain_probability_percent != null ? day.rain_probability_percent + "%" : "—"} · {day.rainfall_mm != null ? day.rainfall_mm + " mm" : "—"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </section>
 
