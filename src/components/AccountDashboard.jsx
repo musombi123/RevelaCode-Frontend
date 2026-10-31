@@ -34,7 +34,7 @@ export default function AccountDashboard() {
       if (!user?.contact || !baseUrl || typeof authFetch !== "function") return;
       try {
         const response = await authFetch(
-          `${String(baseUrl).replace(/\\/+$/, "")}/api/user/connections?contact=${encodeURIComponent(user.contact)}`,
+          `${String(baseUrl).replace(/\/+$/, "")}/api/user/connections?contact=${encodeURIComponent(user.contact)}`,
           { method: "GET", headers: { Accept: "application/json" } },
         );
         const data = await response.json().catch(() => ({}));
