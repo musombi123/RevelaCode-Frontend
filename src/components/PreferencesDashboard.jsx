@@ -30,6 +30,7 @@ import { toast } from "react-hot-toast";
 import usePreferences from "./hooks/usePreferences.jsx";
 import { useTheme } from "./hooks/useTheme.jsx";
 import OfflineSyncStatus from "@/components/OfflineSyncStatus.jsx";
+import MfaSettings from "@/components/accounts/MfaSettings.jsx";
 
 /* =========================================================
    Constants
@@ -464,6 +465,11 @@ export default function PreferencesDashboard({
             <OfflineSyncStatus />
           </div>
         </section>
+
+        {/* ===================================================
+            ACCOUNT SECURITY
+        =================================================== */}
+        <MfaSettings />
 
         {/* ===================================================
             APPEARANCE
