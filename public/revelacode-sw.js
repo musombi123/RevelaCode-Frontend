@@ -36,11 +36,11 @@ self.addEventListener("fetch", (event) => {
     try {
       const response = await fetch(request);
       if (response && response.ok && (!isStaticAsset || response.type === "basic")) {
-        const cacheWrite = caches.open(CACHE_NAME)
+        // Opportunistic cache write only. Do not extend the fetch event or
+        // make the returned response depend on Cache Storage succeeding.
+        void caches.open(CACHE_NAME)
           .then((cache) => cache.put(cacheKey, response.clone()))
           .catch(() => {});
-        // Cache writes run in the event lifetime, but are not awaited by the UI.
-        try { event.waitUntil(cacheWrite); } catch { /* best-effort cache only */ }
       }
       return response;
     } catch {
