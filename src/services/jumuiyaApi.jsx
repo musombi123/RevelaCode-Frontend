@@ -1135,13 +1135,9 @@ export function useJumuiyaApi() {
         ),
 
       // ===================================================
-      // SHAMBA — WEATHER AND MARKET
+      // SHAMBA — MARKET
+      // Weather is defined above with its optional refresh flag.
       // ===================================================
-
-      getFarmWeather: (farmId) =>
-        getData(
-          `/shamba/farms/${encodeId(farmId, "Farm ID")}/weather`,
-        ),
 
       getFarmMarket: (farmId) =>
         getData(
