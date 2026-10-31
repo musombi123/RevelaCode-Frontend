@@ -63,8 +63,8 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState("login");
-  // login | register | forgot; null opens the entry-choice screen
+  const [mode, setMode] = useState(null);
+  // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
   // form | verify | reset
