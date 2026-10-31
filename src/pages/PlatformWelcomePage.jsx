@@ -129,14 +129,14 @@ function NetworkBackdrop() {
         <path className="welcome-network-line" d="M95 125 L315 390" />
       </g>
       <g>
-        <circle className="welcome-network-node welcome-node-one" cx="95" cy="125" r="4.5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-two" cx="260" cy="205" r="5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-three" cx="410" cy="110" r="4.5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-four" cx="595" cy="205" r="5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-five" cx="790" cy="105" r="5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-six" cx="1005" cy="205" r="5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-seven" cx="720" cy="355" r="5" fill="currentColor" />
-        <circle className="welcome-network-node welcome-node-eight" cx="1090" cy="315" r="4.5" fill="currentColor" />
+        <circle className="welcome-network-node welcome-node-one fill-blue-500" cx="95" cy="125" r="4.5" />
+        <circle className="welcome-network-node welcome-node-two fill-emerald-500" cx="260" cy="205" r="5" />
+        <circle className="welcome-network-node welcome-node-three fill-blue-500" cx="410" cy="110" r="4.5" />
+        <circle className="welcome-network-node welcome-node-four fill-emerald-500" cx="595" cy="205" r="5" />
+        <circle className="welcome-network-node welcome-node-five fill-amber-400" cx="790" cy="105" r="5" />
+        <circle className="welcome-network-node welcome-node-six fill-blue-500" cx="1005" cy="205" r="5" />
+        <circle className="welcome-network-node welcome-node-seven fill-emerald-500" cx="720" cy="355" r="5" />
+        <circle className="welcome-network-node welcome-node-eight fill-blue-500" cx="1090" cy="315" r="4.5" />
       </g>
     </svg>
   );
@@ -350,7 +350,7 @@ export default function PlatformWelcomePage() {
   ];
 
   return (
-    <main id="main-content" className="min-h-screen overflow-x-clip bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
+    <div className="min-h-screen overflow-x-clip bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
       <a
         href="#main-content"
         className="sr-only z-[100] rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -407,7 +407,7 @@ export default function PlatformWelcomePage() {
         </div>
       </header>
 
-      <section className="welcome-hero relative isolate overflow-hidden bg-white dark:bg-slate-950">
+      <main id="main-content">\n      <section className="welcome-hero relative isolate overflow-hidden bg-white dark:bg-slate-950">
         <div aria-hidden="true" className="welcome-dot-grid pointer-events-none absolute inset-0 text-slate-300 dark:text-slate-800" />
         <div aria-hidden="true" className="welcome-grid-mask pointer-events-none absolute inset-0">
           <NetworkBackdrop />
@@ -440,7 +440,7 @@ export default function PlatformWelcomePage() {
           <p className="welcome-entrance mt-7 text-base font-semibold text-slate-700 dark:text-slate-200 sm:text-lg" style={{ "--welcome-delay": "0.95s" }}>
             Your ideas deserve better technology.
           </p>
-          <p className="welcome-entrance mt-3 max-w-3xl text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg" style={{ "--welcome-delay": "1.05s" }}>
+          <p className="welcome-entrance mt-3 max-w-3xl text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg" style={{ "--welcome-delay": "0.95s" }}>
             Welcome to RevelaCode. Explore a connected digital ecosystem for business, agriculture, education and communities — powered by practical software, AI and tools built around real needs.
           </p>
 
@@ -534,7 +534,7 @@ export default function PlatformWelcomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="welcome-reveal mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">Impact</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Built for real work.</h2>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">One platform. More possibilities.</h2>
             <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">Practical digital workflows, with AI and offline support across the ecosystem.</p>
           </div>
 
@@ -547,10 +547,7 @@ export default function PlatformWelcomePage() {
               </article>
             ))}
           </div>
-          <p className="welcome-reveal mx-auto mt-7 max-w-3xl text-center text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Product screenshots and verified usage metrics are not included here because no approved screenshot or measurement assets are currently present in this frontend repository.
-          </p>
-        </div>
+      </div>
       </section>
 
       <section className="bg-white py-20 dark:bg-slate-950 sm:py-24">
@@ -589,7 +586,7 @@ export default function PlatformWelcomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      </main>\n\n      <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <span>© {new Date().getFullYear()} RevelaCode Software Solutions</span>
           <div className="flex flex-wrap items-center gap-5">
