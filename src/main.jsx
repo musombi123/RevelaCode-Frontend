@@ -25,18 +25,53 @@ if (
   document.head.appendChild(adSenseScript);
 }
 
-// Prepare the local Faith catalogue and app shell as the platform opens.
-// This is deliberately non-blocking; authenticated API requests stay out of the service-worker cache.
+// Native Android already ships its application shell inside the APK. Do not make
+// app launch depend on Service Worker installation, Cache Storage, or bulk study
+// downloads: older Android WebViews can stall on those APIs during first launch.
 if (typeof window !== "undefined") {
-  const prepareOfflineStudy = () => {
-    warmFaithStudyCache().catch(() => {});
-    warmCrossReferenceDataset().catch(() => {});
+  if (Capacitor.isNativePlatform()) {
+    // Remove only this app's old web shell worker/cache left by earlier APK builds.
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/revelacode-sw.js").catch(() => {});
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations
+          .filter((registration) => [registration.active, registration.waiting, registration.installing]
+            .some((worker) => {
+              if (!worker?.scriptURL) return false;
+              try { return new URL(worker.scriptURL).pathname.endsWith("/revelacode-sw.js"); }
+              catch { return false; }
+            }))
+          .map((registration) => registration.unregister())))
+        .catch(() => {});
     }
-  };
-  if (document.readyState === "complete") prepareOfflineStudy();
-  else window.addEventListener("load", prepareOfflineStudy, { once: true });
+    if ("caches" in window) {
+      window.caches.keys()
+        .then((keys) => Promise.all(keys
+          .filter((key) => key.startsWith("revelacode-app-shell-"))
+          .map((key) => window.caches.delete(key))))
+        .catch(() => {});
+    }
+  } else {
+    // Keep web offline support, but run heavy prefetch work only after first paint,
+    // when the browser is idle. Failures are isolated from the React application.
+    const prepareOfflineStudy = () => {
+      const runWhenIdle = () => {
+        Promise.resolve().then(() => warmFaithStudyCache()).catch(() => {});
+        Promise.resolve().then(() => warmCrossReferenceDataset()).catch(() => {});
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("/revelacode-sw.js").catch(() => {});
+        }
+      };
+
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(runWhenIdle, { timeout: 8000 });
+      } else {
+        window.setTimeout(runWhenIdle, 2500);
+      }
+    };
+
+    if (document.readyState === "complete") prepareOfflineStudy();
+    else window.addEventListener("load", prepareOfflineStudy, { once: true });
+  }
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
