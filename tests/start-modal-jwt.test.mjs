@@ -11,6 +11,15 @@ const dashboardConfig = await readFile(new URL("../src/components/dashboardConfi
 const preferences = await readFile(new URL("../src/components/PreferencesDashboard.jsx", import.meta.url), "utf8");
 const mfaSettings = await readFile(new URL("../src/components/accounts/MfaSettings.jsx", import.meta.url), "utf8");
 
+test("direct routes preserve lazy loading for dashboards and legal documents", () => {
+  assert.match(app, /const BibleDashboard = React\.lazy\(\(\) => import\("\.\/components\/BibleDashboard\.jsx"\)\)/);
+  assert.match(app, /const UserAccountDashboard = React\.lazy\(\(\) => import\("\.\/components\/UserAccountDashboard\.jsx"\)\)/);
+  assert.match(app, /<React\.Suspense[\s\S]*?<UserAccountDashboard \/>[\s\S]*?<\/React\.Suspense>/);
+  assert.match(app, /<React\.Suspense[\s\S]*?<BibleDashboard \/>[\s\S]*?<\/React\.Suspense>/);
+  assert.match(startModal, /const LegalDocs = React\.lazy\(\(\) => import\("\.\/LegalDocs\.jsx"\)\)/);
+  assert.match(startModal, /<React\.Suspense[\s\S]*?<LegalDocs[\s\S]*?<\/React\.Suspense>/);
+});
+
 test("StartModal delegates token persistence to AuthContext and does not put credentials in the cached user", () => {
   assert.match(startModal, /login\(\{\s*user:\s*safeAuthUser,\s*access_token:\s*accessToken/);
   assert.match(authContext, /persistToken\(\s*accessToken/);
