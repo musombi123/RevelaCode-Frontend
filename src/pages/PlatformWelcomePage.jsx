@@ -185,7 +185,7 @@ function ProductCard({ product }) {
           <ProductIcon size={23} strokeWidth={1.9} aria-hidden="true" />
         </span>
         <span className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
-          RevelaCode product
+          RevelaCode ecosystem · Connected
         </span>
       </div>
       <h3 className="mt-6 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">
@@ -350,7 +350,7 @@ export default function PlatformWelcomePage() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
+    <div className="revelacode-homepage min-h-screen overflow-x-clip bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-white">
       <a
         href="#main-content"
         className="sr-only z-[100] rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -392,15 +392,14 @@ export default function PlatformWelcomePage() {
         <div
           id="welcome-mobile-menu"
           aria-hidden={!mobileOpen}
-          inert={!mobileOpen}
           className={"welcome-mobile-menu border-t border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950 md:hidden " + (mobileOpen ? "is-open" : "")}
         >
           <nav aria-label="Mobile navigation" className="mx-auto grid max-w-7xl gap-1 py-3">
-            <a onClick={closeMobileMenu} href="#products" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Products</a>
-            <a onClick={closeMobileMenu} href="#sectors" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Sectors</a>
-            <a onClick={closeMobileMenu} href="#impact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Impact</a>
-            <a onClick={closeMobileMenu} href="#contact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Contact</a>
-            <a onClick={closeMobileMenu} href="/app" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#products" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Products</a>
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#sectors" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Sectors</a>
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#impact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Impact</a>
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#contact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Contact</a>
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="/app" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
               Open web app <ArrowRight size={15} aria-hidden="true" />
             </a>
           </nav>
@@ -482,6 +481,10 @@ export default function PlatformWelcomePage() {
               </div>
             ))}
           </div>
+          <div className="welcome-entrance mt-5 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-semibold text-slate-500 dark:text-slate-400" style={{ "--welcome-delay": "1.4s" }}>
+            <span className="inline-flex items-center gap-2"><ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> Secure account access</span>
+            <span className="inline-flex items-center gap-2"><Smartphone size={15} className="text-blue-600 dark:text-blue-400" aria-hidden="true" /> Android and web</span>
+          </div>
         </div>
       </section>
 
@@ -503,7 +506,7 @@ export default function PlatformWelcomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="welcome-reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Sectors</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Explore the ecosystem</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Choose a hub. Start exploring.</h2>
               <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">Open any hub directly. You can look around as a guest without creating an account first.</p>
             </div>
@@ -593,7 +596,7 @@ export default function PlatformWelcomePage() {
             <a href="#products" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Products</a>
             <a href="#sectors" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Sectors</a>
             <a href="#contact" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Contact</a>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Code. Innovate. Transform.</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Code. Innovate. Transform. · Built to code. Built to innovate. Built to transform.</span>
           </div>
         </div>
       </footer>
