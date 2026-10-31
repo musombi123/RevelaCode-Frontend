@@ -121,7 +121,7 @@ export default function MfaSettings() {
       setMfaSetup(null);
       setMfaCode("");
       setMfaPassword("");
-      setMfaMessage(result.message || "Authenticator verification has been disabled.");
+      setMfaMessage(result.message || "Two-step verification is off. Password sign-in is restored.");
     } catch (error) {
       setMfaError(error.message || "Could not disable authenticator verification.");
     } finally {
@@ -162,11 +162,11 @@ export default function MfaSettings() {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Two-factor authentication</h3>
                 <span className={mfaStatus.enabled ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300"}>
-                  {mfaStatus.enabled ? "Enabled" : "Not enabled"}
+                  {mfaStatus.enabled ? "Enabled" : "Optional · off"}
                 </span>
               </div>
               <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Protect sign-in with a free authenticator app. No phone number, SMS, or subscription is required.
+                Optional extra protection for your sign-in. Enable it whenever you choose; no phone number, SMS, or subscription is required. When enabled, an authenticator code is required at your next sign-in.
               </p>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function MfaSettings() {
                 />
               </label>
               <button type="button" onClick={startMfaSetup} disabled={mfaBusy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
-                <ShieldCheck className="h-4 w-4" /> {mfaBusy ? "Preparing..." : "Set up authenticator"}
+                <ShieldCheck className="h-4 w-4" /> {mfaBusy ? "Preparing..." : "Enable two-step verification"}
               </button>
             </div>
           )}
