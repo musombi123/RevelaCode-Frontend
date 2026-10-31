@@ -254,22 +254,51 @@ export default function PlatformWelcomePage() {
     const query = typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
+    if (!query) return undefined;
 
-    if (query?.matches) return undefined;
-
+    let interval = null;
     let swapTimer = null;
-    const interval = window.setInterval(() => {
-      setGreetingVisible(false);
-      if (swapTimer) window.clearTimeout(swapTimer);
-      swapTimer = window.setTimeout(() => {
-        setGreetingIndex((current) => (current + 1) % greetingWords.length);
-        setGreetingVisible(true);
-      }, 350);
-    }, 2400);
+
+    const stopRotation = () => {
+      if (interval !== null) window.clearInterval(interval);
+      if (swapTimer !== null) window.clearTimeout(swapTimer);
+      interval = null;
+      swapTimer = null;
+      setGreetingVisible(true);
+    };
+
+    const startRotation = () => {
+      if (query.matches || interval !== null) return;
+      interval = window.setInterval(() => {
+        setGreetingVisible(false);
+        if (swapTimer !== null) window.clearTimeout(swapTimer);
+        swapTimer = window.setTimeout(() => {
+          setGreetingIndex((current) => (current + 1) % greetingWords.length);
+          setGreetingVisible(true);
+          swapTimer = null;
+        }, 350);
+      }, 2400);
+    };
+
+    const syncMotionPreference = () => {
+      if (query.matches) stopRotation();
+      else startRotation();
+    };
+
+    syncMotionPreference();
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", syncMotionPreference);
+    } else {
+      query.addListener?.(syncMotionPreference);
+    }
 
     return () => {
-      window.clearInterval(interval);
-      if (swapTimer) window.clearTimeout(swapTimer);
+      stopRotation();
+      if (typeof query.removeEventListener === "function") {
+        query.removeEventListener("change", syncMotionPreference);
+      } else {
+        query.removeListener?.(syncMotionPreference);
+      }
     };
   }, []);
 
@@ -406,7 +435,8 @@ export default function PlatformWelcomePage() {
         </div>
       </header>
 
-      <main id="main-content">\n      <section className="welcome-hero relative isolate overflow-hidden bg-white dark:bg-slate-950">
+      <main id="main-content">
+      <section className="welcome-hero relative isolate overflow-hidden bg-white dark:bg-slate-950">
         <div aria-hidden="true" className="welcome-dot-grid pointer-events-none absolute inset-0 text-slate-300 dark:text-slate-800" />
         <div aria-hidden="true" className="welcome-grid-mask pointer-events-none absolute inset-0">
           <NetworkBackdrop />
@@ -589,7 +619,9 @@ export default function PlatformWelcomePage() {
         </div>
       </section>
 
-      </main>\n\n      <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <span>© {new Date().getFullYear()} RevelaCode Software Solutions</span>
           <div className="flex flex-wrap items-center gap-5">
