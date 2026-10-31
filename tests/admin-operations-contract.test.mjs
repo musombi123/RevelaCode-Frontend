@@ -93,3 +93,13 @@ test("Meta-Engineer Lab reuses the signed-in RevelaCode session for its protecte
   assert.match(lab, /Authorization/);
   assert.doesNotMatch(lab, /AdminLogin|login\(/);
 });
+
+
+test("Shamba weather API has one refresh-aware definition", () => {
+  const api = source("src/services/jumuiyaApi.jsx");
+  const definitions = api.match(/getFarmWeather\\s*:/g) || [];
+  assert.equal(definitions.length, 1, "Duplicate object keys silently override the refresh-aware weather request");
+  assert.match(api, /getFarmWeather: \\(farmId, \\{ refresh = false \\} = \\)/);
+  assert.match(api, /\\/shamba\\/farms\\/\\$\\{encodeId\\(farmId, "Farm ID"\\)\\}\\/weather/);
+  assert.match(api, /refresh: refresh \\? "true" : ""/);
+});
