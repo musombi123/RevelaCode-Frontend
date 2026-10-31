@@ -206,7 +206,7 @@ export default function StartModal() {
         return;
 
       case "guest":
-        window.location.replace("/");
+        window.location.replace("/app");
         return;
 
       default:
