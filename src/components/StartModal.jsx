@@ -766,7 +766,7 @@ const completeLogin = (data = {}) => {
       });
       setMfaSetupData(setup);
       setStep("mfa-setup");
-      setMessage("Privileged accounts must enable authenticator verification before continuing.");
+      setMessage("Complete authenticator enrollment to finish this sign-in.");
       return null;
     }
 
