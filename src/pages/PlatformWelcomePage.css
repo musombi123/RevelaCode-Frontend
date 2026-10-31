@@ -1,3 +1,7 @@
+.revelacode-homepage {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Motion styles for the public marketing homepage. Layout and colour stay in Tailwind utilities. */
 .welcome-entrance {
   opacity: 0;
