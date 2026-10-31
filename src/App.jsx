@@ -7,6 +7,7 @@ import {
   Navigate,
   useNavigate,
   useLocation,
+  useParams,
 } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
@@ -105,6 +106,41 @@ function InteractiveWorkspaceRoute() {
   const hostHub = resolveRevelaCodeHubHost();
   const requestedHub = new URLSearchParams(location.search).get("hub");
   return <InternalDashboard initialHub={hostHub || requestedHub || null} />;
+}
+
+const PUBLIC_HUB_KEYS = new Set([
+  "faith",
+  "education",
+  "shamba",
+  "biashara",
+  "community",
+]);
+
+function HubGuestEntryRoute() {
+  const { hub = "" } = useParams();
+  const safeHub = String(hub).trim().toLowerCase();
+  const { user, isGuest, guestMode, loading } = useAuth();
+
+  React.useEffect(() => {
+    if (loading || !PUBLIC_HUB_KEYS.has(safeHub)) return;
+    // Public exploration starts a guest session only when no session exists.
+    // Never replace an already authenticated visitor's identity or tokens.
+    if (!user && !isGuest) guestMode();
+  }, [loading, user, isGuest, guestMode, safeHub]);
+
+  if (!PUBLIC_HUB_KEYS.has(safeHub)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (loading || (!user && !isGuest)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400" role="status">
+        Preparing your guest workspace…
+      </div>
+    );
+  }
+
+  return <InternalDashboard initialHub={safeHub} />;
 }
 
 /*
@@ -239,6 +275,7 @@ export default function App() {
               <Route path="/" element={<PlatformHomeRoute />} />
               <Route path="/welcome" element={<PlatformWelcomePage />} />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
+              <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
               <Route path="/media/:mediaId" element={<CommunityPublicRoute mode="media" />} />
