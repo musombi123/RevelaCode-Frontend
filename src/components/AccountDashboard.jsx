@@ -22,11 +22,38 @@ const initialIntegrations = [
 ];
 
 export default function AccountDashboard() {
-  const { user } = useAuth(); // use the existing central RevelaCode session
+  const { user, authFetch } = useAuth(); // use the existing central RevelaCode session
   const [integrations, setIntegrations] = useState(
     initialIntegrations.map((i) => ({ ...i, connected: false }))
   );
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchConnections = async () => {
+      if (!user?.contact || !baseUrl || typeof authFetch !== "function") return;
+      try {
+        const response = await authFetch(
+          `${String(baseUrl).replace(/\\/+$/, "")}/api/user/connections?contact=${encodeURIComponent(user.contact)}`,
+          { method: "GET", headers: { Accept: "application/json" } },
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!cancelled && response.ok && data.success) {
+          setIntegrations((previous) =>
+            previous.map((item) => ({
+              ...item,
+              connected: data.connectedAccounts?.includes(item.name) || item.name === "ChatGPT",
+            }))
+          );
+        }
+      } catch (error) {
+        if (!cancelled) console.warn("Failed to fetch connected accounts:", error);
+      }
+    };
+    fetchConnections();
+    return () => { cancelled = true; };
+  }, [user?.contact, authFetch]);
+
   const handleConnect = async (platform) => {
     try {
       if (platform.connected) {
