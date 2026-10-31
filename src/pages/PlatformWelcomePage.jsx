@@ -401,7 +401,7 @@ export default function PlatformWelcomePage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <a href="/app" className="welcome-cta-sheen hidden min-h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:inline-flex">
+            <a href="/app" className="welcome-cta-sheen after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent hidden min-h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:inline-flex">
               Open web app <ArrowRight size={15} aria-hidden="true" />
             </a>
             <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
@@ -478,7 +478,7 @@ export default function PlatformWelcomePage() {
               href={ANDROID_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="welcome-cta-sheen inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="welcome-cta-sheen after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <Download size={18} aria-hidden="true" />
               Download Android app
@@ -610,7 +610,7 @@ export default function PlatformWelcomePage() {
           <p className="text-sm font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">RevelaCode Software Solutions</p>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Your ideas deserve better technology.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-400">Welcome to RevelaCode. Explore the connected digital ecosystem in your browser or on Android.</p>
-          <a href="/app" className="welcome-cta-sheen mt-8 inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          <a href="/app" className="welcome-cta-sheen after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent mt-8 inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             Continue to web app <ArrowRight size={16} aria-hidden="true" />
           </a>
           <p className="mt-5 text-sm text-slate-600 dark:text-slate-400">
