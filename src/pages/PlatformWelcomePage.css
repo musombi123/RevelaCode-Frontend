@@ -68,17 +68,6 @@
 .welcome-node-seven { animation-delay: 1.5s; }
 .welcome-node-eight { animation-delay: 1.75s; }
 
-.welcome-network-node:nth-child(2n) {
-  fill: theme(colors.blue.500);
-}
-
-.welcome-network-node:nth-child(2n + 1) {
-  fill: theme(colors.emerald.500);
-}
-
-.welcome-network-node.welcome-node-five {
-  fill: theme(colors.amber.400);
-}
 
 @keyframes welcome-network-pulse {
   0%, 100% {
@@ -149,6 +138,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  #main-content *,
+  #main-content *::before,
+  #main-content *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .welcome-hero .animate-ping {
+    animation: none !important;
+  }
+
   .welcome-entrance,
   .welcome-network-line,
   .welcome-network-node,
