@@ -1,0 +1,183 @@
+/* Motion styles for the public marketing homepage. Layout and colour stay in Tailwind utilities. */
+.welcome-entrance {
+  opacity: 0;
+  animation: welcome-enter 800ms cubic-bezier(.2,.7,.2,1) var(--welcome-delay, 0s) both;
+  will-change: transform, opacity;
+}
+
+@keyframes welcome-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-greeting {
+  display: inline-block;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 350ms ease, transform 350ms ease;
+}
+
+.welcome-greeting.is-hidden {
+  opacity: 0;
+  transform: translateY(-0.5rem);
+}
+
+.welcome-dot-grid {
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: .14;
+}
+
+.welcome-grid-mask {
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 78%);
+}
+
+.welcome-network-line {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: welcome-network-draw 2.2s ease .6s forwards;
+}
+
+@keyframes welcome-network-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.welcome-network-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: welcome-network-pulse 3.2s ease-in-out infinite;
+}
+
+.welcome-node-one { animation-delay: 0s; }
+.welcome-node-two { animation-delay: .25s; }
+.welcome-node-three { animation-delay: .5s; }
+.welcome-node-four { animation-delay: .75s; }
+.welcome-node-five { animation-delay: 1s; }
+.welcome-node-six { animation-delay: 1.25s; }
+.welcome-node-seven { animation-delay: 1.5s; }
+.welcome-node-eight { animation-delay: 1.75s; }
+
+.welcome-network-node:nth-child(2n) {
+  fill: theme(colors.blue.500);
+}
+
+.welcome-network-node:nth-child(2n + 1) {
+  fill: theme(colors.emerald.500);
+}
+
+.welcome-network-node.welcome-node-five {
+  fill: theme(colors.amber.400);
+}
+
+@keyframes welcome-network-pulse {
+  0%, 100% {
+    opacity: .9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: .45;
+    transform: scale(1.7);
+  }
+}
+
+.welcome-cta-sheen {
+  position: relative;
+  isolation: isolate;
+}
+
+.welcome-cta-sheen::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgb(255 255 255 / .08) 42%,
+    rgb(255 255 255 / .28) 50%,
+    rgb(255 255 255 / .08) 58%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: welcome-sheen 3.4s ease-in-out infinite;
+}
+
+@keyframes welcome-sheen {
+  0%, 35% {
+    transform: translateX(-120%);
+  }
+  75%, 100% {
+    transform: translateX(120%);
+  }
+}
+
+.welcome-reveal {
+  opacity: 0;
+  transform: translateY(1rem);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.welcome-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.welcome-mobile-menu {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: max-height 260ms ease, opacity 200ms ease;
+}
+
+.welcome-mobile-menu.is-open {
+  max-height: 22rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-entrance,
+  .welcome-network-line,
+  .welcome-network-node,
+  .welcome-cta-sheen::after {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  .welcome-greeting,
+  .welcome-reveal,
+  .welcome-mobile-menu {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .welcome-mobile-menu:not(.is-open) {
+    max-height: 0 !important;
+    opacity: 0 !important;
+  }
+
+  .welcome-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
