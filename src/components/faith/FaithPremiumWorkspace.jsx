@@ -163,9 +163,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   const refreshAccount = useCallback(async () => {
     if (!signedIn) {
       setCourses([]);
-      setTrials([]);
-      setEntitlement(null);
-      setGroupEntitlement(null);
       return;
     }
     try {
