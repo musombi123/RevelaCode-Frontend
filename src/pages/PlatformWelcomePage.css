@@ -95,14 +95,6 @@
   z-index: 1;
   content: "";
   pointer-events: none;
-  background: linear-gradient(
-    110deg,
-    transparent 0%,
-    rgb(255 255 255 / .08) 42%,
-    rgb(255 255 255 / .28) 50%,
-    rgb(255 255 255 / .08) 58%,
-    transparent 100%
-  );
   transform: translateX(-120%);
   animation: welcome-sheen 3.4s ease-in-out infinite;
 }
