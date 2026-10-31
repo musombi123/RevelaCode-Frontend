@@ -88,7 +88,7 @@ test("Shamba admin verification is a direct, authenticated profile review workfl
 
 test("Meta-Engineer Lab reuses the signed-in RevelaCode session for its protected API", () => {
   const lab = source("src/pages/MetaEngineerLab.jsx");
-  assert.match(lab, /auth\.getAccessToken/);
+  assert.match(lab, /auth\\?\.getAccessToken/);
   assert.match(lab, /authFetch/);
   assert.match(lab, /Authorization/);
   assert.doesNotMatch(lab, /AdminLogin|login\(/);
