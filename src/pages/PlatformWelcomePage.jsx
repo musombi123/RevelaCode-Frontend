@@ -632,6 +632,6 @@ export default function PlatformWelcomePage() {
           </div>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
