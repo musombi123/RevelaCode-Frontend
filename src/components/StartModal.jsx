@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
-import LegalDocs from "./LegalDocs.jsx";
+const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
 
 export default function StartModal() {
@@ -2871,12 +2871,14 @@ const completeLogin = (data = {}) => {
                 sm:dark:border-slate-800
               "
             >
-              <LegalDocs
-                activeTab="privacy"
-                onClose={() =>
-                  setShowLegal(false)
-                }
-              />
+              <React.Suspense fallback={<div className="flex min-h-[50vh] items-center justify-center p-6 text-sm text-slate-500 dark:text-slate-400" role="status">Loading legal documents…</div>}>
+                <LegalDocs
+                  activeTab="privacy"
+                  onClose={() =>
+                    setShowLegal(false)
+                  }
+                />
+              </React.Suspense>
             </div>
           </div>,
           document.body
