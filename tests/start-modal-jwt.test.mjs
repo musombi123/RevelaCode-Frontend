@@ -6,6 +6,10 @@ const startModal = await readFile(new URL("../src/components/StartModal.jsx", im
 const authContext = await readFile(new URL("../src/context/AuthContext.jsx", import.meta.url), "utf8");
 const authGate = await readFile(new URL("../src/components/AuthGate.jsx", import.meta.url), "utf8");
 const app = await readFile(new URL("../src/App.jsx", import.meta.url), "utf8");
+const mainDashboard = await readFile(new URL("../src/components/MainDashboardV2.jsx", import.meta.url), "utf8");
+const dashboardConfig = await readFile(new URL("../src/components/dashboardConfig.jsx", import.meta.url), "utf8");
+const preferences = await readFile(new URL("../src/components/PreferencesDashboard.jsx", import.meta.url), "utf8");
+const mfaSettings = await readFile(new URL("../src/components/accounts/MfaSettings.jsx", import.meta.url), "utf8");
 
 test("StartModal delegates token persistence to AuthContext and does not put credentials in the cached user", () => {
   assert.match(startModal, /login\(\{\s*user:\s*safeAuthUser,\s*access_token:\s*accessToken/);
@@ -40,4 +44,27 @@ test("AuthGate fails closed unless the server confirms an identity and current r
   assert.match(authGate, /Navigate to="\/login"/);
   assert.match(authGate, /setState\("authenticated"\)/);
   assert.match(authGate, /return <>\{children\}<\/>;/);
+});
+
+
+test("first entry gives visitors an immediate guest-exploration choice", () => {
+  assert.match(startModal, /const \[mode, setMode\] = useState\(null\)/);
+  assert.match(startModal, /onClick=\{\s*handleGuestLogin/);
+  assert.match(startModal, /Continue as guest/);
+  assert.match(authContext, /const guestMode\s*=\s*useCallback/);
+  assert.match(authContext, /isGuest:\s*true/);
+});
+
+test("guest navigation excludes identity, settings, security, and payment areas", () => {
+  assert.match(mainDashboard, /dashboard\.restricted/);
+  assert.match(mainDashboard, /\["accounts", "profile", "settings", "payments"\]/);
+  assert.match(dashboardConfig, /dashboard\.restricted/);
+});
+
+test("optional two-step verification is manageable from Settings", () => {
+  assert.match(preferences, /MfaSettings/);
+  assert.match(mfaSettings, /Enable two-step verification/);
+  assert.match(mfaSettings, /Disable 2FA/);
+  assert.match(mfaSettings, /mfa\/setup/);
+  assert.match(mfaSettings, /mfa\/enable/);
 });
