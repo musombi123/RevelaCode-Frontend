@@ -12,7 +12,6 @@ import {
 import Layout from "./components/Layout.jsx";
 import MainDashboardV2 from "./components/MainDashboardV2.jsx";
 import Pages from "./app/pages.jsx";
-import BibleDashboard from "./components/BibleDashboard.jsx";
 import StartModal from "./components/StartModal.jsx";
 import AndroidPermissionSetup from "./components/AndroidPermissionSetup.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
@@ -26,12 +25,16 @@ import AuthGate from "./components/AuthGate.jsx";
 import ElimuHub from "./pages/ElimuHub.jsx";
 import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
 import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
-import UserAccountDashboard from "./components/UserAccountDashboard.jsx";
 import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+
+// These screens are also loaded lazily by the dashboard registry. Keep their
+// direct routes lazy as well so they can live in their own production chunks.
+const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));
+const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));
 
 function SPAWrapper({ children }) {
   const { hasStarted, loading } = useAuth();
@@ -249,7 +252,9 @@ export default function App() {
                 element={
                   <AuthGate>
                     <Layout>
-                      <UserAccountDashboard />
+                      <React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500 dark:text-slate-400" role="status">Loading account workspace…</div>}>
+                        <UserAccountDashboard />
+                      </React.Suspense>
                     </Layout>
                   </AuthGate>
                 }
@@ -283,7 +288,9 @@ export default function App() {
                 element={
                   <SPAWrapper>
                     <Layout>
-                      <BibleDashboard />
+                      <React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500 dark:text-slate-400" role="status">Loading Bible workspace…</div>}>
+                        <BibleDashboard />
+                      </React.Suspense>
                     </Layout>
                   </SPAWrapper>
                 }
