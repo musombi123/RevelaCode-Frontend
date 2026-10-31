@@ -16,6 +16,8 @@ on:
       - "public/revelacode-sw.js"
       - "src/services/offlineHubSync.js"
       - "src/components/study/studyMaterialCache.js"
+      - "src/components/FaithDashboard.jsx"
+      - "src/components/faith/FaithPremiumWorkspace.jsx"
   pull_request:
     branches: [main]
     paths:
@@ -30,6 +32,8 @@ on:
       - "public/revelacode-sw.js"
       - "src/services/offlineHubSync.js"
       - "src/components/study/studyMaterialCache.js"
+      - "src/components/FaithDashboard.jsx"
+      - "src/components/faith/FaithPremiumWorkspace.jsx"
   workflow_dispatch:
 
 permissions:
