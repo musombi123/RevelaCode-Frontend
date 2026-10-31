@@ -35,7 +35,13 @@ test("authenticated requests refresh once and retry with the replacement bearer 
   assert.match(authContext, /fetch\(refreshUrl,\s*\{/);
   assert.match(authContext, /persistToken\(nextToken, nextTokenType, nextRefreshToken\)/);
   assert.match(authContext, /response = await fetch\(url, \{ \.\.\.options, headers: retryHeaders \}\)/);
-  assert.match(authContext, /if \(response\.status === 401\)\s*\{[\s\S]*?clearToken\(\)/);
+  assert.match(authContext, /if \(response\.status === 401 && requestWasAuthenticated\)\s*\{[\s\S]*?clearToken\(\)/);
+});
+
+test("guest and public 401 responses preserve the guest identity", () => {
+  assert.match(authContext, /let requestWasAuthenticated = Boolean\(\s*headers\.has\("Authorization"\) \|\| readRefreshToken\(\)\s*\)/);
+  assert.match(authContext, /requestWasAuthenticated = true;[\s\S]*?headers: retryHeaders/);
+  assert.match(authContext, /if \(response\.status === 401 && requestWasAuthenticated\)/);
 });
 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {
