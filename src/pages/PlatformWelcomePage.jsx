@@ -7,6 +7,12 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  BookOpen,
+  GraduationCap,
+  Sprout,
+  Store,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 
 const ANDROID_RELEASES_URL =
@@ -192,6 +198,145 @@ export default function PlatformWelcomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+
+        <section className="border-t border-slate-200/80 py-14 sm:py-16" aria-labelledby="hub-explore-title">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">Explore the ecosystem</p>
+              <h2 id="hub-explore-title" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+                Choose a hub. Start exploring.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                Open any hub directly. You can look around as a guest without creating an account first.
+              </p>
+            </div>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+              <ShieldCheck size={14} /> Guest access available
+            </span>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                key: "faith",
+                name: "Faith & Scripture",
+                category: "Faith hub",
+                description: "Explore Bible study, scripture resources and faith learning.",
+                icon: BookOpen,
+                tone: "border-violet-200 bg-violet-50 text-violet-800",
+                iconTone: "bg-violet-100 text-violet-800",
+              },
+              {
+                key: "education",
+                name: "Elimu",
+                category: "Education hub",
+                description: "Discover school tools, learning resources and education workflows.",
+                icon: GraduationCap,
+                tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+                iconTone: "bg-emerald-100 text-emerald-800",
+              },
+              {
+                key: "shamba",
+                name: "Shamba",
+                category: "Agriculture hub",
+                description: "Explore farming tools, crop planning and market information.",
+                icon: Sprout,
+                tone: "border-amber-200 bg-amber-50 text-amber-900",
+                iconTone: "bg-amber-100 text-amber-900",
+              },
+              {
+                key: "biashara",
+                name: "Biashara",
+                category: "Business hub",
+                description: "Preview business tools for products, sales and operations.",
+                icon: Store,
+                tone: "border-blue-200 bg-blue-50 text-blue-800",
+                iconTone: "bg-blue-100 text-blue-800",
+              },
+              {
+                key: "community",
+                name: "Community",
+                category: "Community hub",
+                description: "Explore people, groups, discussions and shared opportunities.",
+                icon: Users,
+                tone: "border-cyan-200 bg-cyan-50 text-cyan-900",
+                iconTone: "bg-cyan-100 text-cyan-900",
+              },
+            ].map((hub) => {
+              const HubIcon = hub.icon;
+              return (
+                <a
+                  key={hub.key}
+                  href={`/explore/${hub.key}`}
+                  className="group flex min-h-[210px] flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+                  aria-label={`Explore ${hub.name} as a guest`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className={`inline-grid h-12 w-12 place-items-center rounded-2xl ${hub.iconTone}`}>
+                      <HubIcon size={23} />
+                    </span>
+                    <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                      {hub.category}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-xl font-extrabold text-slate-950">{hub.name}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{hub.description}</p>
+                  <span className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-extrabold text-blue-700">
+                    Explore as guest <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="border-t border-slate-200/80 py-14 sm:py-16" aria-labelledby="welcome-faq-title">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">Help centre</p>
+            <h2 id="welcome-faq-title" className="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+              Frequently asked questions
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              A few things to know before you start exploring RevelaCode.
+            </p>
+          </div>
+
+          <div className="mt-7 max-w-4xl divide-y divide-slate-200 rounded-3xl border border-slate-200 bg-white px-5 sm:px-7">
+            {[
+              {
+                q: "Can I explore RevelaCode without creating an account?",
+                a: "Yes. Select any hub and choose Explore as guest. RevelaCode opens that hub in a guest session. Some actions that require an account, ownership, verification or payment remain unavailable until you sign in.",
+              },
+              {
+                q: "Which hubs can I explore?",
+                a: "You can open Faith & Scripture, Elimu, Shamba, Biashara and Community directly from this page. Each card takes you to its corresponding dashboard.",
+              },
+              {
+                q: "Will guest access let me manage a school, farm or business?",
+                a: "Guest access is for exploring the platform. Managing private records, school operations, farm data, business transactions or other owner-only functions requires the appropriate account and permissions.",
+              },
+              {
+                q: "Can I switch to my account later?",
+                a: "Yes. Use the sign-in option inside the application to access your account. Your account permissions and verification status determine which protected features are available.",
+              },
+              {
+                q: "Should I use the Android app or the web app?",
+                a: "Both provide access to the RevelaCode ecosystem. Use the web app in your browser, or download the Android app for phone access. The Android download link opens the official Releases page unless a direct APK URL has been configured.",
+              },
+            ].map((item) => (
+              <details key={item.q} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-sm font-extrabold text-slate-900 marker:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  {item.q}
+                  <ChevronDown size={18} className="shrink-0 text-slate-500 transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="max-w-3xl pt-3 pr-8 text-sm leading-7 text-slate-600">
+                  {item.a}
+                </p>
+              </details>
+            ))}
           </div>
         </section>
 
