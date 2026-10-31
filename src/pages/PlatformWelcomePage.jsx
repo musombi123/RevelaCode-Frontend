@@ -46,7 +46,7 @@ const sectors = [
   {
     key: "education",
     name: "Elimu",
-    category: "Education",
+    category: "Education hub",
     description: "Discover school tools, learning resources and education workflows.",
     icon: GraduationCap,
     tone: "emerald",
@@ -55,7 +55,7 @@ const sectors = [
   {
     key: "shamba",
     name: "Shamba",
-    category: "Agriculture",
+    category: "Agriculture hub",
     description: "Explore farming tools, crop planning and market information.",
     icon: Sprout,
     tone: "emerald",
@@ -64,7 +64,7 @@ const sectors = [
   {
     key: "biashara",
     name: "Biashara",
-    category: "Business",
+    category: "Business hub",
     description: "Preview business tools for products, sales and operations.",
     icon: Store,
     tone: "blue",
@@ -73,7 +73,7 @@ const sectors = [
   {
     key: "community",
     name: "Community",
-    category: "Communities · Jumuiya",
+    category: "Community hub · Jumuiya",
     description: "Explore people, groups, discussions and shared opportunities.",
     icon: Users,
     tone: "blue",
@@ -149,7 +149,7 @@ function ThemeToggle({ isDark, onToggle }) {
       onClick={onToggle}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       title={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
     >
       {isDark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
     </button>
@@ -176,7 +176,7 @@ function ProductCard({ product }) {
   return (
     <article
       className={
-        "group flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950 sm:p-7 " +
+        "group flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950 sm:p-7 " +
         colorClasses.hover
       }
     >
@@ -219,7 +219,7 @@ function SectorCard({ sector }) {
   return (
     <a
       href={sector.href}
-      className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500 sm:p-6"
+      className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500 sm:p-6"
       aria-label={"Explore " + sector.name + " as a guest"}
     >
       <span className={"grid h-11 w-11 place-items-center rounded-xl " + (isEmerald ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400")}>
@@ -394,14 +394,14 @@ export default function PlatformWelcomePage() {
           </a>
 
           <nav aria-label="Primary navigation" className="hidden items-center gap-8 md:flex">
-            <a href="#products" className="text-sm font-semibold text-slate-600 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Products</a>
-            <a href="#sectors" className="text-sm font-semibold text-slate-600 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Sectors</a>
-            <a href="#impact" className="text-sm font-semibold text-slate-600 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Impact</a>
-            <a href="#contact" className="text-sm font-semibold text-slate-600 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Contact</a>
+            <a href="#products" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Products</a>
+            <a href="#sectors" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Sectors</a>
+            <a href="#impact" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Impact</a>
+            <a href="#contact" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Contact</a>
           </nav>
 
           <div className="flex items-center gap-2">
-            <a href="/app" className="welcome-cta-sheen hidden min-h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:inline-flex">
+            <a href="/app" className="welcome-cta-sheen hidden min-h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-600 px-4 text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:inline-flex">
               Open web app <ArrowRight size={15} aria-hidden="true" />
             </a>
             <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
@@ -411,7 +411,7 @@ export default function PlatformWelcomePage() {
               aria-expanded={mobileOpen}
               aria-controls="welcome-mobile-menu"
               aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 md:hidden"
             >
               {mobileOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
             </button>
@@ -421,14 +421,14 @@ export default function PlatformWelcomePage() {
         <div
           id="welcome-mobile-menu"
           aria-hidden={!mobileOpen}
-          className={"welcome-mobile-menu border-t border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950 md:hidden " + (mobileOpen ? "is-open" : "")}
+          className={"welcome-mobile-menu absolute left-0 right-0 top-16 border-t border-slate-200 bg-white px-4 shadow-lg dark:border-slate-800 dark:bg-slate-950 md:hidden " + (mobileOpen ? "is-open" : "")}
         >
           <nav aria-label="Mobile navigation" className="mx-auto grid max-w-7xl gap-1 py-3">
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#products" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Products</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#sectors" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Sectors</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#impact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Impact</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#contact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Contact</a>
-            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="/app" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white transition hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="/app" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
               Open web app <ArrowRight size={15} aria-hidden="true" />
             </a>
           </nav>
@@ -478,7 +478,7 @@ export default function PlatformWelcomePage() {
               href={ANDROID_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="welcome-cta-sheen inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="welcome-cta-sheen inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <Download size={18} aria-hidden="true" />
               Download Android app
@@ -486,7 +486,7 @@ export default function PlatformWelcomePage() {
             </a>
             <a
               href="/app"
-              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition-transform hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
             >
               <Smartphone size={18} aria-hidden="true" />
               Continue to web app
@@ -549,7 +549,7 @@ export default function PlatformWelcomePage() {
             {sectors.map((sector) => <div key={sector.key} className="welcome-reveal"><SectorCard sector={sector} /></div>)}
           </div>
 
-          <a href="/explore/faith" className="welcome-reveal group mt-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500 dark:hover:bg-slate-900/80 sm:flex-row sm:items-center sm:justify-between sm:p-6" aria-label="Explore Faith and Scripture as a guest">
+          <a href="/explore/faith" className="welcome-reveal group mt-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-transform duration-200 hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500 dark:hover:bg-slate-900/80 sm:flex-row sm:items-center sm:justify-between sm:p-6" aria-label="Explore Faith and Scripture as a guest">
             <span className="flex items-center gap-4">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"><Sparkles size={21} aria-hidden="true" /></span>
               <span>
@@ -573,7 +573,7 @@ export default function PlatformWelcomePage() {
 
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {capabilities.map((item, index) => (
-              <article key={item.title} className="welcome-reveal rounded-2xl border border-slate-200 bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950 sm:p-7">
+              <article key={item.title} className="welcome-reveal rounded-2xl border border-slate-200 bg-white p-6 transition-transform duration-200 hover:-translate-y-1 hover:border-blue-500 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950 sm:p-7">
                 <span className="text-sm font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">0{index + 1}</span>
                 <h3 className="mt-4 text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">{item.description}</p>
@@ -610,7 +610,7 @@ export default function PlatformWelcomePage() {
           <p className="text-sm font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">RevelaCode Software Solutions</p>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Your ideas deserve better technology.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-400">Welcome to RevelaCode. Explore the connected digital ecosystem in your browser or on Android.</p>
-          <a href="/app" className="welcome-cta-sheen mt-8 inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          <a href="/app" className="welcome-cta-sheen mt-8 inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             Continue to web app <ArrowRight size={16} aria-hidden="true" />
           </a>
           <p className="mt-5 text-sm text-slate-600 dark:text-slate-400">
@@ -625,9 +625,9 @@ export default function PlatformWelcomePage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <span>© {new Date().getFullYear()} RevelaCode Software Solutions</span>
           <div className="flex flex-wrap items-center gap-5">
-            <a href="#products" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Products</a>
-            <a href="#sectors" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Sectors</a>
-            <a href="#contact" className="transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Contact</a>
+            <a href="#products" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Products</a>
+            <a href="#sectors" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Sectors</a>
+            <a href="#contact" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Contact</a>
             <span className="font-semibold text-slate-700 dark:text-slate-300">Code. Innovate. Transform. · Built to code. Built to innovate. Built to transform.</span>
           </div>
         </div>
