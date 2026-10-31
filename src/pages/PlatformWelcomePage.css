@@ -128,16 +128,17 @@
 }
 
 .welcome-mobile-menu {
-  max-height: 0;
+  visibility: hidden;
   opacity: 0;
-  overflow: hidden;
+  transform: translateY(-0.5rem);
   pointer-events: none;
-  transition: max-height 260ms ease, opacity 200ms ease;
+  transition: opacity 200ms ease, transform 260ms ease, visibility 200ms step-end;
 }
 
 .welcome-mobile-menu.is-open {
-  max-height: 22rem;
+  visibility: visible;
   opacity: 1;
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -173,10 +174,6 @@
     transform: none !important;
   }
 
-  .welcome-mobile-menu:not(.is-open) {
-    max-height: 0 !important;
-    opacity: 0 !important;
-  }
 
   .welcome-reveal {
     opacity: 1 !important;
