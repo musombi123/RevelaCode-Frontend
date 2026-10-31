@@ -471,15 +471,25 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
     if (!requestedHub) return;
 
-    const isKnownHub = DASHBOARDS.some(
+    const requestedDashboard = DASHBOARDS.find(
       (dashboard) => dashboard.key === requestedHub
     );
 
-    if (!isKnownHub) return;
+    if (!requestedDashboard) return;
+
+    if (
+      isGuest &&
+      (requestedDashboard.restricted ||
+        ["accounts", "profile", "settings", "payments"].includes(requestedHub))
+    ) {
+      setActiveView("home");
+      setSidebarOpen(false);
+      return;
+    }
 
     setActiveView(requestedHub);
     setSidebarOpen(false);
-  }, [searchParams]);
+  }, [searchParams, isGuest]);
 
   /* =========================================================
      Verse URL Handling
@@ -619,9 +629,12 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
          * dashboard in the main navigation.
          */
 
+        // Keep identity, personal preferences, account security, and
+        // payments out of an anonymous guest session.
         if (
           isGuest &&
-          dashboard.key === "accounts"
+          (dashboard.restricted ||
+            ["accounts", "profile", "settings", "payments"].includes(dashboard.key))
         ) {
           return false;
         }
