@@ -970,6 +970,12 @@ export function AuthProvider({
 
         const requestUrl = String(url);
         const isAuthEntryRequest = /\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:[?#]|$)/i.test(requestUrl);
+        // A 401 from a public/guest request must not erase the locally stored
+        // guest identity. Only invalidate a session when this request had an
+        // Authorization header or a refresh credential to recover.
+        let requestWasAuthenticated = Boolean(
+          headers.has("Authorization") || readRefreshToken()
+        );
         let response = await fetch(url, { ...options, headers });
 
         if (
@@ -1048,6 +1054,7 @@ export function AuthProvider({
                   // Continue without an optional license header.
                 }
 
+                requestWasAuthenticated = true;
                 response = await fetch(url, { ...options, headers: retryHeaders });
               }
             } catch (error) {
@@ -1056,9 +1063,9 @@ export function AuthProvider({
           }
         }
 
-        if (response.status === 401) {
-          // A 401 after the one permitted refresh/retry means the session is
-          // no longer accepted. Clear stale credentials, not just React state.
+        if (response.status === 401 && requestWasAuthenticated) {
+          // Only an authenticated request can prove that the saved session is
+          // no longer accepted. A guest/public 401 leaves guest mode untouched.
           clearToken();
           try {
             localStorage.removeItem(STORAGE_KEY);
