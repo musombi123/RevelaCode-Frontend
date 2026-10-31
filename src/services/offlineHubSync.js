@@ -28,17 +28,45 @@ export function isBrowserOffline() {
 
 function openDatabase() {
   if (!hasIndexedDb()) return Promise.resolve(null);
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(QUEUE_STORE)) db.createObjectStore(QUEUE_STORE, { keyPath: "id" });
-      if (!db.objectStoreNames.contains(CACHE_STORE)) db.createObjectStore(CACHE_STORE, { keyPath: "key" });
-      if (!db.objectStoreNames.contains(SESSION_STORE)) db.createObjectStore(SESSION_STORE, { keyPath: "key" });
-      if (!db.objectStoreNames.contains(ACTIVITY_STORE)) db.createObjectStore(ACTIVITY_STORE, { keyPath: "id" });
+  return new Promise((resolve) => {
+    let settled = false;
+    let timeoutId = null;
+    const finish = (db) => {
+      if (settled) {
+        // A request may succeed after the timeout/blocked fallback was selected.
+        try { db?.close(); } catch { /* ignore late database handles */ }
+        return;
+      }
+      settled = true;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      if (db) db.onversionchange = () => db.close();
+      resolve(db || null);
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error("Offline storage could not be opened."));
+
+    // A blocked or stalled WebView IndexedDB open falls back to localStorage.
+    timeoutId = setTimeout(() => finish(null), 1800);
+    let request;
+    try {
+      request = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch {
+      finish(null);
+      return;
+    }
+
+    request.onupgradeneeded = () => {
+      try {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(QUEUE_STORE)) db.createObjectStore(QUEUE_STORE, { keyPath: "id" });
+        if (!db.objectStoreNames.contains(CACHE_STORE)) db.createObjectStore(CACHE_STORE, { keyPath: "key" });
+        if (!db.objectStoreNames.contains(SESSION_STORE)) db.createObjectStore(SESSION_STORE, { keyPath: "key" });
+        if (!db.objectStoreNames.contains(ACTIVITY_STORE)) db.createObjectStore(ACTIVITY_STORE, { keyPath: "id" });
+      } catch {
+        finish(null);
+      }
+    };
+    request.onsuccess = () => finish(request.result);
+    request.onerror = () => finish(null);
+    request.onblocked = () => finish(null);
   });
 }
 
