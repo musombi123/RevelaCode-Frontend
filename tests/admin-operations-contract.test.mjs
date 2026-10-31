@@ -69,3 +69,27 @@ test("policy, study and operational handbook are present and do not embed privil
   assert.doesNotMatch(policy, /ADMIN_API_KEY\s*=\s*["']/);
   assert.doesNotMatch(study, /X-API-KEY|VITE_ADMIN_API_KEY/);
 });
+
+
+test("Shamba admin verification is a direct, authenticated profile review workflow", () => {
+  const page = source("src/components/admin/AdminShambaVerification.jsx");
+  const api = source("src/services/jumuiyaApi.jsx");
+  const dashboard = source("src/components/admin/AdminDashboard.jsx");
+  assert.match(page, /getFarmerVerificationQueue/);
+  assert.match(page, /reviewFarmerProfile/);
+  assert.match(page, /Verify profile/);
+  assert.match(page, /Request information/);
+  assert.match(page, /REQUIRED_FIELDS/);
+  assert.match(api, /getData\("\/shamba\/farmer\/verification-queue"\)/);
+  assert.match(api, /\/shamba\/farmer\/\$\{encodeId\(farmerId/);
+  assert.match(dashboard, /shambaVerification:/);
+  assert.doesNotMatch(page, /VITE_ADMIN_API_KEY|X-API-KEY/);
+});
+
+test("Meta-Engineer Lab reuses the signed-in RevelaCode session for its protected API", () => {
+  const lab = source("src/pages/MetaEngineerLab.jsx");
+  assert.match(lab, /auth\.getAccessToken/);
+  assert.match(lab, /authFetch/);
+  assert.match(lab, /Authorization/);
+  assert.doesNotMatch(lab, /AdminLogin|login\(/);
+});
