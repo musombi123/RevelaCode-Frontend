@@ -46,22 +46,41 @@ function openDatabase() {
   if (!databasePromise) {
     databasePromise = new Promise((resolve) => {
       let request;
+      let settled = false;
+      let timeoutId = null;
+      const finish = (db) => {
+        if (settled) {
+          try { db?.close(); } catch { /* ignore late database handles */ }
+          return;
+        }
+        settled = true;
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        if (db) db.onversionchange = () => db.close();
+        resolve(db || null);
+      };
+
+      // Do not let an Android WebView IndexedDB stall leave study-cache reads pending.
+      timeoutId = setTimeout(() => finish(null), 1800);
       try {
         request = indexedDB.open(DB_NAME, DB_VERSION);
       } catch {
-        resolve(null);
+        finish(null);
         return;
       }
 
       request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: "key" });
+        try {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: "key" });
+          }
+        } catch {
+          finish(null);
         }
       };
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => resolve(null);
-      request.onblocked = () => resolve(null);
+      request.onsuccess = () => finish(request.result);
+      request.onerror = () => finish(null);
+      request.onblocked = () => finish(null);
     });
   }
 

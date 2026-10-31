@@ -12,6 +12,28 @@ on:
       - "package-lock.json"
       - "scripts/configure-android-permissions.mjs"
       - "scripts/set-android-release-version.mjs"
+      - "src/main.jsx"
+      - "public/revelacode-sw.js"
+      - "src/services/offlineHubSync.js"
+      - "src/components/study/studyMaterialCache.js"
+      - "src/components/FaithDashboard.jsx"
+      - "src/components/faith/FaithPremiumWorkspace.jsx"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/android-brand-verification.yml"
+      - "public/Logo.png"
+      - "capacitor.config.json"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/configure-android-permissions.mjs"
+      - "scripts/set-android-release-version.mjs"
+      - "src/main.jsx"
+      - "public/revelacode-sw.js"
+      - "src/services/offlineHubSync.js"
+      - "src/components/study/studyMaterialCache.js"
+      - "src/components/FaithDashboard.jsx"
+      - "src/components/faith/FaithPremiumWorkspace.jsx"
   workflow_dispatch:
 
 permissions:

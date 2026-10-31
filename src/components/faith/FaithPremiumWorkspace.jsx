@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, ArrowRight, BookOpen, Bookmark, CheckCircle2, ChevronRight,
-  Clock3, CreditCard, ExternalLink, GraduationCap, Loader2, Lock,
+  Clock3, ExternalLink, GraduationCap, Loader2, Lock,
   MessageCircle, FileText, Plus, RefreshCw, Send, ShieldCheck, Users,
-  Wallet, Check, AlertCircle, Globe2, Trash2, Trophy, HelpCircle,
+  Check, AlertCircle, Globe2, Trash2, Trophy, HelpCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,11 +48,6 @@ async function faithApi(path, options = {}) {
     throw error;
   }
   return data;
-}
-
-function money(amount, currency = "KES") {
-  const value = Number(amount);
-  return (currency || "KES") + " " + (Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : String(amount || "—"));
 }
 
 function niceDate(value) {
@@ -132,11 +127,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   const [working, setWorking] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [plans, setPlans] = useState([]);
-  const [pricingMeta, setPricingMeta] = useState({ checkout_enabled: false, pricing_status: "draft" });
-  const [trials, setTrials] = useState([]);
-  const [entitlement, setEntitlement] = useState(null);
-  const [groupEntitlement, setGroupEntitlement] = useState(null);
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedLessonSlug, setSelectedLessonSlug] = useState("");
@@ -161,51 +151,28 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   const [assignmentCourse, setAssignmentCourse] = useState("scripture-study-method");
   const [assignmentLesson, setAssignmentLesson] = useState("observe-before-interpreting");
   const [assignmentDue, setAssignmentDue] = useState("");
-  const [phone, setPhone] = useState("");
-  const [lastCheckout, setLastCheckout] = useState(null);
-  const [checkoutMessage, setCheckoutMessage] = useState("");
 
   const signedIn = !isGuest && Boolean(readAccessToken());
-  const currentTrial = trials.find((item) => item.hub === "faith") || null;
-  const hasPremium = entitlement?.allowed === true;
-  const hasGroupTools = groupEntitlement?.allowed === true;
-  const tier = entitlement?.tier || "free";
-  const courseUnlocked = (course) => !course?.locked;
+  // Faith Academy is open to all authenticated Faith Hub members. Access is
+  // account-scoped for saved records.
+  const hasPremium = true;
+  const hasGroupTools = true;
+  const courseUnlocked = () => true;
   const selectedLesson = selectedCourse?.lessons?.find((lesson) => lesson.slug === selectedLessonSlug) || null;
 
   const refreshAccount = useCallback(async () => {
     if (!signedIn) {
       setCourses([]);
-      setTrials([]);
-      setEntitlement(null);
-      setGroupEntitlement(null);
       return;
     }
-    const settled = await Promise.allSettled([
-      faithApi("/api/study/faith/courses"),
-      faithApi("/api/revenue/trials"),
-      faithApi("/api/revenue/entitlements?hub=faith&feature=faith_group_tools"),
-    ]);
-    if (settled[0].status === "fulfilled") {
-      setCourses(settled[0].value.courses || []);
-      setEntitlement(settled[0].value.entitlement || null);
-    }
-    if (settled[1].status === "fulfilled") setTrials(settled[1].value.trials || []);
-    if (settled[2].status === "fulfilled") setGroupEntitlement(settled[2].value);
-  }, [signedIn]);
-
-  const refreshPlans = useCallback(async () => {
     try {
-      const data = await faithApi("/api/revenue/plans?hub=faith");
-      setPlans((data.plans || []).filter((plan) => ["faith_plus", "faith_pro"].includes(plan.code)));
-      setPricingMeta({
-        checkout_enabled: Boolean(data.checkout_enabled || data.billing_enabled),
-        pricing_status: data.pricing_status || "draft",
-      });
+      const data = await faithApi("/api/study/faith/courses");
+      setCourses((data.courses || []).map((course) => ({ ...course, locked: false })));
     } catch (e) {
-      setPricingMeta({ checkout_enabled: false, pricing_status: "unavailable" });
+      setCourses([]);
+      throw e;
     }
-  }, []);
+  }, [signedIn]);
 
   const loadEvents = useCallback(async () => {
     setEventError("");
@@ -220,9 +187,9 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError("");
-    await Promise.allSettled([refreshPlans(), loadEvents(), refreshAccount()]);
+    await Promise.allSettled([loadEvents(), refreshAccount()]);
     setLoading(false);
-  }, [refreshAccount, refreshPlans, loadEvents]);
+  }, [refreshAccount, loadEvents]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -262,8 +229,14 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     setWorking("course");
     try {
       const data = await faithApi("/api/study/faith/courses/" + encodeURIComponent(slug));
-      setSelectedCourse(data.course || null);
-      const firstOpen = (data.course?.lessons || []).find((lesson) => !lesson.locked);
+      const course = data.course || null;
+      const openCourseData = course ? {
+        ...course,
+        locked: false,
+        lessons: (course.lessons || []).map((lesson) => ({ ...lesson, locked: false })),
+      } : null;
+      setSelectedCourse(openCourseData);
+      const firstOpen = (openCourseData?.lessons || []).find((lesson) => !lesson.locked);
       setSelectedLessonSlug(firstOpen?.slug || "");
       setAnswerSelections({});
       setAssessmentResult(null);
@@ -286,27 +259,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     setCompanionAnswer("");
   }
 
-  async function startTrial() {
-    if (!signedIn) {
-      setNotice("Sign in to start your personal 30-day Faith trial.");
-      if (onLogin) onLogin();
-      return;
-    }
-    setError("");
-    setNotice("");
-    setWorking("trial");
-    try {
-      const data = await faithApi("/api/revenue/trials/start", { method: "POST", body: { hub: "faith" } });
-      setNotice(data.message || "Your Faith trial is active.");
-      await refreshAccount();
-    } catch (e) {
-      setError(e.message);
-      await refreshAccount();
-    } finally {
-      setWorking("");
-    }
-  }
-
   async function saveProgress(completed = true) {
     if (!selectedCourse || !selectedLesson) return;
     setWorking("progress");
@@ -324,7 +276,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       await refreshAccount();
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
@@ -348,16 +299,13 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       await refreshWorkspaceIfAllowed();
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
   }
 
   async function refreshWorkspaceIfAllowed() {
-    if (hasPremium) {
-      try { setWorkspace(await faithApi("/api/study/faith/workspace")); } catch {}
-    }
+    try { setWorkspace(await faithApi("/api/study/faith/workspace")); } catch {}
   }
 
   async function askCompanion() {
@@ -373,7 +321,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       setCompanionAnswer(data.answer || "");
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
@@ -401,7 +348,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       setTab("workspace");
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
@@ -436,7 +382,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       setNotice("Study group created. Share its invite code with members.");
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
@@ -457,7 +402,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       setNotice("You joined the study group.");
     } catch (e) {
       setError(e.message);
-      if (e.status === 402) setTab("plans");
     } finally {
       setWorking("");
     }
@@ -516,64 +460,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     }
   }
 
-  async function startCheckout(plan) {
-    if (!signedIn) {
-      setNotice("Sign in before starting checkout.");
-      if (onLogin) onLogin();
-      return;
-    }
-    if (!pricingMeta.checkout_enabled || plan.status !== "available") {
-      setError("This plan is not yet approved and live M-Pesa checkout is not enabled. No payment has been attempted.");
-      return;
-    }
-    if (!phone.trim()) {
-      setError("Enter the Kenyan M-Pesa phone number to continue.");
-      return;
-    }
-    setWorking("checkout");
-    setError("");
-    setCheckoutMessage("");
-    try {
-      const key = "faith_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 14);
-      const data = await faithApi("/api/revenue/checkout", {
-        method: "POST",
-        headers: { "Idempotency-Key": key },
-        body: { plan_code: plan.code, phone: phone.trim() },
-      });
-      setLastCheckout(data.checkout || null);
-      setCheckoutMessage(data.message || "M-Pesa checkout was initiated. Approve the prompt on your phone, then refresh its status.");
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setWorking("");
-    }
-  }
-
-  async function refreshCheckout() {
-    const checkoutId = lastCheckout?.checkout_request_id || lastCheckout?.checkoutRequestId || lastCheckout?.id;
-    if (!checkoutId) {
-      setError("The checkout reference is not available yet. Refresh the page and check your subscription status.");
-      return;
-    }
-    setWorking("checkout-refresh");
-    try {
-      const result = await faithApi("/api/revenue/checkout/" + encodeURIComponent(checkoutId) + "/refresh", { method: "POST", body: {} });
-      setLastCheckout(result.checkout || lastCheckout);
-      setCheckoutMessage(result.message || "Checkout status refreshed. Subscription access changes only after verified payment.");
-      await refreshAccount();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setWorking("");
-    }
-  }
-
   const tabItems = [
     { id: "courses", label: "Courses", icon: GraduationCap },
     { id: "workspace", label: "My workspace", icon: FileText },
     { id: "groups", label: "Church groups", icon: Users },
     { id: "briefing", label: "Daily briefing", icon: Globe2 },
-    { id: "plans", label: "Plans & access", icon: Wallet },
   ];
 
   const completedCount = useMemo(
@@ -581,18 +472,13 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
     [courses]
   );
 
-  function renderLockedCard(title, description, feature) {
+  function renderLockedCard(title, description) {
     return (
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"><Lock size={18} /></div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-black text-slate-950 dark:text-white">{title}</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{feature === "groups" ? "Church and group management is included in Faith Pro and the 30-day trial." : "The Faith trial unlocks this service for 30 days. Faith Plus and Pro plans are available after approval."}</p>
-            <Button className="mt-3" onClick={() => setTab("plans")}>View access options <ArrowRight size={14} /></Button>
-          </div>
-        </div>
+        <h3 className="font-black text-slate-950 dark:text-white">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Faith Hub study tools are free. Sign in to save your activity to your account.</p>
+        <Button className="mt-3" onClick={() => onLogin && onLogin()}>Sign in / register <ArrowRight size={14} /></Button>
       </div>
     );
   }
@@ -609,11 +495,10 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em]"><ShieldCheck size={13} /> Faith Academy</div>
             <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Study deeper. Learn with evidence. Grow together.</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/80">Structured courses, real assessments, saved progress and notes, a lesson-grounded AI companion, and church study groups—all connected to RevelaCode’s existing Faith and revenue systems.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/80">Structured courses, real assessments, saved progress and notes, a lesson-grounded AI companion, and church study groups—available as part of Faith Hub.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Pill tone="green">{tier === "trial" ? "30-day trial active" : tier === "paid" ? "Subscription active" : "Essential Scripture stays free"}</Pill>
-            {entitlement?.trial?.ends_at && tier === "trial" && <Pill tone="slate">Until {niceDate(entitlement.trial.ends_at)}</Pill>}
+            <Pill tone="green">Free Faith Hub access</Pill>
           </div>
         </div>
         <div className="relative mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -621,7 +506,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
             { label: "Curated courses", value: String(courses.length || 3) },
             { label: "Lessons completed", value: String(completedCount) },
             { label: "Saved notes", value: String(workspace.summary?.notes_count || 0) },
-            { label: "Access tier", value: tier === "trial" ? "Trial" : tier === "paid" ? "Paid" : "Free" },
+            { label: "Access", value: "Free" },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-white/15 bg-white/10 p-3">
               <p className="text-[10px] font-bold uppercase tracking-wide text-white/70">{stat.label}</p>
@@ -633,7 +518,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
 
       {!signedIn && (
         <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between">
-          <div><h3 className="font-bold text-amber-950 dark:text-amber-100">Sign in to save your learning</h3><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">The catalogue and daily briefing are available here. A signed-in account is needed for a one-time trial, synced progress, private notes, and subscriptions.</p></div>
+          <div><h3 className="font-bold text-amber-950 dark:text-amber-100">Sign in to save your learning</h3><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">The catalogue and daily briefing are available here. A signed-in account is needed to save progress, private notes, and group activity.</p></div>
           <Button onClick={() => onLogin && onLogin()}>Sign in / register <ArrowRight size={14} /></Button>
         </div>
       )}
@@ -658,7 +543,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
 
       {tab === "courses" && !selectedCourse && (
         <div className="space-y-4">
-          <SectionHeading eyebrow="Structured learning" title="Courses built for serious study" description="Every course includes objectives, source-linked lessons, assessment questions graded by the backend, and resumable progress. One lesson is available as a free preview." actions={<Button variant="subtle" onClick={() => setTab("plans")}><Wallet size={14} /> Trial & pricing</Button>} />
+          <SectionHeading eyebrow="Structured learning" title="Courses built for serious study" description="Every course includes objectives, source-linked lessons, assessment questions graded by the backend, and resumable progress. Faith Hub courses are available without a paid plan." />
           <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
             {[...(courses.length ? courses : [
               { slug: "three-angels-messages", title: "The Three Angels’ Messages — Text, Tradition & Debate", summary: "Read Revelation 14 in context and compare Adventist and alternative Christian interpretations.", level: "Priority · Prophecy", duration_minutes: 75, lesson_count: 3, completed_lessons: 0, locked: !hasPremium },
@@ -704,7 +589,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{selectedCourse.summary}</p>
                 {Array.isArray(selectedCourse.outcomes) && <div className="mt-4"><p className="text-xs font-black text-slate-800 dark:text-slate-200">Learning outcomes</p><ul className="mt-2 space-y-1.5">{selectedCourse.outcomes.map((outcome) => <li key={outcome} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />{outcome}</li>)}</ul></div>}
               </div>
-              {!courseUnlocked(selectedCourse) && <div className="max-w-xs rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20"><p className="text-xs font-black text-amber-950 dark:text-amber-100">Unlock full course</p><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">The listed lesson outline is visible; full lessons and assessments unlock after trial or subscription.</p><Button className="mt-2" onClick={() => setTab("plans")}>View access options</Button></div>}
+              
             </div>
           </section>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -712,11 +597,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               <h3 className="font-black text-slate-950 dark:text-white">Course lessons</h3>
               <div className="mt-3 space-y-2">
                 {(selectedCourse.lessons || []).map((lesson, index) => (
-                  <button key={lesson.slug} type="button" onClick={() => { if (lesson.locked) { setTab("plans"); setError("This lesson is locked. Start your trial or choose an eligible plan."); return; } setSelectedLessonSlug(lesson.slug); setAnswerSelections({}); setAssessmentResult(null); setCompanionAnswer(""); }} className={"flex w-full items-start gap-3 rounded-xl border p-3 text-left transition " + (selectedLessonSlug === lesson.slug ? "border-indigo-300 bg-indigo-50/60 dark:border-indigo-900/50 dark:bg-indigo-950/20" : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60")}>
+                  <button key={lesson.slug} type="button" onClick={() => { setSelectedLessonSlug(lesson.slug); setAnswerSelections({}); setAssessmentResult(null); setCompanionAnswer(""); }} className={"flex w-full items-start gap-3 rounded-xl border p-3 text-left transition " + (selectedLessonSlug === lesson.slug ? "border-indigo-300 bg-indigo-50/60 dark:border-indigo-900/50 dark:bg-indigo-950/20" : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60")}>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{lesson.completed ? <Check size={15} className="text-emerald-600" /> : lesson.locked ? <Lock size={14} /> : index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-900 dark:text-white">{lesson.title}</span><span className="mt-1 block text-[11px] text-slate-500 dark:text-slate-400">{lesson.minutes || 10} min · {lesson.reference || "Guided reading"}</span>{lesson.summary && <span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{lesson.summary}</span>}</span>
                     {lesson.preview && <Pill tone="green">Free preview</Pill>}
-                    {lesson.locked && <Pill tone="amber">Locked</Pill>}
+                    
                   </button>
                 ))}
               </div>
@@ -727,7 +612,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">These courses separate the passage itself, historical context, interpretive tradition, and application. A tradition-specific position is labelled instead of presented as a universal Christian view.</p>
                 <div className="mt-3 space-y-2">{(selectedCourse.sources || []).map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-xs font-semibold leading-5 text-indigo-700 underline underline-offset-2 dark:text-indigo-300"><ExternalLink size={13} className="mt-0.5 shrink-0" />{source.label}</a>)}</div>
               </div>
-              {hasPremium && <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20"><h3 className="font-black text-slate-900 dark:text-white">Need a study plan?</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Use your private workspace for notes, progress, and assessment history.</p><Button className="mt-3" onClick={() => setTab("workspace")}><FileText size={14} /> Open workspace</Button></div>}
+              {<div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20"><h3 className="font-black text-slate-900 dark:text-white">Your study records</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Use your private workspace for notes, progress, and assessment history.</p><Button className="mt-3" onClick={() => setTab("workspace")}><FileText size={14} /> Open workspace</Button></div>}
             </aside>
           </div>
 
@@ -739,7 +624,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                 <section className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50"><h4 className="text-xs font-black text-slate-900 dark:text-white">Sources for this lesson</h4><div className="mt-2 space-y-2">{(selectedLesson.sources || []).map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-xs font-semibold leading-5 text-indigo-700 underline underline-offset-2 dark:text-indigo-300"><ExternalLink size={13} className="mt-0.5 shrink-0" />{source.label}</a>)}</div></section>
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Button onClick={() => saveProgress(true)} disabled={working === "progress"}>{working === "progress" ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Mark complete</Button>
-                  {hasPremium && <Button variant="subtle" onClick={() => { setTab("workspace"); setNoteTitle(selectedLesson.title); setNoteContent(""); }}><FileText size={14} /> Add a private note</Button>}
+                  {<Button variant="subtle" onClick={() => { setTab("workspace"); setNoteTitle(selectedLesson.title); setNoteContent(""); }}><FileText size={14} /> Add a private note</Button>}
                 </div>
                 {selectedLesson.quiz?.length > 0 && (
                   <section className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
@@ -762,7 +647,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
               <aside className="space-y-4">
                 <section className="rounded-2xl border border-violet-200 bg-white p-4 dark:border-violet-900/40 dark:bg-slate-900">
                   <div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white"><MessageCircle size={17} /></div><div><h3 className="font-black text-slate-900 dark:text-white">RevelaAI Study Companion</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Answers use this lesson and its source list as context. It distinguishes textual claims from interpretation and states uncertainty where needed.</p></div></div>
-                  {hasPremium ? <>
+                  {signedIn ? <>
                     <textarea value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} placeholder="Ask about the reasoning, context, or alternative interpretations…" className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:border-indigo-400 dark:border-slate-700 dark:bg-slate-950" />
                     <div className="mt-3 rounded-xl border border-slate-200 p-2 dark:border-slate-700">
                       <p className="px-1 text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">AI discussion mode</p>
@@ -780,7 +665,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
                     </div>
                     <Button className="mt-2 w-full" onClick={askCompanion} disabled={working === "companion" || !question.trim()}>{working === "companion" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {companionMode === "debate" ? "Start balanced debate" : "Interpret with AI"}</Button>
                     {companionAnswer && <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><Markdown>{companionAnswer}</Markdown></div>}
-                  </> : <><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">The lesson is available, but the advanced companion is part of Faith Plus / Pro or the 30-day trial.</p><Button className="mt-3 w-full" onClick={() => setTab("plans")}>Unlock Study Companion</Button></>}
+                  </> : <><p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Sign in to use the lesson-grounded Study Companion and save its response to your account.</p><Button className="mt-3 w-full" onClick={() => onLogin && onLogin()}>Sign in to continue</Button></>}
                 </section>
               </aside>
             </div>
@@ -789,8 +674,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       )}
 
       {tab === "workspace" && (
-        !signedIn ? renderLockedCard("Your private study workspace", "Sign in to attach notes, results, and course progress to your own account.", "workspace")
-          : !hasPremium ? renderLockedCard("Personal notes and synced progress", "Save private notes against a course or lesson, review completed lessons, and keep your assessment history synced across devices.", "workspace")
+        !signedIn ? renderLockedCard("Your private study workspace", "Sign in to attach notes, results, and course progress to your own account.")
           : <div className="space-y-4">
               <SectionHeading eyebrow="Private to your account" title="My study workspace" description="Your notes, completed lessons, and assessment results live in the existing RevelaCode database under your account." actions={<Button variant="subtle" onClick={refreshWorkspace}><RefreshCw size={14} /> Refresh</Button>} />
               <div className="grid grid-cols-3 gap-2">{[
@@ -816,10 +700,9 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
       )}
 
       {tab === "groups" && (
-        !signedIn ? renderLockedCard("Church and study-group tools", "Sign in to start a group workspace or join a group by invite code.", "groups")
-          : !hasGroupTools ? renderLockedCard("Faith Pro group workspaces", "Create a church or Bible-study group, invite members using a real join code, assign courses, and track who has completed each assignment. Group tools are available during your 30-day Faith trial or with Faith Pro.", "groups")
+        !signedIn ? renderLockedCard("Church and study-group tools", "Sign in to start a group workspace or join a group by invite code.")
           : <div className="space-y-4">
-              <SectionHeading eyebrow="Church and study-group plans" title="Study together" description="Group creation and joining persist to the backend. Leaders share an invite code; members join with it, and assignments track each member's completion." actions={<Button variant="subtle" onClick={refreshGroups}><RefreshCw size={14} /> Refresh groups</Button>} />
+              <SectionHeading eyebrow="Church and study groups" title="Study together" description="Group creation and joining persist to the backend. Leaders share an invite code; members join with it, and assignments track each member's completion." actions={<Button variant="subtle" onClick={refreshGroups}><RefreshCw size={14} /> Refresh groups</Button>} />
               <div className="grid gap-4 lg:grid-cols-2">
                 <form onSubmit={createGroup} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                   <h3 className="font-black text-slate-900 dark:text-white">Create a church / study group</h3>
@@ -853,38 +736,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
           <SectionHeading eyebrow="Existing Events service" title="Daily world briefing" description="Uses RevelaCode’s current events feed. The article is a reported event; any prophetic connection remains a separate interpretation. Always open the publisher to verify the full report." actions={<><Button variant="subtle" onClick={loadEvents}><RefreshCw size={14} /> Refresh</Button>{onNavigate && <Button variant="subtle" onClick={() => onNavigate("events")}>Open Events workspace <ArrowRight size={14} /></Button>}</>} />
           {eventError && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">{eventError}</div>}
           {events.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center dark:border-slate-800"><Globe2 className="mx-auto text-slate-400" size={26} /><h3 className="mt-3 font-bold text-slate-900 dark:text-white">No current event items returned</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">The briefing uses the existing backend event ingestion pipeline. A blank response is not replaced with invented headlines.</p></div> : <div className="grid gap-3 md:grid-cols-2">{events.map((event, index) => <article key={event.id || event.url || event.headline || index} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><div className="flex flex-wrap items-center gap-2"><Pill tone="indigo">{event.source || "Publisher not provided"}</Pill>{event.publishedAt && <span className="inline-flex items-center gap-1 text-[10px] text-slate-400"><Clock3 size={12} />{niceDate(event.publishedAt)}</span>}{event.region && <Pill>{String(event.region).replaceAll("_", " ")}</Pill>}</div><h3 className="mt-3 text-sm font-black leading-6 text-slate-950 dark:text-white">{event.headline || event.title || "Untitled report"}</h3><p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{shortText(event.description || event.content, 420) || "No description was provided by the event feed."}</p><div className="mt-4 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-400">Report ≠ confirmed prophetic fulfilment</span>{event.url && <a href={event.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 underline dark:text-indigo-300">Open original <ExternalLink size={12} /></a>}</div></article>)}</div>}
-        </div>
-      )}
-
-      {tab === "plans" && (
-        <div className="space-y-4">
-          <SectionHeading eyebrow="Shared Revenue Engine" title="Faith plans & account access" description="The one-time 30-day Faith trial and any paid plan are managed by RevelaCode’s existing revenue service. Checkout is available only when the platform has approved the plan and configured production M-Pesa." />
-          <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black text-slate-950 dark:text-white">Faith trial status</h3><Pill tone={currentTrial?.status === "active" ? "green" : currentTrial?.status === "expired" ? "amber" : "slate"}>{currentTrial?.status || (signedIn ? "not checked" : "sign in required")}</Pill></div><p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{currentTrial?.status === "active" ? "Your full Faith Academy access ends " + niceDate(currentTrial.ends_at) + ". " + currentTrial.days_remaining + " day(s) remaining." : currentTrial?.status === "expired" ? "This account has already used its Faith trial. Choose an approved plan after the platform enables checkout." : "Each account can use one 30-day trial per hub. Starting it activates the complete Faith premium feature set for that period."}</p></div>
-              {!currentTrial || currentTrial.status === "not_started" ? <Button onClick={startTrial} disabled={working === "trial" || !signedIn}>{working === "trial" ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />} Start 30-day trial</Button> : currentTrial.status === "active" ? <Pill tone="green">Premium trial active</Pill> : null}
-            </div>
-          </section>
-
-          {!signedIn && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">Sign in to start your free trial or inspect your personal entitlement status. No payment is attempted from this screen unless you explicitly start checkout.</div>}
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {plans.map((plan) => {
-              const isPro = plan.code === "faith_pro";
-              const available = plan.status === "available";
-              return <article key={plan.code} className={"rounded-2xl border bg-white p-4 dark:bg-slate-900 " + (isPro ? "border-violet-300 dark:border-violet-900/50" : "border-slate-200 dark:border-slate-800")}>
-                <div className="flex items-start justify-between gap-2"><div><Pill tone={isPro ? "purple" : "indigo"}>{isPro ? "Church & group plan" : "Individual study plan"}</Pill><h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{plan.name}</h3></div>{available ? <Pill tone="green">Available</Pill> : <Pill tone="amber">Proposed</Pill>}</div>
-                <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{money(plan.amount, plan.currency)}<span className="ml-1 text-xs font-semibold text-slate-500">/ {plan.interval || "month"}</span></p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{isPro ? "Built for pastors, group leaders, ministries, and organised study classes." : "Built for individuals who want structured courses, personal study records, and the source-grounded AI companion."}</p>
-                <ul className="mt-4 space-y-2">{(plan.features || []).map((feature) => <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />{feature}</li>)}</ul>
-                {pricingMeta.checkout_enabled && available ? <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800"><label className="text-xs font-bold text-slate-700 dark:text-slate-300">M-Pesa phone number<input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" placeholder="07xx xxx xxx or 2547xx…" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal dark:border-slate-700 dark:bg-slate-950" /></label><Button className="mt-2 w-full" onClick={() => startCheckout(plan)} disabled={working === "checkout" || !signedIn}>{working === "checkout" ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />} Continue to M-Pesa</Button></div> : <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-950/50 dark:text-slate-400">{available ? "The plan is published, but production checkout is not yet configured. No payment can be taken right now." : "This is proposed pricing, not an approved live offer. A platform admin must publish the plan after reviewing price and provider readiness."}</div>}
-              </article>;
-            })}
-          </div>
-
-          {(checkoutMessage || lastCheckout) && <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><h3 className="font-black text-slate-900 dark:text-white">Checkout status</h3><p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{checkoutMessage}</p>{lastCheckout && <div className="mt-2 flex flex-wrap items-center gap-2"><Pill tone="amber">{lastCheckout.status || "pending"}</Pill>{(lastCheckout.checkout_request_id || lastCheckout.checkoutRequestId) && <code className="max-w-full break-all text-[10px] text-slate-500">{lastCheckout.checkout_request_id || lastCheckout.checkoutRequestId}</code>}</div>}<Button className="mt-3" variant="subtle" onClick={refreshCheckout} disabled={working === "checkout-refresh"}><RefreshCw size={13} /> Refresh verified status</Button><p className="mt-2 text-[10px] leading-5 text-slate-400">A checkout prompt or callback is not proof of payment. Entitlements change only after the backend verifies the provider result.</p></div>}
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50"><div className="flex items-start gap-3"><ShieldCheck size={18} className="mt-0.5 text-emerald-600" /><div><h3 className="font-bold text-slate-900 dark:text-white">Billing honesty & safety</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Basic Bible access remains free. The trial is one-time per hub. Plan prices and live checkout readiness come from the central backend. This interface never marks a payment successful by itself, and does not claim that automatic renewals are enabled.</p></div></div></div>
         </div>
       )}
 

@@ -10,12 +10,11 @@ function source(relativePath) {
   return readFileSync(path.join(repositoryRoot, relativePath), "utf8");
 }
 
-test("each subscription hub renders its own plans in its primary workspace", () => {
+test("each metered subscription hub renders its own plans in its primary workspace", () => {
   const contracts = [
     ["src/Dashboard/BiasharaDashboard.jsx", '<HubRevenueOffers hub="biashara" compact />'],
     ["src/Dashboard/ShambaDashboard.jsx", '<HubRevenueOffers hub="shamba" compact />'],
     ["src/Dashboard/ElimuDashboardWorkspace.jsx", '<HubRevenueOffers hub="elimu" compact />'],
-    ["src/components/FaithDashboard.jsx", '<HubRevenueOffers hub="faith" compact />'],
     ["src/Dashboard/Community/CommunityMarketplace.jsx", '<HubRevenueOffers hub="marketplace" compact />'],
     ["src/components/AIAssistantDashboard.jsx", '<HubRevenueOffers hub="smart_ai" compact />'],
   ];
@@ -26,6 +25,16 @@ test("each subscription hub renders its own plans in its primary workspace", () 
       `Expected the ${marker} plan panel in ${file}`,
     );
   }
+});
+
+test("Faith Hub is permanently free and does not render subscription offers", () => {
+  const dashboard = source("src/components/FaithDashboard.jsx");
+  const workspace = source("src/components/faith/FaithPremiumWorkspace.jsx");
+
+  assert.doesNotMatch(dashboard, /HubRevenueOffers/);
+  assert.doesNotMatch(workspace, /\/api\/revenue\//);
+  assert.doesNotMatch(workspace, /startCheckout|startTrial|Plans & access/);
+  assert.match(workspace, /Free Faith Hub access/);
 });
 
 test("Community is permanently free and does not render membership subscription offers", () => {

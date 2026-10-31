@@ -30,7 +30,6 @@ import FaithPremiumWorkspace from "./faith/FaithPremiumWorkspace.jsx";
 import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 
 /* =========================================================
@@ -727,7 +726,7 @@ export default function FaithDashboard({
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
         {renderStudyHeader(
           "Faith Academy",
-          "Structured courses, source-grounded study assistance, private learning records, church study groups, and trial or subscription access.",
+          "Structured courses, source-grounded study assistance, private learning records, and church study groups.",
           closeStudyView
         )}
         <FaithPremiumWorkspace
@@ -1202,8 +1201,6 @@ export default function FaithDashboard({
           </div>
         </div>
       </section>
-
-      <HubRevenueOffers hub="faith" compact />
 
       {/* Clearly labelled sponsored placement; study access never depends on ad clicks. */}
       <CommunityAdSenseUnit />
