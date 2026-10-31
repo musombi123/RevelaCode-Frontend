@@ -30,5 +30,7 @@ jobs:
         run: node --test tests/hub-plans-visibility.test.mjs
       - name: Run admin operations contracts
         run: node --test tests/admin-operations-contract.test.mjs
+      - name: Check CSS source does not expose regex classes as Tailwind utilities
+        run: node --test tests/css-tailwind-source-scan.test.mjs
       - name: Build production frontend
         run: npm run build
