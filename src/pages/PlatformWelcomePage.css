@@ -46,8 +46,8 @@
 }
 
 .welcome-network-line {
-  stroke-dasharray: 260;
-  stroke-dashoffset: 260;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
   animation: welcome-network-draw 2.2s ease .6s forwards;
 }
 
