@@ -154,7 +154,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
 
   const signedIn = !isGuest && Boolean(readAccessToken());
   // Faith Academy is open to all authenticated Faith Hub members. Access is
-  // account-scoped for saved records, not sold through subscriptions or trials.
+  // account-scoped for saved records.
   const hasPremium = true;
   const hasGroupTools = true;
   const courseUnlocked = () => true;
