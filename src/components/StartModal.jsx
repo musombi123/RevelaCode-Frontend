@@ -210,7 +210,7 @@ export default function StartModal() {
         return;
 
       default:
-        window.location.replace("/");
+        window.location.replace("/app");
     }
   };
 
