@@ -26,6 +26,7 @@ import ElimuHub from "./pages/ElimuHub.jsx";
 import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
 import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
+import PlatformWelcomePage from "./pages/PlatformWelcomePage.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -169,13 +170,9 @@ function PlatformHomeRoute() {
     return <ElimuPublicSchoolPage customDomainMode />;
   }
 
-  return (
-    <SPAWrapper>
-      <Layout>
-        <MainDashboardV2 />
-      </Layout>
-    </SPAWrapper>
-  );
+  // The platform root is a public entry page with an explicit Android or web choice.
+  // Keep the existing workspace on /app so sign-in and guest flows remain separate.
+  return <PlatformWelcomePage />;
 }
 
 function PlatformSchoolRoute() {
@@ -240,6 +237,7 @@ export default function App() {
             <AndroidPermissionSetup />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
+              <Route path="/welcome" element={<PlatformWelcomePage />} />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
