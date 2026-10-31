@@ -2011,8 +2011,8 @@ export function getVisibleDashboards({
       ) => {
         if (
           isGuest &&
-          dashboard.key ===
-            "accounts"
+          (dashboard.restricted ||
+            ["accounts", "profile", "settings", "payments"].includes(dashboard.key))
         ) {
           return false;
         }

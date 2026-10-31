@@ -63,8 +63,8 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState("login");
-  // login | register | forgot; null opens the entry-choice screen
+  const [mode, setMode] = useState(null);
+  // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
   // form | verify | reset
@@ -766,7 +766,7 @@ const completeLogin = (data = {}) => {
       });
       setMfaSetupData(setup);
       setStep("mfa-setup");
-      setMessage("Privileged accounts must enable authenticator verification before continuing.");
+      setMessage("Complete authenticator enrollment to finish this sign-in.");
       return null;
     }
 
