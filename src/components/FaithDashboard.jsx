@@ -887,318 +887,44 @@ export default function FaithDashboard({
         space-y-3 sm:space-y-5
       "
     >
-      {/* =====================================================
-          HERO
-      ===================================================== */}
-
       <section
-        className="
-          relative
-          overflow-hidden
-          rounded-2xl
-          bg-gradient-to-br
-          from-indigo-800
-          via-indigo-700
-          to-violet-800
-          p-3.5
-          text-white
-          shadow-lg
-          sm:rounded-3xl
-          sm:p-6
-          lg:p-9
-        "
+        aria-label="Faith and Scripture workspace"
+        className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-4"
       >
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -right-20
-            -top-20
-            h-72
-            w-72
-            rounded-full
-            bg-white/10
-            blur-3xl
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -bottom-24
-            -left-24
-            h-72
-            w-72
-            rounded-full
-            bg-black/10
-            blur-3xl
-          "
-        />
-
-        <div className="relative z-10 max-w-5xl">
-          <div
-            className="
-              inline-flex
-              items-center
-              gap-2
-              rounded-full
-              border
-              border-white/20
-              bg-white/10
-              px-3
-              py-1.5
-              text-xs
-              font-bold
-              uppercase
-              tracking-[0.12em]
-              backdrop-blur-sm
-            "
-          >
-            <Sparkles size={14} />
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+            <Sparkles size={13} />
             Faith & Scripture
           </div>
-
-          <div
-            className="
-              mt-3
-              flex
-              flex-col
-              gap-3
-              sm:mt-5
-              sm:gap-5
-              lg:flex-row
-              lg:items-end
-              lg:justify-between
-            "
-          >
-            <div>
-              <h1
-                className="
-                  text-xl
-                  font-black
-                  tracking-tight
-                  sm:text-4xl
-                  lg:text-5xl
-                "
-              >
-                Welcome to Faith, {displayName}
-              </h1>
-
-              <p
-                className="
-                  mt-2
-
-                  max-w-3xl
-
-                  text-xs
-
-                  leading-5
-
-                  text-white/90
-
-                  sm:mt-4
-
-                  sm:text-sm
-
-                  sm:leading-7
-
-                  lg:text-base
-                "
-              >
-                Your connected Scripture workspace for Bible study,
-                prophecy, events, intelligent cross-referencing, and
-                structured study materials.
-              </p>
-            </div>
-
-            <div
-              className="
-                inline-flex
-                w-fit
-                shrink-0
-                items-center
-                gap-2
-                rounded-full
-                border
-                border-white/15
-                bg-white/10
-                px-3
-                py-2
-                text-xs
-                font-semibold
-                backdrop-blur-sm
-              "
-            >
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">
+              Welcome to Faith, {displayName}
+            </h1>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
               {isGuest ? "Guest Session" : "Verified Account"}
-            </div>
+            </span>
           </div>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600 dark:text-slate-300">
+            Bible study, prophecy, events, cross-references and structured study materials.
+          </p>
+        </div>
 
-          {/* Hero Actions */}
-
-          <div
-            className="
-              mt-4
-              grid
-              grid-cols-2
-              gap-2
-              sm:mt-6
-              sm:flex
-              sm:flex-row
-              sm:flex-wrap
-            "
-          >
-            <button
-              type="button"
-              onClick={openFaithAcademy}
-              className="
-                group
-                col-span-2
-                inline-flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-amber-200/80
-                bg-gradient-to-r
-                from-amber-200
-                to-amber-100
-                px-3
-                py-2.5
-                text-sm
-                font-black
-                text-indigo-950
-                shadow-md
-                transition
-                hover:from-amber-100
-                hover:to-white
-                active:scale-[0.99]
-                sm:w-auto
-                sm:px-5
-                sm:py-3
-              "
-            >
-              <GraduationCap size={17} />
-              Open Faith Academy
-              <ArrowRight size={16} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateTo("bible")}
-              className="
-                inline-flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-white
-                px-2.5
-                py-2.5
-                text-xs
-                font-bold
-                text-indigo-700
-                sm:w-auto
-                sm:px-5
-                sm:py-3
-                sm:text-sm
-                shadow-lg
-                transition
-                hover:bg-gray-100
-                active:scale-[0.99]
-              "
-            >
-              Open Bible
-              <ArrowRight size={17} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateTo("prophecy")}
-              className="
-                inline-flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-white/20
-                bg-white/10
-                px-2.5
-                py-2.5
-                text-xs
-                font-bold
-                text-white
-                sm:w-auto
-                sm:px-5
-                sm:py-3
-                sm:text-sm
-                backdrop-blur-sm
-                transition
-                hover:bg-white/20
-                active:scale-[0.99]
-              "
-            >
-              Explore Prophecy
-              <BookOpen size={17} />
-            </button>
-
-            <button
-              type="button"
-              onClick={openStudy}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-white/20
-                bg-white/10
-                px-5
-                py-3
-                font-bold
-                text-white
-                backdrop-blur-sm
-                transition
-                hover:bg-white/20
-                active:scale-[0.99]
-              "
-            >
-              Study Library
-              <Library size={17} />
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenAI}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-white/20
-                bg-white/10
-                px-5
-                py-3
-                font-bold
-                text-white
-                backdrop-blur-sm
-                transition
-                hover:bg-white/20
-                active:scale-[0.99]
-              "
-            >
-              Ask RevelaAI
-              <Sparkles size={17} />
-            </button>
-          </div>
+        <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
+          <button type="button" onClick={openFaithAcademy} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-indigo-700">
+            <GraduationCap size={14} /> Faith Academy
+          </button>
+          <button type="button" onClick={() => navigateTo("bible")} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            Open Bible <ArrowRight size={13} />
+          </button>
+          <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            Prophecy <BookOpen size={13} />
+          </button>
+          <button type="button" onClick={openStudy} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            Study Library <Library size={13} />
+          </button>
+          <button type="button" onClick={onOpenAI} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            Ask RevelaAI <Sparkles size={13} />
+          </button>
         </div>
       </section>
 
