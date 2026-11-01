@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - ".github/workflows/dispatch-android.yml"
       - "src/**"
       - "public/**"
       - "index.html"
