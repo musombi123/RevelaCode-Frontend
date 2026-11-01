@@ -989,7 +989,7 @@ export function AuthProvider({
         // Track whether a credential was sent. A connected service rejecting
         // that credential is not, by itself, proof that the platform session
         // is invalid.
-        const requestWasAuthenticated = Boolean(
+        let requestWasAuthenticated = Boolean(
           headers.has("Authorization") || readRefreshToken()
         );
         let response = await fetch(url, { ...options, headers });
