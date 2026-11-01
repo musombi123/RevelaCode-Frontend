@@ -971,10 +971,19 @@ export function AuthProvider({
 
         const requestUrl = String(url);
         const requestMethod = String(options.method || "GET").toUpperCase();
-        const isAuthEntryRequest = /\\/api\\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:[?#]|$)/i.test(requestUrl);
+        let requestPath = "";
+        try {
+          requestPath = new URL(
+            requestUrl,
+            String(import.meta.env.VITE_API_URL || window.location.origin),
+          ).pathname;
+        } catch {
+          // Invalid request URLs cannot invalidate the platform session.
+        }
+        const isAuthEntryRequest = /^\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:\/|$)/i.test(requestPath);
         const isAuthoritativeSessionRequest = isAuthoritativeSessionCheck(
           requestUrl,
-          String(import.meta.env.VITE_API_URL || "").trim().replace(/\\/+$/, ""),
+          String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, ""),
           requestMethod,
         );
         // Track whether a credential was sent. A connected service rejecting
