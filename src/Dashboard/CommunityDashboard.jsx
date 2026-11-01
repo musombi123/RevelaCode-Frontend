@@ -54,7 +54,6 @@ import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirec
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import CommunityProfileWorkspace from "@/Dashboard/Community/CommunityProfileWorkspace.jsx";
-import CommunityIdentityHero from "@/Dashboard/Community/CommunityIdentityHero.jsx";
 
 // ============================================================
 // TEMPORARY HUB REDIRECTS
@@ -1335,15 +1334,6 @@ export default function CommunityDashboard({
                   </div>
                 </div>
               </header>
-
-              <CommunityIdentityHero
-                profile={communityProfile}
-                user={user}
-                onEditProfile={() => navigate("community-me")}
-                onCreatePost={openComposer}
-                onOpenFeed={() => navigate("community-feed")}
-                onOpenGroups={() => navigate("community-circles")}
-              />
 
               <section aria-label="Create a Community post" className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
                 <div className="flex items-center gap-3 p-3.5 sm:p-4">
