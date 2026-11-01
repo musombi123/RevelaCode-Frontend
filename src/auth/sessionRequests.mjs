@@ -25,7 +25,7 @@ export function isAuthoritativeSessionCheck(
       return false;
     }
 
-    const pathname = request.pathname.replace(/\\/+$/, "") || "/";
+    const pathname = request.pathname.replace(/\/+$/, "") || "/";
     return pathname === "/api/auth/me";
   } catch {
     return false;
