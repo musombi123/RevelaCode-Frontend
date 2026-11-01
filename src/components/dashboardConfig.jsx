@@ -30,6 +30,7 @@ import {
   ArrowRight,
   ChevronDown,
   Construction,
+  ShieldCheck,
 } from "lucide-react";
 
 import { API_ROOT } from "@/services/jumuiyaApi.jsx";
@@ -751,6 +752,11 @@ const AIAssistantDashboard =
       ),
     "RevelaAI",
   );
+
+const SecurityAcademyDashboard = safeLazy(
+  () => import("./SecurityAcademyDashboard.jsx"),
+  "Security Academy",
+);
 
 const FaithDashboard = safeLazy(
   () =>
@@ -1923,6 +1929,14 @@ export const DASHBOARDS = [
       <UserAccountDashboard />
     ),
     restricted: true,
+  },
+
+  {
+    key: "security-academy",
+    title: "Security Academy",
+    label: "Security Academy",
+    icon: ShieldCheck,
+    element: <SecurityAcademyDashboard />,
   },
 
   /* ====================================================
