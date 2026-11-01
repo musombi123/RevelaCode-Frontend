@@ -1,0 +1,50 @@
+name: Dispatch Android build when web source changes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+  workflow_dispatch:
+    inputs:
+      frontend_ref:
+        description: "Frontend branch, tag, or commit SHA to package"
+        required: true
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch the exact frontend revision to RevelaCode-Android
+        if: ${{ secrets.REVELACODE_ANDROID_DISPATCH_TOKEN != '' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REVELACODE_ANDROID_DISPATCH_TOKEN }}
+          script: |
+            const frontendRef = context.eventName === "workflow_dispatch"
+              ? (context.payload.inputs?.frontend_ref || "main")
+              : context.sha;
+            await github.rest.repos.createDispatchEvent({
+              owner: "musombi123",
+              repo: "RevelaCode-Android",
+              event_type: "frontend-updated",
+              client_payload: {
+                frontend_ref: frontendRef,
+                triggered_by: context.eventName
+              }
+            });
+            core.info(`Dispatched Android packaging for frontend ref ${frontendRef}`);
+
+      - name: Explain manual fallback
+        if: ${{ secrets.REVELACODE_ANDROID_DISPATCH_TOKEN == '' }}
+        run: echo "Set REVELACODE_ANDROID_DISPATCH_TOKEN in this repository to enable automatic Android builds. You can still run the Android workflow manually."
