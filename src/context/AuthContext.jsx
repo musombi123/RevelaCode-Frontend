@@ -15,6 +15,7 @@ import {
   clearStoredTokens,
 } from "@/auth/tokenStorage.mjs";
 import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
+import { isAuthoritativeSessionCheck } from "@/auth/sessionRequests.mjs";
 
 /* =========================================================
    CONTEXT
@@ -969,10 +970,25 @@ export function AuthProvider({
         }
 
         const requestUrl = String(url);
-        const isAuthEntryRequest = /\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:[?#]|$)/i.test(requestUrl);
-        // A 401 from a public/guest request must not erase the locally stored
-        // guest identity. Only invalidate a session when this request had an
-        // Authorization header or a refresh credential to recover.
+        const requestMethod = String(options.method || "GET").toUpperCase();
+        let requestPath = "";
+        try {
+          requestPath = new URL(
+            requestUrl,
+            String(import.meta.env.VITE_API_URL || window.location.origin),
+          ).pathname;
+        } catch {
+          // Invalid request URLs cannot invalidate the platform session.
+        }
+        const isAuthEntryRequest = /^\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:\/|$)/i.test(requestPath);
+        const isAuthoritativeSessionRequest = isAuthoritativeSessionCheck(
+          requestUrl,
+          String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, ""),
+          requestMethod,
+        );
+        // Track whether a credential was sent. A connected service rejecting
+        // that credential is not, by itself, proof that the platform session
+        // is invalid.
         let requestWasAuthenticated = Boolean(
           headers.has("Authorization") || readRefreshToken()
         );
@@ -1063,9 +1079,15 @@ export function AuthProvider({
           }
         }
 
-        if (response.status === 401 && requestWasAuthenticated) {
-          // Only an authenticated request can prove that the saved session is
-          // no longer accepted. A guest/public 401 leaves guest mode untouched.
+        if (
+          response.status === 401 &&
+          requestWasAuthenticated &&
+          isAuthoritativeSessionRequest
+        ) {
+          // Only the primary RevelaCode session endpoint may invalidate the
+          // global session. RevelaAI, Core Mesh, Security Academy and other
+          // connected services can reject a token independently; keep those
+          // failures local to their workspace instead of logging the user out.
           clearToken();
           try {
             localStorage.removeItem(STORAGE_KEY);

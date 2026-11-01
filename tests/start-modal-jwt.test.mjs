@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isAuthoritativeSessionCheck } from "../src/auth/sessionRequests.mjs";
 
 const startModal = await readFile(new URL("../src/components/StartModal.jsx", import.meta.url), "utf8");
 const authContext = await readFile(new URL("../src/context/AuthContext.jsx", import.meta.url), "utf8");
@@ -44,13 +45,19 @@ test("authenticated requests refresh once and retry with the replacement bearer 
   assert.match(authContext, /fetch\(refreshUrl,\s*\{/);
   assert.match(authContext, /persistToken\(nextToken, nextTokenType, nextRefreshToken\)/);
   assert.match(authContext, /response = await fetch\(url, \{ \.\.\.options, headers: retryHeaders \}\)/);
-  assert.match(authContext, /if \(response\.status === 401 && requestWasAuthenticated\)\s*\{[\s\S]*?clearToken\(\)/);
+  assert.match(authContext, /response\.status === 401 &&\s*requestWasAuthenticated &&\s*isAuthoritativeSessionRequest/);
+  assert.match(authContext, /isAuthoritativeSessionCheck\(/);
 });
 
-test("guest and public 401 responses preserve the guest identity", () => {
-  assert.match(authContext, /let requestWasAuthenticated = Boolean\(\s*headers\.has\("Authorization"\) \|\| readRefreshToken\(\)\s*\)/);
-  assert.match(authContext, /requestWasAuthenticated = true;[\s\S]*?headers: retryHeaders/);
-  assert.match(authContext, /if \(response\.status === 401 && requestWasAuthenticated\)/);
+test("only a 401 from the authoritative RevelaCode session endpoint can clear the global login", () => {
+  const authApi = "https://backend.revelacode.co.ke";
+  assert.equal(isAuthoritativeSessionCheck(authApi + "/api/auth/me", authApi, "GET"), true);
+  assert.equal(isAuthoritativeSessionCheck("https://revelaai.onrender.com/api/core-mesh/dashboard", authApi, "GET"), false);
+  assert.equal(isAuthoritativeSessionCheck("https://revelaai.onrender.com/api/security-academy/courses", authApi, "GET"), false);
+  assert.equal(isAuthoritativeSessionCheck(authApi + "/api/users/me", authApi, "GET"), false);
+  assert.equal(isAuthoritativeSessionCheck(authApi + "/api/auth/me", authApi, "POST"), false);
+  assert.match(authContext, /response\.status === 401 &&\s*requestWasAuthenticated &&\s*isAuthoritativeSessionRequest/);
+  assert.match(authContext, /clearToken\(\);[\s\S]*?setUser\(null\)/);
 });
 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {
