@@ -16,7 +16,7 @@ import {
   FlaskConical,
   Globe2,
   GraduationCap,
-  LoaderCircle,
+  Loader2,
   LockKeyhole,
   RefreshCw,
   ShieldCheck,
@@ -62,7 +62,7 @@ function ProgressBar({ value = 0, compact = false }) {
 function LoadingState({ label = "Loading Security Academy…" }) {
   return (
     <div className="flex min-h-[260px] items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400" role="status">
-      <LoaderCircle size={18} className="animate-spin text-cyan-500" />
+      <Loader2 size={18} className="animate-spin text-cyan-500" />
       {label}
     </div>
   );
@@ -349,7 +349,7 @@ function CourseWorkspace({ detail, authFetch, onBack, onRefresh }) {
                 <button type="button" onClick={() => setActiveLessonIndex((index) => Math.max(0, index - 1))} disabled={activeLessonIndex === 0} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-300">Previous lesson</button>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button type="button" onClick={markComplete} disabled={saving || completed.has(activeLesson.id)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
-                    {saving ? <LoaderCircle size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                     {completed.has(activeLesson.id) ? "Lesson saved" : "Mark lesson complete"}
                   </button>
                   <button type="button" onClick={() => setActiveLessonIndex((index) => Math.min(lessons.length - 1, index + 1))} disabled={activeLessonIndex >= lessons.length - 1} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-cyan-700 dark:hover:bg-cyan-600">
@@ -403,7 +403,7 @@ function CourseWorkspace({ detail, authFetch, onBack, onRefresh }) {
                   </div>
                 ) : <span className="text-xs text-slate-500 dark:text-slate-400">{Object.keys(answers).length}/{quiz.length} answered</span>}
                 <button type="button" onClick={submit} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-700 px-5 py-3 text-xs font-black text-white transition hover:bg-cyan-600 disabled:opacity-50">
-                  {saving ? <LoaderCircle size={14} className="animate-spin" /> : <FileCheck2 size={14} />}
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <FileCheck2 size={14} />}
                   Submit assessment
                 </button>
               </div>
