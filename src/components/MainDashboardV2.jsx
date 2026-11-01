@@ -27,6 +27,7 @@ import {
   Leaf,
   ShoppingCart,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
@@ -644,7 +645,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const navigationGroupSpecs = [
     { key: "start", label: "Start", keys: ["home"] },
-    { key: "learn", label: "Learn & Faith", keys: ["faith", "education"] },
+    { key: "learn", label: "Learn & Security", keys: ["faith", "education", "security-academy"] },
     { key: "grow", label: "Work & Grow", keys: ["biashara", "shamba"] },
     { key: "community", label: "Community & Services", keys: ["community", "payments"] },
     { key: "account", label: "Account & Settings", keys: ["profile", "settings", "accounts"] },
@@ -1479,6 +1480,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                       ? [
                           { key: "faith", label: "Faith & Scripture", Icon: BookOpen, detail: "Bible study and faith" },
                           { key: "education", label: "Elimu", Icon: GraduationCap, detail: "Schools and learning" },
+                          { key: "security-academy", label: "Security Academy", Icon: ShieldCheck, detail: "Reverse engineering and defense" },
                         ]
                       : [
                           { key: "biashara", label: "Biashara", Icon: ShoppingCart, detail: "Sales and business" },
