@@ -1114,6 +1114,7 @@ function HomeDashboard({
 }) {
   const { language, t } = usePreferences();
   const { history: userHistory = [] } = useHistory();
+  const isAndroidAppBuild = import.meta.env.VITE_ANDROID_APP === "true";
 
   const {
     notifications,
@@ -1588,6 +1589,92 @@ function HomeDashboard({
     }
     return <div key={item.key} className={cardClass}>{content}</div>;
   };
+
+  if (isAndroidAppBuild) {
+    return (
+      <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_1fr] gap-3 overflow-hidden px-3 py-2 sm:px-4">
+        <section
+          aria-label={t("RevelaCode home")}
+          className="relative isolate flex min-h-[108px] items-center justify-between gap-3 overflow-hidden rounded-[22px] border border-slate-200/90 bg-white px-3 py-3 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 h-36 w-36 rounded-full bg-blue-500/10 blur-2xl dark:bg-blue-400/10" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 left-[22%] h-28 w-28 rounded-full bg-violet-500/10 blur-2xl dark:bg-violet-400/10" />
+          <div className="relative min-w-0 flex-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.13em] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {t("Your connected ecosystem")}
+            </span>
+            <h1 className="mt-2 truncate text-lg font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-xl">
+              {t(greetingKey)}{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                {displayName}
+              </span>
+            </h1>
+            <p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t("Learn, build, grow and connect.")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenAI?.()}
+            aria-label={t("Open RevelaAI assistant")}
+            className="relative flex h-[68px] w-[68px] shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-950 text-blue-100 shadow-md transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/10"
+            style={{ backgroundImage: "radial-gradient(circle at 85% 15%, rgba(37,99,235,.38), transparent 55%), linear-gradient(145deg, #0b1220, #111c31)" }}
+          >
+            <Sparkles size={21} />
+            <span className="mt-1 text-[10px] font-extrabold">RevelaAI</span>
+          </button>
+        </section>
+
+        <section aria-label={t("Your hubs")} className="min-h-0 overflow-hidden">
+          <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
+            <div className="min-w-0">
+              <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
+                {t("Choose your workspace")}
+              </h2>
+              <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                {t("One tap to continue")}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
+              {HOME_HUBS.length} {t("hubs")}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {sortedHubs.map((hub, index) => {
+              const Icon = hub.icon;
+              const uses = Number(hubUsage[hub.key]?.count) || 0;
+              return (
+                <button
+                  key={hub.key}
+                  type="button"
+                  onClick={() => handleHubOpen(hub.key)}
+                  aria-label={t("Open") + " " + t(hub.title)}
+                  className={"group flex min-h-[72px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 " + (index === 4 ? "col-span-2 " : "") + hub.borderTone + " " + hub.surface}
+                >
+                  <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}>
+                    <Icon size={18} strokeWidth={2} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
+                      {t(hub.shortTitle)}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">
+                      {t(hub.description)}
+                    </span>
+                  </span>
+                  <ArrowRight size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 dark:text-slate-300" />
+                  {uses > 0 ? (
+                    <span className="sr-only">{formatNumber(uses)} {t("opens")}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1500px] space-y-4 overflow-x-clip px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:space-y-5 sm:px-6">
