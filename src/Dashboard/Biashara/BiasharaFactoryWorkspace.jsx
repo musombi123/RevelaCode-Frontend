@@ -154,7 +154,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
       getBiasharaMachines(businessId),
       getBiasharaQualityChecks(businessId),
       getBiasharaFactoryAlerts(businessId),
-      getBiasharaProducts({ limit: 100 }),
+      getBiasharaProducts({ limit: 100 }, { businessId }),
     ]);
     const [overviewResult, batchesResult, machinesResult, checksResult, alertsResult, productsResult] = tasks;
     const failures = tasks.filter((task) => task.status === "rejected");
