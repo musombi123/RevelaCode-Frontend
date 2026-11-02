@@ -194,7 +194,8 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
       await load();
       if (typeof onRefresh === "function") await onRefresh();
     } catch (err) {
-      setError(err?.message || err?.error || "The factory operation failed.");
+      if (err?.queued) setNotice(err.message || "Saved on this device and will synchronize when the connection returns.");
+      else setError(err?.message || err?.error || "The factory operation failed.");
     } finally {
       setSaving(false);
     }
