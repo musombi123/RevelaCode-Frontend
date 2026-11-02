@@ -25,11 +25,13 @@ import BiasharaWebsiteBuilder from "@/Dashboard/Biashara/BiasharaWebsiteBuilder.
 import BiasharaContractsWorkspace from "@/Dashboard/Biashara/BiasharaContractsWorkspace.jsx";
 import BiasharaFactoryWorkspace from "@/Dashboard/Biashara/BiasharaFactoryWorkspace.jsx";
 import BiasharaHRWorkspace from "@/Dashboard/Biashara/BiasharaHRWorkspace.jsx";
+import BiasharaIntegrationsWorkspace from "@/Dashboard/Biashara/BiasharaIntegrationsWorkspace.jsx";
 
 const ROUTES = [
   { key: "products", label: "Products", icon: Package },
   { key: "factory", label: "Production & Factory", icon: Package },
   { key: "hr", label: "HR & Attendance", icon: Users },
+  { key: "integrations", label: "Integrations", icon: Zap },
   { key: "services", label: "Services", icon: Wrench },
   { key: "orders", label: "Orders", icon: ClipboardList },
   { key: "customers", label: "Customers", icon: Users },
@@ -45,6 +47,7 @@ const TITLES = {
   products: ["Products and inventory", "Add, archive and review stock for products sold by your business."],
   factory: ["Production & Factory Centre", "Manufacturing batches, raw-material usage, wastage, quality and machine performance."],
   hr: ["HR & Attendance", "Employee register, System IDs, shift schedules and attendance."],
+  integrations: ["External integrations", "M-Pesa checkout readiness, KRA eTIMS certification and WhatsApp connectivity."],
   services: ["Manage services", "Create and maintain the services this business offers, with business-specific pricing and availability."],
   orders: ["Order management", "Review customer orders and update order status."],
   customers: ["Customer records", "Keep customer contact details in one place."],
@@ -386,7 +389,7 @@ export default function BiasharaInternalWorkspace({
   const reload = useCallback(async () => {
     setError("");
 
-    if (route === "factory" || route === "hr" || route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
+    if (route === "factory" || route === "hr" || route === "integrations" || route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
       setRows([]);
       setLoading(false);
       return;
@@ -698,6 +701,9 @@ export default function BiasharaInternalWorkspace({
   }
   if (route === "hr") {
     return <BiasharaHRWorkspace business={business} onRefresh={onRefresh} />;
+  }
+  if (route === "integrations") {
+    return <BiasharaIntegrationsWorkspace business={business} onRefresh={onRefresh} />;
   }
 
   return (
