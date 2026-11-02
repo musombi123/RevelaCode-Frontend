@@ -16,7 +16,7 @@ Use distinct AdSense units for the different formats and surfaces:
 | `RevelaCode - Community Home - Display` | Community overview | `VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID` |
 | `RevelaCode - Faith Overview - Display` | Faith landing page | `VITE_ADSENSE_FAITH_SLOT` |
 
-The Community feed retains the existing repository slot default `8625467538`; set the environment variable when the active AdSense unit in your account has a different ID. The Community Home slot has no fallback: it will not borrow the Faith display slot. The Faith display setting retains the legacy `VITE_ADSENSE_COMMUNITY_SLOT` fallback for backward compatibility.
+The configured Community feed unit is `8625467538`. Community Home uses the supplied Display unit `3949493375`, and Faith uses the supplied Display unit `1404267263`. These are also the component defaults; the matching Vite environment variables override them when explicitly set.
 
 For Community Feed, configure an AdSense in-feed unit and its matching `VITE_ADSENSE_COMMUNITY_LAYOUT_KEY`. For Community Home and Faith, configure responsive display units. Keep the publisher/client ID separate from the numeric Ad Unit IDs.
 
@@ -35,8 +35,8 @@ Set these as **build-time** environment variables in the frontend deployment:
 ```env
 VITE_ADSENSE_COMMUNITY_SLOT_ID=YOUR_COMMUNITY_IN_FEED_SLOT_ID
 VITE_ADSENSE_COMMUNITY_LAYOUT_KEY=YOUR_COMMUNITY_IN_FEED_LAYOUT_KEY
-VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID=YOUR_COMMUNITY_DISPLAY_SLOT_ID
-VITE_ADSENSE_FAITH_SLOT=YOUR_FAITH_DISPLAY_SLOT_ID
+VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID=3949493375
+VITE_ADSENSE_FAITH_SLOT=1404267263
 ```
 
 After changing any `VITE_*` variable, trigger a fresh frontend build/deploy because Vite embeds those values at build time. Confirm that `revelacode.co.ke` is approved in AdSense, the configured units are active, and there are no account or consent blockers. Ad fill is not guaranteed immediately.
