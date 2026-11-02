@@ -912,6 +912,13 @@ export function useJumuiyaApi() {
       recordBiasharaMachineReading: (businessId, machineId, data) =>
         postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data, { businessId }),
       getBiasharaFactoryAlerts: (businessId) => getData("/biashara/factory/alerts", { businessId }),
+      getBiasharaIntegrationsStatus: (businessId) => getData("/biashara/integrations/status", { businessId }),
+      startBiasharaInvoiceMpesa: (businessId, invoiceId, phone, idempotencyKey) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/stk-push`, { phone }, { businessId, headers: { "Idempotency-Key": idempotencyKey } }),
+      getBiasharaInvoiceMpesaStatus: (businessId, invoiceId) =>
+        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/status`, { businessId }),
+      refreshBiasharaInvoiceMpesa: (businessId, invoiceId) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/refresh`, {}, { businessId }),
 
       // ===================================================
       // BIASHARA — HR AND ATTENDANCE
