@@ -383,6 +383,29 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
               </form>;
             })}</div> : <Empty>The quality queue is clear. Completed production batches appear here.</Empty>}
           </Panel>
+          <Panel title="Recent inspections and internal QA certificates" description="Passing inspections issue a traceable internal batch certificate ID. This is a company quality record, not an external regulator certification.">
+            {qualityChecks.length ? (
+              <div className="space-y-3">
+                {qualityChecks.slice(0, 12).map((check) => (
+                  <div key={idOf(check)} className="rounded-xl border border-slate-100 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-900">Batch {check.batch_id}</p>
+                        <p className="mt-1 text-xs text-slate-500">{check.created_at ? new Date(check.created_at).toLocaleString("en-KE") : "Inspection time unavailable"}</p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${check.result === "passed" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>{check.grade || check.result}</span>
+                    </div>
+                    {check.certificate_number ? (
+                      <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 font-mono text-xs font-bold text-emerald-800">Internal QA certificate: {check.certificate_number}</p>
+                    ) : (
+                      <p className="mt-3 text-xs text-slate-500">No certificate issued for a rejected batch.</p>
+                    )}
+                    {check.inspection_notes ? <p className="mt-2 text-xs leading-5 text-slate-600">{check.inspection_notes}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : <Empty>No quality inspections have been recorded yet.</Empty>}
+          </Panel>
         ) : null}
 
         {tab === "machines" ? (
