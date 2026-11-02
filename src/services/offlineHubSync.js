@@ -328,7 +328,7 @@ export async function queueOfflineMutation({ scope, url, method, body, headers =
     url: String(url),
     method: String(method).toUpperCase(),
     body: serializedBody,
-    businessId: String(headers?.["X-Business-ID"] || headers?.["x-business-id"] || "").slice(0, 128),
+    businessId: readHeader(headers, "X-Business-ID").slice(0, 128),
     status: "pending",
     createdAt: Date.now(),
     attempts: 0,
