@@ -9,40 +9,58 @@ import {
 } from "@capacitor-community/admob";
 
 const ADSENSE_CLIENT = "ca-pub-5357444506450550";
-// Reuse the Community feed slot already present in this repository, while
-// allowing deployment-specific overrides without changing source.
-// In-feed slot already used by CommunityAdCard.jsx; deployments can override it.
+
 const COMMUNITY_FEED_AD_SLOT = String(
   import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT_ID || "8625467538",
 ).trim();
-// Keep the previous Faith/display configuration working independently.
+const COMMUNITY_OVERVIEW_AD_SLOT = String(
+  import.meta.env.VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID || "",
+).trim();
 const FAITH_DISPLAY_AD_SLOT = String(
   import.meta.env.VITE_ADSENSE_FAITH_SLOT ||
     import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT ||
     "",
 ).trim();
 const COMMUNITY_AD_LAYOUT_KEY = String(
-  import.meta.env.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY ||
-    "-6t+ed+2i-1n-4w",
+  import.meta.env.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY || "-6t+ed+2i-1n-4w",
 ).trim();
 
 const ADMOB_APP_ID = String(
   import.meta.env.VITE_ADMOB_ANDROID_APP_ID || "",
 ).trim();
-const ADMOB_NATIVE_UNIT_ID = String(
+const COMMUNITY_NATIVE_AD_UNIT_ID = String(
   import.meta.env.VITE_ADMOB_COMMUNITY_NATIVE_AD_UNIT_ID || "",
 ).trim();
+const COMMUNITY_OVERVIEW_NATIVE_AD_UNIT_ID = String(
+  import.meta.env.VITE_ADMOB_COMMUNITY_OVERVIEW_NATIVE_AD_UNIT_ID || "",
+).trim();
+const FAITH_NATIVE_AD_UNIT_ID = String(
+  import.meta.env.VITE_ADMOB_FAITH_NATIVE_AD_UNIT_ID || "",
+).trim();
 
-const TEST_ADMOB_APP_ID = "ca-app-pub-3940256099942544~3347511713";
-const TEST_NATIVE_AD_UNIT_ID = "ca-app-pub-3940256099942544/2247696110";
-const HAS_PRODUCTION_ADMOB_IDS = Boolean(ADMOB_APP_ID && ADMOB_NATIVE_UNIT_ID);
-const NATIVE_AD_UNIT_ID = HAS_PRODUCTION_ADMOB_IDS
-  ? ADMOB_NATIVE_UNIT_ID
-  : TEST_NATIVE_AD_UNIT_ID;
-const IS_TESTING_ADS = !HAS_PRODUCTION_ADMOB_IDS;
-
-const NATIVE_FEED_ID = "revelacode-community-feed";
-const NATIVE_SLOT_KEY = "community-sponsored-placement";
+const AD_PLACEMENTS = {
+  "community-feed": {
+    feedId: "revelacode-community-feed",
+    slotKey: "community-feed-sponsored-slot",
+    admobUnitId: COMMUNITY_NATIVE_AD_UNIT_ID,
+    adsenseSlot: COMMUNITY_FEED_AD_SLOT,
+    adsenseFormat: "fluid",
+  },
+  "community-overview": {
+    feedId: "revelacode-community-overview",
+    slotKey: "community-overview-sponsored-slot",
+    admobUnitId: COMMUNITY_OVERVIEW_NATIVE_AD_UNIT_ID,
+    adsenseSlot: COMMUNITY_OVERVIEW_AD_SLOT,
+    adsenseFormat: "auto",
+  },
+  "faith-overview": {
+    feedId: "revelacode-faith-overview",
+    slotKey: "faith-overview-sponsored-slot",
+    admobUnitId: FAITH_NATIVE_AD_UNIT_ID,
+    adsenseSlot: FAITH_DISPLAY_AD_SLOT,
+    adsenseFormat: "auto",
+  },
+};
 
 let admobInitializePromise = null;
 
@@ -78,13 +96,11 @@ async function initializeAdMobWithConsent() {
 }
 
 /**
- * Compact native AdMob creative for the Community feed.
- *
- * The NativeAdFeed API is marked Preview by the plugin maintainers. It runs
- * only inside the Android APK; the existing AdSense unit remains the web path.
- * Without BOTH real AdMob IDs, it deliberately uses Google's official demo IDs.
+ * One NativeAdFeed manager and one stable native slot per visible placement.
+ * Community feed rendering is capped to one instance so a screen never creates
+ * competing managers with duplicate feed IDs or slot keys.
  */
-function CommunityNativeAdMobUnit() {
+function NativeAdMobPlacement({ config }) {
   const [status, setStatus] = useState("idle");
 
   useEffect(() => {
@@ -111,11 +127,12 @@ function CommunityNativeAdMobUnit() {
           return;
         }
 
+        const hasProductionIds = Boolean(ADMOB_APP_ID && config.admobUnitId);
         feed = await NativeAdFeed.create({
-          feedId: NATIVE_FEED_ID,
-          adId: NATIVE_AD_UNIT_ID,
+          feedId: config.feedId,
+          ...(hasProductionIds ? { adId: config.admobUnitId } : {}),
           template: NativeAdTemplate.Small,
-          isTesting: IS_TESTING_ADS,
+          isTesting: !hasProductionIds,
           style: {
             backgroundColor: "#0b1220",
             cornerRadius: 12,
@@ -132,25 +149,25 @@ function CommunityNativeAdMobUnit() {
         loadedHandle = await feed.addListener(
           NativeAdPluginEvents.Loaded,
           (event) => {
-            if (event.slotKey === NATIVE_SLOT_KEY) settle("loaded");
+            if (event.slotKey === config.slotKey) settle("loaded");
           },
         );
         failedHandle = await feed.addListener(
           NativeAdPluginEvents.FailedToLoad,
           (event) => {
-            if (event.slotKey === NATIVE_SLOT_KEY) settle("failed");
+            if (event.slotKey === config.slotKey) settle("failed");
           },
         );
 
         settle("loading");
         timeoutId = window.setTimeout(() => settle("failed"), 15000);
       } catch (error) {
-        console.warn("Community AdMob placement is unavailable.", error);
+        console.warn("AdMob placement is unavailable.", error);
         settle("failed");
       }
     }
 
-    setup();
+    void setup();
 
     return () => {
       active = false;
@@ -174,7 +191,7 @@ function CommunityNativeAdMobUnit() {
         }
       })();
     };
-  }, []);
+  }, [config]);
 
   if (!isAndroidNativeApp() || status === "idle" || status === "failed") {
     return null;
@@ -185,15 +202,17 @@ function CommunityNativeAdMobUnit() {
       aria-label="Sponsored advertisement"
       className="my-5 rounded-2xl border border-slate-200 bg-white p-2.5 dark:border-white/10 dark:bg-slate-900"
     >
-      <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
-        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">
+      <div className="mb-1.5 flex min-h-[15px] items-center justify-between gap-2 px-1">
+        <span className="inline-flex min-h-[15px] min-w-[15px] items-center text-[10px] font-black uppercase leading-[15px] tracking-[0.12em] text-slate-400">
           Advertisement
         </span>
-        <span className="text-[9px] text-slate-400">Sponsored</span>
+        <span className="text-[10px] leading-[15px] text-slate-400">
+          Sponsored
+        </span>
       </div>
       {createElement("capacitor-admob-native", {
-        "feed-id": NATIVE_FEED_ID,
-        "slot-key": NATIVE_SLOT_KEY,
+        "feed-id": config.feedId,
+        "slot-key": config.slotKey,
       })}
       {status === "loading" && (
         <span className="sr-only">Loading advertisement</span>
@@ -202,52 +221,52 @@ function CommunityNativeAdMobUnit() {
   );
 }
 
-function CommunityWebAdSenseUnit({ placement = "display" }) {
+function WebAdSensePlacement({ config }) {
   const adRef = useRef(null);
   const pushAttempted = useRef(false);
-  const adSlot = placement === "feed"
-    ? COMMUNITY_FEED_AD_SLOT
-    : FAITH_DISPLAY_AD_SLOT;
+  const adSlot = config.adsenseSlot;
 
   useEffect(() => {
     if (
-      !/^\d+$/.test(adSlot) ||
+      !/^\\d+$/.test(adSlot) ||
       !adRef.current ||
-      pushAttempted.current
+      pushAttempted.current ||
+      typeof window === "undefined"
     ) {
       return;
     }
-    if (typeof window === "undefined") return;
 
     pushAttempted.current = true;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (error) {
       pushAttempted.current = false;
-      console.warn("Community AdSense unit could not be initialized.", error);
+      console.warn("AdSense placement could not be initialized.", error);
     }
   }, [adSlot]);
 
-  if (!/^\d+$/.test(adSlot) || !ADSENSE_CLIENT) return null;
+  if (!/^\\d+$/.test(adSlot) || !ADSENSE_CLIENT) return null;
 
   return (
     <aside
       aria-label="Advertisement"
       className="my-6 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900 sm:p-4"
     >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+      <div className="mb-2 flex min-h-[15px] items-center justify-between gap-3">
+        <span className="inline-flex min-h-[15px] min-w-[15px] items-center text-[10px] font-black uppercase leading-[15px] tracking-[0.12em] text-slate-400">
           Advertisement
         </span>
-        <span className="text-[9px] text-slate-400">Google AdSense</span>
+        <span className="text-[10px] leading-[15px] text-slate-400">
+          Google AdSense
+        </span>
       </div>
       <ins
         ref={adRef}
         className="adsbygoogle"
         style={{ display: "block", width: "100%", minHeight: "100px" }}
-        data-ad-format={placement === "feed" ? "fluid" : "auto"}
+        data-ad-format={config.adsenseFormat}
         data-ad-layout-key={
-          placement === "feed" ? COMMUNITY_AD_LAYOUT_KEY : undefined
+          config.adsenseFormat === "fluid" ? COMMUNITY_AD_LAYOUT_KEY : undefined
         }
         data-full-width-responsive="true"
         data-ad-client={ADSENSE_CLIENT}
@@ -257,10 +276,12 @@ function CommunityWebAdSenseUnit({ placement = "display" }) {
   );
 }
 
-export default function CommunityAdSenseUnit({ placement = "display" }) {
+export default function CommunityAdSenseUnit({ placement = "faith-overview" }) {
+  const config = AD_PLACEMENTS[placement] || AD_PLACEMENTS["faith-overview"];
+
   return isAndroidNativeApp() ? (
-    <CommunityNativeAdMobUnit />
+    <NativeAdMobPlacement config={config} />
   ) : (
-    <CommunityWebAdSenseUnit placement={placement} />
+    <WebAdSensePlacement config={config} />
   );
 }
