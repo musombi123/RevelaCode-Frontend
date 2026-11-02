@@ -162,6 +162,7 @@ function Notice({ tone = "blue", children }) {
 
 function BiasharaForecastPanel({ business, currency = "KES" }) {
   const api = useJumuiyaApi();
+  const businessId = String(business?.id || business?._id || "");
   const [horizon, setHorizon] = useState(7);
   const [targetMargin, setTargetMargin] = useState(25);
   const [report, setReport] = useState(null);
@@ -178,7 +179,7 @@ function BiasharaForecastPanel({ business, currency = "KES" }) {
       const result = await api.getBiasharaBusinessForecast({
         forecastDays: horizon,
         targetMarginPercent: targetMargin,
-      });
+      }, { businessId });
       setReport(result?.report || result?.data || result);
     } catch (error) {
       setForecastError(error?.message || "Business forecast could not be loaded.");
@@ -186,7 +187,7 @@ function BiasharaForecastPanel({ business, currency = "KES" }) {
     } finally {
       setLoadingForecast(false);
     }
-  }, [api, horizon, targetMargin]);
+  }, [api, businessId, horizon, targetMargin]);
 
   useEffect(() => {
     loadForecast();
@@ -557,7 +558,7 @@ export default function BiasharaInternalWorkspace({
     setNotice("");
     try {
       if (typeof api.updateBiasharaOrderStatus !== "function") throw new Error("The order status API helper is missing.");
-      await api.updateBiasharaOrderStatus(id, status);
+      await api.updateBiasharaOrderStatus(businessId, id, status);
       setNotice(`Order status updated to ${status}.`);
       await reload();
       await onRefresh?.();
@@ -581,7 +582,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.adjustBiasharaInventory !== "function") throw new Error("The inventory adjustment API helper is unavailable.");
-      await api.adjustBiasharaInventory(id, {
+      await api.adjustBiasharaInventory(businessId, id, {
         movement_type: "add",
         quantity,
         reason: "Restock recorded from Biashara product catalogue",
