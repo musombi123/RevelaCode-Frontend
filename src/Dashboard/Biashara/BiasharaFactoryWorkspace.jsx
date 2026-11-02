@@ -373,6 +373,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
         ) : null}
 
         {tab === "quality" ? (
+          <>
           <Panel title="Quality inspection queue" description="Only a passing inspection releases finished goods into available inventory. Rejected batches remain blocked.">
             {qualityQueue.length ? <div className="space-y-3">{qualityQueue.map((batch) => {
               const form = qualityForms[idOf(batch)] || { grade: "A", inspection_notes: "" };
@@ -406,6 +407,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
               </div>
             ) : <Empty>No quality inspections have been recorded yet.</Empty>}
           </Panel>
+          </>
         ) : null}
 
         {tab === "machines" ? (
