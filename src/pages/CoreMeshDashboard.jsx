@@ -209,11 +209,6 @@ export default function CoreMeshDashboard() {
   const configuration = snapshot?.configuration || {};
   const runtimeConfigurationChecks = [
     {
-      label: "ZERO service URL",
-      env: "USECT_ZERO_BASE_URL / USECT_ZERO_URL",
-      ready: configuration.zero_url_configured === true,
-    },
-    {
       label: "ZERO brain token",
       env: "USECT_ZERO_BRAIN_TOKEN",
       ready: configuration.zero_brain_token_configured === true,
@@ -224,11 +219,6 @@ export default function CoreMeshDashboard() {
       ready: configuration.zero_admin_token_configured === true,
     },
     {
-      label: "Genesis service URL",
-      env: "GENESIS_BASE_URL",
-      ready: configuration.genesis_url_configured === true,
-    },
-    {
       label: "Genesis proxy token",
       env: "GENESIS_ADMIN_TOKEN (or GENESIS_TOKEN)",
       ready: configuration.genesis_proxy_credential_configured === true,
@@ -237,11 +227,6 @@ export default function CoreMeshDashboard() {
       label: "Genesis tool catalog",
       env: "GENESIS_ORCHESTRATOR_TOOLS_ENABLED=true",
       ready: configuration.genesis_orchestrator_tools_enabled === true,
-    },
-    {
-      label: "Mind service URL",
-      env: "MIND_BASE_URL",
-      ready: configuration.mind_url_configured === true,
     },
     {
       label: "Mind mutation token",
@@ -412,18 +397,15 @@ export default function CoreMeshDashboard() {
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Configuration checks are not proof of successful live execution.</p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <DataPoint label="ZERO dispatcher" value={configuration.zero_tools_ready ? "Configured" : "Missing configuration"} />
-              <DataPoint label="ZERO service URL" value={configuration.zero_url_configured ? "Configured" : "Missing"} />
+              <DataPoint label="ZERO dispatcher" value={configuration.zero_brain_dispatcher_enabled ? "Enabled" : "Needs brain token"} />
               <DataPoint label="ZERO brain token" value={configuration.zero_brain_token_configured ? "Configured" : "Missing"} />
               <DataPoint label="ZERO admin token" value={configuration.zero_admin_token_configured ? "Configured" : "Missing"} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
-              <DataPoint label="Genesis service URL" value={configuration.genesis_url_configured ? "Configured" : "Missing"} />
               <DataPoint label="Genesis proxy token" value={configuration.genesis_proxy_credential_configured ? "Configured" : "Missing"} />
               <DataPoint label="Genesis registry" value={configuration.genesis_registry_ready ? "Reachable" : "Unavailable"} />
               <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
               <DataPoint label="Genesis tool catalog" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
-              <DataPoint label="Mind service URL" value={configuration.mind_url_configured ? "Configured" : "Missing"} />
               <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
             </div>
@@ -436,7 +418,7 @@ export default function CoreMeshDashboard() {
             <div className="min-w-0">
               <p className="font-bold">Status request failed</p>
               <p className="mt-1 break-words text-xs leading-5">{error}</p>
-              <p className="mt-1 text-xs opacity-80">Confirm the RevelaAI API URL and your signed-in session, then refresh.</p>
+              <p className="mt-1 text-xs opacity-80">Confirm the RevelaAI service is healthy and your signed-in session is valid, then refresh.</p>
             </div>
           </div>
         )}
@@ -698,7 +680,7 @@ export default function CoreMeshDashboard() {
           <div className="min-w-0 text-xs leading-5">
             <p className="font-bold">Core Mesh deployment wiring is incomplete</p>
             <p className="mt-1">
-              Administrator authentication succeeded, but one or more private core bindings are not present in the RevelaAI runtime. Sync the root Render Blueprint and apply its environment updates, then redeploy the affected services.
+              Administrator authentication succeeded, but one or more server-side credentials or operator permissions are missing. Update only the listed secret or allowlist values on the appropriate service. Private core routing is handled automatically by the deployment; this dashboard does not require service URLs.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {missingRuntimeConfiguration.map((item) => (
@@ -708,7 +690,7 @@ export default function CoreMeshDashboard() {
               ))}
             </ul>
             <p className="mt-2 text-[10px] opacity-80">
-              Keep all service URLs and credentials in Render server-side environment bindings. Never put core tokens in Vite variables or browser storage.
+              Keep core credentials server-side. Never put core tokens in Vite variables or browser storage.
             </p>
           </div>
         </div>
