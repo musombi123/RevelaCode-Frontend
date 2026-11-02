@@ -488,8 +488,8 @@ export function useJumuiyaApi() {
   );
 
   const putData = useCallback(
-    async (path, data = {}) =>
-      extractData(await put(path, data)),
+    async (path, data = {}, options = {}) =>
+      extractData(await put(path, data, options)),
     [put],
   );
 
@@ -643,8 +643,8 @@ export function useJumuiyaApi() {
       createProduct: (data) =>
         postData("/biashara/products", data),
 
-      createBiasharaProduct: (data) =>
-        postData("/biashara/products", data),
+      createBiasharaProduct: (data, options = {}) =>
+        postData("/biashara/products", data, options),
 
       updateProduct: (productId, data) =>
         putData(
@@ -652,10 +652,11 @@ export function useJumuiyaApi() {
           data,
         ),
 
-      updateBiasharaProduct: (productId, data) =>
+      updateBiasharaProduct: (businessId, productId, data) =>
         putData(
           `/biashara/products/${encodeId(productId, "Product ID")}`,
           data,
+          { businessId },
         ),
 
       deleteProduct: (productId) =>
@@ -663,26 +664,27 @@ export function useJumuiyaApi() {
           `/biashara/products/${encodeId(productId, "Product ID")}`,
         ),
 
-      deleteBiasharaProduct: (productId) =>
+      deleteBiasharaProduct: (businessId, productId) =>
         deleteData(
           `/biashara/products/${encodeId(productId, "Product ID")}`,
+          { businessId },
         ),
 
       // ===================================================
       // BIASHARA — SERVICES
       // ===================================================
 
-      getBiasharaServices: ({ status = "", search = "", limit = 100 } = {}) =>
-        getData(withQuery("/biashara/services", { status, search, limit })),
+      getBiasharaServices: ({ status = "", search = "", limit = 100 } = {}, options = {}) =>
+        getData(withQuery("/biashara/services", { status, search, limit }), options),
 
-      createBiasharaService: (data) =>
-        postData("/biashara/services", data),
+      createBiasharaService: (data, options = {}) =>
+        postData("/biashara/services", data, options),
 
-      updateBiasharaService: (serviceId, data) =>
-        putData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, data),
+      updateBiasharaService: (businessId, serviceId, data) =>
+        putData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, data, { businessId }),
 
-      deleteBiasharaService: (serviceId) =>
-        deleteData(`/biashara/services/${encodeId(serviceId, "Service ID")}`),
+      deleteBiasharaService: (businessId, serviceId) =>
+        deleteData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, { businessId }),
 
       // ===================================================
       // BIASHARA — INVENTORY
@@ -749,20 +751,20 @@ export function useJumuiyaApi() {
         ),
 
       getBiasharaCustomers: (
-        { search = "", limit = 50 } = {},
+        { search = "", limit = 50 } = {}, options = {},
       ) =>
         getData(
           withQuery("/biashara/customers", {
             search,
             limit,
-          }),
+          }), options,
         ),
 
       createCustomer: (data) =>
         postData("/biashara/customers", data),
 
-      createBiasharaCustomer: (data) =>
-        postData("/biashara/customers", data),
+      createBiasharaCustomer: (businessId, data) =>
+        postData("/biashara/customers", data, { businessId }),
 
       // ===================================================
       // BIASHARA — ORDERS
@@ -779,20 +781,20 @@ export function useJumuiyaApi() {
         ),
 
       getBiasharaOrders: (
-        { status = "", limit = 50 } = {},
+        { status = "", limit = 50 } = {}, options = {},
       ) =>
         getData(
           withQuery("/biashara/orders", {
             status,
             limit,
-          }),
+          }), options,
         ),
 
       createOrder: (data) =>
         postData("/biashara/orders", data),
 
-      createBiasharaOrder: (data) =>
-        postData("/biashara/orders", data),
+      createBiasharaOrder: (businessId, data) =>
+        postData("/biashara/orders", data, { businessId }),
 
       getOrder: (orderId) =>
         getData(
@@ -823,8 +825,8 @@ export function useJumuiyaApi() {
       recordSale: (data) =>
         postData("/biashara/sales", data),
 
-      recordBiasharaSale: (data) =>
-        postData("/biashara/sales", data),
+      recordBiasharaSale: (businessId, data) =>
+        postData("/biashara/sales", data, { businessId }),
 
       // ===================================================
       // BIASHARA — EXPENSES
