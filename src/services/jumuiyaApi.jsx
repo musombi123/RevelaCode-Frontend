@@ -882,6 +882,23 @@ export function useJumuiyaApi() {
         postData("/biashara/businesses/active", { business_id: businessId }),
 
       // ===================================================
+      // BIASHARA — FACTORY / MANUFACTURING
+      // ===================================================
+
+      getBiasharaFactoryOverview: () => getData("/biashara/factory/overview"),
+      getBiasharaProductionBatches: () => getData("/biashara/factory/production/batches"),
+      createBiasharaProductionBatch: (data) => postData("/biashara/factory/production/batches", data),
+      completeBiasharaProductionBatch: (batchId, data) =>
+        postData(`/biashara/factory/production/batches/${encodeId(batchId, "Batch ID")}/complete`, data),
+      getBiasharaQualityChecks: () => getData("/biashara/factory/quality/checks"),
+      inspectBiasharaQuality: (data) => postData("/biashara/factory/quality/checks", data),
+      getBiasharaMachines: () => getData("/biashara/factory/machines"),
+      createBiasharaMachine: (data) => postData("/biashara/factory/machines", data),
+      recordBiasharaMachineReading: (machineId, data) =>
+        postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data),
+      getBiasharaFactoryAlerts: () => getData("/biashara/factory/alerts"),
+
+      // ===================================================
       // SHAMBA — HEALTH AND FARMER
       // ===================================================
 
