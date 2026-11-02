@@ -275,24 +275,27 @@ async function performRequest(
     body,
     headers = {},
     offlineScope = "",
+    cacheScope = offlineScope,
     ...rest
   } = options;
   const method = String(rest.method || "GET").toUpperCase();
+  const requestHeaders = new Headers(headers);
+  if (!requestHeaders.has("Accept")) requestHeaders.set("Accept", "application/json");
+  if (method !== "GET" && !requestHeaders.has("Idempotency-Key")) {
+    const mutationId = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "mutation-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+    requestHeaders.set("Idempotency-Key", mutationId);
+  }
 
-  if (offlineScope && method === "GET" && isBrowserOffline()) {
-    const cached = await readCachedApiResponse(offlineScope, url);
+  if (cacheScope && method === "GET" && isBrowserOffline()) {
+    const cached = await readCachedApiResponse(cacheScope, url);
     if (cached.hit) return cached.payload;
   }
 
   if (offlineScope && method !== "GET" && isBrowserOffline()) {
-    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers: requestHeaders });
     if (queued) throw createOfflineQueuedError();
-  }
-
-  const requestHeaders = new Headers(headers);
-
-  if (!requestHeaders.has("Accept")) {
-    requestHeaders.set("Accept", "application/json");
   }
 
   let requestBody = body;
@@ -342,13 +345,13 @@ async function performRequest(
         "Check the configured backend URL, server availability, CORS, TLS, network connectivity, and backend logs.",
     });
 
-    if (offlineScope && method === "GET") {
-      const cached = await readCachedApiResponse(offlineScope, url);
+    if (cacheScope && method === "GET") {
+      const cached = await readCachedApiResponse(cacheScope, url);
       if (cached.hit) return cached.payload;
     }
 
-    if (offlineScope && method !== "GET" && isBrowserOffline()) {
-      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+    if (offlineScope && method !== "GET") {
+      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers: requestHeaders });
       if (queued) throw createOfflineQueuedError();
     }
 
@@ -365,8 +368,8 @@ async function performRequest(
   }
 
   const payload = await parseResponse(response);
-  if (offlineScope && method === "GET" && response.ok) {
-    await writeCachedApiResponse(offlineScope, url, payload);
+  if (cacheScope && method === "GET" && response.ok) {
+    await writeCachedApiResponse(cacheScope, url, payload);
   }
   return payload;
 }
@@ -401,9 +404,19 @@ export function useJumuiyaApi() {
   // -------------------------------------------------------
 
   const request = useCallback(
-    (path, options = {}) =>
-      performRequest(authFetch, path, { ...options, offlineScope }),
-    [authFetch, offlineScope],
+    (path, options = {}) => {
+      const { businessId = "", ...requestOptions } = options;
+      const cacheScope = businessId ? offlineScopeForUser(user, businessId) : offlineScope;
+      const headers = { ...(requestOptions.headers || {}) };
+      if (businessId) headers["X-Business-ID"] = String(businessId);
+      return performRequest(authFetch, path, {
+        ...requestOptions,
+        headers,
+        offlineScope,
+        cacheScope,
+      });
+    },
+    [authFetch, offlineScope, user],
   );
 
   // -------------------------------------------------------
@@ -469,20 +482,20 @@ export function useJumuiyaApi() {
   );
 
   const postData = useCallback(
-    async (path, data = {}) =>
-      extractData(await post(path, data)),
+    async (path, data = {}, options = {}) =>
+      extractData(await post(path, data, options)),
     [post],
   );
 
   const putData = useCallback(
-    async (path, data = {}) =>
-      extractData(await put(path, data)),
+    async (path, data = {}, options = {}) =>
+      extractData(await put(path, data, options)),
     [put],
   );
 
   const patchData = useCallback(
-    async (path, data = {}) =>
-      extractData(await patch(path, data)),
+    async (path, data = {}, options = {}) =>
+      extractData(await patch(path, data, options)),
     [patch],
   );
 
@@ -615,6 +628,7 @@ export function useJumuiyaApi() {
           search = "",
           limit = 50,
         } = {},
+        options = {},
       ) =>
         getData(
           withQuery("/biashara/products", {
@@ -623,13 +637,14 @@ export function useJumuiyaApi() {
             search,
             limit,
           }),
+          options,
         ),
 
       createProduct: (data) =>
         postData("/biashara/products", data),
 
-      createBiasharaProduct: (data) =>
-        postData("/biashara/products", data),
+      createBiasharaProduct: (data, options = {}) =>
+        postData("/biashara/products", data, options),
 
       updateProduct: (productId, data) =>
         putData(
@@ -637,10 +652,11 @@ export function useJumuiyaApi() {
           data,
         ),
 
-      updateBiasharaProduct: (productId, data) =>
+      updateBiasharaProduct: (businessId, productId, data) =>
         putData(
           `/biashara/products/${encodeId(productId, "Product ID")}`,
           data,
+          { businessId },
         ),
 
       deleteProduct: (productId) =>
@@ -648,26 +664,27 @@ export function useJumuiyaApi() {
           `/biashara/products/${encodeId(productId, "Product ID")}`,
         ),
 
-      deleteBiasharaProduct: (productId) =>
+      deleteBiasharaProduct: (businessId, productId) =>
         deleteData(
           `/biashara/products/${encodeId(productId, "Product ID")}`,
+          { businessId },
         ),
 
       // ===================================================
       // BIASHARA — SERVICES
       // ===================================================
 
-      getBiasharaServices: ({ status = "", search = "", limit = 100 } = {}) =>
-        getData(withQuery("/biashara/services", { status, search, limit })),
+      getBiasharaServices: ({ status = "", search = "", limit = 100 } = {}, options = {}) =>
+        getData(withQuery("/biashara/services", { status, search, limit }), options),
 
-      createBiasharaService: (data) =>
-        postData("/biashara/services", data),
+      createBiasharaService: (data, options = {}) =>
+        postData("/biashara/services", data, options),
 
-      updateBiasharaService: (serviceId, data) =>
-        putData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, data),
+      updateBiasharaService: (businessId, serviceId, data) =>
+        putData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, data, { businessId }),
 
-      deleteBiasharaService: (serviceId) =>
-        deleteData(`/biashara/services/${encodeId(serviceId, "Service ID")}`),
+      deleteBiasharaService: (businessId, serviceId) =>
+        deleteData(`/biashara/services/${encodeId(serviceId, "Service ID")}`, { businessId }),
 
       // ===================================================
       // BIASHARA — INVENTORY
@@ -693,10 +710,11 @@ export function useJumuiyaApi() {
           data,
         ),
 
-      adjustBiasharaInventory: (productId, data) =>
+      adjustBiasharaInventory: (businessId, productId, data) =>
         postData(
           `/biashara/inventory/${encodeId(productId, "Product ID")}/adjust`,
           data,
+          { businessId },
         ),
 
       getInventoryHistory: (
@@ -734,20 +752,20 @@ export function useJumuiyaApi() {
         ),
 
       getBiasharaCustomers: (
-        { search = "", limit = 50 } = {},
+        { search = "", limit = 50 } = {}, options = {},
       ) =>
         getData(
           withQuery("/biashara/customers", {
             search,
             limit,
-          }),
+          }), options,
         ),
 
       createCustomer: (data) =>
         postData("/biashara/customers", data),
 
-      createBiasharaCustomer: (data) =>
-        postData("/biashara/customers", data),
+      createBiasharaCustomer: (businessId, data) =>
+        postData("/biashara/customers", data, { businessId }),
 
       // ===================================================
       // BIASHARA — ORDERS
@@ -764,20 +782,20 @@ export function useJumuiyaApi() {
         ),
 
       getBiasharaOrders: (
-        { status = "", limit = 50 } = {},
+        { status = "", limit = 50 } = {}, options = {},
       ) =>
         getData(
           withQuery("/biashara/orders", {
             status,
             limit,
-          }),
+          }), options,
         ),
 
       createOrder: (data) =>
         postData("/biashara/orders", data),
 
-      createBiasharaOrder: (data) =>
-        postData("/biashara/orders", data),
+      createBiasharaOrder: (businessId, data) =>
+        postData("/biashara/orders", data, { businessId }),
 
       getOrder: (orderId) =>
         getData(
@@ -795,10 +813,11 @@ export function useJumuiyaApi() {
           { status },
         ),
 
-      updateBiasharaOrderStatus: (orderId, status) =>
+      updateBiasharaOrderStatus: (businessId, orderId, status) =>
         patchData(
           `/biashara/orders/${encodeId(orderId, "Order ID")}/status`,
           { status },
+          { businessId },
         ),
 
       // ===================================================
@@ -808,8 +827,8 @@ export function useJumuiyaApi() {
       recordSale: (data) =>
         postData("/biashara/sales", data),
 
-      recordBiasharaSale: (data) =>
-        postData("/biashara/sales", data),
+      recordBiasharaSale: (businessId, data) =>
+        postData("/biashara/sales", data, { businessId }),
 
       // ===================================================
       // BIASHARA — EXPENSES
@@ -835,8 +854,8 @@ export function useJumuiyaApi() {
       // BIASHARA — DASHBOARD
       // ===================================================
 
-      getBiasharaDashboard: () =>
-        getData("/biashara/dashboard"),
+      getBiasharaDashboard: (businessId) =>
+        getData("/biashara/dashboard", { businessId }),
 
       // ===================================================
       // BIASHARA — SALES FORECAST AND PRICING REVIEW
@@ -845,41 +864,79 @@ export function useJumuiyaApi() {
       getBiasharaBusinessForecast: ({
         forecastDays = 7,
         targetMarginPercent = 25,
-      } = {}) =>
+      } = {}, options = {}) =>
         getData(
           withQuery("/biashara/intelligence/business-forecast", {
             forecast_days: forecastDays,
             target_margin_percent: targetMarginPercent,
-          }),
+          }), options,
         ),
 
       // ===================================================
       // BIASHARA — WORKSPACE CONTRACTS
       // ===================================================
 
-      getBiasharaInvoices: () => getData("/biashara/finance/invoices"),
-      createBiasharaInvoice: (data) => postData("/biashara/finance/invoices", data),
-      allocateBiasharaInvoicePayment: (invoiceId, data) =>
-        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, data),
-      getBiasharaInvoiceAllocations: (invoiceId) =>
-        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`),
+      getBiasharaInvoices: (businessId) => getData("/biashara/finance/invoices", { businessId }),
+      createBiasharaInvoice: (businessId, data) => postData("/biashara/finance/invoices", data, { businessId }),
+      allocateBiasharaInvoicePayment: (businessId, invoiceId, data) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, data, { businessId }),
+      getBiasharaInvoiceAllocations: (businessId, invoiceId) =>
+        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, { businessId }),
 
-      getBiasharaAutomationRules: () => getData("/biashara/automations/rules"),
-      createBiasharaAutomationRule: (data) => postData("/biashara/automations/rules", data),
-      updateBiasharaAutomationRule: (ruleId, data) =>
-        patchData(`/biashara/automations/rules/${encodeId(ruleId, "Automation rule ID")}`, data),
+      getBiasharaAutomationRules: (businessId) => getData("/biashara/automations/rules", { businessId }),
+      createBiasharaAutomationRule: (businessId, data) => postData("/biashara/automations/rules", data, { businessId }),
+      updateBiasharaAutomationRule: (businessId, ruleId, data) =>
+        patchData(`/biashara/automations/rules/${encodeId(ruleId, "Automation rule ID")}`, data, { businessId }),
 
-      getBiasharaSyncJobs: () => getData("/biashara/sync/jobs"),
-      createBiasharaSyncJob: (data) => postData("/biashara/sync/jobs", data),
+      getBiasharaSyncJobs: (businessId) => getData("/biashara/sync/jobs", { businessId }),
+      createBiasharaSyncJob: (businessId, data) => postData("/biashara/sync/jobs", data, { businessId }),
 
-      getBiasharaTeam: () => getData("/biashara/team"),
-      inviteBiasharaTeamMember: (data) => postData("/biashara/team/invitations", data),
-      removeBiasharaTeamMember: (memberId) =>
-        deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`),
+      getBiasharaTeam: (businessId) => getData("/biashara/team", { businessId }),
+      inviteBiasharaTeamMember: (businessId, data) => postData("/biashara/team/invitations", data, { businessId }),
+      removeBiasharaTeamMember: (businessId, memberId) =>
+        deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`, { businessId }),
 
       getBiasharaBusinesses: () => getData("/biashara/businesses"),
       setActiveBiasharaBusiness: (businessId) =>
         postData("/biashara/businesses/active", { business_id: businessId }),
+
+      // ===================================================
+      // BIASHARA — FACTORY / MANUFACTURING
+      // ===================================================
+
+      getBiasharaFactoryOverview: (businessId) => getData("/biashara/factory/overview", { businessId }),
+      getBiasharaProductionBatches: (businessId) => getData("/biashara/factory/production/batches", { businessId }),
+      createBiasharaProductionBatch: (businessId, data) => postData("/biashara/factory/production/batches", data, { businessId }),
+      completeBiasharaProductionBatch: (businessId, batchId, data) =>
+        postData(`/biashara/factory/production/batches/${encodeId(batchId, "Batch ID")}/complete`, data, { businessId }),
+      getBiasharaQualityChecks: (businessId) => getData("/biashara/factory/quality/checks", { businessId }),
+      inspectBiasharaQuality: (businessId, data) => postData("/biashara/factory/quality/checks", data, { businessId }),
+      getBiasharaMachines: (businessId) => getData("/biashara/factory/machines", { businessId }),
+      createBiasharaMachine: (businessId, data) => postData("/biashara/factory/machines", data, { businessId }),
+      recordBiasharaMachineReading: (businessId, machineId, data) =>
+        postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data, { businessId }),
+      getBiasharaFactoryAlerts: (businessId) => getData("/biashara/factory/alerts", { businessId }),
+      getBiasharaIntegrationsStatus: (businessId) => getData("/biashara/integrations/status", { businessId }),
+      startBiasharaInvoiceMpesa: (businessId, invoiceId, phone, idempotencyKey) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/stk-push`, { phone }, { businessId, headers: { "Idempotency-Key": idempotencyKey } }),
+      getBiasharaInvoiceMpesaStatus: (businessId, invoiceId) =>
+        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/status`, { businessId }),
+      refreshBiasharaInvoiceMpesa: (businessId, invoiceId) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/mpesa/refresh`, {}, { businessId }),
+
+      // ===================================================
+      // BIASHARA — HR AND ATTENDANCE
+      // ===================================================
+
+      getBiasharaEmployees: (businessId) => getData("/biashara/hr/employees", { businessId }),
+      createBiasharaEmployee: (businessId, data) => postData("/biashara/hr/employees", data, { businessId }),
+      updateBiasharaEmployee: (businessId, employeeId, data) =>
+        patchData(`/biashara/hr/employees/${encodeId(employeeId, "Employee ID")}`, data, { businessId }),
+      getBiasharaAttendance: (businessId, params = {}) =>
+        getData(withQuery("/biashara/hr/attendance", params), { businessId }),
+      getBiasharaMyAttendance: (businessId) => getData("/biashara/hr/attendance/me", { businessId }),
+      clockInBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-in", data, { businessId }),
+      clockOutBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-out", data, { businessId }),
 
       // ===================================================
       // SHAMBA — HEALTH AND FARMER

@@ -15,11 +15,11 @@ function safeScope(scope) {
   return String(scope || "").trim().replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
 }
 
-export function offlineScopeForUser(user) {
+export function offlineScopeForUser(user, tenantId = "") {
   const id = user && (user.id || user._id || user.user_id || user.userId || user.uid);
-  return id === undefined || id === null || String(id).trim() === ""
-    ? ""
-    : "user:" + safeScope(id);
+  if (id === undefined || id === null || String(id).trim() === "") return "";
+  const base = "user:" + safeScope(id);
+  return tenantId ? base + ":tenant:" + safeScope(tenantId) : base;
 }
 
 export function isBrowserOffline() {
@@ -219,6 +219,13 @@ async function storeAll(storeName) {
   }
 }
 
+function readHeader(headers, name) {
+  if (headers && typeof headers.get === "function") return headers.get(name) || "";
+  const target = String(name).toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => String(key).toLowerCase() === target);
+  return entry ? String(entry[1] || "") : "";
+}
+
 function emitChange() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("revelacode:offline-sync-change"));
@@ -232,7 +239,7 @@ function isSensitiveOrUnsafePath(url) {
   } catch {
     path = String(url || "").toLowerCase();
   }
-  return /\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|entitlement|entitlements|fees|invoice|invoices|receipt|receipts|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|media|upload|documents?\/upload)(\/|$)/i.test(path);
+  return /\/(auth|login|logout|password|token|otp|checkout|payment|payments|wallet|billing|subscription|subscriptions|entitlement|entitlements|fees|invoice|invoices|receipt|receipts|reconcile|refund|admin|moderation|verification|review|invite|invitations|permissions|access|hr|attendance|employees?|payroll|salary|media|upload|documents?\/upload)(\/|$)/i.test(path);
 }
 
 function hasSensitivePayload(value, depth = 0) {
@@ -301,16 +308,19 @@ export async function writeCachedApiResponse(scope, url, payload) {
   return saved;
 }
 
-export async function queueOfflineMutation({ scope, url, method, body }) {
+export async function queueOfflineMutation({ scope, url, method, body, headers = {} }) {
   const owner = safeScope(scope);
   if (!owner || !shouldQueueOfflineMutation(url, method, body)) return false;
   let serializedBody;
   try { serializedBody = JSON.stringify(body); }
   catch { return false; }
   if (typeof serializedBody !== "string" || serializedBody.length > 1024 * 1024) return false;
-  const id = typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : "offline-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+  const suppliedId = readHeader(headers, "Idempotency-Key") || readHeader(headers, "X-Offline-Mutation-Id");
+  const id = /^[A-Za-z0-9._:-]{1,160}$/.test(suppliedId)
+    ? suppliedId
+    : typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "offline-" + Date.now() + "-" + Math.random().toString(36).slice(2);
   const item = {
     id,
     key: id,
@@ -318,6 +328,7 @@ export async function queueOfflineMutation({ scope, url, method, body }) {
     url: String(url),
     method: String(method).toUpperCase(),
     body: serializedBody,
+    businessId: readHeader(headers, "X-Business-ID").slice(0, 128),
     status: "pending",
     createdAt: Date.now(),
     attempts: 0,
@@ -416,6 +427,7 @@ export async function flushOfflineQueue({ scope, authFetch }) {
             "Content-Type": "application/json",
             "Idempotency-Key": item.id,
             "X-Offline-Mutation-Id": item.id,
+            ...(item.businessId ? { "X-Business-ID": item.businessId } : {}),
           },
           body: item.method === "DELETE" && (!item.body || item.body === "null") ? undefined : item.body,
         });

@@ -23,9 +23,15 @@ import {
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import BiasharaWebsiteBuilder from "@/Dashboard/Biashara/BiasharaWebsiteBuilder.jsx";
 import BiasharaContractsWorkspace from "@/Dashboard/Biashara/BiasharaContractsWorkspace.jsx";
+import BiasharaFactoryWorkspace from "@/Dashboard/Biashara/BiasharaFactoryWorkspace.jsx";
+import BiasharaHRWorkspace from "@/Dashboard/Biashara/BiasharaHRWorkspace.jsx";
+import BiasharaIntegrationsWorkspace from "@/Dashboard/Biashara/BiasharaIntegrationsWorkspace.jsx";
 
 const ROUTES = [
   { key: "products", label: "Products", icon: Package },
+  { key: "factory", label: "Production & Factory", icon: Package },
+  { key: "hr", label: "HR & Attendance", icon: Users },
+  { key: "integrations", label: "Integrations", icon: Wrench },
   { key: "services", label: "Services", icon: Wrench },
   { key: "orders", label: "Orders", icon: ClipboardList },
   { key: "customers", label: "Customers", icon: Users },
@@ -39,6 +45,9 @@ const ROUTES = [
 
 const TITLES = {
   products: ["Products and inventory", "Add, archive and review stock for products sold by your business."],
+  factory: ["Production & Factory Centre", "Manufacturing batches, raw-material usage, wastage, quality and machine performance."],
+  hr: ["HR & Attendance", "Employee register, System IDs, shift schedules and attendance."],
+  integrations: ["External integrations", "M-Pesa checkout readiness, KRA eTIMS certification and WhatsApp connectivity."],
   services: ["Manage services", "Create and maintain the services this business offers, with business-specific pricing and availability."],
   orders: ["Order management", "Review customer orders and update order status."],
   customers: ["Customer records", "Keep customer contact details in one place."],
@@ -153,6 +162,7 @@ function Notice({ tone = "blue", children }) {
 
 function BiasharaForecastPanel({ business, currency = "KES" }) {
   const api = useJumuiyaApi();
+  const businessId = String(business?.id || business?._id || "");
   const [horizon, setHorizon] = useState(7);
   const [targetMargin, setTargetMargin] = useState(25);
   const [report, setReport] = useState(null);
@@ -169,7 +179,7 @@ function BiasharaForecastPanel({ business, currency = "KES" }) {
       const result = await api.getBiasharaBusinessForecast({
         forecastDays: horizon,
         targetMarginPercent: targetMargin,
-      });
+      }, { businessId });
       setReport(result?.report || result?.data || result);
     } catch (error) {
       setForecastError(error?.message || "Business forecast could not be loaded.");
@@ -177,7 +187,7 @@ function BiasharaForecastPanel({ business, currency = "KES" }) {
     } finally {
       setLoadingForecast(false);
     }
-  }, [api, horizon, targetMargin]);
+  }, [api, businessId, horizon, targetMargin]);
 
   useEffect(() => {
     loadForecast();
@@ -332,6 +342,7 @@ export default function BiasharaInternalWorkspace({
   onRefresh,
 }) {
   const api = useJumuiyaApi();
+  const businessId = String(business?.id || business?._id || "");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -343,6 +354,8 @@ export default function BiasharaInternalWorkspace({
     sku: "",
     category: "",
     price: "",
+    cost_price: "0",
+    production_type: "resale",
     stock_quantity: "0",
     phone: "",
     email: "",
@@ -351,7 +364,7 @@ export default function BiasharaInternalWorkspace({
     reference: "",
     description: "",
     service_type: "general",
-    unit: "service",
+    unit: route === "products" ? "piece" : "service",
     duration_minutes: "0",
   }));
   const [editingServiceId, setEditingServiceId] = useState("");
@@ -371,16 +384,16 @@ export default function BiasharaInternalWorkspace({
     setError("");
     setNotice("");
     setForm({
-      name: "", sku: "", category: "", price: "", stock_quantity: "0",
+      name: "", sku: "", category: "", price: "", cost_price: "0", production_type: "resale", stock_quantity: "0",
       phone: "", email: "", amount: "", payment_method: "cash", reference: "",
-      description: "", service_type: "general", unit: "service", duration_minutes: "0",
+      description: "", service_type: "general", unit: route === "products" ? "piece" : "service", duration_minutes: "0",
     });
   }, [route]);
 
   const reload = useCallback(async () => {
     setError("");
 
-    if (route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
+    if (route === "factory" || route === "hr" || route === "integrations" || route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
       setRows([]);
       setLoading(false);
       return;
@@ -398,19 +411,19 @@ export default function BiasharaInternalWorkspace({
       let response;
       if (route === "products") {
         if (typeof api.getBiasharaProducts !== "function") throw new Error("The products API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaProducts({ limit: 100, search: query });
+        response = await api.getBiasharaProducts({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["products", "items", "results"]));
       } else if (route === "services") {
         if (typeof api.getBiasharaServices !== "function") throw new Error("The services API helper is missing.");
-        response = await api.getBiasharaServices({ limit: 100, search: query });
+        response = await api.getBiasharaServices({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["services", "items", "results"]));
       } else if (route === "orders") {
         if (typeof api.getBiasharaOrders !== "function") throw new Error("The orders API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaOrders({ limit: 100 });
+        response = await api.getBiasharaOrders({ limit: 100 }, { businessId });
         setRows(asArray(response, ["orders", "items", "results"]));
       } else if (route === "customers") {
         if (typeof api.getBiasharaCustomers !== "function") throw new Error("The customers API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaCustomers({ limit: 100, search: query });
+        response = await api.getBiasharaCustomers({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["customers", "items", "results"]));
       } else {
         setRows([]);
@@ -421,7 +434,7 @@ export default function BiasharaInternalWorkspace({
     } finally {
       setLoading(false);
     }
-  }, [route, dashboard, api, query]);
+  }, [route, dashboard, api, query, businessId]);
 
   useEffect(() => {
     reload();
@@ -445,11 +458,14 @@ export default function BiasharaInternalWorkspace({
           sku: form.sku.trim(),
           category: form.category.trim(),
           price: Number(form.price),
+          cost_price: Number(form.cost_price || 0),
+          production_type: form.production_type,
+          unit: form.unit.trim() || "piece",
           stock_quantity: Number(form.stock_quantity || 0),
           currency,
           status: "active",
-        });
-        setForm((current) => ({ ...current, name: "", sku: "", category: "", price: "", stock_quantity: "0" }));
+        }, { businessId });
+        setForm((current) => ({ ...current, name: "", sku: "", category: "", price: "", cost_price: "0", production_type: "resale", stock_quantity: "0" }));
         setNotice("Product created successfully.");
       } else if (route === "services") {
         const servicePayload = {
@@ -465,10 +481,10 @@ export default function BiasharaInternalWorkspace({
         };
         if (editingServiceId) {
           if (typeof api.updateBiasharaService !== "function") throw new Error("The business service update API helper is missing.");
-          response = await api.updateBiasharaService(editingServiceId, servicePayload);
+          response = await api.updateBiasharaService(businessId, editingServiceId, servicePayload);
         } else {
           if (typeof api.createBiasharaService !== "function") throw new Error("The business services API helper is missing.");
-          response = await api.createBiasharaService(servicePayload);
+          response = await api.createBiasharaService(servicePayload, { businessId });
         }
         setForm((current) => ({
           ...current,
@@ -484,7 +500,7 @@ export default function BiasharaInternalWorkspace({
         setEditingServiceId("");
       } else if (route === "customers") {
         if (typeof api.createBiasharaCustomer !== "function") throw new Error("The customer creation API helper is missing.");
-        response = await api.createBiasharaCustomer({
+        response = await api.createBiasharaCustomer(businessId, {
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
@@ -493,7 +509,7 @@ export default function BiasharaInternalWorkspace({
         setNotice("Customer saved successfully.");
       } else if (route === "sales") {
         if (typeof api.recordBiasharaSale !== "function") throw new Error("The sales API helper is missing.");
-        response = await api.recordBiasharaSale({
+        response = await api.recordBiasharaSale(businessId, {
           amount: Number(form.amount),
           currency,
           payment_method: form.payment_method,
@@ -542,7 +558,7 @@ export default function BiasharaInternalWorkspace({
     setNotice("");
     try {
       if (typeof api.updateBiasharaOrderStatus !== "function") throw new Error("The order status API helper is missing.");
-      await api.updateBiasharaOrderStatus(id, status);
+      await api.updateBiasharaOrderStatus(businessId, id, status);
       setNotice(`Order status updated to ${status}.`);
       await reload();
       await onRefresh?.();
@@ -566,7 +582,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.adjustBiasharaInventory !== "function") throw new Error("The inventory adjustment API helper is unavailable.");
-      await api.adjustBiasharaInventory(id, {
+      await api.adjustBiasharaInventory(businessId, id, {
         movement_type: "add",
         quantity,
         reason: "Restock recorded from Biashara product catalogue",
@@ -586,7 +602,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.deleteBiasharaProduct !== "function") throw new Error("The product delete API helper is unavailable.");
-      await api.deleteBiasharaProduct(id);
+      await api.deleteBiasharaProduct(businessId, id);
       setNotice("Product archived. Existing orders and sales are preserved.");
       await reload();
       await onRefresh?.();
@@ -634,7 +650,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.deleteBiasharaService !== "function") throw new Error("The services delete API helper is unavailable.");
-      await api.deleteBiasharaService(id);
+      await api.deleteBiasharaService(businessId, id);
       setNotice("Service archived successfully.");
       await reload();
       await onRefresh?.();
@@ -685,6 +701,16 @@ export default function BiasharaInternalWorkspace({
 
   if (["finance", "automations", "sync", "team", "business-switch"].includes(route)) {
     return <BiasharaContractsWorkspace route={route} business={business} onRefresh={onRefresh} />;
+  }
+
+  if (route === "factory") {
+    return <BiasharaFactoryWorkspace business={business} onRefresh={onRefresh} />;
+  }
+  if (route === "hr") {
+    return <BiasharaHRWorkspace business={business} onRefresh={onRefresh} />;
+  }
+  if (route === "integrations") {
+    return <BiasharaIntegrationsWorkspace business={business} onRefresh={onRefresh} />;
   }
 
   return (
@@ -739,17 +765,20 @@ export default function BiasharaInternalWorkspace({
           <>
             <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">Add a product</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field label="Product name" required value={form.name} onChange={(v) => updateField("name", v)} />
                 <Field label="SKU" value={form.sku} onChange={(v) => updateField("sku", v)} />
                 <Field label="Category" value={form.category} onChange={(v) => updateField("category", v)} />
-                <Field label="Unit price" type="number" required value={form.price} onChange={(v) => updateField("price", v)} />
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Inventory type</span><select className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10" value={form.production_type} onChange={(e) => updateField("production_type", e.target.value)}><option value="resale">Resale / trading stock</option><option value="raw_material">Raw material</option><option value="finished_good">Finished good</option><option value="consumable">Consumable</option></select></label>
+                <Field label="Selling price" type="number" required value={form.price} onChange={(v) => updateField("price", v)} />
+                <Field label="Unit cost" type="number" value={form.cost_price} onChange={(v) => updateField("cost_price", v)} />
+                <Field label="Unit of measure" value={form.unit} onChange={(v) => updateField("unit", v)} />
                 <Field label="Opening stock" type="number" value={form.stock_quantity} onChange={(v) => updateField("stock_quantity", v)} />
               </div>
               <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><Package size={16} />{saving ? "Saving…" : "Create product"}</button>
             </form>
             <ListPanel title="Product catalogue" loading={loading} rows={filteredRows} empty="No products were returned for this business yet." onSearch={setQuery} query={query}>
-              {(product) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{product.name || product.product_name || "Unnamed product"}</p><p className="mt-1 text-xs text-slate-500">{product.sku || "No SKU"}{product.category ? ` · ${product.category}` : ""}</p></div><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-900">{money(product.price, product.currency || currency)}</span><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (number(product.stock_quantity ?? product.quantity ?? product.stock) <= number(product.low_stock_threshold ?? 5) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>Remaining: {number(product.stock_quantity ?? product.quantity ?? product.stock)}</span><button type="button" disabled={saving} onClick={() => addProductStock(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95 disabled:opacity-50"><Plus size={14} /> Add stock</button><button type="button" disabled={saving} onClick={() => deleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
+              {(product) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{product.name || product.product_name || "Unnamed product"}</p><p className="mt-1 text-xs text-slate-500">{product.sku || "No SKU"}{product.category ? ` · ${product.category}` : ""} · {String(product.production_type || "resale").replace(/_/g, " ")} · {product.unit || "piece"}</p></div><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-900">{money(product.price, product.currency || currency)}</span><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (number(product.stock_quantity ?? product.quantity ?? product.stock) <= number(product.low_stock_threshold ?? 5) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>Remaining: {number(product.stock_quantity ?? product.quantity ?? product.stock)}</span><button type="button" disabled={saving} onClick={() => addProductStock(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95 disabled:opacity-50"><Plus size={14} /> Add stock</button><button type="button" disabled={saving} onClick={() => deleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
             </ListPanel>
           </>
         ) : null}
