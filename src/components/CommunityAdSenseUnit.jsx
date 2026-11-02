@@ -228,7 +228,7 @@ function WebAdSensePlacement({ config }) {
 
   useEffect(() => {
     if (
-      !/^\\d+$/.test(adSlot) ||
+      !/^\d+$/.test(adSlot) ||
       !adRef.current ||
       pushAttempted.current ||
       typeof window === "undefined"
@@ -245,7 +245,7 @@ function WebAdSensePlacement({ config }) {
     }
   }, [adSlot]);
 
-  if (!/^\\d+$/.test(adSlot) || !ADSENSE_CLIENT) return null;
+  if (!/^\d+$/.test(adSlot) || !ADSENSE_CLIENT) return null;
 
   return (
     <aside
