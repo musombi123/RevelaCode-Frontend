@@ -710,10 +710,11 @@ export function useJumuiyaApi() {
           data,
         ),
 
-      adjustBiasharaInventory: (productId, data) =>
+      adjustBiasharaInventory: (businessId, productId, data) =>
         postData(
           `/biashara/inventory/${encodeId(productId, "Product ID")}/adjust`,
           data,
+          { businessId },
         ),
 
       getInventoryHistory: (
@@ -812,10 +813,11 @@ export function useJumuiyaApi() {
           { status },
         ),
 
-      updateBiasharaOrderStatus: (orderId, status) =>
+      updateBiasharaOrderStatus: (businessId, orderId, status) =>
         patchData(
           `/biashara/orders/${encodeId(orderId, "Order ID")}/status`,
           { status },
+          { businessId },
         ),
 
       // ===================================================
@@ -852,8 +854,8 @@ export function useJumuiyaApi() {
       // BIASHARA — DASHBOARD
       // ===================================================
 
-      getBiasharaDashboard: () =>
-        getData("/biashara/dashboard"),
+      getBiasharaDashboard: (businessId) =>
+        getData("/biashara/dashboard", { businessId }),
 
       // ===================================================
       // BIASHARA — SALES FORECAST AND PRICING REVIEW
@@ -862,12 +864,12 @@ export function useJumuiyaApi() {
       getBiasharaBusinessForecast: ({
         forecastDays = 7,
         targetMarginPercent = 25,
-      } = {}) =>
+      } = {}, options = {}) =>
         getData(
           withQuery("/biashara/intelligence/business-forecast", {
             forecast_days: forecastDays,
             target_margin_percent: targetMarginPercent,
-          }),
+          }), options,
         ),
 
       // ===================================================
