@@ -53,7 +53,11 @@ export default function BiasharaHRWorkspace({business,onRefresh}) {
     if(canManageEmployees && results[0].status==="fulfilled" && results[0].value) setEmployees(rows(results[0].value));
     if(canViewAttendance && results[1].status==="fulfilled" && results[1].value) setAttendance(rows(results[1].value));
     if(results[2].status==="fulfilled") setMine(unwrap(results[2].value));
-    const failures=results.filter(x=>x.status==="rejected");
+    const managementFailures=results.slice(0,2).filter(x=>x.status==="rejected");
+    const selfOnlyFailure=(!canManageEmployees && !canViewAttendance && results[2].status==="rejected")
+      ? [results[2]]
+      : [];
+    const failures=[...managementFailures,...selfOnlyFailure];
     if(failures.length)setError(failures.map(x=>x.reason?.message||"An HR service could not be loaded.").join(" "));
     setLoading(false);
   },[businessId,canManageEmployees,canViewAttendance,getBiasharaEmployees,getBiasharaAttendance,getBiasharaMyAttendance]);
