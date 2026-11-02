@@ -275,12 +275,13 @@ async function performRequest(
     body,
     headers = {},
     offlineScope = "",
+    cacheScope = offlineScope,
     ...rest
   } = options;
   const method = String(rest.method || "GET").toUpperCase();
 
-  if (offlineScope && method === "GET" && isBrowserOffline()) {
-    const cached = await readCachedApiResponse(offlineScope, url);
+  if (cacheScope && method === "GET" && isBrowserOffline()) {
+    const cached = await readCachedApiResponse(cacheScope, url);
     if (cached.hit) return cached.payload;
   }
 
@@ -342,8 +343,8 @@ async function performRequest(
         "Check the configured backend URL, server availability, CORS, TLS, network connectivity, and backend logs.",
     });
 
-    if (offlineScope && method === "GET") {
-      const cached = await readCachedApiResponse(offlineScope, url);
+    if (cacheScope && method === "GET") {
+      const cached = await readCachedApiResponse(cacheScope, url);
       if (cached.hit) return cached.payload;
     }
 
@@ -365,8 +366,8 @@ async function performRequest(
   }
 
   const payload = await parseResponse(response);
-  if (offlineScope && method === "GET" && response.ok) {
-    await writeCachedApiResponse(offlineScope, url, payload);
+  if (cacheScope && method === "GET" && response.ok) {
+    await writeCachedApiResponse(cacheScope, url, payload);
   }
   return payload;
 }
@@ -403,13 +404,14 @@ export function useJumuiyaApi() {
   const request = useCallback(
     (path, options = {}) => {
       const { businessId = "", ...requestOptions } = options;
-      const tenantScope = businessId ? offlineScopeForUser(user, businessId) : offlineScope;
+      const cacheScope = businessId ? offlineScopeForUser(user, businessId) : offlineScope;
       const headers = { ...(requestOptions.headers || {}) };
       if (businessId) headers["X-Business-ID"] = String(businessId);
       return performRequest(authFetch, path, {
         ...requestOptions,
         headers,
-        offlineScope: tenantScope,
+        offlineScope,
+        cacheScope,
       });
     },
     [authFetch, offlineScope, user],
@@ -624,6 +626,7 @@ export function useJumuiyaApi() {
           search = "",
           limit = 50,
         } = {},
+        options = {},
       ) =>
         getData(
           withQuery("/biashara/products", {
@@ -632,6 +635,7 @@ export function useJumuiyaApi() {
             search,
             limit,
           }),
+          options,
         ),
 
       createProduct: (data) =>
