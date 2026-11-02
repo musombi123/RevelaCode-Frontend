@@ -15,11 +15,11 @@ function safeScope(scope) {
   return String(scope || "").trim().replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
 }
 
-export function offlineScopeForUser(user) {
+export function offlineScopeForUser(user, tenantId = "") {
   const id = user && (user.id || user._id || user.user_id || user.userId || user.uid);
-  return id === undefined || id === null || String(id).trim() === ""
-    ? ""
-    : "user:" + safeScope(id);
+  if (id === undefined || id === null || String(id).trim() === "") return "";
+  const base = "user:" + safeScope(id);
+  return tenantId ? base + ":tenant:" + safeScope(tenantId) : base;
 }
 
 export function isBrowserOffline() {
@@ -301,7 +301,7 @@ export async function writeCachedApiResponse(scope, url, payload) {
   return saved;
 }
 
-export async function queueOfflineMutation({ scope, url, method, body }) {
+export async function queueOfflineMutation({ scope, url, method, body, headers = {} }) {
   const owner = safeScope(scope);
   if (!owner || !shouldQueueOfflineMutation(url, method, body)) return false;
   let serializedBody;
@@ -318,6 +318,7 @@ export async function queueOfflineMutation({ scope, url, method, body }) {
     url: String(url),
     method: String(method).toUpperCase(),
     body: serializedBody,
+    businessId: String(headers?.["X-Business-ID"] || headers?.["x-business-id"] || "").slice(0, 128),
     status: "pending",
     createdAt: Date.now(),
     attempts: 0,
@@ -416,6 +417,7 @@ export async function flushOfflineQueue({ scope, authFetch }) {
             "Content-Type": "application/json",
             "Idempotency-Key": item.id,
             "X-Offline-Mutation-Id": item.id,
+            ...(item.businessId ? { "X-Business-ID": item.businessId } : {}),
           },
           body: item.method === "DELETE" && (!item.body || item.body === "null") ? undefined : item.body,
         });
