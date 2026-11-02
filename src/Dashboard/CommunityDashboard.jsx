@@ -1399,7 +1399,7 @@ export default function CommunityDashboard({
                   />
                 )}
               </section>
-              <CommunityAdSenseUnit placement="community-overview" />
+              {!loading && posts.length > 0 ? <CommunityAdSenseUnit placement="community-overview" /> : null}
 
               <div className="mb-4 flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white/80 px-3 py-3 text-xs dark:border-white/10 dark:bg-slate-900/70">
                 <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-black text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">✓</span>
