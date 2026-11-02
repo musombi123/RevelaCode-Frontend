@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Layers3,
   Menu,
+  MonitorDown,
   Moon,
   ShieldCheck,
   Smartphone,
@@ -22,6 +23,9 @@ import "./PlatformWelcomePage.css";
 
 const ANDROID_RELEASES_URL =
   "https://github.com/musombi123/RevelaCode-Frontend/releases";
+
+const WINDOWS_DOWNLOAD_URL =
+  "https://github.com/musombi123/RevelaCode-Windows/releases/latest/download/RevelaCode-Windows-Setup.exe";
 
 const ANDROID_DOWNLOAD_URL =
   String(import.meta.env.VITE_ANDROID_APK_URL || "").trim() ||
@@ -99,8 +103,12 @@ const faqs = [
     a: "Yes. Use the sign-in option inside the application to access your account. Your account permissions and verification status determine which protected features are available.",
   },
   {
-    q: "Should I use the Android app or the web app?",
-    a: "Both provide access to the RevelaCode ecosystem. Use the web app in your browser, or download the Android app for phone access. The Android download link opens the official Releases page unless a direct APK URL has been configured.",
+    q: "Can I install RevelaCode on Windows?",
+    a: "Yes. Download the Windows desktop installer directly from this page. The desktop app includes its own local workspace; cloud services and synchronisation still require an internet connection.",
+  },
+  {
+    q: "Should I use the Android app, Windows desktop app or web app?",
+    a: "All three provide access to the RevelaCode ecosystem. Choose Android for your phone, Windows for a desktop installation, or the web app in your browser.",
   },
 ];
 
@@ -473,20 +481,30 @@ export default function PlatformWelcomePage() {
             Welcome to RevelaCode. Explore a connected digital ecosystem for business, agriculture, education and communities — powered by practical software, AI and tools built around real needs.
           </p>
 
-          <div className="welcome-entrance mt-9 flex w-full max-w-xl flex-col justify-center gap-3 sm:flex-row" style={{ "--welcome-delay": "1.15s" }}>
+          <div className="welcome-entrance mt-9 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-3" style={{ "--welcome-delay": "1.15s" }}>
+            <a
+              href={WINDOWS_DOWNLOAD_URL}
+              download="RevelaCode-Windows-Setup.exe"
+              className="welcome-cta-sheen after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-transform hover:-translate-y-0.5 hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              aria-label="Download RevelaCode for Windows directly"
+            >
+              <MonitorDown size={18} aria-hidden="true" />
+              Download for Windows
+              <Download size={16} aria-hidden="true" />
+            </a>
             <a
               href={ANDROID_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="welcome-cta-sheen after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent inline-flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3.5 text-sm font-bold text-blue-800 transition-transform hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:border-blue-800 dark:hover:bg-blue-950"
             >
-              <Download size={18} aria-hidden="true" />
-              Download Android app
+              <Smartphone size={18} aria-hidden="true" />
+              Download Android
               <ArrowRight size={16} aria-hidden="true" />
             </a>
             <a
               href="/app"
-              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-800 transition-transform hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 transition-transform hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
             >
               <Smartphone size={18} aria-hidden="true" />
               Continue to web app
@@ -494,8 +512,8 @@ export default function PlatformWelcomePage() {
             </a>
           </div>
 
-          <p className="welcome-entrance mt-4 max-w-xl text-xs leading-6 text-slate-500 dark:text-slate-400" style={{ "--welcome-delay": "1.25s" }}>
-            Android downloads open the official Releases page unless a direct APK URL is configured. The web app opens in this browser.
+          <p className="welcome-entrance mt-4 max-w-2xl text-xs leading-6 text-slate-500 dark:text-slate-400" style={{ "--welcome-delay": "1.25s" }}>
+            Windows downloads start directly. Android uses the configured APK download or official Releases page. The web app opens in this browser.
           </p>
 
           <div className="welcome-entrance mt-12 grid w-full max-w-4xl grid-cols-2 gap-0 border-t border-slate-200 pt-6 dark:border-slate-800 sm:grid-cols-4" style={{ "--welcome-delay": "1.4s" }} aria-label="RevelaCode ecosystem">
