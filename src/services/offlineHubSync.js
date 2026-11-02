@@ -219,6 +219,13 @@ async function storeAll(storeName) {
   }
 }
 
+function readHeader(headers, name) {
+  if (headers && typeof headers.get === "function") return headers.get(name) || "";
+  const target = String(name).toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => String(key).toLowerCase() === target);
+  return entry ? String(entry[1] || "") : "";
+}
+
 function emitChange() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("revelacode:offline-sync-change"));
@@ -308,9 +315,12 @@ export async function queueOfflineMutation({ scope, url, method, body, headers =
   try { serializedBody = JSON.stringify(body); }
   catch { return false; }
   if (typeof serializedBody !== "string" || serializedBody.length > 1024 * 1024) return false;
-  const id = typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : "offline-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+  const suppliedId = readHeader(headers, "Idempotency-Key") || readHeader(headers, "X-Offline-Mutation-Id");
+  const id = /^[A-Za-z0-9._:-]{1,160}$/.test(suppliedId)
+    ? suppliedId
+    : typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "offline-" + Date.now() + "-" + Math.random().toString(36).slice(2);
   const item = {
     id,
     key: id,
