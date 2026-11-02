@@ -1059,6 +1059,7 @@ export default function BiasharaDashboard({
         "overview",
         "products",
         "factory",
+        "hr",
         "services",
         "orders",
         "customers",
