@@ -92,7 +92,6 @@ function Empty({ children }) {
 
 export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const {
-    businessId,
     getBiasharaFactoryOverview,
     getBiasharaProductionBatches,
     createBiasharaProductionBatch,
