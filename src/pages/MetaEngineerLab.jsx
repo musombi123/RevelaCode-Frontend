@@ -21,7 +21,16 @@ const TABS = [
   { id: "audit", label: "Audit Log", icon: Activity },
 ];
 const cn = (...values) => values.filter(Boolean).join(" ");
-const pretty = (value) => typeof value === "string" ? value : JSON.stringify(value ?? {}, null, 2);
+const pretty = (value) => {
+  if (typeof value === "string") return value;
+  try { return JSON.stringify(value ?? {}, null, 2); }
+  catch { return String(value ?? ""); }
+};
+const displayText = (value, fallback = "") => {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  return pretty(value);
+};
 const first = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
 
 function statusTone(status = "") {
@@ -365,7 +374,7 @@ export default function MetaEngineerLab() {
                 const Icon = failed ? XCircle : done ? CheckCircle : active ? Loader : Circle;
                 return <div key={step.id || step.label || index} className="flex gap-3 rounded-xl border border-slate-800/80 bg-slate-950/50 p-3">
                   <div className={cn("mt-0.5 shrink-0", failed ? "text-rose-400" : done ? "text-emerald-400" : active ? "text-cyan-300" : "text-slate-600")}><Icon className={cn("h-4 w-4", active && "animate-spin")} /></div>
-                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold text-slate-200">{step.label || step.name || `Step ${index + 1}`}</p><span className={cn("rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase", statusTone(state))}>{statusLabel(state)}</span></div><p className="mt-1 break-words text-[11px] leading-5 text-slate-500">{step.detail || step.message || step.summary || "No event details received from the API yet."}</p></div>
+                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold text-slate-200">{displayText(step.label || step.name, `Step ${index + 1}`)}</p><span className={cn("rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase", statusTone(state))}>{statusLabel(state)}</span></div><p className="mt-1 break-words text-[11px] leading-5 text-slate-500">{displayText(step.detail || step.message || step.summary, "No event details received from the API yet.")}</p></div>
                 </div>;
               })}
             </div>
