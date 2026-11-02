@@ -14,6 +14,7 @@ import {
   Globe,
   GraduationCap,
   History,
+  HeartHandshake,
   Layers,
   Library,
   Search,
@@ -188,6 +189,17 @@ export default function FaithDashboard({
       icon: Layers,
       gradient: "from-emerald-600 to-green-700",
       badge: "Explore References",
+    },
+
+    {
+      key: "missionpulse",
+      title: "MissionPulse",
+      label: "Church & Community Mission",
+      description:
+        "Coordinate community care, ministry assignments, outreach programmes, volunteers and measurable impact.",
+      icon: HeartHandshake,
+      gradient: "from-emerald-700 to-teal-800",
+      badge: "Serve Communities",
     },
   ];
 
@@ -1511,7 +1523,7 @@ export default function FaithDashboard({
               <button
                 key={tool.key}
                 type="button"
-                onClick={() => navigateTo(tool.key)}
+                onClick={() => tool.key === "missionpulse" ? window.location.assign("/faith/missionpulse") : navigateTo(tool.key)}
                 className="
                   group
                   relative

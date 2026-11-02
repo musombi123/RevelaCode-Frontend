@@ -28,6 +28,7 @@ import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
 import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
 import PlatformWelcomePage from "./pages/PlatformWelcomePage.jsx";
+import MissionPulse from "./pages/faith/MissionPulse.jsx";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -290,6 +291,16 @@ export default function App() {
                       <React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500 dark:text-slate-400" role="status">Loading account workspace…</div>}>
                         <UserAccountDashboard />
                       </React.Suspense>
+                    </Layout>
+                  </AuthGate>
+                }
+              />
+              <Route
+                path="/faith/missionpulse"
+                element={
+                  <AuthGate>
+                    <Layout>
+                      <MissionPulse />
                     </Layout>
                   </AuthGate>
                 }
