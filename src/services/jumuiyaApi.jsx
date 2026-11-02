@@ -911,6 +911,14 @@ export function useJumuiyaApi() {
         postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data, { businessId }),
       getBiasharaFactoryAlerts: (businessId) => getData("/biashara/factory/alerts", { businessId }),
 
+      getBiasharaEmployees: (businessId) => getData("/biashara/hr/employees", { businessId }),
+      createBiasharaEmployee: (businessId, data) => postData("/biashara/hr/employees", data, { businessId }),
+      getBiasharaAttendance: (businessId, params = {}) =>
+        getData(withQuery("/biashara/hr/attendance", params), { businessId }),
+      getBiasharaMyAttendance: (businessId) => getData("/biashara/hr/attendance/me", { businessId }),
+      clockInBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-in", data, { businessId }),
+      clockOutBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-out", data, { businessId }),
+
       // ===================================================
       // BIASHARA — HR AND ATTENDANCE
       // ===================================================
