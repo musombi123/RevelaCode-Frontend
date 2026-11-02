@@ -872,25 +872,25 @@ export function useJumuiyaApi() {
       // BIASHARA — WORKSPACE CONTRACTS
       // ===================================================
 
-      getBiasharaInvoices: () => getData("/biashara/finance/invoices"),
-      createBiasharaInvoice: (data) => postData("/biashara/finance/invoices", data),
-      allocateBiasharaInvoicePayment: (invoiceId, data) =>
-        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, data),
-      getBiasharaInvoiceAllocations: (invoiceId) =>
-        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`),
+      getBiasharaInvoices: (businessId) => getData("/biashara/finance/invoices", { businessId }),
+      createBiasharaInvoice: (businessId, data) => postData("/biashara/finance/invoices", data, { businessId }),
+      allocateBiasharaInvoicePayment: (businessId, invoiceId, data) =>
+        postData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, data, { businessId }),
+      getBiasharaInvoiceAllocations: (businessId, invoiceId) =>
+        getData(`/biashara/finance/invoices/${encodeId(invoiceId, "Invoice ID")}/allocations`, { businessId }),
 
-      getBiasharaAutomationRules: () => getData("/biashara/automations/rules"),
-      createBiasharaAutomationRule: (data) => postData("/biashara/automations/rules", data),
-      updateBiasharaAutomationRule: (ruleId, data) =>
-        patchData(`/biashara/automations/rules/${encodeId(ruleId, "Automation rule ID")}`, data),
+      getBiasharaAutomationRules: (businessId) => getData("/biashara/automations/rules", { businessId }),
+      createBiasharaAutomationRule: (businessId, data) => postData("/biashara/automations/rules", data, { businessId }),
+      updateBiasharaAutomationRule: (businessId, ruleId, data) =>
+        patchData(`/biashara/automations/rules/${encodeId(ruleId, "Automation rule ID")}`, data, { businessId }),
 
-      getBiasharaSyncJobs: () => getData("/biashara/sync/jobs"),
-      createBiasharaSyncJob: (data) => postData("/biashara/sync/jobs", data),
+      getBiasharaSyncJobs: (businessId) => getData("/biashara/sync/jobs", { businessId }),
+      createBiasharaSyncJob: (businessId, data) => postData("/biashara/sync/jobs", data, { businessId }),
 
-      getBiasharaTeam: () => getData("/biashara/team"),
-      inviteBiasharaTeamMember: (data) => postData("/biashara/team/invitations", data),
-      removeBiasharaTeamMember: (memberId) =>
-        deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`),
+      getBiasharaTeam: (businessId) => getData("/biashara/team", { businessId }),
+      inviteBiasharaTeamMember: (businessId, data) => postData("/biashara/team/invitations", data, { businessId }),
+      removeBiasharaTeamMember: (businessId, memberId) =>
+        deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`, { businessId }),
 
       getBiasharaBusinesses: () => getData("/biashara/businesses"),
       setActiveBiasharaBusiness: (businessId) =>
