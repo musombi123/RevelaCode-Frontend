@@ -31,7 +31,7 @@ const ROUTES = [
   { key: "products", label: "Products", icon: Package },
   { key: "factory", label: "Production & Factory", icon: Package },
   { key: "hr", label: "HR & Attendance", icon: Users },
-  { key: "integrations", label: "Integrations", icon: Zap },
+  { key: "integrations", label: "Integrations", icon: Wrench },
   { key: "services", label: "Services", icon: Wrench },
   { key: "orders", label: "Orders", icon: ClipboardList },
   { key: "customers", label: "Customers", icon: Users },
