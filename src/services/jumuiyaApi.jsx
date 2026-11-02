@@ -285,7 +285,7 @@ async function performRequest(
   }
 
   if (offlineScope && method !== "GET" && isBrowserOffline()) {
-    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers });
     if (queued) throw createOfflineQueuedError();
   }
 
@@ -348,7 +348,7 @@ async function performRequest(
     }
 
     if (offlineScope && method !== "GET" && isBrowserOffline()) {
-      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body });
+      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers });
       if (queued) throw createOfflineQueuedError();
     }
 
@@ -401,9 +401,18 @@ export function useJumuiyaApi() {
   // -------------------------------------------------------
 
   const request = useCallback(
-    (path, options = {}) =>
-      performRequest(authFetch, path, { ...options, offlineScope }),
-    [authFetch, offlineScope],
+    (path, options = {}) => {
+      const { businessId = "", ...requestOptions } = options;
+      const tenantScope = businessId ? offlineScopeForUser(user, businessId) : offlineScope;
+      const headers = { ...(requestOptions.headers || {}) };
+      if (businessId) headers["X-Business-ID"] = String(businessId);
+      return performRequest(authFetch, path, {
+        ...requestOptions,
+        headers,
+        offlineScope: tenantScope,
+      });
+    },
+    [authFetch, offlineScope, user],
   );
 
   // -------------------------------------------------------
@@ -469,8 +478,8 @@ export function useJumuiyaApi() {
   );
 
   const postData = useCallback(
-    async (path, data = {}) =>
-      extractData(await post(path, data)),
+    async (path, data = {}, options = {}) =>
+      extractData(await post(path, data, options)),
     [post],
   );
 
@@ -885,18 +894,18 @@ export function useJumuiyaApi() {
       // BIASHARA — FACTORY / MANUFACTURING
       // ===================================================
 
-      getBiasharaFactoryOverview: () => getData("/biashara/factory/overview"),
-      getBiasharaProductionBatches: () => getData("/biashara/factory/production/batches"),
-      createBiasharaProductionBatch: (data) => postData("/biashara/factory/production/batches", data),
-      completeBiasharaProductionBatch: (batchId, data) =>
-        postData(`/biashara/factory/production/batches/${encodeId(batchId, "Batch ID")}/complete`, data),
-      getBiasharaQualityChecks: () => getData("/biashara/factory/quality/checks"),
-      inspectBiasharaQuality: (data) => postData("/biashara/factory/quality/checks", data),
-      getBiasharaMachines: () => getData("/biashara/factory/machines"),
-      createBiasharaMachine: (data) => postData("/biashara/factory/machines", data),
-      recordBiasharaMachineReading: (machineId, data) =>
-        postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data),
-      getBiasharaFactoryAlerts: () => getData("/biashara/factory/alerts"),
+      getBiasharaFactoryOverview: (businessId) => getData("/biashara/factory/overview", { businessId }),
+      getBiasharaProductionBatches: (businessId) => getData("/biashara/factory/production/batches", { businessId }),
+      createBiasharaProductionBatch: (businessId, data) => postData("/biashara/factory/production/batches", data, { businessId }),
+      completeBiasharaProductionBatch: (businessId, batchId, data) =>
+        postData(`/biashara/factory/production/batches/${encodeId(batchId, "Batch ID")}/complete`, data, { businessId }),
+      getBiasharaQualityChecks: (businessId) => getData("/biashara/factory/quality/checks", { businessId }),
+      inspectBiasharaQuality: (businessId, data) => postData("/biashara/factory/quality/checks", data, { businessId }),
+      getBiasharaMachines: (businessId) => getData("/biashara/factory/machines", { businessId }),
+      createBiasharaMachine: (businessId, data) => postData("/biashara/factory/machines", data, { businessId }),
+      recordBiasharaMachineReading: (businessId, machineId, data) =>
+        postData(`/biashara/factory/machines/${encodeId(machineId, "Machine ID")}/readings`, data, { businessId }),
+      getBiasharaFactoryAlerts: (businessId) => getData("/biashara/factory/alerts", { businessId }),
 
       // ===================================================
       // SHAMBA — HEALTH AND FARMER
