@@ -10,6 +10,7 @@ const PRIMARY_NAV = [
   { key: "website", label: "Website", route: "website", icon: Globe, available: true },
   { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
+  { key: "factory", label: "Production & Factory", route: "factory", icon: Package, available: true },
   { key: "services", label: "Manage services", route: "services", icon: Wrench, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
   { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
@@ -27,10 +28,10 @@ const MORE_TOOLS = [
   { key: "notifications", label: "Alerts", route: "notifications", icon: Bell, available: true },
 ];
 
-const MOBILE_NAV_KEYS = ["overview", "orders", "products", "website"];
+const MOBILE_NAV_KEYS = ["overview", "orders", "products", "factory", "website"];
 
 const SIMPLE_PRIMARY_KEYS = new Set([
-  "overview", "website", "orders", "products", "services",
+  "overview", "website", "orders", "products", "factory", "services",
   "customers", "finance", "sync", "settings",
 ]);
 const SIMPLE_TOOL_KEYS = new Set(["sales", "notifications"]);
@@ -77,9 +78,11 @@ export default function BiasharaShell({ business, activeSection = "overview", on
   const businessName = business?.name || business?.business_name || "Current business";
   const simpleMode = business?.workspace_mode === "simple" ||
     (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
+  const factoryEnabled = String(business?.industry_template || "").toLowerCase() === "factory";
+  const configuredNav = PRIMARY_NAV.filter((item) => item.key !== "factory" || factoryEnabled);
   const primaryNav = simpleMode
-    ? PRIMARY_NAV.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
-    : PRIMARY_NAV;
+    ? configuredNav.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
+    : configuredNav;
   const moreNav = simpleMode
     ? MORE_TOOLS.filter((item) => SIMPLE_TOOL_KEYS.has(item.key))
     : MORE_TOOLS;
