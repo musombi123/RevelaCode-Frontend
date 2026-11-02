@@ -1942,7 +1942,7 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 </article>
-                {index === 6 ? <CommunityAdSenseUnit placement="community-feed" key="community-feed-sponsored-slot" /> : null}
+                {!searchTerm.trim() && index === 6 ? <CommunityAdSenseUnit placement="community-feed" key="community-feed-sponsored-slot" /> : null}
                 </React.Fragment>
               );
             })
