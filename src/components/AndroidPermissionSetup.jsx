@@ -8,6 +8,8 @@ import {
   Mic,
   ShieldCheck,
   Settings,
+  Volume2,
+  Wifi,
   X,
 } from "lucide-react";
 import {
@@ -262,8 +264,32 @@ export default function AndroidPermissionSetup() {
             </span>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-800/70">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 dark:bg-slate-900 dark:text-emerald-300">
+                <Volume2 size={20} />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold">Speaker and audio output</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  Audio playback uses Android speaker output. The app includes audio-settings access; Android does not show a separate speaker permission prompt.
+                </span>
+              </span>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-800/70">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 dark:bg-slate-900 dark:text-sky-300">
+                <Wifi size={20} />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold">Internet, networks and search</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  Internet and network-state access are included for online services, connectivity checks and search. Android grants these at install time; they do not need a separate runtime prompt.
+                </span>
+              </span>
+            </div>
+          </div>
           <p className="px-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            You can continue without granting these permissions. Only the features that need access will be limited.
+            You can continue without granting the optional camera, location, microphone or notification permissions. Features that need denied access may be limited.
           </p>
 
           {message && (
