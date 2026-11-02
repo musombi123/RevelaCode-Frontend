@@ -12,6 +12,7 @@ const PRIMARY_NAV = [
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
   { key: "factory", label: "Production & Factory", route: "factory", icon: Package, available: true },
   { key: "hr", label: "HR & Attendance", route: "hr", icon: Users, available: true },
+  { key: "integrations", label: "Integrations", route: "integrations", icon: Zap, available: true },
   { key: "services", label: "Manage services", route: "services", icon: Wrench, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
   { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
@@ -32,7 +33,7 @@ const MORE_TOOLS = [
 const MOBILE_NAV_KEYS = ["overview", "orders", "products", "factory", "website"];
 
 const SIMPLE_PRIMARY_KEYS = new Set([
-  "overview", "website", "orders", "products", "factory", "services",
+  "overview", "website", "orders", "products", "factory", "hr", "integrations", "services",
   "customers", "finance", "sync", "settings",
 ]);
 const SIMPLE_TOOL_KEYS = new Set(["sales", "notifications"]);
@@ -81,9 +82,13 @@ export default function BiasharaShell({ business, activeSection = "overview", on
     (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
   const factoryEnabled = String(business?.industry_template || "").toLowerCase() === "factory";
   const industryTemplate = String(business?.industry_template || "").toLowerCase();
-  const hrEnabled = ["factory", "salon", "professional_services", "general"].includes(industryTemplate);
+  const hrEnabled = Boolean(industryTemplate) && industryTemplate !== "school";
+  const role = String(business?.access_role || business?.role || (business?.is_owner ? "owner" : "viewer")).toLowerCase().replace(/-/g, "_").replace(/ /g, "_");
+  const integrationEnabled = ["owner", "ceo", "director", "admin", "accountant", "operations_manager", "manager"].includes(role);
   const configuredNav = PRIMARY_NAV.filter((item) =>
-    (item.key !== "factory" || factoryEnabled) && (item.key !== "hr" || hrEnabled)
+    (item.key !== "factory" || factoryEnabled) &&
+    (item.key !== "hr" || hrEnabled) &&
+    (item.key !== "integrations" || integrationEnabled)
   );
   const primaryNav = simpleMode
     ? configuredNav.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
