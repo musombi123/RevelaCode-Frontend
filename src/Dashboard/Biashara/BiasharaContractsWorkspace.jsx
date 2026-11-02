@@ -164,7 +164,7 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
     finally { setSaving(false); }
   };
 
-  const inviteRoles = ["operations_manager", "hr_manager", "accountant", "store_keeper", "factory_floor_lead", "sales_agent", "employee", "manager", "sales", "inventory", "viewer"];
+  const inviteRoles = ["director", "operations_manager", "hr_manager", "accountant", "store_keeper", "factory_floor_lead", "sales_agent", "employee", "manager", "sales", "inventory", "viewer"];
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-5 sm:px-6 lg:px-8">
       <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white sm:p-8">
