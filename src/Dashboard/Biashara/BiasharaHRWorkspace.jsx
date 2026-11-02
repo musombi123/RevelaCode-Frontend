@@ -25,11 +25,14 @@ async function gps() {
 
 export default function BiasharaHRWorkspace({business,onRefresh}) {
   const {
-    getBiasharaEmployees,createBiasharaEmployee,getBiasharaAttendance,
+    getBiasharaEmployees,createBiasharaEmployee,updateBiasharaEmployee,getBiasharaAttendance,
     getBiasharaMyAttendance,clockInBiashara,clockOutBiashara,
   } = useJumuiyaApi();
   const businessId=String(business?.id || business?._id || "");
-  const [tab,setTab]=useState("employees");
+  const role=String(business?.access_role || business?.role || (business?.is_owner ? "owner" : "viewer")).toLowerCase().replace(/-/g,"_").replace(/ /g,"_");
+  const canManageHr=["owner","ceo","director","admin","hr_manager"].includes(role);
+  const [tab,setTab]=useState(canManageHr ? "employees" : "my-shift");
+  const [linkUserIds,setLinkUserIds]=useState({});
   const [employees,setEmployees]=useState([]);
   const [attendance,setAttendance]=useState([]);
   const [mine,setMine]=useState(null);
@@ -41,18 +44,22 @@ export default function BiasharaHRWorkspace({business,onRefresh}) {
 
   const load=useCallback(async()=>{
     setLoading(true);setError("");
-    const results=await Promise.allSettled([
-      getBiasharaEmployees(businessId),
-      getBiasharaAttendance(businessId),
-      getBiasharaMyAttendance(businessId),
-    ]);
-    if(results[0].status==="fulfilled")setEmployees(rows(results[0].value));
-    if(results[1].status==="fulfilled")setAttendance(rows(results[1].value));
-    if(results[2].status==="fulfilled")setMine(unwrap(results[2].value));
-    const failures=results.slice(0,2).filter(x=>x.status==="rejected");
+    const results=canManageHr
+      ? await Promise.allSettled([
+          getBiasharaEmployees(businessId),
+          getBiasharaAttendance(businessId),
+          getBiasharaMyAttendance(businessId),
+        ])
+      : await Promise.allSettled([getBiasharaMyAttendance(businessId)]);
+    if(canManageHr){
+      if(results[0].status==="fulfilled")setEmployees(rows(results[0].value));
+      if(results[1].status==="fulfilled")setAttendance(rows(results[1].value));
+      if(results[2].status==="fulfilled")setMine(unwrap(results[2].value));
+    } else if(results[0].status==="fulfilled") setMine(unwrap(results[0].value));
+    const failures=canManageHr ? results.slice(0,2).filter(x=>x.status==="rejected") : results.filter(x=>x.status==="rejected");
     if(failures.length)setError(failures.map(x=>x.reason?.message||"An HR service could not be loaded.").join(" "));
     setLoading(false);
-  },[businessId,getBiasharaEmployees,getBiasharaAttendance,getBiasharaMyAttendance]);
+  },[businessId,canManageHr,getBiasharaEmployees,getBiasharaAttendance,getBiasharaMyAttendance]);
   useEffect(()=>{load();},[load]);
 
   const run=async(action,message)=>{
@@ -73,6 +80,11 @@ export default function BiasharaHRWorkspace({business,onRefresh}) {
     if(kind==="in")await clockInBiashara(businessId,location);
     else await clockOutBiashara(businessId,location);
   },kind==="in"?"Clock-in recorded.":"Clock-out recorded.");
+  const linkEmployee=(employee)=>{
+    const value=String(linkUserIds[idOf(employee)]||"").trim();
+    if(!value){setError("Enter the accepted company member User ID first.");return;}
+    run(()=>updateBiasharaEmployee(businessId,idOf(employee),{user_id:value}),"Employee account linked. The employee can now use My Shift.");
+  };
 
   return <div className="min-h-full bg-slate-50 px-3 py-4 sm:px-5 sm:py-6"><div className="mx-auto max-w-screen-2xl space-y-4">
     <header className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-lg sm:p-7">
@@ -82,12 +94,12 @@ export default function BiasharaHRWorkspace({business,onRefresh}) {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Employee register, System IDs, shifts and clock-in/out for {business?.name||"this company"}.</p>
       </div><button type="button" onClick={load} disabled={loading||saving} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 text-sm font-semibold"><RefreshCw size={16}/> Refresh HR</button></div>
     </header>
-    <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2">{[["employees","Employees",Users],["attendance","Attendance log",CalendarClock],["my-shift","My shift",Clock3]].map(([key,label,Icon])=><button key={key} onClick={()=>setTab(key)} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold ${tab===key?"bg-blue-700 text-white":"text-slate-600 hover:bg-slate-100"}`}><Icon size={16}/>{label}</button>)}</nav>
+    <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2">{[...(canManageHr?[["employees","Employees",Users],["attendance","Attendance log",CalendarClock]]:[]),["my-shift","My shift",Clock3]].map(([key,label,Icon])=><button key={key} onClick={()=>setTab(key)} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold ${tab===key?"bg-blue-700 text-white":"text-slate-600 hover:bg-slate-100"}`}><Icon size={16}/>{label}</button>)}</nav>
     {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</div>}
     {notice&&<div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</div>}
 
-    {tab==="employees"&&<div className="space-y-4">
-      <Panel title="Register employee"><p className="mb-4 text-xs leading-5 text-slate-500">The System ID identifies the employee. For self-service attendance, link an account that has already accepted a company invitation with the Employee role. HR records do not create logins or grant permissions.</p>
+    {canManageHr && tab==="employees"&&<div className="space-y-4">
+      <Panel title="Register employee"><p className="mb-4 text-xs leading-5 text-slate-500">The System ID identifies the employee. Invite the person through Team first, using the correct company role, then link their accepted User ID here. HR records do not create logins or grant platform permissions.</p>
         <form onSubmit={submitEmployee} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Field label="Full name" required value={form.name} onChange={v=>setForm(x=>({...x,name:v}))}/>
           <Field label="Phone" required value={form.phone} onChange={v=>setForm(x=>({...x,phone:v}))}/>
@@ -95,17 +107,17 @@ export default function BiasharaHRWorkspace({business,onRefresh}) {
           <Field label="Existing company User ID (optional)" value={form.user_id} onChange={v=>setForm(x=>({...x,user_id:v}))}/>
           <Field label="Department" value={form.department} onChange={v=>setForm(x=>({...x,department:v}))}/>
           <Field label="Job title" value={form.job_title} onChange={v=>setForm(x=>({...x,job_title:v}))}/>
-          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Platform role</span><select value={form.role} onChange={e=>setForm(x=>({...x,role:e.target.value}))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="employee">Employee</option><option value="factory_floor_lead">Factory Floor Lead</option><option value="sales_agent">Sales Agent</option><option value="store_keeper">Store Keeper</option><option value="accountant">Accountant</option><option value="hr_manager">HR Manager</option><option value="operations_manager">Operations Manager</option><option value="manager">Manager</option></select></label>
+          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Company job function</span><select value={form.role} onChange={e=>setForm(x=>({...x,role:e.target.value}))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option value="employee">Employee</option><option value="factory_floor_lead">Factory Floor Lead</option><option value="sales_agent">Sales Agent</option><option value="store_keeper">Store Keeper</option><option value="accountant">Accountant</option><option value="hr_manager">HR Manager</option><option value="operations_manager">Operations Manager</option><option value="manager">Manager</option></select></label>
           <Field label="Shift start (24h)" required value={form.shift_start} onChange={v=>setForm(x=>({...x,shift_start:v}))}/>
           <Field label="Shift end (24h)" required value={form.shift_end} onChange={v=>setForm(x=>({...x,shift_end:v}))}/>
           <Field label="Late grace (minutes)" type="number" value={form.late_grace_minutes} onChange={v=>setForm(x=>({...x,late_grace_minutes:v}))}/>
           <div className="flex items-end"><button disabled={saving} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white disabled:opacity-50"><Plus size={16}/>{saving?"Saving…":"Register employee"}</button></div>
         </form>
       </Panel>
-      <Panel title={`Employee register · ${employees.length}`}>{loading?<p className="text-sm text-slate-500">Loading…</p>:employees.length?<div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead><tr className="border-b text-xs uppercase tracking-wide text-slate-500"><th className="py-3 pr-3">System ID</th><th className="py-3 pr-3">Employee</th><th className="py-3 pr-3">Department</th><th className="py-3 pr-3">Role</th><th className="py-3 pr-3">Shift</th><th>Status</th></tr></thead><tbody>{employees.map(x=><tr key={idOf(x)} className="border-b border-slate-50"><td className="py-3 pr-3 font-mono text-xs font-bold text-blue-700">{x.system_id}</td><td className="py-3 pr-3"><b>{x.name}</b><p className="text-xs text-slate-500">{x.phone}</p></td><td className="py-3 pr-3">{x.department||"—"}</td><td className="py-3 pr-3 capitalize">{String(x.role||"employee").replace(/_/g," ")}</td><td className="py-3 pr-3">{x.shift_start}–{x.shift_end}</td><td>{x.status}</td></tr>)}</tbody></table></div>:<Empty>No employees registered yet.</Empty>}</Panel>
+      <Panel title={`Employee register · ${employees.length}`}>{loading?<p className="text-sm text-slate-500">Loading…</p>:employees.length?<div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead><tr className="border-b text-xs uppercase tracking-wide text-slate-500"><th className="py-3 pr-3">System ID</th><th className="py-3 pr-3">Employee</th><th className="py-3 pr-3">Department</th><th className="py-3 pr-3">Role</th><th className="py-3 pr-3">Shift</th><th>Status</th><th>Account</th></tr></thead><tbody>{employees.map(x=><tr key={idOf(x)} className="border-b border-slate-50"><td className="py-3 pr-3 font-mono text-xs font-bold text-blue-700">{x.system_id}</td><td className="py-3 pr-3"><b>{x.name}</b><p className="text-xs text-slate-500">{x.phone}</p></td><td className="py-3 pr-3">{x.department||"—"}</td><td className="py-3 pr-3 capitalize">{String(x.role||"employee").replace(/_/g," ")}</td><td className="py-3 pr-3">{x.shift_start}–{x.shift_end}</td><td>{x.status}</td><td className="py-3">{x.user_id ? <span className="text-xs text-emerald-700">Linked</span> : <div className="flex min-w-[240px] gap-2"><input aria-label={"User ID for "+x.name} value={linkUserIds[idOf(x)]||""} onChange={e=>setLinkUserIds(current=>({...current,[idOf(x)]:e.target.value}))} className="min-h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2 text-xs" placeholder="Accepted member User ID"/><button type="button" disabled={saving} onClick={()=>linkEmployee(x)} className="rounded-lg bg-slate-900 px-2 text-xs font-semibold text-white disabled:opacity-50">Link</button></div>}</td></tr>)}</tbody></table></div>:<Empty>No employees registered yet.</Empty>}</Panel>
     </div>}
 
-    {tab==="attendance"&&<Panel title="Attendance register"><p className="mb-4 text-xs text-slate-500">Times are stored in UTC and displayed in Africa/Nairobi. Late minutes use each employee's configured shift start and grace period.</p>{loading?<p>Loading…</p>:attendance.length?<div className="space-y-3">{attendance.map(x=><div key={idOf(x)} className="flex flex-col gap-2 rounded-xl border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><b className="text-slate-900">{x.employee_name||x.system_id}</b><p className="text-xs text-slate-500">{x.system_id} · {x.local_date}</p><p className="text-xs text-slate-500">In: {timeLabel(x.clock_in_at)} · Out: {timeLabel(x.clock_out_at)}</p></div><div className="flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-3 py-1">Late {mins(x.late_minutes)}</span><span className="rounded-full bg-slate-100 px-3 py-1">Worked {x.worked_minutes==null?"Open":mins(x.worked_minutes)}</span><span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">Overtime {x.overtime_minutes==null?"—":mins(x.overtime_minutes)}</span></div></div>)}</div>:<Empty>No attendance records yet.</Empty>}</Panel>}
+    {canManageHr && tab==="attendance"&&<Panel title="Attendance register"><p className="mb-4 text-xs text-slate-500">Times are stored in UTC and displayed in Africa/Nairobi. Late minutes use each employee's configured shift start and grace period.</p>{loading?<p>Loading…</p>:attendance.length?<div className="space-y-3">{attendance.map(x=><div key={idOf(x)} className="flex flex-col gap-2 rounded-xl border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between"><div><b className="text-slate-900">{x.employee_name||x.system_id}</b><p className="text-xs text-slate-500">{x.system_id} · {x.local_date}</p><p className="text-xs text-slate-500">In: {timeLabel(x.clock_in_at)} · Out: {timeLabel(x.clock_out_at)}</p></div><div className="flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-3 py-1">Late {mins(x.late_minutes)}</span><span className="rounded-full bg-slate-100 px-3 py-1">Worked {x.worked_minutes==null?"Open":mins(x.worked_minutes)}</span><span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">Overtime {x.overtime_minutes==null?"—":mins(x.overtime_minutes)}</span></div></div>)}</div>:<Empty>No attendance records yet.</Empty>}</Panel>}
 
     {tab==="my-shift"&&<Panel title="My attendance"><p className="mb-4 text-xs leading-5 text-slate-500">Clocking is available after HR links your login to an active employee record. GPS permission is optional. The timestamp is saved even when location is declined.</p>{mine?.employee?<div className="space-y-4">
       <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold uppercase text-slate-500">Employee</p><p className="mt-1 text-lg font-bold text-slate-900">{mine.employee.name}</p><p className="font-mono text-sm text-blue-700">{mine.employee.system_id}</p></div>
