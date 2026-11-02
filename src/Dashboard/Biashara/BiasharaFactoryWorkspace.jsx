@@ -136,13 +136,14 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
 
   const currency = String(business?.currency || "KES").toUpperCase();
   const businessId = String(business?.id || business?._id || "");
-  const materialProducts = useMemo(() => {
-    const classified = products.filter((item) =>
-      ["raw_material", "raw material", "raw"].includes(String(item?.production_type || item?.inventory_type || "").toLowerCase()) ||
-      item?.is_raw_material === true
-    );
-    return classified.length ? classified : products;
-  }, [products]);
+  const materialProducts = useMemo(
+    () => products.filter((item) => String(item?.production_type || "").toLowerCase() === "raw_material"),
+    [products],
+  );
+  const finishedProducts = useMemo(
+    () => products.filter((item) => String(item?.production_type || "").toLowerCase() === "finished_good"),
+    [products],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -345,13 +346,13 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
             <Panel title="Start a production batch" description="Raw material is deducted from stock when the batch is started. Both products must exist in this business inventory.">
               <form onSubmit={startBatch} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <Field label="Batch reference (optional)" value={batchForm.batch_number} onChange={(value) => setBatchForm((current) => ({ ...current, batch_number: value }))} />
-                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Raw-material product</span><select required value={batchForm.raw_material_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, raw_material_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">Select raw material</option>{materialProducts.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {quantity(product.stock_quantity)} {product.unit || "units"}</option>)}</select></label>
-                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Finished-goods product</span><select required value={batchForm.output_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, output_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">Select finished product</option>{products.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {product.unit || "units"}</option>)}</select></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Raw-material product</span><select required value={batchForm.raw_material_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, raw_material_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">{materialProducts.length ? "Select raw material" : "No raw-material SKUs — add one in Products"}</option>{materialProducts.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {quantity(product.stock_quantity)} {product.unit || "units"}</option>)}</select></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Finished-goods product</span><select required value={batchForm.output_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, output_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">{finishedProducts.length ? "Select finished product" : "No finished-good SKUs — add one in Products"}</option>{finishedProducts.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {product.unit || "units"}</option>)}</select></label>
                 <Field label="Raw material input quantity" type="number" step="0.001" required value={batchForm.input_quantity} onChange={(value) => setBatchForm((current) => ({ ...current, input_quantity: value }))} />
                 <Field label="Expected finished output quantity" type="number" step="0.001" required value={batchForm.expected_output_quantity} onChange={(value) => setBatchForm((current) => ({ ...current, expected_output_quantity: value }))} />
                 <div className="flex items-end"><button disabled={saving} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50"><Plus size={16} /> {saving ? "Starting…" : "Start batch"}</button></div>
               </form>
-              <p className="mt-3 text-xs leading-5 text-slate-500">Product categories are not used as an authorization shortcut. Choose the correct raw-material and finished-goods SKUs. Stock deduction and the batch event are committed together through a MongoDB transaction.</p>
+              <p className="mt-3 text-xs leading-5 text-slate-500">In Products, classify input SKUs as Raw material and output SKUs as Finished good. Both must use the same base unit (for example kg → kg); unit conversions such as kg → bags need a configured conversion factor before use. Stock deduction and the batch event are committed together through a MongoDB transaction.</p>
             </Panel>
 
             <Panel title="Active production batches" description="Complete output accounting for each batch. All material input must be assigned to finished output, wastage or recoverable by-products.">
