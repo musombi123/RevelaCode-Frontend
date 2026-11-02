@@ -92,6 +92,7 @@ function Empty({ children }) {
 
 export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const {
+    businessId,
     getBiasharaFactoryOverview,
     getBiasharaProductionBatches,
     createBiasharaProductionBatch,
@@ -135,20 +136,24 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const [readingForms, setReadingForms] = useState({});
 
   const currency = String(business?.currency || "KES").toUpperCase();
-  const materialProducts = useMemo(
-    () => products.filter((item) => ["raw_material", "raw material", "raw"].includes(String(item?.production_type || item?.inventory_type || "").toLowerCase()) || item?.is_raw_material === true),
-    [products],
-  );
+  const businessId = String(business?.id || business?._id || "");
+  const materialProducts = useMemo(() => {
+    const classified = products.filter((item) =>
+      ["raw_material", "raw material", "raw"].includes(String(item?.production_type || item?.inventory_type || "").toLowerCase()) ||
+      item?.is_raw_material === true
+    );
+    return classified.length ? classified : products;
+  }, [products]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     const tasks = await Promise.allSettled([
-      getBiasharaFactoryOverview(),
-      getBiasharaProductionBatches(),
-      getBiasharaMachines(),
-      getBiasharaQualityChecks(),
-      getBiasharaFactoryAlerts(),
+      getBiasharaFactoryOverview(businessId),
+      getBiasharaProductionBatches(businessId),
+      getBiasharaMachines(businessId),
+      getBiasharaQualityChecks(businessId),
+      getBiasharaFactoryAlerts(businessId),
       getBiasharaProducts({ limit: 100 }),
     ]);
     const [overviewResult, batchesResult, machinesResult, checksResult, alertsResult, productsResult] = tasks;
@@ -198,7 +203,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const startBatch = (event) => {
     event.preventDefault();
     runAction(async () => {
-      await createBiasharaProductionBatch({
+      await createBiasharaProductionBatch(businessId, {
         ...batchForm,
         batch_number: batchForm.batch_number.trim() || `BATCH-${Date.now()}`,
         input_quantity: Number(batchForm.input_quantity),
@@ -217,7 +222,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const completeBatch = (event, batch) => {
     event.preventDefault();
     const form = completionForms[idOf(batch)] || {};
-    runAction(() => completeBiasharaProductionBatch(idOf(batch), {
+    runAction(() => completeBiasharaProductionBatch(businessId, idOf(batch), {
       actual_output_quantity: Number(form.actual_output_quantity),
       wastage_quantity: Number(form.wastage_quantity || 0),
       recoverable_byproducts_quantity: Number(form.recoverable_byproducts_quantity || 0),
@@ -228,7 +233,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const inspectBatch = (event, batch) => {
     event.preventDefault();
     const form = qualityForms[idOf(batch)] || { grade: "A", inspection_notes: "" };
-    runAction(() => inspectBiasharaQuality({
+    runAction(() => inspectBiasharaQuality(businessId, {
       batch_id: idOf(batch),
       grade: form.grade,
       inspection_notes: form.inspection_notes || "",
@@ -240,7 +245,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const registerMachine = (event) => {
     event.preventDefault();
     runAction(async () => {
-      await createBiasharaMachine({
+      await createBiasharaMachine(businessId, {
         ...machineForm,
         name: machineForm.name.trim(),
         machine_code: machineForm.machine_code.trim().toUpperCase(),
@@ -253,7 +258,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
   const submitReading = (event, machine) => {
     event.preventDefault();
     const form = readingForms[idOf(machine)] || {};
-    runAction(() => recordBiasharaMachineReading(idOf(machine), {
+    runAction(() => recordBiasharaMachineReading(businessId, idOf(machine), {
       operating_hours: Number(form.operating_hours),
       output_quantity: Number(form.output_quantity || 0),
       notes: form.notes || "",
@@ -340,7 +345,7 @@ export default function BiasharaFactoryWorkspace({ business, onRefresh }) {
             <Panel title="Start a production batch" description="Raw material is deducted from stock when the batch is started. Both products must exist in this business inventory.">
               <form onSubmit={startBatch} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <Field label="Batch reference (optional)" value={batchForm.batch_number} onChange={(value) => setBatchForm((current) => ({ ...current, batch_number: value }))} />
-                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Raw-material product</span><select required value={batchForm.raw_material_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, raw_material_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">Select raw material</option>{products.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {quantity(product.stock_quantity)} {product.unit || "units"}</option>)}</select></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Raw-material product</span><select required value={batchForm.raw_material_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, raw_material_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">Select raw material</option>{materialProducts.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {quantity(product.stock_quantity)} {product.unit || "units"}</option>)}</select></label>
                 <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Finished-goods product</span><select required value={batchForm.output_product_id} onChange={(event) => setBatchForm((current) => ({ ...current, output_product_id: event.target.value }))} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900"><option value="">Select finished product</option>{products.map((product) => <option key={idOf(product)} value={idOf(product)}>{product.name} · {product.unit || "units"}</option>)}</select></label>
                 <Field label="Raw material input quantity" type="number" step="0.001" required value={batchForm.input_quantity} onChange={(value) => setBatchForm((current) => ({ ...current, input_quantity: value }))} />
                 <Field label="Expected finished output quantity" type="number" step="0.001" required value={batchForm.expected_output_quantity} onChange={(value) => setBatchForm((current) => ({ ...current, expected_output_quantity: value }))} />
