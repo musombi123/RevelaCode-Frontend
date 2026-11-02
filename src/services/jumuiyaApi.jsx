@@ -279,6 +279,14 @@ async function performRequest(
     ...rest
   } = options;
   const method = String(rest.method || "GET").toUpperCase();
+  const requestHeaders = new Headers(headers);
+  if (!requestHeaders.has("Accept")) requestHeaders.set("Accept", "application/json");
+  if (method !== "GET" && !requestHeaders.has("Idempotency-Key")) {
+    const mutationId = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "mutation-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+    requestHeaders.set("Idempotency-Key", mutationId);
+  }
 
   if (cacheScope && method === "GET" && isBrowserOffline()) {
     const cached = await readCachedApiResponse(cacheScope, url);
@@ -286,14 +294,8 @@ async function performRequest(
   }
 
   if (offlineScope && method !== "GET" && isBrowserOffline()) {
-    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers });
+    const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers: requestHeaders });
     if (queued) throw createOfflineQueuedError();
-  }
-
-  const requestHeaders = new Headers(headers);
-
-  if (!requestHeaders.has("Accept")) {
-    requestHeaders.set("Accept", "application/json");
   }
 
   let requestBody = body;
@@ -348,8 +350,8 @@ async function performRequest(
       if (cached.hit) return cached.payload;
     }
 
-    if (offlineScope && method !== "GET" && isBrowserOffline()) {
-      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers });
+    if (offlineScope && method !== "GET") {
+      const queued = await queueOfflineMutation({ scope: offlineScope, url, method, body, headers: requestHeaders });
       if (queued) throw createOfflineQueuedError();
     }
 
