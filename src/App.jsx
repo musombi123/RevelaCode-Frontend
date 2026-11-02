@@ -189,7 +189,7 @@ function PlatformHomeRoute() {
   // The native Android package opens the compact application workspace directly.
   // The public marketing homepage remains the default entry point on the web.
   if (import.meta.env.VITE_ANDROID_APP === "true") {
-    return <InternalDashboard />;
+    return <InternalDashboard initialHub="home" />;
   }
 
   // The Community root is open to anyone; /app opens the signed-in workspace.
