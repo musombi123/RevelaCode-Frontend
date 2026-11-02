@@ -1,3 +1,4 @@
+# CI for MissionPulse changes; keep this workflow scoped to the feature's entry files.
 name: MissionPulse frontend validation
 
 on:
