@@ -341,6 +341,7 @@ export default function BiasharaInternalWorkspace({
   onRefresh,
 }) {
   const api = useJumuiyaApi();
+  const businessId = String(business?.id || business?._id || "");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -362,7 +363,7 @@ export default function BiasharaInternalWorkspace({
     reference: "",
     description: "",
     service_type: "general",
-    unit: "service",
+    unit: route === "products" ? "piece" : "service",
     duration_minutes: "0",
   }));
   const [editingServiceId, setEditingServiceId] = useState("");
@@ -384,7 +385,7 @@ export default function BiasharaInternalWorkspace({
     setForm({
       name: "", sku: "", category: "", price: "", cost_price: "0", production_type: "resale", stock_quantity: "0",
       phone: "", email: "", amount: "", payment_method: "cash", reference: "",
-      description: "", service_type: "general", unit: "service", duration_minutes: "0",
+      description: "", service_type: "general", unit: route === "products" ? "piece" : "service", duration_minutes: "0",
     });
   }, [route]);
 
@@ -409,19 +410,19 @@ export default function BiasharaInternalWorkspace({
       let response;
       if (route === "products") {
         if (typeof api.getBiasharaProducts !== "function") throw new Error("The products API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaProducts({ limit: 100, search: query });
+        response = await api.getBiasharaProducts({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["products", "items", "results"]));
       } else if (route === "services") {
         if (typeof api.getBiasharaServices !== "function") throw new Error("The services API helper is missing.");
-        response = await api.getBiasharaServices({ limit: 100, search: query });
+        response = await api.getBiasharaServices({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["services", "items", "results"]));
       } else if (route === "orders") {
         if (typeof api.getBiasharaOrders !== "function") throw new Error("The orders API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaOrders({ limit: 100 });
+        response = await api.getBiasharaOrders({ limit: 100 }, { businessId });
         setRows(asArray(response, ["orders", "items", "results"]));
       } else if (route === "customers") {
         if (typeof api.getBiasharaCustomers !== "function") throw new Error("The customers API helper is missing from useJumuiyaApi.");
-        response = await api.getBiasharaCustomers({ limit: 100, search: query });
+        response = await api.getBiasharaCustomers({ limit: 100, search: query }, { businessId });
         setRows(asArray(response, ["customers", "items", "results"]));
       } else {
         setRows([]);
@@ -432,7 +433,7 @@ export default function BiasharaInternalWorkspace({
     } finally {
       setLoading(false);
     }
-  }, [route, dashboard, api, query]);
+  }, [route, dashboard, api, query, businessId]);
 
   useEffect(() => {
     reload();
@@ -462,7 +463,7 @@ export default function BiasharaInternalWorkspace({
           stock_quantity: Number(form.stock_quantity || 0),
           currency,
           status: "active",
-        });
+        }, { businessId });
         setForm((current) => ({ ...current, name: "", sku: "", category: "", price: "", cost_price: "0", production_type: "resale", stock_quantity: "0" }));
         setNotice("Product created successfully.");
       } else if (route === "services") {
@@ -479,10 +480,10 @@ export default function BiasharaInternalWorkspace({
         };
         if (editingServiceId) {
           if (typeof api.updateBiasharaService !== "function") throw new Error("The business service update API helper is missing.");
-          response = await api.updateBiasharaService(editingServiceId, servicePayload);
+          response = await api.updateBiasharaService(businessId, editingServiceId, servicePayload);
         } else {
           if (typeof api.createBiasharaService !== "function") throw new Error("The business services API helper is missing.");
-          response = await api.createBiasharaService(servicePayload);
+          response = await api.createBiasharaService(servicePayload, { businessId });
         }
         setForm((current) => ({
           ...current,
@@ -498,7 +499,7 @@ export default function BiasharaInternalWorkspace({
         setEditingServiceId("");
       } else if (route === "customers") {
         if (typeof api.createBiasharaCustomer !== "function") throw new Error("The customer creation API helper is missing.");
-        response = await api.createBiasharaCustomer({
+        response = await api.createBiasharaCustomer(businessId, {
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
@@ -507,7 +508,7 @@ export default function BiasharaInternalWorkspace({
         setNotice("Customer saved successfully.");
       } else if (route === "sales") {
         if (typeof api.recordBiasharaSale !== "function") throw new Error("The sales API helper is missing.");
-        response = await api.recordBiasharaSale({
+        response = await api.recordBiasharaSale(businessId, {
           amount: Number(form.amount),
           currency,
           payment_method: form.payment_method,
@@ -600,7 +601,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.deleteBiasharaProduct !== "function") throw new Error("The product delete API helper is unavailable.");
-      await api.deleteBiasharaProduct(id);
+      await api.deleteBiasharaProduct(businessId, id);
       setNotice("Product archived. Existing orders and sales are preserved.");
       await reload();
       await onRefresh?.();
@@ -648,7 +649,7 @@ export default function BiasharaInternalWorkspace({
     setSaving(true); setError(""); setNotice("");
     try {
       if (typeof api.deleteBiasharaService !== "function") throw new Error("The services delete API helper is unavailable.");
-      await api.deleteBiasharaService(id);
+      await api.deleteBiasharaService(businessId, id);
       setNotice("Service archived successfully.");
       await reload();
       await onRefresh?.();
