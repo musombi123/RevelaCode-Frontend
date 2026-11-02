@@ -14,12 +14,10 @@ const COMMUNITY_FEED_AD_SLOT = String(
   import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT_ID || "8625467538",
 ).trim();
 const COMMUNITY_OVERVIEW_AD_SLOT = String(
-  import.meta.env.VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID || "",
+  import.meta.env.VITE_ADSENSE_COMMUNITY_DISPLAY_SLOT_ID || "3949493375",
 ).trim();
 const FAITH_DISPLAY_AD_SLOT = String(
-  import.meta.env.VITE_ADSENSE_FAITH_SLOT ||
-    import.meta.env.VITE_ADSENSE_COMMUNITY_SLOT ||
-    "",
+  import.meta.env.VITE_ADSENSE_FAITH_SLOT || "1404267263",
 ).trim();
 const COMMUNITY_AD_LAYOUT_KEY = String(
   import.meta.env.VITE_ADSENSE_COMMUNITY_LAYOUT_KEY || "-6t+ed+2i-1n-4w",
