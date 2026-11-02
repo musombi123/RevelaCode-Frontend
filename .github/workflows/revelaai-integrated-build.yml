@@ -20,4 +20,5 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run test:auth
+      - run: npm run test:platform-host
       - run: npm run build

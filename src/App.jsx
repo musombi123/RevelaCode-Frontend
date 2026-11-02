@@ -29,6 +29,7 @@ import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
 import PlatformWelcomePage from "./pages/PlatformWelcomePage.jsx";
 import MissionPulse from "./pages/faith/MissionPulse.jsx";
+import { isRevelaCodePlatformHostname } from "./utils/platformHost.mjs";
 
 import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { PreferencesProvider } from "./context/PreferencesContext.jsx";
@@ -167,19 +168,15 @@ function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) 
   );
 }
 function isPlatformHostname() {
-  const hostname = String(window.location.hostname || "").trim().toLowerCase();
   const configured = String(import.meta.env.VITE_PLATFORM_HOSTNAMES || "")
     .split(",")
-    .map((value) => value.trim().toLowerCase())
+    .map((value) => value.trim())
     .filter(Boolean);
-  return (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "revelacode.co.ke" ||
-    hostname === "www.revelacode.co.ke" ||
-    Boolean(resolveRevelaCodeHubHost()) ||
-    hostname.endsWith(".onrender.com") ||
-    configured.includes(hostname)
+
+  return isRevelaCodePlatformHostname(
+    window.location.hostname,
+    configured,
+    Boolean(resolveRevelaCodeHubHost())
   );
 }
 
