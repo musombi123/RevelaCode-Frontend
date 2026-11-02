@@ -585,6 +585,8 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const activeHubKey = activeView;
   const activeHubTitle = activeDashboard?.title || "RevelaCode";
+  const isAndroidHome =
+    import.meta.env.VITE_ANDROID_APP === "true" && activeView === "home";
 
   // Hub dashboards own their workspace headers. Keep the shell header
   // for Home and utility/section screens to avoid stacked header bars.
@@ -1363,24 +1365,11 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           <section
             id="revelacode-dashboard-content"
-            className="
-              min-w-0
-              flex-1
-              overflow-y-auto
-              overscroll-contain
-              bg-slate-100
-              px-3
-              pt-3
-              pb-24
-              dark:bg-slate-950
-              sm:px-4
-              sm:py-4
-              lg:px-6
-              lg:py-6
-              lg:pb-6
-            "
+            className={isAndroidHome
+              ? "min-w-0 flex-1 overflow-hidden bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
+              : "min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
           >
-            {isGuest && (
+            {isGuest && !isAndroidHome && (
               <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-bold">You’re exploring RevelaCode as a guest</p>
