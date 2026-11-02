@@ -23,9 +23,11 @@ import {
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import BiasharaWebsiteBuilder from "@/Dashboard/Biashara/BiasharaWebsiteBuilder.jsx";
 import BiasharaContractsWorkspace from "@/Dashboard/Biashara/BiasharaContractsWorkspace.jsx";
+import BiasharaFactoryWorkspace from "@/Dashboard/Biashara/BiasharaFactoryWorkspace.jsx";
 
 const ROUTES = [
   { key: "products", label: "Products", icon: Package },
+  { key: "factory", label: "Production & Factory", icon: Package },
   { key: "services", label: "Services", icon: Wrench },
   { key: "orders", label: "Orders", icon: ClipboardList },
   { key: "customers", label: "Customers", icon: Users },
@@ -39,6 +41,7 @@ const ROUTES = [
 
 const TITLES = {
   products: ["Products and inventory", "Add, archive and review stock for products sold by your business."],
+  factory: ["Production & Factory Centre", "Manufacturing batches, raw-material usage, wastage, quality and machine performance."],
   services: ["Manage services", "Create and maintain the services this business offers, with business-specific pricing and availability."],
   orders: ["Order management", "Review customer orders and update order status."],
   customers: ["Customer records", "Keep customer contact details in one place."],
@@ -380,7 +383,7 @@ export default function BiasharaInternalWorkspace({
   const reload = useCallback(async () => {
     setError("");
 
-    if (route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
+    if (route === "factory" || route === "business-profile" || route === "website" || route === "biashara-analytics" || route === "biashara-intelligence" || route === "notifications") {
       setRows([]);
       setLoading(false);
       return;
@@ -685,6 +688,10 @@ export default function BiasharaInternalWorkspace({
 
   if (["finance", "automations", "sync", "team", "business-switch"].includes(route)) {
     return <BiasharaContractsWorkspace route={route} business={business} onRefresh={onRefresh} />;
+  }
+
+  if (route === "factory") {
+    return <BiasharaFactoryWorkspace business={business} onRefresh={onRefresh} />;
   }
 
   return (
