@@ -912,6 +912,20 @@ export function useJumuiyaApi() {
       getBiasharaFactoryAlerts: (businessId) => getData("/biashara/factory/alerts", { businessId }),
 
       // ===================================================
+      // BIASHARA — HR AND ATTENDANCE
+      // ===================================================
+
+      getBiasharaEmployees: (businessId) => getData("/biashara/hr/employees", { businessId }),
+      createBiasharaEmployee: (businessId, data) => postData("/biashara/hr/employees", data, { businessId }),
+      updateBiasharaEmployee: (businessId, employeeId, data) =>
+        patchData(`/biashara/hr/employees/${encodeId(employeeId, "Employee ID")}`, data, { businessId }),
+      getBiasharaAttendance: (businessId, params = {}) =>
+        getData(withQuery("/biashara/hr/attendance", params), { businessId }),
+      getBiasharaMyAttendance: (businessId) => getData("/biashara/hr/attendance/me", { businessId }),
+      clockInBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-in", data, { businessId }),
+      clockOutBiashara: (businessId, data = {}) => postData("/biashara/hr/attendance/clock-out", data, { businessId }),
+
+      // ===================================================
       // SHAMBA — HEALTH AND FARMER
       // ===================================================
 
