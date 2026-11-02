@@ -25,9 +25,9 @@ if (
   document.head.appendChild(adSenseScript);
 }
 
-// Native Android already ships its application shell inside the APK. Do not make
-// app launch depend on Service Worker installation, Cache Storage, or bulk study
-// downloads: older Android WebViews can stall on those APIs during first launch.
+// Native Android already ships its application shell inside the APK. Keep
+// Service Worker installation and shell-cache operations off the launch-critical
+// path; optional study data is warmed later, after the first screen is available.
 if (typeof window !== "undefined") {
   if (Capacitor.isNativePlatform()) {
     // Remove only this app's old web shell worker/cache left by earlier APK builds.
@@ -49,6 +49,45 @@ if (typeof window !== "undefined") {
           .filter((key) => key.startsWith("revelacode-app-shell-"))
           .map((key) => window.caches.delete(key))))
         .catch(() => {});
+    }
+
+    // Begin optional offline-data caching only after the APK's first screen has
+    // had time to render. Never wait for these downloads before mounting React.
+    const scheduleAndroidOfflineWarmup = () => {
+      let started = false;
+      const runWarmup = () => {
+        if (started) return;
+        started = true;
+        if (navigator.onLine === false) return;
+
+        Promise.resolve()
+          .then(() => warmFaithStudyCache())
+          .then((faithResult) => warmCrossReferenceDataset()
+            .then((referenceResult) => ({ faithResult, referenceResult })))
+          .then(({ faithResult, referenceResult }) => {
+            console.info("[RevelaCode offline] Android background cache warm-up finished.", {
+              faith: faithResult?.source || "unavailable",
+              faithMaterials: faithResult?.count || 0,
+              crossReferences: referenceResult?.source || "unavailable",
+              crossReferenceCount: referenceResult?.count || 0,
+            });
+          })
+          .catch((error) => {
+            console.warn("[RevelaCode offline] Android background cache warm-up was skipped.", error);
+          });
+      };
+
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(runWarmup, { timeout: 12000 });
+      } else {
+        window.setTimeout(runWarmup, 5000);
+      }
+    };
+
+    if (document.readyState === "complete") {
+      scheduleAndroidOfflineWarmup();
+    } else {
+      window.addEventListener("load", scheduleAndroidOfflineWarmup, { once: true });
     }
   } else {
     // Keep web offline support, but run heavy prefetch work only after first paint,
