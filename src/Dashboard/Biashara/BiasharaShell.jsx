@@ -11,6 +11,7 @@ const PRIMARY_NAV = [
   { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
   { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
   { key: "factory", label: "Production & Factory", route: "factory", icon: Package, available: true },
+  { key: "hr", label: "HR & Attendance", route: "hr", icon: Users, available: true },
   { key: "services", label: "Manage services", route: "services", icon: Wrench, available: true },
   { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
   { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
@@ -79,7 +80,11 @@ export default function BiasharaShell({ business, activeSection = "overview", on
   const simpleMode = business?.workspace_mode === "simple" ||
     (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
   const factoryEnabled = String(business?.industry_template || "").toLowerCase() === "factory";
-  const configuredNav = PRIMARY_NAV.filter((item) => item.key !== "factory" || factoryEnabled);
+  const industryTemplate = String(business?.industry_template || "").toLowerCase();
+  const hrEnabled = ["factory", "salon", "professional_services", "general"].includes(industryTemplate);
+  const configuredNav = PRIMARY_NAV.filter((item) =>
+    (item.key !== "factory" || factoryEnabled) && (item.key !== "hr" || hrEnabled)
+  );
   const primaryNav = simpleMode
     ? configuredNav.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
     : configuredNav;
