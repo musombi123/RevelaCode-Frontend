@@ -941,7 +941,7 @@ export default function FaithDashboard({
       </section>
 
       {/* Clearly labelled sponsored placement; study access never depends on ad clicks. */}
-      <CommunityAdSenseUnit />
+      <CommunityAdSenseUnit placement="faith-overview" />
 
       {/* =====================================================
           STUDY QUICK ACCESS
