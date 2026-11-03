@@ -646,7 +646,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
       });
 
   const navigationGroupSpecs = [
-    { key: "start", label: "Start", keys: ["home"] },
+    { key: "start", label: "Start", keys: ["home", "ai"] },
     { key: "learn", label: "Learn & Security", keys: ["faith", "education", "security-academy"] },
     { key: "grow", label: "Work & Grow", keys: ["biashara", "shamba"] },
     { key: "community", label: "Community & Services", keys: ["community", "payments"] },
