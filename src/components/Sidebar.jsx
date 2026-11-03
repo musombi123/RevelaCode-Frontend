@@ -15,7 +15,6 @@ import {
   Info,
   Mic,
   Camera,
-  CreditCard,
   WifiOff,
 } from "lucide-react";
 
@@ -44,7 +43,6 @@ export default function Sidebar({
   onSelectChat,
   onDeleteChat,
   onRenameChat, // (chatId, title, { manual: boolean }) => void
-  onOpenPlans,
   onOpenVoice,
   onOpenVision,
   onOpenIdentity,
@@ -243,15 +241,7 @@ export default function Sidebar({
               <Camera size={15} className="shrink-0 text-sky-300" />
               <span className="truncate">Vision</span>
             </button>
-            <button
-              type="button"
-              onClick={() => { onOpenPlans?.(); setOpen(false); }}
-              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-amber-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-              title="View free trial and available plans"
-            >
-              <CreditCard size={15} className="shrink-0 text-amber-300" />
-              <span className="truncate">Plans</span>
-            </button>
+
           </div>
 
           <button
