@@ -109,7 +109,7 @@ test("required stable tour targets exist in the real application surfaces", () =
     elimu: read("src/Dashboard/ElimuDashboardWorkspace.jsx") + read("src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx"),
     faith: read("src/components/FaithDashboard.jsx") + read("src/components/study/StudyLibrary.jsx"),
     community: read("src/Dashboard/CommunityDashboard.jsx") + read("src/Dashboard/Community/CommunityComposer.jsx"),
-    ai: read("src/components/AIAssistantDashboard.jsx"),
+    ai: read("src/components/AIAssistantDashboard.jsx") + read("src/components/InputBar.jsx"),
     account: read("src/components/UserAccountDashboard.jsx"),
   };
 
