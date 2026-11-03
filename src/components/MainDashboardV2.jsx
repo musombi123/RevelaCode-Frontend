@@ -1443,7 +1443,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
-          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && (
+          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && (
             <>
               {mobileCategoryOpen ? (
                 <section
