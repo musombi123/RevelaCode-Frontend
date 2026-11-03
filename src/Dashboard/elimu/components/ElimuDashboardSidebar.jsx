@@ -608,6 +608,7 @@ export default function ElimuDashboardSidebar({
                       onClick={() =>
                         handleNavigate(item.path)
                       }
+                      data-demo={"elimu-nav-" + item.id}
                       aria-current={
                         active ? "page" : undefined
                       }
