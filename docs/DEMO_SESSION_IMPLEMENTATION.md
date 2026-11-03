@@ -96,7 +96,7 @@ While `state.active` is true:
 - XMLHttpRequest is guarded for Axios' browser XHR adapter; fetch is guarded directly.
 - sendBeacon is blocked unless it targets a recognised analytics provider or an explicit analytics endpoint on a first-party RevelaCode service.
 - Analytics calls go through `trackDemo()`; it is a no-op unless a compatible analytics adapter is configured.
-- Progress and language preference use localStorage inside try/catch. The demo works offline because the script and fixtures are bundled.
+- Progress and language preference use localStorage inside try/catch. The demo works offline because the script and fixtures are bundled. Read-aloud uses a matching sw-KE/en-KE voice (or language-region match) when installed; otherwise it remains silent rather than switching to an unrelated voice.
 
 Do not add a direct payment SDK/network call to a demo action. Keep payment and business writes behind the existing API gateway so the demo guard can simulate them.
 
