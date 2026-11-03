@@ -366,6 +366,14 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   }, [screen, stopCamera]);
 
   useEffect(() => {
+    setDiagnosticFile(null);
+    setDiagnosticResult(null);
+    setDiagnosticSaved(false);
+    setDiagnosticError("");
+    stopCamera();
+  }, [diagnosticMode, stopCamera]);
+
+  useEffect(() => {
     if (!currentFarmId || !farmVerified) {
       setSoilTests([]);
       return undefined;
@@ -450,10 +458,6 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const runDiagnostic = useCallback(async () => {
     if (!diagnosticFile) {
       setDiagnosticError("Capture or upload a clear photo first.");
-      return;
-    }
-    if (!farmVerified && currentFarmId) {
-      setDiagnosticError("This farm's separate rights review is not verified. Complete the review before running farm-linked AI diagnostics.");
       return;
     }
     setDiagnosticBusy(true);
