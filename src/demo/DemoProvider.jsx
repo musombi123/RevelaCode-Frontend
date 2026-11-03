@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { setDemoApiActive, trackDemo } from "./demoApi.js";
 
 const STORAGE_KEY = "revelacode_demo_progress_v1";
@@ -38,7 +38,7 @@ export function DemoProvider({ children, chapters = [] }) {
     return next;
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!state.active) return undefined;
     const release = setDemoApiActive(true);
     return release;
@@ -53,6 +53,7 @@ export function DemoProvider({ children, chapters = [] }) {
     const stepIndex = resume ? current.stepIndex : 0;
     commit({ ...current, active: true, chapterId, stepIndex });
     trackDemo("demo_started", { chapter_id: chapterId, resumed: resume });
+    trackDemo("step_viewed", { chapter_id: chapterId, step_index: stepIndex });
   }, [commit]);
 
   const next = useCallback(() => {
