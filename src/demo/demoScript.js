@@ -11,12 +11,12 @@ const CURATED = {
     whoFor: bi("For anyone exploring the ecosystem for the first time.", "Kwa mtu yeyote anayeanza kuchunguza mfumo huu."),
     benefits: [
       bi("Explore safely before creating an account.", "Chunguza kwa usalama kabla ya kufungua akaunti."),
-      bi("Use one identity across connected hubs.", "Tumia utambulisho mmoja katika vitovu vyote."),
+      bi("Use one identity across connected hubs.", "Tumia utambulisho mmoja katika vitovu vilivyounganishwa."),
       bi("Choose guest access or register when ready.", "Chagua kuingia kama mgeni au kujisajili ukiwa tayari."),
     ],
     steps: [
-      step("welcome-entry", "welcome", "Start with one choice", "Anza kwa kuchagua", "Sign in, create an account, or explore first as a guest.", "Ingia, fungua akaunti, au anza kwa kuchunguza kama mgeni."),
-      step("welcome-guest", "welcome", "Explore as a guest", "Chunguza kama mgeni", "Choose Continue as guest. You can create your account later.", "Chagua Endelea kama mgeni. Unaweza kufungua akaunti baadaye.", "click"),
+      step("welcome-entry", "welcome", "Choose how to begin", "Chagua jinsi ya kuanza", "Sign in, create an account, or explore first as a guest.", "Ingia, fungua akaunti, au anza kwa kuchunguza kama mgeni."),
+      step("welcome-guest", "welcome", "Explore as a guest", "Chunguza kama mgeni", "Choose Continue as guest. This tour uses sample data only.", "Chagua Endelea kama mgeni. Ziara hii hutumia data za mfano pekee.", "click"),
       step("home-welcome", "home", "Meet your home hub", "Fahamu kitovu cha nyumbani", "Your home brings the connected workspaces together in one place.", "Ukurasa wa nyumbani unaunganisha vitovu vyako vyote sehemu moja."),
     ],
     challenge: bi("Find the hub you would use most often.", "Tafuta kitovu utakachotumia mara nyingi."),
@@ -48,10 +48,12 @@ const CURATED = {
     ],
     steps: [
       step("biashara-overview", "biashara", "Your business overview", "Muhtasari wa biashara", "See your business identity, live figures and stock alerts together.", "Ona utambulisho wa biashara, takwimu na tahadhari za bidhaa pamoja."),
-      step("biashara-nav-orders", "biashara", "Open customer orders", "Fungua oda za wateja", "Tap Orders to review new requests and follow their progress.", "Gusa Oda kukagua maombi mapya na kufuatilia hatua zake.", "click"),
-      step("biashara-orders-workspace", "biashara", "Review an order", "Kagua oda", "Check the customer, items, amount and status before fulfilling an order.", "Kagua mteja, bidhaa, kiasi na hali kabla ya kutimiza oda."),
+      step("biashara-more-menu-btn", "biashara", "Find more business tools", "Tafuta zana zaidi za biashara", "Open More to find Products, Finance, Team and other operations.", "Fungua Zaidi kupata Bidhaa, Fedha, Timu na shughuli nyingine.", "click"),
+      step("biashara-nav-products", "biashara", "Open Products and stock", "Fungua Bidhaa na stoo", "Choose Products to review stock and add an item to your catalogue.", "Chagua Bidhaa kukagua stoo na kuongeza bidhaa kwenye orodha.", "click"),
+      step("biashara-product-name", "biashara", "Name a sample product", "Weka jina la bidhaa ya mfano", "Enter the sample name below. It will fill the product form without saving yet.", "Weka jina la mfano hapa chini. Litajaza fomu bila kuhifadhi bado.", "type", "Demo maize flour"),
+      step("biashara-create-product", "biashara", "Try creating the product", "Jaribu kuunda bidhaa", "Tap Create product. Demo mode simulates the request and saves nothing.", "Gusa Unda bidhaa. Hali ya onyesho huiga ombi bila kuhifadhi chochote.", "click"),
     ],
-    challenge: bi("Find Products and identify where low stock is reviewed.", "Tafuta Bidhaa na mahali pa kukagua bidhaa zinazopungua."),
+    challenge: bi("Find Orders and check which orders need attention.", "Tafuta Oda na uangalie oda zinazohitaji kushughulikiwa."),
   },
   shamba: {
     id: "shamba", registryKey: "shamba", icon: "sprout", title: bi("Shamba", "Shamba"),
@@ -80,9 +82,10 @@ const CURATED = {
     ],
     steps: [
       step("elimu-overview", "education", "Your school workspace", "Nafasi ya kazi ya shule", "The dashboard adapts to your school role and permissions.", "Dashibodi hubadilika kulingana na jukumu na ruhusa zako shuleni."),
-      step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website to review the school's public pages and information.", "Chagua Tovuti ya Umma kukagua kurasa na taarifa za shule.", "click"),
-      step("elimu-school-pages", "education", "Review your school profile", "Kagua wasifu wa shule", "Open School profile to check the school's public identity and details.", "Fungua Wasifu wa Shule kukagua utambulisho na taarifa za shule."),
+      step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website to review the school's public information.", "Chagua Tovuti ya Umma kukagua taarifa za shule.", "click"),
+      step("elimu-school-pages", "education", "Review your school pages", "Kagua kurasa za shule", "Check the school identity, public information and family-facing pages.", "Kagua utambulisho wa shule, taarifa za umma na kurasa za wazazi."),
       step("elimu-nav-students", "education", "Open learner records", "Fungua kumbukumbu za wanafunzi", "Choose Students to see where enrolment and learner records are managed.", "Chagua Wanafunzi kuona mahali pa kusimamia usajili na taarifa zao.", "click"),
+      step("elimu-student-records", "education", "Review learner management", "Kagua usimamizi wa wanafunzi", "Student records are protected by your school role and permissions.", "Kumbukumbu za wanafunzi zinalindwa na jukumu na ruhusa zako shuleni."),
     ],
     challenge: bi("Find the module your school role uses most.", "Tafuta sehemu inayotumiwa zaidi na jukumu lako shuleni."),
   },
@@ -114,8 +117,8 @@ const CURATED = {
     steps: [
       step("community-overview", "community", "Your community feed", "Mtiririko wa jamii yako", "Browse updates, groups and useful local conversations.", "Vinjari taarifa, vikundi na mazungumzo muhimu ya eneo lako."),
       step("community-create-post", "community", "Start a post", "Anzisha chapisho", "Tap Create post to open the composer. Demo mode blocks publishing.", "Gusa Tengeneza chapisho kufungua sehemu ya kuandika. Hali ya onyesho huzuia uchapishaji.", "click"),
-      step("community-composer", "community", "Write a useful update", "Andika taarifa muhimu", "Add a short message, then close the composer without publishing.", "Ongeza ujumbe mfupi, kisha funga bila kuchapisha."),
-      step("community-chat-nav", "community", "Find community chats", "Tafuta mazungumzo ya jamii", "Open Chats to see where private and group conversations live, then continue when ready.", "Fungua Gumzo kuona mahali pa mazungumzo binafsi na ya vikundi, kisha endelea ukiwa tayari.", "none"),
+      step("community-composer-title", "community", "Write a sample title", "Andika kichwa cha mfano", "Enter a short title below. It fills the draft but does not publish it.", "Weka kichwa kifupi hapa chini. Hujaza rasimu bila kuichapisha.", "type", "A useful community update"),
+      step("community-chat-nav", "community", "Open Jumuiya chat", "Fungua gumzo la Jumuiya", "Open Chats to find private messages and group conversations.", "Fungua Gumzo kupata ujumbe binafsi na mazungumzo ya vikundi.", "click"),
     ],
     challenge: bi("Find a group or person you would like to connect with.", "Tafuta kikundi au mtu unayetaka kuungana naye."),
   },
@@ -130,8 +133,8 @@ const CURATED = {
     ],
     steps: [
       step("ai-overview", "ai", "Meet your assistant", "Kutana na msaidizi wako", "RevelaAI can help with questions across the connected workspaces.", "RevelaAI inaweza kusaidia maswali katika vitovu vilivyounganishwa."),
-      step("ai-chat-input", "ai", "Ask a simple question", "Uliza swali rahisi", "Type: Show me three ways to improve my work today.", "Andika: Nionyeshe njia tatu za kuboresha kazi yangu leo.", "type", "Show me three ways to improve my work today."),
-      step("ai-vision-tools", "ai", "Explore voice and vision", "Chunguza sauti na picha", "Try the voice or camera controls, then return here to continue the tour.", "Jaribu vitufe vya sauti au kamera, kisha rudi hapa kuendelea na ziara.", "none"),
+      step("ai-chat-input", "ai", "Ask a simple question", "Uliza swali rahisi", "Type the sample question below to see the message field in action.", "Andika swali la mfano hapa chini kuona jinsi sehemu ya ujumbe inavyofanya kazi.", "type", "Show me three ways to improve my work today."),
+      step("ai-vision-tools", "ai", "Explore voice and vision", "Chunguza sauti na picha", "Use voice or camera controls to explore other ways to communicate.", "Tumia vitufe vya sauti au kamera kuchunguza njia nyingine za kuwasiliana."),
     ],
     challenge: bi("Ask RevelaAI for one practical next step in your chosen hub.", "Uliza RevelaAI hatua moja ya vitendo kwa kitovu unachochagua."),
   },
@@ -148,10 +151,10 @@ const CURATED = {
       step("account-overview", "profile", "Your Account Center", "Kituo chako cha Akaunti", "Your personal tools are grouped in one account workspace.", "Zana zako binafsi zimepangwa katika nafasi moja ya akaunti."),
       step("account-menu-profile", "profile", "Review your profile", "Kagua wasifu wako", "Open Profile to check your personal information and account identity.", "Fungua Wasifu kukagua taarifa binafsi na utambulisho wa akaunti.", "click"),
       step("account-menu-payments", "profile", "Find payments and wallet", "Tafuta malipo na pochi", "Open Payments to review the wallet and transaction area.", "Fungua Malipo kukagua pochi na sehemu ya miamala.", "click"),
-      step("account-menu-accounts", "profile", "Check account security", "Kagua usalama wa akaunti", "Open Account & Security to review password and sign-in protection options.", "Fungua Akaunti na Usalama kukagua nenosiri na ulinzi wa kuingia.", "click"),
-      step("account-menu-help", "profile", "Find help and notifications", "Tafuta msaada na arifa", "Use Help for support and Notifications for important account updates.", "Tumia Msaada kupata huduma na Arifa kuona taarifa muhimu."),
+      step("account-menu-accounts", "profile", "Check account security", "Kagua usalama wa akaunti", "Open Account and Security to review sign-in protection options.", "Fungua Akaunti na Usalama kukagua njia za kulinda kuingia.", "click"),
+      step("account-menu-help", "profile", "Find help and notifications", "Tafuta msaada na arifa", "Open Help for support. Notifications are listed in the same Account Center menu.", "Fungua Msaada kupata huduma. Arifa zimo kwenye menyu hiyo hiyo ya Akaunti.", "click"),
     ],
-    challenge: bi("Find the help section and locate the support contact.", "Tafuta sehemu ya msaada na mawasiliano ya huduma."),
+    challenge: bi("Find the notifications area and locate the support contact in Help.", "Tafuta sehemu ya arifa na mawasiliano ya huduma kwenye Msaada."),
   },
 };
 
@@ -169,32 +172,43 @@ const FINISH = {
 };
 
 const CORE_ORDER = ["biashara", "shamba", "education", "faith", "community"];
-const RESERVED = new Set(["home", "biashara", "shamba", "education", "faith", "community", "ai", "profile", "settings", "accounts", "payments"]);
+const RESERVED = new Set([
+  "home", "biashara", "shamba", "education", "faith", "community",
+  "ai", "profile", "settings", "accounts", "payments", "bible", "prophecy",
+  "events", "referential", "notifications",
+]);
 
 function generatedChapter(entry, homeHub = false) {
   const key = String(entry?.key || entry?.id || "").trim();
   const label = String(entry?.title || entry?.label || key || "Workspace");
-  const fallback = {
-    id: key, registryKey: key, icon: "layers",
+  if (!key) return null;
+  const benefits = [
+    bi("Keep related work in one place.", "Weka kazi zinazohusiana sehemu moja."),
+    bi("Use the tools available to your role.", "Tumia zana zinazoruhusiwa kwa jukumu lako."),
+    bi("Return to this workspace whenever you need it.", "Rudi kwenye kitovu hiki unapokihitaji."),
+  ];
+  return {
+    id: key,
+    registryKey: key,
+    icon: "layers",
     title: bi(label, label),
     summary: bi("Explore this connected RevelaCode workspace and its main tools.", "Chunguza kitovu hiki cha RevelaCode na zana zake kuu."),
     whoFor: bi("For people whose work or interests match this workspace.", "Kwa watu ambao kazi au maslahi yao yanaendana na kitovu hiki."),
-    benefits: [
-      bi("Keep related work in one place.", "Weka kazi zinazohusiana sehemu moja."),
-      bi("Use the tools available to your role.", "Tumia zana zinazoruhusiwa kwa jukumu lako."),
-      bi("Return to this workspace whenever you need it.", "Rudi kwenye kitovu hiki unapokihitaji."),
-    ],
-    steps: [
-      step("home-welcome", key, "Open the workspace", "Fungua kitovu", "Start from the workspace overview and look for its main tools.", "Anza kwenye muhtasari na utafute zana kuu."),
-      step("home-hubs", key, "Find a main tool", "Tafuta zana kuu", "Choose one tool that matches the task you want to complete.", "Chagua zana inayolingana na kazi unayotaka kufanya."),
-      step("home-welcome", key, "Review the next step", "Kagua hatua inayofuata", "Use the workspace navigation to continue safely.", "Tumia urambazaji wa kitovu kuendelea kwa usalama."),
-    ],
+    benefits,
+    steps: homeHub
+      ? [
+          step("home-hub-" + key, "home", "Find this workspace", "Tafuta kitovu hiki", "Open this hub card to enter its workspace.", "Fungua kadi hii kuingia kwenye kitovu.", "click"),
+          step(null, key, "Explore the main tools", "Chunguza zana kuu", "Look through the workspace and find the tool you need most.", "Chunguza kitovu na utafute zana unayohitaji zaidi."),
+          step(null, key, "Choose a next action", "Chagua hatua inayofuata", "Use the workspace navigation to continue with a task.", "Tumia urambazaji wa kitovu kuendelea na kazi."),
+        ]
+      : [
+          step(null, key, "Open the workspace", "Fungua kitovu", "Start from the workspace overview and look for its main tools.", "Anza kwenye muhtasari na utafute zana kuu."),
+          step(null, key, "Find a main tool", "Tafuta zana kuu", "Choose one tool that matches the task you want to complete.", "Chagua zana inayolingana na kazi unayotaka kufanya."),
+          step(null, key, "Review the next step", "Kagua hatua inayofuata", "Use the workspace navigation to continue safely.", "Tumia urambazaji wa kitovu kuendelea kwa usalama."),
+        ],
     challenge: bi("Choose one task you want to try in this workspace.", "Chagua kazi moja unayotaka kujaribu katika kitovu hiki."),
     generated: true,
   };
-  if (!key) return null;
-  if (homeHub) return { ...fallback, id: key, title: bi(label, label) };
-  return fallback;
 }
 
 export function buildDemoChapters(homeHubs = [], dashboards = []) {
@@ -202,7 +216,14 @@ export function buildDemoChapters(homeHubs = [], dashboards = []) {
   const dashboardByKey = new Map(dashboards.map((item) => [String(item?.key || ""), item]));
   const hubIds = CORE_ORDER.filter((key) => homeKeys.has(key) || dashboardByKey.has(key));
   const chapters = [CURATED.welcome, CURATED.home];
-  hubIds.forEach((key) => chapters.push(CURATED[key]));
+  hubIds.forEach((key) => {
+    const curated = CURATED[key];
+    const dashboard = dashboardByKey.get(key);
+    const homeHub = homeHubs.find((hub) => hub?.key === key);
+    if (curated) chapters.push(curated);
+    else if (homeHub || dashboard) chapters.push(generatedChapter(homeHub || dashboard, Boolean(homeHub)));
+  });
+
   const extras = [];
   homeHubs.forEach((hub) => {
     const key = String(hub?.key || "");
@@ -210,10 +231,11 @@ export function buildDemoChapters(homeHubs = [], dashboards = []) {
   });
   dashboards.forEach((dashboard) => {
     const key = String(dashboard?.key || "");
-    if (!key || RESERVED.has(key) || dashboard.hidden) return;
-    if (!extras.some((item) => item?.id === key)) extras.push(generatedChapter(dashboard, false));
+    if (!key || RESERVED.has(key) || dashboard.hidden || extras.some((item) => item?.id === key)) return;
+    extras.push(generatedChapter(dashboard, false));
   });
-  chapters.push(...extras.filter(Boolean), CURATED.ai, CURATED.account, FINISH);
+
+  chapters.push(CURATED.ai, CURATED.account, ...extras.filter(Boolean), FINISH);
   return chapters;
 }
 
