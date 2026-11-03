@@ -2,6 +2,7 @@ import { getDemoPayload } from "./mockData.js";
 
 let guardUsers = 0;
 let originalFetch = null;
+let originalSendBeacon = null;
 let originalXhrOpen = null;
 let originalXhrSend = null;
 let patchedXhrPrototype = null;
@@ -41,11 +42,11 @@ function makeFetchResponse(payload) {
 
 function installFetchGuard() {
   if (typeof window === "undefined" || typeof window.fetch !== "function" || originalFetch) return;
-  originalFetch = window.fetch.bind(window);
+  originalFetch = window.fetch;
   window.fetch = async function demoSafeFetch(input, init = {}) {
     const url = typeof input === "string" || input instanceof URL ? String(input) : input?.url || "";
     const method = String(init?.method || input?.method || "GET").toUpperCase();
-    if (guardUsers > 0 && (isWriteMethod(method) || (method === "GET" && isApiUrl(url)))) {
+    if (guardUsers > 0 && (isWriteMethod(method) || (["GET", "HEAD"].includes(method) && isApiUrl(url)))) {
       const body = init?.body ?? null;
       return makeFetchResponse(getDemoPayload(url, method, body));
     }
@@ -110,11 +111,26 @@ function installXhrGuard() {
   };
 }
 
+function installBeaconGuard() {
+  if (typeof navigator === "undefined" || typeof navigator.sendBeacon !== "function" || originalSendBeacon) return;
+  originalSendBeacon = navigator.sendBeacon;
+  navigator.sendBeacon = function demoSafeBeacon() {
+    // sendBeacon is POST-only; while the tour is active, acknowledge but never send it.
+    if (guardUsers > 0) return true;
+    return originalSendBeacon.apply(this, arguments);
+  };
+}
+
 function restoreNetworkGuard() {
   if (originalFetch && typeof window !== "undefined") {
     window.fetch = originalFetch;
   }
   originalFetch = null;
+
+  if (originalSendBeacon && typeof navigator !== "undefined") {
+    navigator.sendBeacon = originalSendBeacon;
+  }
+  originalSendBeacon = null;
 
   if (patchedXhrPrototype) {
     patchedXhrPrototype.open = originalXhrOpen;
@@ -131,6 +147,7 @@ export function setDemoApiActive(active) {
     guardUsers += 1;
     installFetchGuard();
     installXhrGuard();
+    installBeaconGuard();
     let released = false;
     return () => {
       if (released) return;
