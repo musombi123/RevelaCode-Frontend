@@ -704,6 +704,7 @@ function DesktopNavItem({ item, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
+      data-demo={"shamba-nav-" + item.key}
       aria-current={active ? "page" : undefined}
       className={"group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition " + (active ? "bg-[#E6F4E9] text-[#123D2F] shadow-sm" : "text-[#D3E5D9] hover:bg-white/10 hover:text-white")}
 
@@ -733,6 +734,7 @@ function MobileNavItem({ item, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
+      data-demo={"shamba-nav-" + item.key}
       aria-current={active ? "page" : undefined}
       className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition ${
         active ? "text-[#087F5B]" : "text-slate-400"
@@ -1039,7 +1041,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         />
       </div>
       <div className="hidden min-[1200px]:block">
-    <div className="shamba-workspace isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
+    <div data-demo="shamba-overview" className="shamba-workspace isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
       <div className="mx-auto flex w-full min-w-0 max-w-none">
         {/* ==================================================
             DESKTOP SIDEBAR
@@ -1325,7 +1327,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
               ACTIVE DASHBOARD
           ================================================== */}
 
-          <div className="px-4 pt-5 sm:px-6 min-[1200px]:px-8 min-[1200px]:pt-6">
+          <div data-demo={activeSection === "farms" ? "shamba-farms-screen" : undefined} className="px-4 pt-5 sm:px-6 min-[1200px]:px-8 min-[1200px]:pt-6">
             <Suspense
               fallback={
                 <div className="rounded-2xl border border-[#DCE5E1] bg-white p-8 shadow-sm">
