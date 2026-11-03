@@ -59,6 +59,9 @@
 .rc-demo-eyebrow { color: #047857; font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 900; }
 .rc-demo-copy h2, .rc-demo-finish-content h2 { margin-top: 5px; color: #0f172a; font-size: clamp(1.2rem,3vw,1.5rem); line-height: 1.2; font-weight: 900; }
 .rc-demo-copy p:not(.rc-demo-eyebrow), .rc-demo-finish-content > p:not(.rc-demo-eyebrow) { margin-top: 8px; color: #334155; font-size: .95rem; line-height: 1.55; }
+.rc-demo-copy .rc-demo-summary { margin-top: 5px; color: #475569; font-size: .78rem; line-height: 1.45; }
+.rc-demo-copy .rc-demo-who-for { margin-top: 8px; border-left: 3px solid #0ea5e9; padding: 6px 9px; color: #1e293b; background: #eff6ff; font-size: .76rem; line-height: 1.4; }
+.rc-demo-copy .rc-demo-who-for strong { color: #075985; }
 .rc-demo-missing { margin-top: 10px; border-radius: 12px; background: #f1f5f9; padding: 9px 11px; color: #334155 !important; font-size: .8rem !important; }
 .rc-demo-benefits { margin-top: 8px; padding: 12px; border-radius: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; }
 .rc-demo-benefits h3, .rc-demo-rating h3 { color: #065f46; font-size: .83rem; font-weight: 900; }
