@@ -1,4 +1,5 @@
 import React from "react";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -188,6 +189,7 @@ export default function ElimuDashboardHeader({
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <PremiumPlansStar />
               {showSchoolProfileAction ? (
                 <button
                   type="button"
