@@ -147,11 +147,11 @@ const CURATED = {
       bi("Manage security, notifications and support.", "Simamia usalama, arifa na msaada."),
     ],
     steps: [
-      step("account-overview", "profile", "Your Account Center", "Kituo chako cha Akaunti", "Your personal tools are grouped in one account workspace.", "Zana zako binafsi zimepangwa katika nafasi moja ya akaunti."),
       step("account-menu-profile", "profile", "Review your profile", "Kagua wasifu wako", "Open Profile to check your personal information and account identity.", "Fungua Wasifu kukagua taarifa binafsi na utambulisho wa akaunti.", "click"),
       step("account-menu-payments", "profile", "Find payments and wallet", "Tafuta malipo na pochi", "Open Payments to review the wallet and transaction area.", "Fungua Malipo kukagua pochi na sehemu ya miamala.", "click"),
       step("account-menu-accounts", "profile", "Check account security", "Kagua usalama wa akaunti", "Open Account and Security to review sign-in protection options.", "Fungua Akaunti na Usalama kukagua njia za kulinda kuingia.", "click"),
-      step("account-menu-notifications", "profile", "Find your notifications", "Tafuta arifa zako", "Open Notifications for account updates. Help is in this menu when you need support.", "Fungua Arifa kupata taarifa za akaunti. Msaada uko kwenye menyu hii unapouhitaji.", "click"),
+      step("account-menu-notifications", "profile", "Find your notifications", "Tafuta arifa zako", "Open Notifications for important account updates and reminders.", "Fungua Arifa kupata taarifa na vikumbusho muhimu vya akaunti.", "click"),
+      step("account-menu-help", "profile", "Find help and support", "Tafuta msaada", "Open Help for guides, documentation and the support contact. Notifications are just above it.", "Fungua Msaada kwa miongozo, nyaraka na mawasiliano ya huduma. Arifa ziko juu yake.", "click"),
     ],
     challenge: bi("Open Help and find the support contact for your account.", "Fungua Msaada na utafute mawasiliano ya huduma ya akaunti yako."),
   },
