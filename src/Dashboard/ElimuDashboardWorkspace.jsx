@@ -1438,6 +1438,7 @@ export default function ElimuDashboardWorkspace({
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
+                  data-demo="elimu-open-nav"
                   onClick={() => setMobileSidebarOpen(true)}
                   aria-label="Open navigation menu"
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
