@@ -11,6 +11,7 @@ import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 const FARM_PHOTO = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85";
 const ShambaFarmSetup = lazy(() => import("@/Dashboard/ShambaFarmsDashboard.jsx"));
+const ShambaTrustWorkspace = lazy(() => import("@/Dashboard/ShambaTrustDashboard.jsx"));
 const PANEL = "rounded-2xl border border-[#17384F] bg-[#0A2237]";
 const MUTED = "text-[#8BA6B8]";
 const ACTION = "bg-[#20C987] text-[#05251E]";
@@ -489,7 +490,12 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                 {[...activities, ...harvests].sort((a, b) => new Date(recordDate(b) || 0).getTime() - new Date(recordDate(a) || 0).getTime()).slice(0, 12).map((item, index) => <div key={getId(item) || index} className="flex items-center gap-2 border-b border-[#17384F] py-2 last:border-0"><Clock size={14} className="text-[#48D89A]"/><span className="min-w-0 flex-1 truncate text-[11px] text-white">{item?.type || item?.activity_type || item?.name || "Farm record"}</span><span className={"text-[9px] " + MUTED}>{dateLabel(recordDate(item))}</span></div>)}
                 {!activities.length && !harvests.length && <p className={"mt-2 text-[11px] " + MUTED}>No farm history records returned.</p>}
               </div>}
-              <button type="button" onClick={() => go("weather")} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold " + ACTION}><MapPin size={15}/>View Farm Weather</button>
+              <button type="button" onClick={() => {
+                const lat = num(first(farmDetail?.latitude, farmDetail?.lat, selectedFarm?.latitude, selectedFarm?.lat));
+                const lng = num(first(farmDetail?.longitude, farmDetail?.lng, selectedFarm?.longitude, selectedFarm?.lng));
+                const query = lat !== null && lng !== null ? lat + "," + lng : [farmDetail?.name || selectedFarm?.name, farmLocation(farmDetail || selectedFarm)].filter(Boolean).join(", ");
+                if (typeof window !== "undefined") window.open("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query), "_blank", "noopener,noreferrer");
+              }} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold " + ACTION}><MapPin size={15}/>View Farm Map</button>
             </>}
             {!selectedFarm && <div className={PANEL + " mt-4 p-5 text-center"}><p className="text-[13px] font-bold">No farm selected</p><button type="button" onClick={() => go("farms")} className="mt-3 text-[12px] font-bold text-[#45D99A]">Open My Farms</button></div>}
           </section>
@@ -509,6 +515,17 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                 {[["Humidity", humidity, "%", Droplets], ["Wind", wind, " km/h", Wind], ["Rain chance", rainChance, "%", CloudRain]].map(([label, value, suffix, Icon]) => <div key={label}><Icon size={15} className="text-[#50D69B]"/><p className="mt-1 text-[14px] font-extrabold">{farmVerified ? numberText(value, suffix) : "—"}</p><p className={"text-[9px] " + MUTED}>{label}</p></div>)}
               </div>
             </div>
+            {farmVerified && forecast.length > 0 && (
+              <div className={PANEL + " mt-3 grid grid-cols-5 gap-1 p-2"}>
+                {forecast.slice(0, 5).map((day, index) => (
+                  <div key={day?.date || day?.day || index} className="flex min-w-0 flex-col items-center gap-1 rounded-xl bg-[#102D43] px-1 py-2 text-center">
+                    <span className="truncate text-[9px] font-semibold text-[#B8CBD6]">{day?.day || dateLabel(day?.date || day?.time) || (index === 0 ? "Today" : "")}</span>
+                    <WeatherGlyph condition={day?.condition || day?.description || day?.weather} size={18}/>
+                    <span className="text-[10px] font-extrabold text-white">{numberText(first(day?.max, day?.temperature_max, day?.temp_max))}°</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-5"><SectionHeading title="7-Day Forecast"/></div>
             <div className={PANEL + " divide-y divide-[#17384F] px-3"}>
               {farmVerified && forecast.length ? forecast.slice(0, 7).map((day, index) => <div key={day?.date || day?.day || index} className="flex items-center gap-3 py-3"><WeatherGlyph condition={day?.condition || day?.description || day?.weather} size={18}/><span className="min-w-0 flex-1 text-[11px] font-semibold text-white">{day?.day || day?.date || dateLabel(day?.time)}</span><span className="text-[11px] text-[#C1D1DA]">{numberText(first(day?.max, day?.temperature_max, day?.temp_max))}° / {numberText(first(day?.min, day?.temperature_min, day?.temp_min))}°</span><span className="text-[10px] text-[#73DDA7]">{numberText(first(day?.precipitation_probability, day?.rain_chance), "%")}</span></div>) : <div className="py-5 text-center"><p className="text-[12px] font-bold text-white">{farmVerified ? "Forecast data not returned" : "No farm forecast available"}</p><p className={"mt-1 text-[10px] " + MUTED}>Shamba displays forecast values only when supplied by the weather service.</p></div>}
@@ -652,8 +669,12 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
 
         {screen === "trust" && (
           <section className="pt-4">
-            <div className="rounded-2xl border border-[#244A5E] bg-[#0A2237] p-4"><ShieldCheck size={22} className="text-[#4BDD9D]"/><h1 className="mt-2 text-[17px] font-black">Trust & Verification</h1><p className={"mt-1 text-[11px] leading-5 " + MUTED}>Farmer profile verification and each farm's rights review are separate checks.</p><div className="mt-4 space-y-3 text-[11px]"><div className="flex items-center justify-between gap-2"><span className={MUTED}>Farmer profile</span><b>{statusLabel(profileStatus)}</b></div><div className="flex items-center justify-between gap-2"><span className={MUTED}>Farm rights review</span><b>{statusLabel(selectedFarm?.legal_verification_status)}</b></div></div></div>
-            <button type="button" onClick={() => onNavigate?.("shamba/trust")} className={"mt-3 w-full rounded-xl py-3 text-[12px] font-extrabold " + ACTION}>Open full verification workspace</button>
+            <div className="mb-3 rounded-2xl border border-[#244A5E] bg-[#0A2237] p-4"><ShieldCheck size={22} className="text-[#4BDD9D]"/><h1 className="mt-2 text-[17px] font-black">Trust & Verification</h1><p className={"mt-1 text-[11px] leading-5 " + MUTED}>Farmer profile verification and each farm's rights review are separate checks.</p><div className="mt-4 space-y-3 text-[11px]"><div className="flex items-center justify-between gap-2"><span className={MUTED}>Farmer profile</span><b>{statusLabel(profileStatus)}</b></div><div className="flex items-center justify-between gap-2"><span className={MUTED}>Farm rights review</span><b>{statusLabel(selectedFarm?.legal_verification_status)}</b></div></div></div>
+            <div className="dark overflow-hidden rounded-2xl">
+              <Suspense fallback={<div className={PANEL + " p-5 text-center text-[12px] " + MUTED}>Opening the farm verification workspace…</div>}>
+                <ShambaTrustWorkspace />
+              </Suspense>
+            </div>
           </section>
         )}
       </main>
