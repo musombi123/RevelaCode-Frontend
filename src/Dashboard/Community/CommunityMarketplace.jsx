@@ -18,7 +18,6 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 const CATEGORIES = [
   { value: "", label: "Everything" },
@@ -573,8 +572,6 @@ export default function CommunityMarketplace({ onNavigate }) {
           </div>
         </div>
       </section>
-
-      <HubRevenueOffers hub="marketplace" compact />
 
       {notice ? (
         <div role="status" className="flex items-start gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs leading-5 text-cyan-800 dark:border-cyan-900/50 dark:bg-cyan-950/30 dark:text-cyan-200">
