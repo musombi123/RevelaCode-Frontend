@@ -149,7 +149,7 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(api, /navigator\.sendBeacon/);
   assert.match(api, /shouldMockRequest/);
   assert.match(api, /firstPartyHost/);
-  assert.match(app, /buildDemoChapters\\(HOME_HUBS, DASHBOARDS\\)/);
-  assert.match(app, /<DemoProvider chapters=\\{DEMO_CHAPTERS\\}>/);
-  assert.match(app, /<DemoOverlay \\/>/);
+  assert.match(app, /buildDemoChapters\(HOME_HUBS, DASHBOARDS\)/);
+  assert.match(app, /<DemoProvider chapters=\{DEMO_CHAPTERS\}>/);
+  assert.match(app, /<DemoOverlay \/>/);
 });
