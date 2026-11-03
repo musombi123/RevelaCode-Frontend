@@ -46,3 +46,21 @@ test("the app uses the tested resolver before selecting custom school-domain mod
   assert.match(app, /if \(!isPlatformHostname\(\)\)\s*\{\s*return <ElimuPublicSchoolPage customDomainMode \/>;\s*\}/);
   assert.match(app, /return <PlatformWelcomePage \/>;/);
 });
+
+
+test("native Android and Windows builds bypass the marketing welcome screen", () => {
+  assert.match(app, /VITE_ANDROID_APP === "true"/);
+  assert.match(app, /VITE_TAURI_APP === "true"/);
+  assert.match(app, /return <InternalDashboard initialHub="home" \/>/);
+  assert.match(app, /<Navigate to="\/app" replace \/>/);
+});
+
+test("RevelaAI is exposed as a top-level workspace navigation entry", async () => {
+  const dashboardConfig = await readFile(new URL("../src/components/dashboardConfig.jsx", import.meta.url), "utf8");
+  const mainDashboard = await readFile(new URL("../src/components/MainDashboardV2.jsx", import.meta.url), "utf8");
+  const aiStart = dashboardConfig.indexOf('key: "ai"');
+  assert.notEqual(aiStart, -1);
+  const aiEntry = dashboardConfig.slice(aiStart, dashboardConfig.indexOf("},", aiStart));
+  assert.doesNotMatch(aiEntry, /hidden:\s*true/);
+  assert.match(mainDashboard, /keys:\s*\["home",\s*"ai"\]/);
+});
