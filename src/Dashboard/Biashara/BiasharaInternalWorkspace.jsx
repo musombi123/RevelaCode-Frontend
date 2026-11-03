@@ -133,12 +133,13 @@ function Metric({ label, value, helper }) {
   );
 }
 
-function Field({ label, value, onChange, type = "text", required = false, placeholder = "" }) {
+function Field({ label, value, onChange, type = "text", required = false, placeholder = "", dataDemo }) {
   return (
     <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required ? " *" : ""}</span>
       <input
         type={type}
+        data-demo={dataDemo}
         value={value ?? ""}
         required={required}
         placeholder={placeholder}
@@ -766,7 +767,7 @@ export default function BiasharaInternalWorkspace({
             <form onSubmit={handleSubmit} className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
               <h2 className="text-lg font-bold text-slate-900">Add a product</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Product name" required value={form.name} onChange={(v) => updateField("name", v)} />
+                <Field label="Product name" required value={form.name} onChange={(v) => updateField("name", v)} dataDemo="biashara-product-name" />
                 <Field label="SKU" value={form.sku} onChange={(v) => updateField("sku", v)} />
                 <Field label="Category" value={form.category} onChange={(v) => updateField("category", v)} />
                 <label className="block"><span className="mb-1.5 block text-xs font-semibold text-slate-600">Inventory type</span><select className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10" value={form.production_type} onChange={(e) => updateField("production_type", e.target.value)}><option value="resale">Resale / trading stock</option><option value="raw_material">Raw material</option><option value="finished_good">Finished good</option><option value="consumable">Consumable</option></select></label>
@@ -775,7 +776,7 @@ export default function BiasharaInternalWorkspace({
                 <Field label="Unit of measure" value={form.unit} onChange={(v) => updateField("unit", v)} />
                 <Field label="Opening stock" type="number" value={form.stock_quantity} onChange={(v) => updateField("stock_quantity", v)} />
               </div>
-              <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><Package size={16} />{saving ? "Saving…" : "Create product"}</button>
+              <button type="submit" data-demo="biashara-create-product" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"><Package size={16} />{saving ? "Saving…" : "Create product"}</button>
             </form>
             <ListPanel title="Product catalogue" loading={loading} rows={filteredRows} empty="No products were returned for this business yet." onSearch={setQuery} query={query}>
               {(product) => <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{product.name || product.product_name || "Unnamed product"}</p><p className="mt-1 text-xs text-slate-500">{product.sku || "No SKU"}{product.category ? ` · ${product.category}` : ""} · {String(product.production_type || "resale").replace(/_/g, " ")} · {product.unit || "piece"}</p></div><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-900">{money(product.price, product.currency || currency)}</span><span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (number(product.stock_quantity ?? product.quantity ?? product.stock) <= number(product.low_stock_threshold ?? 5) ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800")}>Remaining: {number(product.stock_quantity ?? product.quantity ?? product.stock)}</span><button type="button" disabled={saving} onClick={() => addProductStock(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95 disabled:opacity-50"><Plus size={14} /> Add stock</button><button type="button" disabled={saving} onClick={() => deleteProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 active:scale-95 disabled:opacity-50"><Trash2 size={14} /> Delete</button></div></div>}
