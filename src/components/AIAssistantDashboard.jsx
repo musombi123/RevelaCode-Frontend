@@ -17,7 +17,6 @@ import {
   X,
   Mic,
   Camera,
-  CreditCard,
   WifiOff,
 } from "lucide-react";
 
@@ -361,7 +360,6 @@ export default function AIAssistantDashboard({
   }, []);
 
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
-  const [aiRevenueOpen, setAiRevenueOpen] = useState(false);
   const [identityOpen, setIdentityOpen] = useState(false);
   const [freeMode, setFreeMode] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -1851,7 +1849,6 @@ export default function AIAssistantDashboard({
         onSelectChat={selectChat}
         onDeleteChat={deleteChat}
         onRenameChat={renameChat}
-        onOpenPlans={() => setAiRevenueOpen(true)}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
         onOpenIdentity={() => setIdentityOpen(true)}
@@ -1984,31 +1981,7 @@ export default function AIAssistantDashboard({
               {freeMode ? "FREE MODE · LOCAL ONLY" : "ADAPTIVE MODE"}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setAiRevenueOpen((open) => !open)}
-              aria-expanded={aiRevenueOpen}
-              aria-controls="revela-ai-revenue-panel"
-              className="
-                inline-flex
-                items-center
-                gap-2
-                rounded-xl
-                border
-                border-emerald-500/20
-                bg-emerald-500/10
-                px-3
-                py-2
-                text-xs
-                font-bold
-                text-emerald-200
-                transition
-                hover:bg-emerald-500/20
-              "
-            >
-              <Sparkles size={14} />
-              {aiRevenueOpen ? "Hide plans" : "AI trial & plans"}
-            </button>
+
 
             <button
               type="button"
@@ -2176,45 +2149,6 @@ export default function AIAssistantDashboard({
         )}
       </main>
 
-      {aiRevenueOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
-          role="presentation"
-          onClick={() => setAiRevenueOpen(false)}
-        >
-          <section
-            id="revela-ai-revenue-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="revela-ai-revenue-title"
-            onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[94dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-emerald-400/20 bg-slate-950 text-white shadow-2xl"
-          >
-            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-200">
-                  <CreditCard size={17} />
-                </span>
-                <div className="min-w-0">
-                  <h2 id="revela-ai-revenue-title" className="truncate text-sm font-bold">AI trial &amp; plans</h2>
-                  <p className="mt-0.5 text-[10px] text-slate-400">Trial status, subscription and centrally managed offers</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAiRevenueOpen(false)}
-                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
-                aria-label="Close AI trial and plans"
-              >
-                <X size={17} />
-              </button>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
-            </div>
-          </section>
-        </div>
-      )}
-
       {identityOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
@@ -2291,9 +2225,7 @@ export default function AIAssistantDashboard({
                 <Camera size={14} /> Vision
               </button>
             </div>
-            <button type="button" onClick={() => { setIdentityOpen(false); setAiRevenueOpen(true); }} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2.5 text-xs font-bold text-amber-100 transition hover:bg-amber-300/15">
-              <CreditCard size={14} /> View trial and plans
-            </button>
+
           </section>
         </div>
       )}
