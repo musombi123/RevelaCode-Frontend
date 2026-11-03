@@ -129,7 +129,8 @@ export function DemoProvider({ children, chapters = [] }) {
 
   const restart = useCallback(() => {
     commit({ ...stateRef.current, active: true, chapterId: "welcome", stepIndex: 0, completed: [] });
-    trackDemo("demo_started", { restarted: true });
+    trackDemo("demo_started", { restarted: true, chapter_id: "welcome" });
+    trackDemo("step_viewed", { chapter_id: "welcome", step_index: 0 });
   }, [commit]);
 
   const setLang = useCallback((lang) => {
