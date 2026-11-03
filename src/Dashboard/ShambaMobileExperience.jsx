@@ -713,7 +713,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   );
 
   return (
-    <div data-shamba-mobile-ui="reference-v1" className="shamba-mobile min-h-[100svh] bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
+    <div data-demo="shamba-overview" data-shamba-mobile-ui="reference-v1" className="shamba-mobile min-h-[100svh] bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
       {header}
       <main className="mx-auto w-full max-w-[560px] px-4 pb-5">
         {error && <div className="mt-3 rounded-xl border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-[12px] text-amber-200">{error}</div>}
@@ -1121,7 +1121,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             { key: "farms", label: "Farms", icon: Tractor },
             { key: "market", label: "Market", icon: ShoppingCart },
             { key: "alerts", label: "Alerts", icon: Bell },
-          ].map((item) => { const Icon = item.icon; const active = screen === item.key || (item.key === "farms" && screen === "detail"); return <button key={item.key} type="button" onClick={() => go(item.key)} aria-current={active ? "page" : undefined} className={"relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (active ? "text-[#42D99A]" : "text-[#6F8D9F]")}><span className="relative"><Icon size={18}/>{item.key === "alerts" && alertCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">{alertCount}</span>}</span><span className="text-[9px] font-bold">{item.label}</span></button>; })}
+          ].map((item) => { const Icon = item.icon; const active = screen === item.key || (item.key === "farms" && screen === "detail"); return <button key={item.key} type="button" onClick={() => go(item.key)} data-demo={"shamba-nav-" + item.key} aria-current={active ? "page" : undefined} className={"relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (active ? "text-[#42D99A]" : "text-[#6F8D9F]")}><span className="relative"><Icon size={18}/>{item.key === "alerts" && alertCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">{alertCount}</span>}</span><span className="text-[9px] font-bold">{item.label}</span></button>; })}
           <button type="button" onClick={() => setMoreOpen(true)} className={"flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (moreOpen ? "text-[#42D99A]" : "text-[#6F8D9F]")}><MoreHorizontal size={18}/><span className="text-[9px] font-bold">More</span></button>
         </div>
       </nav>
