@@ -28,7 +28,7 @@ export default function ShambaDiagnosticsPanel({
   const savedTests = Array.isArray(soilTests) ? soilTests : [];
 
   return (
-    <section className="pt-4">
+    <section data-shamba-diagnostics="leaf-pest-and-soil-ph" className="pt-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[21px] font-black">Crop & Soil Diagnostics</h1>
