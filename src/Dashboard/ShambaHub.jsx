@@ -37,6 +37,7 @@ import {
 
 import Loading from "@/components/common/Loading.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
+import ShambaMobileExperience from "@/Dashboard/ShambaMobileExperience.jsx";
 
 // ============================================================
 // CONFIGURATION
@@ -1027,6 +1028,16 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
   // ==========================================================
 
   return (
+    <>
+      <div className="min-[1200px]:hidden">
+        <ShambaMobileExperience
+          user={user}
+          location={location}
+          onOpenAI={onOpenAI}
+          onNavigate={handleDashboardNavigate}
+        />
+      </div>
+      <div className="hidden min-[1200px]:block">
     <div className="shamba-workspace isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
       <div className="mx-auto flex w-full min-w-0 max-w-none">
         {/* ==================================================
@@ -1397,5 +1408,8 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         canReviewFarmers={canReviewFarmers}
       />
     </div>
+    </div>
+      </div>
+    </>
   );
 }
