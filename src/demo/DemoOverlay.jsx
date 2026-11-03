@@ -351,10 +351,18 @@ export default function DemoOverlay() {
 
   if (!active) return null;
 
-  const panelStyle = rect && !targetMissing && !isFinish ? {
-    top: Math.max(16, Math.min(window.innerHeight - 150, rect.top + rect.height + 14)),
-    left: Math.max(12, Math.min(window.innerWidth - 420, rect.left)),
-  } : { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+  const panelStyle = rect && !targetMissing && !isFinish ? (() => {
+    const preferred = step?.placement || "auto";
+    const placeAbove = preferred === "top" || (preferred === "auto" && window.innerHeight - rect.bottom < 350);
+    const estimatedCardHeight = 330;
+    const top = placeAbove
+      ? Math.max(16, rect.top - estimatedCardHeight - 14)
+      : Math.min(window.innerHeight - estimatedCardHeight - 16, rect.bottom + 14);
+    return {
+      top,
+      left: Math.max(12, Math.min(window.innerWidth - 422, rect.left)),
+    };
+  })() : { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 
   const backdropStyle = { background: "rgba(2, 8, 23, .70)" };
   const titleText = localized(chapter?.title, lang);
@@ -427,7 +435,7 @@ export default function DemoOverlay() {
               </section>
             ) : null}
             {isLastStep && chapter?.challenge ? (
-              <p className="rc-demo-challenge"><strong>{t.challenge}:</strong> {localized(chapter.challenge, lang)}</p>
+              <p className="rc-demo-challenge"><strong>{t.tryIt} · {t.challenge}:</strong> {localized(chapter.challenge, lang)}</p>
             ) : null}
           </>
         ) : (
