@@ -1035,6 +1035,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
           location={location}
           onOpenAI={onOpenAI}
           onNavigate={handleDashboardNavigate}
+          onExit={onNavigate}
         />
       </div>
       <div className="hidden min-[1200px]:block">
