@@ -93,7 +93,7 @@ export default function WelcomeScreen({
         <div className="mt-5 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => onVoice?.()}
+            data-demo="ai-voice-button" onClick={() => onVoice?.()}
             className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-xs font-bold text-emerald-100 transition hover:border-emerald-200/35 hover:bg-emerald-300/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60"
           >
             <Mic size={15} />
@@ -102,7 +102,7 @@ export default function WelcomeScreen({
           </button>
           <button
             type="button"
-            onClick={() => onVision?.()}
+            data-demo="ai-vision-button" onClick={() => onVision?.()}
             disabled={!visionAvailable}
             className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-bold text-slate-200 transition hover:border-sky-200/25 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50 disabled:cursor-wait disabled:opacity-50"
           >
