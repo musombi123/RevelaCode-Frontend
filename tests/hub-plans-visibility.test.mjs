@@ -25,12 +25,12 @@ test("premium plans are launched globally, not embedded in hub dashboards", () =
   const appShell = source("src/components/MainDashboardV2.jsx");
   const accountCenter = source("src/components/UserAccountDashboard.jsx");
   const modal = source("src/premium/PlansModal.jsx");
-  assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
   assert.match(appShell, /<PlansModal/);
-  assert.match(accountCenter, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(modal, /revenueApi\\.listPlans\\(/);
-  assert.match(modal, /revenueApi\\.startCheckout\\(/);
-  assert.match(modal, /revenueApi\\.getCheckout\\(/);
+  assert.match(accountCenter, /<PremiumPlansStar\s*\/>/);
+  assert.match(modal, /revenueApi\.listPlans\(/);
+  assert.match(modal, /revenueApi\.startCheckout\(/);
+  assert.match(modal, /revenueApi\.getCheckout\(/);
 });
 
 test("Faith Hub is permanently free and does not render subscription offers", () => {
