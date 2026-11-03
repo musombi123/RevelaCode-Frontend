@@ -2161,14 +2161,16 @@ export default function AIAssistantDashboard({
                 sm:pb-4
               "
             >
-              <div className="mx-auto w-full max-w-4xl">
-                <InputBar
+              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-4xl">
+                <div data-demo="ai-vision-tools">
+                  <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
-                />
+                  />
+                </div>
               </div>
             </div>
           </section>
