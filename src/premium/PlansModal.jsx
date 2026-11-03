@@ -357,7 +357,11 @@ export default function PlansModal({
       const prior = grouped.get(key);
       if (!prior || rate < prior.rate) grouped.set(key, { code: item.code, rate });
     });
-    return new Set(yearly.filter((item) => grouped.get(String(item.hub || ""))?.code === item.code).map((item) => item.code));
+    const annualBest = yearly
+      .filter((item) => grouped.get(String(item.hub || ""))?.code === item.code)
+      .map((item) => item.code);
+    const explicitlyMarked = plans.filter((item) => item.best_value === true).map((item) => item.code);
+    return new Set([...annualBest, ...explicitlyMarked]);
   }, [plans]);
 
   const startPayment = async () => {
