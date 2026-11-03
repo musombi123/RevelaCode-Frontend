@@ -352,14 +352,13 @@ export default function DemoOverlay() {
     const voices = synth.getVoices();
     const desired = lang === "sw" ? "sw-KE" : "en-KE";
     const voice = voices.find((item) => item.lang.toLowerCase() === desired.toLowerCase()) ||
-      voices.find((item) => item.lang.toLowerCase().startsWith(lang + "-")) ||
-      voices.find((item) => item.default) ||
-      voices[0] ||
-      null;
+      voices.find((item) => item.lang.toLowerCase().startsWith(lang + "-"));
+    // Narration is optional: never substitute an unrelated language voice.
+    if (!voice) return undefined;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(localized(step.title, lang) + ". " + localized(step.body, lang));
-    if (voice) utterance.voice = voice;
-    utterance.lang = voice?.lang || desired;
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
     synth.speak(utterance);
     return () => synth.cancel();
   }, [active, chapterId, stepIndex, voiceOn, lang, step]);
