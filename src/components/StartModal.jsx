@@ -6,6 +6,7 @@ import React, {
 
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
+import DemoLauncher from "@/demo/DemoLauncher.jsx";
 
 import {
   ArrowRight,
@@ -63,10 +64,17 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState(() => new URLSearchParams(location.search).get("mode") === "register" ? "register" : null);
   // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("mode") === "register") {
+      setMode("register");
+      setStep("form");
+    }
+  }, [location.search]);
   // form | verify | reset
 
   const [loading, setLoading] = useState(false);
@@ -1392,6 +1400,7 @@ const completeLogin = (data = {}) => {
           "
           role="dialog"
           aria-modal="true"
+          data-demo="welcome-entry"
           aria-label="RevelaCode account access"
         >
           <header
@@ -1480,6 +1489,10 @@ const completeLogin = (data = {}) => {
 
             {!mode && (
               <>
+                <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                  <p className="mb-2 text-sm font-bold text-emerald-950 dark:text-emerald-100">New to RevelaCode? Take a guided tour.</p>
+                  <DemoLauncher compact />
+                </div>
                 <div
                   className="
                     grid
@@ -1686,6 +1699,7 @@ const completeLogin = (data = {}) => {
                   onClick={
                     handleGuestLogin
                   }
+                  data-demo="welcome-guest"
                   className="
                     flex
                     w-full
