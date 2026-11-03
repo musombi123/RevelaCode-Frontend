@@ -145,11 +145,14 @@ export default function DemoOverlay() {
   const routeHub = getRouteHub(step?.route);
   useEffect(() => {
     if (!active || !routeHub) return;
+    // A guided click can itself change routes (for example Home → Biashara).
+    // Let that action complete; the next step will establish the new hub route.
+    if (step?.action === "click" && actionPendingRef.current) return;
     const currentHub = new URLSearchParams(location.search).get("hub");
     if (location.pathname !== "/app" || currentHub !== routeHub) {
       navigate("/app?hub=" + encodeURIComponent(routeHub), { replace: true });
     }
-  }, [active, routeHub, location.pathname, location.search, navigate]);
+  }, [active, routeHub, step?.action, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -318,12 +321,14 @@ export default function DemoOverlay() {
     const voices = synth.getVoices();
     const desired = lang === "sw" ? "sw-KE" : "en-KE";
     const voice = voices.find((item) => item.lang.toLowerCase() === desired.toLowerCase()) ||
-      voices.find((item) => item.lang.toLowerCase().startsWith(lang + "-"));
-    if (!voice) return undefined;
+      voices.find((item) => item.lang.toLowerCase().startsWith(lang + "-")) ||
+      voices.find((item) => item.default) ||
+      voices[0] ||
+      null;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(localized(step.title, lang) + ". " + localized(step.body, lang));
-    utterance.voice = voice;
-    utterance.lang = voice.lang;
+    if (voice) utterance.voice = voice;
+    utterance.lang = voice?.lang || desired;
     synth.speak(utterance);
     return () => synth.cancel();
   }, [active, chapterId, stepIndex, voiceOn, lang, step]);
