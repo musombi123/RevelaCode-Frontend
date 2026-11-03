@@ -566,6 +566,7 @@ export default function DemoOverlay() {
               <button type="button" onClick={goCreateAccount} className="rc-demo-primary">{t.create}</button>
               <button type="button" onClick={continueAsGuest} className="rc-demo-secondary">{t.guest}</button>
               <button type="button" onClick={restart} className="rc-demo-secondary"><RotateCcw size={16} /> {t.restart}</button>
+              <button type="button" onClick={next} className="rc-demo-primary">{t.done} <Check size={16} /></button>
             </div>
           </div>
         )}
