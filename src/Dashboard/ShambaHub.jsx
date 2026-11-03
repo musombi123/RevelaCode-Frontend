@@ -1408,7 +1408,6 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
         canReviewFarmers={canReviewFarmers}
       />
     </div>
-    </div>
       </div>
     </>
   );
