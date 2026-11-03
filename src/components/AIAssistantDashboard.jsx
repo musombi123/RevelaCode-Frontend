@@ -1826,6 +1826,7 @@ export default function AIAssistantDashboard({
 
   return (
     <div
+      data-demo="ai-overview"
       className="
         flex
         h-full
@@ -2079,9 +2080,10 @@ export default function AIAssistantDashboard({
                   justify-center
                 "
               >
-                <WelcomeScreen onSuggestion={sendTextMessage} onVoice={openVoice} onVision={openVision} visionAvailable={visionReady} />
+                <div data-demo="ai-vision-tools"><WelcomeScreen onSuggestion={sendTextMessage} onVoice={openVoice} onVision={openVision} visionAvailable={visionReady} /></div>
 
                 <div
+                  data-demo="ai-chat-input"
                   className="
                     mt-8
                     w-full
