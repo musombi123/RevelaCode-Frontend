@@ -74,6 +74,15 @@ export const DEMO_SCHOOL = {
   ],
 };
 
+export const DEMO_SCHOOL_ACCESS = {
+  allowed: true,
+  has_school: true,
+  role: "owner",
+  school: DEMO_SCHOOL.school,
+  membership: { role: "owner", school: DEMO_SCHOOL.school },
+  permissions: ["school.view", "school.manage", "students.view", "students.manage", "website.view", "website.manage"],
+};
+
 export const DEMO_COMMUNITY_POSTS = [
   { id: "demo-post-1", author: "Jumuiya Neighbourhood", body: "Welcome to the demo community. Share useful updates and local opportunities.", created_at: "2026-11-03T07:30:00.000Z", reactions_count: 8, comments_count: 2 },
   { id: "demo-post-2", author: "Demo Farmers Circle", body: "Farmers are sharing seasonal tips and market information here.", created_at: "2026-11-02T14:00:00.000Z", reactions_count: 5, comments_count: 1 },
@@ -115,7 +124,11 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
   }
 
   if (lower.includes("elimu") || lower.includes("school") || lower.includes("student") || lower.includes("class")) {
+    if (lower.includes("/access") || lower.endsWith("access")) {
+      return { success: true, demo: true, access: DEMO_SCHOOL_ACCESS, data: { access: DEMO_SCHOOL_ACCESS } };
+    }
     if (lower.includes("student")) return { success: true, demo: true, students: DEMO_SCHOOL.students, data: { students: DEMO_SCHOOL.students } };
+    if (lower.includes("dashboard")) return { success: true, demo: true, dashboard: DEMO_SCHOOL.dashboard, data: { dashboard: DEMO_SCHOOL.dashboard } };
     return { success: true, demo: true, ...DEMO_SCHOOL, data: { school: DEMO_SCHOOL.school, dashboard: DEMO_SCHOOL.dashboard } };
   }
 
