@@ -42,6 +42,26 @@ export const DEMO_SHOP = {
     { id: "demo-product-2", name: "Cooking oil 1 L", sku: "DM-002", stock_quantity: 7, price: 250, low_stock_threshold: 8 },
     { id: "demo-product-3", name: "Laundry soap", sku: "DM-003", stock_quantity: 4, price: 100, low_stock_threshold: 8 },
   ],
+  customers: [
+    { id: "demo-customer-1", name: "Amina Hassan", phone: "0700 000 101", orders_count: 4, total_spent: 8200 },
+    { id: "demo-customer-2", name: "Peter Mwangi", phone: "0700 000 102", orders_count: 2, total_spent: 3650 },
+  ],
+  finance: {
+    currency: "KES", income_total: 128500, expenses_total: 74200, net_estimate: 54300,
+    transactions: [
+      { id: "demo-finance-1", reference: "DEMO-RCPT-101", type: "sale", description: "Counter sales", amount: 8400, status: "completed", created_at: "2026-11-03T10:05:00.000Z" },
+      { id: "demo-finance-2", reference: "DEMO-EXP-102", type: "expense", description: "Stock purchase", amount: 12500, status: "completed", created_at: "2026-11-02T13:20:00.000Z" },
+    ],
+    expenses: [
+      { id: "demo-expense-1", category: "Stock", description: "Restock", amount: 12500, status: "paid" },
+      { id: "demo-expense-2", category: "Transport", description: "Delivery fuel", amount: 4200, status: "paid" },
+    ],
+  },
+  website: {
+    published: true, title: "Demo General Stores",
+    description: "A sample storefront for the guided demo.",
+    services: ["Retail orders", "Local delivery"],
+  },
 };
 
 export const DEMO_FARM = {
@@ -108,14 +128,23 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
     };
   }
 
-  if (lower.includes("biashara") || lower.includes("business") || lower.includes("orders") || lower.includes("products")) {
-    if (lower.includes("product")) return { success: true, demo: true, ...DEMO_SHOP, data: { products: DEMO_SHOP.products, product: DEMO_SHOP.products[0] } };
+  if (lower.includes("community") || lower.includes("post") || lower.includes("chat") || lower.includes("group") || lower.includes("circle")) {
+    return { success: true, demo: true, posts: DEMO_COMMUNITY_POSTS, data: { posts: DEMO_COMMUNITY_POSTS, items: DEMO_COMMUNITY_POSTS } };
+  }
+
+  if (lower.includes("biashara") || lower.includes("business") || lower.includes("orders") || lower.includes("products") || lower.includes("customer")) {
+    if (lower.includes("finance") || lower.includes("transaction") || lower.includes("expense") || lower.includes("cashbook") || lower.includes("invoice")) {
+      return { success: true, demo: true, finance: DEMO_SHOP.finance, transactions: DEMO_SHOP.finance.transactions, expenses: DEMO_SHOP.finance.expenses, data: { finance: DEMO_SHOP.finance, transactions: DEMO_SHOP.finance.transactions } };
+    }
+    if (lower.includes("product") || lower.includes("stock") || lower.includes("inventory")) return { success: true, demo: true, ...DEMO_SHOP, data: { products: DEMO_SHOP.products, product: DEMO_SHOP.products[0] } };
     if (lower.includes("order")) return { success: true, demo: true, ...DEMO_SHOP, orders: DEMO_SHOP.dashboard.recent_orders, data: { orders: DEMO_SHOP.dashboard.recent_orders } };
+    if (lower.includes("customer")) return { success: true, demo: true, customers: DEMO_SHOP.customers, data: { customers: DEMO_SHOP.customers } };
+    if (lower.includes("website") || lower.includes("storefront")) return { success: true, demo: true, website: DEMO_SHOP.website, data: { website: DEMO_SHOP.website } };
     if (lower.includes("dashboard") || lower.includes("overview")) return { success: true, demo: true, ...DEMO_SHOP, data: DEMO_SHOP.dashboard };
     return { success: true, demo: true, ...DEMO_SHOP, data: { business: DEMO_SHOP.business } };
   }
 
-  if (lower.includes("shamba") || lower.includes("farm") || lower.includes("weather") || lower.includes("market")) {
+  if (lower.includes("shamba") || lower.includes("farm") || lower.includes("weather") || lower.includes("crop") || lower.includes("market")) {
     if (lower.includes("weather")) return { success: true, demo: true, weather: DEMO_FARM.dashboard.weather, data: { weather: DEMO_FARM.dashboard.weather } };
     if (lower.includes("market")) return { success: true, demo: true, market: DEMO_FARM.market, data: { market: DEMO_FARM.market } };
     if (lower.includes("farmer")) return { success: true, demo: true, ...DEMO_FARM, data: { farmer: DEMO_FARM.farmer } };
