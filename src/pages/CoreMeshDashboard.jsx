@@ -160,6 +160,8 @@ export default function CoreMeshDashboard() {
   );
   const [executingTool, setExecutingTool] = useState("");
   const [toolExecutionResult, setToolExecutionResult] = useState(null);
+  const [configurationHealth, setConfigurationHealth] = useState(null);
+  const [configurationHealthError, setConfigurationHealthError] = useState("");
 
   const refresh = useCallback(async (force = false) => {
     setRefreshing(true);
@@ -191,15 +193,28 @@ export default function CoreMeshDashboard() {
     }
   }, [authenticatedFetch]);
 
+  const refreshConfigurationHealth = useCallback(async () => {
+    setConfigurationHealthError("");
+    try {
+      const data = await requestCoreMesh("/api/core-mesh/configuration", {}, authenticatedFetch);
+      setConfigurationHealth(data);
+    } catch (requestError) {
+      setConfigurationHealth(null);
+      setConfigurationHealthError(requestError?.message || "Configuration diagnostics are unavailable.");
+    }
+  }, [authenticatedFetch]);
+
   useEffect(() => {
     refresh(true);
     refreshSignedTools();
+    refreshConfigurationHealth();
     const timer = window.setInterval(() => {
       refresh(false);
       refreshSignedTools();
+      refreshConfigurationHealth();
     }, 30000);
     return () => window.clearInterval(timer);
-  }, [refresh, refreshSignedTools]);
+  }, [refresh, refreshSignedTools, refreshConfigurationHealth]);
 
   const cores = snapshot?.cores || {};
   const onlineCount = useMemo(
@@ -408,6 +423,29 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
               <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white">Server configuration diagnostics</h4>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Admin-only checks. Secret values are never returned to this page.</p>
+                </div>
+                <button type="button" onClick={refreshConfigurationHealth} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Check configuration</button>
+              </div>
+              {configurationHealthError && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{configurationHealthError}</p>}
+              {configurationHealth?.items?.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {configurationHealth.items.map((item) => (
+                    <div key={item.name} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                      <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + (item.configured ? "bg-emerald-500" : item.unknown ? "bg-slate-400" : "bg-amber-500")} />
+                      <div className="min-w-0">
+                        <p className="break-words text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name} <span className="font-normal text-slate-400">· {item.service}</span></p>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{item.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
