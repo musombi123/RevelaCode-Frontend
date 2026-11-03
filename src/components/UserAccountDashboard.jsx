@@ -794,6 +794,7 @@ export default function UserAccountDashboard({
               key={key}
               type="button"
               onClick={() => changeView(key)}
+              data-demo={"account-menu-" + key}
               aria-current={active ? "page" : undefined}
               className={active
                 ? "group relative flex min-h-14 w-full touch-manipulation items-center gap-3 overflow-hidden rounded-2xl bg-emerald-50 px-3 py-2.5 text-left text-emerald-950 shadow-sm ring-1 ring-inset ring-emerald-100 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100 dark:ring-emerald-900/70 motion-reduce:transition-none"
@@ -1079,7 +1080,7 @@ export default function UserAccountDashboard({
 
       case "help":
         return (
-          <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
+          <div data-demo="account-help-workspace" className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
             <HelpModal />
           </div>
         );
@@ -1116,7 +1117,7 @@ export default function UserAccountDashboard({
 
   if (isGuest) {
     return (
-      <div className="min-h-[100dvh] overflow-x-hidden bg-slate-50 p-4 dark:bg-slate-950">
+      <div data-demo="account-overview" className="min-h-[100dvh] overflow-x-hidden bg-slate-50 p-4 dark:bg-slate-950">
         {renderContent()}
       </div>
     );
@@ -1144,7 +1145,7 @@ export default function UserAccountDashboard({
 
   return (
     <>
-      <div className="min-h-[100dvh] overflow-x-hidden bg-[#f6f8fb] text-slate-900 dark:bg-[#080f1c] dark:text-slate-100">
+      <div data-demo="account-overview" className="min-h-[100dvh] overflow-x-hidden bg-[#f6f8fb] text-slate-900 dark:bg-[#080f1c] dark:text-slate-100">
         <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1680px]">
           <aside className="sticky top-0 hidden h-[100dvh] w-[300px] flex-shrink-0 flex-col border-r border-slate-200/80 bg-white/85 shadow-[18px_0_60px_-48px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90 lg:flex">
             <div className="border-b border-slate-200/80 px-6 py-5 dark:border-slate-800">
