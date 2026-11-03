@@ -10,21 +10,27 @@ function source(relativePath) {
   return readFileSync(path.join(repositoryRoot, relativePath), "utf8");
 }
 
-test("each metered subscription hub renders its own plans in its primary workspace", () => {
-  const contracts = [
-    ["src/Dashboard/BiasharaDashboard.jsx", '<HubRevenueOffers hub="biashara" compact />'],
-    ["src/Dashboard/ShambaDashboard.jsx", '<HubRevenueOffers hub="shamba" compact />'],
-    ["src/Dashboard/ElimuDashboardWorkspace.jsx", '<HubRevenueOffers hub="elimu" compact />'],
-    ["src/Dashboard/Community/CommunityMarketplace.jsx", '<HubRevenueOffers hub="marketplace" compact />'],
-    ["src/components/AIAssistantDashboard.jsx", '<HubRevenueOffers hub="smart_ai" compact />'],
+test("premium plans are launched globally, not embedded in hub dashboards", () => {
+  const dashboardFiles = [
+    "src/Dashboard/BiasharaDashboard.jsx",
+    "src/Dashboard/ShambaDashboard.jsx",
+    "src/Dashboard/ElimuDashboardWorkspace.jsx",
+    "src/Dashboard/Community/CommunityMarketplace.jsx",
+    "src/components/AIAssistantDashboard.jsx",
   ];
-
-  for (const [file, marker] of contracts) {
-    assert.ok(
-      source(file).includes(marker),
-      `Expected the ${marker} plan panel in ${file}`,
-    );
+  for (const file of dashboardFiles) {
+    assert.doesNotMatch(source(file), /HubRevenueOffers/);
   }
+
+  const appShell = source("src/components/MainDashboardV2.jsx");
+  const accountCenter = source("src/components/UserAccountDashboard.jsx");
+  const modal = source("src/premium/PlansModal.jsx");
+  assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(appShell, /<PlansModal/);
+  assert.match(accountCenter, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(modal, /revenueApi\\.listPlans\\(/);
+  assert.match(modal, /revenueApi\\.startCheckout\\(/);
+  assert.match(modal, /revenueApi\\.getCheckout\\(/);
 });
 
 test("Faith Hub is permanently free and does not render subscription offers", () => {
