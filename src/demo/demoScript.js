@@ -115,7 +115,7 @@ const CURATED = {
       step("community-overview", "community", "Your community feed", "Mtiririko wa jamii yako", "Browse updates, groups and useful local conversations.", "Vinjari taarifa, vikundi na mazungumzo muhimu ya eneo lako."),
       step("community-create-post", "community", "Start a post", "Anzisha chapisho", "Tap Create post to open the composer. Demo mode blocks publishing.", "Gusa Tengeneza chapisho kufungua sehemu ya kuandika. Hali ya onyesho huzuia uchapishaji.", "click"),
       step("community-composer", "community", "Write a useful update", "Andika taarifa muhimu", "Add a short message, then close the composer without publishing.", "Ongeza ujumbe mfupi, kisha funga bila kuchapisha."),
-      step("community-chat-nav", "community", "Find community chats", "Tafuta mazungumzo ya jamii", "Open Chats to see where private and group conversations live.", "Fungua Gumzo kuona mahali pa mazungumzo binafsi na ya vikundi.", "click"),
+      step("community-chat-nav", "community", "Find community chats", "Tafuta mazungumzo ya jamii", "Open Chats to see where private and group conversations live, then continue when ready.", "Fungua Gumzo kuona mahali pa mazungumzo binafsi na ya vikundi, kisha endelea ukiwa tayari.", "none"),
     ],
     challenge: bi("Find a group or person you would like to connect with.", "Tafuta kikundi au mtu unayetaka kuungana naye."),
   },
@@ -169,7 +169,7 @@ const FINISH = {
 };
 
 const CORE_ORDER = ["biashara", "shamba", "education", "faith", "community"];
-const RESERVED = new Set(["home", "biashara", "shamba", "education", "faith", "community", "ai", "profile", "settings", "accounts", "payments", "security-academy"]);
+const RESERVED = new Set(["home", "biashara", "shamba", "education", "faith", "community", "ai", "profile", "settings", "accounts", "payments"]);
 
 function generatedChapter(entry, homeHub = false) {
   const key = String(entry?.key || entry?.id || "").trim();
