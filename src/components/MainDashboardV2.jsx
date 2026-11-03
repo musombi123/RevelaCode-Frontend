@@ -36,6 +36,8 @@ import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
+import PlansModal from "@/premium/PlansModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -299,6 +301,11 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const [showStartModal, setShowStartModal] =
     useState(false);
 
+  const [showPremiumPlans, setShowPremiumPlans] = useState(false);
+  const [premiumRequestedPlanCode, setPremiumRequestedPlanCode] = useState("");
+  const pendingPremiumPlanCode = useRef("");
+  const [resumePremiumAfterLogin, setResumePremiumAfterLogin] = useState(false);
+
   const [searchParams] =
     useSearchParams();
 
@@ -435,6 +442,29 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     setSidebarOpen(false);
     setMobileCategoryOpen(null);
   }, []);
+
+  useEffect(() => {
+    const openPremium = (event) => {
+      setPremiumRequestedPlanCode(String(event?.detail?.planCode || ""));
+      setShowPremiumPlans(true);
+    };
+    window.addEventListener("revelacode:premium-open", openPremium);
+    return () => window.removeEventListener("revelacode:premium-open", openPremium);
+  }, []);
+
+  useEffect(() => {
+    if (
+      resumePremiumAfterLogin &&
+      user &&
+      String(user.role || "").toLowerCase() !== "guest" &&
+      !showStartModal
+    ) {
+      setPremiumRequestedPlanCode(pendingPremiumPlanCode.current);
+      setShowPremiumPlans(true);
+      setResumePremiumAfterLogin(false);
+      pendingPremiumPlanCode.current = "";
+    }
+  }, [resumePremiumAfterLogin, user, showStartModal]);
 
   /* =========================================================
      Start / Authentication Modal
@@ -704,6 +734,35 @@ const BIASHARA_SECTION_KEYS = new Set(
           />
         )}
       </AnimatePresence>
+
+      <PlansModal
+        open={showPremiumPlans}
+        initialPlanCode={premiumRequestedPlanCode}
+        onClose={() => {
+          setShowPremiumPlans(false);
+          setPremiumRequestedPlanCode("");
+        }}
+        onRequireLogin={(planCode) => {
+          pendingPremiumPlanCode.current = String(planCode || "");
+          setShowPremiumPlans(false);
+          setResumePremiumAfterLogin(true);
+          setShowStartModal(true);
+        }}
+        onPlanActivated={(hub) => {
+          setShowPremiumPlans(false);
+          setPremiumRequestedPlanCode("");
+          const destination = ({
+            biashara: "biashara",
+            shamba: "shamba",
+            elimu: "education",
+            smart_ai: "ai",
+            faith: "faith",
+            community: "community",
+            marketplace: "community",
+          })[String(hub || "").toLowerCase()] || "home";
+          handleNavigate(destination);
+        }}
+      />
 
       {/* =====================================================
           FULLSCREEN AI
@@ -1292,6 +1351,8 @@ const BIASHARA_SECTION_KEYS = new Set(
                   sm:gap-2
                 "
               >
+                <PremiumPlansStar />
+
                 {/* Notifications */}
 
                 <Notifications />
