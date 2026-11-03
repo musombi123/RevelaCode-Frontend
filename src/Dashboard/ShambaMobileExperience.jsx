@@ -248,7 +248,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const [cropForScan, setCropForScan] = useState("");
   const [soilMethod, setSoilMethod] = useState("test_strip");
   const [soilMeasuredPh, setSoilMeasuredPh] = useState("");
-  const [soilCalibration, setSoilCalibration] = useState("not_applicable");
+  const [soilCalibration, setSoilCalibration] = useState("uncalibrated");
   const [soilCalibrationDate, setSoilCalibrationDate] = useState("");
   const [soilKitName, setSoilKitName] = useState("");
   const [soilSampleDepth, setSoilSampleDepth] = useState("10");
@@ -470,7 +470,6 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
         : "";
       if (!token) throw new Error("Sign in to RevelaCode before using Live Vision.");
       const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
-      const identity = String(user?.user_id || user?.userId || user?.id || "");
       const farmName = selectedFarm?.name || "the selected farm";
       const cropName = cropForScan.trim() || first(selectedFarm?.primary_crop, selectedFarm?.crop_name, "crop not specified");
       const prompt = diagnosticMode === "leaf"
@@ -498,7 +497,6 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
         body: JSON.stringify({
           image: imageData,
           mimeType: diagnosticFile.type || "image/jpeg",
-          ...(identity ? { userId: identity, user_id: identity } : {}),
           prompt,
         }),
       });
