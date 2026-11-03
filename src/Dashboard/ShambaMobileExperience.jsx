@@ -582,7 +582,8 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
       });
       const saved = response?.data?.soil_test || response?.data || response;
       setSoilTests((items) => [saved, ...items]);
-      if (measured !== null) {
+      const trustedReading = measured !== null && (soilMethod !== "digital_meter" || soilCalibration === "calibrated");
+      if (trustedReading) {
         setFarmDetail((current) => ({ ...(current || selectedFarm || {}), soil_ph: measured, soil_ph_method: soilMethod, soil_ph_calibration_status: soilMethod === "digital_meter" ? soilCalibration : "not_applicable" }));
         setFarms((items) => items.map((farm) => String(getId(farm)) === String(currentFarmId) ? { ...farm, soil_ph: measured } : farm));
       }
