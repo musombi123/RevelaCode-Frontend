@@ -71,7 +71,7 @@ function installFetchGuard() {
       const body = init?.body ?? null;
       return makeFetchResponse(getDemoPayload(url, method, body));
     }
-    return originalFetch(input, init);
+    return originalFetch.call(window, input, init);
   };
 }
 
