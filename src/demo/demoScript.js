@@ -48,7 +48,6 @@ const CURATED = {
     ],
     steps: [
       step("biashara-overview", "biashara", "Your business overview", "Muhtasari wa biashara", "See your business identity, live figures and stock alerts together.", "Ona utambulisho wa biashara, takwimu na tahadhari za bidhaa pamoja."),
-      step("biashara-more-menu-btn", "biashara", "Find more business tools", "Tafuta zana zaidi za biashara", "Open More to find Products, Finance, Team and other operations.", "Fungua Zaidi kupata Bidhaa, Fedha, Timu na shughuli nyingine.", "click"),
       step("biashara-nav-products", "biashara", "Open Products and stock", "Fungua Bidhaa na stoo", "Choose Products to review stock and add an item to your catalogue.", "Chagua Bidhaa kukagua stoo na kuongeza bidhaa kwenye orodha.", "click"),
       step("biashara-product-name", "biashara", "Name a sample product", "Weka jina la bidhaa ya mfano", "Enter the sample name below. It will fill the product form without saving yet.", "Weka jina la mfano hapa chini. Litajaza fomu bila kuhifadhi bado.", "type", "Demo maize flour"),
       step("biashara-create-product", "biashara", "Try creating the product", "Jaribu kuunda bidhaa", "Tap Create product. Demo mode simulates the request and saves nothing.", "Gusa Unda bidhaa. Hali ya onyesho huiga ombi bila kuhifadhi chochote.", "click"),
