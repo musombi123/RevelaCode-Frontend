@@ -13,10 +13,11 @@ function isWriteMethod(method) {
 function isApiUrl(value) {
   try {
     const parsed = new URL(String(value), window.location.href);
-    return /\/api(?:\/|$)/i.test(parsed.pathname) ||
-      /revelacode-backend|revelaai\.onrender\.com/i.test(parsed.hostname);
+    return /\\/api(?:\\/|$)/i.test(parsed.pathname) ||
+      /\\/(?:payments?|wallet|checkout|mpesa|daraja|transactions?)(?:\\/|$)/i.test(parsed.pathname) ||
+      /revelacode-backend|revelaai\\.onrender\\.com|stripe|mpesa|paystack|flutterwave|pesapal|intasend/i.test(parsed.hostname);
   } catch {
-    return /\/api(?:\/|$)/i.test(String(value));
+    return /\\/api(?:\\/|$)|\\/(?:payments?|wallet|checkout|mpesa|daraja|transactions?)(?:\\/|$)/i.test(String(value));
   }
 }
 
