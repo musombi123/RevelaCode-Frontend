@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3,
   Bell, CheckCircle2, ChevronRight, Clock, Cloud, CloudRain, CloudSun,
@@ -10,6 +10,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 
 const FARM_PHOTO = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85";
+const ShambaFarmSetup = lazy(() => import("@/Dashboard/ShambaFarmsDashboard.jsx"));
 const PANEL = "rounded-2xl border border-[#17384F] bg-[#0A2237]";
 const MUTED = "text-[#8BA6B8]";
 const ACTION = "bg-[#20C987] text-[#05251E]";
@@ -230,26 +231,11 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   }, [getShambaDashboard, getFarmer, getFarms, getMarketplaceListings]);
 
   useEffect(() => {
-    let live = true;
-    Promise.allSettled([getShambaDashboard(), getFarmer(), getFarms(), getMarketplaceListings({ hub: "shamba" })]).then((results) => {
-      if (!live) return;
-      const value = (index) => results[index].status === "fulfilled" ? results[index].value : null;
-      if (results[0].status === "fulfilled") setDashboard(value(0));
-      if (results[1].status === "fulfilled") setFarmer(unwrapFarmer(value(1)));
-      if (results[2].status === "fulfilled") {
-        const items = unwrap(value(2), "farms").filter((farm) => farm?.status !== "deleted");
-        setFarms(items);
-        setSelectedFarmId((current) => current || String(getId(items[0]) || ""));
-      }
-      if (results[3].status === "fulfilled") setMarketListings(unwrap(value(3), "listings").filter((item) => item?.status !== "deleted"));
-      if (results.every((result) => result.status === "rejected")) setError("Shamba could not reach the data service. Check your connection and refresh.");
-      else if (results.some((result) => result.status === "rejected")) setError("Some Shamba data is temporarily unavailable. Sections show only information returned by the server.");
+    loadCore().catch(() => {
+      setError("Shamba could not load your workspace.");
       setLoading(false);
-    }).catch(() => {
-      if (live) { setError("Shamba could not load your workspace."); setLoading(false); }
     });
-    return () => { live = false; };
-  }, [getShambaDashboard, getFarmer, getFarms, getMarketplaceListings]);
+  }, [loadCore]);
 
   useEffect(() => {
     if (!currentFarmId) {
@@ -651,10 +637,16 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
         )}
 
         {screen === "manage" && (
-          <section className="pt-4">
-            <div className="mb-3 flex items-center justify-between gap-2"><div><h1 className="text-[20px] font-black">Farm Management</h1><p className={"text-[10px] " + MUTED}>Use the existing verified farm workflow</p></div><button type="button" onClick={() => go("farms")} className="text-[11px] font-bold text-[#4BDD9D]">Back to farms</button></div>
-            <div className="rounded-2xl border border-[#244A5E] bg-[#0A2237] p-3 text-[11px] leading-5 text-[#C3D6DF]">Farm creation and profile updates use the existing Shamba workflow and backend validation. The form is opened below so your saved data and verification rules remain unchanged.</div>
-            <button type="button" onClick={() => onNavigate?.("shamba/farms")} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold " + ACTION}><Tractor size={15}/>Open farm registration</button>
+          <section className="pt-3">
+            <div className="mb-3 flex items-center justify-between gap-2"><div><h1 className="text-[20px] font-black">Farm Management</h1><p className={"text-[10px] " + MUTED}>Farmer profile and farm registration</p></div><button type="button" onClick={() => go("farms")} className="text-[11px] font-bold text-[#4BDD9D]">Back to farms</button></div>
+            <div className="dark overflow-hidden rounded-2xl">
+              <Suspense fallback={<div className={PANEL + " p-5 text-center text-[12px] " + MUTED}>Opening the secure farm registration form…</div>}>
+                <ShambaFarmSetup onNavigate={(target) => {
+                  if (String(target || "").toLowerCase().includes("trust")) go("trust");
+                  else go("farms");
+                }} />
+              </Suspense>
+            </div>
           </section>
         )}
 
