@@ -517,7 +517,7 @@ export default function CommunityComposer({
   // ==========================================================
 
   return (
-      <div className="mx-auto w-full max-w-5xl space-y-5 pb-10">
+      <div data-demo="community-composer" className="mx-auto w-full max-w-5xl space-y-5 pb-10">
 
         {/* ====================================================
             TOP NAVIGATION
