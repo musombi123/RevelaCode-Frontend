@@ -44,6 +44,29 @@ export function DemoProvider({ children, chapters = [] }) {
     return release;
   }, [state.active]);
 
+  useLayoutEffect(() => {
+    if (!chapters.length) return;
+    const validIds = new Set(chapters.map((chapter) => chapter.id));
+    const currentChapter = chapters.find((chapter) => chapter.id === state.chapterId);
+    const safeChapterId = currentChapter ? state.chapterId : "welcome";
+    const safeStepIndex = currentChapter
+      ? Math.min(state.stepIndex, Math.max(0, (currentChapter.steps || []).length - 1))
+      : 0;
+    const safeCompleted = state.completed.filter((id) => validIds.has(id) && id !== "finish");
+    if (
+      safeChapterId !== state.chapterId ||
+      safeStepIndex !== state.stepIndex ||
+      safeCompleted.length !== state.completed.length
+    ) {
+      commit({
+        ...stateRef.current,
+        chapterId: safeChapterId,
+        stepIndex: safeStepIndex,
+        completed: safeCompleted,
+      });
+    }
+  }, [chapters, state.chapterId, state.stepIndex, state.completed, commit]);
+
   const chapterAt = useCallback((id) => chaptersRef.current.findIndex((chapter) => chapter.id === id), []);
 
   const start = useCallback((options = {}) => {
