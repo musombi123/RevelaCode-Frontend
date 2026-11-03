@@ -209,13 +209,13 @@ export default function BiasharaShell({ business, activeSection = "overview", on
           const Icon = item.icon;
           const active = isActive(item, activeSection);
           return (
-            <button key={item.key} type="button" onClick={() => navigateTo(item.route)} aria-current={active ? "page" : undefined} className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (active ? (isAndroidApp ? "text-[#37D98B]" : "text-emerald-300") : "text-slate-400 hover:bg-white/5 hover:text-white")}>
+            <button key={item.key} type="button" onClick={() => navigateTo(item.route)} data-demo={"biashara-nav-" + item.key} aria-current={active ? "page" : undefined} className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (active ? (isAndroidApp ? "text-[#37D98B]" : "text-emerald-300") : "text-slate-400 hover:bg-white/5 hover:text-white")}>
               <Icon aria-hidden="true" size={19} />
               <span className="max-w-full truncate">{item.label === "Products and stock" ? "Products" : item.label}</span>
             </button>
           );
         })}
-        <button type="button" onClick={() => { setMobileMenuOpen((open) => !open); }} aria-expanded={mobileMenuOpen} aria-label="More Biashara sections" className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (mobileMenuOpen ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
+        <button type="button" onClick={() => { setMobileMenuOpen((open) => !open); }} data-demo="biashara-more-menu-btn" aria-expanded={mobileMenuOpen} aria-label="More Biashara sections" className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (mobileMenuOpen ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
           <MoreHorizontal aria-hidden="true" size={19} />
           <span>More</span>
         </button>
