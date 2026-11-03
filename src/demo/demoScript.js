@@ -80,7 +80,8 @@ const CURATED = {
     ],
     steps: [
       step("elimu-overview", "education", "Your school workspace", "Nafasi ya kazi ya shule", "The dashboard adapts to your school role and permissions.", "Dashibodi hubadilika kulingana na jukumu na ruhusa zako shuleni."),
-      step("elimu-school-pages", "education", "Find school pages", "Tafuta kurasa za shule", "Open the school profile to review the public website and family portals.", "Fungua wasifu wa shule kukagua tovuti ya umma na mifumo ya wazazi."),
+      step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website to review the school's public pages and information.", "Chagua Tovuti ya Umma kukagua kurasa na taarifa za shule.", "click"),
+      step("elimu-school-pages", "education", "Review your school profile", "Kagua wasifu wa shule", "Open School profile to check the school's public identity and details.", "Fungua Wasifu wa Shule kukagua utambulisho na taarifa za shule."),
       step("elimu-nav-students", "education", "Open learner records", "Fungua kumbukumbu za wanafunzi", "Choose Students to see where enrolment and learner records are managed.", "Chagua Wanafunzi kuona mahali pa kusimamia usajili na taarifa zao.", "click"),
     ],
     challenge: bi("Find the module your school role uses most.", "Tafuta sehemu inayotumiwa zaidi na jukumu lako shuleni."),
@@ -130,7 +131,7 @@ const CURATED = {
     steps: [
       step("ai-overview", "ai", "Meet your assistant", "Kutana na msaidizi wako", "RevelaAI can help with questions across the connected workspaces.", "RevelaAI inaweza kusaidia maswali katika vitovu vilivyounganishwa."),
       step("ai-chat-input", "ai", "Ask a simple question", "Uliza swali rahisi", "Type: Show me three ways to improve my work today.", "Andika: Nionyeshe njia tatu za kuboresha kazi yangu leo.", "type", "Show me three ways to improve my work today."),
-      step("ai-vision-tools", "ai", "Explore voice and vision", "Chunguza sauti na picha", "Use the voice or camera controls to explore other ways to communicate.", "Tumia vitufe vya sauti au kamera kuchunguza njia nyingine za kuwasiliana.", "click"),
+      step("ai-vision-tools", "ai", "Explore voice and vision", "Chunguza sauti na picha", "Try the voice or camera controls, then return here to continue the tour.", "Jaribu vitufe vya sauti au kamera, kisha rudi hapa kuendelea na ziara.", "none"),
     ],
     challenge: bi("Ask RevelaAI for one practical next step in your chosen hub.", "Uliza RevelaAI hatua moja ya vitendo kwa kitovu unachochagua."),
   },
