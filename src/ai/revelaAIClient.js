@@ -38,10 +38,11 @@ function normalizeAIResponse(payload) {
     data.imageUrl,
     data.image_url,
     data.url,
+    ...(Array.isArray(data.urls) ? data.urls : []),
     ...(Array.isArray(data.images) ? data.images.map((item) =>
       typeof item === "string" ? item : item?.url || item?.image_url
     ) : []),
-  ].filter((item) => typeof item === "string" && /^https?:\/\//i.test(item));
+  ].filter((item) => typeof item === "string" && /^https?:\\/\\//i.test(item));
 
   const text = String(
     data.content ??
@@ -62,6 +63,8 @@ function normalizeAIResponse(payload) {
     sources: Array.isArray(meta?.online?.sources) ? meta.online.sources : [],
     metadata: {
       ...meta,
+      downloads: meta.downloads && typeof meta.downloads === "object" ? meta.downloads : (data.downloads && typeof data.downloads === "object" ? data.downloads : {}),
+      designBrief: meta.design_brief || meta.designBrief || null,
       provider: data.provider || meta.provider || meta.ai_model || null,
       model: data.model || meta.ai_model || null,
       engine: data.engine || meta.ai_model || meta.provider || "revelaai-coordinated-ai",
