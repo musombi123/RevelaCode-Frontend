@@ -1237,7 +1237,7 @@ export default function CommunityDashboard({
   // ==========================================================
 
   return (
-    <div className={"min-h-[70vh] w-full " + (communityDark ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900")}>
+    <div data-demo="community-overview" className={"min-h-[70vh] w-full " + (communityDark ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900")}>
       <div className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-3 px-3 pb-28 pt-3 sm:px-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[184px_minmax(0,1fr)_272px]">
         {/* Desktop left rail */}
         <aside className="hidden min-w-0 lg:block">
@@ -1258,10 +1258,10 @@ export default function CommunityDashboard({
               <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "groups" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
                 <Users size={16} /> Circles
               </button>
-              <button type="button" onClick={openComposer} className="mb-1 flex w-full items-center gap-3 rounded-xl bg-slate-950 px-3 py-3 text-left text-xs font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+              <button type="button" onClick={openComposer} data-demo="community-create-post" className="mb-1 flex w-full items-center gap-3 rounded-xl bg-slate-950 px-3 py-3 text-left text-xs font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
                 <Plus size={16} /> Create
               </button>
-              <button type="button" onClick={() => navigate("community-chats")} aria-current={workspacePage === "chats" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "chats" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
+              <button type="button" onClick={() => navigate("community-chats")} data-demo="community-chat-nav" aria-current={workspacePage === "chats" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "chats" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
                 <MessageCircle size={16} /> Chats
               </button>
               <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "me" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
@@ -1310,7 +1310,7 @@ export default function CommunityDashboard({
                       {backendHealth === "checking" ? "Checking" : backendHealth === "online" ? "Online" : "Offline"}
                     </div>
                     <button type="button" onClick={() => navigate("community-notifications")} aria-label="Open notifications" title="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 hover:text-cyan-700 dark:border-white/10 dark:text-slate-300 dark:hover:text-cyan-200"><Bell size={16} /></button>
-                    <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-2.5 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-cyan-300 sm:px-3"><Plus size={14} /> <span className="hidden sm:inline">Create post</span><span className="sm:hidden">Post</span></button>
+                    <button type="button" onClick={openComposer} data-demo="community-create-post" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-2.5 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-cyan-300 sm:px-3"><Plus size={14} /> <span className="hidden sm:inline">Create post</span><span className="sm:hidden">Post</span></button>
                     <button type="button" onClick={() => navigate("community-advertisement")} aria-label="Create a Community advertisement" title="Create an ad" className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-amber-400 hover:text-amber-600 dark:border-white/10 dark:text-slate-300 sm:flex"><Megaphone size={15} /></button>
                     <div className="relative">
                       <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" aria-label="Open RevelaCode menu" title="RevelaCode menu" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300"><Menu size={16} /></button>
