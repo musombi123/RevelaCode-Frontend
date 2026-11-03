@@ -892,6 +892,7 @@ export default function FaithDashboard({
 
   return (
     <div
+      data-demo="faith-overview"
       className="
         mx-auto
         w-full
@@ -931,7 +932,7 @@ export default function FaithDashboard({
           <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
             Prophecy <BookOpen size={13} />
           </button>
-          <button type="button" onClick={openStudy} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+          <button type="button" onClick={openStudy} data-demo="faith-study-library" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
             Study Library <Library size={13} />
           </button>
           <button type="button" onClick={onOpenAI} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
