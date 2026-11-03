@@ -64,3 +64,19 @@ test("RevelaAI is exposed as a top-level workspace navigation entry", async () =
   assert.doesNotMatch(aiEntry, /hidden:\s*true/);
   assert.match(mainDashboard, /keys:\s*\["home",\s*"ai"\]/);
 });
+
+
+test("all primary platform hubs remain directly available in workspace navigation", async () => {
+  const dashboardConfig = await readFile(new URL("../src/components/dashboardConfig.jsx", import.meta.url), "utf8");
+  const mainDashboard = await readFile(new URL("../src/components/MainDashboardV2.jsx", import.meta.url), "utf8");
+
+  for (const key of ["faith", "education", "shamba", "biashara", "community"]) {
+    assert.match(dashboardConfig, new RegExp('key: "' + key + '"'));
+    assert.match(mainDashboard, new RegExp('keys:.*"' + key + '"'));
+  }
+
+  assert.match(mainDashboard, /keys:\s*\["home",\s*"ai"\]/);
+  assert.match(mainDashboard, /label: "Learn & Security"/);
+  assert.match(mainDashboard, /label: "Work & Grow"/);
+  assert.match(mainDashboard, /label: "Community & Services"/);
+});
