@@ -51,7 +51,7 @@ test("assistant chat hides internal USECT/Core Mesh status and strips it from re
 });
 
 test("Premium plans are opened from the global star, not a RevelaAI dashboard section", () => {
-  assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
   assert.match(appShell, /<PlansModal/);
   assert.doesNotMatch(dashboard, /revela-ai-revenue-panel|HubRevenueOffers|aiRevenueOpen/);
   assert.doesNotMatch(sidebar, /Plans|onOpenPlans/);
