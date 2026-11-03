@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 
 import ElimuDashboardHeader from "@/Dashboard/elimu/components/ElimuDashboardHeader.jsx";
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import ElimuDashboardSidebar from "@/Dashboard/elimu/components/ElimuDashboardSidebar.jsx";
 
 import ElimuOwnerDashboard from "@/Dashboard/elimu/ElimuOwnerDashboard.jsx";
@@ -1520,7 +1519,6 @@ export default function ElimuDashboardWorkspace({
               />
 
               {!isSpecialCenter && role === "owner" && ["elimu", "overview", "elimu/overview"].includes(normalizedPath) ? (
-                <HubRevenueOffers hub="elimu" compact />
               ) : null}
 
               {routeAccessError && !isRoleAccessDenied && (
