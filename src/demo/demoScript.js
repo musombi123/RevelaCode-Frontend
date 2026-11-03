@@ -152,9 +152,9 @@ const CURATED = {
       step("account-menu-profile", "profile", "Review your profile", "Kagua wasifu wako", "Open Profile to check your personal information and account identity.", "Fungua Wasifu kukagua taarifa binafsi na utambulisho wa akaunti.", "click"),
       step("account-menu-payments", "profile", "Find payments and wallet", "Tafuta malipo na pochi", "Open Payments to review the wallet and transaction area.", "Fungua Malipo kukagua pochi na sehemu ya miamala.", "click"),
       step("account-menu-accounts", "profile", "Check account security", "Kagua usalama wa akaunti", "Open Account and Security to review sign-in protection options.", "Fungua Akaunti na Usalama kukagua njia za kulinda kuingia.", "click"),
-      step("account-menu-help", "profile", "Find help and notifications", "Tafuta msaada na arifa", "Open Help for support. Notifications are listed in the same Account Center menu.", "Fungua Msaada kupata huduma. Arifa zimo kwenye menyu hiyo hiyo ya Akaunti.", "click"),
+      step("account-menu-notifications", "profile", "Find your notifications", "Tafuta arifa zako", "Open Notifications for account updates. Help is in this menu when you need support.", "Fungua Arifa kupata taarifa za akaunti. Msaada uko kwenye menyu hii unapouhitaji.", "click"),
     ],
-    challenge: bi("Find the notifications area and locate the support contact in Help.", "Tafuta sehemu ya arifa na mawasiliano ya huduma kwenye Msaada."),
+    challenge: bi("Open Help and find the support contact for your account.", "Fungua Msaada na utafute mawasiliano ya huduma ya akaunti yako."),
   },
 };
 
