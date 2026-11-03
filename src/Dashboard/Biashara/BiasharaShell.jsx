@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe, ArrowLeftRight,
-  LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
+  Home, LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
   RefreshCw, Settings, Sparkles, Store, Users, Wrench, Zap, X,
 } from "lucide-react";
 
@@ -31,6 +31,13 @@ const MORE_TOOLS = [
 ];
 
 const MOBILE_NAV_KEYS = ["overview", "orders", "products", "factory", "website"];
+
+const ANDROID_NAV = [
+  { key: "overview", label: "Home", route: "overview", icon: Home, available: true },
+  { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
+  { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
+  { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },
+];
 
 const SIMPLE_PRIMARY_KEYS = new Set([
   "overview", "website", "orders", "products", "factory", "hr", "integrations", "services",
@@ -77,6 +84,7 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
 
 export default function BiasharaShell({ business, activeSection = "overview", onNavigate, onRefresh, children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isAndroidApp = import.meta.env.VITE_ANDROID_APP === "true";
   const businessName = business?.name || business?.business_name || "Current business";
   const simpleMode = business?.workspace_mode === "simple" ||
     (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
@@ -104,8 +112,16 @@ export default function BiasharaShell({ business, activeSection = "overview", on
     if (route && typeof onNavigate === "function") onNavigate(route);
   };
 
-  const visibleMobileItems = primaryNav.filter((item) => MOBILE_NAV_KEYS.includes(item.key));
-  const moreItems = primaryNav.filter((item) => !MOBILE_NAV_KEYS.includes(item.key));
+  const visibleMobileItems = isAndroidApp
+    ? ANDROID_NAV
+    : primaryNav.filter((item) => MOBILE_NAV_KEYS.includes(item.key));
+  const androidFooterRoutes = new Set(ANDROID_NAV.map((item) => item.route));
+  const moreItems = isAndroidApp
+    ? primaryNav.filter((item) => !androidFooterRoutes.has(item.route))
+    : primaryNav.filter((item) => !MOBILE_NAV_KEYS.includes(item.key));
+  const visibleMoreTools = isAndroidApp
+    ? moreNav.filter((item) => item.route !== "biashara-analytics")
+    : moreNav;
 
   return (
     <div className="min-h-screen bg-revela-dark text-slate-100 lg:flex">
@@ -164,11 +180,16 @@ export default function BiasharaShell({ business, activeSection = "overview", on
               <Store aria-hidden="true" size={19} />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{activeLabel}</p>
-              <p className="max-w-[58vw] truncate text-xs text-slate-400">{businessName}</p>
+              <p className="truncate text-sm font-extrabold tracking-tight text-white">{isAndroidApp ? "RevelaCode" : activeLabel}</p>
+              <p className="max-w-[58vw] truncate text-xs text-slate-400">{isAndroidApp ? "Biashara Hub · " + activeLabel : businessName}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {isAndroidApp ? (
+              <button type="button" onClick={() => navigateTo("notifications")} aria-label="Open business alerts" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+                <Bell aria-hidden="true" size={18} />
+              </button>
+            ) : null}
             <button type="button" onClick={() => onRefresh?.()} aria-label="Refresh business data" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
               <RefreshCw aria-hidden="true" size={17} />
             </button>
@@ -183,12 +204,12 @@ export default function BiasharaShell({ business, activeSection = "overview", on
         </main>
       </div>
 
-      <nav aria-label="Biashara mobile navigation" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 bg-revela-card/95 px-1 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur lg:hidden">
+      <nav aria-label="Biashara mobile navigation" className={"fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-1 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur lg:hidden " + (isAndroidApp ? "border-white/10 bg-[#061D36]/96 shadow-[0_-8px_28px_rgba(3,20,43,.28)]" : "border-white/10 bg-revela-card/95")}>
         {visibleMobileItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item, activeSection);
           return (
-            <button key={item.key} type="button" onClick={() => navigateTo(item.route)} aria-current={active ? "page" : undefined} className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (active ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
+            <button key={item.key} type="button" onClick={() => navigateTo(item.route)} aria-current={active ? "page" : undefined} className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (active ? (isAndroidApp ? "text-[#37D98B]" : "text-emerald-300") : "text-slate-400 hover:bg-white/5 hover:text-white")}>
               <Icon aria-hidden="true" size={19} />
               <span className="max-w-full truncate">{item.label === "Products and stock" ? "Products" : item.label}</span>
             </button>
@@ -212,7 +233,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
           <div className="my-3 border-t border-white/10" />
           <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
           <div className="space-y-1">
-            {moreNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
+            {visibleMoreTools.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
           </div>
           <p className="px-3 pt-3 text-[11px] leading-4 text-slate-500">Unavailable sections are marked with a lock until their backend API is ready. No plan or role restriction is inferred here.</p>
         </div>
