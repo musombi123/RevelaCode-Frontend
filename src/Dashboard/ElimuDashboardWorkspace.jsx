@@ -1420,7 +1420,7 @@ export default function ElimuDashboardWorkspace({
           : FileText;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+    <div data-demo="elimu-overview" className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
       <div className="flex min-h-screen">
         <ElimuDashboardSidebar
           access={access}
@@ -1507,7 +1507,7 @@ export default function ElimuDashboardWorkspace({
           </header>
 
           <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-            <div className="mx-auto w-full max-w-[1600px] space-y-6">
+            <div data-demo={isWebsiteCenter ? "elimu-school-pages" : normalizedPath === "elimu/students" ? "elimu-student-records" : undefined} className="mx-auto w-full max-w-[1600px] space-y-6">
               <ElimuDashboardHeader
                 access={access}
                 school={school}
