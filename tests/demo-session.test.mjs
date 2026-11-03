@@ -141,6 +141,7 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(overlay, /isVisibleDemoTarget/);
   assert.match(overlay, /3000/);
   assert.match(overlay, /rc-demo-finish-actions/);
+  assert.match(overlay, /if \(!voice\) return undefined/);
   assert.match(css, /env\(safe-area-inset-bottom\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(provider, /localStorage\.getItem/);
