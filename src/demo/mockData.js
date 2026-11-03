@@ -147,6 +147,21 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
   const verb = String(method || "GET").toUpperCase();
   const payload = body && typeof body === "string" ? (() => { try { return JSON.parse(body); } catch { return {}; } })() : body || {};
 
+  if (verb !== "GET" && verb !== "HEAD" && (lower.includes("/ai") || lower.endsWith("ai"))) {
+    const question = String(payload?.message || payload?.prompt || "").trim();
+    const response = question
+      ? "Demo reply: start with one clear priority, break it into a small action, and review your progress at the end of the day. This sample answer was generated locally for the tour."
+      : "Demo reply: ask a clear question and RevelaAI will help you plan the next step.";
+    return {
+      success: true,
+      ok: true,
+      demo: true,
+      response,
+      data: { response, hub_used: "general", model: "demo-sample" },
+      meta: { demo: true, hub: "general", provider: "demo-sample" },
+    };
+  }
+
   if (verb !== "GET" && verb !== "HEAD") {
     return {
       success: true, ok: true, demo: true,
