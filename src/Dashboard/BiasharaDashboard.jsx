@@ -557,10 +557,12 @@ function QuickAction({
   label,
   description,
   onClick,
+  dataDemo,
 }) {
   return (
     <button
       type="button"
+      data-demo={dataDemo}
       onClick={onClick}
       className="group flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-blue-950/5"
     >
@@ -1011,10 +1013,11 @@ function CreateBusinessState({
   );
 }
 
-function BiasharaAndroidModule({ icon: Icon, label, detail, iconClass, onClick }) {
+function BiasharaAndroidModule({ icon: Icon, label, detail, iconClass, targetId, onClick }) {
   return (
     <button
       type="button"
+      data-demo={targetId}
       onClick={onClick}
       className="group flex min-h-[104px] min-w-0 flex-col items-start justify-between rounded-[19px] border border-slate-200/90 bg-white p-3 text-left shadow-[0_5px_18px_rgba(15,23,42,.045)] transition active:scale-[.98] hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
@@ -1127,6 +1130,7 @@ function BiasharaAndroidOverview({
                 label={item.label}
                 detail={item.detail}
                 iconClass={item.tone}
+                targetId={"biashara-nav-" + item.key}
                 onClick={() => onNavigate(item.key)}
               />
             ))}
@@ -1960,6 +1964,7 @@ export default function BiasharaDashboard({
               icon={Package}
               label="Products"
               description="Manage stock"
+              dataDemo="biashara-nav-products"
               onClick={() =>
                 navigate("products")
               }
