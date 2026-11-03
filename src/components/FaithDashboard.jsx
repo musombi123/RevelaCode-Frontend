@@ -32,6 +32,7 @@ import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 
 /* =========================================================
    FAITH DASHBOARD
@@ -522,6 +523,7 @@ export default function FaithDashboard({
             lg:justify-end
           "
         >
+          <PremiumPlansStar />
           <button
             type="button"
             onClick={openStudy}
@@ -923,6 +925,7 @@ export default function FaithDashboard({
         </div>
 
         <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
+          <PremiumPlansStar />
           <button type="button" onClick={openFaithAcademy} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-indigo-700">
             <GraduationCap size={14} /> Faith Academy
           </button>
