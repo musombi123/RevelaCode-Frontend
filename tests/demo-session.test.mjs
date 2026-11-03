@@ -128,6 +128,7 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   const css = read("src/demo/demo.css");
   const provider = read("src/demo/DemoProvider.jsx");
   const api = read("src/demo/demoApi.js");
+  const app = read("src/App.jsx");
 
   assert.match(overlay, /role="dialog"/);
   assert.match(overlay, /aria-labelledby=/);
@@ -136,7 +137,10 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(overlay, /ArrowLeft/);
   assert.match(overlay, /event\.key === "Escape"/);
   assert.match(overlay, /backButton/);
+  assert.match(overlay, /focusin/);
+  assert.match(overlay, /isVisibleDemoTarget/);
   assert.match(overlay, /3000/);
+  assert.match(overlay, /rc-demo-finish-actions/);
   assert.match(css, /env\(safe-area-inset-bottom\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(provider, /localStorage\.getItem/);
@@ -144,4 +148,8 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(api, /prototype\.send = function demoSafeSend/);
   assert.match(api, /navigator\.sendBeacon/);
   assert.match(api, /shouldMockRequest/);
+  assert.match(api, /firstPartyHost/);
+  assert.match(app, /buildDemoChapters\\(HOME_HUBS, DASHBOARDS\\)/);
+  assert.match(app, /<DemoProvider chapters=\\{DEMO_CHAPTERS\\}>/);
+  assert.match(app, /<DemoOverlay \\/>/);
 });
