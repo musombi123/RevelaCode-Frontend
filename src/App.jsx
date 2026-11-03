@@ -183,9 +183,13 @@ function isPlatformHostname() {
 function PlatformHomeRoute() {
   const domainHub = resolveRevelaCodeHubHost();
 
-  // The native Android package opens the compact application workspace directly.
-  // The public marketing homepage remains the default entry point on the web.
-  if (import.meta.env.VITE_ANDROID_APP === "true") {
+  // Native builds open the working application immediately. The marketing
+  // welcome page remains available on the public website only.
+  if (
+    import.meta.env.VITE_ANDROID_APP === "true" ||
+    import.meta.env.VITE_TAURI_APP === "true" ||
+    String(window.location.hostname || "").trim().toLowerCase() === "tauri.localhost"
+  ) {
     return <InternalDashboard initialHub="home" />;
   }
 
@@ -277,7 +281,16 @@ export default function App() {
             <AndroidPermissionSetup />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
-              <Route path="/welcome" element={<PlatformWelcomePage />} />
+              <Route
+                path="/welcome"
+                element={
+                  import.meta.env.VITE_ANDROID_APP === "true" ||
+                  import.meta.env.VITE_TAURI_APP === "true" ||
+                  String(window.location.hostname || "").trim().toLowerCase() === "tauri.localhost"
+                    ? <Navigate to="/app" replace />
+                    : <PlatformWelcomePage />
+                }
+              />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
               <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
