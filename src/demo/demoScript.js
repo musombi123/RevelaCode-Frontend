@@ -117,6 +117,7 @@ const CURATED = {
       step("community-overview", "community", "Your community feed", "Mtiririko wa jamii yako", "Browse updates, groups and useful local conversations.", "Vinjari taarifa, vikundi na mazungumzo muhimu ya eneo lako."),
       step("community-create-post", "community", "Start a post", "Anzisha chapisho", "Tap Create post to open the composer. Demo mode blocks publishing.", "Gusa Tengeneza chapisho kufungua sehemu ya kuandika. Hali ya onyesho huzuia uchapishaji.", "click"),
       step("community-composer-title", "community", "Write a sample title", "Andika kichwa cha mfano", "Enter a short title below. It fills the draft but does not publish it.", "Weka kichwa kifupi hapa chini. Hujaza rasimu bila kuichapisha.", "type", "A useful community update"),
+      step("community-back-feed", "community", "Return to the feed", "Rudi kwenye mtiririko", "Tap Back to feed. The feed returns and your sample draft remains unpublished.", "Gusa Rudi kwenye mtiririko. Unarudi kwenye habari na rasimu yako haijachapishwa.", "click"),
       step("community-chat-nav", "community", "Open Jumuiya chat", "Fungua gumzo la Jumuiya", "Open Chats to find private messages and group conversations.", "Fungua Gumzo kupata ujumbe binafsi na mazungumzo ya vikundi.", "click"),
     ],
     challenge: bi("Find a group or person you would like to connect with.", "Tafuta kikundi au mtu unayetaka kuungana naye."),
@@ -234,7 +235,7 @@ export function buildDemoChapters(homeHubs = [], dashboards = []) {
     extras.push(generatedChapter(dashboard, false));
   });
 
-  chapters.push(CURATED.ai, CURATED.account, ...extras.filter(Boolean), FINISH);
+  chapters.push(...extras.filter(Boolean), CURATED.ai, CURATED.account, FINISH);
   return chapters;
 }
 
