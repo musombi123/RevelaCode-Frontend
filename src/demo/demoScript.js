@@ -234,7 +234,7 @@ export function buildDemoChapters(homeHubs = [], dashboards = []) {
     extras.push(generatedChapter(dashboard, false));
   });
 
-  chapters.push(CURATED.ai, CURATED.account, ...extras.filter(Boolean), FINISH);
+  chapters.push(...extras.filter(Boolean), CURATED.ai, CURATED.account, FINISH);
   return chapters;
 }
 
