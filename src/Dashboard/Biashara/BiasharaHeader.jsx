@@ -1,5 +1,4 @@
 import React from "react";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import {
   MapPin,
   RefreshCw,
@@ -67,7 +66,6 @@ export default function BiasharaHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <PremiumPlansStar />
           {onNotifications && (
             <button
               type="button"
