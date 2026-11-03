@@ -17,6 +17,7 @@ test("premium plans are launched globally, not embedded in hub dashboards", () =
     "src/Dashboard/ElimuDashboardWorkspace.jsx",
     "src/Dashboard/Community/CommunityMarketplace.jsx",
     "src/components/AIAssistantDashboard.jsx",
+    "src/Dashboard/JumuiyaDashboardShell.jsx",
   ];
   for (const file of dashboardFiles) {
     assert.doesNotMatch(source(file), /HubRevenueOffers/);
@@ -54,14 +55,21 @@ test("Community is permanently free and does not render membership subscription 
   assert.match(widget, /Community is permanently free/);
 });
 
-test("hub plan cards load the central catalogue, show per-hub trial status, and gate payment", () => {
-  const widget = source("src/Dashboard/HubRevenueOffers.jsx");
+test("all plan entry points use the standalone Premium modal, not dashboard plan sections", () => {
+  const appShell = source("src/components/MainDashboardV2.jsx");
+  const accountCenter = source("src/components/UserAccountDashboard.jsx");
+  const jumuiyaShell = source("src/Dashboard/JumuiyaDashboardShell.jsx");
+  const aiDashboard = source("src/components/AIAssistantDashboard.jsx");
+  const sidebar = source("src/components/Sidebar.jsx");
+  const modal = source("src/premium/PlansModal.jsx");
 
-  assert.match(widget, /revenueApi\.listPlans\(stream/);
-  assert.match(widget, /revenueApi\.listTrials\(/);
-  assert.match(widget, /revenueApi\.listSubscriptions\(/);
-  assert.match(widget, /revenueApi\.startCheckout\(/);
-  assert.match(widget, /plan\.status === "available"/);
-  assert.match(widget, /provider-confirmed payment/);
-  assert.match(widget, /\{trialDays\}-day free \{label\} trial/);
+  assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(accountCenter, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(jumuiyaShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.doesNotMatch(jumuiyaShell, /HubRevenueOffers|Plans and upgrade/);
+  assert.doesNotMatch(aiDashboard, /AI trial &amp; plans|HubRevenueOffers|aiRevenueOpen/);
+  assert.doesNotMatch(sidebar, /Plans<\\/span>|onOpenPlans/);
+  assert.match(modal, /revenueApi\\.listPlans\\(/);
+  assert.match(modal, /revenueApi\\.startCheckout\\(/);
+  assert.match(modal, /revenueApi\\.getCheckout\\(/);
 });
