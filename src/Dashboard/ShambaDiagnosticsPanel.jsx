@@ -147,7 +147,7 @@ export default function ShambaDiagnosticsPanel({
             <p className="text-[11px] font-extrabold text-white">Saved soil test history</p>
             {savedTests.slice(0, 6).map((test, index) => (
               <div key={getId(test) || index} className="mt-2 flex items-center justify-between gap-2 border-b border-[#17384F] pb-2 last:border-0">
-                <span className="min-w-0"><span className="block text-[11px] font-bold text-[#DCE9EF]">{test?.measured_ph !== null && test?.measured_ph !== undefined ? "Measured pH " + test.measured_ph : "AI visual estimate only"}</span><span className={"text-[9px] " + MUTED}>{String(test?.method || "soil test").replace(/_/g, " ")} · {formatDate(test?.created_at)}</span></span>
+                <span className="min-w-0"><span className="block text-[11px] font-bold text-[#DCE9EF]">{test?.measurement_status === "measured" ? "Measured pH " + test.measured_ph : test?.measurement_status === "uncalibrated_reading" ? "Uncalibrated meter reading " + test.measured_ph : "AI visual estimate only"}</span><span className={"text-[9px] " + MUTED}>{String(test?.method || "soil test").replace(/_/g, " ")} · {formatDate(test?.created_at)}</span></span>
                 <span className={"shrink-0 text-[9px] " + (test?.calibration_status === "calibrated" ? "text-[#59DEA1]" : "text-amber-300")}>{test?.calibration_status || "not applicable"}</span>
               </div>
             ))}
