@@ -197,11 +197,12 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const profileStatus = farmerStatus(farmer);
   const firstName = displayUserName(user, farmer);
   const weather = weatherPayload(weatherResponse);
-  const currentTemperature = first(weather?.temperature, weather?.temperature_c, weather?.temp_c, weather?.current?.temperature, weather?.current?.temperature_2m);
+  const currentTemperature = first(weather?.temperature, weather?.temperature_c, weather?.temp_c, weather?.current?.temperature_c, weather?.current?.temperature, weather?.current?.temperature_2m);
   const currentCondition = first(weather?.condition, weather?.description, weather?.summary, weather?.current?.condition, weather?.current?.weather_description);
-  const humidity = first(weather?.humidity, weather?.current?.humidity, weather?.current?.relative_humidity_2m);
-  const wind = first(weather?.wind_speed, weather?.wind_speed_kmh, weather?.current?.wind_speed, weather?.current?.wind_speed_10m);
-  const rainChance = first(weather?.rainfall_probability, weather?.precipitation_probability, weather?.rain_chance, weather?.current?.precipitation_probability);
+  const humidity = first(weather?.humidity, weather?.current?.humidity_percent, weather?.current?.humidity, weather?.current?.relative_humidity_2m);
+  const wind = first(weather?.wind_speed, weather?.wind_speed_kmh, weather?.current?.wind_speed_kmh, weather?.current?.wind_speed, weather?.current?.wind_speed_10m);
+  const rainChance = first(weather?.rainfall_probability, weather?.precipitation_probability, weather?.rain_chance, weather?.current?.rain_probability_percent, weather?.current?.precipitation_probability);
+  const rainfallMm = first(weather?.current?.precipitation_mm, weather?.current?.rain_mm, weather?.rainfall_mm);
   const forecast = forecastItems(weather);
   const currentMarketItems = marketItems(marketResponse);
   const marketRows = currentMarketItems.length ? currentMarketItems : marketListings;
@@ -359,7 +360,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
               </div>
               <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-right text-[10px]">
                 <span className={MUTED}>Humidity</span><b>{numberText(humidity, "%")}</b>
-                <span className={MUTED}>Rain</span><b>{numberText(rainChance, "%")}</b>
+                <span className={MUTED}>Rain</span><b>{rainChance !== undefined ? numberText(rainChance, "%") : numberText(rainfallMm, " mm")}</b>
                 <span className={MUTED}>Wind</span><b>{numberText(wind, " km/h")}</b>
               </div>
             </section>
@@ -521,14 +522,14 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                   <div key={day?.date || day?.day || index} className="flex min-w-0 flex-col items-center gap-1 rounded-xl bg-[#102D43] px-1 py-2 text-center">
                     <span className="truncate text-[9px] font-semibold text-[#B8CBD6]">{day?.day || dateLabel(day?.date || day?.time) || (index === 0 ? "Today" : "")}</span>
                     <WeatherGlyph condition={day?.condition || day?.description || day?.weather} size={18}/>
-                    <span className="text-[10px] font-extrabold text-white">{numberText(first(day?.max, day?.temperature_max, day?.temp_max))}°</span>
+                    <span className="text-[10px] font-extrabold text-white">{numberText(first(day?.temperature_max_c, day?.max, day?.temperature_max, day?.temp_max))}°</span>
                   </div>
                 ))}
               </div>
             )}
             <div className="mt-5"><SectionHeading title="7-Day Forecast"/></div>
             <div className={PANEL + " divide-y divide-[#17384F] px-3"}>
-              {farmVerified && forecast.length ? forecast.slice(0, 7).map((day, index) => <div key={day?.date || day?.day || index} className="flex items-center gap-3 py-3"><WeatherGlyph condition={day?.condition || day?.description || day?.weather} size={18}/><span className="min-w-0 flex-1 text-[11px] font-semibold text-white">{day?.day || day?.date || dateLabel(day?.time)}</span><span className="text-[11px] text-[#C1D1DA]">{numberText(first(day?.max, day?.temperature_max, day?.temp_max))}° / {numberText(first(day?.min, day?.temperature_min, day?.temp_min))}°</span><span className="text-[10px] text-[#73DDA7]">{numberText(first(day?.precipitation_probability, day?.rain_chance), "%")}</span></div>) : <div className="py-5 text-center"><p className="text-[12px] font-bold text-white">{farmVerified ? "Forecast data not returned" : "No farm forecast available"}</p><p className={"mt-1 text-[10px] " + MUTED}>Shamba displays forecast values only when supplied by the weather service.</p></div>}
+              {farmVerified && forecast.length ? forecast.slice(0, 7).map((day, index) => <div key={day?.date || day?.day || index} className="flex items-center gap-3 py-3"><WeatherGlyph condition={day?.condition || day?.description || day?.weather} size={18}/><span className="min-w-0 flex-1 text-[11px] font-semibold text-white">{day?.day || day?.date || dateLabel(day?.time)}</span><span className="text-[11px] text-[#C1D1DA]">{numberText(first(day?.temperature_min_c, day?.min, day?.temperature_min, day?.temp_min))}°–{numberText(first(day?.temperature_max_c, day?.max, day?.temperature_max, day?.temp_max))}°</span><span className="text-[10px] text-[#73DDA7]">{numberText(first(day?.rain_probability_percent, day?.precipitation_probability, day?.rain_chance), "%")}</span></div>) : <div className="py-5 text-center"><p className="text-[12px] font-bold text-white">{farmVerified ? "Forecast data not returned" : "No farm forecast available"}</p><p className={"mt-1 text-[10px] " + MUTED}>Shamba displays forecast values only when supplied by the weather service.</p></div>}
             </div>
             <button type="button" onClick={refresh} disabled={refreshing} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold disabled:opacity-50 " + ACTION}><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/>Refresh Weather</button>
           </section>
