@@ -35,6 +35,11 @@ test("premium plans are launched globally, not embedded in hub dashboards", () =
   assert.match(biasharaHeader, /<PremiumPlansStar\s/);
   assert.match(appShell, /<PlansModal/);
   assert.match(accountCenter, /<PremiumPlansStar\s*\/>/);
+  assert.match(biasharaHeader, /<PremiumPlansStar\s/);
+  assert.match(elimuHeader, /<PremiumPlansStar\s*\/>/);
+  assert.match(shambaHeader, /<PremiumPlansStar\s*\/>/);
+  assert.match(communityHeader, /<PremiumPlansStar\s*\/>/);
+  assert.match(faithHeader, /<PremiumPlansStar\s*\/>/);
   assert.match(modal, /revenueApi\.listPlans\(/);
   assert.match(modal, /revenueApi\.startCheckout\(/);
   assert.match(modal, /revenueApi\.getCheckout\(/);
