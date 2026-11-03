@@ -11,6 +11,42 @@ import "./index.css";
 const ADSENSE_SCRIPT_URL =
   "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5357444506450550";
 
+const launchSplash = (() => {
+  if (typeof window === "undefined") return null;
+
+  const isAndroid =
+    Capacitor.isNativePlatform() ||
+    import.meta.env.VITE_ANDROID_APP === "true";
+  const isWindowsDesktop =
+    import.meta.env.VITE_TAURI_APP === "true" ||
+    Boolean(window.__TAURI_INTERNALS__);
+
+  if (!isAndroid && !isWindowsDesktop) return null;
+
+  const element = document.getElementById("revelacode-launch-splash");
+  const image = element?.querySelector("img");
+  if (!element || !image) return null;
+
+  image.src = isAndroid ? "/splash/android.webp" : "/splash/desktop.webp";
+  element.hidden = false;
+
+  const startedAt = performance.now();
+  let finishScheduled = false;
+
+  return {
+    finish() {
+      if (finishScheduled || !element.isConnected) return;
+      finishScheduled = true;
+      const minimumVisibleMs = 950;
+      const remaining = Math.max(0, minimumVisibleMs - (performance.now() - startedAt));
+      window.setTimeout(() => {
+        element.classList.add("is-hidden");
+        window.setTimeout(() => element.remove(), 380);
+      }, remaining);
+    },
+  };
+})();
+
 // AdSense is a web publisher integration. Native Android uses the AdMob SDK instead.
 if (
   typeof window !== "undefined" &&
@@ -124,3 +160,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+if (launchSplash) {
+  // Keep the splash visible until the first React frame is painted, with a
+  // bounded timeout so a rendering failure cannot leave a permanent overlay.
+  window.requestAnimationFrame(() =>
+    window.requestAnimationFrame(() => launchSplash.finish())
+  );
+  window.setTimeout(() => launchSplash.finish(), 4500);
+}
