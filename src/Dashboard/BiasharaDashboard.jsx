@@ -1788,7 +1788,7 @@ export default function BiasharaDashboard({
             HEADER
         ================================================= */}
 
-        <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-lg shadow-slate-900/10 sm:rounded-[2rem] sm:shadow-xl">
+        <section data-demo="biashara-overview" className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-lg shadow-slate-900/10 sm:rounded-[2rem] sm:shadow-xl">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="relative z-10 flex flex-col gap-4 p-4 sm:gap-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
