@@ -58,6 +58,8 @@ test("the demo API returns sample GET data and simulated write success", () => {
   const farm = getDemoPayload("/api/jumuiya/shamba/farms");
   const schoolAccess = getDemoPayload("/api/jumuiya/elimu/access");
   const community = getDemoPayload("/api/jumuiya/community/posts");
+  const finance = getDemoPayload("/api/jumuiya/biashara/finance/transactions");
+  const account = getDemoPayload("/api/jumuiya/account/payments");
   const write = getDemoPayload(
     "https://revelacode-backend.onrender.com/api/jumuiya/biashara/products",
     "POST",
@@ -73,6 +75,10 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.equal(schoolAccess.access.role, "owner");
   assert.equal(community.demo, true);
   assert.ok(Array.isArray(community.posts) && community.posts.length > 0);
+  assert.equal(finance.demo, true);
+  assert.ok(Array.isArray(finance.transactions) && finance.transactions.length > 0);
+  assert.equal(account.demo, true);
+  assert.equal(account.payments.currency, "KES");
   assert.equal(write.demo, true);
   assert.equal(write.data.status, "simulated");
   assert.match(write.message, /nothing was saved/i);
