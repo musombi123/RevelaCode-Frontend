@@ -19,7 +19,7 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_REVELACODE_URL ||
   import.meta.env.VITE_BACKEND_URL ||
-  "";
+  "https://revelacode-backend.onrender.com";
 
 function normalizeBackendBase(value) {
   let base = String(value || "").trim();
