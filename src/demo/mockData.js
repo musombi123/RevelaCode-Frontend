@@ -103,6 +103,33 @@ export const DEMO_SCHOOL_ACCESS = {
   permissions: ["school.view", "school.manage", "students.view", "students.manage", "website.view", "website.manage"],
 };
 
+export const DEMO_STUDY_MATERIALS = [
+  {
+    id: "demo-study-1",
+    title: "How to Read a Bible Passage in Context",
+    category: "Bible Study",
+    topic: "Scripture",
+    description: "A practical sample guide to context, audience and meaning.",
+    summary: "Observe the passage, understand its setting and compare related Scripture.",
+    content: "# Read in context\n\n1. Read the full passage.\n2. Identify the audience and setting.\n3. Notice repeated words and the main idea.\n4. Compare related passages before drawing a conclusion.",
+    reading_time: 6,
+    is_published: true,
+    tags: ["Bible study", "context", "reading"],
+  },
+  {
+    id: "demo-study-2",
+    title: "A Simple Guide to Prophecy Symbols",
+    category: "Prophecy",
+    topic: "Prophecy",
+    description: "A sample introduction to studying symbols with their wider context.",
+    summary: "Compare symbols with their scriptural setting and related passages.",
+    content: "# Study symbols carefully\n\nRead the whole chapter, note the symbol, compare other passages and record what the text itself explains.",
+    reading_time: 5,
+    is_published: true,
+    tags: ["Prophecy", "symbols", "Scripture"],
+  },
+];
+
 export const DEMO_COMMUNITY_POSTS = [
   { id: "demo-post-1", author: "Jumuiya Neighbourhood", body: "Welcome to the demo community. Share useful updates and local opportunities.", created_at: "2026-11-03T07:30:00.000Z", reactions_count: 8, comments_count: 2 },
   { id: "demo-post-2", author: "Demo Farmers Circle", body: "Farmers are sharing seasonal tips and market information here.", created_at: "2026-11-02T14:00:00.000Z", reactions_count: 5, comments_count: 1 },
@@ -125,6 +152,34 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
       success: true, ok: true, demo: true,
       message: "Demo mode: this action was simulated. Nothing was saved.",
       data: { id: "demo-action-" + Date.now(), status: "simulated", ...payload },
+    };
+  }
+
+  if (lower.includes("/ai") || lower.endsWith("ai")) {
+    const question = String(payload?.message || payload?.prompt || "").trim();
+    return {
+      success: true,
+      demo: true,
+      response: question
+        ? "Demo reply: start with one clear priority, break it into a small action, and review your progress at the end of the day. This sample answer was generated locally for the tour."
+        : "Demo reply: ask a clear question and RevelaAI will help you plan the next step.",
+      data: {
+        response: question
+          ? "Demo reply: start with one clear priority, break it into a small action, and review your progress at the end of the day. This sample answer was generated locally for the tour."
+          : "Demo reply: ask a clear question and RevelaAI will help you plan the next step.",
+        hub_used: "general",
+        model: "demo-sample",
+      },
+      meta: { demo: true, hub: "general", provider: "demo-sample" },
+    };
+  }
+
+  if (lower.includes("/study/materials") || lower.includes("study-library") || lower.includes("faith-library")) {
+    return {
+      success: true,
+      demo: true,
+      materials: DEMO_STUDY_MATERIALS,
+      data: { materials: DEMO_STUDY_MATERIALS, items: DEMO_STUDY_MATERIALS },
     };
   }
 
