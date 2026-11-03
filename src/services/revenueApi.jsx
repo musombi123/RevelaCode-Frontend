@@ -199,6 +199,7 @@ export function createRevenueApiClient({
         body: {},
       }),
     listSubscriptions: (options = {}) => request("/subscriptions", options),
+    getMySubscription: (options = {}) => request("/subscription/me", options),
     adminBillingStatus: (options = {}) => request("/admin/billing/status", options),
     adminSubscriptions: ({ page = 1, perPage = 25, hub, status } = {}, options = {}) =>
       request("/admin/subscriptions", {
