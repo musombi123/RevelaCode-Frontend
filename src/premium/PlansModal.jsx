@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, LoaderCircle, LockKeyhole, RefreshCw, ShieldCheck, Smartphone, Star, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, LockKeyhole, RefreshCw, ShieldCheck, Smartphone, Star, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
 
@@ -486,7 +486,7 @@ export default function PlansModal({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
           {step === "catalog" ? (
             <>
-              {plansLoading ? <div className="flex items-center gap-2 py-10 text-sm text-slate-500"><LoaderCircle className="h-5 w-5 animate-spin" />{t.loading}</div> : null}
+              {plansLoading ? <div className="flex items-center gap-2 py-10 text-sm text-slate-500"><RefreshCw className="h-5 w-5 animate-spin" />{t.loading}</div> : null}
               {!plansLoading && plansError ? <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{plansError}</div> : null}
               {catalogOffline ? <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{t.offline}</div> : null}
               {!plansLoading && !plansError && plans.length === 0 ? <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">{t.empty}</p> : null}
@@ -535,7 +535,7 @@ export default function PlansModal({
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"><Smartphone className="h-5 w-5 shrink-0 text-slate-400" /><input id="premium-mpesa-phone" value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneError(""); }} inputMode="tel" autoComplete="tel" placeholder="0712 345 678" className="min-h-12 min-w-0 flex-1 bg-transparent text-sm outline-none" aria-invalid={Boolean(phoneError)} /></div>
               {phoneError ? <p role="alert" className="mt-2 text-xs text-rose-600 dark:text-rose-300">{phoneError}</p> : null}
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center justify-between gap-3 text-sm"><span className="text-slate-500 dark:text-slate-400">{t.amount}</span><strong className="text-lg font-black text-slate-950 dark:text-white">{formatMoney(selectedPlan?.amount, selectedPlan?.currency || "KES")}</strong></div><div className="mt-2 flex items-center justify-between gap-3 text-xs"><span className="text-slate-500 dark:text-slate-400">{t.duration}</span><strong className="text-slate-800 dark:text-slate-200">{selectedDuration}</strong></div><p className="mt-3 border-t border-slate-200 pt-3 text-[11px] leading-5 text-slate-500 dark:border-slate-700 dark:text-slate-400">The server calculates the final amount from the published plan catalogue. No card details or M-Pesa PIN are collected by RevelaCode.</p></div>
-              <button type="button" onClick={() => startPayment().catch((error) => paymentLogError("start_payment_unhandled", error))} disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}{submitting ? t.sending : `${t.pay} ${formatMoney(selectedPlan?.amount, selectedPlan?.currency || "KES")} ${t.withMpesa}`}</button>
+              <button type="button" onClick={() => startPayment().catch((error) => paymentLogError("start_payment_unhandled", error))} disabled={submitting} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{submitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}{submitting ? t.sending : `${t.pay} ${formatMoney(selectedPlan?.amount, selectedPlan?.currency || "KES")} ${t.withMpesa}`}</button>
             </div>
           ) : null}
 
