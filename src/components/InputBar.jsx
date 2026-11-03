@@ -885,6 +885,7 @@ export default function InputBar({
 
             <button
               type="button"
+              data-demo="ai-send-message"
               onClick={submit}
               disabled={!canSend}
               aria-label="Send message"
