@@ -631,6 +631,8 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     let backListener = null;
 
     App.addListener("backButton", () => {
+      // The guided tour owns hardware Back while its dialog is open.
+      if (document.querySelector("[data-demo-overlay-root]")) return;
       if (moreOpenRef.current) {
         setMoreOpen(false);
         return;
