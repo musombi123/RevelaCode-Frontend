@@ -114,6 +114,16 @@ function getFocusable(root) {
     .filter((node) => node.getAttribute("aria-hidden") !== "true" && node.getClientRects().length > 0);
 }
 
+function isVisibleDemoTarget(element) {
+  if (!element || !element.isConnected || element.getClientRects().length === 0) return false;
+  const style = window.getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return false;
+  const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
+  return visibleWidth / rect.width >= 0.65;
+}
+
 export default function DemoOverlay() {
   const demo = useDemo();
   const navigate = useNavigate();
@@ -172,9 +182,7 @@ export default function DemoOverlay() {
     const locate = () => {
       if (disposed) return;
       const found = Array.from(document.querySelectorAll("[data-demo]"))
-        .find((element) => element.getAttribute("data-demo") === String(step.target) &&
-          element.getClientRects().length > 0 &&
-          window.getComputedStyle(element).visibility !== "hidden");
+        .find((element) => element.getAttribute("data-demo") === String(step.target) && isVisibleDemoTarget(element));
       if (found) {
         setTargetElement(found);
         setTargetMissing(false);
@@ -194,9 +202,7 @@ export default function DemoOverlay() {
       if (disposed) return;
       locate();
       const exists = Array.from(document.querySelectorAll("[data-demo]"))
-        .some((element) => element.getAttribute("data-demo") === String(step.target) &&
-          element.getClientRects().length > 0 &&
-          window.getComputedStyle(element).visibility !== "hidden");
+        .some((element) => element.getAttribute("data-demo") === String(step.target) && isVisibleDemoTarget(element));
       if (!exists) setTargetMissing(true);
       observer?.disconnect();
     }, 3000);
@@ -339,14 +345,20 @@ export default function DemoOverlay() {
     let listener = null;
     App.addListener("backButton", () => {
       const globalIndex = chapters.findIndex((item) => item.id === chapterId);
-      if (globalIndex === 0 && stepIndex === 0) setExitConfirm(true);
-      else back();
+      if (exitConfirm) {
+        exit();
+        setExitConfirm(false);
+      } else if (globalIndex === 0 && stepIndex === 0) {
+        setExitConfirm(true);
+      } else {
+        back();
+      }
     }).then((registered) => {
       if (disposed) registered.remove();
       else listener = registered;
     }).catch(() => {});
     return () => { disposed = true; listener?.remove(); };
-  }, [active, chapters, chapterId, stepIndex, back]);
+  }, [active, chapters, chapterId, stepIndex, back, exitConfirm, exit]);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -356,8 +368,12 @@ export default function DemoOverlay() {
       const activeInside = dialog.contains(document.activeElement);
       if (event.key === "Escape") {
         event.preventDefault();
-        if (exitConfirm) setExitConfirm(false);
-        else setExitConfirm(true);
+        if (exitConfirm) {
+          exit();
+          setExitConfirm(false);
+        } else {
+          setExitConfirm(true);
+        }
         return;
       }
       if (event.key === "ArrowRight" && !["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) {
@@ -388,7 +404,7 @@ export default function DemoOverlay() {
     };
     document.addEventListener("keydown", onDialogKeyDown, true);
     return () => document.removeEventListener("keydown", onDialogKeyDown, true);
-  }, [active, exitConfirm, next, back]);
+  }, [active, exitConfirm, next, back, exit]);
 
   const chapterIndex = Math.max(0, chapters.findIndex((item) => item.id === chapterId));
   const stepCount = chapter?.steps?.length || 0;
