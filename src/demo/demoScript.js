@@ -81,9 +81,10 @@ const CURATED = {
     ],
     steps: [
       step("elimu-overview", "education", "Your school workspace", "Nafasi ya kazi ya shule", "The dashboard adapts to your school role and permissions.", "Dashibodi hubadilika kulingana na jukumu na ruhusa zako shuleni."),
-      step("elimu-open-nav", "education", "Open school navigation", "Fungua urambazaji wa shule", "On a phone, tap the menu. On desktop, use the school sidebar.", "Kwenye simu, gusa menyu. Kwenye tarakilishi, tumia menyu ya pembeni.", "click"),
-      step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website to review the school's public information.", "Chagua Tovuti ya Umma kukagua taarifa za shule.", "click"),
+      step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website from the sidebar or phone menu.", "Chagua Tovuti ya Umma kwenye menyu ya pembeni au menyu ya simu.", "click"),
       step("elimu-school-pages", "education", "Review your school pages", "Kagua kurasa za shule", "Check the school identity, public information and family-facing pages.", "Kagua utambulisho wa shule, taarifa za umma na kurasa za wazazi."),
+      step("elimu-nav-students", "education", "Open learner records", "Fungua kumbukumbu za wanafunzi", "Choose Students to see where enrolment and learner records are managed.", "Chagua Wanafunzi kuona mahali pa kusimamia usajili na taarifa zao.", "click"),
+      step("elimu-student-records", "education", "Review learner management", "Kagua usimamizi wa wanafunzi", "Student records are protected by your school role and permissions.", "Kumbukumbu za wanafunzi zinalindwa na jukumu na ruhusa zako shuleni."),
     ],
     challenge: bi("Find the module your school role uses most.", "Tafuta sehemu inayotumiwa zaidi na jukumu lako shuleni."),
   },
