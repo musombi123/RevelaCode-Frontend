@@ -137,7 +137,7 @@ function installBeaconGuard() {
   originalSendBeacon = navigator.sendBeacon;
   navigator.sendBeacon = function demoSafeBeacon() {
     // sendBeacon is POST-only; while the tour is active, acknowledge but never send it.
-    if (guardUsers > 0 && isApiUrl(arguments[0]) && !isAnalyticsUrl(arguments[0])) return true;
+    if (guardUsers > 0 && !isAnalyticsUrl(arguments[0])) return true;
     return originalSendBeacon.apply(this, arguments);
   };
 }
