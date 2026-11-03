@@ -101,7 +101,7 @@ function statusLabel(status) {
   return labels[status] || String(status || "Unverified").replace(/_/g, " ");
 }
 
-function MobileHeader({ title, subtitle, onBack, onAlerts, right }) {
+function MobileHeader({ title, subtitle, onBack, onAlerts, onProfile, profileInitial, alertCount = 0, right }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#14344A] bg-[#041726]/95 px-4 py-3 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[560px] items-center gap-3">
@@ -118,11 +118,18 @@ function MobileHeader({ title, subtitle, onBack, onAlerts, right }) {
           <div className="truncate text-[15px] font-extrabold text-white">{title}</div>
           {subtitle && <div className={"truncate text-[11px] " + MUTED}>{subtitle}</div>}
         </div>
-        {right || (onAlerts && (
+        {right}
+        {onAlerts && (
           <button type="button" onClick={onAlerts} aria-label="Open alerts" className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#B9D0DC]">
             <Bell size={19} />
+            {alertCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[#041726]"/>}
           </button>
-        ))}
+        )}
+        {onProfile && (
+          <button type="button" onClick={onProfile} aria-label="Open profile and settings" className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#6B897E] bg-[#24483E] text-[11px] font-black text-white">
+            {String(profileInitial || "U").slice(0, 1).toUpperCase()}
+          </button>
+        )}
       </div>
     </header>
   );
@@ -187,6 +194,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const [detailTab, setDetailTab] = useState("Overview");
   const [recordTab, setRecordTab] = useState("Expenses");
   const [alertFilter, setAlertFilter] = useState("All");
+  const [marketTab, setMarketTab] = useState("Local Market");
   const [advisorQuestion, setAdvisorQuestion] = useState("");
 
   const activeFarms = useMemo(() => farms.filter((farm) => farm?.status !== "deleted"), [farms]);
@@ -205,7 +213,10 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const rainfallMm = first(weather?.current?.precipitation_mm, weather?.current?.rain_mm, weather?.rainfall_mm);
   const forecast = forecastItems(weather);
   const currentMarketItems = marketItems(marketResponse);
-  const marketRows = currentMarketItems.length ? currentMarketItems : marketListings;
+  const nationalMarketItems = marketItems(first(marketResponse?.national_market, marketResponse?.national_prices, marketResponse?.national, marketResponse?.data?.national_market, marketResponse?.data?.national_prices));
+  const marketRows = marketTab === "National"
+    ? nationalMarketItems
+    : currentMarketItems.length ? currentMarketItems : marketListings;
   const alertCount = alerts.filter((item) => !item?.read_at && item?.is_read !== true && item?.read !== true).length;
   const farmerPill = farmerStatus(farmer);
   const farmHealth = first(commandCenter?.farm_health, commandCenter?.health_score, commandCenter?.health?.score, farmDetail?.health_score);
@@ -328,7 +339,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const salesTotal = harvests.reduce((sum, item) => sum + (num(first(item?.revenue, item?.sale_amount, item?.total_value, item?.amount)) || 0), 0);
 
   const header = screen === "home" ? (
-    <MobileHeader title="RevelaCode" subtitle="Shamba Hub" onAlerts={() => go("alerts")} />
+    <MobileHeader title="RevelaCode" subtitle="Shamba Hub" onAlerts={() => go("alerts")} alertCount={alertCount} onProfile={() => go("profile")} profileInitial={firstName} />
   ) : (
     <MobileHeader title={titleMap[screen] || "Shamba"} subtitle={farmLocation(selectedFarm)} onBack={() => screen === "detail" ? go("farms") : go("home")} onAlerts={() => go("alerts")} />
   );
@@ -426,7 +437,12 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2"><span className="truncate text-[12px] font-extrabold text-white">{farm?.name || "Unnamed Farm"}</span><span className={"shrink-0 rounded-full px-2 py-1 text-[9px] font-bold " + (verified ? "bg-[#0C664C] text-[#B7F7D8]" : state === "pending" ? "bg-[#73551C] text-[#FFE7A7]" : "bg-[#314354] text-[#C4D1DA]")}>{statusLabel(state)}</span></span>
                     <span className={"mt-1 block truncate text-[10px] " + MUTED}>{first(farm?.primary_crop, farm?.crop_name, farm?.crop_type, "Farm")} · {numberText(farm?.size)} {farm?.size_unit || "acres"}</span>
-                    <span className="mt-2 flex items-center gap-3 text-[9px] text-[#7897A9]"><span>{farmLocation(farm)}</span><span>Updated {timeAgo(farm?.updated_at || farm?.created_at)}</span></span>
+                    <span className="mt-2 flex items-center gap-3 text-[9px] text-[#9AB5C3]">
+                      <span>Health {numberText(first(farm?.health_score, farm?.farm_health_score, farm?.health?.score), "%")}</span>
+                      <span>Yield {numberText(first(farm?.expected_yield, farm?.yield_estimate))} t</span>
+                      <span>Updated {timeAgo(farm?.updated_at || farm?.created_at)}</span>
+                    </span>
+                    <span className={"mt-1 block truncate text-[9px] " + MUTED}>{farmLocation(farm)}</span>
                   </span>
                   <ChevronRight size={16} className="mt-1 shrink-0 text-[#64879C]"/>
                 </button>;
@@ -541,8 +557,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             <p className={"mt-1 text-[11px] " + MUTED}>Prices returned by Shamba market services</p>
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#1A3B52] bg-[#0A2237] p-2.5"><MapPin size={14} className="text-[#43D79A]"/><span className="flex-1 text-[11px] text-[#D9E7ED]">{farmLocation(selectedFarm)}</span><button type="button" onClick={refresh} aria-label="Refresh market" className="text-[#91ADBC]"><RefreshCw size={15}/></button></div>
             <div className="mt-3 flex rounded-xl border border-[#1A3B52] bg-[#0A2237] p-1">
-              <span className="flex-1 rounded-lg bg-[#1BC987] px-3 py-2 text-center text-[11px] font-extrabold text-[#05251E]">Local Market</span>
-              <span className="flex-1 px-3 py-2 text-center text-[11px] font-semibold text-[#8BA6B8]">National</span>
+              {["Local Market", "National"].map((tab) => <button key={tab} type="button" onClick={() => setMarketTab(tab)} className={"flex-1 rounded-lg px-3 py-2 text-center text-[11px] font-extrabold " + (marketTab === tab ? "bg-[#1BC987] text-[#05251E]" : "text-[#8BA6B8]")}>{tab}</button>)}
             </div>
             <div className={PANEL + " mt-3 overflow-hidden"}>
               <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 border-b border-[#17384F] px-3 py-3 text-[10px] font-bold text-[#7898AB]"><span>Crop</span><span>Price (KES)</span><span>Trend</span></div>
@@ -553,7 +568,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                 const unit = first(item?.unit, item?.price_unit, item?.quantity_unit);
                 return <div key={getId(item) || index} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-b border-[#17384F] px-3 py-3 last:border-0"><span className="min-w-0"><span className="block truncate text-[11px] font-bold text-white">{name}</span><span className={"text-[9px] " + MUTED}>{unit || "Price per unit"}</span></span><span className="text-[11px] font-extrabold text-white">{typeof price === "object" ? JSON.stringify(price) : (price === undefined ? "—" : String(price))}</span><span className={"text-[10px] font-bold " + (String(trend || "").includes("-") ? "text-rose-400" : "text-[#49DB99]")}>{trend || "—"}</span></div>;
               })}
-              {!marketRows.length && <div className="px-4 py-6 text-center"><ShoppingCart size={24} className="mx-auto text-[#48D79A]"/><p className="mt-2 text-[12px] font-bold text-white">No current price records</p><p className={"mt-1 text-[10px] " + MUTED}>Market prices will appear when the backend returns verified location, grade and unit data.</p></div>}
+              {!marketRows.length && <div className="px-4 py-6 text-center"><ShoppingCart size={24} className="mx-auto text-[#48D79A]"/><p className="mt-2 text-[12px] font-bold text-white">{marketTab === "National" ? "No national price feed returned" : "No current price records"}</p><p className={"mt-1 text-[10px] " + MUTED}>{marketTab === "National" ? "National prices will appear when the market service supplies a national dataset." : "Market prices will appear when the backend returns verified location, grade and unit data."}</p></div>}
             </div>
             <div className="mt-3 rounded-xl border border-[#155C4D] bg-[#063C37] p-3.5"><div className="flex items-center gap-2 text-[#5CE1A3]"><Sprout size={17}/><p className="text-[11px] font-extrabold">Market insight</p></div><p className="mt-1 text-[10px] leading-4 text-[#B8D9CF]">{first(marketResponse?.insight, marketResponse?.summary, marketResponse?.data?.insight, "Use prices as a guide, then confirm grade, buyer, quantity and delivery terms before trading.")}</p></div>
           </section>
