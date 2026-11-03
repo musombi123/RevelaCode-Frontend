@@ -891,7 +891,7 @@ export default function InputBar({
               aria-label="Send message"
               title="Send message (Enter)"
               className={[
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
                 canSend
                   ? "bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-950 shadow-lg shadow-emerald-500/25 hover:brightness-110 active:scale-95"
