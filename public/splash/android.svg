@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280" viewBox="0 0 720 1280" role="img" aria-labelledby="title desc">
+  <title id="title">RevelaCode Android splash screen</title>
+  <desc id="desc">A vertical navy technology splash screen with a luminous circuit-inspired r mark, gold orbital line and RevelaCode tagline.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#020817"/><stop offset=".52" stop-color="#071831"/><stop offset="1" stop-color="#020817"/></linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0A74DA"/><stop offset=".52" stop-color="#11C6C7"/><stop offset="1" stop-color="#2E8B57"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#D4AF37"/><stop offset=".55" stop-color="#FFF0A5"/><stop offset="1" stop-color="#D4AF37"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#0A74DA" stop-opacity=".38"/><stop offset="1" stop-color="#0A74DA" stop-opacity="0"/></radialGradient>
+    <pattern id="hex" width="96" height="84" patternUnits="userSpaceOnUse"><path d="M24 2 72 2 94 42 72 82 24 82 2 42Z" fill="none" stroke="#1673B8" stroke-opacity=".22" stroke-width="1.5"/></pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="720" height="1280" fill="url(#bg)"/>
+  <rect width="720" height="1280" fill="url(#hex)"/>
+  <ellipse cx="360" cy="620" rx="320" ry="430" fill="url(#halo)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+    <g stroke="#0A74DA" stroke-width="3">
+      <path d="M0 160H140L185 205H285M0 230H80L125 275H220M720 170H585L540 215H435M720 245H640L595 290H500"/>
+      <path d="M0 1095H115L155 1055H250M720 1100H605L565 1060H470"/>
+    </g>
+    <g stroke="#2E8B57" stroke-width="3">
+      <path d="M0 315H68L108 355H190M720 350H650L610 390H528M0 1015H95M720 1015H625"/>
+    </g>
+    <g stroke="#D4AF37" stroke-width="2.5">
+      <path d="M0 395H70L110 435H180M720 430H650L610 470H540"/>
+      <path d="M90 0V125L135 170M630 0V130L585 175"/>
+    </g>
+  </g>
+  <g filter="url(#glow)">
+    <g fill="#0EA5E9"><circle cx="185" cy="205" r="6"/><circle cx="125" cy="275" r="5"/><circle cx="540" cy="215" r="6"/><circle cx="595" cy="290" r="5"/></g>
+    <g fill="#22C55E"><circle cx="108" cy="355" r="6"/><circle cx="610" cy="390" r="6"/></g>
+    <g fill="#EAB308"><circle cx="110" cy="435" r="5"/><circle cx="610" cy="470" r="5"/></g>
+  </g>
+  <g transform="translate(360 600)">
+    <text x="0" y="95" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="310" font-weight="800" fill="url(#mark)" stroke="#7DD3FC" stroke-opacity=".52" stroke-width="3" filter="url(#glow)">r</text>
+    <g fill="none" stroke="#DDF8FF" stroke-width="5" stroke-linecap="round" opacity=".95">
+      <path d="M-42 20V-80L-4 -118V-155M0 25V-34L38 -74V-122M42 20V-14L78 -50"/>
+    </g>
+    <g fill="#D4AF37" stroke="#FFF3B0" stroke-width="2" filter="url(#glow)">
+      <circle cx="-4" cy="-155" r="9"/><circle cx="38" cy="-122" r="8"/><circle cx="78" cy="-50" r="8"/>
+    </g>
+    <ellipse cx="0" cy="8" rx="245" ry="90" transform="rotate(-17)" fill="none" stroke="url(#gold)" stroke-width="8" filter="url(#glow)"/>
+  </g>
+  <text x="360" y="835" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="66" font-weight="800" letter-spacing="-2">
+    <tspan fill="#F8FAFC">Revela</tspan><tspan fill="#D4AF37">Code</tspan>
+  </text>
+  <text x="360" y="900" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="23" font-weight="500" letter-spacing="2" fill="#E2E8F0">Code. Innovate. Transform.</text>
+  <g filter="url(#glow)"><path d="M170 965H300M420 965H550" stroke="url(#gold)" stroke-width="3"/><circle cx="335" cy="965" r="7" fill="#0EA5E9"/><circle cx="385" cy="965" r="7" fill="#22C55E"/></g>
+  <g fill="none" stroke-linecap="round" opacity=".86">
+    <path d="M80 1280V1175L160 1095V1050M185 1280V1210L250 1145V1100" stroke="#0A74DA" stroke-width="4"/>
+    <path d="M640 1280V1175L560 1095V1050M535 1280V1210L470 1145V1100" stroke="#2E8B57" stroke-width="4"/>
+    <path d="M300 1280V1200L330 1170M420 1280V1200L390 1170" stroke="#D4AF37" stroke-width="3"/>
+  </g>
+  <g filter="url(#glow)"><circle cx="160" cy="1095" r="7" fill="#0EA5E9"/><circle cx="560" cy="1095" r="7" fill="#22C55E"/><circle cx="330" cy="1170" r="7" fill="#EAB308"/><circle cx="390" cy="1170" r="7" fill="#EAB308"/></g>
+</svg>
