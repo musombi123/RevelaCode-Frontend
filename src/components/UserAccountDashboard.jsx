@@ -34,6 +34,8 @@ import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
 import { useAuth } from "@/context/AuthContext.jsx";
 import DemoLauncher from "@/demo/DemoLauncher.jsx";
+import { isDemoApiActive } from "@/demo/demoApi.js";
+import { DEMO_ACCOUNT } from "@/demo/mockData.js";
 
 /* =========================================================
    LAZY DASHBOARDS
@@ -839,7 +841,19 @@ export default function UserAccountDashboard({
   ======================================================= */
 
   const renderContent = () => {
-    if (isGuest) {
+    const safeUserData = isGuest && isDemoApiActive()
+      ? {
+          id: DEMO_ACCOUNT.profile.id,
+          name: DEMO_ACCOUNT.profile.full_name,
+          fullName: DEMO_ACCOUNT.profile.full_name,
+          contact: DEMO_ACCOUNT.profile.contact,
+          verified: DEMO_ACCOUNT.profile.verified,
+          created_at: "2026-01-01T00:00:00.000Z",
+          ...DEMO_ACCOUNT.profile,
+        }
+      : userData;
+
+    if (isGuest && !isDemoApiActive()) {
       return (
         <section className="flex min-h-[58vh] items-center justify-center py-8">
           <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 text-center shadow-[0_24px_70px_-40px_rgba(15,23,42,0.4)] sm:p-9 dark:border-slate-800 dark:bg-slate-900">
@@ -874,7 +888,7 @@ export default function UserAccountDashboard({
       );
     }
 
-    if (loadingUser || !userData) {
+    if (!safeUserData && !isDemoApiActive()) {
       return (
         <div className="space-y-5" aria-busy="true" aria-label="Loading account information">
           <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
@@ -910,14 +924,14 @@ export default function UserAccountDashboard({
                 <div className="-mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex min-w-0 items-end gap-4">
                     <div className="flex h-[76px] w-[76px] flex-shrink-0 items-center justify-center rounded-[25px] bg-gradient-to-br from-emerald-50 to-white text-lg font-bold text-emerald-800 shadow-lg ring-4 ring-white dark:from-emerald-950 dark:to-slate-900 dark:text-emerald-200 dark:ring-slate-900 sm:h-[88px] sm:w-[88px] sm:rounded-[28px]">
-                      {getInitials(userData?.name || userData?.fullName || userData?.username || userData?.contact)}
+                      {getInitials(safeUserData?.name || safeUserData?.fullName || safeUserData?.username || safeUserData?.contact)}
                     </div>
                     <div className="min-w-0 flex-1 pb-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="max-w-full break-words text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                          {userData?.name || userData?.fullName || userData?.username || "RevelaCode User"}
+                          {safeUserData?.name || safeUserData?.fullName || safeUserData?.username || "RevelaCode User"}
                         </h2>
-                        {(userData?.verified || userData?.is_verified || userData?.email_verified || userData?.phone_verified || userData?.emailVerified) && (
+                        {(safeUserData?.verified || safeUserData?.is_verified || safeUserData?.email_verified || safeUserData?.phone_verified || safeUserData?.emailVerified) && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200">
                             <BadgeCheck className="h-3.5 w-3.5" />
                             Verified
@@ -925,7 +939,7 @@ export default function UserAccountDashboard({
                         )}
                       </div>
                       <p className="mt-1 break-words text-sm text-slate-500 dark:text-slate-400">
-                        {userData?.contact || authUser?.contact || "Contact not provided"}
+                        {safeUserData?.contact || authUser?.contact || "Contact not provided"}
                       </p>
                     </div>
                   </div>
@@ -934,7 +948,7 @@ export default function UserAccountDashboard({
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
                       <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Member since</p>
                       <p className="mt-1 break-words text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {formatDate(userData?.created_at || userData?.createdAt)}
+                        {formatDate(safeUserData?.created_at || safeUserData?.createdAt)}
                       </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
@@ -947,7 +961,7 @@ export default function UserAccountDashboard({
             </section>
 
             <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
-              <UserProfile user={userData} />
+              <UserProfile user={safeUserData} />
             </div>
           </div>
         );
@@ -955,14 +969,14 @@ export default function UserAccountDashboard({
       case "settings":
         return (
           <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
-            <PreferencesDashboard userData={userData} />
+            <PreferencesDashboard userData={safeUserData} />
           </div>
         );
 
       case "accounts":
         return (
           <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
-            <AccountDashboard userData={userData} onResetPassword={confirmResetPassword} />
+            <AccountDashboard userData={safeUserData} onResetPassword={confirmResetPassword} />
           </div>
         );
 
@@ -1123,7 +1137,7 @@ export default function UserAccountDashboard({
      GUEST VIEW
   ======================================================= */
 
-  if (isGuest) {
+  if (isGuest && !isDemoApiActive()) {
     return (
       <div data-demo="account-overview" className="min-h-[100dvh] overflow-x-hidden bg-slate-50 p-4 dark:bg-slate-950">
         {renderContent()}
