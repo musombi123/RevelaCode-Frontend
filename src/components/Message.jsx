@@ -642,6 +642,7 @@ function Message({ message, onEdit, onReveal }) {
                   <a
                     key={format}
                     href={url}
+                    download={`revelaai-design.${format}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-emerald-300 hover:bg-white/[0.09]"
