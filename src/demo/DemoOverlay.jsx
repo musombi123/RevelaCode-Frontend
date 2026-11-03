@@ -170,6 +170,21 @@ export default function DemoOverlay() {
     return undefined;
   }, [active]);
 
+  // StartModal is already an account-access dialog. When the tour is active,
+  // hide that underlying dialog from assistive technology so only the guided
+  // dialog is modal; the tour's action button still activates its highlighted controls.
+  useEffect(() => {
+    if (!active) return undefined;
+    const startDialog = document.querySelector('[data-demo="welcome-entry"]');
+    if (!startDialog) return undefined;
+    const previousAriaHidden = startDialog.getAttribute("aria-hidden");
+    startDialog.setAttribute("aria-hidden", "true");
+    return () => {
+      if (previousAriaHidden === null) startDialog.removeAttribute("aria-hidden");
+      else startDialog.setAttribute("aria-hidden", previousAriaHidden);
+    };
+  }, [active]);
+
   useEffect(() => {
     if (!active || !step?.target || isFinish) {
       setTargetElement(null);
