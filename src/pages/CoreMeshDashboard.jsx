@@ -437,7 +437,7 @@ export default function CoreMeshDashboard() {
                 <div className="mt-3 space-y-2">
                   {configurationHealth.items.map((item) => (
                     <div key={item.name} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                      <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + (item.configured ? "bg-emerald-500" : item.unknown ? "bg-slate-400" : "bg-amber-500")} />
+                      <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + (item.valid === false ? "bg-amber-500" : item.unknown ? "bg-slate-400" : item.configured ? "bg-emerald-500" : "bg-amber-500")} />
                       <div className="min-w-0">
                         <p className="break-words text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name} <span className="font-normal text-slate-400">· {item.service}</span></p>
                         <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{item.message}</p>
