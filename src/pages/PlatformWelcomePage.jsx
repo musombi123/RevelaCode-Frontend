@@ -21,15 +21,13 @@ import {
 import { useTheme } from "../components/hooks/useTheme.jsx";
 import "./PlatformWelcomePage.css";
 
-const ANDROID_RELEASES_URL =
-  "https://github.com/musombi123/RevelaCode-Frontend/releases";
+
 
 const WINDOWS_DOWNLOAD_URL =
   "https://github.com/musombi123/RevelaCode-Windows/releases/latest/download/RevelaCode-Windows-Setup.exe";
 
 const ANDROID_DOWNLOAD_URL =
-  String(import.meta.env.VITE_ANDROID_APK_URL || "").trim() ||
-  ANDROID_RELEASES_URL;
+  "https://github.com/musombi123/RevelaCode-Android/releases/latest/download/RevelaCode-Android.apk";
 
 const capabilities = [
   {
@@ -494,13 +492,13 @@ export default function PlatformWelcomePage() {
             </a>
             <a
               href={ANDROID_DOWNLOAD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              download="RevelaCode-Android.apk"
+              aria-label="Download RevelaCode for Android directly"
               className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3.5 text-sm font-bold text-blue-800 transition-transform hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:border-blue-800 dark:hover:bg-blue-950"
             >
               <Smartphone size={18} aria-hidden="true" />
               Download Android
-              <ArrowRight size={16} aria-hidden="true" />
+              <Download size={16} aria-hidden="true" />
             </a>
             <a
               href="/app"
@@ -513,7 +511,7 @@ export default function PlatformWelcomePage() {
           </div>
 
           <p className="welcome-entrance mt-4 max-w-2xl text-xs leading-6 text-slate-500 dark:text-slate-400" style={{ "--welcome-delay": "1.25s" }}>
-            Windows downloads start directly. Android uses the configured APK download or official Releases page. The web app opens in this browser.
+            Windows and Android downloads start directly from their installer links. The web app opens in this browser.
           </p>
 
           <div className="welcome-entrance mt-12 grid w-full max-w-4xl grid-cols-2 gap-0 border-t border-slate-200 pt-6 dark:border-slate-800 sm:grid-cols-4" style={{ "--welcome-delay": "1.4s" }} aria-label="RevelaCode ecosystem">
