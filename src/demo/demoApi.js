@@ -29,9 +29,11 @@ function isAnalyticsUrl(value) {
     const path = parsed.pathname.toLowerCase();
     const knownAnalyticsHost =
       /google-analytics|googletagmanager|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|heap/i.test(host);
+    const firstPartyHost =
+      /(^|\.)(?:revelacode\.co\.ke|revelacode-backend\.onrender\.com|revelacode-frontend\.onrender\.com|revelaai\.onrender\.com)$|^(?:localhost|127\.0\.0\.1|tauri\.localhost)$/i.test(host);
     const explicitAnalyticsPath =
       /^\/(?:api\/)?(?:analytics|telemetry|demo-analytics|demo-events)(?:\/|$)/i.test(path);
-    return knownAnalyticsHost || explicitAnalyticsPath;
+    return knownAnalyticsHost || (firstPartyHost && explicitAnalyticsPath);
   } catch {
     return /^\/(?:api\/)?(?:analytics|telemetry|demo-analytics|demo-events)(?:\/|$)/i.test(String(value));
   }
