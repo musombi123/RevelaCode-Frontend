@@ -91,6 +91,13 @@
 .rc-demo-stars button { min-width: 48px; min-height: 48px; color: #b45309; font-size: 1.7rem; line-height: 1; }
 .rc-demo-comment { display: grid; gap: 5px; margin-top: 8px; color: #334155; font-size: .75rem; font-weight: 800; }
 .rc-demo-comment textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px; color: #0f172a; background: #fff; }
+.rc-demo-comment input { width: 100%; min-height: 48px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; color: #0f172a; background: #fff; font: inherit; }
+.rc-demo-type-action { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 8px; margin-top: 8px; }
+.rc-demo-type-action .rc-demo-comment { min-width: 0; margin-top: 0; }
+.rc-demo-action-trigger { width: 100%; min-height: 48px; margin-top: 8px; }
+.rc-demo-type-action button { min-height: 48px; }
+@media (max-width: 767px) { .rc-demo-type-action { grid-template-columns: 1fr; } .rc-demo-type-action button { width: 100%; } }
+
 .rc-demo-finish-actions { display: grid; grid-template-columns: 1fr 1fr; }
 .rc-demo-confirm { position: absolute; inset: 12px; z-index: 5; display: grid; align-content: center; gap: 10px; border-radius: 16px; border: 1px solid #cbd5e1; background: #fff; padding: 18px; box-shadow: 0 8px 30px rgba(2,8,23,.2); }
 .rc-demo-confirm h3 { color: #0f172a; font-weight: 900; font-size: 1.1rem; }
