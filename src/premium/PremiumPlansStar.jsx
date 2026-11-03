@@ -51,6 +51,7 @@ export default function PremiumPlansStar({ className = "" }) {
       onClick={openPlans}
       aria-label="Premium plans"
       title="Premium plans"
+      data-premium-plans-star="true"
       className={`relative inline-flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-amber-200 bg-white text-amber-600 shadow-sm transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 active:scale-95 dark:border-amber-900/60 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-amber-950/40 ${className}`}
     >
       <Star
