@@ -76,7 +76,7 @@
 .rc-demo-secondary:hover { background: #f8fafc; }
 .rc-demo-primary:disabled, .rc-demo-secondary:disabled { opacity: .45; cursor: not-allowed; }
 .rc-demo-chapter-menu { max-height: 220px; overflow: auto; margin-top: 8px; border: 1px solid #dbe4ee; border-radius: 14px; background: #f8fafc; padding: 5px; }
-.rc-demo-chapter-link { width: 100%; display: flex; align-items: center; gap: 9px; min-height: 44px; border-radius: 10px; padding: 7px 9px; text-align: left; color: #0f172a; font-size: .8rem; font-weight: 750; }
+.rc-demo-chapter-link { width: 100%; display: flex; align-items: center; gap: 9px; min-height: 48px; border-radius: 10px; padding: 7px 9px; text-align: left; color: #0f172a; font-size: .8rem; font-weight: 750; }
 .rc-demo-chapter-link:hover { background: #e2e8f0; }
 .rc-demo-chapter-number { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #d1fae5; color: #065f46; font-size: .72rem; }
 .rc-demo-current { margin-left: auto; color: #059669; }
@@ -88,7 +88,7 @@
 .rc-demo-tick.is-complete { background: #d1fae5; color: #047857; }
 .rc-demo-rating { margin-top: 8px; border-radius: 14px; background: #f8fafc; padding: 12px; }
 .rc-demo-stars { display: flex; gap: 7px; margin-top: 6px; }
-.rc-demo-stars button { min-width: 42px; min-height: 44px; color: #b45309; font-size: 1.7rem; line-height: 1; }
+.rc-demo-stars button { min-width: 48px; min-height: 48px; color: #b45309; font-size: 1.7rem; line-height: 1; }
 .rc-demo-comment { display: grid; gap: 5px; margin-top: 8px; color: #334155; font-size: .75rem; font-weight: 800; }
 .rc-demo-comment textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px; color: #0f172a; background: #fff; }
 .rc-demo-finish-actions { display: grid; grid-template-columns: 1fr 1fr; }
