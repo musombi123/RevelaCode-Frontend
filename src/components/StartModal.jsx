@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -64,12 +65,12 @@ export default function StartModal() {
   // STATE
   // =======================================================
 
-  const [mode, setMode] = useState(() => new URLSearchParams(location.search).get("mode") === "register" ? "register" : null);
+  const [mode, setMode] = useState(null);
   // null opens the entry choice (sign in, create an account, or explore as guest)
 
   const [step, setStep] = useState("form");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (new URLSearchParams(location.search).get("mode") === "register") {
       setMode("register");
       setStep("form");
