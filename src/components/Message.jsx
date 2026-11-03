@@ -460,6 +460,7 @@ function Message({ message, onEdit, onReveal }) {
   const audioUrl = isSafeHttpUrl(message.audioUrl) ? message.audioUrl : null;
   const sources = normalizeSources(message.sources);
   const documentMeta = message.metadata?.multimodal || null;
+  const imageDownloads = Object.entries(message.metadata?.downloads || {}).filter(([format, url]) => ["png", "jpg", "pdf"].includes(format) && isSafeHttpUrl(url));
 
   const isLongUser = isUser && fullText.length > LONG_USER_TEXT;
   const userText =
@@ -631,6 +632,22 @@ function Message({ message, onEdit, onReveal }) {
                       className="block h-auto w-full object-cover"
                     />
                   </button>
+                ))}
+              </div>
+            )}
+
+            {!revealing && imageDownloads.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Download generated design">
+                {imageDownloads.map(([format, url]) => (
+                  <a
+                    key={format}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-emerald-300 hover:bg-white/[0.09]"
+                  >
+                    Download {format.toUpperCase()}
+                  </a>
                 ))}
               </div>
             )}
