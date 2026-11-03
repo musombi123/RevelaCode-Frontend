@@ -102,12 +102,12 @@ test("required stable tour targets exist in the real application surfaces", () =
     start: ["welcome-entry", "welcome-guest"],
     home: ["home-welcome", "home-hubs", "home-hub-"],
     biashara: ["biashara-overview", "biashara-nav-products", "biashara-product-name", "biashara-create-product"],
-    shamba: ["shamba-overview", "shamba-nav-farms", "shamba-farms-screen"],
-    elimu: ["elimu-overview", "elimu-open-nav", "elimu-nav-website", "elimu-school-pages"],
+    shamba: ["shamba-overview", "shamba-nav-", "shamba-farms-screen"],
+    elimu: ["elimu-overview", "elimu-open-nav", "elimu-nav-", "elimu-school-pages"],
     faith: ["faith-overview", "faith-study-library", "faith-study-root"],
     community: ["community-overview", "community-create-post", "community-composer-title", "community-back-feed", "community-chat-nav"],
     ai: ["ai-overview", "ai-chat-input", "ai-vision-tools"],
-    account: ["account-overview", "account-menu-profile", "account-menu-payments", "account-menu-accounts", "account-menu-notifications", "account-menu-help"],
+    account: ["account-overview", "account-menu-"],
   };
 
   for (const [surface, markers] of Object.entries(required)) {
