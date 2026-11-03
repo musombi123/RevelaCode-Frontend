@@ -138,7 +138,7 @@ function SectionHeading({ title, action, onAction }) {
 function StatTile({ icon: Icon, label, value, detail }) {
   return (
     <div className={PANEL + " min-w-0 p-3"}>
-      <div className="flex items-center gap-2 text-[#45D79A]"><Icon size={16}/><span className="truncate text-[11px] " + MUTED>{label}</span></div>
+      <div className="flex items-center gap-2 text-[#45D79A]"><Icon size={16}/><span className={"truncate text-[11px] " + MUTED}>{label}</span></div>
       <div className="mt-2 text-[20px] font-black leading-none text-white">{value}</div>
       {detail && <div className={"mt-1 text-[10px] " + MUTED}>{detail}</div>}
     </div>
