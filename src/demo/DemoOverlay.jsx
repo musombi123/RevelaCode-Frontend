@@ -51,6 +51,10 @@ const TEXT = {
     done: "Done",
     waiting: "Finding this part of the app…",
     centered: "This step is shown here because its page is still loading.",
+    doAction: "Try the highlighted action",
+    typeSample: "Type the sample text",
+    applySample: "Fill the app field",
+    actionReady: "Sample text added to the app field.",
     close: "Close",
   },
   sw: {
@@ -85,6 +89,10 @@ const TEXT = {
     done: "Imekamilika",
     waiting: "Inatafuta sehemu hii ya programu…",
     centered: "Hatua hii inaonyeshwa hapa kwa sababu ukurasa bado unafunguka.",
+    doAction: "Jaribu kitendo kilichoangaziwa",
+    typeSample: "Andika maandishi ya mfano",
+    applySample: "Jaza sehemu ya programu",
+    actionReady: "Maandishi ya mfano yamejazwa kwenye programu.",
     close: "Funga",
   },
 };
@@ -103,7 +111,7 @@ function localized(value, lang) {
 function getFocusable(root) {
   if (!root) return [];
   return Array.from(root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'))
-    .filter((node) => node.getAttribute("aria-hidden") !== "true" && node.offsetParent !== null);
+    .filter((node) => node.getAttribute("aria-hidden") !== "true" && node.getClientRects().length > 0);
 }
 
 export default function DemoOverlay() {
@@ -122,8 +130,11 @@ export default function DemoOverlay() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [ratingSent, setRatingSent] = useState(false);
+  const [demoInput, setDemoInput] = useState("");
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const actionTimerRef = useRef(null);
+  const actionPendingRef = useRef(false);
   const chapter = chapters.find((item) => item.id === chapterId) || chapters[0];
   const isFinish = chapterId === "finish";
   const step = chapter?.steps?.[stepIndex] || null;
@@ -136,7 +147,7 @@ export default function DemoOverlay() {
     if (!active || !routeHub) return;
     const currentHub = new URLSearchParams(location.search).get("hub");
     if (location.pathname !== "/app" || currentHub !== routeHub) {
-      navigate("/app?hub=" + encodeURIComponent(routeHub), { replace: false });
+      navigate("/app?hub=" + encodeURIComponent(routeHub), { replace: true });
     }
   }, [active, routeHub, location.pathname, location.search, navigate]);
 
@@ -157,10 +168,14 @@ export default function DemoOverlay() {
     let timeoutId = null;
     const locate = () => {
       if (disposed) return;
-      const found = document.querySelector('[data-demo="' + String(step.target).replace(/["\\]/g, "") + '"]');
+      const found = Array.from(document.querySelectorAll("[data-demo]"))
+        .find((element) => element.getAttribute("data-demo") === String(step.target));
       if (found) {
         setTargetElement(found);
         setTargetMissing(false);
+        try {
+          found.scrollIntoView({ block: "center", behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth" });
+        } catch { /* scrolling is an enhancement, not a requirement */ }
         observer?.disconnect();
         if (timeoutId) window.clearTimeout(timeoutId);
         return;
@@ -173,7 +188,9 @@ export default function DemoOverlay() {
     timeoutId = window.setTimeout(() => {
       if (disposed) return;
       locate();
-      if (!document.querySelector('[data-demo="' + String(step.target).replace(/["\\]/g, "") + '"]')) setTargetMissing(true);
+      const exists = Array.from(document.querySelectorAll("[data-demo]"))
+        .some((element) => element.getAttribute("data-demo") === String(step.target));
+      if (!exists) setTargetMissing(true);
       observer?.disconnect();
     }, 3000);
     return () => {
@@ -210,38 +227,53 @@ export default function DemoOverlay() {
     };
   }, [active, targetElement]);
 
-  useEffect(() => {
-    if (!active || !step || step.action === "none" || !targetElement) return undefined;
-    const onClick = (event) => {
-      if (step.action === "click") next();
-      if (step.action === "type") {
-        const control = event.target;
-        if (control && (control.matches?.("input,textarea") || control.isContentEditable)) {
-          const currentValue = String(control.value || control.textContent || "");
-          const expected = String(step.demoValue || "");
-          if (expected ? currentValue.trim().toLowerCase() === expected.trim().toLowerCase() : currentValue.trim().length > 0) next();
-        }
-      }
-    };
-    const onInput = (event) => {
-      if (step.action !== "type") return;
-      const control = event.target;
-      if (!control || !(control.matches?.("input,textarea") || control.isContentEditable)) return;
-      const currentValue = String(control.value || control.textContent || "");
-      const expected = String(step.demoValue || "");
-      if (expected ? currentValue.trim().toLowerCase() === expected.trim().toLowerCase() : currentValue.trim().length > 0) next();
-    };
-    targetElement.addEventListener("click", onClick, true);
-    targetElement.addEventListener("input", onInput, true);
-    if (step.action === "type") {
-      const input = targetElement.matches?.("input,textarea") ? targetElement : targetElement.querySelector("input,textarea");
-      input?.focus();
+  const advanceAfterAction = useCallback(() => {
+    if (actionPendingRef.current) return;
+    actionPendingRef.current = true;
+    if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
+    actionTimerRef.current = window.setTimeout(() => {
+      actionPendingRef.current = false;
+      next();
+    }, 450);
+  }, [next]);
+
+  const applyDemoText = useCallback((event) => {
+    event.preventDefault();
+    if (!targetElement || step?.action !== "type") return;
+    const expected = String(step.demoValue || "").trim();
+    const value = String(demoInput || "").trim();
+    if (!value || (expected && value.toLowerCase() !== expected.toLowerCase())) return;
+
+    const control = targetElement.matches?.("input,textarea,[contenteditable='true']")
+      ? targetElement
+      : targetElement.querySelector("input,textarea,[contenteditable='true']");
+    if (!control) return;
+
+    if (control.isContentEditable) {
+      control.textContent = value;
+    } else {
+      const prototype = control.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+      if (setter) setter.call(control, value);
+      else control.value = value;
     }
-    return () => {
-      targetElement.removeEventListener("click", onClick, true);
-      targetElement.removeEventListener("input", onInput, true);
-    };
-  }, [active, step, targetElement, next]);
+    control.dispatchEvent(new Event("input", { bubbles: true }));
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+    advanceAfterAction();
+  }, [targetElement, step, demoInput, advanceAfterAction]);
+
+  useEffect(() => {
+    setDemoInput("");
+    actionPendingRef.current = false;
+    if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
+  }, [chapterId, stepIndex]);
+
+  useEffect(() => {
+    if (!active || step?.action !== "click" || !targetElement) return undefined;
+    const onClick = () => advanceAfterAction();
+    targetElement.addEventListener("click", onClick, false);
+    return () => targetElement.removeEventListener("click", onClick, false);
+  }, [active, step?.action, targetElement, advanceAfterAction]);
 
   useEffect(() => {
     if (!active) {
@@ -290,34 +322,47 @@ export default function DemoOverlay() {
     return () => { disposed = true; listener?.remove(); };
   }, [active, chapters, chapterId, stepIndex, back]);
 
-  const onDialogKeyDown = useCallback((event) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      if (exitConfirm) setExitConfirm(false);
-      else setExitConfirm(true);
-      return;
-    }
-    if (event.key === "ArrowRight" && !["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) {
-      event.preventDefault();
-      next();
-      return;
-    }
-    if (event.key === "ArrowLeft" && !["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) {
-      event.preventDefault();
-      back();
-      return;
-    }
-    if (event.key === "Tab") {
-      const items = getFocusable(dialogRef.current);
-      if (!items.length) return;
-      const first = items[0], last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault(); last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault(); first.focus();
+  useEffect(() => {
+    if (!active) return undefined;
+    const onDialogKeyDown = (event) => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const activeInside = dialog.contains(document.activeElement);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (exitConfirm) setExitConfirm(false);
+        else setExitConfirm(true);
+        return;
       }
-    }
-  }, [exitConfirm, next, back]);
+      if (event.key === "ArrowRight" && !["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) {
+        event.preventDefault();
+        next();
+        return;
+      }
+      if (event.key === "ArrowLeft" && !["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) {
+        event.preventDefault();
+        back();
+        return;
+      }
+      if (event.key === "Tab") {
+        const items = getFocusable(dialog);
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (!activeInside) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onDialogKeyDown, true);
+    return () => document.removeEventListener("keydown", onDialogKeyDown, true);
+  }, [active, exitConfirm, next, back]);
 
   const chapterIndex = Math.max(0, chapters.findIndex((item) => item.id === chapterId));
   const stepCount = chapter?.steps?.length || 0;
@@ -352,7 +397,7 @@ export default function DemoOverlay() {
 
   const panelStyle = rect && !targetMissing && !isFinish ? (() => {
     const preferred = step?.placement || "auto";
-    const placeAbove = preferred === "top" || (preferred === "auto" && window.innerHeight - rect.bottom < 350);
+    const placeAbove = preferred === "top" || (preferred !== "bottom" && preferred !== "top" && window.innerHeight - rect.bottom < 350);
     const estimatedCardHeight = 330;
     const top = placeAbove
       ? Math.max(16, rect.top - estimatedCardHeight - 14)
@@ -368,7 +413,7 @@ export default function DemoOverlay() {
   const bodyText = localized(step?.body, lang);
 
   return (
-    <div className="rc-demo-layer" onKeyDown={onDialogKeyDown}>
+    <div className="rc-demo-layer" data-demo-overlay-root="true">
       {rect && !targetMissing && !isFinish ? (
         <>
           <div className="rc-demo-mask" style={{ ...backdropStyle, top: 0, left: 0, right: 0, height: Math.max(0, rect.top - 6) }} />
@@ -385,6 +430,7 @@ export default function DemoOverlay() {
         aria-modal="true"
         aria-labelledby="rc-demo-title"
         aria-describedby="rc-demo-body"
+        tabIndex={-1}
         className={"rc-demo-card " + (isFinish ? "rc-demo-finish" : "") + (!rect || targetMissing ? " rc-demo-centered" : "")}
         style={panelStyle}
       >
@@ -427,6 +473,29 @@ export default function DemoOverlay() {
               {targetMissing ? <p className="rc-demo-missing">{t.centered}</p> : !targetElement && step?.target ? <p className="rc-demo-missing">{t.waiting}</p> : null}
             </div>
 
+            {step?.action === "click" ? (
+              <button type="button" disabled={!targetElement || targetMissing} onClick={() => targetElement?.click()} className="rc-demo-primary rc-demo-action-trigger">
+                {t.doAction} <ArrowRight size={15} />
+              </button>
+            ) : null}
+            {step?.action === "type" ? (
+              <form className="rc-demo-type-action" onSubmit={applyDemoText}>
+                <label className="rc-demo-comment">
+                  <span>{t.typeSample}</span>
+                  <input
+                    value={demoInput}
+                    onChange={(event) => setDemoInput(event.target.value)}
+                    placeholder={String(step.demoValue || "")}
+                    autoComplete="off"
+                    aria-label={t.typeSample}
+                  />
+                </label>
+                <button type="submit" disabled={!targetElement || targetMissing || !demoInput.trim() || (step.demoValue && demoInput.trim().toLowerCase() !== String(step.demoValue).trim().toLowerCase())} className="rc-demo-primary">
+                  {t.applySample}
+                </button>
+              </form>
+            ) : null}
+
             {isLastStep && chapter?.benefits?.length ? (
               <section className="rc-demo-benefits">
                 <h3>{t.benefits}</h3>
@@ -442,6 +511,12 @@ export default function DemoOverlay() {
             <p className="rc-demo-eyebrow">{t.finish}</p>
             <h2 id="rc-demo-title">{localized(chapter.title, lang)}</h2>
             <p id="rc-demo-body">{localized(chapter.summary, lang)}</p>
+            {chapter?.benefits?.length ? (
+              <section className="rc-demo-benefits">
+                <h3>{t.benefits}</h3>
+                <ul>{chapter.benefits.slice(0, 3).map((benefit, index) => <li key={index}><Check size={15} /> {localized(benefit, lang)}</li>)}</ul>
+              </section>
+            ) : null}
             <div className="rc-demo-recap">
               {chapters.filter((item) => item.id !== "finish").map((item) => (
                 <div key={item.id} className="rc-demo-recap-row">
