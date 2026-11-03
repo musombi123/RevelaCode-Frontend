@@ -122,6 +122,12 @@ export function DemoProvider({ children, chapters = [] }) {
 
   const exit = useCallback(() => {
     const current = stateRef.current;
+    if (current.chapterId === "finish") {
+      trackDemo("demo_finished", {
+        completed_chapters: current.completed.filter((id) => id !== "finish").length,
+        exit_action: "leave_finish",
+      });
+    }
     commit({ ...current, active: false });
   }, [commit]);
 
