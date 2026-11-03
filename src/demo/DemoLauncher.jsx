@@ -18,7 +18,7 @@ export default function DemoLauncher({ startAt = "welcome", onStart, className =
     return (
       <span className={"inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200 " + className} role="status">
         <span className="h-2 w-2 rounded-full bg-emerald-500" />
-        Demo in progress
+        Demo mode — nothing is saved
       </span>
     );
   }
