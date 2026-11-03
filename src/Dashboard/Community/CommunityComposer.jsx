@@ -774,6 +774,7 @@ export default function CommunityComposer({
                   <input
                     id="community-title"
                     type="text"
+                    data-demo="community-composer-title"
                     value={postTitle}
                     onChange={(event) =>
                       setPostTitle(
