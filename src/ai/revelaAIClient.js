@@ -42,7 +42,7 @@ function normalizeAIResponse(payload) {
     ...(Array.isArray(data.images) ? data.images.map((item) =>
       typeof item === "string" ? item : item?.url || item?.image_url
     ) : []),
-  ].filter((item) => typeof item === "string" && /^https?:\\/\\//i.test(item));
+  ].filter((item) => typeof item === "string" && /^https?:\/\//i.test(item));
 
   const text = String(
     data.content ??
