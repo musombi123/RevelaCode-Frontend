@@ -411,7 +411,8 @@ export default function DemoOverlay() {
         return;
       }
       if (event.key === "Tab") {
-        const items = getFocusable(dialog);
+        const focusScope = exitConfirm ? dialog.querySelector(".rc-demo-confirm") : dialog;
+        const items = getFocusable(focusScope);
         if (!items.length) return;
         const first = items[0], last = items[items.length - 1];
         if (!activeInside) {
