@@ -787,7 +787,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
         )}
 
         {screen === "farms" && (
-          <section className="pt-4">
+          <section data-demo="shamba-farms-screen" className="pt-4">
             <div className="flex items-center justify-between gap-2">
               <div><h1 className="text-[21px] font-black">My Farms</h1><p className={"text-[11px] " + MUTED}>Your registered farm portfolio</p></div>
               <button type="button" onClick={() => go("manage")} className={"inline-flex items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-extrabold " + ACTION}><Plus size={14}/>Add Farm</button>
