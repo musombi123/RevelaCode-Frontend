@@ -31,7 +31,7 @@ export default function DemoLauncher({ startAt = "welcome", onStart, className =
         onClick={() => launch(false)}
         className={"inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 motion-reduce:transition-none " + (compact ? "w-full" : "")}
       >
-        <PlayCircle size={18} aria-hidden="true" /> Try the Demo
+        <PlayCircle size={18} aria-hidden="true" /> {lang === "sw" ? "Jaribu onyesho" : "Try the Demo"}
       </button>
       {hasProgress ? (
         <button
@@ -40,7 +40,7 @@ export default function DemoLauncher({ startAt = "welcome", onStart, className =
           onClick={() => launch(true)}
           className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-emerald-950/30 motion-reduce:transition-none"
         >
-          <RotateCcw size={16} aria-hidden="true" /> Resume demo
+          <RotateCcw size={16} aria-hidden="true" /> {lang === "sw" ? "Endelea na onyesho" : "Resume demo"}
         </button>
       ) : null}
     </div>
