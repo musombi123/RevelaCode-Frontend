@@ -273,6 +273,14 @@ export default function DemoOverlay() {
   }, [chapterId, stepIndex]);
 
   useEffect(() => {
+    if (active || !actionTimerRef.current) return undefined;
+    window.clearTimeout(actionTimerRef.current);
+    actionTimerRef.current = null;
+    actionPendingRef.current = false;
+    return undefined;
+  }, [active]);
+
+  useEffect(() => {
     if (!active || step?.action !== "click" || !targetElement) return undefined;
     const onClick = () => advanceAfterAction();
     targetElement.addEventListener("click", onClick, false);
@@ -285,7 +293,8 @@ export default function DemoOverlay() {
       setExitConfirm(false);
       if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
         window.requestAnimationFrame(() => {
-          const launcher = document.querySelector("[data-demo-launcher]");
+          const launcher = Array.from(document.querySelectorAll("[data-demo-launcher]"))
+            .find((element) => element.getClientRects().length > 0 && window.getComputedStyle(element).visibility !== "hidden");
           (launcher || previousFocusRef.current)?.focus?.();
         });
       }
@@ -294,6 +303,14 @@ export default function DemoOverlay() {
     window.requestAnimationFrame(() => getFocusable(dialogRef.current)[0]?.focus());
     return undefined;
   }, [active, chapterId, stepIndex]);
+
+  useEffect(() => {
+    if (!exitConfirm) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      dialogRef.current?.querySelector(".rc-demo-confirm button:not([disabled])")?.focus?.();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [exitConfirm]);
 
   useEffect(() => {
     if (!active || !step || !voiceOn || typeof window === "undefined" || !window.speechSynthesis) return undefined;
