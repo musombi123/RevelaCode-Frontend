@@ -44,6 +44,7 @@ import {
 } from "./hooks/useNotifications.jsx";
 import usePreferences from "./hooks/usePreferences.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
+import DemoLauncher from "@/demo/DemoLauncher.jsx";
 
 /* ======================================================
    HARDENED SAFE LAZY LOADING
@@ -1046,7 +1047,7 @@ export function ComingSoonDashboard({
    Keep home hub identity, destinations, accents and copy here.
 ====================================================== */
 
-const HOME_HUBS = Object.freeze([
+export const HOME_HUBS = Object.freeze([
   { key: "faith", title: "Faith & Scripture", shortTitle: "Faith", description: "Bible study, prophecy and SDA lessons", icon: BookOpen, surface: "bg-violet-50 dark:bg-violet-950/25", iconTone: "text-violet-700 dark:text-violet-300", borderTone: "border-violet-100 dark:border-violet-900/50", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
   { key: "education", title: "Elimu", shortTitle: "Elimu", description: "Schools, classes and learning", icon: GraduationCap, surface: "bg-emerald-50 dark:bg-emerald-950/25", iconTone: "text-emerald-700 dark:text-emerald-300", borderTone: "border-emerald-100 dark:border-emerald-900/50", iconBg: "bg-emerald-100 dark:bg-emerald-900/50" },
   { key: "shamba", title: "Shamba", shortTitle: "Shamba", description: "Farms, crops and market insights", icon: Leaf, surface: "bg-amber-50 dark:bg-amber-950/25", iconTone: "text-amber-700 dark:text-amber-300", borderTone: "border-amber-100 dark:border-amber-900/50", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
@@ -1594,6 +1595,7 @@ function HomeDashboard({
     return (
       <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_1fr] gap-3 overflow-hidden px-3 py-2 sm:px-4">
         <section
+          data-demo="home-welcome"
           aria-label={t("RevelaCode home")}
           className="relative isolate flex min-h-[108px] items-center justify-between gap-3 overflow-hidden rounded-[22px] border border-slate-200/90 bg-white px-3 py-3 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900"
         >
@@ -1613,10 +1615,12 @@ function HomeDashboard({
             <p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
               {t("Learn, build, grow and connect.")}
             </p>
+            <div className="mt-2"><DemoLauncher startAt="home" compact /></div>
           </div>
           <button
             type="button"
             onClick={() => onOpenAI?.()}
+            data-demo="home-revelaai"
             aria-label={t("Open RevelaAI assistant")}
             className="relative flex h-[68px] w-[68px] shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-950 text-blue-100 shadow-md transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/10"
             style={{ backgroundImage: "radial-gradient(circle at 85% 15%, rgba(37,99,235,.38), transparent 55%), linear-gradient(145deg, #0b1220, #111c31)" }}
@@ -1626,7 +1630,7 @@ function HomeDashboard({
           </button>
         </section>
 
-        <section aria-label={t("Your hubs")} className="min-h-0 overflow-hidden">
+        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-hidden">
           <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
             <div className="min-w-0">
               <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
@@ -1649,6 +1653,7 @@ function HomeDashboard({
                   key={hub.key}
                   type="button"
                   onClick={() => handleHubOpen(hub.key)}
+                  data-demo={`home-hub-${hub.key}`}
                   aria-label={t("Open") + " " + t(hub.title)}
                   className={"group flex min-h-[72px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 " + (index === 4 ? "col-span-2 " : "") + hub.borderTone + " " + hub.surface}
                 >
@@ -1689,7 +1694,7 @@ function HomeDashboard({
         }
       `}</style>
 
-      <section aria-label={t("Home welcome")} className="relative isolate overflow-hidden rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-6 lg:p-7">
+      <section data-demo="home-welcome" aria-label={t("Home welcome")} className="relative isolate overflow-hidden rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-6 lg:p-7">
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 left-[22%] h-52 w-52 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-400/10" />
         <div className="relative grid min-w-0 grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.82fr)] md:items-stretch md:gap-5">
@@ -1697,6 +1702,7 @@ function HomeDashboard({
             <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />{t("Your connected ecosystem")}</div>
             <h1 className="mt-4 break-words text-[clamp(1.65rem,5vw,2.6rem)] font-black leading-[1.12] tracking-[-0.04em] text-slate-950 dark:text-white">{t(greetingKey)}{" "}<span className="break-words bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">{displayName}</span></h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{t("One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.")}</p>
+            <div className="mt-4"><DemoLauncher startAt="home" /></div>
             <div className="mt-5 flex min-w-0 flex-wrap items-center gap-2">
               <span className="inline-flex max-w-full min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300"><History size={15} className="shrink-0 text-blue-600 dark:text-blue-300" /><span className="shrink-0 font-bold">{t("Last activity")}</span><span className="max-w-[12rem] truncate">{prettyTime || lastActivityText || t("No activity yet")}</span></span>
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300"><Bell size={15} className="shrink-0 text-violet-600 dark:text-violet-300" /><span className="font-bold">{t("Unread")}</span>{notificationsLoading && !isGuest ? <span className="h-4 w-9 animate-pulse rounded bg-slate-200 motion-reduce:animate-none dark:bg-slate-800" aria-label={t("Loading")} /> : <span className="tabular-nums">{isGuest ? "0" : formatNumber(unreadCount || 0)}</span>}</span>
@@ -1717,12 +1723,12 @@ function HomeDashboard({
             const Icon = hub.icon;
             const uses = Number(hubUsage[hub.key]?.count) || 0;
             const tone = hubToneByKey[hub.key] || hubToneByKey.community;
-            return <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} aria-label={t("Open") + " " + t(hub.title)} className={"group flex min-h-12 shrink-0 snap-start items-center gap-2.5 rounded-2xl border " + tone.surface + " px-3 py-2 text-left transition duration-200 hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"}><span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-full " + tone.icon}><Icon size={17} strokeWidth={2} /></span><span className="max-w-[9rem] truncate text-xs font-extrabold text-slate-900 dark:text-white">{t(hub.shortTitle)}</span>{uses > 0 ? <span className="rounded-full border border-white/70 bg-white/70 px-2 py-1 text-[11px] font-bold text-slate-600 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300">{formatNumber(uses)}</span> : null}</button>;
+            return <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} data-demo={`home-hub-${hub.key}`} aria-label={t("Open") + " " + t(hub.title)} className={"group flex min-h-12 shrink-0 snap-start items-center gap-2.5 rounded-2xl border " + tone.surface + " px-3 py-2 text-left transition duration-200 hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"}><span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-full " + tone.icon}><Icon size={17} strokeWidth={2} /></span><span className="max-w-[9rem] truncate text-xs font-extrabold text-slate-900 dark:text-white">{t(hub.shortTitle)}</span>{uses > 0 ? <span className="rounded-full border border-white/70 bg-white/70 px-2 py-1 text-[11px] font-bold text-slate-600 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300">{formatNumber(uses)}</span> : null}</button>;
           })}
         </div>
       </section>
 
-      <section aria-label={t("Your hubs")} className="space-y-3" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 640px" }}>
+      <section data-demo="home-hubs" aria-label={t("Your hubs")} className="space-y-3" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 640px" }}>
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-2 px-1"><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">{t("Your Hubs")}</h2><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{t("Your connected workspaces, organized by what you want to do.")}</p></div><span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{formatNumber(HOME_HUBS.length)} {t("hubs")}</span></div>
         <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-6 md:gap-4">
           {sortedHubs.map((hub, index) => {
