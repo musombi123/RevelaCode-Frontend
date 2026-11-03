@@ -1,0 +1,163 @@
+import React from "react";
+import {
+  Activity, Bug, Camera, CheckCircle2, FlaskConical, ImagePlus,
+  RefreshCw, ScanSearch, ShieldAlert, X,
+} from "lucide-react";
+
+const PANEL = "rounded-2xl border border-[#17384F] bg-[#0A2237]";
+const MUTED = "text-[#8BA6B8]";
+const ACTION = "bg-[#20C987] text-[#05251E]";
+
+function getId(item) { return item?.id || item?._id || null; }
+function formatDate(value) {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+}
+
+export default function ShambaDiagnosticsPanel({
+  mode, setMode, farm, farmVerified, file, preview, result, busy, saving,
+  error, saved, cropName, setCropName, soilMethod, setSoilMethod,
+  measuredPh, setMeasuredPh, calibration, setCalibration, calibrationDate,
+  setCalibrationDate, kitName, setKitName, sampleDepth, setSampleDepth,
+  sampleLocation, setSampleLocation, notes, setNotes, soilTests,
+  imageInputRef, videoRef, cameraOpen, onStartCamera, onStopCamera,
+  onCapture, onChooseImage, onRun, onSaveLeaf, onSaveSoil,
+}) {
+  const isLeaf = mode === "leaf";
+  const savedTests = Array.isArray(soilTests) ? soilTests : [];
+
+  return (
+    <section className="pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[21px] font-black">Crop & Soil Diagnostics</h1>
+          <p className={"mt-1 text-[11px] " + MUTED}>Camera-assisted screening with RevelaAI Live Vision</p>
+        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#123F3A] text-[#52DDA0]"><ScanSearch size={21}/></span>
+      </div>
+
+      {!farm && <div className="mt-3 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-[11px] leading-5 text-amber-200">No farm is selected. You may scan a photo, but it will not be attached to farm records yet.</div>}
+      {farm && !farmVerified && <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-[11px] leading-5 text-amber-200"><ShieldAlert size={15} className="mt-0.5 shrink-0"/>This farm's rights review is not verified. You can scan the image, but saving farm-specific diagnostics is locked until the review is complete.</div>}
+
+      <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-[#1A3D53] bg-[#0A2237] p-1">
+        <button type="button" onClick={() => setMode("leaf")} className={"flex items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-[11px] font-extrabold " + (isLeaf ? ACTION : "text-[#91AABB]")}><Bug size={15}/>Leaf / Pest Scan</button>
+        <button type="button" onClick={() => setMode("soil")} className={"flex items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-[11px] font-extrabold " + (!isLeaf ? ACTION : "text-[#91AABB]")}><FlaskConical size={15}/>Soil pH</button>
+      </div>
+
+      <div className={PANEL + " mt-3 p-3.5"}>
+        {isLeaf ? (
+          <>
+            <div className="flex items-center gap-2"><Bug size={17} className="text-[#54DDA0]"/><p className="text-[12px] font-extrabold text-white">Inspect a crop leaf</p></div>
+            <p className={"mt-1 text-[10px] leading-4 " + MUTED}>Capture the affected leaf close-up. Take a second photo of the underside if insects, eggs or webbing may be present.</p>
+            <label className="mt-3 block text-[10px] font-bold text-[#A9C0CC]">Crop name (optional)</label>
+            <input value={cropName} onChange={(event) => setCropName(event.target.value)} placeholder={farm?.primary_crop || farm?.crop_name || "e.g. Maize, tomato, kale"} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white outline-none placeholder:text-[#6D899A]"/>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2"><FlaskConical size={17} className="text-[#54DDA0]"/><p className="text-[12px] font-extrabold text-white">Soil pH test reader</p></div>
+            <p className={"mt-1 text-[10px] leading-4 " + MUTED}>Use a soil pH strip or colourimetric kit. Put the reacted strip beside its matching colour chart in the same photo. A camera cannot measure pH from bare soil.</p>
+          </>
+        )}
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={onStartCamera} className="flex items-center justify-center gap-2 rounded-xl border border-[#27624F] bg-[#103A34] px-2 py-3 text-[11px] font-extrabold text-[#8BE8B9]"><Camera size={16}/>Open Camera</button>
+          <button type="button" onClick={() => imageInputRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-[#21465D] bg-[#0E2B42] px-2 py-3 text-[11px] font-extrabold text-[#C9DCE5]"><ImagePlus size={16}/>{isLeaf ? "Upload Photo" : "Upload Test Photo"}</button>
+        </div>
+        <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={(event) => { onChooseImage(event.target.files?.[0]); event.target.value = ""; }}/>
+
+        {cameraOpen && (
+          <div className="mt-3 overflow-hidden rounded-xl border border-[#28526A] bg-black">
+            <video ref={videoRef} autoPlay muted playsInline className="max-h-[360px] w-full object-contain"/>
+            <div className="grid grid-cols-2 gap-2 p-2">
+              <button type="button" onClick={onCapture} className={"rounded-lg py-2.5 text-[11px] font-extrabold " + ACTION}>Capture photo</button>
+              <button type="button" onClick={onStopCamera} className="rounded-lg border border-white/15 py-2.5 text-[11px] font-bold text-white">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {file && (
+          <div className="mt-3 overflow-hidden rounded-xl border border-[#21465D] bg-[#071B2B]">
+            <img src={preview} alt={isLeaf ? "Selected crop leaf" : "Selected soil pH test strip and chart"} className="max-h-[260px] w-full object-contain"/>
+            <div className="flex items-center justify-between gap-2 p-2.5">
+              <span className="min-w-0 truncate text-[10px] text-[#AFC3CE]">{file.name} · {(file.size / 1024).toFixed(0)} KB</span>
+              <button type="button" onClick={() => onChooseImage(null)} className="shrink-0 rounded-lg p-1 text-[#9BB2C0]" aria-label="Remove selected image"><X size={16}/></button>
+            </div>
+          </div>
+        )}
+
+        <button type="button" disabled={!file || busy} onClick={onRun} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold disabled:opacity-40 " + ACTION}>
+          {busy ? <RefreshCw size={15} className="animate-spin"/> : <ScanSearch size={16}/>}
+          {busy ? (isLeaf ? "RevelaAI is inspecting the leaf…" : "Reading the test chart…") : (isLeaf ? "Analyse leaf for pests & disease" : "Read pH test strip with RevelaAI")}
+        </button>
+
+        {result && result.mode === mode && (
+          <div className="mt-3 rounded-xl border border-[#23614E] bg-[#06392F] p-3.5">
+            <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-extrabold text-[#8DF0BB]">{isLeaf ? "Preliminary AI assessment" : "AI colour-chart interpretation"}</p><span className="rounded-full bg-[#145542] px-2 py-1 text-[9px] font-bold text-[#B5F4D4]">{isLeaf ? "Visual screening" : "Estimate only"}</span></div>
+            <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-[#D5ECE3]">{result.reply}</p>
+            <p className="mt-2 text-[9px] text-[#81BBA2]">{result.provider}{result.model ? " · " + result.model : ""} · {new Date(result.capturedAt).toLocaleString()}</p>
+            {isLeaf && farmVerified && (
+              <button type="button" disabled={saving || saved} onClick={onSaveLeaf} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#20C987] px-3 py-2.5 text-[11px] font-extrabold text-[#05251E] disabled:opacity-50">
+                {saved ? <CheckCircle2 size={15}/> : <Activity size={15}/>}
+                {saved ? "Saved to Farm Records" : saving ? "Saving scan…" : "Save scan to Farm Records"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!isLeaf && (
+        <>
+          <div className={PANEL + " mt-3 p-3.5"}>
+            <p className="text-[11px] font-extrabold text-white">Record a measured pH reading</p>
+            <label className="mt-2 block text-[10px] font-semibold text-[#AFC3CE]">Test method</label>
+            <select value={soilMethod} onChange={(event) => setSoilMethod(event.target.value)} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white">
+              <option value="digital_meter">Digital pH meter</option><option value="test_strip">pH test strip</option><option value="colorimetric_kit">Colour comparison kit</option><option value="laboratory">Laboratory test</option>
+            </select>
+            <label className="mt-3 block text-[10px] font-semibold text-[#AFC3CE]">Measured pH value (0–14)</label>
+            <input type="number" inputMode="decimal" min="0" max="14" step="0.1" value={measuredPh} onChange={(event) => setMeasuredPh(event.target.value)} placeholder="e.g. 6.5 — leave blank for photo estimate only" className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white outline-none placeholder:text-[#6D899A]"/>
+            {soilMethod === "digital_meter" && (
+              <>
+                <label className="mt-3 block text-[10px] font-semibold text-[#AFC3CE]">Meter calibration status</label>
+                <select value={calibration} onChange={(event) => setCalibration(event.target.value)} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white"><option value="calibrated">Calibrated with buffer solutions</option><option value="uncalibrated">Not calibrated</option><option value="overdue">Calibration overdue</option></select>
+                <label className="mt-3 block text-[10px] font-semibold text-[#AFC3CE]">Calibration date</label>
+                <input type="date" value={calibrationDate} onChange={(event) => setCalibrationDate(event.target.value)} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white"/>
+              </>
+            )}
+            <label className="mt-3 block text-[10px] font-semibold text-[#AFC3CE]">Test kit / meter brand (optional)</label>
+            <input value={kitName} onChange={(event) => setKitName(event.target.value)} placeholder="Brand or model" className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white placeholder:text-[#6D899A]"/>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div><label className="block text-[10px] font-semibold text-[#AFC3CE]">Sample depth (cm)</label><input type="number" min="0" max="100" step="1" value={sampleDepth} onChange={(event) => setSampleDepth(event.target.value)} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white"/></div>
+              <div><label className="block text-[10px] font-semibold text-[#AFC3CE]">Sample point</label><input value={sampleLocation} onChange={(event) => setSampleLocation(event.target.value)} placeholder="North field" className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white placeholder:text-[#6D899A]"/></div>
+            </div>
+            <label className="mt-3 block text-[10px] font-semibold text-[#AFC3CE]">Notes (optional)</label>
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Soil preparation, dilution or kit instructions followed…" className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white placeholder:text-[#6D899A]"/>
+            <button type="button" disabled={saving || (!String(measuredPh).trim() && result?.mode !== "soil")} onClick={onSaveSoil} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold disabled:opacity-40 " + ACTION}>
+              {saving ? <RefreshCw size={15} className="animate-spin"/> : <CheckCircle2 size={15}/>}Save soil test to farm
+            </button>
+            {saved && <p className="mt-2 text-center text-[10px] font-bold text-[#75E6AE]">Soil test saved. Measured pH and AI visual estimates remain labelled separately.</p>}
+          </div>
+
+          <div className={PANEL + " mt-3 p-3"}>
+            <p className="text-[10px] font-extrabold text-[#C4D8E2]">Soil pH accuracy</p>
+            <p className={"mt-1 text-[10px] leading-4 " + MUTED}>Follow the kit's soil-to-water ratio and wait time, then photograph the reacted strip with its matching chart in neutral daylight. Calibrate a digital meter with the correct buffer solutions. A laboratory test is the best confirmation. AI never converts a bare-soil photo into a measured pH.</p>
+          </div>
+
+          <div className={PANEL + " mt-3 p-3"}>
+            <p className="text-[11px] font-extrabold text-white">Saved soil test history</p>
+            {savedTests.slice(0, 6).map((test, index) => (
+              <div key={getId(test) || index} className="mt-2 flex items-center justify-between gap-2 border-b border-[#17384F] pb-2 last:border-0">
+                <span className="min-w-0"><span className="block text-[11px] font-bold text-[#DCE9EF]">{test?.measured_ph !== null && test?.measured_ph !== undefined ? "Measured pH " + test.measured_ph : "AI visual estimate only"}</span><span className={"text-[9px] " + MUTED}>{String(test?.method || "soil test").replace(/_/g, " ")} · {formatDate(test?.created_at)}</span></span>
+                <span className={"shrink-0 text-[9px] " + (test?.calibration_status === "calibrated" ? "text-[#59DEA1]" : "text-amber-300")}>{test?.calibration_status || "not applicable"}</span>
+              </div>
+            ))}
+            {!savedTests.length && <p className={"mt-2 text-[10px] " + MUTED}>No saved soil tests yet.</p>}
+          </div>
+        </>
+      )}
+
+      {error && <div role="alert" className="mt-3 rounded-xl border border-rose-800/60 bg-rose-950/40 p-3 text-[10px] leading-4 text-rose-200">{error}</div>}
+      <p className={"mt-3 text-[9px] leading-4 " + MUTED}>Live Vision sends the selected photo to RevelaAI for analysis; this endpoint processes the image without retaining its bytes. Results are preliminary visible-spectrum screening, not laboratory diagnosis, X-ray or multispectral imaging.</p>
+    </section>
+  );
+}
