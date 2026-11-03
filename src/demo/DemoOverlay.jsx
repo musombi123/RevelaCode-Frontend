@@ -170,6 +170,16 @@ export default function DemoOverlay() {
     return undefined;
   }, [active]);
 
+  useEffect(() => {
+    if (!active) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      const first = getFocusable(dialog)[0];
+      (first || dialog)?.focus?.();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, chapterId, stepIndex, isFinish]);
+
   // StartModal is already an account-access dialog. When the tour is active,
   // hide that underlying dialog from assistive technology so only the guided
   // dialog is modal; the tour's action button still activates its highlighted controls.
@@ -417,8 +427,18 @@ export default function DemoOverlay() {
         }
       }
     };
+    const onFocusIn = (event) => {
+      const dialog = dialogRef.current;
+      if (!dialog || dialog.contains(event.target)) return;
+      const first = getFocusable(dialog)[0];
+      (first || dialog).focus?.();
+    };
     document.addEventListener("keydown", onDialogKeyDown, true);
-    return () => document.removeEventListener("keydown", onDialogKeyDown, true);
+    document.addEventListener("focusin", onFocusIn, true);
+    return () => {
+      document.removeEventListener("keydown", onDialogKeyDown, true);
+      document.removeEventListener("focusin", onFocusIn, true);
+    };
   }, [active, exitConfirm, next, back, exit]);
 
   const chapterIndex = Math.max(0, chapters.findIndex((item) => item.id === chapterId));
