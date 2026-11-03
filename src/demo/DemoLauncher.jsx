@@ -1,10 +1,10 @@
 import React from "react";
-import { PlayCircle, RotateCcw, Sparkles } from "lucide-react";
+import { PlayCircle, RotateCcw } from "lucide-react";
 import { useDemo } from "./DemoProvider.jsx";
 
 export default function DemoLauncher({ startAt = "welcome", onStart, className = "", compact = false }) {
   const { active, chapterId, stepIndex, completed, lang, start } = useDemo();
-  const hasProgress = chapterId !== "welcome" || stepIndex > 0 || completed.length > 0;
+  const hasProgress = !completed.includes("finish") && (chapterId !== "welcome" || stepIndex > 0 || completed.length > 0);
 
   const launch = (resume) => {
     if (typeof onStart === "function") {
