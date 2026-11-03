@@ -27,7 +27,7 @@ const launchSplash = (() => {
   const image = element?.querySelector("img");
   if (!element || !image) return null;
 
-  image.src = isAndroid ? "/splash/android.webp" : "/splash/desktop.webp";
+  image.src = isAndroid ? "/splash/android.svg" : "/splash/desktop.svg";
   element.hidden = false;
 
   const startedAt = performance.now();
