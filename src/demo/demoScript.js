@@ -133,7 +133,8 @@ const CURATED = {
     ],
     steps: [
       step("ai-overview", "ai", "Meet your assistant", "Kutana na msaidizi wako", "RevelaAI can help with questions across the connected workspaces.", "RevelaAI inaweza kusaidia maswali katika vitovu vilivyounganishwa."),
-      step("ai-chat-input", "ai", "Ask a simple question", "Uliza swali rahisi", "Type the sample question below to see the message field in action.", "Andika swali la mfano hapa chini kuona jinsi sehemu ya ujumbe inavyofanya kazi.", "type", "Show me three ways to improve my work today."),
+      step("ai-chat-input", "ai", "Ask a simple question", "Uliza swali rahisi", "Type the sample question below. It fills the chat without sending it yet.", "Andika swali la mfano hapa chini. Hujaza gumzo bila kulituma bado.", "type", "Show me three ways to improve my work today."),
+      step("ai-send-message", "ai", "Send your question", "Tuma swali lako", "Tap Send. RevelaAI answers with a sample reply while Demo mode blocks live requests.", "Gusa Tuma. RevelaAI hujibu kwa mfano huku hali ya onyesho ikizuia maombi halisi.", "click"),
       step("ai-vision-tools", "ai", "Explore voice and vision", "Chunguza sauti na picha", "Use voice or camera controls to explore other ways to communicate.", "Tumia vitufe vya sauti au kamera kuchunguza njia nyingine za kuwasiliana."),
     ],
     challenge: bi("Ask RevelaAI for one practical next step in your chosen hub.", "Uliza RevelaAI hatua moja ya vitendo kwa kitovu unachochagua."),
