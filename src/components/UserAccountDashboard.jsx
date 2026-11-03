@@ -34,6 +34,7 @@ import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
 import { useAuth } from "@/context/AuthContext.jsx";
 import DemoLauncher from "@/demo/DemoLauncher.jsx";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { isDemoApiActive } from "@/demo/demoApi.js";
 import { DEMO_ACCOUNT } from "@/demo/mockData.js";
 
@@ -1312,7 +1313,9 @@ export default function UserAccountDashboard({
                       </p>
                     </div>
 
-                    <div className="hidden max-w-[300px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-3.5 py-3 shadow-sm sm:flex dark:border-slate-800 dark:bg-slate-950/50">
+                    <div className="flex shrink-0 items-center gap-3">
+                      <PremiumPlansStar />
+                      <div className="hidden max-w-[300px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-3.5 py-3 shadow-sm sm:flex dark:border-slate-800 dark:bg-slate-950/50">
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 text-xs font-bold text-white ring-2 ring-emerald-100 dark:ring-emerald-950/70">
                         {getInitials(userData?.name || userData?.fullName || userData?.username || userData?.contact)}
                       </div>
@@ -1325,6 +1328,7 @@ export default function UserAccountDashboard({
                       {(userData?.verified || userData?.is_verified || userData?.email_verified || userData?.phone_verified || userData?.emailVerified) && (
                         <BadgeCheck className="h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-300" aria-label="Verified account" />
                       )}
+                      </div>
                     </div>
                   </div>
                 </header>
