@@ -212,7 +212,7 @@ function generatedChapter(entry, homeHub = false) {
 
 export function buildDemoChapters(homeHubs = [], dashboards = []) {
   const homeKeys = new Set(homeHubs.map((hub) => String(hub?.key || "")).filter(Boolean));
-  const dashboardByKey = new Map(dashboards.map((item) => [String(item?.key || ""), item]));
+  const dashboardByKey = new Map(dashboards.filter((item) => !item?.hidden).map((item) => [String(item?.key || ""), item]));
   const hubIds = CORE_ORDER.filter((key) => homeKeys.has(key) || dashboardByKey.has(key));
   const chapters = [CURATED.welcome, CURATED.home];
   hubIds.forEach((key) => {
