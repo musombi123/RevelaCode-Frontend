@@ -634,7 +634,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
 
   const titleMap = {
     farms: "My Farms", detail: "Farm Details", weather: "Weather & Forecast",
-    market: "Market Prices", advisor: "AI Farm Advisor", records: "Farm Records",
+    market: "Market Prices", advisor: "AI Farm Advisor", diagnostics: "Crop & Soil Diagnostics", records: "Farm Records",
     alerts: "Alerts & Notifications", profile: "Profile & Settings", plans: "Shamba Plans & Tools",
     manage: "Farm Management",
   };
@@ -689,7 +689,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                   { label: "My Farms", icon: Tractor, action: () => go("farms"), tone: "text-[#55D99B] bg-[#104438]" },
                   { label: "Weather", icon: CloudSun, action: () => go("weather"), tone: "text-sky-300 bg-[#123A58]" },
                   { label: "Market Prices", icon: ShoppingCart, action: () => go("market"), tone: "text-[#78D77D] bg-[#143F36]" },
-                  { label: "AI Advisor", icon: MessageCircle, action: openAdvisor, tone: "text-sky-300 bg-[#123A58]" },
+                  { label: "Crop & Soil Scan", icon: Camera, action: () => { setDiagnosticMode("leaf"); go("diagnostics"); }, tone: "text-sky-300 bg-[#123A58]" },
                   { label: "Create Farm", icon: Sprout, action: () => go("manage"), tone: "text-[#A7DD79] bg-[#24452F]" },
                   { label: "Farm Records", icon: ClipboardListIcon, action: () => go("records"), tone: "text-[#74D99D] bg-[#124237]" },
                 ].map((item) => {
@@ -806,7 +806,13 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                   ["pH", first(farmDetail?.soil_ph, farmDetail?.ph, "Not measured")],
                   ["NPK", first(farmDetail?.npk, "Not measured")],
                 ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-3 border-b border-[#17384F] pb-2 last:border-0"><span className={"text-[11px] " + MUTED}>{label}</span><span className="text-[11px] font-bold text-white">{value}</span></div>)}
-                <p className={"text-[10px] leading-4 " + MUTED}>Soil-photo estimates are not laboratory measurements. Use a qualified laboratory for pH and nutrient testing.</p>
+                <p className={"text-[10px] leading-4 " + MUTED}>A bare-soil photo cannot measure pH. Use a calibrated meter or chemical test kit; AI can only interpret a visible test strip beside its matching colour chart.</p>
+                <button type="button" onClick={() => { setDiagnosticMode("soil"); setDiagnosticFile(null); setDiagnosticResult(null); setDiagnosticError(""); setDiagnosticSaved(false); go("diagnostics"); }} className={"flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[11px] font-extrabold " + ACTION}><FlaskConical size={15}/>Scan soil test / record pH</button>
+                <div className="rounded-xl border border-[#1A4056] bg-[#071C2C] p-3">
+                  <p className="text-[11px] font-extrabold text-white">Recent soil tests</p>
+                  {soilTests.slice(0, 4).map((test, index) => <div key={getId(test) || index} className="mt-2 flex items-center justify-between gap-2 border-b border-[#17384F] pb-2 last:border-0"><span className="min-w-0"><span className="block text-[10px] font-bold text-[#D7E5EB]">{test?.measured_ph !== null && test?.measured_ph !== undefined ? "Measured pH " + test.measured_ph : "Visual estimate only"}</span><span className={"text-[9px] " + MUTED}>{test?.method?.replace(/_/g, " ") || "Soil test"} · {dateLabel(test?.created_at)}</span></span><span className={"text-[9px] " + (test?.calibration_status === "calibrated" ? "text-[#57DDA2]" : "text-amber-300")}>{statusLabel(test?.calibration_status)}</span></div>)}
+                  {!soilTests.length && <p className={"mt-2 text-[10px] " + MUTED}>No saved soil tests yet.</p>}
+                </div>
               </div>}
               {detailTab === "History" && <div className={PANEL + " mt-3 p-3"}>
                 <p className="text-[12px] font-extrabold text-white">Farm history</p>
@@ -822,6 +828,51 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             </>}
             {!selectedFarm && <div className={PANEL + " mt-4 p-5 text-center"}><p className="text-[13px] font-bold">No farm selected</p><button type="button" onClick={() => go("farms")} className="mt-3 text-[12px] font-bold text-[#45D99A]">Open My Farms</button></div>}
           </section>
+        )}
+
+        {screen === "diagnostics" && (
+          <ShambaDiagnosticsPanel
+            mode={diagnosticMode}
+            setMode={setDiagnosticMode}
+            farm={selectedFarm}
+            farmVerified={farmVerified}
+            file={diagnosticFile}
+            preview={diagnosticPreview}
+            result={diagnosticResult}
+            busy={diagnosticBusy}
+            saving={diagnosticSaving}
+            error={diagnosticError}
+            saved={diagnosticSaved}
+            cropName={cropForScan}
+            setCropName={setCropForScan}
+            soilMethod={soilMethod}
+            setSoilMethod={setSoilMethod}
+            measuredPh={soilMeasuredPh}
+            setMeasuredPh={setSoilMeasuredPh}
+            calibration={soilCalibration}
+            setCalibration={setSoilCalibration}
+            calibrationDate={soilCalibrationDate}
+            setCalibrationDate={setSoilCalibrationDate}
+            kitName={soilKitName}
+            setKitName={setSoilKitName}
+            sampleDepth={soilSampleDepth}
+            setSampleDepth={setSoilSampleDepth}
+            sampleLocation={soilSampleLocation}
+            setSampleLocation={setSoilSampleLocation}
+            notes={soilNotes}
+            setNotes={setSoilNotes}
+            soilTests={soilTests}
+            imageInputRef={imageInputRef}
+            videoRef={videoRef}
+            cameraOpen={cameraOpen}
+            onStartCamera={startCamera}
+            onStopCamera={stopCamera}
+            onCapture={captureCameraPhoto}
+            onChooseImage={chooseDiagnosticImage}
+            onRun={runDiagnostic}
+            onSaveLeaf={saveLeafDiagnostic}
+            onSaveSoil={saveSoilTest}
+          />
         )}
 
         {screen === "weather" && (
@@ -1021,6 +1072,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
           <div className="grid grid-cols-2 gap-2">
             {[
               { title: "Weather & Forecast", icon: CloudSun, key: "weather" },
+              { title: "Crop & Soil Scan", icon: Camera, key: "diagnostics" },
               { title: "AI Farm Advisor", icon: MessageCircle, key: "advisor" },
               { title: "Farm Records", icon: ClipboardListIcon, key: "records" },
               { title: "Profile & Settings", icon: User, key: "profile" },
