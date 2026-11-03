@@ -1155,7 +1155,8 @@ export default function CommunityDashboard({
   // ----------------------------------------------------------
 
   const renderBackMenu = () => (
-    <div className="mb-3 flex justify-end">
+    <div className="mb-3 flex items-center justify-between">
+      <PremiumPlansStar />
       <div className="relative">
         <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
           <Menu size={14} /> RevelaCode menu <ChevronDown size={12} />
@@ -1198,11 +1199,14 @@ export default function CommunityDashboard({
 
   if (workspacePage === "composer") {
     return (
-      <CommunityComposer
-        initialPost={editingPost}
-        initialCategory={composerCategory}
-        onNavigate={navigate}
-      />
+      <div className="min-w-0">
+        {renderBackMenu()}
+        <CommunityComposer
+          initialPost={editingPost}
+          initialCategory={composerCategory}
+          onNavigate={navigate}
+        />
+      </div>
     );
   }
 
