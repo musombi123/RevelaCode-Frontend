@@ -4,9 +4,8 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import {
-  ArrowLeft, ArrowRight, BookOpen, Bot, Check, ChevronDown, CircleHelp,
-  Flag, GraduationCap, House, Languages, Leaf, Lightbulb, List, Pause,
-  Play, RotateCcw, ShoppingBag, SkipForward, Sparkles, Sprout, Store,
+  ArrowLeft, ArrowRight, BookOpen, Bot, Check, Flag, GraduationCap, HelpCircle,
+  Home, Languages, List, RotateCcw, SkipForward, Sparkles, Sprout, Store,
   Users, Volume2, VolumeX, X,
 } from "lucide-react";
 import { useDemo } from "./DemoProvider.jsx";
@@ -14,9 +13,9 @@ import { trackDemo } from "./demoApi.js";
 import "./demo.css";
 
 const ICONS = {
-  sparkles: Sparkles, house: House, store: Store, sprout: Sprout,
+  sparkles: Sparkles, house: Home, store: Store, sprout: Sprout,
   "graduation-cap": GraduationCap, "book-open": BookOpen, users: Users,
-  bot: Bot, "user-round": CircleHelp, flag: Flag, layers: List,
+  bot: Bot, "user-round": HelpCircle, flag: Flag, layers: List,
 };
 
 const TEXT = {
