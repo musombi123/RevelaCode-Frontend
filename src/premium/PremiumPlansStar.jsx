@@ -16,7 +16,7 @@ export default function PremiumPlansStar({ className = "" }) {
       return () => { active = false; };
     }
 
-    revenueApi.getMySubscription({ requestScope: "" })
+    const loadSubscription = () => revenueApi.getMySubscription({ requestScope: "" })
       .then((response) => {
         if (!active) return;
         setIsPremium(response?.isPremium === true);
@@ -29,8 +29,14 @@ export default function PremiumPlansStar({ className = "" }) {
           code: error?.code || error?.name || "subscription_unavailable",
         });
       });
+    const handleSubscriptionUpdated = () => { loadSubscription(); };
+    window.addEventListener("revelacode:subscription-updated", handleSubscriptionUpdated);
+    loadSubscription();
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+      window.removeEventListener("revelacode:subscription-updated", handleSubscriptionUpdated);
+    };
   }, [user?.id, user?.user_id, user?._id, user?.role, revenueApi]);
 
   const openPlans = () => {
