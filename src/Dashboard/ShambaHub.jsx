@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 
 import Loading from "@/components/common/Loading.jsx";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 import ShambaMobileExperience from "@/Dashboard/ShambaMobileExperience.jsx";
 
@@ -1207,6 +1208,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
 
               {/* CONTEXT ACTIONS */}
               <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
+                <PremiumPlansStar />
                 {location && (
                   <LocationBadge
                     location={location}
