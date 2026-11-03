@@ -261,6 +261,36 @@
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5357444506450550"
       crossorigin="anonymous"
     ></script>
+  
+    <style>
+      #revelacode-launch-splash[hidden] { display: none !important; }
+      #revelacode-launch-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: grid;
+        overflow: hidden;
+        background: #08111f;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 360ms ease, visibility 360ms ease;
+      }
+      #revelacode-launch-splash img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+      }
+      #revelacode-launch-splash.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #revelacode-launch-splash { transition: none; }
+      }
+    </style>
   </head>
 
   <body>
@@ -309,6 +339,9 @@
     <!-- ======================================================
          REACT APPLICATION
     ======================================================= -->
+    <div id="revelacode-launch-splash" hidden aria-label="RevelaCode starting">
+      <img alt="RevelaCode — Code. Innovate. Transform." />
+    </div>
     <div id="root"></div>
 
     <script type="module" src="/src/main.jsx"></script>
