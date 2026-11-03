@@ -1011,6 +1011,189 @@ function CreateBusinessState({
   );
 }
 
+function BiasharaAndroidModule({ icon: Icon, label, detail, iconClass, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex min-h-[104px] min-w-0 flex-col items-start justify-between rounded-[19px] border border-slate-200/90 bg-white p-3 text-left shadow-[0_5px_18px_rgba(15,23,42,.045)] transition active:scale-[.98] hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      <span className={"flex h-10 w-10 items-center justify-center rounded-[14px] " + iconClass}>
+        <Icon size={20} strokeWidth={2.2} />
+      </span>
+      <span className="mt-2 block min-w-0 w-full">
+        <span className="block text-[12px] font-extrabold leading-4 text-slate-900">{label}</span>
+        <span className="mt-1 block truncate text-[10px] leading-4 text-slate-500">{detail}</span>
+      </span>
+      <ChevronRight size={15} className="absolute hidden" aria-hidden="true" />
+    </button>
+  );
+}
+
+function BiasharaAndroidOverview({
+  business,
+  currency,
+  totalRevenue,
+  totalOrders,
+  customers,
+  netEstimate,
+  lowStockCount,
+  lowStockProducts,
+  error,
+  loadingDashboard,
+  lastUpdated,
+  onRefresh,
+  onNavigate,
+}) {
+  const simpleMode = business?.workspace_mode === "simple" ||
+    (!business?.workspace_mode && ["micro", "small"].includes(String(business?.business_scale || "").toLowerCase()));
+  const businessName = business?.name || business?.business_name || "Your business";
+  const verification = String(
+    business?.verification_status || business?.status || "active"
+  ).trim().toLowerCase();
+  const businessActive = ["verified", "approved", "active", "complete"].includes(verification);
+  const modules = [
+    { key: "website", label: "Website", detail: "Services & products", icon: Globe, tone: "bg-blue-50 text-blue-600" },
+    { key: "orders", label: "Orders", detail: "Manage orders", icon: ShoppingCart, tone: "bg-emerald-50 text-emerald-600" },
+    { key: "products", label: "Products & stock", detail: "Inventory control", icon: Box, tone: "bg-orange-50 text-orange-600" },
+    { key: "finance", label: "Finance", detail: "Track finances", icon: WalletCards, tone: "bg-indigo-50 text-indigo-600" },
+    { key: "automations", label: "Automations", detail: "Automate workflows", icon: Sparkles, tone: "bg-cyan-50 text-cyan-700" },
+    { key: "sync", label: "Sync Centre", detail: "Sync your data", icon: RefreshCw, tone: "bg-emerald-50 text-emerald-600" },
+    { key: "biashara-analytics", label: "Insights", detail: "Business reports", icon: BarChart3, tone: "bg-violet-50 text-violet-600" },
+    { key: "team", label: "Team", detail: "Manage team", icon: Users, tone: "bg-blue-50 text-blue-600" },
+    { key: "sales", label: "Sales entry", detail: "Record a sale", icon: DollarSign, tone: "bg-green-50 text-green-600" },
+  ].filter((item) => !simpleMode || !["automations", "sync", "team"].includes(item.key));
+
+  return (
+    <div className="min-h-full bg-[#F3F6FB] pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-slate-900">
+      <div className="mx-auto w-full max-w-3xl space-y-3.5 px-3 pb-5 pt-3">
+        <section className="relative isolate overflow-hidden rounded-[24px] bg-gradient-to-br from-[#062A58] via-[#064B91] to-[#0877C9] px-4 py-5 text-white shadow-[0_14px_35px_rgba(5,52,105,.22)]">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full border-[24px] border-white/5" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 right-16 h-52 w-52 rounded-full bg-cyan-300/15 blur-3xl" />
+          <div className="relative z-10 flex min-h-[126px] items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur">
+              <Briefcase size={27} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-200">Biashara Hub</p>
+              <h1 className="mt-1 text-[25px] font-black leading-[1.08] tracking-tight">Grow your business.</h1>
+              <p className="mt-1 text-[15px] font-semibold text-blue-50">Manage smarter.</p>
+              <p className="mt-2 max-w-[245px] text-[10px] leading-4 text-blue-100/85">Your sales, stock, customers and operations in one workspace.</p>
+            </div>
+            <div aria-hidden="true" className="hidden shrink-0 sm:flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-white/10">
+              <Store size={43} className="text-cyan-100" />
+            </div>
+          </div>
+          <div className="relative z-10 mt-3 flex items-center justify-between gap-2 border-t border-white/15 pt-3">
+            <span className="min-w-0 truncate text-[11px] font-semibold text-blue-100">{business?.category || business?.business_type || "Business operations"}</span>
+            <button type="button" onClick={() => onNavigate("business-profile")} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-[10px] font-bold text-white ring-1 ring-white/20 transition hover:bg-white/15">
+              Business profile <ChevronRight size={13} />
+            </button>
+          </div>
+        </section>
+
+        <section className="flex items-center gap-3 rounded-[20px] border border-slate-200/90 bg-white p-3.5 shadow-[0_5px_18px_rgba(15,23,42,.04)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50 text-blue-700">
+            {business?.logo_url ? (
+              <img src={business.logo_url} alt="" className="h-full w-full object-cover" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+            ) : <Store size={23} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h2 className="truncate text-[14px] font-extrabold text-slate-900">{businessName}</h2>
+              {businessActive ? <CheckCircle2 size={15} className="shrink-0 text-emerald-500" /> : null}
+            </div>
+            <p className="mt-1 truncate text-[10px] font-medium text-slate-500">{businessActive ? "Business profile active" : "Business verification: " + statusLabel(verification)}</p>
+            <p className="mt-0.5 truncate text-[10px] text-slate-400">{[business?.location || business?.address, business?.county].filter(Boolean).join(", ") || "Add your business location"}</p>
+          </div>
+          <button type="button" onClick={() => onNavigate("business-profile")} aria-label="Edit business profile" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-700">
+            <ChevronRight size={18} />
+          </button>
+        </section>
+
+        <section>
+          <div className="mb-2.5 flex items-end justify-between px-1">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.17em] text-blue-700">Business tools</p>
+              <h2 className="mt-0.5 text-[16px] font-black tracking-tight text-slate-900">Run your business</h2>
+            </div>
+            <span className="text-[10px] font-semibold text-slate-400">{modules.length} tools</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {modules.map((item) => (
+              <BiasharaAndroidModule
+                key={item.key}
+                icon={item.icon}
+                label={item.label}
+                detail={item.detail}
+                iconClass={item.tone}
+                onClick={() => onNavigate(item.key)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[22px] bg-gradient-to-br from-[#061D3B] via-[#082B52] to-[#063E6A] p-4 text-white shadow-[0_10px_28px_rgba(5,35,76,.17)]">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={19} className="text-amber-300" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.16em] text-blue-200">Performance</p>
+                <h2 className="text-[15px] font-extrabold">Business overview</h2>
+              </div>
+            </div>
+            <span className="rounded-full bg-white/10 px-2.5 py-1.5 text-[9px] font-bold text-blue-100">{String(currency).toUpperCase()}</span>
+          </div>
+          <div className="grid grid-cols-4 divide-x divide-white/15">
+            {[
+              { label: "Sales", value: formatCompactMoney(totalRevenue, currency), icon: DollarSign, tone: "text-sky-300" },
+              { label: "Orders", value: formatNumber(totalOrders), icon: ShoppingCart, tone: "text-emerald-300" },
+              { label: "Customers", value: formatNumber(customers), icon: Users, tone: "text-violet-300" },
+              { label: "Net est.", value: formatCompactMoney(netEstimate, currency), icon: TrendingUp, tone: "text-amber-300" },
+            ].map((metric) => {
+              const Icon = metric.icon;
+              return (
+                <div key={metric.label} className="min-w-0 px-1.5 text-center first:pl-0 last:pr-0">
+                  <Icon size={16} className={"mx-auto " + metric.tone} />
+                  <p className="mt-2 truncate text-[12px] font-black tracking-tight sm:text-[14px]">{metric.value}</p>
+                  <p className="mt-1 truncate text-[9px] font-medium text-blue-100/80">{metric.label}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-3">
+            <span className="text-[10px] text-blue-100/75">Live figures from your business dashboard</span>
+            <button type="button" onClick={() => onNavigate("biashara-analytics")} className="inline-flex shrink-0 items-center gap-1 text-[10px] font-extrabold text-cyan-200">Insights <ChevronRight size={13} /></button>
+          </div>
+        </section>
+
+        <section className={"flex items-center gap-3 rounded-2xl border px-3.5 py-3 " + (lowStockCount > 0 ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50")}>
+          <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + (lowStockCount > 0 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700")}>
+            {lowStockCount > 0 ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className={"text-[12px] font-extrabold " + (lowStockCount > 0 ? "text-amber-900" : "text-emerald-900")}>{lowStockCount > 0 ? (lowStockCount + " products need stock attention") : "No low-stock alerts reported"}</p>
+            <p className={"mt-0.5 text-[10px] " + (lowStockCount > 0 ? "text-amber-800" : "text-emerald-800")}>{error || (lowStockCount > 0 ? "Review inventory and reorder levels." : "Your latest business figures are shown above.")}</p>
+          </div>
+          {lowStockCount > 0 ? <button type="button" onClick={() => onNavigate("products")} className="shrink-0 text-[10px] font-extrabold text-amber-800">Review</button> : null}
+          {loadingDashboard ? <RefreshCw size={14} className="shrink-0 animate-spin text-slate-400" /> : null}
+          {!loadingDashboard && lastUpdated ? <span className="shrink-0 text-[9px] text-slate-400">{formatDate(lastUpdated)}</span> : null}
+        </section>
+
+        {lowStockProducts.length > 0 ? (
+          <button type="button" onClick={() => onNavigate("products")} className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left shadow-sm">
+            <span className="min-w-0">
+              <span className="block text-[11px] font-extrabold text-slate-900">Low-stock items</span>
+              <span className="mt-0.5 block truncate text-[10px] text-slate-500">{lowStockProducts.slice(0, 2).map((item) => item.name || item.product_name || "Product").join(" · ")}</span>
+            </span>
+            <ChevronRight size={16} className="text-slate-400" />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /* =========================================================
    MAIN DASHBOARD
 ========================================================= */
@@ -1581,6 +1764,23 @@ export default function BiasharaDashboard({
 
   return (
     <BiasharaShell business={business} activeSection={activeSection} onNavigate={navigate} onRefresh={loadDashboard}>
+    {import.meta.env.VITE_ANDROID_APP === "true" ? (
+      <BiasharaAndroidOverview
+        business={business}
+        currency={currency}
+        totalRevenue={totalRevenue}
+        totalOrders={totalOrders}
+        customers={customers}
+        netEstimate={netEstimate}
+        lowStockCount={lowStockCount}
+        lowStockProducts={lowStockProducts}
+        error={error}
+        loadingDashboard={loadingDashboard}
+        lastUpdated={lastUpdated}
+        onRefresh={loadDashboard}
+        onNavigate={navigate}
+      />
+    ) : (
     <div className="min-h-full bg-[#f4f7fb]">
       <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-3 sm:space-y-6 sm:p-6 lg:p-8">
 
@@ -2467,6 +2667,7 @@ export default function BiasharaDashboard({
         </section>
       </div>
     </div>
+    )}
     </BiasharaShell>
   );
 }
