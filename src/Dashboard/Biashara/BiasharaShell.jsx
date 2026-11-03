@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import {
   DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe, ArrowLeftRight,
   Home, LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
@@ -128,7 +129,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
     <div className="min-h-screen bg-revela-dark text-slate-100 lg:flex">
       <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-white/10 bg-revela-card lg:flex">
         <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-300/15">
               <Store aria-hidden="true" size={21} />
             </span>
@@ -136,6 +137,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
               <p className="text-sm font-semibold tracking-tight text-white">Biashara OS</p>
               <p className="mt-0.5 text-xs text-slate-400">Business workspace</p>
             </div>
+            <PremiumPlansStar className="border-white/10 bg-revela-dark text-amber-300 dark:bg-revela-dark" />
           </div>
         </div>
 
@@ -186,6 +188,7 @@ export default function BiasharaShell({ business, activeSection = "overview", on
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <PremiumPlansStar className="border-white/10 bg-revela-card text-amber-300 dark:bg-revela-card" />
             {isAndroidApp ? (
               <button type="button" onClick={() => navigateTo("notifications")} aria-label="Open business alerts" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
                 <Bell aria-hidden="true" size={18} />
