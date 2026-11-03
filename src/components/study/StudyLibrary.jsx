@@ -363,7 +363,7 @@ export default function StudyLibrary({
   ======================================================= */
 
   return (
-    <div className="space-y-6">
+    <div data-demo="faith-study-root" className="space-y-6">
       {/* =================================================
           HEADER
       ================================================= */}
