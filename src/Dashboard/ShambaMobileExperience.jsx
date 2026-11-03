@@ -1,8 +1,8 @@
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3,
+  Activity, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Bug, Camera,
   Bell, CheckCircle2, ChevronRight, Clock, Cloud, CloudRain, CloudSun,
-  Crown, Droplets, Filter, FlaskConical, Home, Leaf, MapPin, MessageCircle,
+  Crown, Droplets, Filter, FlaskConical, Home, ImagePlus, Leaf, MapPin, MessageCircle,
   MoreHorizontal, Package, Plus, RefreshCw, Search, Settings, ShieldCheck,
   ShoppingCart, Sprout, Sun, Tractor, User, Users, Wheat, Wind, X,
 } from "lucide-react";
@@ -101,6 +101,45 @@ function statusLabel(status) {
   return labels[status] || String(status || "Unverified").replace(/_/g, " ");
 }
 
+async function prepareDiagnosticImage(file) {
+  if (!file || !String(file.type || "").startsWith("image/")) {
+    throw new Error("Choose a leaf or soil-test image first.");
+  }
+  if (typeof createImageBitmap !== "function") {
+    if (file.size > 4 * 1024 * 1024) throw new Error("This photo is too large. Take a smaller photo or upload an image under 4 MB.");
+    return file;
+  }
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("The photo could not be prepared for analysis.");
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    if (!blob) throw new Error("The photo could not be compressed for analysis.");
+    if (blob.size > 4 * 1024 * 1024) {
+      const smaller = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.68));
+      if (!smaller || smaller.size > 4 * 1024 * 1024) throw new Error("The photo is too large for Live Vision. Capture it again from a little farther away.");
+      return new File([smaller], "shamba-diagnostic.jpg", { type: "image/jpeg", lastModified: Date.now() });
+    }
+    return new File([blob], "shamba-diagnostic.jpg", { type: "image/jpeg", lastModified: Date.now() });
+  } finally {
+    bitmap.close?.();
+  }
+}
+
+function imageFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected image."));
+    reader.onerror = () => reject(new Error("Could not read the selected image."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function MobileHeader({ title, subtitle, onBack, onAlerts, onProfile, profileInitial, alertCount = 0, right }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#14344A] bg-[#041726]/95 px-4 py-3 backdrop-blur-xl">
@@ -166,7 +205,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     getShambaDashboard, getFarmer, getFarms, getFarm, getFarmWeather,
     getFarmMarket, getFarmActivities, getFarmCommandCenter, getFarmInsights,
     getFarmAlerts, getFarmRecommendations, getMarketplaceListings, getHarvests,
-    markFarmAlertRead,
+    getSoilTests, createSoilTest, createFarmActivity, markFarmAlertRead,
   } = api;
 
   const [screen, setScreen] = useState("home");
@@ -196,6 +235,28 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const [alertFilter, setAlertFilter] = useState("All");
   const [marketTab, setMarketTab] = useState("Local Market");
   const [advisorQuestion, setAdvisorQuestion] = useState("");
+  const [soilTests, setSoilTests] = useState([]);
+  const [diagnosticMode, setDiagnosticMode] = useState("leaf");
+  const [diagnosticFile, setDiagnosticFile] = useState(null);
+  const [diagnosticResult, setDiagnosticResult] = useState(null);
+  const [diagnosticBusy, setDiagnosticBusy] = useState(false);
+  const [diagnosticSaving, setDiagnosticSaving] = useState(false);
+  const [diagnosticError, setDiagnosticError] = useState("");
+  const [diagnosticSaved, setDiagnosticSaved] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cropForScan, setCropForScan] = useState("");
+  const [soilMethod, setSoilMethod] = useState("test_strip");
+  const [soilMeasuredPh, setSoilMeasuredPh] = useState("");
+  const [soilCalibration, setSoilCalibration] = useState("not_applicable");
+  const [soilCalibrationDate, setSoilCalibrationDate] = useState("");
+  const [soilKitName, setSoilKitName] = useState("");
+  const [soilSampleDepth, setSoilSampleDepth] = useState("10");
+  const [soilSampleLocation, setSoilSampleLocation] = useState("");
+  const [soilNotes, setSoilNotes] = useState("");
+  const imageInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const cameraStreamRef = useRef(null);
+  const diagnosticPreview = useMemo(() => diagnosticFile ? URL.createObjectURL(diagnosticFile) : "", [diagnosticFile]);
 
   const activeFarms = useMemo(() => farms.filter((farm) => farm?.status !== "deleted"), [farms]);
   const selectedFarm = useMemo(() => activeFarms.find((farm) => String(getId(farm)) === String(selectedFarmId)) || activeFarms[0] || null, [activeFarms, selectedFarmId]);
