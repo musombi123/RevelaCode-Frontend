@@ -169,7 +169,9 @@ export default function DemoOverlay() {
     const locate = () => {
       if (disposed) return;
       const found = Array.from(document.querySelectorAll("[data-demo]"))
-        .find((element) => element.getAttribute("data-demo") === String(step.target));
+        .find((element) => element.getAttribute("data-demo") === String(step.target) &&
+          element.getClientRects().length > 0 &&
+          window.getComputedStyle(element).visibility !== "hidden");
       if (found) {
         setTargetElement(found);
         setTargetMissing(false);
@@ -189,7 +191,9 @@ export default function DemoOverlay() {
       if (disposed) return;
       locate();
       const exists = Array.from(document.querySelectorAll("[data-demo]"))
-        .some((element) => element.getAttribute("data-demo") === String(step.target));
+        .some((element) => element.getAttribute("data-demo") === String(step.target) &&
+          element.getClientRects().length > 0 &&
+          window.getComputedStyle(element).visibility !== "hidden");
       if (!exists) setTargetMissing(true);
       observer?.disconnect();
     }, 3000);
