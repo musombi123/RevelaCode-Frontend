@@ -28,6 +28,10 @@ import CertificateVerifyPage from "./pages/CertificateVerifyPage.jsx";
 import LegalDocumentsPage from "./pages/LegalDocumentsPage.jsx";
 import CommunityPublicPage from "./pages/jumuiya/CommunityPublicPage.jsx";
 import PlatformWelcomePage from "./pages/PlatformWelcomePage.jsx";
+import DemoProvider from "./demo/DemoProvider.jsx";
+import DemoOverlay from "./demo/DemoOverlay.jsx";
+import { buildDemoChapters } from "./demo/demoScript.js";
+import { HOME_HUBS, DASHBOARDS } from "./components/dashboardConfig.jsx";
 import MissionPulse from "./pages/faith/MissionPulse.jsx";
 import { isRevelaCodePlatformHostname } from "./utils/platformHost.mjs";
 
@@ -271,10 +275,13 @@ function ElimuPortalRoute({ portal }) {
   );
 }
 
+const DEMO_CHAPTERS = buildDemoChapters(HOME_HUBS, DASHBOARDS);
+
 export default function App() {
   return (
     <PreferencesProvider>
       <AuthProvider>
+        <DemoProvider chapters={DEMO_CHAPTERS}>
         <HistoryProvider>
           <BrowserRouter>
             <SEOManager />
@@ -480,8 +487,10 @@ export default function App() {
                 element={<Navigate to="/" replace />}
               />
             </Routes>
+            <DemoOverlay />
           </BrowserRouter>
         </HistoryProvider>
+        </DemoProvider>
       </AuthProvider>
     </PreferencesProvider>
   );
