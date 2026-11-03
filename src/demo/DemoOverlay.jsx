@@ -20,6 +20,7 @@ const ICONS = {
 const TEXT = {
   en: {
     demoMode: "Demo mode — nothing is saved",
+    whoFor: "Who is this for?",
     chapter: "Chapter",
     step: "Step",
     of: "of",
@@ -53,6 +54,7 @@ const TEXT = {
   },
   sw: {
     demoMode: "Hali ya onyesho — hakuna kinachohifadhiwa",
+    whoFor: "Ni kwa ajili ya nani?",
     chapter: "Sura",
     step: "Hatua",
     of: "ya",
@@ -107,6 +109,7 @@ export default function DemoOverlay() {
   const demo = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
+  const { guestMode } = useAuth();
   const {
     active, chapterId, stepIndex, lang, voiceOn, chapters,
     next, back, skip, jumpToChapter, exit, setLang, setVoiceOn, restart, completed,
@@ -332,6 +335,12 @@ export default function DemoOverlay() {
     navigate("/login?mode=register");
   };
 
+  const continueAsGuest = () => {
+    exit();
+    guestMode?.();
+    navigate("/app", { replace: true });
+  };
+
   const submitRating = () => {
     if (!rating) return;
     const analytics = window.revelacodeAnalytics || window.revelaAnalytics;
@@ -406,6 +415,8 @@ export default function DemoOverlay() {
             <div aria-live="polite" className="rc-demo-copy">
               <p className="rc-demo-eyebrow">{t.chapter} {chapterIndex + 1}</p>
               <h2 id="rc-demo-title">{localized(step?.title, lang)}</h2>
+              <p className="rc-demo-summary">{localized(chapter?.summary, lang)}</p>
+              <p className="rc-demo-who-for"><strong>{t.whoFor}</strong> {localized(chapter?.whoFor, lang)}</p>
               <p id="rc-demo-body">{bodyText}</p>
               {targetMissing ? <p className="rc-demo-missing">{t.centered}</p> : !targetElement && step?.target ? <p className="rc-demo-missing">{t.waiting}</p> : null}
             </div>
@@ -446,7 +457,7 @@ export default function DemoOverlay() {
             </section>
             <div className="rc-demo-finish-actions">
               <button type="button" onClick={goCreateAccount} className="rc-demo-primary">{t.create}</button>
-              <button type="button" onClick={handleExit} className="rc-demo-secondary">{t.guest}</button>
+              <button type="button" onClick={continueAsGuest} className="rc-demo-secondary">{t.guest}</button>
               <button type="button" onClick={restart} className="rc-demo-secondary"><RotateCcw size={16} /> {t.restart}</button>
             </div>
           </div>
