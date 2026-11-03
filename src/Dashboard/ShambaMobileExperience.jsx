@@ -340,6 +340,251 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     return () => { live = false; };
   }, [currentFarmId, farmVerified, getFarm, getFarmActivities, getHarvests, getFarmWeather, getFarmMarket, getFarmCommandCenter, getFarmInsights, getFarmRecommendations, getFarmAlerts, selectedFarm]);
 
+  const stopCamera = useCallback(() => {
+    cameraStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    setCameraOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && cameraStreamRef.current) {
+      videoRef.current.srcObject = cameraStreamRef.current;
+      videoRef.current.play?.().catch(() => {});
+    }
+  }, [cameraOpen]);
+
+  useEffect(() => {
+    return () => {
+      cameraStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+      if (diagnosticPreview) URL.revokeObjectURL(diagnosticPreview);
+    };
+  }, [diagnosticPreview]);
+
+  useEffect(() => {
+    if (screen !== "diagnostics") stopCamera();
+  }, [screen, stopCamera]);
+
+  useEffect(() => {
+    if (!currentFarmId || !farmVerified) {
+      setSoilTests([]);
+      return undefined;
+    }
+    let live = true;
+    getSoilTests(currentFarmId)
+      .then((value) => {
+        if (live) setSoilTests(unwrap(value, "soil_tests").sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime()));
+      })
+      .catch(() => {
+        if (live) setSoilTests([]);
+      });
+    return () => { live = false; };
+  }, [currentFarmId, farmVerified, getSoilTests]);
+
+  const chooseDiagnosticImage = useCallback(async (file) => {
+    if (!file) return;
+    setDiagnosticError("");
+    setDiagnosticSaved(false);
+    setDiagnosticResult(null);
+    try {
+      const prepared = await prepareDiagnosticImage(file);
+      setDiagnosticFile(prepared);
+    } catch (imageError) {
+      setDiagnosticError(imageError?.message || "The photo could not be prepared.");
+    }
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setDiagnosticError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setDiagnosticError("Camera access is not available in this browser. Upload a photo instead.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1600 }, height: { ideal: 1200 } },
+      });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+    } catch (cameraError) {
+      setDiagnosticError(cameraError?.name === "NotAllowedError"
+        ? "Camera permission was denied. Allow camera access in Android settings or upload a photo."
+        : "The camera could not be opened. Upload a photo or check the device camera permission.");
+    }
+  }, []);
+
+  const captureCameraPhoto = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video?.videoWidth || !video?.videoHeight) {
+      setDiagnosticError("The camera is still starting. Hold steady and try again.");
+      return;
+    }
+    try {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("The camera frame could not be captured.");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+      if (!blob) throw new Error("The camera frame could not be captured.");
+      const photo = new File([blob], "shamba-camera-scan.jpg", { type: "image/jpeg", lastModified: Date.now() });
+      setDiagnosticFile(await prepareDiagnosticImage(photo));
+      setDiagnosticResult(null);
+      setDiagnosticSaved(false);
+      setDiagnosticError("");
+      stopCamera();
+    } catch (captureError) {
+      setDiagnosticError(captureError?.message || "The camera photo could not be processed.");
+    }
+  }, [stopCamera]);
+
+  const runDiagnostic = useCallback(async () => {
+    if (!diagnosticFile) {
+      setDiagnosticError("Capture or upload a clear photo first.");
+      return;
+    }
+    if (!farmVerified && currentFarmId) {
+      setDiagnosticError("This farm's separate rights review is not verified. Complete the review before running farm-linked AI diagnostics.");
+      return;
+    }
+    setDiagnosticBusy(true);
+    setDiagnosticError("");
+    setDiagnosticResult(null);
+    setDiagnosticSaved(false);
+    try {
+      const token = typeof window !== "undefined"
+        ? (localStorage.getItem("revelacode_access_token") || localStorage.getItem("access_token") || localStorage.getItem("token"))
+        : "";
+      if (!token) throw new Error("Sign in to RevelaCode before using Live Vision.");
+      const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
+      const identity = String(user?.user_id || user?.userId || user?.id || "");
+      const farmName = selectedFarm?.name || "the selected farm";
+      const cropName = cropForScan.trim() || first(selectedFarm?.primary_crop, selectedFarm?.crop_name, "crop not specified");
+      const prompt = diagnosticMode === "leaf"
+        ? [
+            "You are an agricultural plant-health diagnostician. Examine only the attached visible-spectrum leaf/plant photograph for possible insect pests, mites, eggs, larvae, feeding damage, fungal or bacterial lesions, viral-like patterns, and non-infectious stress.",
+            "Farm: " + farmName + ". Crop: " + cropName + ".",
+            "Report: (1) visible observations only, (2) likely pest/disease candidates ranked with reasons, (3) visible evidence such as holes, mines, stippling, webbing, frass, colonies, spots, blight or distortion, (4) severity only if justified, (5) confidence as low/medium/high with limitations, (6) safe integrated-pest-management next steps and what close-up/underside photo or field check is needed.",
+            "Do not claim a confirmed species or pathogen from an unclear image. Distinguish pests from nutrient deficiency, water stress, sun scorch and spray injury. Do not prescribe a pesticide or dosage. If the photo is not a plant leaf, say so and request a better image. This is preliminary visual screening, not laboratory confirmation."
+          ].join(" ")
+        : [
+            "You are an agricultural soil-test reader. Inspect the attached photo ONLY for a pH indicator strip/test solution beside its matching manufacturer's colour chart.",
+            "Farm: " + farmName + ".",
+            "Estimate a pH band only if the reacted strip/sample and readable comparator chart are both visible together under reasonably neutral lighting. State the closest chart colour, estimated pH value or range, and confidence. If the strip, chart, labels or lighting are unclear, say 'Not reliably readable' and do not invent a number.",
+            "If this is a photograph of bare soil without a chemical test strip, meter display or laboratory report, explain that soil pH cannot be determined from soil colour/appearance. This is a visual interpretation of a test kit, not a direct pH measurement. Recommend a calibrated pH meter or recognised soil-testing kit/laboratory for confirmation."
+          ].join(" ");
+      const imageData = await imageFileToDataUrl(diagnosticFile);
+      const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+      const response = await fetch(apiBase + "/api/vision/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": tokenType + " " + token,
+        },
+        body: JSON.stringify({
+          image: imageData,
+          mimeType: diagnosticFile.type || "image/jpeg",
+          ...(identity ? { userId: identity, user_id: identity } : {}),
+          prompt,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      const data = payload?.data || payload || {};
+      const reply = data?.reply || data?.response || data?.content || data?.answer || payload?.message;
+      if (!response.ok || typeof reply !== "string" || !reply.trim()) {
+        const detail = payload?.message || payload?.error?.message;
+        if (response.status === 403) throw new Error(detail || "Live Vision access is not included in the current AI entitlement. Check your RevelaAI plan.");
+        if (response.status === 503) throw new Error(detail || "The Live Vision model is temporarily unavailable or not configured.");
+        throw new Error(detail || "RevelaAI could not return a usable diagnostic. Try a sharper photo.");
+      }
+      setDiagnosticResult({
+        mode: diagnosticMode,
+        reply: reply.trim(),
+        provider: data?.provider || "RevelaAI Live Vision",
+        model: data?.model || "",
+        capturedAt: new Date().toISOString(),
+        fileName: diagnosticFile.name,
+      });
+    } catch (scanError) {
+      setDiagnosticError(scanError?.message || "The diagnostic request failed. Please try again.");
+    } finally {
+      setDiagnosticBusy(false);
+    }
+  }, [diagnosticFile, diagnosticMode, farmVerified, currentFarmId, user, selectedFarm, cropForScan]);
+
+  const saveLeafDiagnostic = useCallback(async () => {
+    if (!diagnosticResult || diagnosticResult.mode !== "leaf") return;
+    if (!currentFarmId || !farmVerified) {
+      setDiagnosticError("Select a farm with verified farm rights before saving this scan to its records.");
+      return;
+    }
+    setDiagnosticSaving(true);
+    setDiagnosticError("");
+    try {
+      const cropName = cropForScan.trim() || first(selectedFarm?.primary_crop, selectedFarm?.crop_name, "Crop not specified");
+      const description = ("RevelaAI preliminary leaf/pest visual screening · " + cropName + ". " + diagnosticResult.reply).slice(0, 990);
+      const response = await createFarmActivity(currentFarmId, {
+        type: "crop_visual_diagnosis",
+        description,
+        activity_date: new Date().toISOString().slice(0, 10),
+      });
+      const saved = response?.data?.activity || response?.data || response;
+      setActivities((items) => [saved, ...items]);
+      setDiagnosticSaved(true);
+    } catch (saveError) {
+      setDiagnosticError(saveError?.message || "The scan completed, but it could not be saved to farm records.");
+    } finally {
+      setDiagnosticSaving(false);
+    }
+  }, [diagnosticResult, currentFarmId, farmVerified, cropForScan, selectedFarm, createFarmActivity]);
+
+  const saveSoilTest = useCallback(async () => {
+    if (!currentFarmId || !farmVerified) {
+      setDiagnosticError("Select a farm with verified farm rights before saving a soil test.");
+      return;
+    }
+    const measured = soilMeasuredPh.trim() === "" ? null : num(soilMeasuredPh);
+    if (soilMeasuredPh.trim() !== "" && (measured === null || measured < 0 || measured > 14)) {
+      setDiagnosticError("Enter a measured pH value between 0 and 14.");
+      return;
+    }
+    const aiReport = diagnosticResult?.mode === "soil" ? diagnosticResult.reply : "";
+    if (measured === null && !aiReport) {
+      setDiagnosticError("Enter a pH reading from your test kit/meter, or run a photo scan of the reacted test strip beside its colour chart.");
+      return;
+    }
+    setDiagnosticSaving(true);
+    setDiagnosticError("");
+    try {
+      const response = await createSoilTest(currentFarmId, {
+        method: soilMethod,
+        measured_ph: measured,
+        calibration_status: soilMethod === "digital_meter" ? soilCalibration : "not_applicable",
+        calibration_date: soilCalibrationDate,
+        kit_name: soilKitName,
+        sample_depth_cm: soilSampleDepth.trim() === "" ? null : num(soilSampleDepth),
+        sample_location: soilSampleLocation,
+        ai_visual_estimate: aiReport,
+        ai_assessment: aiReport,
+        notes: soilNotes,
+      });
+      const saved = response?.data?.soil_test || response?.data || response;
+      setSoilTests((items) => [saved, ...items]);
+      if (measured !== null) {
+        setFarmDetail((current) => ({ ...(current || selectedFarm || {}), soil_ph: measured, soil_ph_method: soilMethod, soil_ph_calibration_status: soilMethod === "digital_meter" ? soilCalibration : "not_applicable" }));
+        setFarms((items) => items.map((farm) => String(getId(farm)) === String(currentFarmId) ? { ...farm, soil_ph: measured } : farm));
+      }
+      setDiagnosticSaved(true);
+    } catch (saveError) {
+      setDiagnosticError(saveError?.message || "The soil test result could not be saved.");
+    } finally {
+      setDiagnosticSaving(false);
+    }
+  }, [currentFarmId, farmVerified, soilMeasuredPh, diagnosticResult, soilMethod, soilCalibration, soilCalibrationDate, soilKitName, soilSampleDepth, soilSampleLocation, soilNotes, createSoilTest, selectedFarm]);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try { await loadCore(); }
