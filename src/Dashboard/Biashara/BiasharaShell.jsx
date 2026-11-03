@@ -66,6 +66,7 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
         type="button"
         disabled={!item.available}
         onClick={() => item.available && item.route ? onNavigate(item.route) : undefined}
+        data-demo={"biashara-nav-" + item.key}
         aria-current={active ? "page" : undefined}
         aria-label={item.available ? item.label : item.label + ". Unavailable: " + item.reason}
         title={item.available ? item.label : item.reason}
