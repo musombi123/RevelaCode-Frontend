@@ -714,7 +714,7 @@ export default function BiasharaInternalWorkspace({
   }
 
   return (
-    <div className="min-h-full bg-[#f4f7fb] p-4 sm:p-6 lg:p-8">
+    <div data-demo={route === "orders" ? "biashara-orders-workspace" : undefined} className="min-h-full bg-[#f4f7fb] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-screen-2xl space-y-6">
         <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7">
           <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
