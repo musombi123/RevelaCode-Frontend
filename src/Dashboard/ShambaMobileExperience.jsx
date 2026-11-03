@@ -497,6 +497,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
         body: JSON.stringify({
           image: imageData,
           mimeType: diagnosticFile.type || "image/jpeg",
+          hub: "shamba",
           prompt,
         }),
       });
