@@ -25,10 +25,15 @@ function isApiUrl(value) {
 function isAnalyticsUrl(value) {
   try {
     const parsed = new URL(String(value), window.location.href);
-    const candidate = parsed.hostname + parsed.pathname;
-    return /analytics|telemetry|events|collect|tracking|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|google-analytics/i.test(candidate);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    const knownAnalyticsHost =
+      /google-analytics|googletagmanager|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|heap/i.test(host);
+    const explicitAnalyticsPath =
+      /^\/(?:api\/)?(?:analytics|telemetry|demo-analytics|demo-events)(?:\/|$)/i.test(path);
+    return knownAnalyticsHost || explicitAnalyticsPath;
   } catch {
-    return /analytics|telemetry|events|collect|tracking|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|google-analytics/i.test(String(value));
+    return /^\/(?:api\/)?(?:analytics|telemetry|demo-analytics|demo-events)(?:\/|$)/i.test(String(value));
   }
 }
 
