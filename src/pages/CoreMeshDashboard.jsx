@@ -446,6 +446,18 @@ export default function CoreMeshDashboard() {
                   ))}
                 </div>
               )}
+              {configurationHealth?.core_probes && (
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {Object.entries(configurationHealth.core_probes).map(([coreName, probe]) => (
+                    <div key={coreName} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{coreName === "zero" ? "USECT-ZERO" : coreName === "genesis" ? "Genesis · Core-One" : "Infinite Mind · Core-Two"}</p>
+                      <p className={"mt-1 text-xs font-bold " + (probe.reachable ? "text-emerald-600 dark:text-emerald-300" : "text-amber-600 dark:text-amber-300")}>{probe.reachable ? "Health check passed" : "Not reachable"}</p>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{probe.message}</p>
+                      {probe.reason && <p className="mt-1 break-all font-mono text-[10px] text-slate-400">Diagnostic: {probe.reason}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
