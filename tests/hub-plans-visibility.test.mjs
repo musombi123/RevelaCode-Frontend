@@ -26,12 +26,13 @@ test("premium plans are launched globally, not embedded in hub dashboards", () =
   const appShell = source("src/components/MainDashboardV2.jsx");
   const accountCenter = source("src/components/UserAccountDashboard.jsx");
   const modal = source("src/premium/PlansModal.jsx");
-  const biasharaHeader = source("src/Dashboard/Biashara/BiasharaHeader.jsx");
+  const biasharaHeader = source("src/Dashboard/Biashara/BiasharaShell.jsx");
   const elimuHeader = source("src/Dashboard/elimu/components/ElimuDashboardHeader.jsx");
   const shambaHeader = source("src/Dashboard/ShambaHub.jsx");
   const communityHeader = source("src/Dashboard/CommunityDashboard.jsx");
   const faithHeader = source("src/components/FaithDashboard.jsx");
   assert.match(appShell, /<PremiumPlansStar\s*\/>/);
+  assert.match(biasharaHeader, /<PremiumPlansStar\s/);
   assert.match(appShell, /<PlansModal/);
   assert.match(accountCenter, /<PremiumPlansStar\s*\/>/);
   assert.match(modal, /revenueApi\.listPlans\(/);
@@ -67,7 +68,7 @@ test("all plan entry points use the standalone Premium modal, not dashboard plan
   const sidebar = source("src/components/Sidebar.jsx");
   const modal = source("src/premium/PlansModal.jsx");
 
-  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
+
   assert.match(appShell, /<PlansModal/);
   assert.match(source("src/premium/PremiumPlansStar.jsx"), /data-premium-plans-star="true"/);
   assert.doesNotMatch(jumuiyaShell, /HubRevenueOffers|Plans and upgrade/);
