@@ -763,7 +763,7 @@ export default function UserAccountDashboard({
   ======================================================= */
 
   const changeView = (view) => {
-    if (view === "payments") {
+    if (view === "payments" && !isDemoApiActive()) {
       onNavigate?.("payments");
       return;
     }
@@ -972,6 +972,23 @@ export default function UserAccountDashboard({
             <PreferencesDashboard userData={safeUserData} />
           </div>
         );
+
+      case "payments":
+        return isDemoApiActive() ? (
+          <section data-demo="account-payments-preview" className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><WalletCards className="h-6 w-6" /></span>
+              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Demo Wallet</h2><p className="text-sm text-slate-500 dark:text-slate-400">Sample balance and transactions only</p></div>
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Available balance</p>
+            <p className="mt-1 text-3xl font-black text-slate-950 dark:text-white">{DEMO_ACCOUNT.payments.currency} {Number(DEMO_ACCOUNT.payments.balance || 0).toLocaleString("en-KE")}</p>
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">Payments, M-Pesa and transfers are disabled in Demo mode. No money moves and no payment provider is contacted.</div>
+            <h3 className="mt-6 text-sm font-bold text-slate-900 dark:text-white">Recent transactions</h3>
+            {DEMO_ACCOUNT.payments.transactions.length ? (
+              <ul className="mt-3 space-y-2">{DEMO_ACCOUNT.payments.transactions.map((item) => <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-950"><span>{item.description || item.reference || "Demo transaction"}</span><strong>{DEMO_ACCOUNT.payments.currency} {Number(item.amount || 0).toLocaleString("en-KE")}</strong></li>)}</ul>
+            ) : <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No sample transactions yet.</p>}
+          </section>
+        ) : null;
 
       case "accounts":
         return (
