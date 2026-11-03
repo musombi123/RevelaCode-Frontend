@@ -21,6 +21,7 @@ function getId(item) { return item?.id || item?._id || null; }
 function unwrap(value, key) {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.[key])) return value[key];
+  if (Array.isArray(value?.data)) return value.data;
   if (Array.isArray(value?.data?.[key])) return value.data[key];
   if (Array.isArray(value?.items)) return value.items;
   if (Array.isArray(value?.data?.items)) return value.data.items;
