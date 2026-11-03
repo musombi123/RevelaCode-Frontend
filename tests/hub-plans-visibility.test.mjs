@@ -69,6 +69,7 @@ test("all plan entry points use the standalone Premium modal, not dashboard plan
   const modal = source("src/premium/PlansModal.jsx");
 
   assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(source("src/premium/PremiumPlansStar.jsx"), /data-premium-plans-star="true"/);
   assert.match(accountCenter, /<PremiumPlansStar\\s*\\/>/);
   assert.match(jumuiyaShell, /<PremiumPlansStar\\s*\\/>/);
   assert.match(biasharaHeader, /<PremiumPlansStar\\s*\\/>/);
