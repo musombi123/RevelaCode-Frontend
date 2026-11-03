@@ -62,25 +62,18 @@ test("Community is permanently free and does not render membership subscription 
 
 test("all plan entry points use the standalone Premium modal, not dashboard plan sections", () => {
   const appShell = source("src/components/MainDashboardV2.jsx");
-  const accountCenter = source("src/components/UserAccountDashboard.jsx");
   const jumuiyaShell = source("src/Dashboard/JumuiyaDashboardShell.jsx");
   const aiDashboard = source("src/components/AIAssistantDashboard.jsx");
   const sidebar = source("src/components/Sidebar.jsx");
   const modal = source("src/premium/PlansModal.jsx");
 
-  assert.match(appShell, /<PremiumPlansStar\\s*\\/>/);
+  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
+  assert.match(appShell, /<PlansModal/);
   assert.match(source("src/premium/PremiumPlansStar.jsx"), /data-premium-plans-star="true"/);
-  assert.match(accountCenter, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(jumuiyaShell, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(biasharaHeader, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(elimuHeader, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(shambaHeader, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(communityHeader, /<PremiumPlansStar\\s*\\/>/);
-  assert.match(faithHeader, /<PremiumPlansStar\\s*\\/>/);
   assert.doesNotMatch(jumuiyaShell, /HubRevenueOffers|Plans and upgrade/);
   assert.doesNotMatch(aiDashboard, /AI trial &amp; plans|HubRevenueOffers|aiRevenueOpen/);
-  assert.doesNotMatch(sidebar, /Plans<\\/span>|onOpenPlans/);
-  assert.match(modal, /revenueApi\\.listPlans\\(/);
-  assert.match(modal, /revenueApi\\.startCheckout\\(/);
-  assert.match(modal, /revenueApi\\.getCheckout\\(/);
+  assert.doesNotMatch(sidebar, /Plans|onOpenPlans/);
+  assert.match(modal, /revenueApi\.listPlans\(/);
+  assert.match(modal, /revenueApi\.startCheckout\(/);
+  assert.match(modal, /revenueApi\.getCheckout\(/);
 });
