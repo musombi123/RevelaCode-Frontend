@@ -345,7 +345,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   );
 
   return (
-    <div className="shamba-mobile min-h-[100svh] bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
+    <div data-shamba-mobile-ui="reference-v1" className="shamba-mobile min-h-[100svh] bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
       {header}
       <main className="mx-auto w-full max-w-[560px] px-4 pb-5">
         {error && <div className="mt-3 rounded-xl border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-[12px] text-amber-200">{error}</div>}
