@@ -1094,6 +1094,21 @@ export function useJumuiyaApi() {
         ),
 
       // ===================================================
+      // SHAMBA — SOIL pH TESTS
+      // ===================================================
+
+      getSoilTests: (farmId) =>
+        getData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/soil-tests`,
+        ),
+
+      createSoilTest: (farmId, data) =>
+        postData(
+          `/shamba/farms/${encodeId(farmId, "Farm ID")}/soil-tests`,
+          data,
+        ),
+
+      // ===================================================
       // SHAMBA — HARVESTS
       // ===================================================
 
