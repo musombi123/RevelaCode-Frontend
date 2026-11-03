@@ -1,4 +1,6 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   Activity, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Bug, Camera,
   Bell, CheckCircle2, ChevronRight, Clock, Cloud, CloudRain, CloudSun,
@@ -201,7 +203,7 @@ function WeatherGlyph({ condition, size = 24 }) {
   return <Icon size={size} className={text.includes("rain") ? "text-sky-300" : "text-amber-300"} />;
 }
 
-export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate }) {
+export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate, onExit }) {
   const api = useJumuiyaApi();
   const {
     getShambaDashboard, getFarmer, getFarms, getFarm, getFarmWeather,
@@ -212,6 +214,8 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
 
   const [screen, setScreen] = useState("home");
   const [moreOpen, setMoreOpen] = useState(false);
+  const screenRef = useRef(screen);
+  const moreOpenRef = useRef(moreOpen);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -610,6 +614,52 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     setDetailTab("Overview");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  useEffect(() => {
+    screenRef.current = screen;
+  }, [screen]);
+
+  useEffect(() => {
+    moreOpenRef.current = moreOpen;
+  }, [moreOpen]);
+
+  // Handle Android system Back within Shamba before allowing the activity to close.
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== "android") return undefined;
+
+    let disposed = false;
+    let backListener = null;
+
+    App.addListener("backButton", () => {
+      if (moreOpenRef.current) {
+        setMoreOpen(false);
+        return;
+      }
+
+      const currentScreen = screenRef.current;
+      if (currentScreen === "detail") {
+        go("farms");
+        return;
+      }
+
+      if (currentScreen !== "home") {
+        go("home");
+        return;
+      }
+
+      onExit?.("home");
+    }).then((listener) => {
+      if (disposed) listener.remove();
+      else backListener = listener;
+    }).catch((error) => {
+      console.warn("[Shamba] Android Back listener could not be registered.", error);
+    });
+
+    return () => {
+      disposed = true;
+      backListener?.remove();
+    };
+  }, [go, onExit]);
 
   const filteredFarms = useMemo(() => activeFarms.filter((farm) => {
     const searchText = (String(farm?.name || "") + " " + farmLocation(farm)).toLowerCase();
@@ -1071,7 +1121,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             { key: "farms", label: "Farms", icon: Tractor },
             { key: "market", label: "Market", icon: ShoppingCart },
             { key: "alerts", label: "Alerts", icon: Bell },
-          ].map((item) => { const Icon = item.icon; const active = screen === item.key || (item.key === "farms" && screen === "detail"); return <button key={item.key} type="button" onClick={() => go(item.key)} className={"relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (active ? "text-[#42D99A]" : "text-[#6F8D9F]")}><span className="relative"><Icon size={18}/>{item.key === "alerts" && alertCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">{alertCount}</span>}</span><span className="text-[9px] font-bold">{item.label}</span></button>; })}
+          ].map((item) => { const Icon = item.icon; const active = screen === item.key || (item.key === "farms" && screen === "detail"); return <button key={item.key} type="button" onClick={() => go(item.key)} aria-current={active ? "page" : undefined} className={"relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (active ? "text-[#42D99A]" : "text-[#6F8D9F]")}><span className="relative"><Icon size={18}/>{item.key === "alerts" && alertCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white">{alertCount}</span>}</span><span className="text-[9px] font-bold">{item.label}</span></button>; })}
           <button type="button" onClick={() => setMoreOpen(true)} className={"flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 " + (moreOpen ? "text-[#42D99A]" : "text-[#6F8D9F]")}><MoreHorizontal size={18}/><span className="text-[9px] font-bold">More</span></button>
         </div>
       </nav>
