@@ -333,7 +333,7 @@ export default function StudyLibrary({
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div data-demo="faith-study-root" className="space-y-6">
         <div>
           <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
             Study Library
