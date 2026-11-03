@@ -1065,7 +1065,7 @@ function BiasharaAndroidOverview({
   ].filter((item) => !simpleMode || !["automations", "sync", "team"].includes(item.key));
 
   return (
-    <div className="min-h-full bg-[#F3F6FB] pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-slate-900">
+    <div data-demo="biashara-overview" className="min-h-full bg-[#F3F6FB] pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-slate-900">
       <div className="mx-auto w-full max-w-3xl space-y-3.5 px-3 pb-5 pt-3">
         <section className="relative isolate overflow-hidden rounded-[24px] bg-gradient-to-br from-[#062A58] via-[#064B91] to-[#0877C9] px-4 py-5 text-white shadow-[0_14px_35px_rgba(5,52,105,.22)]">
           <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full border-[24px] border-white/5" />
