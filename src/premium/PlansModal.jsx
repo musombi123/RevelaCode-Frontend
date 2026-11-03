@@ -295,6 +295,7 @@ export default function PlansModal({
       checkoutRef.current = updated;
       setCheckout(updated);
       const status = String(updated?.status || "pending").toLowerCase();
+      setFailureText("");
       paymentLog("status_received", { status, checkoutReferencePresent: true });
       if (status === "succeeded") {
         setPolling(false);
@@ -302,7 +303,8 @@ export default function PlansModal({
         setStep("success");
         setFailureText("");
         try {
-          await revenueApi.listSubscriptions({ requestScope: "" });
+          await revenueApi.getMySubscription({ requestScope: "" });
+          window.dispatchEvent(new Event("revelacode:subscription-updated"));
         } catch (error) {
           paymentLogError("subscription_refresh_failed", error);
         }
@@ -558,6 +560,7 @@ export default function PlansModal({
               <h3 className="mt-5 text-xl font-black text-slate-950 dark:text-white">{t.pendingTitle}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t.pendingText}</p>
               <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{t.pendingSub}</p>
+              {failureText ? <p role="status" className="mx-auto mt-3 max-w-sm rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{failureText}</p> : null}
               <div className="mx-auto mt-6 flex max-w-xs items-center justify-center gap-2 rounded-xl bg-slate-100 p-3 text-sm font-bold text-slate-800 dark:bg-slate-900 dark:text-slate-100"><Clock3 className="h-4 w-4" />{t.remaining}: {formatTime(remainingSeconds)}</div>
               <div className="mx-auto mt-4 h-1.5 max-w-xs overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${Math.max(0, (remainingSeconds / 90) * 100)}%` }} /></div>
               <button type="button" onClick={() => { setPolling(false); setPollingPaused(true); }} className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">{t.stop}</button>
