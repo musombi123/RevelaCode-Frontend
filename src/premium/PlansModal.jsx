@@ -132,7 +132,7 @@ function durationText(plan, t) {
   return interval === "year" ? t.yearly : interval === "one_time" ? t.oneTime : t.monthly;
 }
 
-function paymentFailure(checkout, t) {
+function paymentFailure(checkout, t, language) {
   const code = String(checkout?.result_code ?? checkout?.callback_result_code ?? "");
   const messages = {
     "1032": "You cancelled the M-Pesa request.",
@@ -140,6 +140,15 @@ function paymentFailure(checkout, t) {
     "2001": "The M-Pesa PIN was not accepted. Check your PIN and try again.",
     "1037": "The phone did not respond before the STK request expired. Request another prompt.",
   };
+  if (language === "sw") {
+    const swahili = {
+      "1032": "Umeghairi ombi la M-Pesa.",
+      "1": "Salio la M-Pesa halitoshi. Ongeza salio kisha ujaribu tena.",
+      "2001": "PIN ya M-Pesa haikukubaliwa. Hakikisha PIN yako kisha ujaribu tena.",
+      "1037": "Simu haikujibu kabla ombi la STK kuisha. Omba ujumbe mwingine.",
+    };
+    if (swahili[code]) return swahili[code];
+  }
   return messages[code] || checkout?.result_description || checkout?.message || t.failedTitle;
 }
 
@@ -302,7 +311,7 @@ export default function PlansModal({
       if (status === "failed" || status === "initiation_failed") {
         setPolling(false);
         setPollingPaused(false);
-        setFailureText(paymentFailure(updated, t));
+        setFailureText(paymentFailure(updated, t, language));
         setStep("failed");
         return;
       }
@@ -320,7 +329,7 @@ export default function PlansModal({
     } finally {
       pollInFlight.current = false;
     }
-  }, [revenueApi, t]);
+  }, [revenueApi, t, language]);
 
   useEffect(() => {
     if (!open || !polling || !checkout?.checkout_request_id) return undefined;
@@ -400,7 +409,7 @@ export default function PlansModal({
         return;
       }
       if (started?.status === "initiation_failed" || started?.status === "failed") {
-        setFailureText(paymentFailure(started, t));
+        setFailureText(paymentFailure(started, t, language));
         setStep("failed");
         return;
       }
