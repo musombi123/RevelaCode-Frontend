@@ -40,6 +40,7 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
@@ -1305,6 +1306,7 @@ export default function CommunityDashboard({
                     <button type="submit" className="hidden h-8 shrink-0 items-center gap-1 rounded-lg bg-slate-950 px-2.5 text-[10px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 sm:inline-flex"><Search size={12} /> Search</button>
                   </form>
                   <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <PremiumPlansStar />
                     <div role="status" aria-live="polite" title={backendHealth === "online" ? "Community service is online" : backendHealth === "checking" ? "Checking Community service" : "Community service is unavailable"} className={"hidden 2xl:inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
                       <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "bg-emerald-500" : "bg-amber-500")} />
                       {backendHealth === "checking" ? "Checking" : backendHealth === "online" ? "Online" : "Offline"}
