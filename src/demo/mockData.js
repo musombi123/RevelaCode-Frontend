@@ -161,10 +161,6 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
     return { success: true, demo: true, ...DEMO_SCHOOL, data: { school: DEMO_SCHOOL.school, dashboard: DEMO_SCHOOL.dashboard } };
   }
 
-  if (lower.includes("community") || lower.includes("post") || lower.includes("chat") || lower.includes("group")) {
-    return { success: true, demo: true, posts: DEMO_COMMUNITY_POSTS, data: { posts: DEMO_COMMUNITY_POSTS, items: DEMO_COMMUNITY_POSTS } };
-  }
-
   if (lower.includes("payment") || lower.includes("wallet") || lower.includes("transaction") || lower.includes("notification") || lower.includes("profile") || lower.includes("account")) {
     return { success: true, demo: true, ...DEMO_ACCOUNT, data: DEMO_ACCOUNT };
   }
