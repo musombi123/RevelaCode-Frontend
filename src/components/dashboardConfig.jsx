@@ -2035,7 +2035,6 @@ export const DASHBOARDS = [
     title: "RevelaAI",
     label: "AI",
     icon: Bot,
-    hidden: true,
     element: (
       <AIAssistantDashboard />
     ),
