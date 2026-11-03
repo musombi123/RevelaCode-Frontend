@@ -22,6 +22,22 @@ function isApiUrl(value) {
   }
 }
 
+function isAnalyticsUrl(value) {
+  try {
+    const parsed = new URL(String(value), window.location.href);
+    const candidate = parsed.hostname + parsed.pathname;
+    return /analytics|telemetry|events|collect|tracking|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|google-analytics/i.test(candidate);
+  } catch {
+    return /analytics|telemetry|events|collect|tracking|posthog|segment|mixpanel|amplitude|plausible|matomo|rudderstack|datadog|newrelic|sentry|google-analytics/i.test(String(value));
+  }
+}
+
+function shouldMockRequest(method, url) {
+  if (isAnalyticsUrl(url)) return false;
+  const verb = String(method || "GET").toUpperCase();
+  return isWriteMethod(verb) || (["GET", "HEAD"].includes(verb) && isApiUrl(url));
+}
+
 function makeFetchResponse(payload) {
   const body = JSON.stringify(payload);
   if (typeof Response === "function") {
@@ -46,7 +62,7 @@ function installFetchGuard() {
   window.fetch = async function demoSafeFetch(input, init = {}) {
     const url = typeof input === "string" || input instanceof URL ? String(input) : input?.url || "";
     const method = String(init?.method || input?.method || "GET").toUpperCase();
-    if (guardUsers > 0 && (isWriteMethod(method) || (["GET", "HEAD"].includes(method) && isApiUrl(url)))) {
+    if (guardUsers > 0 && shouldMockRequest(method, url)) {
       const body = init?.body ?? null;
       return makeFetchResponse(getDemoPayload(url, method, body));
     }
@@ -70,7 +86,7 @@ function installXhrGuard() {
   prototype.send = function demoSafeSend(body) {
     const method = this.__revelaDemoMethod || "GET";
     const url = this.__revelaDemoUrl || "";
-    if (!(guardUsers > 0 && (isWriteMethod(method) || (method === "GET" && isApiUrl(url))))) {
+    if (!(guardUsers > 0 && shouldMockRequest(method, url))) {
       return originalXhrSend.call(this, body);
     }
 
@@ -116,7 +132,7 @@ function installBeaconGuard() {
   originalSendBeacon = navigator.sendBeacon;
   navigator.sendBeacon = function demoSafeBeacon() {
     // sendBeacon is POST-only; while the tour is active, acknowledge but never send it.
-    if (guardUsers > 0) return true;
+    if (guardUsers > 0 && isApiUrl(arguments[0]) && !isAnalyticsUrl(arguments[0])) return true;
     return originalSendBeacon.apply(this, arguments);
   };
 }
