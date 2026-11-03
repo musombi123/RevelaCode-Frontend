@@ -389,7 +389,8 @@ export default function DemoOverlay() {
     const onDialogKeyDown = (event) => {
       const dialog = dialogRef.current;
       if (!dialog) return;
-      const activeInside = dialog.contains(document.activeElement);
+      const focusScope = exitConfirm ? dialog.querySelector(".rc-demo-confirm") : dialog;
+      const activeInside = Boolean(focusScope?.contains(document.activeElement));
       if (event.key === "Escape") {
         event.preventDefault();
         if (exitConfirm) {
@@ -411,7 +412,6 @@ export default function DemoOverlay() {
         return;
       }
       if (event.key === "Tab") {
-        const focusScope = exitConfirm ? dialog.querySelector(".rc-demo-confirm") : dialog;
         const items = getFocusable(focusScope);
         if (!items.length) return;
         const first = items[0], last = items[items.length - 1];
@@ -429,9 +429,10 @@ export default function DemoOverlay() {
     };
     const onFocusIn = (event) => {
       const dialog = dialogRef.current;
-      if (!dialog || dialog.contains(event.target)) return;
-      const first = getFocusable(dialog)[0];
-      (first || dialog).focus?.();
+      const focusScope = exitConfirm ? dialog?.querySelector(".rc-demo-confirm") : dialog;
+      if (!focusScope || focusScope.contains(event.target)) return;
+      const first = getFocusable(focusScope)[0];
+      (first || focusScope).focus?.();
     };
     document.addEventListener("keydown", onDialogKeyDown, true);
     document.addEventListener("focusin", onFocusIn, true);
