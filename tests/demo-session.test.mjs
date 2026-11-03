@@ -8,6 +8,7 @@ import {
   DEMO_SCHOOL,
   DEMO_SCHOOL_ACCESS,
   DEMO_COMMUNITY_POSTS,
+  DEMO_STUDY_MATERIALS,
   getDemoPayload,
 } from "../src/demo/mockData.js";
 
@@ -60,6 +61,8 @@ test("the demo API returns sample GET data and simulated write success", () => {
   const community = getDemoPayload("/api/jumuiya/community/posts");
   const finance = getDemoPayload("/api/jumuiya/biashara/finance/transactions");
   const account = getDemoPayload("/api/jumuiya/account/payments");
+  const studies = getDemoPayload("https://revelacode-backend.onrender.com/api/study/materials?category=faith&limit=100");
+  const aiReply = getDemoPayload("https://revelaai.onrender.com/ai", "POST", JSON.stringify({ message: "Show me three ways to improve my work today." }));
   const write = getDemoPayload(
     "https://revelacode-backend.onrender.com/api/jumuiya/biashara/products",
     "POST",
@@ -79,6 +82,12 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.ok(Array.isArray(finance.transactions) && finance.transactions.length > 0);
   assert.equal(account.demo, true);
   assert.equal(account.payments.currency, "KES");
+  assert.equal(studies.demo, true);
+  assert.ok(Array.isArray(studies.materials) && studies.materials.length > 0);
+  assert.ok(DEMO_STUDY_MATERIALS.length > 0);
+  assert.equal(aiReply.demo, true);
+  assert.match(aiReply.response, /^Demo reply:/);
+  assert.equal(aiReply.data.model, "demo-sample");
   assert.equal(write.demo, true);
   assert.equal(write.data.status, "simulated");
   assert.match(write.message, /nothing was saved/i);
@@ -112,8 +121,8 @@ test("required stable tour targets exist in the real application surfaces", () =
     elimu: ["elimu-overview", "elimu-open-nav", "elimu-nav-", "elimu-school-pages"],
     faith: ["faith-overview", "faith-study-library", "faith-study-root"],
     community: ["community-overview", "community-create-post", "community-composer-title", "community-back-feed", "community-chat-nav"],
-    ai: ["ai-overview", "ai-chat-input", "ai-vision-tools"],
-    account: ["account-overview", "account-menu-"],
+    ai: ["ai-overview", "ai-chat-input", "ai-send-message", "ai-vision-tools"],
+    account: ["account-overview", "account-menu-", "account-payments-preview"],
   };
 
   for (const [surface, markers] of Object.entries(required)) {
@@ -150,6 +159,8 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(api, /navigator\.sendBeacon/);
   assert.match(api, /shouldMockRequest/);
   assert.match(api, /firstPartyHost/);
+  assert.match(read("src/components/UserAccountDashboard.jsx"), /isGuest && isDemoApiActive/);
+  assert.match(read("src/components/UserAccountDashboard.jsx"), /DEMO_ACCOUNT\.payments/);
   assert.match(app, /buildDemoChapters\(HOME_HUBS, DASHBOARDS\)/);
   assert.match(app, /<DemoProvider chapters=\{DEMO_CHAPTERS\}>/);
   assert.match(app, /<DemoOverlay \/>/);
