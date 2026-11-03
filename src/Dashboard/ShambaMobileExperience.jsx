@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
+import ShambaDiagnosticsPanel from "@/Dashboard/ShambaDiagnosticsPanel.jsx";
 
 const FARM_PHOTO = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85";
 const ShambaFarmSetup = lazy(() => import("@/Dashboard/ShambaFarmsDashboard.jsx"));
@@ -381,7 +382,13 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   }, [currentFarmId, farmVerified, getSoilTests]);
 
   const chooseDiagnosticImage = useCallback(async (file) => {
-    if (!file) return;
+    if (!file) {
+      setDiagnosticFile(null);
+      setDiagnosticResult(null);
+      setDiagnosticSaved(false);
+      setDiagnosticError("");
+      return;
+    }
     setDiagnosticError("");
     setDiagnosticSaved(false);
     setDiagnosticResult(null);
