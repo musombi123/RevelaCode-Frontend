@@ -141,3 +141,79 @@ The Android workflow also runs `npm run test:demo` against the frontend revision
 - [ ] Only the tour dialog is modal while the StartModal is behind it.
 - [ ] Step buttons, chapter menu, language, voice and rating controls have accessible names.
 - [ ] A missing/slow target falls back to a centred card after three seconds.
+
+
+## Exact existing-file integration snippets
+
+The App entry, StartModal launcher and Account Center Help launcher were already connected to the initial demo scaffold before this implementation. They were verified and retained; there was no reason to duplicate those hooks.
+
+### App entry — existing integration retained
+
+Before and after: no code change required. The current entry builds chapters from the live registries and mounts the provider/overlay around the routed app:
+
+```jsx
+const DEMO_CHAPTERS = buildDemoChapters(HOME_HUBS, DASHBOARDS);
+
+<DemoProvider chapters={DEMO_CHAPTERS}>
+  <HistoryProvider>
+    <BrowserRouter>
+      <Routes>{/* existing application routes */}</Routes>
+      <DemoOverlay />
+    </BrowserRouter>
+  </HistoryProvider>
+</DemoProvider>
+```
+
+### StartModal — existing launcher retained
+
+Before and after: no launcher code change required; the existing welcome panel already contains:
+
+```jsx
+<DemoLauncher compact />
+```
+
+The existing StartModal also retains `data-demo="welcome-entry"` and `data-demo="welcome-guest"` targets for the welcome and guest steps.
+
+### Home dashboard — stable hub-card target added
+
+Before:
+
+```jsx
+<button
+  key={hub.key}
+  type="button"
+  onClick={() => handleHubOpen(hub.key)}
+  aria-label={t("Open") + " " + t(hub.title)}
+>
+  {/* existing hub card */}
+</button>
+```
+
+After:
+
+```jsx
+<button
+  key={hub.key}
+  type="button"
+  onClick={() => handleHubOpen(hub.key)}
+  data-demo={`home-hub-${hub.key}`}
+  aria-label={t("Open") + " " + t(hub.title)}
+>
+  {/* existing hub card */}
+</button>
+```
+
+The Home launcher `<DemoLauncher startAt="home" />` and Home section targets `home-welcome` / `home-hubs` were already present and remain in place.
+
+### Account Center Help — existing launcher retained
+
+Before and after: no launcher code change required; the current Help workspace already has the stable target and launcher:
+
+```jsx
+<div data-demo="account-help-workspace">
+  <DemoLauncher startAt="welcome" compact />
+  <HelpModal />
+</div>
+```
+
+The Account Center profile, payments, account/security, notifications and Help menu items already expose `account-menu-*` targets; the curated chapter now visits Notifications and uses Help as its final challenge.
