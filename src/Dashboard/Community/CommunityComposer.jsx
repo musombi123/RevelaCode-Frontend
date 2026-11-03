@@ -534,6 +534,7 @@ export default function CommunityComposer({
         >
           <button
             type="button"
+            data-demo="community-back-feed"
             onClick={goBack}
             className="
               inline-flex
