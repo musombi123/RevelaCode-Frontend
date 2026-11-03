@@ -250,22 +250,10 @@ export default function PlansModal({
 
   useEffect(() => {
     if (!open) return undefined;
-    let active = true;
     const controller = new AbortController();
     loadPlans(controller.signal).catch((error) => paymentLogError("plans_load_unhandled", error));
-    if (initialPlanCode) {
-      const known = plans.find((item) => item.code === initialPlanCode);
-      if (known && authenticated) resetForPlan(known);
-      else if (known && !authenticated) {
-        setSelectedPlan(known);
-        setStep("login");
-      }
-    }
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [open, initialPlanCode, authenticated, loadPlans, plans, resetForPlan]);
+    return () => controller.abort();
+  }, [open, loadPlans]);
 
   useEffect(() => {
     if (!open || !initialPlanCode || !plans.length) return;
