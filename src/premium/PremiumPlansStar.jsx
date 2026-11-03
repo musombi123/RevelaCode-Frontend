@@ -16,15 +16,10 @@ export default function PremiumPlansStar({ className = "" }) {
       return () => { active = false; };
     }
 
-    revenueApi.listSubscriptions({ requestScope: "" })
+    revenueApi.getMySubscription({ requestScope: "" })
       .then((response) => {
         if (!active) return;
-        const now = Date.now();
-        const items = Array.isArray(response?.items) ? response.items : [];
-        setIsPremium(items.some((item) =>
-          String(item?.status || "").toLowerCase() === "active" &&
-          (!item?.ends_at || new Date(item.ends_at).getTime() > now)
-        ));
+        setIsPremium(response?.isPremium === true);
       })
       .catch((error) => {
         if (!active) return;
