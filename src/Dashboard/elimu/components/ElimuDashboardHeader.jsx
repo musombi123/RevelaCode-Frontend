@@ -134,7 +134,7 @@ export default function ElimuDashboardHeader({
       : "";
 
   return (
-    <header className="space-y-4">
+    <header data-demo="elimu-overview" className="space-y-4">
       <section className="relative isolate overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-xl">
         <div
           aria-hidden="true"
@@ -192,6 +192,7 @@ export default function ElimuDashboardHeader({
                 <button
                   type="button"
                   onClick={handleProfile}
+                  data-demo="elimu-school-pages"
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-4 focus:ring-white/10"
                 >
                   <Building2 size={16} aria-hidden="true" />
