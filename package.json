@@ -9,7 +9,8 @@
     "vision:assets": "node scripts/fetch-free-vision-assets.mjs",
     "test:auth": "node --test tests/token-storage.test.mjs tests/session-identity.test.mjs tests/start-modal-jwt.test.mjs",
     "test:community": "node --test tests/community-comments.test.mjs",
-    "test:platform-host": "node --test tests/platform-host.test.mjs"
+    "test:platform-host": "node --test tests/platform-host.test.mjs",
+    "test:demo": "node --test tests/demo-session.test.mjs"
   },
   "engines": {
     "node": "22.x"
