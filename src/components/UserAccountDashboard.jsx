@@ -33,6 +33,7 @@ import {
 import Loading from "./common/Loading";
 import UserProfile from "./accounts/UserProfile";
 import { useAuth } from "@/context/AuthContext.jsx";
+import DemoLauncher from "@/demo/DemoLauncher.jsx";
 
 /* =========================================================
    LAZY DASHBOARDS
@@ -1081,6 +1082,13 @@ export default function UserAccountDashboard({
       case "help":
         return (
           <div data-demo="account-help-workspace" className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.32)] sm:p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold text-emerald-950 dark:text-emerald-100">Need a guided tour?</p>
+                <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-200">Learn the main workspaces step by step.</p>
+              </div>
+              <DemoLauncher startAt="welcome" compact />
+            </div>
             <HelpModal />
           </div>
         );
