@@ -21,7 +21,6 @@ import {
   WifiOff,
 } from "lucide-react";
 
-import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
@@ -2211,7 +2210,6 @@ export default function AIAssistantDashboard({
               </button>
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
-              <HubRevenueOffers hub="smart_ai" compact />
             </div>
           </section>
         </div>
