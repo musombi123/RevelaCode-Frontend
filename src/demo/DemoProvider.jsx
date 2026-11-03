@@ -51,7 +51,8 @@ export function DemoProvider({ children, chapters = [] }) {
     const resume = options.resume === true;
     const chapterId = options.chapterId || (resume ? current.chapterId : "welcome");
     const stepIndex = resume ? current.stepIndex : 0;
-    commit({ ...current, active: true, chapterId, stepIndex });
+    const completed = resume ? current.completed : [];
+    commit({ ...current, active: true, chapterId, stepIndex, completed });
     trackDemo("demo_started", { chapter_id: chapterId, resumed: resume });
     trackDemo("step_viewed", { chapter_id: chapterId, step_index: stepIndex });
   }, [commit]);
