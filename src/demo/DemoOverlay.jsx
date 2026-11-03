@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext.jsx";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -9,6 +10,7 @@ import {
   Users, Volume2, VolumeX, X,
 } from "lucide-react";
 import { useDemo } from "./DemoProvider.jsx";
+import { trackDemo } from "./demoApi.js";
 import "./demo.css";
 
 const ICONS = {
@@ -343,10 +345,7 @@ export default function DemoOverlay() {
 
   const submitRating = () => {
     if (!rating) return;
-    const analytics = window.revelacodeAnalytics || window.revelaAnalytics;
-    if (analytics && typeof analytics.trackDemo === "function") {
-      try { analytics.trackDemo("demo_rating", { rating, comment }); } catch {}
-    }
+    trackDemo("demo_rating", { rating, comment });
     setRatingSent(true);
   };
 
