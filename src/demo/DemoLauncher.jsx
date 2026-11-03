@@ -3,7 +3,7 @@ import { PlayCircle, RotateCcw, Sparkles } from "lucide-react";
 import { useDemo } from "./DemoProvider.jsx";
 
 export default function DemoLauncher({ startAt = "welcome", onStart, className = "", compact = false }) {
-  const { active, chapterId, stepIndex, completed, start } = useDemo();
+  const { active, chapterId, stepIndex, completed, lang, start } = useDemo();
   const hasProgress = chapterId !== "welcome" || stepIndex > 0 || completed.length > 0;
 
   const launch = (resume) => {
@@ -18,7 +18,7 @@ export default function DemoLauncher({ startAt = "welcome", onStart, className =
     return (
       <span className={"inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200 " + className} role="status">
         <span className="h-2 w-2 rounded-full bg-emerald-500" />
-        Demo mode — nothing is saved
+        {lang === "sw" ? "Hali ya onyesho — hakuna kinachohifadhiwa" : "Demo mode — nothing is saved"}
       </span>
     );
   }
