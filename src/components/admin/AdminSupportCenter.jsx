@@ -206,11 +206,11 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
     setError("");
     try {
       const month = window.prompt("Statement month (YYYY-MM):", new Date().toISOString().slice(0, 7));
-      if (!month || !/^\\d{4}-\\d{2}$/.test(month)) return;
+      if (!month || !/^\d{4}-\d{2}$/.test(month)) return;
       const token = typeof getAccessToken === "function" ? await getAccessToken() : "";
       const tokenType = typeof getTokenType === "function" ? await getTokenType() : "Bearer";
       const response = await authFetch(`${resolveAdminBackendUrl()}/api/support-center/payroll/export.${format}?month=${encodeURIComponent(month)}`, {
-        headers: token ? { Authorization: `${tokenType || "Bearer"} ${String(token).replace(/^Bearer\\s+/i, "")}` } : {},
+        headers: token ? { Authorization: \`\${tokenType || "Bearer"} \${String(token).replace(/^Bearer\s+/i, "")}\` } : {},
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
