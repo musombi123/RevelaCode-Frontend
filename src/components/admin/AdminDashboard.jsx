@@ -32,6 +32,7 @@ import AdminBiasharaVerification from "./AdminBiasharaVerification.jsx";
 import AdminShambaVerification from "./AdminShambaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
+import AdminJumuiyaSamples from "./AdminJumuiyaSamples.jsx";
 import AdminOperationsHandbook from "./AdminOperationsHandbook.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
@@ -85,6 +86,13 @@ const adminPages = {
       "Browse Shamba farmer profiles, Biashara businesses, and Elimu schools.",
     icon: Database,
     component: AdminJumuiyaDirectory,
+  },
+
+  sampleData: {
+    title: "Jumuiya Sample Data",
+    description: "Inspect isolated sample records across Community Center, Shamba, Biashara, Elimu, Marketplace, Faith, and shared services.",
+    icon: Database,
+    component: AdminJumuiyaSamples,
   },
 
   verification: {
@@ -184,7 +192,7 @@ export default function AdminDashboard({ initialTab = "overview" }) {
   // Grouping is presentation-only; existing page keys and their config stay unchanged.
   const pageGroups = [
     { label: "Core systems", keys: ["coreMesh", "usectZero", "metaEngineer", "sciCore"] },
-    { label: "Platform", keys: ["overview", "directories", "revenue"] },
+    { label: "Platform", keys: ["overview", "directories", "sampleData", "revenue"] },
     { label: "Verification", keys: ["verification", "biasharaVerification", "shambaVerification"] },
     { label: "Content", keys: ["study", "policy", "scripture"] },
     { label: "Administration", keys: ["team", "operations", "settings"] },
