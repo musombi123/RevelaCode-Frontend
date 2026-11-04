@@ -25,6 +25,9 @@ const COPY = {
     trialUnavailable: "Trial eligibility is temporarily unavailable. You can still view published plans.",
     freeIncluded: "Included at no charge",
     billingTerms: "M-Pesa charges are made once for the selected period. Automatic recurring renewals are not enabled. Access is activated only after the Backend verifies payment.",
+    paidPlansTitle: "Paid hub plans",
+    paidPlansText: "Plan pricing, periods, publication status and included features come from the live Backend catalogue.",
+    daysUnit: "days",
     loading: "Loading current plans…",
     empty: "No paid plans are currently published.",
     offline: "No internet connection. Reconnect to load current prices and pay securely.",
@@ -90,6 +93,9 @@ const COPY = {
     trialUnavailable: "Hali ya kustahili jaribio haipatikani kwa sasa. Bado unaweza kuona mipango iliyochapishwa.",
     freeIncluded: "Imejumuishwa bila malipo",
     billingTerms: "Malipo ya M-Pesa hutozwa mara moja kwa kipindi kilichochaguliwa. Malipo ya kujirudia kiotomatiki hayajawashwa. Huduma huanza tu baada ya Backend kuthibitisha malipo.",
+    paidPlansTitle: "Mipango ya kulipia ya hub",
+    paidPlansText: "Bei, vipindi, hali ya uchapishaji na vipengele vinatoka kwenye orodha ya sasa ya Backend.",
+    daysUnit: "siku",
     loading: "Inapakia mipango ya sasa…",
     empty: "Hakuna mipango ya kulipia iliyochapishwa kwa sasa.",
     offline: "Hakuna intaneti. Unganisha tena ili kupata bei za sasa na kulipa kwa usalama.",
@@ -313,7 +319,7 @@ export default function PlansModal({
     } finally {
       setPlansLoading(false);
     }
-  }, [authenticated, revenueApi, t.network, t.unavailable]);
+  }, [authenticated, revenueApi, t.network, t.unavailable, t.trialUnavailable]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -688,7 +694,7 @@ export default function PlansModal({
                                 {active ? t.trialActive : used ? t.trialUsed : t.trialNotStarted}
                               </span>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t.trialDays}: <strong className="text-slate-800 dark:text-slate-200">{Number.isFinite(Number(trial.trial_days)) && trial.trial_days !== null ? `${trial.trial_days} days` : "—"}</strong></p>
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t.trialDays}: <strong className="text-slate-800 dark:text-slate-200">{Number.isFinite(Number(trial.trial_days)) && trial.trial_days !== null ? `${trial.trial_days} {t.daysUnit}` : "—"}</strong></p>
                             {active ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{trial.days_remaining} {t.daysRemaining}</p> : null}
                             {available ? (
                               <button type="button" onClick={() => startHubTrial(trial.hub)} disabled={Boolean(trialStartingHub)} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50">
@@ -705,8 +711,8 @@ export default function PlansModal({
 
               <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h3 className="text-base font-black text-slate-950 dark:text-white">Paid hub plans</h3>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Prices, periods, publication status and included features come from the live Backend catalogue.</p>
+                  <h3 className="text-base font-black text-slate-950 dark:text-white">{t.paidPlansTitle}</h3>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t.paidPlansText}</p>
                 </div>
               </div>
               {!plansLoading && !plansError && paidPlans.length === 0 ? <p className="rounded-xl border border-slate-200 bg-slate-50 py-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t.empty}</p> : null}
