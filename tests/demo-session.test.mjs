@@ -14,6 +14,18 @@ import {
   DEMO_ATTENDANCE,
   DEMO_ASSESSMENTS,
   DEMO_FEES,
+  DEMO_PARENTS,
+  DEMO_SCHOOL_INVENTORY,
+  DEMO_SCHOOL_RECEIPTS,
+  DEMO_FEE_REMINDERS,
+  DEMO_SCHOOL_SYNC_JOBS,
+  DEMO_SCHOOL_REPORTS,
+  DEMO_BUSINESS_INVOICES,
+  DEMO_BUSINESS_AUTOMATIONS,
+  DEMO_FACTORY_MACHINES,
+  DEMO_FACTORY_QUALITY_CHECKS,
+  DEMO_BUSINESS_ATTENDANCE,
+  DEMO_BUSINESS_TEAM,
   DEMO_FARM_CROPS,
   DEMO_FARM_ACTIVITIES,
   DEMO_HARVESTS,
@@ -87,6 +99,12 @@ test("the demo API returns sample GET data and simulated write success", () => {
   const farmRightsQueue = getDemoPayload("/api/jumuiya/shamba/trust/verification-queue");
   const businessOrders = getDemoPayload("/api/jumuiya/biashara/orders");
   const businessExpenses = getDemoPayload("/api/jumuiya/biashara/expenses");
+  const schoolInventory = getDemoPayload("/api/jumuiya/elimu/inventory/items");
+  const schoolParents = getDemoPayload("/api/jumuiya/elimu/portal/parents");
+  const schoolReports = getDemoPayload("/api/jumuiya/elimu/reports/dashboard");
+  const businessInvoices = getDemoPayload("/api/jumuiya/biashara/finance/invoices");
+  const businessAutomation = getDemoPayload("/api/jumuiya/biashara/automations/rules");
+  const businessMachines = getDemoPayload("/api/jumuiya/biashara/factory/machines");
   const write = getDemoPayload(
     "https://revelacode-backend.onrender.com/api/jumuiya/biashara/products",
     "POST",
@@ -107,6 +125,12 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.equal(farmRightsQueue.items.length, 2);
   assert.equal(businessOrders.orders.length, 18);
   assert.equal(businessExpenses.expenses.length, 12);
+  assert.ok(schoolInventory.items.length >= 10);
+  assert.ok(schoolParents.parents.length >= 50);
+  assert.equal(schoolReports.reports.enrolment.total, 320);
+  assert.equal(businessInvoices.invoices.length, 12);
+  assert.equal(businessAutomation.rules.length, 3);
+  assert.equal(businessMachines.machines.length, 2);
   assert.equal(community.demo, true);
   assert.ok(Array.isArray(community.posts) && community.posts.length > 0);
   assert.equal(finance.demo, true);
@@ -137,6 +161,18 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.ok(DEMO_ATTENDANCE.length >= 90);
   assert.ok(DEMO_ASSESSMENTS.length >= 90);
   assert.ok(DEMO_FEES.length >= 100);
+  assert.ok(DEMO_PARENTS.length >= 50);
+  assert.equal(DEMO_SCHOOL_INVENTORY.length, 10);
+  assert.ok(DEMO_SCHOOL_RECEIPTS.length >= 20);
+  assert.ok(DEMO_FEE_REMINDERS.length >= 20);
+  assert.equal(DEMO_SCHOOL_SYNC_JOBS.length, 3);
+  assert.equal(DEMO_SCHOOL_REPORTS.enrolment.total, 320);
+  assert.equal(DEMO_BUSINESS_INVOICES.length, 12);
+  assert.equal(DEMO_BUSINESS_AUTOMATIONS.length, 3);
+  assert.equal(DEMO_FACTORY_MACHINES.length, 2);
+  assert.equal(DEMO_FACTORY_QUALITY_CHECKS.length, 2);
+  assert.equal(DEMO_BUSINESS_ATTENDANCE.length, 8);
+  assert.equal(DEMO_BUSINESS_TEAM.length, 8);
   assert.equal(DEMO_FARM_CROPS.length, 4);
   assert.ok(DEMO_FARM_ACTIVITIES.length >= 4);
   assert.ok(DEMO_HARVESTS.length >= 2);
