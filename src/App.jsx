@@ -84,11 +84,15 @@ function NativeOAuthDeepLinkHandler() {
       if (!active || !value) return;
       try {
         const parsed = new URL(String(value));
-        if (
-          parsed.protocol !== "com.revelacode.app:" ||
-          parsed.hostname !== "oauth" ||
-          parsed.pathname !== "/callback"
-        ) return;
+        const isLegacyCustomScheme =
+          parsed.protocol === "com.revelacode.app:" &&
+          parsed.hostname === "oauth" &&
+          parsed.pathname === "/callback";
+        const isVerifiedAndroidAppLink =
+          parsed.protocol === "https:" &&
+          parsed.host === "revelacode.co.ke" &&
+          parsed.pathname === "/oauth/android-callback";
+        if (!isLegacyCustomScheme && !isVerifiedAndroidAppLink) return;
 
         const query = parsed.searchParams.toString();
         const dedupeKey = `${parsed.protocol}//${parsed.host}${parsed.pathname}?${query}`;
@@ -367,6 +371,7 @@ export default function App() {
               <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+              <Route path="/oauth/android-callback" element={<OAuthCallbackPage />} />
               <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
               <Route
                 path="/accounts"
