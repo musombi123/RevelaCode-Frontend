@@ -1064,7 +1064,7 @@ function BiasharaAndroidOverview({
     { key: "biashara-analytics", label: "Insights", detail: "Business reports", icon: BarChart3, tone: "bg-violet-50 text-violet-600" },
     { key: "team", label: "Team", detail: "Manage team", icon: Users, tone: "bg-blue-50 text-blue-600" },
     { key: "sales", label: "Sales entry", detail: "Record a sale", icon: DollarSign, tone: "bg-green-50 text-green-600" },
-  ].filter((item) => !simpleMode || !["automations", "sync", "team"].includes(item.key));
+  ].filter((item) => !simpleMode || !["automations", "sync"].includes(item.key));
 
   return (
     <div data-demo="biashara-overview" className="min-h-full bg-[#F3F6FB] pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-slate-900">
