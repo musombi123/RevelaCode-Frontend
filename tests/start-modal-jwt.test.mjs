@@ -28,6 +28,23 @@ test("StartModal delegates token persistence to AuthContext and does not put cre
   assert.doesNotMatch(startModal, /accessToken,\s*tokenType,\s*refreshToken,\s*password/);
 });
 
+test("Android Google sign-in opens the system browser and recovers the callback deep link", () => {
+  assert.match(startModal, /registerPlugin\("Browser"\)/);
+  assert.match(startModal, /NativeBrowser\.open\(/);
+  assert.match(startModal, /client", isNativeAndroid \? "android" : "web"/);
+  assert.match(app, /appUrlOpen/);
+  assert.match(app, /getLaunchUrl\(\)/);
+  assert.match(app, /parsed\.hostname !== "oauth"/);
+  assert.match(app, /parsed\.pathname !== "\/callback"/);
+  assert.match(app, /NativeBrowser\.close\(\)/);
+});
+
+test("Android Google invitation acceptance uses the Android callback flow", async () => {
+  const invitationPage = await readFile(new URL("../src/pages/SupportInvitationPage.jsx", import.meta.url), "utf8");
+  assert.match(invitationPage, /client: isNativeAndroid \? "android" : "web"/);
+  assert.match(invitationPage, /NativeBrowser\.open\(/);
+});
+
 test("closing/resetting StartModal does not clear the token", () => {
   assert.doesNotMatch(startModal, /localStorage\.removeItem\(\s*["']revela_jwt["']/);
   assert.match(authContext, /clearStoredTokens\(\)/);
