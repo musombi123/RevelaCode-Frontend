@@ -210,7 +210,7 @@ test("required stable tour targets exist in the real application surfaces", () =
     community: ["community-overview", "community-create-post", "community-composer-title", "community-back-feed", "community-chat-nav"],
     ai: ["ai-overview", "ai-chat-input", "ai-send-message", "ai-vision-tools"],
     account: ["account-overview", "account-menu-", "account-payments-preview"],
-    admin: ["DemoLauncher", 'startAt="welcome"'],
+    admin: ["DemoLauncher", 'startAt="welcome"', "showPresentation"],
   };
 
   for (const [surface, markers] of Object.entries(required)) {
