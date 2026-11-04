@@ -7,6 +7,23 @@ import {
   DEMO_FARM,
   DEMO_SCHOOL,
   DEMO_SCHOOL_ACCESS,
+  DEMO_PRESENTATION_DATA,
+  DEMO_STUDENTS,
+  DEMO_CLASSES,
+  DEMO_STAFF,
+  DEMO_ATTENDANCE,
+  DEMO_ASSESSMENTS,
+  DEMO_FEES,
+  DEMO_FARM_CROPS,
+  DEMO_FARM_ACTIVITIES,
+  DEMO_HARVESTS,
+  DEMO_SOIL_TESTS,
+  DEMO_FARM_RIGHTS_QUEUE,
+  DEMO_SHAMBA_SAFETY_REPORTS,
+  DEMO_PRODUCTS,
+  DEMO_ORDERS,
+  DEMO_SALES,
+  DEMO_EXPENSES,
   DEMO_COMMUNITY_POSTS,
   DEMO_STUDY_MATERIALS,
   getDemoPayload,
@@ -63,7 +80,7 @@ test("the demo API returns sample GET data and simulated write success", () => {
   const account = getDemoPayload("/api/jumuiya/account/payments");
   const studies = getDemoPayload("https://revelacode-backend.onrender.com/api/study/materials?category=faith&limit=100");
   const aiReply = getDemoPayload("https://revelaai.onrender.com/ai", "POST", JSON.stringify({ message: "Show me three ways to improve my work today." }));
-  const write = getDemoPayload(
+  const schoolStudents = getDemoPayload("/api/jumuiya/elimu/students");\n  const schoolClasses = getDemoPayload("/api/jumuiya/elimu/classes");\n  const schoolFees = getDemoPayload("/api/jumuiya/elimu/fees");\n  const farmCrops = getDemoPayload("/api/jumuiya/shamba/farms/demo-farm-001/crops");\n  const farmRightsQueue = getDemoPayload("/api/jumuiya/shamba/trust/verification-queue");\n  const businessOrders = getDemoPayload("/api/jumuiya/biashara/orders");\n  const businessExpenses = getDemoPayload("/api/jumuiya/biashara/expenses");\n  const write = getDemoPayload(
     "https://revelacode-backend.onrender.com/api/jumuiya/biashara/products",
     "POST",
     JSON.stringify({ name: "Demo maize flour" }),
@@ -75,7 +92,7 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.ok(Array.isArray(farm.farms) && farm.farms.length > 0);
   assert.equal(schoolAccess.demo, true);
   assert.equal(schoolAccess.access.allowed, true);
-  assert.equal(schoolAccess.access.role, "owner");
+  assert.equal(schoolAccess.access.role, "owner");\n  assert.equal(schoolStudents.students.length, 320);\n  assert.equal(schoolClasses.classes.length, 12);\n  assert.ok(schoolFees.fees.length >= 100);\n  assert.equal(farmCrops.crops.length, 4);\n  assert.equal(farmRightsQueue.items.length, 2);\n  assert.equal(businessOrders.orders.length, 18);\n  assert.equal(businessExpenses.expenses.length, 12);
   assert.equal(community.demo, true);
   assert.ok(Array.isArray(community.posts) && community.posts.length > 0);
   assert.equal(finance.demo, true);
