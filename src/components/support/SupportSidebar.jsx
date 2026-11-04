@@ -11,7 +11,6 @@ import {
   Users,
   BookOpen,
   ShieldCheck,
-  Headphones,
 } from "lucide-react";
 
 
