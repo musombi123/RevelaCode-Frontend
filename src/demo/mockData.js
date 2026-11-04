@@ -200,6 +200,41 @@ export const DEMO_FACTORY_BATCHES = [
   { id: demoId("batch", 1), batch_number: "JDT-BATCH-001", product: "Branded maize flour pack", planned_quantity: 500, completed_quantity: 460, wastage_quantity: 8, status: "completed", is_demo: true },
   { id: demoId("batch", 2), batch_number: "JDT-BATCH-002", product: "Retail cereal mix", planned_quantity: 300, completed_quantity: 180, wastage_quantity: 3, status: "in_progress", is_demo: true },
 ];
+export const DEMO_BUSINESS_INVOICES = Array.from({ length: 12 }, (_, i) => ({
+  id: demoId("invoice", i + 1), invoice_number: "JDT-INV-" + String(i + 1).padStart(4, "0"),
+  customer_id: DEMO_CUSTOMERS[i].id, customer_name: DEMO_CUSTOMERS[i].name,
+  amount: 4500 + i * 1200, amount_paid: i % 3 === 0 ? 4500 + i * 1200 : 0,
+  balance: i % 3 === 0 ? 0 : 4500 + i * 1200, status: i % 3 === 0 ? "paid" : "issued",
+  due_date: "2026-11-" + String(10 + (i % 18)).padStart(2, "0"), currency: "KES", is_demo: true,
+}));
+export const DEMO_BUSINESS_AUTOMATIONS = [
+  { id: demoId("automation", 1), name: "Low-stock alert", trigger: "stock_below_threshold", status: "active", runs_this_month: 6, is_demo: true },
+  { id: demoId("automation", 2), name: "Order confirmation", trigger: "order_created", status: "active", runs_this_month: 18, is_demo: true },
+  { id: demoId("automation", 3), name: "Weekly sales summary", trigger: "weekly_schedule", status: "paused", runs_this_month: 3, is_demo: true },
+];
+export const DEMO_BUSINESS_SYNC_JOBS = [
+  { id: demoId("business-sync", 1), job_type: "inventory_snapshot", status: "completed", records_processed: 30, created_at: DEMO_STAMP, is_demo: true },
+  { id: demoId("business-sync", 2), job_type: "customer_export_preview", status: "preview", records_processed: 18, created_at: DEMO_STAMP, is_demo: true },
+];
+export const DEMO_FACTORY_MACHINES = [
+  { id: demoId("machine", 1), name: "Packing line A", machine_code: "JDT-M01", status: "operational", last_maintenance: "2026-10-20", is_demo: true },
+  { id: demoId("machine", 2), name: "Grain mill B", machine_code: "JDT-M02", status: "maintenance_due", last_maintenance: "2026-09-14", is_demo: true },
+];
+export const DEMO_FACTORY_QUALITY_CHECKS = [
+  { id: demoId("quality-check", 1), batch_id: demoId("batch", 1), check_name: "Packaging seal inspection", result: "passed", inspected_quantity: 100, is_demo: true },
+  { id: demoId("quality-check", 2), batch_id: demoId("batch", 2), check_name: "Moisture sampling", result: "pending", inspected_quantity: 20, is_demo: true },
+];
+export const DEMO_BUSINESS_ATTENDANCE = DEMO_BUSINESS_STAFF.map((employee, i) => ({
+  id: demoId("employee-attendance", i + 1), employee_id: employee.id,
+  employee_name: employee.full_name, attendance_date: DEMO_DATE,
+  status: i === 6 ? "off" : i === 5 ? "late" : "present", clock_in: i === 5 ? "08:24" : "08:00", is_demo: true,
+}));
+export const DEMO_BUSINESS_TEAM = DEMO_BUSINESS_STAFF.map((employee, i) => ({
+  id: demoId("team-member", i + 1), user_id: employee.user_id,
+  full_name: employee.full_name, role: ["owner", "manager", "accountant", "storekeeper", "sales_agent"][i % 5],
+  status: "active", is_demo: true,
+}));
+
 export const DEMO_SHOP = {
   business: DEMO_SAMPLE_BUSINESS,
   dashboard: {
@@ -219,7 +254,10 @@ export const DEMO_SHOP = {
   },
   products: DEMO_PRODUCTS, customers: DEMO_CUSTOMERS, orders: DEMO_ORDERS,
   sales: DEMO_SALES, services: DEMO_SERVICES, employees: DEMO_BUSINESS_STAFF,
-  factory_batches: DEMO_FACTORY_BATCHES,
+  factory_batches: DEMO_FACTORY_BATCHES, invoices: DEMO_BUSINESS_INVOICES,
+  automations: DEMO_BUSINESS_AUTOMATIONS, sync_jobs: DEMO_BUSINESS_SYNC_JOBS,
+  machines: DEMO_FACTORY_MACHINES, quality_checks: DEMO_FACTORY_QUALITY_CHECKS,
+  employee_attendance: DEMO_BUSINESS_ATTENDANCE, team: DEMO_BUSINESS_TEAM,
   finance: {
     currency: "KES", income_total: 128500, expenses_total: 74200, net_estimate: 54300,
     transactions: [
@@ -524,11 +562,18 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
     if (path.includes("/orders")) return listResponse("orders", DEMO_ORDERS);
     if (path.includes("/customers")) return listResponse("customers", DEMO_CUSTOMERS);
     if (path.includes("/sales")) return listResponse("sales", DEMO_SALES);
-    if (path.includes("/expenses") || path.includes("/finance") || path.includes("/cashbook") || path.includes("/transactions") || path.includes("/invoices")) return { success: true, demo: true, ...DEMO_SHOP.finance, data: { ...DEMO_SHOP.finance } };
+    if (path.includes("/finance/invoices")) return listResponse("invoices", DEMO_BUSINESS_INVOICES);
+    if (path.includes("/expenses") || path.includes("/finance") || path.includes("/cashbook") || path.includes("/transactions")) return { success: true, demo: true, ...DEMO_SHOP.finance, data: { ...DEMO_SHOP.finance } };
     if (path.includes("/website")) return { success: true, demo: true, website: DEMO_SHOP.website, inquiries: DEMO_SHOP.website.inquiries, data: { website: DEMO_SHOP.website, inquiries: DEMO_SHOP.website.inquiries } };
+    if (path.includes("/automations")) return listResponse("rules", DEMO_BUSINESS_AUTOMATIONS);
+    if (path.includes("/sync")) return listResponse("jobs", DEMO_BUSINESS_SYNC_JOBS);
     if (path.includes("/dashboard") || path.includes("/analytics") || path.includes("/intelligence")) return { success: true, demo: true, ...DEMO_SHOP, data: DEMO_SHOP.dashboard };
+    if (path.includes("/factory/quality")) return listResponse("checks", DEMO_FACTORY_QUALITY_CHECKS);
+    if (path.includes("/factory/machines")) return listResponse("machines", DEMO_FACTORY_MACHINES);
     if (path.includes("/factory") || path.includes("/production")) return listResponse("batches", DEMO_FACTORY_BATCHES);
-    if (path.includes("/hr") || path.includes("/team") || path.includes("/employees")) return listResponse("employees", DEMO_BUSINESS_STAFF);
+    if (path.includes("/hr/attendance")) return listResponse("attendance", DEMO_BUSINESS_ATTENDANCE);
+    if (path.includes("/hr") || path.includes("/employees")) return listResponse("employees", DEMO_BUSINESS_STAFF);
+    if (path.includes("/team")) return listResponse("team", DEMO_BUSINESS_TEAM);
     return { success: true, demo: true, ...DEMO_SHOP, data: { business: DEMO_SAMPLE_BUSINESS } };
   }
 
