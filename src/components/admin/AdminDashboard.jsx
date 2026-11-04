@@ -31,6 +31,7 @@ import AdminSchoolVerification from "./AdminSchoolVerification.jsx";
 import AdminBiasharaVerification from "./AdminBiasharaVerification.jsx";
 import AdminShambaVerification from "./AdminShambaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
+import AdminSupportCenter from "./AdminSupportCenter.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import AdminJumuiyaSamples from "./AdminJumuiyaSamples.jsx";
 import AdminSchoolStaffInvitations from "./AdminSchoolStaffInvitations.jsx";
@@ -125,6 +126,13 @@ const adminPages = {
     component: AdminShambaVerification,
   },
 
+  supportCenter: {
+    title: "Support Team Center",
+    description: "Operate support tickets, team access, verification, payments and audit controls.",
+    icon: ShieldCheck,
+    component: AdminSupportCenter,
+  },
+
   revenue: {
     title: "Revenue Management",
     description: "Manage pricing proposals and review revenue transaction intents across Jumuiya.",
@@ -199,7 +207,7 @@ export default function AdminDashboard({ initialTab = "overview" }) {
   // Grouping is presentation-only; existing page keys and their config stay unchanged.
   const pageGroups = [
     { label: "Core systems", keys: ["coreMesh", "usectZero", "metaEngineer", "sciCore"] },
-    { label: "Platform", keys: ["overview", "directories", "sampleData", "revenue"] },
+    { label: "Platform", keys: ["overview", "directories", "sampleData", "revenue", "supportCenter"] },
     { label: "Verification", keys: ["verification", "biasharaVerification", "shambaVerification"] },
     { label: "Content", keys: ["study", "policy", "scripture"] },
     { label: "Administration", keys: ["team", "schoolStaffInvitations", "operations", "settings"] },

@@ -20,6 +20,7 @@ import {
   Cpu,
   Building2,
   Sprout,
+  Headphones,
 } from "lucide-react";
 
 
@@ -97,6 +98,12 @@ const tabs = [
     label: "Shamba Verification",
     description: "Review farmer profiles",
     icon: Sprout,
+  },
+  {
+    key: "supportCenter",
+    label: "Support Team Center",
+    description: "Inbox, tickets, support access and payroll",
+    icon: Headphones,
   },
   {
     key: "revenue",

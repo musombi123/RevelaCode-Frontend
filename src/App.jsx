@@ -1,5 +1,6 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
 import {
   BrowserRouter,
   Routes,
@@ -19,6 +20,8 @@ import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import BiasharaInvitationPage from "./pages/BiasharaInvitationPage.jsx";
 import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
+import OAuthCallbackPage from "./pages/OAuthCallbackPage.jsx";
+import SupportPaymentRetryPage from "./pages/SupportPaymentRetryPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
@@ -62,6 +65,33 @@ function SPAWrapper({ children }) {
   if (!hasStarted) return <StartModal />;
 
   return children;
+}
+
+function NativeOAuthDeepLinkHandler() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return undefined;
+    let listener;
+    let active = true;
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      if (!url || !String(url).startsWith("com.revelacode.app://oauth/callback")) return;
+      try {
+        const parsed = new URL(url);
+        const query = parsed.searchParams.toString();
+        navigate(`/oauth/callback${query ? `?${query}` : ""}`, { replace: true });
+      } catch (error) {
+        console.warn("Could not process the Google OAuth app callback.", error);
+      }
+    }).then(handle => {
+      listener = handle;
+      if (!active) handle.remove();
+    }).catch(error => console.warn("Native OAuth deep-link listener could not start.", error));
+    return () => {
+      active = false;
+      listener?.remove();
+    };
+  }, [navigate]);
+  return null;
 }
 
 function InternalDashboard({ initialHub = null }) {
@@ -161,7 +191,7 @@ function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) 
   const requiredRoles = requiredRole === "admin"
     ? ["admin", "platform_admin", "super_admin", "revelacode_admin"]
     : requiredRole === "support"
-      ? ["support", "support_admin"]
+      ? ["support", "support_agent", "support_admin"]
       : [requiredRole];
 
   return (
@@ -287,6 +317,7 @@ export default function App() {
           <BrowserRouter>
             <SEOManager />
             <AndroidPermissionSetup />
+            <NativeOAuthDeepLinkHandler />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
               <Route
@@ -307,6 +338,8 @@ export default function App() {
               <Route path="/community" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />
+              <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+              <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
               <Route
                 path="/accounts"
                 element={
