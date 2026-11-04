@@ -39,7 +39,7 @@ const CURATED = {
   },
   biashara: {
     id: "biashara", registryKey: "biashara", icon: "store", title: bi("Biashara", "Biashara"),
-    summary: bi("Run sales, stock, orders, customers and business operations.", "Simamia mauzo, bidhaa, oda, wateja na shughuli za biashara."),
+    summary: bi("Present a populated company with products, customers, orders, sales, staff and finance records.", "Wasilisha biashara yenye bidhaa, wateja, oda, mauzo, wafanyakazi na rekodi za fedha."),
     whoFor: bi("For shop owners, traders, service providers and growing businesses.", "Kwa wamiliki wa maduka, wafanyabiashara, watoa huduma na biashara zinazokua."),
     benefits: [
       bi("Keep products, orders and sales connected.", "Unganisha bidhaa, oda na mauzo."),
@@ -47,7 +47,7 @@ const CURATED = {
       bi("Give each team member the right workspace.", "Mpe kila mfanyakazi nafasi inayofaa."),
     ],
     steps: [
-      step("biashara-overview", "biashara", "Your business overview", "Muhtasari wa biashara", "See your business identity, live figures and stock alerts together.", "Ona utambulisho wa biashara, takwimu na tahadhari za bidhaa pamoja."),
+      step("biashara-overview", "biashara", "Your business overview", "Muhtasari wa biashara", "Present 30 sample products, customers, orders, sales, staff, stock alerts and finance records.", "Wasilisha bidhaa 30 za mfano, wateja, oda, mauzo, wafanyakazi na rekodi za fedha."),
       step("biashara-nav-products", "biashara", "Open Products and stock", "Fungua Bidhaa na stoo", "Choose Products to review stock and add an item to your catalogue.", "Chagua Bidhaa kukagua stoo na kuongeza bidhaa kwenye orodha.", "click"),
       step("biashara-product-name", "biashara", "Name a sample product", "Weka jina la bidhaa ya mfano", "Enter the sample name below. It will fill the product form without saving yet.", "Weka jina la mfano hapa chini. Litajaza fomu bila kuhifadhi bado.", "type", "Demo maize flour"),
       step("biashara-create-product", "biashara", "Try creating the product", "Jaribu kuunda bidhaa", "Tap Create product. Demo mode simulates the request and saves nothing.", "Gusa Unda bidhaa. Hali ya onyesho huiga ombi bila kuhifadhi chochote.", "click"),
@@ -56,7 +56,7 @@ const CURATED = {
   },
   shamba: {
     id: "shamba", registryKey: "shamba", icon: "sprout", title: bi("Shamba", "Shamba"),
-    summary: bi("Manage farms, crops, field records, weather and markets.", "Simamia mashamba, mazao, kumbukumbu, hali ya hewa na masoko."),
+    summary: bi("Present three sample farms with crops, field activities, harvests, soil records and review queues.", "Wasilisha mashamba matatu ya mfano yenye mazao, shughuli, mavuno, vipimo vya udongo na foleni za ukaguzi."),
     whoFor: bi("For farmers, farm teams and agricultural advisers.", "Kwa wakulima, timu za mashamba na washauri wa kilimo."),
     benefits: [
       bi("Keep each farm and crop record organised.", "Panga taarifa za kila shamba na zao."),
@@ -64,7 +64,7 @@ const CURATED = {
       bi("Review crop and soil guidance with AI tools.", "Pata mwongozo wa mazao na udongo kwa zana za AI."),
     ],
     steps: [
-      step("shamba-overview", "shamba", "Your farm home", "Nyumbani kwa shamba lako", "Start with your farmer profile, farm status and current farm information.", "Anza na wasifu wa mkulima, hali ya uthibitishaji na taarifa za shamba."),
+      step("shamba-overview", "shamba", "Your farm home", "Nyumbani kwa shamba lako", "Explore three sample farms, crop plans, field activities, harvests and soil records.", "Chunguza mashamba matatu ya mfano, mipango ya mazao, shughuli, mavuno na rekodi za udongo."),
       step("shamba-nav-farms", "shamba", "Open your farms", "Fungua mashamba yako", "Tap Farms to view registered farms and open a farm record.", "Gusa Mashamba kuona mashamba yaliyosajiliwa na kufungua rekodi.", "click"),
       step("shamba-farms-screen", "shamba", "Review a farm record", "Kagua rekodi ya shamba", "Check the location, size, crop and verification status before recording activity.", "Kagua eneo, ukubwa, zao na hali ya uthibitishaji kabla ya kurekodi shughuli."),
     ],
@@ -72,7 +72,7 @@ const CURATED = {
   },
   education: {
     id: "education", registryKey: "education", icon: "graduation-cap", title: bi("Elimu", "Elimu"),
-    summary: bi("Coordinate schools, staff, learners, fees and academic work.", "Ratibu shule, wafanyakazi, wanafunzi, ada na shughuli za masomo."),
+    summary: bi("Present a clearly labelled demo school with 320 learners and complete academic, staff and finance samples.", "Wasilisha shule ya maonyesho iliyo na alama wazi, wanafunzi 320 na rekodi za masomo, wafanyakazi na fedha."),
     whoFor: bi("For school owners, principals, bursars, registrars and teachers.", "Kwa wamiliki wa shule, wakuu, wahasibu, wasajili na walimu."),
     benefits: [
       bi("Give each school role the right access.", "Mpe kila jukumu la shule ruhusa inayofaa."),
@@ -84,7 +84,7 @@ const CURATED = {
       step("elimu-nav-website", "education", "Open school pages", "Fungua kurasa za shule", "Choose Public website from the sidebar or phone menu.", "Chagua Tovuti ya Umma kwenye menyu ya pembeni au menyu ya simu.", "click"),
       step("elimu-school-pages", "education", "Review your school pages", "Kagua kurasa za shule", "Check the school identity, public information and family-facing pages.", "Kagua utambulisho wa shule, taarifa za umma na kurasa za wazazi."),
       step("elimu-nav-students", "education", "Open learner records", "Fungua kumbukumbu za wanafunzi", "Choose Students to see where enrolment and learner records are managed.", "Chagua Wanafunzi kuona mahali pa kusimamia usajili na taarifa zao.", "click"),
-      step("elimu-student-records", "education", "Review learner management", "Kagua usimamizi wa wanafunzi", "Student records are protected by your school role and permissions.", "Kumbukumbu za wanafunzi zinalindwa na jukumu na ruhusa zako shuleni."),
+      step("elimu-student-records", "education", "Review the populated school", "Kagua shule yenye taarifa", "Explore 320 learners, 12 classes, 18 staff, attendance, assessments, timetables and fee ledgers.", "Chunguza wanafunzi 320, madarasa 12, wafanyakazi 18, mahudhurio, tathmini, ratiba na daftari za ada."),
     ],
     challenge: bi("Find the module your school role uses most.", "Tafuta sehemu inayotumiwa zaidi na jukumu lako shuleni."),
   },
