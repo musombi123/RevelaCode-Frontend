@@ -46,6 +46,7 @@ test("platform admins can select a school and send protected Elimu staff invitat
   const dashboard = read("src/components/admin/AdminDashboard.jsx");
   const sidebar = read("src/components/admin/AdminSidebar.jsx");
   assert.match(page, /\/api\/jumuiya\/admin\/schools/);
+  assert.match(page, /for \(let page = 1; page <= 100; page \+= 1\)/);
   assert.match(page, /staff-invitations/);
   assert.match(page, /School Owner and Principal are intentionally excluded/);
   assert.match(page, /teacher/);
