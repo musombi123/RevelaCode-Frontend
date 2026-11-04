@@ -663,6 +663,7 @@ export default function PlatformWelcomePage() {
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {paidPlans.map((plan) => {
                       const available = plan.status === "available" && checkoutEnabled;
+                      const planStatus = available ? "Available" : plan.status === "available" ? "Checkout unavailable" : "Not yet published";
                       const planHub = String(plan.hub || "").toLowerCase();
                       const openPlanUrl = `/app?hub=home&premium=1&plan=${encodeURIComponent(plan.code)}`;
                       return (
@@ -673,7 +674,7 @@ export default function PlatformWelcomePage() {
                               <h4 className="mt-2 text-lg font-extrabold text-slate-950 dark:text-white">{plan.name}</h4>
                             </div>
                             <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${available ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"}`}>
-                              {available ? "Available" : "Not yet published"}
+                              {planStatus}
                             </span>
                           </div>
                           <p className="mt-5 text-3xl font-black tracking-tight text-slate-950 dark:text-white">{formatPlanMoney(plan.amount, plan.currency || "KES")}</p>
