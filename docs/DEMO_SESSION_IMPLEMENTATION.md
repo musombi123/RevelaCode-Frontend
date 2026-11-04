@@ -151,6 +151,20 @@ While `state.active` is true:
 - Business writes and payment-provider requests are simulated; nothing is saved and no money moves.
 - `trackDemo(eventName, detail)` is the only analytics entry point. It no-ops when no supported analytics adapter is configured.
 - Progress and language survive reload in localStorage inside try/catch. The bundled script and fixtures allow the tour to run offline.
+
+### Fully populated presentation records
+
+The guided Demo Session now exposes a coherent synthetic presentation dataset across the three operational hubs. It is loaded only while Demo mode is active; it does not create database rows or change live tenant records.
+
+| Hub | Included presentation records |
+|---|---|
+| Elimu | One **Jumuiya Demonstration School**, explicitly labelled **DEMO SCHOOL — NOT VERIFIED**; 320 synthetic learners, 12 classes, 18 staff, 48 lessons, 6 assignments, 90 attendance entries, 96 assessment records, 120 fee ledgers, 30 timetable entries, CBC projects, school events and library catalogue entries. |
+| Shamba | Synthetic farmer profile; 3 farms, 4 crop records, 4 field activities, 2 harvests, 2 sample soil-test records, market prices, weather, alerts, recommendations, farmer-profile review cases, farm-rights review cases, safety reports and soil-service requests. |
+| Biashara | Synthetic retail business; 30 products, 18 customers, 18 orders, 40 sales, 12 expenses, 8 employees, 3 services, production batches, finance transactions, storefront settings and sample website inquiries. |
+
+All records are synthetic and visibly marked with demo metadata. The school, farmer and business are not presented as verified real entities. Demo GET requests resolve to the bundled fixtures for the corresponding module. POST, PUT, PATCH and DELETE remain simulated and return a clear “nothing was saved” response. Payments, M-Pesa and external payment-provider calls remain disabled.
+
+The dataset is deliberately available to an authenticated administrator who starts Demo mode as well as to a guest using the guided tour. Demo mode does not grant platform-admin permissions: it only replaces data reads and blocks writes while the session is active.
 - Read-aloud looks for sw-KE/en-KE or another voice in the selected language. If none is installed, narration remains silent.
 
 Keep demo actions behind the API gateway. Do not add direct payment SDK calls or raw payment-provider requests to a guided demo action.
@@ -183,6 +197,9 @@ The Android workflow runs `npm run test:demo`, verifies the required target stri
 - [ ] Start from Home and resume an interrupted session.
 - [ ] Complete the Biashara sample product flow; verify no product is saved.
 - [ ] Complete Shamba, Elimu, Faith and Community; verify the sample post is not published.
+- [ ] Open Elimu Students, Classes, Staff, Attendance, Assessments, Fees and Timetable; confirm the synthetic sample records are populated and the school is labelled not verified.
+- [ ] Open Shamba Farms, Crops, Activities, Harvests, Soil, Market and Trust Centre; confirm farmer and farm-rights review queues are sample-only.
+- [ ] Open Biashara Products, Orders, Customers, Sales, Finance, HR, Factory and Website; confirm all sample records are populated.
 - [ ] Send the sample RevelaAI question; verify the local demo reply appears.
 - [ ] Open the sample wallet; verify no payment provider or M-Pesa request occurs.
 - [ ] Exit, reload and Resume; verify chapter, step and language persist.
