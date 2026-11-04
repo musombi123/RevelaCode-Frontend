@@ -162,13 +162,13 @@ export default function DemoOverlay() {
     if (location.pathname !== "/app" || currentHub !== routeHub) {
       navigate("/app?hub=" + encodeURIComponent(routeHub), { replace: true });
     }
-  }, [active, routeHub, step?.action, location.pathname, location.search, navigate]);
+  }, [active, presentationOnly, routeHub, step?.action, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     if (!active || presentationOnly) return undefined;
     previousFocusRef.current = document.activeElement;
     return undefined;
-  }, [active]);
+  }, [active, presentationOnly]);
 
   useEffect(() => {
     if (!active || presentationOnly) return undefined;
@@ -178,7 +178,7 @@ export default function DemoOverlay() {
       (first || dialog)?.focus?.();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [active, chapterId, stepIndex, isFinish]);
+  }, [active, presentationOnly, chapterId, stepIndex, isFinish]);
 
   // StartModal is already an account-access dialog. When the tour is active,
   // hide that underlying dialog from assistive technology so only the guided
@@ -193,7 +193,7 @@ export default function DemoOverlay() {
       if (previousAriaHidden === null) startDialog.removeAttribute("aria-hidden");
       else startDialog.setAttribute("aria-hidden", previousAriaHidden);
     };
-  }, [active]);
+  }, [active, presentationOnly]);
 
   useEffect(() => {
     if (!active || presentationOnly || !step?.target || isFinish) {
@@ -236,7 +236,7 @@ export default function DemoOverlay() {
       observer?.disconnect();
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [active, chapterId, stepIndex, step?.target, isFinish]);
+  }, [active, presentationOnly, chapterId, stepIndex, step?.target, isFinish]);
 
   const [rect, setRect] = useState(null);
   useEffect(() => {
@@ -263,7 +263,7 @@ export default function DemoOverlay() {
       window.removeEventListener("scroll", update, true);
       resizeObserver?.disconnect();
     };
-  }, [active, targetElement]);
+  }, [active, presentationOnly, targetElement]);
 
   const advanceAfterAction = useCallback(() => {
     if (actionPendingRef.current) return;
@@ -307,19 +307,19 @@ export default function DemoOverlay() {
   }, [chapterId, stepIndex]);
 
   useEffect(() => {
-    if (active || !actionTimerRef.current) return undefined;
+    if ((active && !presentationOnly) || !actionTimerRef.current) return undefined;
     window.clearTimeout(actionTimerRef.current);
     actionTimerRef.current = null;
     actionPendingRef.current = false;
     return undefined;
-  }, [active]);
+  }, [active, presentationOnly]);
 
   useEffect(() => {
     if (!active || presentationOnly || step?.action !== "click" || !targetElement) return undefined;
     const onClick = () => advanceAfterAction();
     targetElement.addEventListener("click", onClick, false);
     return () => targetElement.removeEventListener("click", onClick, false);
-  }, [active, step?.action, targetElement, advanceAfterAction]);
+  }, [active, presentationOnly, step?.action, targetElement, advanceAfterAction]);
 
   useEffect(() => {
     if (!active || presentationOnly) {
@@ -336,7 +336,7 @@ export default function DemoOverlay() {
     }
     window.requestAnimationFrame(() => getFocusable(dialogRef.current)[0]?.focus());
     return undefined;
-  }, [active, chapterId, stepIndex]);
+  }, [active, presentationOnly, chapterId, stepIndex]);
 
   useEffect(() => {
     if (!exitConfirm) return undefined;
@@ -361,7 +361,7 @@ export default function DemoOverlay() {
     utterance.lang = voice.lang;
     synth.speak(utterance);
     return () => synth.cancel();
-  }, [active, chapterId, stepIndex, voiceOn, lang, step]);
+  }, [active, presentationOnly, chapterId, stepIndex, voiceOn, lang, step]);
 
   useEffect(() => {
     if (!active || presentationOnly || Capacitor.getPlatform() !== "android") return undefined;
@@ -382,7 +382,7 @@ export default function DemoOverlay() {
       else listener = registered;
     }).catch(() => {});
     return () => { disposed = true; listener?.remove(); };
-  }, [active, chapters, chapterId, stepIndex, back, exitConfirm, exit]);
+  }, [active, presentationOnly, chapters, chapterId, stepIndex, back, exitConfirm, exit]);
 
   useEffect(() => {
     if (!active || presentationOnly) return undefined;
@@ -440,7 +440,7 @@ export default function DemoOverlay() {
       document.removeEventListener("keydown", onDialogKeyDown, true);
       document.removeEventListener("focusin", onFocusIn, true);
     };
-  }, [active, exitConfirm, next, back, exit]);
+  }, [active, presentationOnly, exitConfirm, next, back, exit]);
 
   const chapterIndex = Math.max(0, chapters.findIndex((item) => item.id === chapterId));
   const stepCount = chapter?.steps?.length || 0;
