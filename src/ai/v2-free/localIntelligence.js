@@ -59,7 +59,9 @@ export function localMode(mode,input){
  "Prophecy research":"PROPHECY RESEARCH: Separate biblical text, historical facts and contemporary interpretation. Keyword similarity cannot establish prophetic fulfillment. Verify current events and record alternative interpretations.",
  "Business strategist":"BUSINESS STRATEGY: Track revenue, variable costs, fixed costs, margin, cash conversion and retention. Find the largest measurable bottleneck. Paste CSV with revenue in column one and cost in column two for arithmetic.",
  "Teacher":"TEACHER: Explain the core idea, mechanism, worked example, common misconception and a short comprehension question. Add your topic and learner level.",
- "Creator":"CREATOR: Define audience, objective, key message, tone and call to action. Draft clearly, then check originality and accuracy. This offline engine creates text templates, not generative AI images."
+ "Creator":"CREATOR: Define audience, objective, key message, tone and call to action. Draft clearly, then check originality and accuracy. This offline engine creates text templates, not generative AI images.",
+ "Troubleshooter":"TROUBLESHOOTING: Capture the exact error and stack trace. Reproduce the failure consistently, record expected versus actual behavior, and identify the smallest failing step. Check the most recent code/configuration change, inspect inputs and initialization order, then change one thing at a time and add a regression test.",
+ "Project planner":"PROJECT PLAN: Define the outcome and acceptance criteria first. Break the work into deliverable milestones, identify dependencies and resource limits, assign an owner to each task, surface risks early, and measure progress against a realistic completion condition."
  };
  let result=rules[mode]||"Local assistant: define the goal, evidence, constraints and next action.";
  if(mode==="Business strategist"&&input){const rows=input.split(/\r?\n/).map(x=>x.split(",").map(Number)).filter(x=>x.length>=2&&x.every(Number.isFinite));if(rows.length){const revenue=rows.reduce((s,x)=>s+x[0],0),cost=rows.reduce((s,x)=>s+x[1],0),profit=revenue-cost;result+="\n\nLOCAL CALCULATION ("+rows.length+" rows): revenue "+revenue.toFixed(2)+", costs "+cost.toFixed(2)+", profit "+profit.toFixed(2)+", margin "+(revenue?(profit/revenue*100).toFixed(2):"n/a")+"%. Confirm CSV column order.";}}
@@ -87,15 +89,128 @@ export function loadMemory(){try{return JSON.parse(localStorage.getItem(KEY)||'{
 export function searchMemory(query){const words=String(query).toLowerCase().split(/\W+/).filter(x=>x.length>2);return loadMemory().notes.map(n=>Object.assign({},n,{score:words.filter(w=>n.text.toLowerCase().includes(w)).length})).filter(n=>n.score>0).sort((a,b)=>b.score-a.score).slice(0,5);}
 export function typewriter(text,onUpdate,delay=12){let i=0,cancelled=false,timer;const tick=()=>{if(cancelled)return;i=Math.min(text.length,i+3);onUpdate(text.slice(0,i));if(i<text.length)timer=setTimeout(tick,delay);};tick();return()=>{cancelled=true;clearTimeout(timer);};}
 console.log("RevelaAI v2.0 FREE - Zero Cost - No Paid API");
-export function answerLocally(question, context=""){
- const q=String(question||"").trim(),t=q.toLowerCase(),emotion=assessEmotion(q);
- if(!q)return "Tell me what you want to work through.";
- if(/\b(hi|hello|hey|habari|jambo)\b/.test(t))return "Hey! I'm RevelaAI Free, running local-first tools on this device. I can help structure a decision, work through a plan, analyze supported files and calculate business figures. What are we building today?";
- if(/\b(pray|prayer|pray for|maombi)\b/.test(t))return "I can help you compose a prayer. A simple structure is: gratitude, honest reflection, request for wisdom and strength, and commitment to a practical next step. Would you like a prayer focused on wisdom, work, family or encouragement?";
- if(/\b(bible|scripture|jesus|god|prophecy|verse|biblical)\b/.test(t))return "Faith-study approach: (1) identify the exact passage, (2) read its surrounding chapter, (3) check historical and literary context, (4) compare related passages, and (5) distinguish the text from interpretation. This offline rule engine does not contain a complete Bible search or verified prophecy-news feed; provide the passage or verse you want to examine.";
- if(/\b(business|sales|profit|revenue|margin|cost|biashara|price|deal|negotia|contract)\b/.test(t))return localMode(/\b(negotia|deal|contract|price)\b/.test(t)?"Negotiator":"Business strategist",q);
- if(/\b(explain|teach|learn|what is|how does|meaning of)\b/.test(t))return "Let's break it down. First, define the core concept in one sentence. Next, identify its inputs, process and output. Then test it with a real example and check assumptions. This offline build uses templates rather than a language model, so for a precise explanation include the topic, your current level and an example.";
- if(/\b(create|write|draft|sermon|post|plan|caption)\b/.test(t))return localMode("Creator",q);
- const checks=reasonLocally(q);
- return emotion.opening+"\n\nLOCAL REASONING CHECKLIST\n"+checks.summary+"\n\nI am running without a language model or network request, so I cannot reliably invent a detailed factual answer. Add source material, data, or a narrower question and I can help structure it with local rules and calculations.";
+
+/**
+ * Deterministic, offline-only reasoning support for requests that do not match
+ * one of the specialist response templates below. It organizes the request;
+ * it does not claim to verify facts or behave like a hosted language model.
+ */
+const LOCAL_REASONING_STOP_WORDS = new Set([
+  "about", "after", "again", "also", "and", "are", "because", "been", "before",
+  "being", "between", "but", "can", "could", "does", "doing", "done", "for",
+  "from", "have", "help", "here", "how", "into", "its", "just", "like", "make",
+  "more", "most", "much", "need", "our", "out", "please", "should", "some",
+  "than", "that", "the", "their", "them", "then", "there", "these", "they",
+  "this", "those", "through", "using", "very", "want", "was", "what", "when",
+  "where", "which", "while", "with", "would", "you", "your"
+]);
+
+export function reasonLocally(question) {
+  const text = String(question ?? "").trim().slice(0, 4000);
+  const tokens = text.toLowerCase().match(/[a-z0-9][a-z0-9'-]*/g) || [];
+  const frequencies = new Map();
+
+  for (const token of tokens) {
+    if (token.length < 3 || LOCAL_REASONING_STOP_WORDS.has(token)) continue;
+    frequencies.set(token, (frequencies.get(token) || 0) + 1);
+  }
+
+  const keyTerms = [...frequencies.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 8)
+    .map(([term]) => term);
+
+  let kind = "general";
+  let guidance = [
+    "State the desired outcome in one sentence.",
+    "Separate confirmed facts from assumptions and missing information.",
+    "List the available options, constraints, and likely consequences.",
+    "Choose one small action that can be checked before committing further."
+  ];
+
+  if (/\b(error|bug|crash|exception|debug|failed|failure|not working|broken)\b/.test(text.toLowerCase())) {
+    kind = "troubleshooting";
+    guidance = [
+      "Record the exact error, file, line, and full stack trace.",
+      "Reproduce the problem and compare expected behavior with actual behavior.",
+      "Check recent changes, input values, asynchronous initialization, and dependency order.",
+      "Isolate the smallest failing function, fix the cause, and add a regression test."
+    ];
+  } else if (/\b(compare|versus|\bvs\b|choose|decision|should i|which option)\b/.test(text.toLowerCase())) {
+    kind = "decision";
+    guidance = [
+      "List each option and the non-negotiable constraints.",
+      "Compare cost, risk, reversibility, time, and long-term impact.",
+      "Identify what evidence would change the decision.",
+      "Prefer a low-cost test when the evidence is incomplete."
+    ];
+  } else if (/\b(plan|roadmap|launch|implement|build|project|milestone)\b/.test(text.toLowerCase())) {
+    kind = "planning";
+    guidance = [
+      "Define a measurable outcome and acceptance criteria.",
+      "Break the work into deliverables with dependencies and owners.",
+      "Identify the biggest delivery risks and required resources.",
+      "Set checkpoints and a test that proves each milestone is complete."
+    ];
+  } else if (/\b(why|what|when|where|who|which|how)\b/.test(text.toLowerCase()) || text.endsWith("?")) {
+    kind = "research";
+    guidance = [
+      "Turn the request into one precise question or claim.",
+      "Identify the source and date needed to verify the answer.",
+      "Check assumptions and look for credible contrary evidence.",
+      "Do not treat this offline checklist as confirmation of current facts."
+    ];
+  }
+
+  const summary = [
+    "Request type: " + kind + ".",
+    "Key terms: " + (keyTerms.length ? keyTerms.join(", ") : "no distinct topic terms identified") + ".",
+    ...guidance.map((item, index) => (index + 1) + ". " + item)
+  ].join("\n");
+
+  return { kind, keyTerms, summary };
+}
+
+export function answerLocally(question, context = "") {
+  const q = String(question ?? "").trim();
+  const t = q.toLowerCase();
+  const emotion = assessEmotion(q);
+
+  if (!q) return "Tell me what you want to work through.";
+  if (/\b(hi|hello|hey|habari|jambo)\b/.test(t)) {
+    return "Hey! I'm RevelaAI Free, running local-first tools on this device. I can help structure a decision, work through a plan, troubleshoot software, analyze supported files, and calculate business figures. What are we building today?";
+  }
+  if (/\b(pray|prayer|maombi)\b/.test(t)) {
+    return "I can help you compose a prayer. A simple structure is: gratitude, honest reflection, a request for wisdom and strength, and commitment to a practical next step. Would you like a prayer focused on wisdom, work, family, or encouragement?";
+  }
+  if (/\b(bible|scripture|jesus|god|prophecy|verse|biblical)\b/.test(t)) {
+    return "Faith-study approach: (1) identify the exact passage, (2) read its surrounding chapter, (3) check historical and literary context, (4) compare related passages, and (5) distinguish the text from interpretation. This offline rule engine does not contain a complete Bible search or a verified prophecy-news feed; provide the passage or verse you want to examine.";
+  }
+  if (/\b(business|sales|profit|revenue|margin|cost|biashara|price|deal|negotia|contract)\b/.test(t)) {
+    return localMode(/\b(negotia|deal|contract|price)\b/.test(t) ? "Negotiator" : "Business strategist", q);
+  }
+  if (/\b(debug|bug|error|crash|exception|failed|failure|not working|broken)\b/.test(t)) {
+    return localMode("Troubleshooter", q);
+  }
+  if (/\b(explain|teach|learn|what is|how does|meaning of)\b/.test(t)) {
+    return "Let's break it down. First, define the core concept in one sentence. Next, identify its inputs, process, and output. Then test it with a real example and check assumptions. This offline build uses templates rather than a language model, so include the topic, your level, and an example for a more useful breakdown.";
+  }
+  if (/\b(create|write|draft|sermon|post|caption)\b/.test(t)) {
+    return localMode("Creator", q);
+  }
+  if (/\b(plan|roadmap|launch|implement|project|milestone)\b/.test(t)) {
+    return localMode("Project planner", q);
+  }
+
+  const checks = reasonLocally(q);
+  const recentContext = String(context ?? "").trim();
+  return [
+    emotion.opening,
+    "",
+    "LOCAL REASONING CHECKLIST",
+    checks.summary,
+    "",
+    "Offline limitation: I am using deterministic on-device rules, not a hosted language model. I cannot verify current facts or invent a reliable detailed answer without source material.",
+    recentContext ? "Recent conversation context is available locally; tell me which earlier detail to apply." : ""
+  ].filter(Boolean).join("\n");
 }
