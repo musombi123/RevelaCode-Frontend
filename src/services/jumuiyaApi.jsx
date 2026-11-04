@@ -893,6 +893,8 @@ export function useJumuiyaApi() {
 
       getBiasharaTeam: (businessId) => getData("/biashara/team", { businessId }),
       inviteBiasharaTeamMember: (businessId, data) => postData("/biashara/team/invitations", data, { businessId }),
+      acceptBiasharaTeamInvitation: (data, options = {}) =>
+        postData("/biashara/team/invitations/accept", data, options),
       removeBiasharaTeamMember: (businessId, memberId) =>
         deleteData(`/biashara/team/members/${encodeId(memberId, "Member ID")}`, { businessId }),
 
