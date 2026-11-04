@@ -297,8 +297,8 @@ export const DEMO_FARM = {
   market: DEMO_MARKET,
 };
 export const DEMO_FARM_RIGHTS_QUEUE = [
-  { id: demoId("rights-case", 1), farm_id: DEMO_FARMS[0].id, farm_name_snapshot: DEMO_FARMS[0].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mariakani", status: "pending", submitted_at: "2026-10-29T09:00:00.000Z", is_demo: true },
-  { id: demoId("rights-case", 2), farm_id: DEMO_FARMS[1].id, farm_name_snapshot: DEMO_FARMS[1].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mtwapa", status: "more_info", submitted_at: "2026-10-30T11:30:00.000Z", is_demo: true },
+  { id: demoId("rights-case", 1), farm_id: DEMO_FARMS[0].id, farm_name_snapshot: DEMO_FARMS[0].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mariakani", rights_basis: "owner", evidence_type: "sample_reference", evidence_reference: "DEMO-LAND-REF-001", status: "pending", created_at: "2026-10-29T09:00:00.000Z", is_demo: true },
+  { id: demoId("rights-case", 2), farm_id: DEMO_FARMS[1].id, farm_name_snapshot: DEMO_FARMS[1].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mtwapa", rights_basis: "lease", evidence_type: "sample_reference", evidence_reference: "DEMO-LEASE-REF-002", status: "more_info", created_at: "2026-10-30T11:30:00.000Z", is_demo: true },
 ];
 export const DEMO_SHAMBA_SAFETY_REPORTS = [
   { id: demoId("safety-report", 1), listing_id: "demo-listing-001", title: "Sample marketplace listing review", description: "Synthetic safety report for demonstrating administrator review.", status: "open", category: "listing_accuracy", created_at: DEMO_STAMP, is_demo: true },
@@ -308,9 +308,9 @@ export const DEMO_SOIL_SERVICE_REQUESTS = [
   { id: demoId("soil-service", 1), farm_id: DEMO_FARMS[0].id, farmer_name: DEMO_FARMER.farmer_name, service_type: "laboratory_soil_test", status: "pending", county: "Kilifi", is_demo: true },
 ];
 export const DEMO_FARM_VERIFICATION_QUEUE = [
-  { id: demoId("farmer-review", 1), farmer_id: "demo-farmer-pending-1", farmer_name: "Sample Farmer Pending", county: "Kilifi", verification_status: "pending", is_demo: true },
-  { id: demoId("farmer-review", 2), farmer_id: "demo-farmer-info-2", farmer_name: "Sample Farmer — More Information", county: "Mombasa", verification_status: "more_info", is_demo: true },
-  { id: demoId("farmer-review", 3), farmer_id: "demo-farmer-reviewed-3", farmer_name: "Sample Farmer Reviewed", county: "Makueni", verification_status: "demo", is_demo: true },
+  { id: demoId("farmer-review", 1), farmer_id: "demo-farmer-pending-1", farmer_name: "Sample Farmer Pending", phone: "0700000401", county: "Kilifi", town: "Mariakani", farming_type: "Crop farming", experience_years: 6, primary_crops: ["Maize", "Cowpeas"], livestock: ["Goats"], description: "Synthetic profile for demonstrating an administrator review.", verification_status: "pending", created_at: "2026-10-28T08:00:00.000Z", is_demo: true },
+  { id: demoId("farmer-review", 2), farmer_id: "demo-farmer-info-2", farmer_name: "Sample Farmer — More Information", phone: "0700000402", county: "Mombasa", town: "Likoni", farming_type: "Mixed farming", experience_years: 3, primary_crops: ["Tomatoes", "Kale"], livestock: ["Poultry"], description: "Synthetic profile awaiting one additional supporting detail.", verification_status: "more_info", created_at: "2026-10-29T10:00:00.000Z", is_demo: true },
+  { id: demoId("farmer-review", 3), farmer_id: "demo-farmer-reviewed-3", farmer_name: "Sample Farmer Reviewed", phone: "0700000403", county: "Makueni", town: "Wote", farming_type: "Crop farming", experience_years: 11, primary_crops: ["Beans", "Green grams"], livestock: [], description: "Synthetic profile demonstrating an already reviewed record.", verification_status: "demo", created_at: "2026-10-20T09:00:00.000Z", is_demo: true },
 ];
 
 export const DEMO_SCHOOL = {
