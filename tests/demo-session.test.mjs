@@ -243,6 +243,12 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(css, /prefers-reduced-motion/);
   assert.match(provider, /localStorage\.getItem/);
   assert.match(provider, /localStorage\.setItem/);
+  assert.match(provider, /startPresentation/);
+  assert.match(provider, /exitPresentation/);
+  assert.match(provider, /presentationOnly/);
+  assert.match(overlay, /if \(!active \|\| presentationOnly\) return null/);
+  assert.match(read("src/demo/DemoLauncher.jsx"), /Browse demo systems/);
+  assert.match(read("src/demo/DemoLauncher.jsx"), /Exit presentation/);
   assert.match(api, /prototype\.send = function demoSafeSend/);
   assert.match(api, /navigator\.sendBeacon/);
   assert.match(api, /shouldMockRequest/);
