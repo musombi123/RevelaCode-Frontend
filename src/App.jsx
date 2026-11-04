@@ -21,6 +21,7 @@ import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
 import BiasharaInvitationPage from "./pages/BiasharaInvitationPage.jsx";
 import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage.jsx";
+import SupportPaymentRetryPage from "./pages/SupportPaymentRetryPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
 import BiasharaPublicWebsitePage from "./pages/jumuiya/BiasharaPublicWebsitePage.jsx";
@@ -338,6 +339,7 @@ export default function App() {
               <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+              <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
               <Route
                 path="/accounts"
                 element={
