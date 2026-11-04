@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
+import { registerPlugin } from "@capacitor/core";
+
+const NativeBrowser = registerPlugin("Browser");
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
 
@@ -316,16 +319,31 @@ export default function StartModal() {
     );
 
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     if (!baseUrl) {
       setError("The backend URL is not configured.");
       return;
     }
-    if (window.Capacitor?.isNativePlatform?.()) {
-      setError("Google sign-in in the Android APK must open the system browser. This APK needs the Capacitor Browser plugin and deep-link handler before enabling this button.");
+
+    const isNativeAndroid = Boolean(window.Capacitor?.isNativePlatform?.());
+    const authorizationUrl = new URL(`${baseUrl}/api/oauth/google/start`);
+    authorizationUrl.searchParams.set("mode", "login");
+    authorizationUrl.searchParams.set("client", isNativeAndroid ? "android" : "web");
+
+    if (isNativeAndroid) {
+      try {
+        await NativeBrowser.open({
+          url: authorizationUrl.toString(),
+          toolbarColor: "#08111F",
+        });
+      } catch (error) {
+        console.error("Could not open the Android system browser for Google sign-in.", error);
+        setError(error?.message || "Google sign-in could not open the Android browser. Please try again.");
+      }
       return;
     }
-    window.location.assign(`${baseUrl}/api/oauth/google/start?mode=login&client=web`);
+
+    window.location.assign(authorizationUrl.toString());
   };
 
   const requestVerificationCode = () =>
