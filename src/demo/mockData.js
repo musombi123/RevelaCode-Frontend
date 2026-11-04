@@ -313,6 +313,45 @@ export const DEMO_FARM_VERIFICATION_QUEUE = [
   { id: demoId("farmer-review", 3), farmer_id: "demo-farmer-reviewed-3", farmer_name: "Sample Farmer Reviewed", phone: "0700000403", county: "Makueni", town: "Wote", farming_type: "Crop farming", experience_years: 11, primary_crops: ["Beans", "Green grams"], livestock: [], description: "Synthetic profile demonstrating an already reviewed record.", verification_status: "demo", created_at: "2026-10-20T09:00:00.000Z", is_demo: true },
 ];
 
+export const DEMO_PARENTS = DEMO_STUDENTS.slice(0, 80).map((student, i) => ({
+  id: demoId("parent", i + 1), parent_name: student.guardian_name,
+  full_name: student.guardian_name, phone: student.guardian_phone,
+  email: student.guardian_email, learner_count: 1 + (i % 3),
+  linked_admission_numbers: [student.admission_number], is_demo: true,
+}));
+export const DEMO_SCHOOL_INVENTORY = [
+  ["Exercise books", 420, "pieces"], ["Chalk boxes", 38, "boxes"],
+  ["Textbooks", 860, "copies"], ["Laboratory gloves", 120, "pairs"],
+  ["Sports balls", 24, "pieces"], ["Cleaning detergent", 18, "litres"],
+  ["Printer paper", 35, "reams"], ["First aid kits", 6, "kits"],
+  ["Library notebooks", 140, "pieces"], ["Art materials", 75, "sets"],
+].map((row, i) => ({ id: demoId("school-stock", i + 1), item_name: row[0], name: row[0], quantity: row[1], unit: row[2], reorder_level: Math.max(5, Math.floor(row[1] * 0.15)), status: "available", is_demo: true }));
+export const DEMO_SCHOOL_RECEIPTS = DEMO_FEES.filter((fee) => fee.amount_paid > 0).slice(0, 30).map((fee, i) => ({
+  id: demoId("fee-receipt", i + 1), receipt_number: "JDS-RCP-" + String(i + 1).padStart(4, "0"),
+  student_id: fee.student_id, student_name: fee.student_name,
+  admission_number: fee.admission_number, amount: fee.amount_paid,
+  payment_method: ["cash", "mpesa", "bank"][i % 3], status: "recorded",
+  received_on: "2026-11-" + String((i % 4) + 1).padStart(2, "0"), is_demo: true,
+}));
+export const DEMO_FEE_REMINDERS = DEMO_FEES.filter((fee) => fee.balance > 0).slice(0, 25).map((fee, i) => ({
+  id: demoId("fee-reminder", i + 1), student_id: fee.student_id,
+  student_name: fee.student_name, guardian_name: DEMO_STUDENTS[i].guardian_name,
+  guardian_phone: DEMO_STUDENTS[i].guardian_phone, balance: fee.balance,
+  status: i % 3 === 0 ? "sent" : "queued", channel: "demo_only", is_demo: true,
+}));
+export const DEMO_SCHOOL_SYNC_JOBS = [
+  { id: demoId("school-sync", 1), job_type: "student_register_export", status: "completed", records_processed: 320, created_at: DEMO_STAMP, is_demo: true },
+  { id: demoId("school-sync", 2), job_type: "attendance_import_preview", status: "preview", records_processed: 90, created_at: DEMO_STAMP, is_demo: true },
+  { id: demoId("school-sync", 3), job_type: "fee_ledger_reconciliation", status: "completed", records_processed: 120, created_at: DEMO_STAMP, is_demo: true },
+];
+export const DEMO_SCHOOL_REPORTS = {
+  attendance: { attendance_rate: 94, present: 85, absent: 4, late: 1, total: 90 },
+  fees: { billed: 2160000, collected: 1080000, outstanding: 1080000, currency: "KES" },
+  academics: { assessments: DEMO_ASSESSMENTS.length, average_score: 68, pass_rate: 82 },
+  enrolment: { total: DEMO_STUDENTS.length, active: DEMO_STUDENTS.filter((x) => x.status === "active").length, classes: DEMO_CLASSES.length },
+  is_demo: true,
+};
+
 export const DEMO_SCHOOL = {
   school: {
     id: "demo-school-1", school_id: "demo-school-1", name: "Jumuiya Demonstration School",
@@ -335,6 +374,8 @@ export const DEMO_SCHOOL = {
   students: DEMO_STUDENTS, classes: DEMO_CLASSES, staff: DEMO_STAFF,
   lessons: DEMO_LESSONS, assignments: DEMO_ASSIGNMENTS, attendance: DEMO_ATTENDANCE,
   assessments: DEMO_ASSESSMENTS, fees: DEMO_FEES, timetable: DEMO_TIMETABLE,
+  parents: DEMO_PARENTS, inventory: DEMO_SCHOOL_INVENTORY, receipts: DEMO_SCHOOL_RECEIPTS,
+  fee_reminders: DEMO_FEE_REMINDERS, reports: DEMO_SCHOOL_REPORTS, sync_jobs: DEMO_SCHOOL_SYNC_JOBS,
   projects: DEMO_CBC_PROJECTS, events: DEMO_SCHOOL_EVENTS, library: DEMO_SCHOOL_LIBRARY,
 };
 export const DEMO_SCHOOL_ACCESS = {
@@ -432,7 +473,17 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
     if (path.endsWith("/assignments")) return listResponse("assignments", DEMO_ASSIGNMENTS);
     if (path.endsWith("/attendance")) return listResponse("attendance", DEMO_ATTENDANCE);
     if (path.endsWith("/assessments")) return listResponse("assessments", DEMO_ASSESSMENTS);
-    if (path.endsWith("/fees") || path.includes("/fee-status") || path.includes("/receipts")) return listResponse("fees", DEMO_FEES);
+    if (path.includes("/finance/fee-reminders")) return listResponse("reminders", DEMO_FEE_REMINDERS);
+    if (path.includes("/finance/payment-accounts")) return { success: true, demo: true, accounts: [{ id: "demo-school-mpesa", name: "Demo M-Pesa Till", provider: "Safaricom", account_reference: "JDS-DEMO", status: "demo", is_demo: true }, { id: "demo-school-bank", name: "Demo School Bank", provider: "Bank", account_reference: "000000-DEMO", status: "demo", is_demo: true }], data: { accounts: [{ id: "demo-school-mpesa", name: "Demo M-Pesa Till", provider: "Safaricom", account_reference: "JDS-DEMO", status: "demo", is_demo: true }] } };
+    if (path.includes("/finance/receipts")) return listResponse("receipts", DEMO_SCHOOL_RECEIPTS);
+    if (path.includes("/finance/fee-status")) return listResponse("fee_status", DEMO_FEES, { totals: DEMO_SCHOOL_REPORTS.fees });
+    if (path.endsWith("/fees")) return listResponse("fees", DEMO_FEES);
+    if (path.includes("/inventory/needs")) return listResponse("needs", [{ id: demoId("inventory-need", 1), item_name: "Exercise books", quantity_requested: 80, status: "pending", is_demo: true }, { id: demoId("inventory-need", 2), item_name: "Laboratory gloves", quantity_requested: 20, status: "approved", is_demo: true }]);
+    if (path.includes("/inventory/movements")) return listResponse("movements", [{ id: demoId("stock-movement", 1), item_name: "Exercise books", movement_type: "issue", quantity: 25, created_at: DEMO_STAMP, is_demo: true }, { id: demoId("stock-movement", 2), item_name: "Textbooks", movement_type: "receipt", quantity: 60, created_at: DEMO_STAMP, is_demo: true }]);
+    if (path.includes("/inventory/items")) return listResponse("items", DEMO_SCHOOL_INVENTORY);
+    if (path.includes("/portal/parents")) return listResponse("parents", DEMO_PARENTS);
+    if (path.includes("/reports/") || path.includes("/intelligence/")) return { success: true, demo: true, reports: DEMO_SCHOOL_REPORTS, dashboard: DEMO_SCHOOL_REPORTS, data: DEMO_SCHOOL_REPORTS };
+    if (path.includes("/sync/")) return listResponse("jobs", DEMO_SCHOOL_SYNC_JOBS, { status: "demo_preview" });
     if (path.includes("/timetable")) return listResponse("timetable", DEMO_TIMETABLE);
     if (path.includes("/cbc/projects")) return listResponse("projects", DEMO_CBC_PROJECTS);
     if (path.endsWith("/events") || path.endsWith("/calendar")) return listResponse("events", DEMO_SCHOOL_EVENTS);
