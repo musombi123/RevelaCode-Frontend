@@ -240,7 +240,7 @@ export default function DemoOverlay() {
 
   const [rect, setRect] = useState(null);
   useEffect(() => {
-    if (!active || !targetElement) {
+    if (!active || presentationOnly || !targetElement) {
       setRect(null);
       return undefined;
     }
@@ -315,7 +315,7 @@ export default function DemoOverlay() {
   }, [active]);
 
   useEffect(() => {
-    if (!active || step?.action !== "click" || !targetElement) return undefined;
+    if (!active || presentationOnly || step?.action !== "click" || !targetElement) return undefined;
     const onClick = () => advanceAfterAction();
     targetElement.addEventListener("click", onClick, false);
     return () => targetElement.removeEventListener("click", onClick, false);
@@ -347,7 +347,7 @@ export default function DemoOverlay() {
   }, [exitConfirm]);
 
   useEffect(() => {
-    if (!active || !step || !voiceOn || typeof window === "undefined" || !window.speechSynthesis) return undefined;
+    if (!active || presentationOnly || !step || !voiceOn || typeof window === "undefined" || !window.speechSynthesis) return undefined;
     const synth = window.speechSynthesis;
     const voices = synth.getVoices();
     const desired = lang === "sw" ? "sw-KE" : "en-KE";
@@ -364,7 +364,7 @@ export default function DemoOverlay() {
   }, [active, chapterId, stepIndex, voiceOn, lang, step]);
 
   useEffect(() => {
-    if (!active || Capacitor.getPlatform() !== "android") return undefined;
+    if (!active || presentationOnly || Capacitor.getPlatform() !== "android") return undefined;
     let disposed = false;
     let listener = null;
     App.addListener("backButton", () => {
