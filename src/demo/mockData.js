@@ -348,7 +348,6 @@ export const DEMO_SOIL_SERVICE_REQUESTS = [
 export const DEMO_FARM_VERIFICATION_QUEUE = [
   { id: demoId("farmer-review", 1), farmer_id: "demo-farmer-pending-1", farmer_name: "Sample Farmer Pending", phone: "0700000401", county: "Kilifi", town: "Mariakani", farming_type: "Crop farming", experience_years: 6, primary_crops: ["Maize", "Cowpeas"], livestock: ["Goats"], description: "Synthetic profile for demonstrating an administrator review.", verification_status: "pending", created_at: "2026-10-28T08:00:00.000Z", is_demo: true },
   { id: demoId("farmer-review", 2), farmer_id: "demo-farmer-info-2", farmer_name: "Sample Farmer — More Information", phone: "0700000402", county: "Mombasa", town: "Likoni", farming_type: "Mixed farming", experience_years: 3, primary_crops: ["Tomatoes", "Kale"], livestock: ["Poultry"], description: "Synthetic profile awaiting one additional supporting detail.", verification_status: "more_info", created_at: "2026-10-29T10:00:00.000Z", is_demo: true },
-  { id: demoId("farmer-review", 3), farmer_id: "demo-farmer-reviewed-3", farmer_name: "Sample Farmer Reviewed", phone: "0700000403", county: "Makueni", town: "Wote", farming_type: "Crop farming", experience_years: 11, primary_crops: ["Beans", "Green grams"], livestock: [], description: "Synthetic profile demonstrating an already reviewed record.", verification_status: "demo", created_at: "2026-10-20T09:00:00.000Z", is_demo: true },
 ];
 
 export const DEMO_PARENTS = DEMO_STUDENTS.slice(0, 80).map((student, i) => ({
