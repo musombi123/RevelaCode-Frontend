@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "src/App.jsx"
+      - "src/components/admin/AdminDashboard.jsx"
+      - "src/components/admin/AdminSidebar.jsx"
+      - "src/components/admin/AdminSchoolStaffInvitations.jsx"
       - "src/Dashboard/BiasharaDashboard.jsx"
       - "src/Dashboard/Biashara/BiasharaContractsWorkspace.jsx"
       - "src/Dashboard/ElimuDashboardWorkspace.jsx"
@@ -20,6 +23,9 @@ on:
     branches: [main]
     paths:
       - "src/App.jsx"
+      - "src/components/admin/AdminDashboard.jsx"
+      - "src/components/admin/AdminSidebar.jsx"
+      - "src/components/admin/AdminSchoolStaffInvitations.jsx"
       - "src/Dashboard/BiasharaDashboard.jsx"
       - "src/Dashboard/Biashara/BiasharaContractsWorkspace.jsx"
       - "src/Dashboard/ElimuDashboardWorkspace.jsx"
