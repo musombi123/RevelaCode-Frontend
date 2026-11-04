@@ -1,0 +1,41 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
+
+test("Elimu exposes school-scoped staff invitations in the school workspace", () => {
+  const page = read("src/Dashboard/elimu/ElimuStaffManagement.jsx");
+  const workspace = read("src/Dashboard/ElimuDashboardWorkspace.jsx");
+  const api = read("src/services/elimuApi.jsx");
+
+  for (const marker of ["inviteStaff", "getStaffInvitations", "resendStaffInvitation", "revokeStaffInvitation"]) {
+    assert.ok(page.includes(marker) || api.includes(marker), "Elimu invitation flow is missing " + marker);
+  }
+  assert.match(workspace, /ElimuStaffManagement/);
+  assert.match(workspace, /normalizedPath === "elimu\/staff"/);
+  assert.match(api, /post\("staff\/invite"/);
+});
+
+test("Biashara exposes invitation creation, one-time share link, and authenticated acceptance", () => {
+  const workspace = read("src/Dashboard/Biashara/BiasharaContractsWorkspace.jsx");
+  const page = read("src/pages/BiasharaInvitationPage.jsx");
+  const api = read("src/services/jumuiyaApi.jsx");
+  const routes = read("src/App.jsx");
+
+  assert.match(workspace, /inviteBiasharaTeamMember/);
+  assert.match(workspace, /accept_token/);
+  assert.match(workspace, /\/biashara\/invitation/);
+  assert.match(workspace, /Copy invite link/);
+  assert.match(page, /acceptBiasharaTeamInvitation/);
+  assert.match(page, /emailMatches/);
+  assert.match(page, /\/app\?hub=biashara/);
+  assert.match(api, /team\/invitations\/accept/);
+  assert.match(routes, /path="\/biashara\/invitation"/);
+});
+
+test("Biashara Team remains reachable in small/simple workspaces", () => {
+  const dashboard = read("src/Dashboard/BiasharaDashboard.jsx");
+  assert.match(dashboard, /!\["automations", "sync"\]\.includes\(item\.key\)/);
+  assert.doesNotMatch(dashboard, /!\["automations", "sync", "team"\]\.includes\(item\.key\)/);
+});
