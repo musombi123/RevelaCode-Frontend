@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import ShambaFarmerVerificationDashboard from "@/Dashboard/ShambaFarmerVerificationDashboard.jsx";
 
 const RIGHTS_BASES = [
   ["registered_owner", "Registered owner"],
@@ -465,6 +466,9 @@ export default function ShambaTrustDashboard() {
       {admin && (
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-[#DCE5E1] pb-3 dark:border-slate-800"><ShieldCheck size={18} className="text-[#087F5B]" /><h2 className="text-lg font-black text-slate-900 dark:text-white">Administrator review queues</h2></div>
+          <div className="overflow-hidden rounded-2xl border border-[#DCE5E1] bg-white dark:border-slate-800 dark:bg-slate-950">
+            <ShambaFarmerVerificationDashboard />
+          </div>
           <div>
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h3 className="font-black text-slate-900 dark:text-white">Farm-rights cases</h3><p className="text-[12px] text-slate-500">These decisions are separate from farmer-profile approval.</p></div><StatusPill value={rightsQueue.length ? "pending" : "verified"} /></div>
             {rightsQueue.length ? <div className="grid gap-3 lg:grid-cols-2">{rightsQueue.map((item) => {
