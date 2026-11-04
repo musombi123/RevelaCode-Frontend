@@ -95,7 +95,10 @@ export default function AdminJumuiyaSamples() {
         setError(loadError?.message || "Jumuiya sample records could not be loaded.");
       }
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setSeeding(false);
+      }
     }
   }, [adminApi, hub]);
 
