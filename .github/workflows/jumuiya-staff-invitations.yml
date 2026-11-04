@@ -1,0 +1,55 @@
+name: Jumuiya staff invitation checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/App.jsx"
+      - "src/Dashboard/BiasharaDashboard.jsx"
+      - "src/Dashboard/Biashara/BiasharaContractsWorkspace.jsx"
+      - "src/Dashboard/ElimuDashboardWorkspace.jsx"
+      - "src/Dashboard/elimu/ElimuStaffManagement.jsx"
+      - "src/pages/BiasharaInvitationPage.jsx"
+      - "src/services/jumuiyaApi.jsx"
+      - "src/services/elimuApi.jsx"
+      - "tests/jumuiya-staff-invitations.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/jumuiya-staff-invitations.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/App.jsx"
+      - "src/Dashboard/BiasharaDashboard.jsx"
+      - "src/Dashboard/Biashara/BiasharaContractsWorkspace.jsx"
+      - "src/Dashboard/ElimuDashboardWorkspace.jsx"
+      - "src/Dashboard/elimu/ElimuStaffManagement.jsx"
+      - "src/pages/BiasharaInvitationPage.jsx"
+      - "src/services/jumuiyaApi.jsx"
+      - "src/services/elimuApi.jsx"
+      - "tests/jumuiya-staff-invitations.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/jumuiya-staff-invitations.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  staff-invitation-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Test staff invitation flows across Elimu and Biashara
+        run: npm run test:staff-invitations
+      - name: Protect Jumuiya sample workspace
+        run: npm run test:jumuiya-samples
+      - name: Build production frontend
+        run: npm run build
