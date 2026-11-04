@@ -11,6 +11,7 @@ import {
   Users,
   BookOpen,
   ShieldCheck,
+  Headphones,
 } from "lucide-react";
 
 
@@ -31,6 +32,7 @@ export default function SupportSidebar({
   const supportAdmin = String(role || "").toLowerCase() === "support_admin";
   const navigation = supportAdmin ? [
     ...views,
+    { key: "supportCenter", label: "Support Team Center", icon: Headphones },
     { key: "team", label: "Team operations", icon: Users },
     { key: "study", label: "Study Hub management", icon: BookOpen },
     { key: "policies", label: "Policies and terms", icon: ShieldCheck },
