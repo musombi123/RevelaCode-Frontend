@@ -197,6 +197,7 @@ test("required stable tour targets exist in the real application surfaces", () =
     community: read("src/Dashboard/CommunityDashboard.jsx") + read("src/Dashboard/Community/CommunityComposer.jsx"),
     ai: read("src/components/AIAssistantDashboard.jsx") + read("src/components/InputBar.jsx"),
     account: read("src/components/UserAccountDashboard.jsx"),
+    admin: read("src/components/admin/AdminDashboard.jsx"),
   };
 
   const required = {
@@ -209,6 +210,7 @@ test("required stable tour targets exist in the real application surfaces", () =
     community: ["community-overview", "community-create-post", "community-composer-title", "community-back-feed", "community-chat-nav"],
     ai: ["ai-overview", "ai-chat-input", "ai-send-message", "ai-vision-tools"],
     account: ["account-overview", "account-menu-", "account-payments-preview"],
+    admin: ["DemoLauncher", 'startAt="welcome"'],
   };
 
   for (const [surface, markers] of Object.entries(required)) {
