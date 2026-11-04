@@ -33,6 +33,7 @@ import AdminShambaVerification from "./AdminShambaVerification.jsx";
 import AdminRevenueManagement from "./AdminRevenueManagement.jsx";
 import AdminJumuiyaDirectory from "./AdminJumuiyaDirectory.jsx";
 import AdminJumuiyaSamples from "./AdminJumuiyaSamples.jsx";
+import AdminSchoolStaffInvitations from "./AdminSchoolStaffInvitations.jsx";
 import AdminOperationsHandbook from "./AdminOperationsHandbook.jsx";
 import MetaEngineerLab from "@/pages/MetaEngineerLab.jsx";
 import SciCoreDashboard from "@/pages/SciCoreDashboard.jsx";
@@ -93,6 +94,12 @@ const adminPages = {
     description: "Inspect isolated sample records across Community Center, Shamba, Biashara, Elimu, Marketplace, Faith, and shared services.",
     icon: Database,
     component: AdminJumuiyaSamples,
+  },
+  schoolStaffInvitations: {
+    title: "School Staff Invitations",
+    description: "Invite teachers and operational staff into an explicitly selected Elimu school.",
+    icon: Users,
+    component: AdminSchoolStaffInvitations,
   },
 
   verification: {
@@ -195,7 +202,7 @@ export default function AdminDashboard({ initialTab = "overview" }) {
     { label: "Platform", keys: ["overview", "directories", "sampleData", "revenue"] },
     { label: "Verification", keys: ["verification", "biasharaVerification", "shambaVerification"] },
     { label: "Content", keys: ["study", "policy", "scripture"] },
-    { label: "Administration", keys: ["team", "operations", "settings"] },
+    { label: "Administration", keys: ["team", "schoolStaffInvitations", "operations", "settings"] },
   ];
 
   const activeGroup =
