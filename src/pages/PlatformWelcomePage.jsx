@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useTheme } from "../components/hooks/useTheme.jsx";
+import { useRevenueApi } from "../services/revenueApi.jsx";
 import "./PlatformWelcomePage.css";
 
 
@@ -111,6 +112,20 @@ const faqs = [
 ];
 
 const greetingWords = ["Karibu", "Welcome", "Bienvenue", "Willkommen"];
+const PAID_PLAN_HUBS = new Set(["smart_ai", "shamba", "biashara", "elimu", "marketplace"]);
+
+function formatPlanMoney(amount, currency = "KES") {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return `${currency} —`;
+  return `${currency} ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(value)}`;
+}
+
+function planPeriodLabel(interval) {
+  const value = String(interval || "").toLowerCase();
+  if (value === "year") return "365 days";
+  if (value === "month") return "30 days";
+  return value.replace(/_/g, " ");
+}
 
 function NetworkBackdrop() {
   return (
@@ -249,12 +264,38 @@ function SectorCard({ sector }) {
 
 export default function PlatformWelcomePage() {
   const { theme, setTheme } = useTheme();
+  const revenueApi = useRevenueApi();
+  const [cataloguePlans, setCataloguePlans] = React.useState([]);
+  const [catalogueLoading, setCatalogueLoading] = React.useState(true);
+  const [catalogueError, setCatalogueError] = React.useState("");
+  const [checkoutEnabled, setCheckoutEnabled] = React.useState(false);
   const [isDark, setIsDark] = React.useState(
     () => typeof document !== "undefined" && document.documentElement.classList.contains("dark")
   );
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [greetingIndex, setGreetingIndex] = React.useState(0);
   const [greetingVisible, setGreetingVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    let active = true;
+    setCatalogueLoading(true);
+    setCatalogueError("");
+    revenueApi.listPlans(undefined, { requestScope: "" })
+      .then((response) => {
+        if (!active) return;
+        setCataloguePlans(Array.isArray(response?.plans) ? response.plans.filter((plan) => plan && plan.status !== "retired") : []);
+        setCheckoutEnabled(response?.checkout_enabled === true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setCatalogueError(error?.message || "The live plan catalogue is temporarily unavailable.");
+        setCheckoutEnabled(false);
+      })
+      .finally(() => {
+        if (active) setCatalogueLoading(false);
+      });
+    return () => { active = false; };
+  }, [revenueApi]);
 
   React.useEffect(() => {
     const query = typeof window.matchMedia === "function"
@@ -354,6 +395,13 @@ export default function PlatformWelcomePage() {
   };
 
   const closeMobileMenu = () => setMobileOpen(false);
+  const freePlan = cataloguePlans.find((plan) => String(plan.hub || "").toLowerCase() === "all" && Number(plan.amount) <= 0) || null;
+  const paidPlans = cataloguePlans.filter((plan) =>
+    Number(plan.amount) > 0 &&
+    PAID_PLAN_HUBS.has(String(plan.hub || "").toLowerCase()) &&
+    ["month", "year"].includes(String(plan.interval || "").toLowerCase())
+  );
+  const pricingStatus = paidPlans.some((plan) => plan.status === "available") ? "Published plans" : "Plans awaiting publication";
 
   const products = [
     {
@@ -401,6 +449,7 @@ export default function PlatformWelcomePage() {
 
           <nav aria-label="Primary navigation" className="hidden items-center gap-8 md:flex">
             <a href="#products" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Products</a>
+            <a href="#plans" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Plans</a>
             <a href="#sectors" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Sectors</a>
             <a href="#impact" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Impact</a>
             <a href="#contact" className="text-sm font-semibold text-slate-600 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:text-blue-400">Contact</a>
@@ -431,6 +480,7 @@ export default function PlatformWelcomePage() {
         >
           <nav aria-label="Mobile navigation" className="mx-auto grid max-w-7xl gap-1 py-3">
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#products" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Products</a>
+            <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#plans" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Plans</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#sectors" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Sectors</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#impact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Impact</a>
             <a onClick={closeMobileMenu} tabIndex={mobileOpen ? 0 : -1} href="#contact" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-200 dark:hover:bg-slate-900">Contact</a>
@@ -548,6 +598,116 @@ export default function PlatformWelcomePage() {
         </div>
       </section>
 
+      <section id="plans" className="scroll-mt-20 bg-white py-20 dark:bg-slate-950 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="welcome-reveal mx-auto max-w-3xl text-center">
+            <p className="text-sm font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">RevelaCode Premium</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-4xl">Plans built around each hub.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">Compare the complete feature list and current prices from the live Revenue Engine catalogue. Sign in to check trial eligibility and continue to secure M-Pesa checkout.</p>
+            <span className="mt-4 inline-flex rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:text-slate-300">{pricingStatus}</span>
+          </div>
+
+          {catalogueLoading ? (
+            <p className="mt-9 text-center text-sm text-slate-500 dark:text-slate-400">Loading published plan catalogue…</p>
+          ) : null}
+          {catalogueError ? (
+            <p role="status" className="mx-auto mt-7 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{catalogueError}</p>
+          ) : null}
+
+          {!catalogueLoading && !catalogueError ? (
+            <>
+              <div className="welcome-reveal mt-9 grid gap-4 md:grid-cols-2">
+                {freePlan ? (
+                  <article className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">{freePlan.name}</h3>
+                        <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-300">Core ecosystem access</p>
+                      </div>
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">Free</span>
+                    </div>
+                    <p className="mt-4 text-2xl font-black text-slate-950 dark:text-white">KES 0</p>
+                    <ul className="mt-4 space-y-2">
+                      {(Array.isArray(freePlan.features) ? freePlan.features : []).map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm leading-6 text-slate-700 dark:text-slate-300"><Check size={16} className="mt-1 shrink-0 text-emerald-600" aria-hidden="true" />{feature}</li>
+                      ))}
+                    </ul>
+                    <a href="/app" className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200">Open free workspace <ArrowRight size={16} aria-hidden="true" /></a>
+                  </article>
+                ) : null}
+                <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+                  <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">Always-free hubs</h3>
+                  <div className="mt-4">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Community</h4>
+                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">Community membership and hub access remain free. The feed can be supported by sponsored advertising; paid ad campaigns are separate, reviewed requests and do not guarantee placement.</p>
+                  </div>
+                  <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Faith &amp; Scripture</h4>
+                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">Faith access remains free. There is no Faith hub subscription checkout.</p>
+                  </div>
+                  <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">Free membership is not converted into a paid subscription.</p>
+                </article>
+              </div>
+
+              <div className="mt-10">
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-slate-950 dark:text-white">Paid hub subscriptions</h3>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Only published plans can proceed to checkout. Draft plans remain visible for transparent comparison but cannot be purchased.</p>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{paidPlans.length} plan options</span>
+                </div>
+                {paidPlans.length === 0 ? (
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">No paid hub plans are currently listed in the Revenue Engine catalogue.</p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {paidPlans.map((plan) => {
+                      const available = plan.status === "available" && checkoutEnabled;
+                      const planHub = String(plan.hub || "").toLowerCase();
+                      const openPlanUrl = `/app?hub=home&premium=1&plan=${encodeURIComponent(plan.code)}`;
+                      return (
+                        <article key={plan.code} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-6">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">{planHub === "smart_ai" ? "RevelaAI" : planHub.replace(/_/g, " ")}</p>
+                              <h4 className="mt-2 text-lg font-extrabold text-slate-950 dark:text-white">{plan.name}</h4>
+                            </div>
+                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${available ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"}`}>
+                              {available ? "Available" : "Not yet published"}
+                            </span>
+                          </div>
+                          <p className="mt-5 text-3xl font-black tracking-tight text-slate-950 dark:text-white">{formatPlanMoney(plan.amount, plan.currency || "KES")}</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{planPeriodLabel(plan.interval)}</p>
+                          <ul className="mt-4 flex-1 space-y-2">
+                            {(Array.isArray(plan.features) ? plan.features : []).map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2 text-sm leading-6 text-slate-600 dark:text-slate-300"><Check size={16} className="mt-1 shrink-0 text-emerald-600" aria-hidden="true" />{feature}</li>
+                            ))}
+                          </ul>
+                          <a href={openPlanUrl} className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
+                            {available ? "Continue to secure checkout" : "View plan in RevelaCode"} <ArrowRight size={16} aria-hidden="true" />
+                          </a>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <p className="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                Checkout uses M-Pesa STK Push. RevelaCode never asks for your M-Pesa PIN or card details. The Backend calculates the final amount from the approved catalogue and activates access only after Safaricom payment verification. Automatic recurring renewals are not enabled.
+              </p>
+              {!checkoutEnabled ? <p className="mt-3 text-center text-xs text-amber-700 dark:text-amber-300">M-Pesa checkout is not currently enabled for public purchases. You can still compare the catalogue and explore the app.</p> : null}
+            </>
+          ) : null}
+
+          <div className="mt-8 text-center">
+            <a href="/app?hub=home&premium=1" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              Explore Premium in the app <ArrowRight size={16} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section id="sectors" className="scroll-mt-20 bg-white py-20 dark:bg-slate-950 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="welcome-reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -642,6 +802,7 @@ export default function PlatformWelcomePage() {
           <span>© {new Date().getFullYear()} RevelaCode Software Solutions</span>
           <div className="flex flex-wrap items-center gap-5">
             <a href="#products" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Products</a>
+            <a href="#plans" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Plans</a>
             <a href="#sectors" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Sectors</a>
             <a href="#contact" className="hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-400">Contact</a>
             <span className="font-semibold text-slate-700 dark:text-slate-300">Code. Innovate. Transform. · Built to code. Built to innovate. Built to transform.</span>
