@@ -443,7 +443,11 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
 
   if (lower.includes("/api/jumuiya/shamba") || lower.includes("/shamba/") || lower.includes("/farm")) {
     const path = routeKey(lower);
-    if (path.includes("/farmer/verification-queue")) return listResponse("items", DEMO_FARM_VERIFICATION_QUEUE);\n    if (path.endsWith("/trust/overview")) return { success: true, demo: true, overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true }, data: { overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true } } };\n    if (path.endsWith("/trust/verification-queue")) return listResponse("items", DEMO_FARM_RIGHTS_QUEUE);\n    if (path.endsWith("/trust/safety-reports")) return listResponse("items", DEMO_SHAMBA_SAFETY_REPORTS);\n    if (path.endsWith("/trust/soil-service-requests")) return listResponse("items", DEMO_SOIL_SERVICE_REQUESTS);
+    if (path.includes("/farmer/verification-queue")) return listResponse("items", DEMO_FARM_VERIFICATION_QUEUE);
+    if (path.endsWith("/trust/overview")) return { success: true, demo: true, overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true }, data: { overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true } } };
+    if (path.endsWith("/trust/verification-queue")) return listResponse("items", DEMO_FARM_RIGHTS_QUEUE);
+    if (path.endsWith("/trust/safety-reports")) return listResponse("items", DEMO_SHAMBA_SAFETY_REPORTS);
+    if (path.endsWith("/trust/soil-service-requests")) return listResponse("items", DEMO_SOIL_SERVICE_REQUESTS);
     if (path.endsWith("/farmer")) return { success: true, demo: true, farmer: DEMO_FARMER, data: { farmer: DEMO_FARMER } };
     if (path.endsWith("/dashboard")) return { success: true, demo: true, ...DEMO_FARM, data: DEMO_FARM.dashboard };
     if (path.includes("/weather")) return { success: true, demo: true, weather: DEMO_FARM.dashboard.weather, data: { weather: DEMO_FARM.dashboard.weather } };
