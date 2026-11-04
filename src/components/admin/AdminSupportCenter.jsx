@@ -91,6 +91,9 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
       };
       if (target === "verification") {
         setData((old) => ({ ...old, verification: old.verification || null }));
+      } else if (target === "invites") {
+        const [inviteResult, overviewResult] = await Promise.all([api("/invitations"), api("/overview")]);
+        setData((old) => ({ ...old, invites: inviteResult, team: overviewResult }));
       } else {
         const result = await api(routes[target] || "/overview");
         setData((old) => ({ ...old, [target]: result }));
