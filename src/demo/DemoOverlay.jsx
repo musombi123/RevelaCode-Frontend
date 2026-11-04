@@ -130,7 +130,7 @@ export default function DemoOverlay() {
   const location = useLocation();
   const { guestMode } = useAuth();
   const {
-    active, chapterId, stepIndex, lang, voiceOn, chapters,
+    active, presentationOnly, chapterId, stepIndex, lang, voiceOn, chapters,
     next, back, skip, jumpToChapter, exit, setLang, setVoiceOn, restart, completed,
   } = demo;
   const [targetElement, setTargetElement] = useState(null);
@@ -154,7 +154,7 @@ export default function DemoOverlay() {
 
   const routeHub = getRouteHub(step?.route);
   useEffect(() => {
-    if (!active || !routeHub) return;
+    if (!active || presentationOnly || !routeHub) return;
     // A guided click can itself change routes (for example Home → Biashara).
     // Let that action complete; the next step will establish the new hub route.
     if (step?.action === "click" && actionPendingRef.current) return;
@@ -165,13 +165,13 @@ export default function DemoOverlay() {
   }, [active, routeHub, step?.action, location.pathname, location.search, navigate]);
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || presentationOnly) return undefined;
     previousFocusRef.current = document.activeElement;
     return undefined;
   }, [active]);
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || presentationOnly) return undefined;
     const frame = window.requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       const first = getFocusable(dialog)[0];
@@ -184,7 +184,7 @@ export default function DemoOverlay() {
   // hide that underlying dialog from assistive technology so only the guided
   // dialog is modal; the tour's action button still activates its highlighted controls.
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || presentationOnly) return undefined;
     const startDialog = document.querySelector('[data-demo="welcome-entry"]');
     if (!startDialog) return undefined;
     const previousAriaHidden = startDialog.getAttribute("aria-hidden");
@@ -196,7 +196,7 @@ export default function DemoOverlay() {
   }, [active]);
 
   useEffect(() => {
-    if (!active || !step?.target || isFinish) {
+    if (!active || presentationOnly || !step?.target || isFinish) {
       setTargetElement(null);
       setTargetMissing(false);
       return undefined;
@@ -322,7 +322,7 @@ export default function DemoOverlay() {
   }, [active, step?.action, targetElement, advanceAfterAction]);
 
   useEffect(() => {
-    if (!active) {
+    if (!active || presentationOnly) {
       setMenuOpen(false);
       setExitConfirm(false);
       if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
@@ -385,7 +385,7 @@ export default function DemoOverlay() {
   }, [active, chapters, chapterId, stepIndex, back, exitConfirm, exit]);
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || presentationOnly) return undefined;
     const onDialogKeyDown = (event) => {
       const dialog = dialogRef.current;
       if (!dialog) return;
@@ -476,7 +476,7 @@ export default function DemoOverlay() {
     setRatingSent(true);
   };
 
-  if (!active) return null;
+  if (!active || presentationOnly) return null;
 
   const panelStyle = rect && !targetMissing && !isFinish ? (() => {
     const preferred = step?.placement || "auto";
