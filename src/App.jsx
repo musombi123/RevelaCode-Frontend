@@ -161,7 +161,7 @@ function PlatformDashboardRoute({ requiredRole, initialAdminTab = "overview" }) 
   const requiredRoles = requiredRole === "admin"
     ? ["admin", "platform_admin", "super_admin", "revelacode_admin"]
     : requiredRole === "support"
-      ? ["support", "support_admin"]
+      ? ["support", "support_agent", "support_admin"]
       : [requiredRole];
 
   return (
