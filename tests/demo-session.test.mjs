@@ -155,6 +155,9 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.equal(DEMO_SCHOOL.school.is_demo, true);
   assert.equal(DEMO_SCHOOL_ACCESS.allowed, true);
   assert.equal(DEMO_PRESENTATION_DATA.persistence, "disabled");
+  assert.equal(DEMO_SCHOOL_REPORTS.fees.billed, DEMO_SCHOOL_REPORTS.fees.collected + DEMO_SCHOOL_REPORTS.fees.outstanding);
+  assert.equal(DEMO_SCHOOL_REPORTS.attendance.present + DEMO_SCHOOL_REPORTS.attendance.absent + DEMO_SCHOOL_REPORTS.attendance.late, DEMO_SCHOOL_REPORTS.attendance.total);
+  assert.equal(DEMO_SHOP.finance.income_total - DEMO_SHOP.finance.expenses_total, DEMO_SHOP.finance.net_estimate);
   assert.equal(DEMO_STUDENTS.length, 320);
   assert.equal(DEMO_CLASSES.length, 12);
   assert.equal(DEMO_STAFF.length, 18);
