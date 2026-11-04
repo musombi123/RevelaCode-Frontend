@@ -278,6 +278,9 @@ export default function PlansModal({
     setPlansLoading(true);
     setPlansError("");
     setCatalogOffline(false);
+    setTrials([]);
+    setTrialCatalogueAvailable(false);
+    setTrialError("");
     try {
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         throw Object.assign(new Error(t.network), { name: "RevenueApiNetworkError" });
