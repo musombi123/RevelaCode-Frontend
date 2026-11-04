@@ -10,6 +10,7 @@ import SupportTickets from "./SupportTickets.jsx";
 import SupportHistory from "./SupportHistory.jsx";
 import SupportAnalytics from "./SupportAnalytics.jsx";
 import SupportAdminOperations from "./SupportAdminOperations.jsx";
+import AdminSupportCenter from "@/components/admin/AdminSupportCenter.jsx";
 import AdminStudyManagement from "@/components/admin/AdminStudyManagement.jsx";
 import AdminPolicyManagement from "@/components/admin/AdminPolicyManagement.jsx";
 import AdminOperationsHandbook from "@/components/admin/AdminOperationsHandbook.jsx";
@@ -21,6 +22,7 @@ const PAGE_META = {
   tickets: { title: "Support tickets", description: "Review requests, inspect details, and move tickets through resolution." },
   history: { title: "Team history", description: "Review recent ticket assignments and resolutions recorded by the platform." },
   analytics: { title: "Support analytics", description: "Track ticket volumes, resolution rate, and the latest support activity." },
+  supportCenter: { title: "Support Team Center", description: "Handle verification, invitations, plans, inbox and support payroll according to your role." },
   team: { title: "Support team operations", description: "Monitor team workload, assign tickets to active support agents and review recorded operational activity." },
   study: { title: "Study Hub management", description: "Manage existing study materials and reviewed Faith starter lessons under your delegated support-administrator role." },
   policies: { title: "Policies and terms", description: "Maintain approved policy and public legal-document revisions. Publish only reviewed text." },
@@ -40,7 +42,7 @@ export default function SupportDashboard() {
   const [error, setError] = useState("");
 
   const loadDashboard = useCallback(async (showRefresh = false) => {
-    if (!["support", "support_admin"].includes(String(user?.role || "").toLowerCase())) {
+    if (!["support", "support_agent", "support_admin"].includes(String(user?.role || "").toLowerCase())) {
       setError("A signed-in support account is required to open this workspace.");
       setLoading(false);
       return;
@@ -83,6 +85,7 @@ export default function SupportDashboard() {
     if (activeView === "tickets") return <SupportTickets />;
     if (activeView === "history") return <SupportHistory />;
     if (activeView === "analytics") return <SupportAnalytics />;
+    if (activeView === "supportCenter") return <AdminSupportCenter initialView="inbox" />;
     if (activeView === "team" && supportAdmin) return <SupportAdminOperations />;
     if (activeView === "study" && supportAdmin) return <AdminStudyManagement />;
     if (activeView === "policies" && supportAdmin) return <AdminPolicyManagement />;
