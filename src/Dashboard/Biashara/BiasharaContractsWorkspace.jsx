@@ -41,7 +41,9 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [form, setForm] = useState({ customer_name: "", due_date: "", description: "", quantity: "1", unit_price: "", currency: "KES", email: "", role: "sales", name: "", trigger: "low_stock", action: "create_alert", source: "csv_import", direction: "pull" });
+  const [invitationLink, setInvitationLink] = useState("");
+  const [invitationDetails, setInvitationDetails] = useState(null);
+  const [form, setForm] = useState({ customer_name: "", due_date: "", description: "", quantity: "1", unit_price: "", currency: "KES", email: "", role: "sales_agent", name: "", trigger: "low_stock", action: "create_alert", source: "csv_import", direction: "pull" });
   const title = titles[route] || titles.finance;
   const update = (key, value) => setForm((old) => ({ ...old, [key]: value }));
 
@@ -62,23 +64,45 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
 
   const submit = async (event) => {
     event.preventDefault(); setSaving(true); setError(""); setNotice("");
+    if (route === "team") { setInvitationLink(""); setInvitationDetails(null); }
+    let successNotice = "";
     try {
       if (route === "finance") {
         await api.createBiasharaInvoice(businessId, { customer_name: form.customer_name, currency: form.currency, due_date: form.due_date, items: [{ description: form.description, quantity: Number(form.quantity), unit_price: Number(form.unit_price) }] });
-        setNotice("Invoice recorded. This did not process a payment.");
+        successNotice = "Invoice recorded. This did not process a payment.";
       } else if (route === "automations") {
         await api.createBiasharaAutomationRule(businessId, { name: form.name, trigger: form.trigger, action: form.action, enabled: false });
-        setNotice("Rule saved as configuration. Execution is not active without a configured worker.");
+        successNotice = "Rule saved as configuration. Execution is not active without a configured worker.";
       } else if (route === "sync") {
         await api.createBiasharaSyncJob(businessId, { source: form.source, direction: form.direction });
-        setNotice("Sync request queued. No external synchronization has run yet.");
+        successNotice = "Sync request queued. No external synchronization has run yet.";
       } else if (route === "team") {
-        await api.inviteBiasharaTeamMember(businessId, { email: form.email, role: form.role });
-        setNotice("Invitation record created. Email delivery is not configured, so no email was sent.");
+        const response = await api.inviteBiasharaTeamMember(businessId, { email: form.email.trim().toLowerCase(), role: form.role });
+        const invitation = unwrap(response) || {};
+        const token = String(invitation.accept_token || "").trim();
+        if (!token) throw new Error("The invitation response did not contain its one-time acceptance token. Refresh the team list and retry only after checking whether an invitation was created.");
+        const shareUrl = new URL("/biashara/invitation", window.location.origin);
+        shareUrl.searchParams.set("token", token);
+        shareUrl.searchParams.set("email", form.email.trim().toLowerCase());
+        setInvitationLink(shareUrl.toString());
+        setInvitationDetails({ email: form.email.trim().toLowerCase(), role: form.role });
+        successNotice = "Invitation created. No email was sent by this Biashara endpoint; copy the secure link below and share it with the invited person.";
       }
       await load();
+      if (successNotice) setNotice(successNotice);
     } catch (e) { setError(errorText(e)); }
     finally { setSaving(false); }
+  };
+
+  const copyInvitationLink = async () => {
+    if (!invitationLink) return;
+    try {
+      if (!navigator?.clipboard?.writeText) throw new Error("Clipboard access is not available.");
+      await navigator.clipboard.writeText(invitationLink);
+      setNotice("Invitation link copied. Share it only with " + (invitationDetails?.email || "the invited person") + ".");
+    } catch {
+      window.prompt("Copy this one-time Biashara invitation link:", invitationLink);
+    }
   };
 
   const checkInvoicePayment = async (invoice) => {
@@ -164,7 +188,7 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
     finally { setSaving(false); }
   };
 
-  const inviteRoles = ["director", "operations_manager", "hr_manager", "accountant", "store_keeper", "factory_floor_lead", "sales_agent", "employee", "manager", "sales", "inventory", "viewer"];
+  const inviteRoles = ["operations_manager", "hr_manager", "accountant", "store_keeper", "factory_floor_lead", "sales_agent", "employee", "manager", "sales", "inventory", "viewer"];
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-5 sm:px-6 lg:px-8">
       <header className="rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white sm:p-8">
@@ -213,6 +237,15 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
           <button className={button} disabled={saving} type="submit"><Plus size={16} />Create invitation</button>
         </div>
       </form> : null}
+      {route === "team" && invitationLink ? <section role="status" className={panel}>
+        <h2 className="font-bold text-slate-900">Share the team invitation</h2>
+        <p className="mt-1 text-sm text-slate-600">Created for <strong>{invitationDetails?.email}</strong> as <strong>{String(invitationDetails?.role || "").replace(/_/g, " ")}</strong>. The recipient must sign in or register with this exact email address.</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input className={field} aria-label="One-time Biashara invitation link" readOnly value={invitationLink} />
+          <button className={button} type="button" onClick={copyInvitationLink}>Copy invite link</button>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-amber-800">This link contains a one-time token and expires after 30 days. The backend checks the invited account email and verified company status. Share privately.</p>
+      </section> : null}
 
       {route === "business-switch" ? <section className={panel}><h2 className="flex items-center gap-2 font-bold text-slate-900"><ArrowLeftRight size={18} /> Businesses you own</h2><p className="mt-1 text-xs text-slate-500">Selection is saved as a preference. Each request is also scoped to the selected company and checked against your active membership.</p>{businesses.map((item) => <div key={item.id || item._id} className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-slate-900">{item.name || item.business_name || "Business"}</p><p className="mt-1 text-xs text-slate-500">{item.verification_status || "status unavailable"} · {item.status || "status unavailable"}</p></div><button className={button} type="button" disabled={saving || String(item.id || item._id) === String(business?.id || business?._id)} onClick={() => switchBusiness(item.id || item._id)}>{String(item.id || item._id) === String(business?.id || business?._id) ? "Current business" : "Set active"}</button></div>)}</section> : null}
 
