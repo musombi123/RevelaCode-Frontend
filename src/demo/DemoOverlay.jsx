@@ -130,9 +130,10 @@ export default function DemoOverlay() {
   const location = useLocation();
   const { guestMode } = useAuth();
   const {
-    active, presentationOnly, chapterId, stepIndex, lang, voiceOn, chapters,
+    enabled, active: storedActive, presentationOnly, chapterId, stepIndex, lang, voiceOn, chapters,
     next, back, skip, jumpToChapter, exit, setLang, setVoiceOn, restart, completed,
   } = demo;
+  const active = enabled && storedActive;
   const [targetElement, setTargetElement] = useState(null);
   const [targetMissing, setTargetMissing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
