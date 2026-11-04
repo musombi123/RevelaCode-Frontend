@@ -98,7 +98,7 @@ export const DEMO_FEES = DEMO_STUDENTS.slice(0, 120).map((student, i) => ({
 export const DEMO_TIMETABLE = DEMO_CLASSES.slice(0, 6).flatMap((klass, i) => SUBJECTS.slice(0, 5).map((subject, j) => ({
   id: demoId("timetable", i * 5 + j + 1), class_id: klass.id, class_name: klass.class_name,
   day: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][j],
-  start_time: "0" + (8 + (j % 3)) + ":00", end_time: "0" + (8 + (j % 3)) + ":40",
+  start_time: String(8 + (j % 3)).padStart(2, "0") + ":00", end_time: String(8 + (j % 3)).padStart(2, "0") + ":40",
   subject, teacher_id: DEMO_STAFF[4 + ((i + j) % 10)].id, room: "Room " + (i + 1), is_demo: true,
 })));
 export const DEMO_CBC_PROJECTS = [
@@ -296,6 +296,17 @@ export const DEMO_FARM = {
   soil_tests: DEMO_SOIL_TESTS, recommendations: DEMO_FARM_RECOMMENDATIONS,
   market: DEMO_MARKET,
 };
+export const DEMO_FARM_RIGHTS_QUEUE = [
+  { id: demoId("rights-case", 1), farm_id: DEMO_FARMS[0].id, farm_name_snapshot: DEMO_FARMS[0].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mariakani", status: "pending", submitted_at: "2026-10-29T09:00:00.000Z", is_demo: true },
+  { id: demoId("rights-case", 2), farm_id: DEMO_FARMS[1].id, farm_name_snapshot: DEMO_FARMS[1].name, owner_name: DEMO_FARMER.farmer_name, county_snapshot: "Kilifi", town_snapshot: "Mtwapa", status: "more_info", submitted_at: "2026-10-30T11:30:00.000Z", is_demo: true },
+];
+export const DEMO_SHAMBA_SAFETY_REPORTS = [
+  { id: demoId("safety-report", 1), listing_id: "demo-listing-001", title: "Sample marketplace listing review", description: "Synthetic safety report for demonstrating administrator review.", status: "open", category: "listing_accuracy", created_at: DEMO_STAMP, is_demo: true },
+  { id: demoId("safety-report", 2), listing_id: "demo-listing-002", title: "Sample seller identity query", description: "Synthetic report showing the review workflow.", status: "needs_more_info", category: "seller_identity", created_at: "2026-11-02T10:00:00.000Z", is_demo: true },
+];
+export const DEMO_SOIL_SERVICE_REQUESTS = [
+  { id: demoId("soil-service", 1), farm_id: DEMO_FARMS[0].id, farmer_name: DEMO_FARMER.farmer_name, service_type: "laboratory_soil_test", status: "pending", county: "Kilifi", is_demo: true },
+];
 export const DEMO_FARM_VERIFICATION_QUEUE = [
   { id: demoId("farmer-review", 1), farmer_id: "demo-farmer-pending-1", farmer_name: "Sample Farmer Pending", county: "Kilifi", verification_status: "pending", is_demo: true },
   { id: demoId("farmer-review", 2), farmer_id: "demo-farmer-info-2", farmer_name: "Sample Farmer — More Information", county: "Mombasa", verification_status: "more_info", is_demo: true },
@@ -432,7 +443,7 @@ export function getDemoPayload(url = "", method = "GET", body = null) {
 
   if (lower.includes("/api/jumuiya/shamba") || lower.includes("/shamba/") || lower.includes("/farm")) {
     const path = routeKey(lower);
-    if (path.includes("/farmer/verification-queue")) return listResponse("farmers", DEMO_FARM_VERIFICATION_QUEUE);
+    if (path.includes("/farmer/verification-queue")) return listResponse("items", DEMO_FARM_VERIFICATION_QUEUE);\n    if (path.endsWith("/trust/overview")) return { success: true, demo: true, overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true }, data: { overview: { farms: DEMO_FARMS, farm_count: DEMO_FARMS.length, verified_farm_count: 0, pending_farm_count: DEMO_FARM_RIGHTS_QUEUE.length, is_demo: true } } };\n    if (path.endsWith("/trust/verification-queue")) return listResponse("items", DEMO_FARM_RIGHTS_QUEUE);\n    if (path.endsWith("/trust/safety-reports")) return listResponse("items", DEMO_SHAMBA_SAFETY_REPORTS);\n    if (path.endsWith("/trust/soil-service-requests")) return listResponse("items", DEMO_SOIL_SERVICE_REQUESTS);
     if (path.endsWith("/farmer")) return { success: true, demo: true, farmer: DEMO_FARMER, data: { farmer: DEMO_FARMER } };
     if (path.endsWith("/dashboard")) return { success: true, demo: true, ...DEMO_FARM, data: DEMO_FARM.dashboard };
     if (path.includes("/weather")) return { success: true, demo: true, weather: DEMO_FARM.dashboard.weather, data: { weather: DEMO_FARM.dashboard.weather } };
