@@ -9,6 +9,7 @@ function readProgress() {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     return {
       active: value.active === true,
+      presentationOnly: value.presentationOnly === true,
       chapterId: typeof value.chapterId === "string" ? value.chapterId : "welcome",
       stepIndex: Number.isInteger(value.stepIndex) && value.stepIndex >= 0 ? value.stepIndex : 0,
       lang: value.lang === "sw" ? "sw" : "en",
@@ -16,7 +17,7 @@ function readProgress() {
       completed: Array.isArray(value.completed) ? value.completed.filter((id) => typeof id === "string") : [],
     };
   } catch {
-    return { active: false, chapterId: "welcome", stepIndex: 0, lang: "en", voiceOn: false, completed: [] };
+    return { active: false, presentationOnly: false, chapterId: "welcome", stepIndex: 0, lang: "en", voiceOn: false, completed: [] };
   }
 }
 
@@ -75,9 +76,21 @@ export function DemoProvider({ children, chapters = [] }) {
     const chapterId = options.chapterId || (resume ? current.chapterId : "welcome");
     const stepIndex = resume ? current.stepIndex : 0;
     const completed = resume ? current.completed : [];
-    commit({ ...current, active: true, chapterId, stepIndex, completed });
+    commit({ ...current, active: true, presentationOnly: false, chapterId, stepIndex, completed });
     trackDemo("demo_started", { chapter_id: chapterId, resumed: resume });
     trackDemo("step_viewed", { chapter_id: chapterId, step_index: stepIndex });
+  }, [commit]);
+
+  const startPresentation = useCallback(() => {
+    const current = stateRef.current;
+    commit({ ...current, active: true, presentationOnly: true });
+    trackDemo("presentation_mode_started", { source: "admin_console" });
+  }, [commit]);
+
+  const exitPresentation = useCallback(() => {
+    const current = stateRef.current;
+    commit({ ...current, active: false, presentationOnly: false });
+    trackDemo("presentation_mode_ended", { source: "admin_console" });
   }, [commit]);
 
   const next = useCallback(() => {
@@ -140,7 +153,7 @@ export function DemoProvider({ children, chapters = [] }) {
   const jumpToChapter = useCallback((chapterId) => {
     const chapter = chaptersRef.current.find((item) => item.id === chapterId);
     if (!chapter) return;
-    commit({ ...stateRef.current, active: true, chapterId, stepIndex: 0 });
+    commit({ ...stateRef.current, active: true, presentationOnly: false, chapterId, stepIndex: 0 });
     trackDemo("step_viewed", { chapter_id: chapterId, step_index: 0, source: "chapter_menu" });
   }, [commit]);
 
@@ -152,11 +165,11 @@ export function DemoProvider({ children, chapters = [] }) {
         exit_action: "leave_finish",
       });
     }
-    commit({ ...current, active: false });
+    commit({ ...current, active: false, presentationOnly: false });
   }, [commit]);
 
   const restart = useCallback(() => {
-    commit({ ...stateRef.current, active: true, chapterId: "welcome", stepIndex: 0, completed: [] });
+    commit({ ...stateRef.current, active: true, presentationOnly: false, chapterId: "welcome", stepIndex: 0, completed: [] });
     trackDemo("demo_started", { restarted: true, chapter_id: "welcome" });
     trackDemo("step_viewed", { chapter_id: "welcome", step_index: 0 });
   }, [commit]);
@@ -172,9 +185,9 @@ export function DemoProvider({ children, chapters = [] }) {
   }, [commit]);
 
   const value = useMemo(() => ({
-    ...state, chapters, start, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn,
+    ...state, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn,
     updateLanguage: setLang,
-  }), [state, chapters, start, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn]);
+  }), [state, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn]);
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
