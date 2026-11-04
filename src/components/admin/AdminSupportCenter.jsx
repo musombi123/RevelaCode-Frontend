@@ -252,7 +252,7 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
       const token = typeof getAccessToken === "function" ? await getAccessToken() : "";
       const tokenType = typeof getTokenType === "function" ? await getTokenType() : "Bearer";
       const response = await authFetch(`${resolveAdminBackendUrl()}/api/support-center/payroll/export.${format}?month=${encodeURIComponent(month)}`, {
-        headers: token ? { Authorization: \`\${tokenType || "Bearer"} \${String(token).replace(/^Bearer\s+/i, "")}\` } : {},
+        headers: token ? { Authorization: (tokenType || "Bearer") + " " + String(token).replace(/^Bearer\s+/i, "") } : {},
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
