@@ -49,13 +49,22 @@ const CHECKOUT_HUBS = new Set([
 
 const MPESA_READINESS_CHECKS = [
   ["production_environment", "MPESA_ENV is production"],
+  ["stk_url_present", "Daraja API base URL is present"],
+  ["stk_url_matches_environment", "Daraja API base URL matches production"],
+  ["stk_path_valid", "STK request endpoint path is correct"],
+  ["stk_query_path_valid", "STK query endpoint path is correct"],
   ["mpesa_provider_enabled", "REVENUE_PAYMENT_PROVIDERS includes mpesa"],
   ["consumer_key_present", "Daraja consumer key is present"],
   ["consumer_secret_present", "Daraja consumer secret is present"],
   ["shortcode_numeric", "Live shortcode is numeric"],
   ["passkey_present", "Daraja STK passkey is present"],
+  ["transaction_type_supported", "PayBill or Buy Goods transaction type is supported"],
+  ["party_b_numeric", "Destination Party B is numeric"],
+  ["party_b_matches_shortcode_for_paybill", "PayBill Party B matches the shortcode"],
+  ["transaction_configuration_valid", "PayBill/Till transaction settings are consistent"],
   ["callback_https", "Callback uses HTTPS"],
   ["callback_host_present", "Callback has a hostname"],
+  ["callback_host_public_shape", "Callback hostname is public-facing"],
   ["callback_path_matches", "Callback path matches the backend route"],
   ["callback_has_no_credentials", "Callback URL has no embedded credentials"],
   ["callback_has_no_query_or_fragment", "Callback URL has no query string or fragment"],
@@ -963,7 +972,7 @@ export default function AdminRevenueManagement() {
                   <li>Production Daraja API base URL, consumer key, consumer secret, numeric shortcode, and passkey are set in the backend's environment settings.</li>
                 </ul>
                 <p className="mt-2 break-all rounded-lg border border-amber-300/70 bg-white/60 px-3 py-2 font-mono text-[11px] dark:border-amber-800/50 dark:bg-black/20">
-                  https://revelacode-backend.onrender.com/api/revenue/providers/mpesa/callback
+                  {catalogueMeta.mpesa_readiness?.expected_callback_url || "https://revelacode-backend.onrender.com/api/revenue/providers/payment-callback"}
                 </p>
                 {catalogueMeta.mpesa_readiness?.checks ? (
                   <div className="mt-4 rounded-xl border border-amber-300/70 bg-white/60 p-3 dark:border-amber-800/50 dark:bg-black/20">
