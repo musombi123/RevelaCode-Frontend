@@ -158,9 +158,9 @@ The guided Demo Session now exposes a coherent synthetic presentation dataset ac
 
 | Hub | Included presentation records |
 |---|---|
-| Elimu | One **Jumuiya Demonstration School**, explicitly labelled **DEMO SCHOOL — NOT VERIFIED**; 320 synthetic learners, 12 classes, 18 staff, 48 lessons, 6 assignments, 90 attendance entries, 96 assessment records, 120 fee ledgers, 30 timetable entries, CBC projects, school events and library catalogue entries. |
+| Elimu | One **Jumuiya Demonstration School**, explicitly labelled **DEMO SCHOOL — NOT VERIFIED**; 320 synthetic learners, 12 classes, 18 staff, 48 lessons, 6 assignments, 90 attendance entries, 96 assessment records, 120 fee ledgers, 30 timetable entries, 80 parent contacts, 10 inventory items, 30 fee receipts, 25 fee reminders, reports, sync previews, CBC projects, school events and library catalogue entries. |
 | Shamba | Synthetic farmer profile; 3 farms, 4 crop records, 4 field activities, 2 harvests, 2 sample soil-test records, market prices, weather, alerts, recommendations, farmer-profile review cases, farm-rights review cases, safety reports and soil-service requests. |
-| Biashara | Synthetic retail business; 30 products, 18 customers, 18 orders, 40 sales, 12 expenses, 8 employees, 3 services, production batches, finance transactions, storefront settings and sample website inquiries. |
+| Biashara | Synthetic retail business; 30 products, 18 customers, 18 orders, 40 sales, 12 expenses, 8 employees, 3 services, 12 invoices, finance transactions, 3 automation rules, sync jobs, 2 factory machines, quality checks, HR attendance, storefront settings and sample website inquiries. |
 
 All records are synthetic and visibly marked with demo metadata. The school, farmer and business are not presented as verified real entities. Demo GET requests resolve to the bundled fixtures for the corresponding module. POST, PUT, PATCH and DELETE remain simulated and return a clear “nothing was saved” response. Payments, M-Pesa and external payment-provider calls remain disabled.
 
