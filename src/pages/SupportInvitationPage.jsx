@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, UserPlus } from "lucide-react";
-import { useAdminApi } from "@/services/adminApi.jsx";
+import { useAdminApi, resolveAdminBackendUrl } from "@/services/adminApi.jsx";
 
 export default function SupportInvitationPage() {
   const adminApi = useAdminApi();
@@ -16,6 +16,7 @@ export default function SupportInvitationPage() {
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
+  const [googleAccepting, setGoogleAccepting] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -50,6 +51,33 @@ export default function SupportInvitationPage() {
     preview();
     return () => { cancelled = true; };
   }, [adminApi, token, email]);
+
+  async function acceptWithGoogle() {
+    if (googleAccepting) return;
+    if (window.Capacitor?.isNativePlatform?.()) {
+      setMessageType("error");
+      setMessage("Google invitation acceptance on Android requires the system-browser plugin and deep-link handler in the APK. Use the password option here until that APK update is installed.");
+      return;
+    }
+    setGoogleAccepting(true);
+    setMessage("");
+    try {
+      const response = await fetch(`${resolveAdminBackendUrl()}/api/oauth/google/invite/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ invite_token: token, email, client: "web" }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.success || !payload.authorization_url) {
+        throw new Error(payload.message || "Google invitation sign-in could not be started.");
+      }
+      window.location.assign(payload.authorization_url);
+    } catch (error) {
+      setMessageType("error");
+      setMessage(error?.message || "Google invitation sign-in failed.");
+      setGoogleAccepting(false);
+    }
+  }
 
   async function acceptInvitation(event) {
     event.preventDefault();
@@ -118,6 +146,8 @@ export default function SupportInvitationPage() {
 
           {invitation ? (
             <form onSubmit={acceptInvitation} className="space-y-4">
+              <button type="button" onClick={acceptWithGoogle} disabled={googleAccepting} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><span className="text-base font-black text-blue-600">G</span>{googleAccepting ? "Opening Google…" : "Accept with Google"}</button>
+              <div className="flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200 dark:bg-white/10" /><span>or create a password</span><span className="h-px flex-1 bg-slate-200 dark:bg-white/10" /></div>
               <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Create password</span><input required minLength={12} maxLength={256} type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" className="min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
               <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Confirm password</span><input required minLength={12} maxLength={256} type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" className="min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white" /></label>
               <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Use a unique password. RevelaCode stores a password hash; neither the inviting administrator nor the support team will see this password.</p>
