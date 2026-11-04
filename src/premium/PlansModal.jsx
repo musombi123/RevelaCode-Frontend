@@ -28,6 +28,9 @@ const COPY = {
     paidPlansTitle: "Paid hub plans",
     paidPlansText: "Plan pricing, periods, publication status and included features come from the live Backend catalogue.",
     daysUnit: "days",
+    paidPlansTitle: "Paid hub plans",
+    paidPlansText: "Plan pricing, periods, publication status and included features come from the live Backend catalogue.",
+    daysUnit: "days",
     loading: "Loading current plans…",
     empty: "No paid plans are currently published.",
     offline: "No internet connection. Reconnect to load current prices and pay securely.",
@@ -93,6 +96,9 @@ const COPY = {
     trialUnavailable: "Hali ya kustahili jaribio haipatikani kwa sasa. Bado unaweza kuona mipango iliyochapishwa.",
     freeIncluded: "Imejumuishwa bila malipo",
     billingTerms: "Malipo ya M-Pesa hutozwa mara moja kwa kipindi kilichochaguliwa. Malipo ya kujirudia kiotomatiki hayajawashwa. Huduma huanza tu baada ya Backend kuthibitisha malipo.",
+    paidPlansTitle: "Mipango ya kulipia ya hub",
+    paidPlansText: "Bei, vipindi, hali ya uchapishaji na vipengele vinatoka kwenye orodha ya sasa ya Backend.",
+    daysUnit: "siku",
     paidPlansTitle: "Mipango ya kulipia ya hub",
     paidPlansText: "Bei, vipindi, hali ya uchapishaji na vipengele vinatoka kwenye orodha ya sasa ya Backend.",
     daysUnit: "siku",
@@ -230,6 +236,7 @@ export default function PlansModal({
   const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [catalogOffline, setCatalogOffline] = useState(false);
   const [trials, setTrials] = useState([]);
+  const [trialCatalogueAvailable, setTrialCatalogueAvailable] = useState(false);
   const [trialError, setTrialError] = useState("");
   const [trialStartingHub, setTrialStartingHub] = useState("");
   const [step, setStep] = useState("catalog");
@@ -294,7 +301,9 @@ export default function PlansModal({
       // Keep zero-cost and paid plans in the same server-backed catalogue.
       // The UI separates them so free access is never sent to M-Pesa checkout.
       setPlans(rows.filter((item) => item && item.status !== "retired"));
-      setTrials(Array.isArray(trialResult?.value?.trials) ? trialResult.value.trials : []);
+      const trialRows = trialResult?.value?.trials;
+      setTrials(Array.isArray(trialRows) ? trialRows : []);
+      setTrialCatalogueAvailable(Array.isArray(trialRows));
       setTrialError(trialResult?.error ? t.trialUnavailable : "");
       if (current?.checkout) {
         const saved = current.checkout;
@@ -448,12 +457,12 @@ export default function PlansModal({
     () => TRIAL_HUBS.map((item) => ({
       ...item,
       ...(trials.find((trial) => String(trial.hub || "").toLowerCase() === item.hub) || {
-        status: "not_started",
+        status: trialCatalogueAvailable ? "not_started" : "unavailable",
         trial_days: null,
         days_remaining: 0,
       }),
     })),
-    [trials],
+    [trials, trialCatalogueAvailable],
   );
 
   const startHubTrial = async (hub) => {
@@ -472,6 +481,7 @@ export default function PlansModal({
         ...current.filter((item) => item.hub !== hub),
         activatedTrial,
       ]);
+      setTrialCatalogueAvailable(true);
       window.dispatchEvent(new Event("revelacode:entitlements-updated"));
       onPlanActivated?.(hub);
     } catch (error) {
@@ -686,16 +696,18 @@ export default function PlansModal({
                         const active = trial.status === "active";
                         const used = trial.status === "expired";
                         const available = trial.status === "not_started";
+                        const unavailable = trial.status === "unavailable";
                         return (
                           <article key={trial.hub} className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-start justify-between gap-2">
                               <h4 className="text-sm font-black text-slate-900 dark:text-white">{trial.name}</h4>
-                              <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${active ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : used ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200"}`}>
-                                {active ? t.trialActive : used ? t.trialUsed : t.trialNotStarted}
+                              <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${active ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : used || unavailable ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200"}`}>
+                                {active ? t.trialActive : used ? t.trialUsed : unavailable ? t.trialUnavailable : t.trialNotStarted}
                               </span>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t.trialDays}: <strong className="text-slate-800 dark:text-slate-200">{Number.isFinite(Number(trial.trial_days)) && trial.trial_days !== null ? `${trial.trial_days} {t.daysUnit}` : "—"}</strong></p>
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t.trialDays}: <strong className="text-slate-800 dark:text-slate-200">{Number.isFinite(Number(trial.trial_days)) && trial.trial_days !== null ? `${trial.trial_days} ${t.daysUnit}` : "—"}</strong></p>
                             {active ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{trial.days_remaining} {t.daysRemaining}</p> : null}
+                            {unavailable ? <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{t.trialUnavailable}</p> : null}
                             {available ? (
                               <button type="button" onClick={() => startHubTrial(trial.hub)} disabled={Boolean(trialStartingHub)} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50">
                                 {trialStartingHub === trial.hub ? t.trialStarting : t.trialStart}
