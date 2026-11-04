@@ -164,7 +164,7 @@ The guided Demo Session now exposes a coherent synthetic presentation dataset ac
 
 All records are synthetic and visibly marked with demo metadata. The school, farmer and business are not presented as verified real entities. Demo GET requests resolve to the bundled fixtures for the corresponding module. POST, PUT, PATCH and DELETE remain simulated and return a clear “nothing was saved” response. Payments, M-Pesa and external payment-provider calls remain disabled.
 
-The dataset is deliberately available to an authenticated administrator who starts Demo mode as well as to a guest using the guided tour. Demo mode does not grant platform-admin permissions: it only replaces data reads and blocks writes while the session is active.
+The dataset is deliberately available to an authenticated administrator who starts Demo mode as well as to a guest using the guided tour. The Admin Console offers two entry points: **Try the Demo** opens the guided tour; **Browse demo systems** activates presentation-only mode, hides the tour overlay and keeps synthetic GET data active while the administrator navigates freely across modules. The presentation banner includes an explicit Exit presentation control. Demo mode does not grant platform-admin permissions: it only replaces data reads and blocks writes while the session is active.
 - Read-aloud looks for sw-KE/en-KE or another voice in the selected language. If none is installed, narration remains silent.
 
 Keep demo actions behind the API gateway. Do not add direct payment SDK calls or raw payment-provider requests to a guided demo action.
