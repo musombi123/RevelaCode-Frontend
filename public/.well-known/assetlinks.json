@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.revelacode.app",
+      "sha256_cert_fingerprints": [
+        "DC:05:28:00:59:31:C6:18:E7:0B:B7:0F:E2:D4:42:7E:24:29:22:B4:74:26:01:5C:16:54:AF:E4:E9:50:E5:40"
+      ]
+    }
+  }
+]
