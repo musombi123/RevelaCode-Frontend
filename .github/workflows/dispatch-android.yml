@@ -37,16 +37,25 @@ jobs:
             const frontendRef = context.eventName === "workflow_dispatch"
               ? (context.payload.inputs?.frontend_ref || "main")
               : context.sha;
+            const commitMessage = context.payload.head_commit?.message || "";
+            const publishRelease = context.eventName === "push"
+              && commitMessage.includes("[publish-android-release]");
+            const clientPayload = {
+              frontend_ref: frontendRef,
+              build_type: publishRelease ? "release" : "debug",
+              ...(publishRelease ? {
+                version_name: "2.2.0",
+                version_code: "4"
+              } : {}),
+              triggered_by: context.eventName
+            };
             await github.rest.repos.createDispatchEvent({
               owner: "musombi123",
               repo: "RevelaCode-Android",
               event_type: "frontend-updated",
-              client_payload: {
-                frontend_ref: frontendRef,
-                triggered_by: context.eventName
-              }
+              client_payload: clientPayload
             });
-            core.info(`Dispatched Android packaging for frontend ref ${frontendRef}`);
+            core.info(`Dispatched Android ${clientPayload.build_type} packaging for frontend ref ${frontendRef}`);
 
       - name: Explain manual fallback
         if: ${{ env.ANDROID_DISPATCH_TOKEN == '' }}
