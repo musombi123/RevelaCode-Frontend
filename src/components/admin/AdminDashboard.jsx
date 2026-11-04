@@ -20,6 +20,7 @@ import {
 import AdminHeader from "./AdminHeader.jsx";
 import AdminPageErrorBoundary from "./AdminPageErrorBoundary.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
+import DemoLauncher from "@/demo/DemoLauncher.jsx";
 
 import AdminOverview from "./AdminOverview.jsx";
 import AdminTeamManagement from "./AdminTeamManagement.jsx";
@@ -330,7 +331,8 @@ export default function AdminDashboard({ initialTab = "overview" }) {
                   </div>
                 </div>
 
-                <div className="flex flex-shrink-0 items-center sm:justify-end">
+                <div className="flex flex-shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                  <DemoLauncher startAt="welcome" />
                   <div className="inline-flex min-h-10 items-center gap-2.5 rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3.5 py-2 text-[11px] font-bold tracking-wide text-emerald-800 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50 motion-reduce:animate-none" />
