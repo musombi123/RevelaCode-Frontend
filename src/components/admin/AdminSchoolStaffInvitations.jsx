@@ -70,8 +70,15 @@ export default function AdminSchoolStaffInvitations() {
     else setLoading(true);
     setLoadError("");
     try {
-      const response = await api.get("/api/jumuiya/admin/schools", { page: 1, limit: 100 });
-      const rows = schoolRows(response).filter((school) => schoolIdOf(school));
+      const rows = [];
+      // The admin endpoint is paginated (maximum 100 per request). Fetch every
+      // page so the selector covers the complete school directory, not just page one.
+      for (let page = 1; page <= 100; page += 1) {
+        const response = await api.get("/api/jumuiya/admin/schools", { page, limit: 100 });
+        const pageRows = schoolRows(response).filter((school) => schoolIdOf(school));
+        rows.push(...pageRows);
+        if (pageRows.length < 100) break;
+      }
       setSchools(rows);
       setSchoolId((current) => rows.some((school) => schoolIdOf(school) === current) ? current : schoolIdOf(rows[0]));
     } catch (error) {
