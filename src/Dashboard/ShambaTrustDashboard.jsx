@@ -65,7 +65,7 @@ function isAdmin(user) {
   return Boolean(
     user?.is_admin ||
     user?.is_super_admin ||
-    values.some((value) => ["admin", "super_admin", "superadmin"].includes(value)),
+    values.some((value) => ["admin", "platform_admin", "super_admin", "superadmin", "revelacode_admin"].includes(value)),
   );
 }
 
