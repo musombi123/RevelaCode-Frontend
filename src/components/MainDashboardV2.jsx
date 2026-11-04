@@ -306,7 +306,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const pendingPremiumPlanCode = useRef("");
   const [resumePremiumAfterLogin, setResumePremiumAfterLogin] = useState(false);
 
-  const [searchParams] =
+  const [searchParams, setSearchParams] =
     useSearchParams();
 
   const { theme, setTheme } =
@@ -451,6 +451,19 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     window.addEventListener("revelacode:premium-open", openPremium);
     return () => window.removeEventListener("revelacode:premium-open", openPremium);
   }, []);
+
+  // Public pricing links can open the exact plan inside the authenticated app.
+  // Remove the one-shot query parameters after reading them so closing the modal
+  // or navigating between hubs does not reopen it unexpectedly.
+  useEffect(() => {
+    if (searchParams.get("premium") !== "1") return;
+    setPremiumRequestedPlanCode(String(searchParams.get("plan") || ""));
+    setShowPremiumPlans(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("premium");
+    nextParams.delete("plan");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (
