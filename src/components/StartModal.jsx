@@ -208,7 +208,9 @@ export default function StartModal() {
         );
         return;
 
+      case "support_agent":
       case "support":
+      case "support_admin":
         window.location.replace(
           "/support/dashboard"
         );
