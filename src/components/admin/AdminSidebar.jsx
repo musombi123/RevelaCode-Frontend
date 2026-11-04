@@ -81,6 +81,12 @@ const tabs = [
     icon: ClipboardCheck,
   },
   {
+    key: "schoolStaffInvitations",
+    label: "School Staff Invitations",
+    description: "Invite staff into a selected Elimu school",
+    icon: Users,
+  },
+  {
     key: "biasharaVerification",
     label: "Business Verification",
     description: "Approve Biashara applications",
