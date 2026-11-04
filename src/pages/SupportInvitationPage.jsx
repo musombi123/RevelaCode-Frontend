@@ -32,7 +32,7 @@ export default function SupportInvitationPage() {
       }
       setLoading(true);
       try {
-        const response = await adminApi.get("/api/admin/invitations/preview", { token, email });
+        const response = await adminApi.get("/api/support-center/invitations/preview", { token, email });
         if (cancelled) return;
         setInvitation(response?.invitation || null);
         if (!response?.invitation) {
@@ -68,7 +68,7 @@ export default function SupportInvitationPage() {
     setAccepting(true);
     setMessage("");
     try {
-      const response = await adminApi.post("/api/admin/invitations/accept", {
+      const response = await adminApi.post("/api/support-center/invitations/accept", {
         token,
         email,
         password,
