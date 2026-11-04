@@ -103,3 +103,23 @@ test("Shamba weather API has one refresh-aware definition", () => {
   assert.ok(api.includes('/shamba/farms/${encodeId(farmId, "Farm ID")}/weather'));
   assert.ok(api.includes('{ refresh: refresh ? "true" : "" }'));
 });
+
+
+test("Revenue admin shows the production-safe Daraja callback and all backend readiness gates", () => {
+  const revenue = source("src/components/admin/AdminRevenueManagement.jsx");
+  assert.match(revenue, /expected_callback_url/);
+  assert.match(revenue, /api\/revenue\/providers\/payment-callback/);
+  assert.doesNotMatch(revenue, /api\/revenue\/providers\/mpesa\/callback/);
+  for (const check of [
+    "stk_url_present",
+    "stk_url_matches_environment",
+    "stk_path_valid",
+    "stk_query_path_valid",
+    "transaction_type_supported",
+    "party_b_numeric",
+    "transaction_configuration_valid",
+    "callback_path_matches",
+  ]) {
+    assert.ok(revenue.includes(check), "Missing M-Pesa readiness check: " + check);
+  }
+});
