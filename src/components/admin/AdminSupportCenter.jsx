@@ -50,7 +50,7 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
   const [data, setData] = useState({});
   const [lookup, setLookup] = useState("");
   const [invite, setInvite] = useState({ full_name: "", email: "", role: "support_agent" });
-  const [payroll, setPayroll] = useState({ member_id: "", rate: "", period_start: "", period_end: "", tasks_count: "0" });
+  const [payroll, setPayroll] = useState({ member_id: "", rate: "", period_start: "", period_end: "", bonus: "0", bonus_reason: "", deduction: "0", deduction_reason: "", payment_method: "manual" });
 
   const visibleTabs = useMemo(() => TABS.filter(([key]) => isAdmin || ["inbox", "tickets", "plans", "verification", "health"].includes(key)), [isAdmin]);
 
@@ -192,7 +192,42 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
   async function createPayroll(event) {
     event.preventDefault();
     await run("payroll", () => api("/payroll", "POST", payroll), "Payroll record created as pending.");
-    setPayroll({ member_id: "", rate: "", period_start: "", period_end: "", tasks_count: "0" });
+    setPayroll({ member_id: "", rate: "", period_start: "", period_end: "", bonus: "0", bonus_reason: "", deduction: "0", deduction_reason: "", payment_method: "manual" });
+  }
+
+  async function updatePayrollRecord(record, status) {
+    const payment_reference = status === "paid" ? window.prompt("Enter the manual payout reference:") : undefined;
+    if (status === "paid" && !payment_reference?.trim()) return;
+    await run(`payroll-${record.id}`, () => api(`/payroll/${encodeURIComponent(record.id)}`, "PATCH", { status, ...(payment_reference ? { payment_reference } : {}) }), `Payroll marked ${status}.`);
+  }
+
+  async function downloadPayroll(format) {
+    setBusy("payroll-export");
+    setError("");
+    try {
+      const month = window.prompt("Statement month (YYYY-MM):", new Date().toISOString().slice(0, 7));
+      if (!month || !/^\\d{4}-\\d{2}$/.test(month)) return;
+      const token = typeof getAccessToken === "function" ? await getAccessToken() : "";
+      const tokenType = typeof getTokenType === "function" ? await getTokenType() : "Bearer";
+      const response = await authFetch(`${resolveAdminBackendUrl()}/api/support-center/payroll/export.${format}?month=${encodeURIComponent(month)}`, {
+        headers: token ? { Authorization: `${tokenType || "Bearer"} ${String(token).replace(/^Bearer\\s+/i, "")}` } : {},
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || "Statement export failed.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `revelacode-support-payroll-${month}.${format}`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Statement export failed.");
+    } finally {
+      setBusy("");
+    }
   }
 
   const seats = data.team?.seats || {};
@@ -241,7 +276,22 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
 
       {view === "team" && isAdmin && <div className="space-y-4"><div className="grid grid-cols-1 gap-3 sm:grid-cols-3"><article className="rounded-xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800"><p className="text-xs text-slate-500">Support Admin seats</p><strong className="text-2xl">{seats.used || 0} / 3</strong></article><article className="rounded-xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800"><p className="text-xs text-slate-500">Active Support Admins</p><strong className="text-2xl">{seats.active || 0}</strong></article><article className="rounded-xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800"><p className="text-xs text-slate-500">Pending invitations</p><strong className="text-2xl">{seats.pending || 0}</strong></article></div><section className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">{members.map(m => <article key={m.id} className="flex flex-col gap-3 border-b border-slate-100 p-4 last:border-0 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800"><div><strong>{m.full_name}</strong><p className="text-xs text-slate-500">{m.email} · {m.phone}</p><p className="mt-1 text-xs"><Status value={m.status} /> <span className="ml-2">{m.role}</span></p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => changeRole(m)} className="min-h-9 rounded-lg border px-3 text-xs">Change role</button>{["ban","suspend","remove"].map(action => <button key={action} type="button" onClick={() => memberAction(m, action)} className="min-h-9 rounded-lg border border-rose-200 px-3 text-xs text-rose-700">{action}</button>)}{["banned","suspended"].includes(m.status) && <button type="button" onClick={() => memberAction(m, "restore")} className="min-h-9 rounded-lg border border-emerald-200 px-3 text-xs text-emerald-700">Restore</button>}</div></article>)}</section></div>}
 
-      {view === "payments" && isAdmin && <div className="space-y-4"><form onSubmit={createPayroll} className="grid grid-cols-1 gap-3 rounded-2xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800 sm:grid-cols-5"><label className="text-xs">Member ID<input required value={payroll.member_id} onChange={e => setPayroll(x => ({...x,member_id:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label><label className="text-xs">Rate (KES)<input required type="number" min="0" step="0.01" value={payroll.rate} onChange={e => setPayroll(x => ({...x,rate:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label><label className="text-xs">Period start<input required type="date" value={payroll.period_start} onChange={e => setPayroll(x => ({...x,period_start:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label><label className="text-xs">Period end<input required type="date" value={payroll.period_end} onChange={e => setPayroll(x => ({...x,period_end:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label><button className="mt-4 min-h-10 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white">Create payroll record</button></form><section className="rounded-2xl border bg-white dark:bg-slate-950 dark:border-slate-800">{payrollRows.map(x => <article key={x.id} className="flex flex-col gap-2 border-b p-4 last:border-0 sm:flex-row sm:justify-between"><div><strong>{x.member_name}</strong><p className="text-xs text-slate-500">{when(x.period_start)} – {when(x.period_end)} · {x.tasks_count} tasks · KES {x.rate}</p></div><Status value={x.status} /></article>)}</section></div>}
+      {view === "payments" && isAdmin && <div className="space-y-4">
+        <div className="flex flex-wrap gap-2"><button type="button" onClick={() => downloadPayroll("csv")} disabled={busy === "payroll-export"} className="min-h-9 rounded-lg border px-3 text-xs font-semibold dark:border-slate-700">Export monthly CSV</button><button type="button" onClick={() => downloadPayroll("pdf")} disabled={busy === "payroll-export"} className="min-h-9 rounded-lg border px-3 text-xs font-semibold dark:border-slate-700">Export monthly PDF</button></div>
+        {role === "support_admin" && <form onSubmit={createPayroll} className="grid grid-cols-1 gap-3 rounded-2xl border bg-white p-4 dark:bg-slate-950 dark:border-slate-800 sm:grid-cols-4">
+          <label className="text-xs">Member ID<input required value={payroll.member_id} onChange={e => setPayroll(x => ({...x,member_id:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Rate (KES)<input required type="number" min="0" step="0.01" value={payroll.rate} onChange={e => setPayroll(x => ({...x,rate:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Period start<input required type="date" value={payroll.period_start} onChange={e => setPayroll(x => ({...x,period_start:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Period end<input required type="date" value={payroll.period_end} onChange={e => setPayroll(x => ({...x,period_end:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Bonus (KES)<input type="number" min="0" step="0.01" value={payroll.bonus} onChange={e => setPayroll(x => ({...x,bonus:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Bonus reason<input value={payroll.bonus_reason} onChange={e => setPayroll(x => ({...x,bonus_reason:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Deduction (KES)<input type="number" min="0" step="0.01" value={payroll.deduction} onChange={e => setPayroll(x => ({...x,deduction:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <label className="text-xs">Deduction reason<input value={payroll.deduction_reason} onChange={e => setPayroll(x => ({...x,deduction_reason:e.target.value}))} className="mt-1 min-h-10 w-full rounded-lg border bg-transparent px-2" /></label>
+          <button className="min-h-10 rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white sm:col-span-4">Create payroll record</button>
+        </form>}
+        {role === "super_admin" && <p className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950">Super Admin view is read-only. Support Admins create, approve and record payouts.</p>}
+        <section className="rounded-2xl border bg-white dark:bg-slate-950 dark:border-slate-800">{payrollRows.map(x => <article key={x.id} className="flex flex-col gap-2 border-b p-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"><div><strong>{x.member_name}</strong><p className="text-xs text-slate-500">{when(x.period_start)} – {when(x.period_end)} · {x.tasks_count} resolved tickets · KES {x.rate} · Bonus {x.bonus || 0} · Deduction {x.deduction || 0}</p><p className="text-xs text-slate-500">Method: {x.payment_method || "manual"} · Reference: {x.payment_reference || "—"}</p></div><div className="flex items-center gap-2"><Status value={x.status} />{role === "support_admin" && x.status === "pending" && <button type="button" onClick={() => updatePayrollRecord(x, "approved")} className="min-h-8 rounded-lg border px-2 text-xs">Approve</button>}{role === "support_admin" && x.status === "approved" && <button type="button" onClick={() => updatePayrollRecord(x, "paid")} className="min-h-8 rounded-lg border px-2 text-xs">Mark paid</button>}</div></article>)}</section>
+      </div>}
 
       {view === "audit" && isAdmin && <section className="space-y-2">{auditRows.map(x => <article key={x.sequence} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">#{x.sequence} · {x.action}</strong><span className="text-xs text-slate-500">{when(x.created_at)}</span></div><p className="mt-1 text-xs text-slate-500">Actor {x.actor_id} · {x.actor_role} · {x.target_type} {x.target_id} · IP {x.ip || "—"}</p><p className="mt-1 break-all text-[10px] text-slate-400">Hash: {x.event_hash}</p></article>)}</section>}
 
