@@ -64,7 +64,7 @@ Do not put DemoProvider outside AuthProvider: the overlay uses the existing auth
 
 ## Existing entry points and exact small edits
 
-The StartModal, Home launcher and Account Center Help launcher were already present in the repository when this implementation was extended. These are the concrete integration points to retain.
+The StartModal, Home launcher, Account Center Help launcher and the Admin Console presentation launcher are available as entry points. An administrator can start the guided tour directly from the Admin Console hero without leaving administration.
 
 ### StartModal — keep the entry and guest targets
 
