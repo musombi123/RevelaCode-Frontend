@@ -1443,6 +1443,16 @@ const BIASHARA_SECTION_KEYS = new Set(
               ? "min-w-0 flex-1 overflow-hidden bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
               : "min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
           >
+
+            {!showShellHeader ? (
+              <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-2.5 shadow-sm dark:border-amber-900/50 dark:bg-slate-900">
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-900 dark:text-white">RevelaCode Premium</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Compare plans and available hub trials</p>
+                </div>
+                <PremiumPlansStar className="h-10 w-10 rounded-lg" />
+              </div>
+            ) : null}
             {isGuest && !isAndroidHome && (
               <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
