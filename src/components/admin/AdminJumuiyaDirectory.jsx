@@ -472,7 +472,7 @@ function explainError(error) {
   return error?.message || "The records could not be loaded. Please retry.";
 }
 
-export default function AdminJumuiyaDirectory() {
+export default function AdminJumuiyaDirectory({ onOpenSamples }) {
   const adminApi = useAdminApi();
 
   const [resource, setResource] = useState("shamba");
@@ -876,9 +876,18 @@ export default function AdminJumuiyaDirectory() {
                       No records found
                     </p>
                     <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-400">
-                      There are no records matching this search and status filter.
-                      Try clearing the search or choosing another status.
+                      This directory contains real registered farmer, business and school profiles only. There are no records matching this search and status filter.
+                      Clear the filters, or open the separate sample centre to inspect the fictional preview records across all Jumuiya areas.
                     </p>
+                    {typeof onOpenSamples === "function" ? (
+                      <button
+                        type="button"
+                        onClick={onOpenSamples}
+                        className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        Open Jumuiya Sample Data
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ) : (
