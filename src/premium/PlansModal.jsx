@@ -8,6 +8,29 @@ const COPY = {
   en: {
     title: "Choose your Premium plan",
     subtitle: "Secure M-Pesa checkout. Your plan activates only after payment is verified.",
+    freeAccessTitle: "Free access is included",
+    freeAccessText: "Every account keeps essential platform access. Community and Faith remain free and are not sold as paid hub subscriptions.",
+    communityFree: "Community access is permanently free and supported by sponsored advertising. Advertising placements are separate from subscriptions and are reviewed.",
+    faithFree: "Faith Hub access is free. No Faith subscription checkout is offered.",
+    trialTitle: "Free hub trials",
+    trialText: "Eligible signed-in accounts can start one trial per hub. Trial length and eligibility are confirmed by the Revenue Engine.",
+    trialStart: "Start free trial",
+    trialStarting: "Starting trial…",
+    trialActive: "Trial active",
+    trialUsed: "Trial already used",
+    trialNotStarted: "Trial available",
+    trialDays: "Trial length",
+    daysRemaining: "days remaining",
+    trialLogin: "Sign in to check and start your trial",
+    trialUnavailable: "Trial eligibility is temporarily unavailable. You can still view published plans.",
+    freeIncluded: "Included at no charge",
+    billingTerms: "M-Pesa charges are made once for the selected period. Automatic recurring renewals are not enabled. Access is activated only after the Backend verifies payment.",
+    paidPlansTitle: "Paid hub plans",
+    paidPlansText: "Plan pricing, periods, publication status and included features come from the live Backend catalogue.",
+    daysUnit: "days",
+    paidPlansTitle: "Paid hub plans",
+    paidPlansText: "Plan pricing, periods, publication status and included features come from the live Backend catalogue.",
+    daysUnit: "days",
     loading: "Loading current plans…",
     empty: "No paid plans are currently published.",
     offline: "No internet connection. Reconnect to load current prices and pay securely.",
@@ -56,6 +79,29 @@ const COPY = {
   sw: {
     title: "Chagua mpango wako wa Premium",
     subtitle: "Malipo salama ya M-Pesa. Mpango utaanza baada ya malipo kuthibitishwa.",
+    freeAccessTitle: "Huduma za bure zimejumuishwa",
+    freeAccessText: "Kila akaunti hupata huduma muhimu za jukwaa. Community na Faith hubaki bure na haziuzwi kama usajili wa hub.",
+    communityFree: "Community ni bure daima na inawezeshwa na matangazo yanayodhaminiwa. Nafasi za matangazo hushughulikiwa tofauti na usajili na hukaguliwa.",
+    faithFree: "Huduma za Faith Hub ni bure. Hakuna malipo ya usajili wa Faith.",
+    trialTitle: "Majaribio ya bure ya hub",
+    trialText: "Akaunti zilizoingia na zinazostahili zinaweza kuanza jaribio moja kwa kila hub. Muda na kustahili huthibitishwa na Revenue Engine.",
+    trialStart: "Anza jaribio la bure",
+    trialStarting: "Inaanzisha jaribio…",
+    trialActive: "Jaribio linaendelea",
+    trialUsed: "Jaribio tayari lilitumika",
+    trialNotStarted: "Jaribio linapatikana",
+    trialDays: "Muda wa jaribio",
+    daysRemaining: "siku zimebaki",
+    trialLogin: "Ingia ili kuona na kuanza jaribio lako",
+    trialUnavailable: "Hali ya kustahili jaribio haipatikani kwa sasa. Bado unaweza kuona mipango iliyochapishwa.",
+    freeIncluded: "Imejumuishwa bila malipo",
+    billingTerms: "Malipo ya M-Pesa hutozwa mara moja kwa kipindi kilichochaguliwa. Malipo ya kujirudia kiotomatiki hayajawashwa. Huduma huanza tu baada ya Backend kuthibitisha malipo.",
+    paidPlansTitle: "Mipango ya kulipia ya hub",
+    paidPlansText: "Bei, vipindi, hali ya uchapishaji na vipengele vinatoka kwenye orodha ya sasa ya Backend.",
+    daysUnit: "siku",
+    paidPlansTitle: "Mipango ya kulipia ya hub",
+    paidPlansText: "Bei, vipindi, hali ya uchapishaji na vipengele vinatoka kwenye orodha ya sasa ya Backend.",
+    daysUnit: "siku",
     loading: "Inapakia mipango ya sasa…",
     empty: "Hakuna mipango ya kulipia iliyochapishwa kwa sasa.",
     offline: "Hakuna intaneti. Unganisha tena ili kupata bei za sasa na kulipa kwa usalama.",
@@ -102,6 +148,15 @@ const COPY = {
     unknown: "Hali ya ombi la malipo haijathibitishwa. Usilipe tena hadi malipo hayo yakaguliwe.",
   },
 };
+
+const PAID_SUBSCRIPTION_HUBS = new Set(["smart_ai", "shamba", "biashara", "elimu", "marketplace"]);
+const TRIAL_HUBS = [
+  { hub: "smart_ai", name: "RevelaAI" },
+  { hub: "shamba", name: "Shamba" },
+  { hub: "biashara", name: "Biashara" },
+  { hub: "elimu", name: "Elimu" },
+  { hub: "marketplace", name: "Marketplace" },
+];
 
 function normalisePhone(value) {
   const raw = String(value || "").trim().replace(/[\s()-]/g, "");
@@ -180,6 +235,10 @@ export default function PlansModal({
   const [plansError, setPlansError] = useState("");
   const [checkoutEnabled, setCheckoutEnabled] = useState(false);
   const [catalogOffline, setCatalogOffline] = useState(false);
+  const [trials, setTrials] = useState([]);
+  const [trialCatalogueAvailable, setTrialCatalogueAvailable] = useState(false);
+  const [trialError, setTrialError] = useState("");
+  const [trialStartingHub, setTrialStartingHub] = useState("");
   const [step, setStep] = useState("catalog");
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [phone, setPhone] = useState("");
@@ -219,19 +278,36 @@ export default function PlansModal({
     setPlansLoading(true);
     setPlansError("");
     setCatalogOffline(false);
+    setTrials([]);
+    setTrialCatalogueAvailable(false);
+    setTrialError("");
     try {
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         throw Object.assign(new Error(t.network), { name: "RevenueApiNetworkError" });
       }
-      const [catalogue, current] = await Promise.all([
+      const [catalogue, current, trialResult] = await Promise.all([
         revenueApi.listPlans(undefined, { signal, requestScope: "" }),
         authenticated ? revenueApi.getCurrentCheckout("", { signal, requestScope: "" }) : Promise.resolve(null),
+        authenticated
+          ? revenueApi.listTrials({ signal, requestScope: "" })
+              .then((value) => ({ value }))
+              .catch((error) => {
+                paymentLogError("trial_catalogue_load_failed", error);
+                return { error };
+              })
+          : Promise.resolve({ value: null }),
       ]);
       const cached = catalogue?.__revenue_offline_cache === true;
       setCatalogOffline(cached);
       setCheckoutEnabled(!cached && catalogue?.checkout_enabled === true);
       const rows = Array.isArray(catalogue?.plans) ? catalogue.plans : [];
-      setPlans(rows.filter((item) => item && Number(item.amount) > 0 && item.status !== "retired"));
+      // Keep zero-cost and paid plans in the same server-backed catalogue.
+      // The UI separates them so free access is never sent to M-Pesa checkout.
+      setPlans(rows.filter((item) => item && item.status !== "retired"));
+      const trialRows = trialResult?.value?.trials;
+      setTrials(Array.isArray(trialRows) ? trialRows : []);
+      setTrialCatalogueAvailable(Array.isArray(trialRows));
+      setTrialError(trialResult?.error ? t.trialUnavailable : "");
       if (current?.checkout) {
         const saved = current.checkout;
         const matching = rows.find((item) => item.code === saved.plan_code);
@@ -255,7 +331,7 @@ export default function PlansModal({
     } finally {
       setPlansLoading(false);
     }
-  }, [authenticated, revenueApi, t.network, t.unavailable]);
+  }, [authenticated, revenueApi, t.network, t.unavailable, t.trialUnavailable]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -365,6 +441,59 @@ export default function PlansModal({
     const explicitlyMarked = plans.filter((item) => item.best_value === true).map((item) => item.code);
     return new Set([...annualBest, ...explicitlyMarked]);
   }, [plans]);
+
+  const freePlan = useMemo(
+    () => plans.find((item) => String(item.hub || "").toLowerCase() === "all" && Number(item.amount) <= 0) || null,
+    [plans],
+  );
+
+  const paidPlans = useMemo(
+    () => plans.filter((item) =>
+      Number(item.amount) > 0 &&
+      PAID_SUBSCRIPTION_HUBS.has(String(item.hub || "").toLowerCase()) &&
+      ["month", "year"].includes(String(item.interval || "").toLowerCase())
+    ),
+    [plans],
+  );
+
+  const trialCards = useMemo(
+    () => TRIAL_HUBS.map((item) => ({
+      ...item,
+      ...(trials.find((trial) => String(trial.hub || "").toLowerCase() === item.hub) || {
+        status: trialCatalogueAvailable ? "not_started" : "unavailable",
+        trial_days: null,
+        days_remaining: 0,
+      }),
+    })),
+    [trials, trialCatalogueAvailable],
+  );
+
+  const startHubTrial = async (hub) => {
+    if (!authenticated) {
+      onRequireLogin?.("");
+      return;
+    }
+    if (trialStartingHub) return;
+    setTrialError("");
+    setTrialStartingHub(hub);
+    try {
+      const response = await revenueApi.startTrial(hub, { requestScope: "" });
+      const activatedTrial = response?.trial;
+      if (!activatedTrial) throw new Error(t.trialUnavailable);
+      setTrials((current) => [
+        ...current.filter((item) => item.hub !== hub),
+        activatedTrial,
+      ]);
+      setTrialCatalogueAvailable(true);
+      window.dispatchEvent(new Event("revelacode:entitlements-updated"));
+      onPlanActivated?.(hub);
+    } catch (error) {
+      paymentLogError("trial_start_failed", error);
+      setTrialError(error?.message || t.trialUnavailable);
+    } finally {
+      setTrialStartingHub("");
+    }
+  };
 
   const startPayment = async () => {
     if (!selectedPlan || submitting) return;
@@ -504,19 +633,127 @@ export default function PlansModal({
               {plansLoading ? <div className="flex items-center gap-2 py-10 text-sm text-slate-500"><RefreshCw className="h-5 w-5 animate-spin" />{t.loading}</div> : null}
               {!plansLoading && plansError ? <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{plansError}</div> : null}
               {catalogOffline ? <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{t.offline}</div> : null}
-              {!plansLoading && !plansError && plans.length === 0 ? <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">{t.empty}</p> : null}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {plans.map((plan) => {
-                  const available = plan.status === "available" && checkoutEnabled && !catalogOffline && ["month", "year"].includes(String(plan.interval || "").toLowerCase());
-                  return (
-                    <article key={plan.code} className="flex flex-col rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+
+              <section className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white">{t.freeAccessTitle}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{t.freeAccessText}</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {freePlan ? (
+                    <article className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0"><h3 className="break-words text-sm font-black text-slate-900 dark:text-white">{plan.name}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{plan.hub === "smart_ai" ? "RevelaAI" : String(plan.hub || "").replace(/_/g, " ").replace(/^./, (s) => s.toUpperCase())}</p></div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">{freePlan.name}</h4>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Core ecosystem access</p>
+                        </div>
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-[9px] font-black uppercase text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">{t.freeIncluded}</span>
+                      </div>
+                      <p className="mt-3 text-xl font-black text-slate-950 dark:text-white">FREE</p>
+                      {Array.isArray(freePlan.features) && freePlan.features.length ? (
+                        <ul className="mt-3 space-y-1.5">
+                          {freePlan.features.map((feature, index) => (
+                            <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />{feature}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </article>
+                  ) : null}
+                  <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">Community</h4>
+                      <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{t.communityFree}</p>
+                    </div>
+                    <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">Faith Hub</h4>
+                      <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{t.faithFree}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="mb-6">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-base font-black text-slate-950 dark:text-white">{t.trialTitle}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{t.trialText}</p>
+                  </div>
+                </div>
+                {!authenticated ? (
+                  <div className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">{t.trialLogin}</p>
+                    <button type="button" onClick={() => onRequireLogin?.("")} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-950">{t.login}</button>
+                  </div>
+                ) : (
+                  <>
+                    {trialError ? <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{trialError}</p> : null}
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {trialCards.map((trial) => {
+                        const active = trial.status === "active";
+                        const used = trial.status === "expired";
+                        const available = trial.status === "not_started";
+                        const unavailable = trial.status === "unavailable";
+                        return (
+                          <article key={trial.hub} className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-sm font-black text-slate-900 dark:text-white">{trial.name}</h4>
+                              <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${active ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : used || unavailable ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200"}`}>
+                                {active ? t.trialActive : used ? t.trialUsed : unavailable ? t.trialUnavailable : t.trialNotStarted}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t.trialDays}: <strong className="text-slate-800 dark:text-slate-200">{Number.isFinite(Number(trial.trial_days)) && trial.trial_days !== null ? `${trial.trial_days} ${t.daysUnit}` : "—"}</strong></p>
+                            {active ? <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{trial.days_remaining} {t.daysRemaining}</p> : null}
+                            {unavailable ? <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{t.trialUnavailable}</p> : null}
+                            {available ? (
+                              <button type="button" onClick={() => startHubTrial(trial.hub)} disabled={Boolean(trialStartingHub)} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50">
+                                {trialStartingHub === trial.hub ? t.trialStarting : t.trialStart}
+                              </button>
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="text-base font-black text-slate-950 dark:text-white">{t.paidPlansTitle}</h3>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t.paidPlansText}</p>
+                </div>
+              </div>
+              {!plansLoading && !plansError && paidPlans.length === 0 ? <p className="rounded-xl border border-slate-200 bg-slate-50 py-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">{t.empty}</p> : null}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {paidPlans.map((plan) => {
+                  const available = plan.status === "available" && checkoutEnabled && !catalogOffline;
+                  return (
+                    <article key={plan.code} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="break-words text-sm font-black text-slate-900 dark:text-white">{plan.name}</h4>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{plan.hub === "smart_ai" ? "RevelaAI" : String(plan.hub || "").replace(/_/g, " ").replace(/^./, (s) => s.toUpperCase())}</p>
+                        </div>
                         {bestValueCodes.has(plan.code) ? <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black uppercase text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">{t.best}</span> : null}
                       </div>
                       <p className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">{formatMoney(plan.amount, plan.currency || "KES")}</p>
                       <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{t.duration}: {durationText(plan, t)}</p>
-                      {Array.isArray(plan.features) && plan.features.length ? <ul className="mt-3 flex-1 space-y-1.5">{plan.features.slice(0, 5).map((feature, index) => <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />{feature}</li>)}</ul> : <div className="flex-1" />}
+                      {Array.isArray(plan.features) && plan.features.length ? (
+                        <ul className="mt-3 flex-1 space-y-1.5">
+                          {plan.features.map((feature, index) => (
+                            <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />{feature}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <div className="flex-1" />}
                       <button type="button" onClick={() => choosePlan(plan)} disabled={!available} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 dark:disabled:bg-slate-800 dark:disabled:text-slate-500">
                         {available ? t.choose : plan.status !== "available" ? t.pendingTag : t.unavailable}
                       </button>
@@ -525,7 +762,8 @@ export default function PlansModal({
                 })}
               </div>
               {!checkoutEnabled && !catalogOffline ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{t.unavailable}</p> : null}
-              <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-5 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">{t.billingTerms}</p>
+              <div className="mt-4 flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400"><ShieldCheck className="h-4 w-4" /> Secure, verified M-Pesa checkout</span>
                 <button type="button" onClick={() => loadPlans().catch((error) => paymentLogError("manual_refresh_failed", error))} disabled={plansLoading} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"><RefreshCw className={`h-3.5 w-3.5 ${plansLoading ? "animate-spin" : ""}`} />{t.refresh}</button>
               </div>
