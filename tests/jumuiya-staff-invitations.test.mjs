@@ -39,3 +39,18 @@ test("Biashara Team remains reachable in small/simple workspaces", () => {
   assert.match(dashboard, /!\["automations", "sync"\]\.includes\(item\.key\)/);
   assert.doesNotMatch(dashboard, /!\["automations", "sync", "team"\]\.includes\(item\.key\)/);
 });
+
+
+test("platform admins can select a school and send protected Elimu staff invitations", () => {
+  const page = read("src/components/admin/AdminSchoolStaffInvitations.jsx");
+  const dashboard = read("src/components/admin/AdminDashboard.jsx");
+  const sidebar = read("src/components/admin/AdminSidebar.jsx");
+  assert.match(page, /\/api\/jumuiya\/admin\/schools/);
+  assert.match(page, /staff-invitations/);
+  assert.match(page, /School Owner and Principal are intentionally excluded/);
+  assert.match(page, /teacher/);
+  assert.match(page, /bursar/);
+  assert.match(dashboard, /AdminSchoolStaffInvitations/);
+  assert.match(dashboard, /schoolStaffInvitations/);
+  assert.match(sidebar, /School Staff Invitations/);
+});
