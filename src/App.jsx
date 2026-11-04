@@ -1,6 +1,9 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
+import { registerPlugin } from "@capacitor/core";
+
+const NativeBrowser = registerPlugin("Browser");
 import {
   BrowserRouter,
   Routes,
@@ -69,28 +72,57 @@ function SPAWrapper({ children }) {
 
 function NativeOAuthDeepLinkHandler() {
   const navigate = useNavigate();
+  const handledUrl = useRef("");
+
   useEffect(() => {
     if (!window.Capacitor?.isNativePlatform?.()) return undefined;
+
     let listener;
     let active = true;
-    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
-      if (!url || !String(url).startsWith("com.revelacode.app://oauth/callback")) return;
+
+    const processOAuthUrl = (value) => {
+      if (!active || !value) return;
       try {
-        const parsed = new URL(url);
+        const parsed = new URL(String(value));
+        const isLegacyCustomScheme =
+          parsed.protocol === "com.revelacode.app:" &&
+          parsed.hostname === "oauth" &&
+          parsed.pathname === "/callback";
+        const isVerifiedAndroidAppLink =
+          parsed.protocol === "https:" &&
+          parsed.host === "revelacode.co.ke" &&
+          parsed.pathname === "/oauth/android-callback";
+        if (!isLegacyCustomScheme && !isVerifiedAndroidAppLink) return;
+
         const query = parsed.searchParams.toString();
+        const dedupeKey = `${parsed.protocol}//${parsed.host}${parsed.pathname}?${query}`;
+        if (handledUrl.current === dedupeKey) return;
+        handledUrl.current = dedupeKey;
+
+        NativeBrowser.close().catch(() => {});
         navigate(`/oauth/callback${query ? `?${query}` : ""}`, { replace: true });
       } catch (error) {
         console.warn("Could not process the Google OAuth app callback.", error);
       }
-    }).then(handle => {
-      listener = handle;
-      if (!active) handle.remove();
-    }).catch(error => console.warn("Native OAuth deep-link listener could not start.", error));
+    };
+
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => processOAuthUrl(url))
+      .then(handle => {
+        listener = handle;
+        if (!active) handle.remove();
+      })
+      .catch(error => console.warn("Native OAuth deep-link listener could not start.", error));
+
+    CapacitorApp.getLaunchUrl()
+      .then(launch => processOAuthUrl(launch?.url))
+      .catch(error => console.warn("Could not inspect the Android OAuth launch URL.", error));
+
     return () => {
       active = false;
       listener?.remove();
     };
   }, [navigate]);
+
   return null;
 }
 
@@ -339,6 +371,7 @@ export default function App() {
               <Route path="/community/*" element={<Navigate to="/?hub=community" replace />} />
               <Route path="/login" element={<StartModal />} />
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+              <Route path="/oauth/android-callback" element={<OAuthCallbackPage />} />
               <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
               <Route
                 path="/accounts"

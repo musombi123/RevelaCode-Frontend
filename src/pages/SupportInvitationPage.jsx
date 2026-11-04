@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, UserPlus } from "lucide-react";
 import { useAdminApi, resolveAdminBackendUrl } from "@/services/adminApi.jsx";
+import { registerPlugin } from "@capacitor/core";
+
+const NativeBrowser = registerPlugin("Browser");
 
 export default function SupportInvitationPage() {
   const adminApi = useAdminApi();
@@ -55,24 +58,24 @@ export default function SupportInvitationPage() {
 
   async function acceptWithGoogle() {
     if (googleAccepting) return;
-    if (window.Capacitor?.isNativePlatform?.()) {
-      setMessageType("error");
-      setMessage("Google invitation acceptance on Android requires the system-browser plugin and deep-link handler in the APK. Use the password option here until that APK update is installed.");
-      return;
-    }
     setGoogleAccepting(true);
     setMessage("");
     try {
+      const isNativeAndroid = Boolean(window.Capacitor?.isNativePlatform?.());
       const response = await fetch(`${resolveAdminBackendUrl()}/api/oauth/google/invite/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ invite_token: token, email, client: "web" }),
+        body: JSON.stringify({ invite_token: token, email, client: isNativeAndroid ? "android" : "web" }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.success || !payload.authorization_url) {
         throw new Error(payload.message || "Google invitation sign-in could not be started.");
       }
-      window.location.assign(payload.authorization_url);
+      if (isNativeAndroid) {
+        await NativeBrowser.open({ url: payload.authorization_url, toolbarColor: "#08111F" });
+      } else {
+        window.location.assign(payload.authorization_url);
+      }
     } catch (error) {
       setMessageType("error");
       setMessage(error?.message || "Google invitation sign-in failed.");

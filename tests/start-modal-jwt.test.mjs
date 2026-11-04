@@ -28,6 +28,32 @@ test("StartModal delegates token persistence to AuthContext and does not put cre
   assert.doesNotMatch(startModal, /accessToken,\s*tokenType,\s*refreshToken,\s*password/);
 });
 
+test("Android Google sign-in launches a browser and handles OAuth deep links", () => {
+  assert.match(startModal, /registerPlugin\("Browser"\)/);
+  assert.match(startModal, /NativeBrowser\.open\(/);
+  assert.match(startModal, /client", isNativeAndroid \? "android" : "web"/);
+  assert.match(app, /appUrlOpen/);
+  assert.match(app, /getLaunchUrl\(\)/);
+  assert.match(app, /parsed\.hostname !== "oauth"/);
+  assert.match(app, /isVerifiedAndroidAppLink/);
+  assert.match(app, /parsed\.host === "revelacode\.co\.ke"/);
+  assert.match(app, /parsed\.pathname === "\/oauth\/android-callback"/);
+  assert.match(app, /NativeBrowser\.close\(\)/);
+});
+
+test("Android support invitation Google acceptance uses the Android callback", async () => {
+  const invitationPage = await readFile(new URL("../src/pages/SupportInvitationPage.jsx", import.meta.url), "utf8");
+  assert.match(invitationPage, /client: isNativeAndroid \? "android" : "web"/);
+  assert.match(invitationPage, /NativeBrowser\.open\(/);
+});
+
+test("Android App Links are associated with the signed RevelaCode package", async () => {
+  const statements = JSON.parse(await readFile(new URL("../public/.well-known/assetlinks.json", import.meta.url), "utf8"));
+  assert.equal(statements[0].target.package_name, "com.revelacode.app");
+  assert.ok(statements[0].relation.includes("delegate_permission/common.handle_all_urls"));
+  assert.ok(statements[0].target.sha256_cert_fingerprints.includes("DC:05:28:00:59:31:C6:18:E7:0B:B7:0F:E2:D4:42:7E:24:29:22:B4:74:26:01:5C:16:54:AF:E4:E9:50:E5:40"));
+});
+
 test("closing/resetting StartModal does not clear the token", () => {
   assert.doesNotMatch(startModal, /localStorage\.removeItem\(\s*["']revela_jwt["']/);
   assert.match(authContext, /clearStoredTokens\(\)/);
