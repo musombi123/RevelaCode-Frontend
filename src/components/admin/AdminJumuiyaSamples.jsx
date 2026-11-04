@@ -55,11 +55,36 @@ export default function AdminJumuiyaSamples() {
     setLoading(true);
     setError("");
     try {
-      const response = await adminApi.request("/api/jumuiya/admin/sample-records", {
+      let response = await adminApi.request("/api/jumuiya/admin/sample-records", {
         params: { hub },
         signal,
       });
-      const data = unwrap(response);
+      let data = unwrap(response);
+
+      // A fresh database or a service that missed its startup seed can still
+      // recover when an administrator opens the sample centre. This writes
+      // only to the dedicated admin sample collection, never tenant data.
+      if (hub === "all" && Number(data.total) === 0 && !signal?.aborted) {
+        setSeeding(true);
+        const seedResponse = await adminApi.request(
+          "/api/jumuiya/admin/sample-records/seed",
+          { method: "POST" },
+        );
+        const seedResult = unwrap(seedResponse);
+        response = await adminApi.request("/api/jumuiya/admin/sample-records", {
+          params: { hub },
+          signal,
+        });
+        data = unwrap(response);
+        if (!signal?.aborted) {
+          setNotice(
+            String(Number(seedResult.total) || Number(data.total) || 0) +
+            " isolated sample records are ready. No live customer records were changed.",
+          );
+        }
+      }
+
+      if (signal?.aborted) return;
       setItems(Array.isArray(data.items) ? data.items : []);
       setCounts(data.counts_by_hub || {});
       setTotal(Number(data.total) || 0);
