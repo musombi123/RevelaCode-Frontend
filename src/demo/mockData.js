@@ -235,16 +235,20 @@ export const DEMO_BUSINESS_TEAM = DEMO_BUSINESS_STAFF.map((employee, i) => ({
   status: "active", is_demo: true,
 }));
 
+const DEMO_BUSINESS_SALES_TOTAL = DEMO_SALES.reduce((sum, item) => sum + item.amount, 0);
+const DEMO_BUSINESS_EXPENSES_TOTAL = DEMO_EXPENSES.reduce((sum, item) => sum + item.amount, 0);
+const DEMO_BUSINESS_NET_ESTIMATE = DEMO_BUSINESS_SALES_TOTAL - DEMO_BUSINESS_EXPENSES_TOTAL;
+
 export const DEMO_SHOP = {
   business: DEMO_SAMPLE_BUSINESS,
   dashboard: {
     currency: "KES",
     metrics: {
-      sales_total: 128500, orders: DEMO_ORDERS.length, pending_orders: DEMO_ORDERS.filter((x) => x.status === "pending").length,
+      sales_total: DEMO_BUSINESS_SALES_TOTAL, orders: DEMO_ORDERS.length, pending_orders: DEMO_ORDERS.filter((x) => x.status === "pending").length,
       completed_orders: DEMO_ORDERS.filter((x) => x.status === "completed").length, customers: DEMO_CUSTOMERS.length,
       products: DEMO_PRODUCTS.length, active_products: DEMO_PRODUCTS.length,
       low_stock: DEMO_PRODUCTS.filter((x) => x.stock_quantity <= x.low_stock_threshold).length,
-      expenses_total: DEMO_EXPENSES.reduce((sum, x) => sum + x.amount, 0), net_estimate: 54300,
+      expenses_total: DEMO_BUSINESS_EXPENSES_TOTAL, net_estimate: DEMO_BUSINESS_NET_ESTIMATE,
     },
     today: { sales: 8400, orders: 4 },
     top_products: DEMO_PRODUCTS.slice(0, 5).map((x, i) => ({ id: x.id, name: x.name, units_sold: 26 - i * 3, revenue: x.price * (26 - i * 3), stock_quantity: x.stock_quantity })),
@@ -259,7 +263,7 @@ export const DEMO_SHOP = {
   machines: DEMO_FACTORY_MACHINES, quality_checks: DEMO_FACTORY_QUALITY_CHECKS,
   employee_attendance: DEMO_BUSINESS_ATTENDANCE, team: DEMO_BUSINESS_TEAM,
   finance: {
-    currency: "KES", income_total: 128500, expenses_total: 74200, net_estimate: 54300,
+    currency: "KES", income_total: DEMO_BUSINESS_SALES_TOTAL, expenses_total: DEMO_BUSINESS_EXPENSES_TOTAL, net_estimate: DEMO_BUSINESS_NET_ESTIMATE,
     transactions: [
       ...DEMO_SALES.slice(0, 12).map((x) => ({ id: x.id, reference: x.reference, type: "sale", description: "Retail sale", amount: x.amount, status: "completed", created_at: x.created_at })),
       ...DEMO_EXPENSES.map((x) => ({ id: x.id, reference: x.id.toUpperCase(), type: "expense", description: x.description, amount: x.amount, status: x.status, created_at: DEMO_STAMP })),
@@ -382,8 +386,8 @@ export const DEMO_SCHOOL_SYNC_JOBS = [
   { id: demoId("school-sync", 3), job_type: "fee_ledger_reconciliation", status: "completed", records_processed: 120, created_at: DEMO_STAMP, is_demo: true },
 ];
 export const DEMO_SCHOOL_REPORTS = {
-  attendance: { attendance_rate: 94, present: 85, absent: 4, late: 1, total: 90 },
-  fees: { billed: 2160000, collected: 1080000, outstanding: 1080000, currency: "KES" },
+  attendance: { attendance_rate: 93, present: 81, absent: 6, late: 3, total: 90 },
+  fees: { billed: DEMO_FEES.reduce((sum, item) => sum + item.amount_due, 0), collected: DEMO_FEES.reduce((sum, item) => sum + item.amount_paid, 0), outstanding: DEMO_FEES.reduce((sum, item) => sum + item.balance, 0), currency: "KES" },
   academics: { assessments: DEMO_ASSESSMENTS.length, average_score: 68, pass_rate: 82 },
   enrolment: { total: DEMO_STUDENTS.length, active: DEMO_STUDENTS.filter((x) => x.status === "active").length, classes: DEMO_CLASSES.length },
   is_demo: true,
@@ -403,7 +407,7 @@ export const DEMO_SCHOOL = {
   dashboard: {
     students_count: DEMO_STUDENTS.length, active_students: DEMO_STUDENTS.filter((x) => x.status === "active").length,
     staff_count: DEMO_STAFF.length, classes_count: DEMO_CLASSES.length,
-    attendance_rate: 94, present_today: DEMO_ATTENDANCE.filter((x) => x.status === "present").length,
+    attendance_rate: 93, present_today: DEMO_ATTENDANCE.filter((x) => x.status === "present").length,
     outstanding_fees: DEMO_FEES.reduce((sum, x) => sum + x.balance, 0),
     fee_collection: DEMO_FEES.reduce((sum, x) => sum + x.amount_paid, 0),
     assessments_count: DEMO_ASSESSMENTS.length, assignments_count: DEMO_ASSIGNMENTS.length,
