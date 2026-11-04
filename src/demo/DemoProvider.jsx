@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { setDemoApiActive, trackDemo } from "./demoApi.js";
+import { isDemoEnabled } from "./demoPlatform.js";
 
 const STORAGE_KEY = "revelacode_demo_progress_v1";
 const DemoContext = createContext(null);
@@ -26,6 +27,7 @@ function persistProgress(value) {
 }
 
 export function DemoProvider({ children, chapters = [] }) {
+  const enabled = isDemoEnabled();
   const [state, setState] = useState(readProgress);
   const stateRef = useRef(state);
   const chaptersRef = useRef(chapters);
@@ -40,10 +42,19 @@ export function DemoProvider({ children, chapters = [] }) {
   }, []);
 
   useLayoutEffect(() => {
+    if (!enabled) {
+      // Clear stale demo state from an earlier web session on Android and
+      // ensure no mocked API/network guards can remain active in the APK.
+      setDemoApiActive(false);
+      if (stateRef.current.active || stateRef.current.presentationOnly) {
+        commit({ ...stateRef.current, active: false, presentationOnly: false });
+      }
+      return undefined;
+    }
     if (!state.active) return undefined;
     const release = setDemoApiActive(true);
     return release;
-  }, [state.active]);
+  }, [enabled, state.active, commit]);
 
   useLayoutEffect(() => {
     if (!chapters.length) return;
@@ -71,6 +82,7 @@ export function DemoProvider({ children, chapters = [] }) {
   const chapterAt = useCallback((id) => chaptersRef.current.findIndex((chapter) => chapter.id === id), []);
 
   const start = useCallback((options = {}) => {
+    if (!enabled) return;
     const current = stateRef.current;
     const resume = options.resume === true;
     const chapterId = options.chapterId || (resume ? current.chapterId : "welcome");
@@ -79,13 +91,14 @@ export function DemoProvider({ children, chapters = [] }) {
     commit({ ...current, active: true, presentationOnly: false, chapterId, stepIndex, completed });
     trackDemo("demo_started", { chapter_id: chapterId, resumed: resume });
     trackDemo("step_viewed", { chapter_id: chapterId, step_index: stepIndex });
-  }, [commit]);
+  }, [commit, enabled]);
 
   const startPresentation = useCallback(() => {
+    if (!enabled) return;
     const current = stateRef.current;
     commit({ ...current, active: true, presentationOnly: true });
     trackDemo("presentation_mode_started", { source: "admin_console" });
-  }, [commit]);
+  }, [commit, enabled]);
 
   const exitPresentation = useCallback(() => {
     const current = stateRef.current;
@@ -185,9 +198,9 @@ export function DemoProvider({ children, chapters = [] }) {
   }, [commit]);
 
   const value = useMemo(() => ({
-    ...state, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn,
+    ...state, enabled, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn,
     updateLanguage: setLang,
-  }), [state, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn]);
+  }), [state, enabled, chapters, start, startPresentation, exitPresentation, next, back, skip, jumpToChapter, exit, restart, setLang, setVoiceOn]);
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
