@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/Input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Loader2 } from "lucide-react";
+import GoogleAccountConnections from "@/components/GoogleAccountConnections.jsx";
 import { useAuth } from "@/context/AuthContext";
 
 const baseUrl = import.meta.env.VITE_API_URL;
@@ -188,7 +189,7 @@ export default function AccountPage() {
           <Card>
             <CardContent className="space-y-3 pt-4">
               <Button variant="outline">🌙 Toggle Dark Mode</Button>
-              <Button variant="outline">🔗 Linked Accounts</Button>
+              <GoogleAccountConnections />
               <Button variant="destructive">🗑 Delete Account</Button>
             </CardContent>
           </Card>
