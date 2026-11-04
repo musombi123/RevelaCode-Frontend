@@ -17,6 +17,7 @@ import StartModal from "./components/StartModal.jsx";
 import AndroidPermissionSetup from "./components/AndroidPermissionSetup.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
+import BiasharaInvitationPage from "./pages/BiasharaInvitationPage.jsx";
 import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
 import ElimuParentPortal from "./pages/jumuiya/ElimuParentPortal.jsx";
 import ElimuStudentPortal from "./pages/jumuiya/ElimuStudentPortal.jsx";
@@ -336,6 +337,7 @@ export default function App() {
                   </AuthGate>
                 }
               />
+              <Route path="/biashara/invitation" element={<BiasharaInvitationPage />} />
               <Route
                 path="/verify/certificate/:certId"
                 element={<CertificateVerifyPage />}
