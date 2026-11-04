@@ -26,6 +26,8 @@ jobs:
         run: npm run test:community
       - name: Run guided Demo Session regressions
         run: npm run test:demo
+      - name: Run offline AI fallback regressions
+        run: npm run test:offline-ai
       - name: Run RevelaAI dashboard contracts
         run: node --test tests/revelaai-dashboard-contract.test.mjs
       - name: Run hub plans visibility contracts
