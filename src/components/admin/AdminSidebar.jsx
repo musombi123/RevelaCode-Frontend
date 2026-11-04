@@ -69,6 +69,12 @@ const tabs = [
     icon: Database,
   },
   {
+    key: "sampleData",
+    label: "Jumuiya Sample Data",
+    description: "Review isolated Community and cross-hub sample records",
+    icon: Database,
+  },
+  {
     key: "verification",
     label: "School Verification",
     description: "Review school applications",
