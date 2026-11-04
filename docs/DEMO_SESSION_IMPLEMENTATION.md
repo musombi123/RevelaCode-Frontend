@@ -194,6 +194,7 @@ The Android workflow runs `npm run test:demo`, verifies the required target stri
 
 ### Web
 - [ ] Start from StartModal; test Try the Demo and Continue as guest.
+- [ ] As an administrator, open Admin Console → Browse demo systems; navigate across Elimu, Shamba and Biashara without the guided overlay, reload to confirm presentation mode persists, then Exit presentation to restore live API reads.
 - [ ] Start from Home and resume an interrupted session.
 - [ ] Complete the Biashara sample product flow; verify no product is saved.
 - [ ] Complete Shamba, Elimu, Faith and Community; verify the sample post is not published.
