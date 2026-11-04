@@ -1,5 +1,6 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
 import {
   BrowserRouter,
   Routes,
@@ -63,6 +64,33 @@ function SPAWrapper({ children }) {
   if (!hasStarted) return <StartModal />;
 
   return children;
+}
+
+function NativeOAuthDeepLinkHandler() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return undefined;
+    let listener;
+    let active = true;
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      if (!url || !String(url).startsWith("com.revelacode.app://oauth/callback")) return;
+      try {
+        const parsed = new URL(url);
+        const query = parsed.searchParams.toString();
+        navigate(`/oauth/callback${query ? `?${query}` : ""}`, { replace: true });
+      } catch (error) {
+        console.warn("Could not process the Google OAuth app callback.", error);
+      }
+    }).then(handle => {
+      listener = handle;
+      if (!active) handle.remove();
+    }).catch(error => console.warn("Native OAuth deep-link listener could not start.", error));
+    return () => {
+      active = false;
+      listener?.remove();
+    };
+  }, [navigate]);
+  return null;
 }
 
 function InternalDashboard({ initialHub = null }) {
@@ -288,6 +316,7 @@ export default function App() {
           <BrowserRouter>
             <SEOManager />
             <AndroidPermissionSetup />
+            <NativeOAuthDeepLinkHandler />
             <Routes>
               <Route path="/" element={<PlatformHomeRoute />} />
               <Route
