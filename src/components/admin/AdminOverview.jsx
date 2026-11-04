@@ -14,6 +14,7 @@ import {
   Building2,
   CheckCircle2,
   ClipboardCheck,
+  Database,
   GraduationCap,
   Leaf,
   RefreshCw,
@@ -40,6 +41,10 @@ const INITIAL_STATS = {
   pending_schools: 0,
   schools_needing_information: 0,
   rejected_schools: 0,
+  community_posts: 0,
+  community_groups: 0,
+  admin_sample_records: 0,
+  admin_sample_counts_by_hub: {},
 };
 
 // =========================================================
@@ -118,6 +123,15 @@ function normalizeOverview(payload) {
     rejected_schools: safeCount(
       payload.rejected_schools,
     ),
+    community_posts: safeCount(payload.community_posts),
+    community_groups: safeCount(payload.community_groups),
+    admin_sample_records: safeCount(payload.admin_sample_records),
+    admin_sample_counts_by_hub:
+      payload.admin_sample_counts_by_hub &&
+      typeof payload.admin_sample_counts_by_hub === "object" &&
+      !Array.isArray(payload.admin_sample_counts_by_hub)
+        ? payload.admin_sample_counts_by_hub
+        : {},
   };
 }
 
@@ -247,7 +261,7 @@ export default function AdminOverview() {
       <div className="space-y-6">
         <div className="h-8 w-64 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3, 4].map((item) => (
             <div
               key={item}
@@ -426,6 +440,34 @@ export default function AdminOverview() {
           }
           description="School applications awaiting review"
           iconClass="bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+        />
+
+        <StatCard
+          icon={Activity}
+          label="Community Center"
+          value={
+            overview
+              ? formatNumber(stats.community_posts + stats.community_groups)
+              : "—"
+          }
+          description={
+            overview
+              ? formatNumber(stats.community_posts) + " published posts · " + formatNumber(stats.community_groups) + " active groups"
+              : "Community posts and active groups"
+          }
+          iconClass="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"
+        />
+
+        <StatCard
+          icon={Database}
+          label="Jumuiya Sample Records"
+          value={
+            overview
+              ? formatNumber(stats.admin_sample_records)
+              : "—"
+          }
+          description="Isolated training records across all hubs"
+          iconClass="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
         />
       </div>
 
