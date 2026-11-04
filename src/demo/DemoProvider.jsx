@@ -116,7 +116,7 @@ export function DemoProvider({ children, chapters = [] }) {
       commit({ ...current, chapterId: nextChapter.id, stepIndex: 0, completed });
       trackDemo("step_viewed", { chapter_id: nextChapter.id, step_index: 0 });
     } else {
-      commit({ ...current, active: false, completed });
+      commit({ ...current, active: false, presentationOnly: false, completed });
       trackDemo("demo_finished", { completed_chapters: completed.filter((id) => id !== "finish").length });
     }
   }, [chapterAt, commit]);
@@ -143,7 +143,7 @@ export function DemoProvider({ children, chapters = [] }) {
     const nextChapter = chaptersRef.current[index + 1];
     trackDemo("demo_skipped", { chapter_id: current.chapterId, step_index: current.stepIndex });
     if (!nextChapter) {
-      commit({ ...current, active: false });
+      commit({ ...current, active: false, presentationOnly: false });
       return;
     }
     commit({ ...current, chapterId: nextChapter.id, stepIndex: 0 });
