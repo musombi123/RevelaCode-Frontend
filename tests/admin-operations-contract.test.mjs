@@ -26,8 +26,8 @@ test("support invitation acceptance uses the public preview and single-use accep
   const page = source("src/pages/SupportInvitationPage.jsx");
   const routes = source("src/App.jsx");
   const login = source("src/components/admin/AdminLogin.jsx");
-  assert.match(page, /\/api\/admin\/invitations\/preview/);
-  assert.match(page, /\/api\/admin\/invitations\/accept/);
+  assert.ok(page.includes("/api/support-center/invitations/preview"));
+  assert.ok(page.includes("/api/support-center/invitations/accept"));
   assert.match(page, /confirm_password/);
   assert.match(page, /At least 12 characters/);
   assert.match(routes, /path="\/support-invitation"/);
