@@ -11,7 +11,8 @@
     "test:community": "node --test tests/community-comments.test.mjs",
     "test:platform-host": "node --test tests/platform-host.test.mjs",
     "test:demo": "node --test tests/demo-session.test.mjs",
-    "test:offline-ai": "node --test tests/offline-ai.test.mjs"
+    "test:offline-ai": "node --test tests/offline-ai.test.mjs",
+    "test:jumuiya-samples": "node --test tests/admin-jumuiya-samples.test.mjs"
   },
   "engines": {
     "node": "22.x"
