@@ -360,7 +360,7 @@ export default function AdminDashboard({ initialTab = "overview" }) {
               className="admin-page-motion min-w-0 overflow-x-auto rounded-[24px] border border-slate-200/80 bg-white/70 p-3 shadow-[0_18px_55px_-46px_rgba(15,23,42,0.35)] [animation:admin-page-enter_220ms_ease-out_both] dark:border-slate-800 dark:bg-slate-900/45 sm:rounded-[28px] sm:p-5 lg:p-6 motion-reduce:animate-none"
             >
               <AdminPageErrorBoundary pageTitle={activePage.title} key={activeTab}>
-                <ActiveComponent />
+                <ActiveComponent onOpenSamples={() => setActiveTab("sampleData")} />
               </AdminPageErrorBoundary>
             </section>
           </div>
