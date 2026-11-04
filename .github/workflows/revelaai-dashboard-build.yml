@@ -26,6 +26,8 @@ jobs:
         run: npm run test:community
       - name: Run guided Demo Session regressions
         run: npm run test:demo
+      - name: Run Jumuiya admin sample-data regressions
+        run: npm run test:jumuiya-samples
       - name: Run offline AI fallback regressions
         run: npm run test:offline-ai
       - name: Run RevelaAI dashboard contracts
