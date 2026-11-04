@@ -16,7 +16,7 @@ const SUBJECTS = ["English", "Kiswahili", "Mathematics", "Integrated Science", "
 const GRADES = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"];
 const STREAMS = ["East", "West"];
 const CLASS_IDS = Array.from({ length: 12 }, (_, i) => demoId("class", i + 1));
-const DEMO_CLASSES = Array.from({ length: 12 }, (_, i) => ({
+export const DEMO_CLASSES = Array.from({ length: 12 }, (_, i) => ({
   id: CLASS_IDS[i], class_id: CLASS_IDS[i], name: GRADES[i % GRADES.length] + " " + STREAMS[Math.floor(i / GRADES.length)],
   class_name: GRADES[i % GRADES.length] + " " + STREAMS[Math.floor(i / GRADES.length)],
   grade: GRADES[i % GRADES.length], stream: STREAMS[Math.floor(i / GRADES.length)],
