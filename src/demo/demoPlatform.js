@@ -10,5 +10,11 @@ export const ANDROID_DEMO_POLICY_MARKER = "android-demo-disabled";
 export function isDemoEnabled() {
   const androidBuild = import.meta.env?.VITE_ANDROID_APP === "true";
   const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
-  return !androidBuild && !nativeAndroid;
+  if (androidBuild || nativeAndroid) {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.revelacodeDemo = "disabled-android";
+    }
+    return false;
+  }
+  return true;
 }
