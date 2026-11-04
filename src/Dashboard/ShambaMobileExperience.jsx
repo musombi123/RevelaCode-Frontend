@@ -14,6 +14,7 @@ import ShambaDiagnosticsPanel from "@/Dashboard/ShambaDiagnosticsPanel.jsx";
 
 const FARM_PHOTO = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85";
 const ShambaFarmSetup = lazy(() => import("@/Dashboard/ShambaFarmsDashboard.jsx"));
+const ShambaCropWorkspace = lazy(() => import("@/Dashboard/ShambaCropsDashboard.jsx"));
 const ShambaTrustWorkspace = lazy(() => import("@/Dashboard/ShambaTrustDashboard.jsx"));
 const PANEL = "rounded-2xl border border-[#17384F] bg-[#0A2237]";
 const MUTED = "text-[#8BA6B8]";
@@ -692,12 +693,13 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
 
   const back = () => {
     if (screen === "detail") go("farms");
+    else if (screen === "crops") go("detail");
     else if (screen === "home") onNavigate?.("home");
     else go("home");
   };
 
   const titleMap = {
-    farms: "My Farms", detail: "Farm Details", weather: "Weather & Forecast",
+    farms: "My Farms", detail: "Farm Details", crops: "Crop Specifications", weather: "Weather & Forecast",
     market: "Market Prices", advisor: "AI Farm Advisor", diagnostics: "Crop & Soil Diagnostics", records: "Farm Records",
     alerts: "Alerts & Notifications", profile: "Profile & Settings", plans: "Shamba Plans & Tools",
     manage: "Farm Management",
@@ -711,7 +713,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const header = screen === "home" ? (
     <MobileHeader title="RevelaCode" subtitle="Shamba Hub" onAlerts={() => go("alerts")} alertCount={alertCount} onProfile={() => go("profile")} profileInitial={firstName} />
   ) : (
-    <MobileHeader title={titleMap[screen] || "Shamba"} subtitle={farmLocation(selectedFarm)} onBack={() => screen === "detail" ? go("farms") : go("home")} onAlerts={() => go("alerts")} />
+    <MobileHeader title={titleMap[screen] || "Shamba"} subtitle={farmLocation(selectedFarm)} onBack={() => screen === "detail" ? go("farms") : screen === "crops" ? go("detail") : go("home")} onAlerts={() => go("alerts")} />
   );
 
   return (
@@ -837,7 +839,9 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                 {["Overview", "Crops", "Soil", "History"].map((tab) => <button key={tab} type="button" onClick={() => setDetailTab(tab)} className={"flex-1 pb-1 text-[11px] font-bold " + (detailTab === tab ? "border-b-2 border-[#2AD38F] text-[#47DBA0]" : "text-[#86A1B2]")}>{tab}</button>)}
               </div>
               {!farmVerified && <div className="mt-3 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-[11px] leading-5 text-amber-200">This farm has not passed its separate rights review. Farm-linked weather, alerts and intelligence remain unavailable until the review is approved. <button type="button" onClick={() => go("trust")} className="font-bold underline">Review status</button></div>}
-              {detailTab === "Overview" && <div className="mt-3 grid grid-cols-2 gap-2">
+              {detailTab === "Overview" && <>
+                <button type="button" onClick={() => go("manage")} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[11px] font-extrabold " + ACTION}><Tractor size={15}/>Farm specifications & registration</button>
+                <div className="mt-3 grid grid-cols-2 gap-2">
                 <StatTile icon={Sprout} label="Farm health" value={farmVerified ? numberText(farmHealth, "%") : "Locked"} detail={farmVerified ? "Latest backend result" : "Rights review required"}/>
                 <StatTile icon={Wheat} label="Expected yield" value={farmVerified ? numberText(expectedYield, " tonnes") : "Locked"} detail="Only server-returned estimates"/>
                 <div className={PANEL + " col-span-2 p-3"}>
@@ -856,9 +860,11 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
                   {activities.slice(0, 3).map((item, index) => <div key={getId(item) || index} className="flex items-center gap-2 border-b border-[#17384F] py-2 last:border-0"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#123D36] text-[#55D99A]"><Activity size={14}/></span><span className="min-w-0 flex-1 truncate text-[11px] text-[#D7E5EB]">{item?.type || item?.activity_type || "Farm activity"}</span><span className={"text-[9px] " + MUTED}>{timeAgo(recordDate(item))}</span></div>)}
                   {!activities.length && <p className={"mt-2 text-[11px] " + MUTED}>No activity records returned yet.</p>}
                 </div>
-              </div>}
+                </div>
+              </>}
               {detailTab === "Crops" && <div className={PANEL + " mt-3 p-3"}>
-                <p className="text-[12px] font-extrabold text-white">Recorded crops</p>
+                <div className="flex items-center justify-between gap-2"><p className="text-[12px] font-extrabold text-white">Recorded crops</p><button type="button" onClick={() => go("crops")} disabled={!farmVerified} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[#20C987] px-2.5 py-2 text-[10px] font-extrabold text-[#05251E] disabled:cursor-not-allowed disabled:opacity-40"><Sprout size={13}/>Crop specifications</button></div>
+                {!farmVerified && <p className="mt-2 text-[10px] text-amber-200">Crop records become available after this farm passes its separate rights review.</p>}
                 {(farmDetail?.crops || farmDetail?.crop_records || selectedFarm?.crops || []).length ? (farmDetail?.crops || farmDetail?.crop_records || selectedFarm?.crops || []).map((crop, index) => <div key={getId(crop) || index} className="flex items-center gap-3 border-b border-[#17384F] py-3 last:border-0"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#143E36] text-[#56D99B]"><Sprout size={17}/></span><span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-white">{crop?.name || crop?.crop_name || "Crop"}</span><span className={"text-[10px] " + MUTED}>{crop?.stage || crop?.variety || "Stage not recorded"}</span></span><span className="text-[11px] font-bold text-white">{numberText(crop?.area ?? crop?.size)} {crop?.area_unit || crop?.size_unit || "acres"}</span></div>) : <p className={"mt-2 text-[11px] " + MUTED}>No crop records are attached to this farm.</p>}
               </div>}
               {detailTab === "Soil" && <div className={PANEL + " mt-3 space-y-3 p-3"}>
@@ -891,6 +897,15 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
               }} className={"mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[12px] font-extrabold " + ACTION}><MapPin size={15}/>View Farm Map</button>
             </>}
             {!selectedFarm && <div className={PANEL + " mt-4 p-5 text-center"}><p className="text-[13px] font-bold">No farm selected</p><button type="button" onClick={() => go("farms")} className="mt-3 text-[12px] font-bold text-[#45D99A]">Open My Farms</button></div>}
+          </section>
+        )}
+
+        {screen === "crops" && (
+          <section className="pt-3">
+            <div className="mb-3 rounded-xl border border-[#244A5E] bg-[#0A2237] p-3 text-[11px] leading-5 text-[#B9CBD6]">Manage crop varieties, seasons, planting and harvest dates, cultivated area and production notes. Crop data is saved through the Shamba backend.</div>
+            <Suspense fallback={<div className={PANEL + " p-5 text-center text-[12px] " + MUTED}>Loading crop specifications…</div>}>
+              <ShambaCropWorkspace onNavigate={() => go("detail")} />
+            </Suspense>
           </section>
         )}
 
