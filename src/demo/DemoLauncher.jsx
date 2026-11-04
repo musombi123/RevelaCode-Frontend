@@ -10,9 +10,11 @@ export default function DemoLauncher({
   showPresentation = false,
 }) {
   const {
-    active, presentationOnly, chapterId, stepIndex, completed, lang,
+    enabled, active, presentationOnly, chapterId, stepIndex, completed, lang,
     start, startPresentation, exitPresentation,
   } = useDemo();
+  if (!enabled) return null;
+
   const hasProgress = !completed.includes("finish") && (chapterId !== "welcome" || stepIndex > 0 || completed.length > 0);
 
   const launch = (resume) => {
