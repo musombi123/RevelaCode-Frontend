@@ -127,7 +127,26 @@ test("the demo API returns sample GET data and simulated write success", () => {
   assert.ok(DEMO_SHOP.business);
   assert.ok(DEMO_FARM.farmer);
   assert.ok(DEMO_SCHOOL.school);
+  assert.equal(DEMO_SCHOOL.school.verification_status, "demo");
+  assert.equal(DEMO_SCHOOL.school.is_demo, true);
   assert.equal(DEMO_SCHOOL_ACCESS.allowed, true);
+  assert.equal(DEMO_PRESENTATION_DATA.persistence, "disabled");
+  assert.equal(DEMO_STUDENTS.length, 320);
+  assert.equal(DEMO_CLASSES.length, 12);
+  assert.equal(DEMO_STAFF.length, 18);
+  assert.ok(DEMO_ATTENDANCE.length >= 90);
+  assert.ok(DEMO_ASSESSMENTS.length >= 90);
+  assert.ok(DEMO_FEES.length >= 100);
+  assert.equal(DEMO_FARM_CROPS.length, 4);
+  assert.ok(DEMO_FARM_ACTIVITIES.length >= 4);
+  assert.ok(DEMO_HARVESTS.length >= 2);
+  assert.ok(DEMO_SOIL_TESTS.length >= 2);
+  assert.equal(DEMO_FARM_RIGHTS_QUEUE.length, 2);
+  assert.equal(DEMO_SHAMBA_SAFETY_REPORTS.length, 2);
+  assert.equal(DEMO_PRODUCTS.length, 30);
+  assert.equal(DEMO_ORDERS.length, 18);
+  assert.equal(DEMO_SALES.length, 40);
+  assert.equal(DEMO_EXPENSES.length, 12);
   assert.ok(DEMO_COMMUNITY_POSTS.length > 0);
 });
 
