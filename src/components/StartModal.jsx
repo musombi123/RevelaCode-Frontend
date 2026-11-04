@@ -316,6 +316,18 @@ export default function StartModal() {
     );
 
 
+  const handleGoogleSignIn = () => {
+    if (!baseUrl) {
+      setError("The backend URL is not configured.");
+      return;
+    }
+    if (window.Capacitor?.isNativePlatform?.()) {
+      setError("Google sign-in in the Android APK must open the system browser. This APK needs the Capacitor Browser plugin and deep-link handler before enabling this button.");
+      return;
+    }
+    window.location.assign(`${baseUrl}/api/oauth/google/start?mode=login&client=web`);
+  };
+
   const requestVerificationCode = () =>
     apiPost(
       "/api/request-code",
@@ -2649,6 +2661,25 @@ const completeLogin = (data = {}) => {
                           </>
                         )}
                       </button>
+
+                      {(mode === "login" || mode === "register") && (
+                        <>
+                          <div className="flex items-center gap-3 py-1 text-xs text-slate-400">
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                            <span>or continue with</span>
+                            <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGoogleSignIn}
+                            disabled={loading}
+                            className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm font-black text-blue-600">G</span>
+                            Continue with Google
+                          </button>
+                        </>
+                      )}
 
                       {mode === "login" && (
                         <button
