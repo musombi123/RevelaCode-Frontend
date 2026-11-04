@@ -35,7 +35,9 @@ test("Android Google sign-in launches a browser and handles OAuth deep links", (
   assert.match(app, /appUrlOpen/);
   assert.match(app, /getLaunchUrl\(\)/);
   assert.match(app, /parsed\.hostname !== "oauth"/);
-  assert.match(app, /parsed\.pathname !== "\/callback"/);
+  assert.match(app, /isVerifiedAndroidAppLink/);
+  assert.match(app, /parsed\.host === "revelacode\.co\.ke"/);
+  assert.match(app, /parsed\.pathname === "\/oauth\/android-callback"/);
   assert.match(app, /NativeBrowser\.close\(\)/);
 });
 
