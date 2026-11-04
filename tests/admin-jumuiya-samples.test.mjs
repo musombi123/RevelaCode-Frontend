@@ -18,6 +18,8 @@ test("admin sample data workspace covers Community Center and every Jumuiya area
     "/api/jumuiya/admin/sample-records/seed",
     "SAMPLE DATA",
     "live hub data",
+    'hub === "all" && Number(data.total) === 0',
+    "setSeeding(true)",
   ]) {
     assert.ok(page.includes(marker), "Sample data workspace is missing " + marker);
   }
@@ -30,4 +32,8 @@ test("the admin dashboard registers a reachable Jumuiya Sample Data page", () =>
   assert.match(dashboard, /sampleData:\s*\{/);
   assert.match(dashboard, /"sampleData"/);
   assert.match(sidebar, /key: "sampleData"/);
+  const directory = read("src/components/admin/AdminJumuiyaDirectory.jsx");
+  assert.match(directory, /Open Jumuiya Sample Data/);
+  assert.match(directory, /typeof onOpenSamples === "function"/);
+  assert.match(dashboard, /onOpenSamples=\{\(\) => setActiveTab\("sampleData"\)\}/);
 });
