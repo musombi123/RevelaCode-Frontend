@@ -13,7 +13,7 @@ import {
   Loader2,
   Search,
   Image as ImageIcon,
-  ChartNoAxesCombined,
+  BarChart3,
   Calculator,
   Microscope,
   Bot,
@@ -63,7 +63,7 @@ const VOICE_LANGUAGES = [
 
 const TOOL_COMMANDS = [
   ["/search", "Deep Search", Search], ["/image", "Image Studio", ImageIcon],
-  ["/data", "Data analysis", ChartNoAxesCombined], ["/sheet", "Spreadsheet", FileSpreadsheet],
+  ["/data", "Data analysis", BarChart3], ["/sheet", "Spreadsheet", FileSpreadsheet],
   ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
   ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
   ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
