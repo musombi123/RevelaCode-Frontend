@@ -13,14 +13,17 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
+import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
+import {
+  collectWorkspaceRoles,
+  hasPlatformAdminRole,
+  hasSupportWorkspaceRole,
+  resolveWorkspaceRole,
+} from "@/auth/workspaceRoles.mjs";
 
-const API_BASE = (
-  import.meta.env.VITE_REVELACODE_URL ||
-  import.meta.env.VITE_BACKEND_URL ||
-  import.meta.env.VITE_API_URL ||
-  ""
-).replace(/\/+$/, "");
+const API_BASE = resolveBackendBaseUrl(import.meta.env || {});
 
+function getMessage
 function getMessage(payload, fallback) {
   const candidates = [
     payload?.message,
@@ -40,19 +43,7 @@ function getMessage(payload, fallback) {
   );
 }
 
-function getRole(payload) {
-  return String(
-    payload?.role ||
-      payload?.user?.role ||
-      payload?.data?.role ||
-      payload?.data?.user?.role ||
-      "",
-  )
-    .trim()
-    .toLowerCase();
-}
-
-function getToken(payload) {
+function getToken(payload) {function getToken(payload) {
   return (
     payload?.access_token ||
     payload?.accessToken ||
@@ -121,25 +112,9 @@ export default function AdminLogin() {
         );
       }
 
-      // Permissions must come from the backend response.
-      // Never assign the administrator role in the browser.
-      const role = getRole(payload);
-
-      const platformAdminRoles = ["admin", "platform_admin", "super_admin", "revelacode_admin"];
-      const supportRoles = ["support", "support_admin"];
-
-      if (!platformAdminRoles.includes(role) && !supportRoles.includes(role)) {
-        throw new Error(
-          "This account does not have platform administrator or support access. Contact the RevelaCode Administrator if you need access.",
-        );
-      }
-
       const accessToken = getToken(payload);
-
       if (!accessToken) {
-        throw new Error(
-          "The backend did not return an access token. Please try again.",
-        );
+        throw new Error("The backend did not return an access token. Please try again.");
       }
 
       const tokenType =
@@ -148,26 +123,50 @@ export default function AdminLogin() {
         payload?.data?.token_type ||
         payload?.data?.tokenType ||
         "Bearer";
+      const authorization = `${tokenType} ${String(accessToken).replace(/^Bearer\s+/i, "")}`;
 
-      // Preserve the backend response and normalize its token fields
-      // for the existing AuthContext implementation.
-      const authPayload = {
+      // Verify the active database-backed role, including configured owner
+      // elevation, before selecting an administrator or support workspace.
+      const profileResponse = await fetch(`${API_BASE}/api/auth/me`, {
+        method: "GET",
+        headers: { Accept: "application/json", Authorization: authorization },
+      });
+      const profilePayload = await profileResponse.json().catch(() => ({}));
+      if (!profileResponse.ok || profilePayload?.success !== true || profilePayload?.authenticated !== true) {
+        throw new Error(
+          getMessage(profilePayload, `Could not verify current account permissions (HTTP ${profileResponse.status}).`),
+        );
+      }
+
+      const verifiedUser = profilePayload?.user || profilePayload?.data?.user;
+      const verifiedId = verifiedUser?.id || verifiedUser?._id || verifiedUser?.user_id || verifiedUser?.userId;
+      if (!verifiedUser || !verifiedId) {
+        throw new Error("The backend did not return a verified account identity.");
+      }
+
+      const roles = collectWorkspaceRoles(verifiedUser, profilePayload, payload?.user, payload?.data?.user);
+      const role = resolveWorkspaceRole(verifiedUser, profilePayload, payload?.user, payload);
+      const isPlatformAdmin = hasPlatformAdminRole(roles);
+      const isSupport = hasSupportWorkspaceRole(roles);
+      if (!isPlatformAdmin && !isSupport) {
+        throw new Error(
+          "This account does not have platform administrator or support access. Contact the RevelaCode Administrator if you need access.",
+        );
+      }
+
+      // Store the backend-verified identity, not a stale singular role from
+      // an older login payload.
+      login({
         ...payload,
+        ...profilePayload,
+        user: { ...verifiedUser, role, roles },
         role,
+        roles,
         access_token: accessToken,
         token_type: tokenType,
-      };
+      });
 
-      // AuthContext validates the token and persists the real session.
-      login(authPayload);
-
-      // Do not accept arbitrary redirects supplied by the response.
-      navigate(
-        platformAdminRoles.includes(role)
-          ? "/admin/dashboard"
-          : "/support/dashboard",
-        { replace: true },
-      );
+      navigate(isPlatformAdmin ? "/admin/dashboard" : "/support/dashboard", { replace: true });
     } catch (err) {
       setError(
         typeof err?.message === "string" && err.message.trim()
