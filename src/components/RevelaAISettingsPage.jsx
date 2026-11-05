@@ -53,9 +53,39 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
   const current = (section) => ({ ...defaults[section], ...(settings[section] || {}) });
   const set = (section, key, value) => updateSection?.(section, { [key]: value });
   useEffect(() => {
-    const theme = current("appearance").theme;
-    if (["light", "dark", "system"].includes(theme)) setTheme(theme);
-  }, [settings.appearance?.theme, setTheme]);
+    const appearance = current("appearance");
+    const theme = appearance.theme;
+    if (["light", "dark", "system"].includes(theme)) {
+      setTheme(theme);
+    } else if (theme === "scheduled") {
+      const applyScheduledTheme = () => {
+        const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Nairobi", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+        const currentMinutes = Number(parts.find(part => part.type === "hour")?.value || 0) * 60 + Number(parts.find(part => part.type === "minute")?.value || 0);
+        const [startHour,startMinute] = String(appearance.scheduled_start || "19:00").split(":").map(Number);
+        const [endHour,endMinute] = String(appearance.scheduled_end || "07:00").split(":").map(Number);
+        const start = startHour * 60 + startMinute, end = endHour * 60 + endMinute;
+        const dark = start > end ? currentMinutes >= start || currentMinutes < end : currentMinutes >= start && currentMinutes < end;
+        setTheme(dark ? "dark" : "light");
+      };
+      applyScheduledTheme();
+      const timer = window.setInterval(applyScheduledTheme, 60000);
+      return () => window.clearInterval(timer);
+    }
+  }, [settings.appearance, setTheme]);
+
+  useEffect(() => {
+    const appearance = current("appearance");
+    const root = document.documentElement;
+    const accents = { emerald:"#10b981", blue:"#3b82f6", violet:"#8b5cf6", amber:"#f59e0b", rose:"#f43f5e", cyan:"#06b6d4" };
+    root.style.fontSize = `${Math.max(13, Math.min(22, Number(appearance.font_size) || 16))}px`;
+    root.style.setProperty("--revelaai-accent", appearance.accent === "custom" ? (appearance.custom_accent || "#10b981") : (accents[appearance.accent] || accents.emerald));
+    root.style.setProperty("--revelaai-motion-duration", appearance.reduce_motion ? "0ms" : "180ms");
+    root.dataset.revelaDensity = appearance.density || "comfortable";
+    root.dataset.revelaChatStyle = appearance.style || "flat";
+    root.dataset.revelaHighContrast = appearance.high_contrast ? "true" : "false";
+    const fonts = { system:"system-ui, sans-serif", inter:"Inter, system-ui, sans-serif", serif:"Georgia, serif", dyslexia:"OpenDyslexic, Arial, sans-serif" };
+    root.style.fontFamily = fonts[appearance.font] || fonts.system;
+  }, [settings.appearance]);
 
   const section = current(active);
   const textArea = (key, label, example) => <Field label={label} hint={example}><textarea value={section[key] || ""} maxLength={1500} onChange={(event) => set(active, key, event.target.value)} rows={4} className="w-full resize-y rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-400/60" /><span className="text-right text-[11px] text-slate-500">{(section[key] || "").length}/1500</span></Field>;
@@ -71,7 +101,9 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
       <div className="mb-5 flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-emerald-300"><Settings2 size={17}/><span className="text-xs font-bold uppercase tracking-wider">Personal settings</span></div><h2 className="mt-1 text-xl font-bold text-white">{SECTIONS.find(([id]) => id === active)?.[1]}</h2><p className="mt-1 text-xs text-slate-400">{SECTIONS.find(([id]) => id === active)?.[2]}</p></div><button type="button" onClick={() => resetSection?.(active)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-slate-300 hover:bg-white/5"><RotateCcw size={14}/> Reset</button></div>
       {active === "appearance" && <div className="grid gap-3 sm:grid-cols-2">
         {select("theme","Theme",[["light","Light"],["dark","Dark"],["system","System"],["scheduled","Scheduled"]])}
-        {select("accent","Accent colour",[["emerald","Emerald"],["blue","Blue"],["violet","Violet"],["amber","Amber"],["rose","Rose"],["cyan","Cyan"]])}
+        {section.theme==="scheduled"&&<><Field label="Dark mode starts"><Input value={section.scheduled_start||"19:00"} onChange={value=>set(active,"scheduled_start",value)} type="time"/></Field><Field label="Light mode starts"><Input value={section.scheduled_end||"07:00"} onChange={value=>set(active,"scheduled_end",value)} type="time"/></Field></>}
+        {select("accent","Accent colour",[["emerald","Emerald"],["blue","Blue"],["violet","Violet"],["amber","Amber"],["rose","Rose"],["cyan","Cyan"],["custom","Custom"]])}
+        {section.accent==="custom"&&<Field label="Custom accent"><Input type="color" value={section.custom_accent||"#10b981"} onChange={value=>set(active,"custom_accent",value)}/></Field>}
         {select("font","Font",[["system","System"],["inter","Inter"],["serif","Serif"],["dyslexia","Dyslexia-friendly"]])}
         <Field label={`Font size · ${section.font_size}px`}><input type="range" min="13" max="22" value={section.font_size} onChange={(event) => set(active,"font_size",Number(event.target.value))} className="w-full accent-emerald-500"/></Field>
         {select("density","Message density",[["compact","Compact"],["comfortable","Comfortable"],["spacious","Spacious"]])}
