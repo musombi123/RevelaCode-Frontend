@@ -22,6 +22,7 @@ import {
 
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
+import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import InputBar from "@/components/InputBar";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
@@ -2062,6 +2063,7 @@ export default function AIAssistantDashboard({
                     max-w-3xl
                   "
                 >
+                  <ProductivityToolsPanel onSend={sendTextMessage} />
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     onSend={sendMessage}
@@ -2135,6 +2137,7 @@ export default function AIAssistantDashboard({
             >
               <div data-demo="ai-chat-input" className="mx-auto w-full max-w-4xl">
                 <div data-demo="ai-vision-tools">
+                  <ProductivityToolsPanel onSend={sendTextMessage} />
                   <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
