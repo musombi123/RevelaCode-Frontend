@@ -213,14 +213,9 @@ const mdComponents = {
 
   a: ({ href, children }) =>
     isSafeHttpUrl(href) ? (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-emerald-400 underline decoration-emerald-400/30 underline-offset-2 hover:text-emerald-300"
-      >
-        {children}
-      </a>
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline decoration-emerald-400/30 underline-offset-2 hover:text-emerald-300">{children}</a>
+    ) : String(href || "").startsWith("#revelaai-source-") ? (
+      <a href={href} className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 text-[11px] font-bold text-emerald-300 underline">{children}</a>
     ) : (
       <span>{children}</span>
     ),
@@ -597,7 +592,7 @@ function Message({ message, onEdit, onReveal }) {
                   </button>
                 </header>
                 <div className="w-full min-w-0 overflow-x-auto px-3 py-4 text-sm leading-relaxed text-slate-100 sm:px-4">
-                  <MarkdownBody text={visible} />
+                  <MarkdownBody text={visible.replace(/\\[(\\d+)\\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`)} />
                 </div>
               </section>
             ) : visible ? (
@@ -633,6 +628,9 @@ function Message({ message, onEdit, onReveal }) {
                     />
                   </button>
                 ))}
+                <div className="flex flex-wrap gap-2">
+                  {[["Edit","Edit the previous generated image: "],["Enhance","Enhance the previous generated image while preserving its subject: "],["Variations","Create three visual variations of the previous generated image: "]].map(([label,prompt])=><button key={label} type="button" onClick={()=>window.dispatchEvent(new CustomEvent("revelaai:fill-composer",{detail:{text:prompt+String(message.sourcePrompt||message.text||"").slice(0,700)}}))} className="min-h-10 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-slate-300 hover:bg-white/5">{label}</button>)}
+                </div>
               </div>
             )}
 
@@ -683,7 +681,7 @@ function Message({ message, onEdit, onReveal }) {
             )}
 
             {!revealing && sources.length > 0 && (
-              <div className="mt-4 border-t border-white/10 pt-3">
+              <div id={`revelaai-sources-${message.id}`} className="mt-4 border-t border-white/10 pt-3">
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   Sources
                 </p>
@@ -691,6 +689,7 @@ function Message({ message, onEdit, onReveal }) {
                 <div className="space-y-2">
                   {sources.map(({ url, title, host }, index) => (
                     <a
+                      id={`revelaai-source-${message.id}-${index+1}`}
                       key={`${url}-${index}`}
                       href={url}
                       target="_blank"
@@ -709,6 +708,7 @@ function Message({ message, onEdit, onReveal }) {
                     </a>
                   ))}
                 </div>
+                {Array.isArray(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries) && (message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).length > 0 && <details className="mt-3 rounded-xl border border-white/10 bg-white/[.02] p-3"><summary className="cursor-pointer text-[11px] font-semibold text-slate-400">Show queries used</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-500">{(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).slice(0,20).map((query,index)=><li key={index}>{String(query)}</li>)}</ul></details>}
               </div>
             )}
           </div>
