@@ -16,6 +16,7 @@ import AdminPolicyManagement from "@/components/admin/AdminPolicyManagement.jsx"
 import AdminOperationsHandbook from "@/components/admin/AdminOperationsHandbook.jsx";
 import { useAdminApi } from "@/services/adminApi.jsx";
 import { readSupportResponse, supportApiUrl, supportAuthHeaders } from "./supportApi.js";
+import { hasSupportAdminRole, hasSupportWorkspaceRole } from "@/auth/workspaceRoles.mjs";
 
 const PAGE_META = {
   dashboard: { title: "Support overview", description: "Monitor incoming requests and the work waiting for your support team." },
@@ -33,7 +34,7 @@ export default function SupportDashboard() {
   const auth = useAuth();
   const { user, logout, getAccessToken, getTokenType } = auth;
   const adminApi = useAdminApi();
-  const supportAdmin = String(user?.role || "").toLowerCase() === "support_admin";
+  const supportAdmin = hasSupportAdminRole(user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState("dashboard");
   const [stats, setStats] = useState(null);
@@ -42,7 +43,7 @@ export default function SupportDashboard() {
   const [error, setError] = useState("");
 
   const loadDashboard = useCallback(async (showRefresh = false) => {
-    if (!["support", "support_agent", "support_admin"].includes(String(user?.role || "").toLowerCase())) {
+    if (!hasSupportWorkspaceRole(user)) {
       setError("A signed-in support account is required to open this workspace.");
       setLoading(false);
       return;
@@ -128,7 +129,7 @@ export default function SupportDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 md:flex">
-      <SupportSidebar role={user?.role} activeView={activeView} setActiveView={setActiveView} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <SupportSidebar role={user?.role} roles={user?.roles} activeView={activeView} setActiveView={setActiveView} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <SupportHeader user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} logout={logout} />
