@@ -20,7 +20,7 @@ import {
   BookOpen,
   Presentation,
   FileSpreadsheet,
-  WandSparkles,
+  Sparkles,
   XCircle,
 } from "lucide-react";
 
@@ -898,7 +898,7 @@ export default function InputBar({
             </ToolButton>
             <div className="relative">
               <ToolButton label="Open tools" onClick={() => setToolsOpen(value => !value)} disabled={disabled} active={toolsOpen}>
-                <WandSparkles size={18} />
+                <Sparkles size={18} />
               </ToolButton>
               {toolsOpen && <div className="absolute bottom-12 left-0 z-50 w-64 rounded-2xl border border-slate-700 bg-slate-950 p-2 shadow-2xl" role="dialog" aria-label="Choose a RevelaAI tool" data-demo="ai-composer-tools">
                 <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Choose a tool</p>
