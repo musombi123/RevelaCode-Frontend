@@ -262,3 +262,13 @@ test("the tour overlay provides keyboard, dialog and responsive safeguards", () 
   assert.match(app, /<DemoProvider chapters=\{DEMO_CHAPTERS\}>/);
   assert.match(app, /<DemoOverlay \/>/);
 });
+
+
+test("guided demo sessions are enabled in native Android builds as well as web", async () => {
+  const { isDemoEnabled } = await import("../src/demo/demoPlatform.js");
+
+  assert.equal(isDemoEnabled(), true);
+  assert.doesNotMatch(read("src/demo/demoPlatform.js"), /disabled-android|isNativePlatform/);
+  assert.match(read("src/demo/DemoLauncher.jsx"), /Try the Demo/);
+  assert.match(read("src/demo/DemoProvider.jsx"), /setDemoApiActive\(true\)/);
+});
