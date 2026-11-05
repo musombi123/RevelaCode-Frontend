@@ -3,7 +3,7 @@ import { Activity, BookOpen, Calculator, ChartNoAxesCombined, Code2, FileSpreads
 import { useRevelaAISettings } from "@/ai/revelaAISettingsStore";
 import RevelaAISettingsPage from "@/components/RevelaAISettingsPage";
 import RevelaAIQuickSettings from "@/components/RevelaAIQuickSettings";
-import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel";
+const LazyWorkspacePanel = React.lazy(() => import("@/components/RevelaAIWorkspacePanel"));
 
 const API = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
 const headers = () => {
@@ -28,7 +28,7 @@ const CATEGORIES = ["All","Research","Create","Analyse","Science","Office"];
 export default function RevelaAIProductivityHub() {
   const [open,setOpen]=useState(false),[tab,setTab]=useState("tools"),[catalog,setCatalog]=useState(null),[query,setQuery]=useState(""),[category,setCategory]=useState("All"),[region,setRegion]=useState(""),[country,setCountry]=useState(""),[conflicts,setConflicts]=useState(false),[title,setTitle]=useState("RevelaAI report"),[outline,setOutline]=useState("Executive summary\n\nKey findings\n\nRecommendations"),[busy,setBusy]=useState(false),[error,setError]=useState(""),[result,setResult]=useState(null),[quickOpen,setQuickOpen]=useState(false);
   const {settings,loading:settingsLoading,saving:settingsSaving,error:settingsError,updateSection,resetSection}=useRevelaAISettings();
-  useEffect(()=>{const openTools=()=>{setOpen(true);setTab("tools")};window.addEventListener("revelaai:tools-open",openTools);return()=>window.removeEventListener("revelaai:tools-open",openTools)},[]);
+  useEffect(()=>{const openTools=()=>{setOpen(true);setTab("tools")};const openSettings=()=>{setOpen(true);setTab("settings")};window.addEventListener("revelaai:tools-open",openTools);window.addEventListener("revelaai:settings-open",openSettings);return()=>{window.removeEventListener("revelaai:tools-open",openTools);window.removeEventListener("revelaai:settings-open",openSettings)}},[]);
   useEffect(()=>{if(!open)return;let live=true;fetch(API+"/api/productivity/catalog",{headers:headers()}).then(r=>r.ok?r.json():Promise.reject(Error("Sign in to load your plan and tool allowances."))).then(x=>live&&setCatalog(x)).catch(e=>live&&setError(e.message));return()=>{live=false}},[open]);
   const filtered=useMemo(()=>TOOLS.filter(t=>(category==="All"||t.category===category)&&[t.name,t.desc,t.category].join(" ").toLowerCase().includes(query.toLowerCase())),[category,query]);
   const call=async(path,body)=>{setBusy(true);setError("");setResult(null);try{const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json",...headers()},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d?.detail?.message||d?.detail||d?.message||"Request failed");setResult(d);return d}catch(e){setError(String(e.message||"Request failed"));return null}finally{setBusy(false)}};
@@ -56,6 +56,6 @@ export default function RevelaAIProductivityHub() {
         <footer className="border-t border-white/10 p-3 text-[11px] text-slate-500">Meta Engineer and Sci Defender controls remain server-side. Planned tools stay locked until their implementations and entitlements are enabled. {settingsLoading?"Loading preferences…":""}</footer>
       </section>
     </div>}
-    {artifact&&<RevelaAIWorkspacePanel artifact={{title:artifact.primary?.filename||title,description:"Generated output. Open the secure, expiring download link to preview the file.",download_url:artifact.primary?.download_url?.startsWith("http")?artifact.primary.download_url:API+artifact.primary?.download_url}} onAskAI={()=>{usePrompt("Please revise the generated file: "+title);}}/>}
+    {artifact&&<React.Suspense fallback={<div className="fixed bottom-0 right-0 z-[90] p-4 text-xs text-slate-300">Loading workspace…</div>}><LazyWorkspacePanel artifact={{title:artifact.primary?.filename||title,description:"Generated output. Open the secure, expiring download link to preview the file.",download_url:artifact.primary?.download_url?.startsWith("http")?artifact.primary.download_url:API+artifact.primary?.download_url}} onAskAI={()=>{usePrompt("Please revise the generated file: "+title);}}/></React.Suspense>}
   </>;
 }
