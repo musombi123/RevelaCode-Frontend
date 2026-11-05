@@ -10,6 +10,7 @@ const PHASE_ONE_TOOLS = [
   { id: "spreadsheet", title: "Spreadsheets", description: "Editable XLSX workbooks, formulas and CSV exports.", icon: FileSpreadsheet, phase: 1 },
   { id: "word", title: "Word Documents", description: "Editable DOCX reports, proposals and letters.", icon: FileText, phase: 1 },
   { id: "powerpoint", title: "PowerPoint", description: "Editable PPTX presentations and PDF previews.", icon: Presentation, phase: 1 },
+  { id: "sandbox_python", title: "Python Sandbox", description: "Run Python in an isolated, no-network gVisor worker.", icon: Sparkles, phase: 1 },
   { id: "analytics", title: "Data Analytics", description: "Profile, clean and analyze your uploaded datasets.", icon: Search, phase: 2 },
   { id: "accounting", title: "Accounting", description: "Double-entry ledger and financial statements.", icon: FileSpreadsheet, phase: 2 },
   { id: "publications", title: "Publications", description: "Literature reviews and verified research citations.", icon: BookOpen, phase: 2 },
@@ -143,6 +144,19 @@ export default function ProductivityToolsPanel({ onSend }) {
     finally { setLoading(false); }
   };
 
+  const runSandbox = async () => {
+    setLoading(true); setError(""); setResult(null);
+    try {
+      const data = await api("/api/productivity/sandbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: body, timeout_seconds: 15, files: [] }),
+      });
+      setResult({ kind: "sandbox", data });
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
   const generateFile = async kind => {
     setLoading(true); setError(""); setResult(null);
     try {
@@ -234,6 +248,19 @@ export default function ProductivityToolsPanel({ onSend }) {
               <p className="text-slate-600 dark:text-slate-300">Image Studio remains on its existing image-generation route. This new tools panel does not replace or duplicate that provider.</p>
               <button onClick={() => onSend?.("Open the existing RevelaAI Image Studio. I will describe the image I want to create next.")} className="mt-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-extrabold text-white">Continue in Image Studio</button>
             </div>
+          ) : selected === "sandbox_python" ? (
+            <div className="mt-3 space-y-2 rounded-xl border border-slate-200 p-3 dark:border-white/10">
+              {selectedMeta?.enabled === false ? (
+                <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">The isolated Python service is not provisioned yet. RevelaAI will not run this code inside the main API process. Configure the dedicated gVisor service before enabling this tool.</p>
+              ) : (
+                <>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">Python code
+                    <textarea value={body} onChange={event => setBody(event.target.value)} rows={8} spellCheck={false} placeholder={"import numpy as np\nvalues = np.array([2, 4, 6])\nprint(values.mean())"} className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-slate-900 dark:text-white"/>
+                  </label>
+                  <button disabled={loading || !body.trim()} onClick={runSandbox} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-extrabold text-white disabled:opacity-50">{loading ? "Running isolated job..." : "Run in safe sandbox"}</button>
+                </>
+              )}
+            </div>
           ) : selected === "research_global" ? (
             <div className="mt-3 space-y-2 rounded-xl border border-slate-200 p-3 dark:border-white/10">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">Research question</label>
@@ -290,6 +317,13 @@ export default function ProductivityToolsPanel({ onSend }) {
             </div>
           )}
 
+          {result?.kind === "sandbox" && (
+            <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-xs font-bold text-slate-900 dark:text-white">Sandbox job: {result.data.result?.status || result.data.status}</p>
+              <p className="mt-1 text-[10px] text-slate-500">Execution runtime: {result.data.result?.runtime || "gVisor"} · Network: disabled</p>
+              <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-3 text-[11px] leading-5 text-emerald-200">{result.data.result?.stdout || result.data.result?.result?.message || "No standard output."}</pre>
+            </div>
+          )}
           {result?.artifact && (
             <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
               <p className="text-xs font-extrabold text-slate-900 dark:text-white">Workspace output is ready</p>
