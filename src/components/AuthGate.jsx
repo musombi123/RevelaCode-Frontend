@@ -3,11 +3,13 @@ import { Navigate, useLocation } from "react-router-dom";
 import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
+import { collectWorkspaceRoles, resolveWorkspaceRole } from "@/auth/workspaceRoles.mjs";
 
-const API_BASE = String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+const API_BASE = resolveBackendBaseUrl(import.meta.env || {});
 
 export default function AuthGate({ children, requiredRoles = [] }) {
-  const { authFetch, getAccessToken } = useAuth();
+  const { authFetch, getAccessToken, applyVerifiedUser } = useAuth();
   const location = useLocation();
   const [state, setState] = useState("checking");
   const [error, setError] = useState("");
@@ -75,14 +77,12 @@ export default function AuthGate({ children, requiredRoles = [] }) {
 
         // Privileged route checks must use current server data, not cached
         // React/localStorage roles that may be stale or user-modified.
-        const currentRoles = [
-          ...(Array.isArray(verifiedUser.roles) ? verifiedUser.roles : []),
-          verifiedUser.role,
-          ...(Array.isArray(payload?.roles) ? payload.roles : []),
-          payload?.role,
-        ]
-          .filter(Boolean)
-          .map((role) => String(role).trim().toLowerCase());
+        const currentRoles = collectWorkspaceRoles(verifiedUser, payload);
+        applyVerifiedUser?.({
+          ...verifiedUser,
+          role: resolveWorkspaceRole(verifiedUser, payload) || verifiedUser.role,
+          roles: currentRoles,
+        });
 
         const required = requiredRolesKey.split("|").filter(Boolean);
         if (required.length && !required.some((role) => currentRoles.includes(role))) {
@@ -100,7 +100,7 @@ export default function AuthGate({ children, requiredRoles = [] }) {
       });
 
     return () => { active = false; };
-  }, [authFetch, getAccessToken, location.pathname, attempt, requiredRolesKey]);
+  }, [authFetch, getAccessToken, applyVerifiedUser, location.pathname, attempt, requiredRolesKey]);
 
   if (state === "unauthenticated") {
     return <Navigate to="/login" replace state={{ from: location }} />;
