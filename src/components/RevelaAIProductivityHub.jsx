@@ -32,7 +32,21 @@ export default function RevelaAIProductivityHub() {
   useEffect(()=>{if(!open)return;let live=true;fetch(API+"/api/productivity/catalog",{headers:headers()}).then(r=>r.ok?r.json():Promise.reject(Error("Sign in to load your plan and tool allowances."))).then(x=>live&&setCatalog(x)).catch(e=>live&&setError(e.message));return()=>{live=false}},[open]);
   const filtered=useMemo(()=>TOOLS.filter(t=>(category==="All"||t.category===category)&&[t.name,t.desc,t.category].join(" ").toLowerCase().includes(query.toLowerCase())),[category,query]);
   const call=async(path,body)=>{setBusy(true);setError("");setResult(null);try{const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json",...headers()},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d?.detail?.message||d?.detail||d?.message||"Request failed");setResult(d);return d}catch(e){setError(String(e.message||"Request failed"));return null}finally{setBusy(false)}};
-  const runResearch=()=>call("/api/productivity/research",{query,region,source_country:country,conflicting_views:conflicts,limit:10,locale:typeof navigator!=="undefined"?(navigator.language||"en"):"en"});
+  const runResearch=()=>{
+    const prefs=settings.search_research||{}, localePrefs=settings.language_region||{};
+    const mode=prefs.default_mode||"deep";
+    const preferredRegions=Array.isArray(prefs.preferred_regions)?prefs.preferred_regions:[];
+    const preferredLanguages=Array.isArray(prefs.preferred_languages)?prefs.preferred_languages:[];
+    const splitList=value=>String(value||"").split(",").map(item=>item.trim()).filter(Boolean);
+    return call("/api/productivity/research",{
+      query,region:region||preferredRegions[0]||"",country:localePrefs.country||"KE",source_country:country,
+      language:preferredLanguages[0]||"",locale:(localePrefs.interface_language||"en")+"-"+(localePrefs.country||"KE"),
+      preferred_regions:preferredRegions,preferred_languages:preferredLanguages,
+      trusted_sources:splitList(prefs.trusted_sources),blocked_domains:splitList(prefs.blocked_domains),
+      citation_style:prefs.citation_style||"APA",freshness:prefs.freshness||"any",
+      conflicting_views:conflicts,limit:mode==="quick"?6:mode==="extreme"?20:10
+    });
+  };
   const generate=kind=>{const sections=outline.split("\n").map(x=>x.trim()).filter(Boolean);const payload=kind==="word"?{title,sections:[{heading:"Overview",paragraphs:sections}]}:kind==="powerpoint"?{title,slides:sections.slice(0,15).map(x=>({title:x,bullets:[]}))}:{title,sheets:[{name:"Sheet1",headers:["Item","Amount","Notes"],rows:[["Example",100,"Replace with your data"]]}]};call("/api/productivity/generate",{kind,payload})};
   const artifact=result?.artifact;
   const sourceRows=result?.sources||result?.result?.sources||[];
