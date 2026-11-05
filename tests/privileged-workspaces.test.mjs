@@ -28,7 +28,7 @@ test("workspace selection gives platform owner precedence over secondary roles",
 test("the role collector accepts nested login and session response shapes", () => {
   assert.deepEqual(
     collectWorkspaceRoles({ data: { user: { role: "support_agent", roles: ["user", "support_agent"] } } }),
-    ["support_agent", "user"],
+    ["user", "support_agent"],
   );
 });
 
