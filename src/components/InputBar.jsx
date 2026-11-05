@@ -11,6 +11,17 @@ import {
   Camera,
   Flashlight,
   Loader2,
+  Search,
+  Image as ImageIcon,
+  ChartNoAxesCombined,
+  Calculator,
+  Microscope,
+  Bot,
+  BookOpen,
+  Presentation,
+  FileSpreadsheet,
+  WandSparkles,
+  XCircle,
 } from "lucide-react";
 
 /* =========================================================
@@ -33,6 +44,8 @@ const ACCEPTED_TYPES = [
   ".txt",
   ".md",
   ".csv",
+  ".xlsx",
+  ".pptx",
   ".json",
   ".py",
   ".js",
@@ -46,6 +59,14 @@ const ACCEPTED_TYPES = [
 const VOICE_LANGUAGES = [
   { code: "en-KE", label: "EN", name: "English" },
   { code: "sw-KE", label: "SW", name: "Kiswahili" },
+];
+
+const TOOL_COMMANDS = [
+  ["/search", "Deep Search", Search], ["/image", "Image Studio", ImageIcon],
+  ["/data", "Data analysis", ChartNoAxesCombined], ["/sheet", "Spreadsheet", FileSpreadsheet],
+  ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
+  ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
+  ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
 ];
 
 const formatSize = (bytes) =>
@@ -84,6 +105,8 @@ export default function InputBar({
   onSend,
   onMic,
   onRegisterVision,
+  onStop,
+  isGenerating = false,
   freeMode = false,
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
@@ -91,6 +114,7 @@ export default function InputBar({
   const [text, setText] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
   const [dragging, setDragging] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -120,6 +144,17 @@ export default function InputBar({
   /* =======================================================
      CLEANUP
   ======================================================= */
+
+  useEffect(() => {
+    const fillComposer = (event) => {
+      const value = String(event?.detail?.text || "").slice(0, 8000);
+      if (!value) return;
+      setText(value);
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    };
+    window.addEventListener("revelaai:fill-composer", fillComposer);
+    return () => window.removeEventListener("revelaai:fill-composer", fillComposer);
+  }, []);
 
   useEffect(
     () => () => {
@@ -475,6 +510,12 @@ export default function InputBar({
       window.alert("This file is too large. Maximum size is 20 MB.");
       return;
     }
+    const extension = String(file.name || "").split(".").pop().toLowerCase();
+    const supported = ["pdf","docx","pptx","xlsx","csv","txt","md","json","py","js","jsx","ts","tsx","html","css"];
+    if (!(file.type?.startsWith("image/") || supported.includes(extension))) {
+      window.alert("Unsupported file type. Attach an image, PDF, CSV, XLSX, DOCX or PPTX file.");
+      return;
+    }
     setAttachedFile(file);
     textareaRef.current?.focus();
   }, []);
@@ -531,17 +572,29 @@ export default function InputBar({
     if (!canSend) return;
 
     recognitionRef.current?.stop?.();
-    onSend?.(value, attachedFile);
+    const command = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper)\b/i)?.[1]?.toLowerCase() || null;
+    onSend?.(value, attachedFile, { toolCommand: command });
 
     setText("");
     setAttachedFile(null);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
+  const slashMatches = text.startsWith("/")
+    ? TOOL_COMMANDS.filter(([command]) => command.startsWith(text.split(/\s/)[0].toLowerCase())).slice(0, 6)
+    : [];
+
+  const chooseCommand = (command) => {
+    setText(command + " ");
+    setToolsOpen(false);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent?.isComposing) {
       event.preventDefault();
-      submit();
+      if (slashMatches.length) chooseCommand(slashMatches[0][0]);
+      else submit();
     }
   };
 
@@ -811,6 +864,11 @@ export default function InputBar({
             </div>
           )}
 
+          {slashMatches.length > 0 && (
+            <div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-slate-950 p-2">
+              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-slate-200 hover:bg-white/10"><Icon size={14}/><b>{command}</b><span className="text-slate-500">{label}</span></button>)}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             rows={1}
@@ -838,6 +896,15 @@ export default function InputBar({
             <ToolButton label="Scan with camera" onClick={openCamera} disabled={disabled}>
               <Camera size={18} />
             </ToolButton>
+            <div className="relative">
+              <ToolButton label="Open tools" onClick={() => setToolsOpen(value => !value)} disabled={disabled} active={toolsOpen}>
+                <WandSparkles size={18} />
+              </ToolButton>
+              {toolsOpen && <div className="absolute bottom-12 left-0 z-50 w-64 rounded-2xl border border-slate-700 bg-slate-950 p-2 shadow-2xl" role="dialog" aria-label="Choose a RevelaAI tool" data-demo="ai-composer-tools">
+                <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Choose a tool</p>
+                <div className="grid grid-cols-2 gap-1">{TOOL_COMMANDS.map(([command,label,Icon])=><button key={command} type="button" onClick={()=>chooseCommand(command)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-left text-xs text-slate-200 hover:bg-white/10"><Icon size={14}/><span>{label}</span></button>)}</div>
+              </div>}
+            </div>
 
             <span className="mx-1.5 h-5 w-px bg-white/10" aria-hidden="true" />
 
@@ -886,10 +953,10 @@ export default function InputBar({
             <button
               type="button"
               data-demo="ai-send-message"
-              onClick={submit}
-              disabled={!canSend}
-              aria-label="Send message"
-              title="Send message (Enter)"
+              onClick={isGenerating ? onStop : submit}
+              disabled={isGenerating ? !onStop : !canSend}
+              aria-label={isGenerating ? "Stop generating" : "Send message"}
+              title={isGenerating ? "Stop generating" : "Send message (Enter)"
               className={[
                 "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
@@ -898,7 +965,7 @@ export default function InputBar({
                   : "cursor-not-allowed bg-white/[0.06] text-slate-600",
               ].join(" ")}
             >
-              <ArrowUp size={18} strokeWidth={2.5} />
+              {isGenerating ? <XCircle size={18} strokeWidth={2.5} /> : <ArrowUp size={18} strokeWidth={2.5} />}
             </button>
           </div>
         </div>
