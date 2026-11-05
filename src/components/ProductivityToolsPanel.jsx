@@ -83,6 +83,12 @@ export default function ProductivityToolsPanel({ onSend }) {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
+    const openTools = () => { setOpen(true); setError(""); };
+    window.addEventListener("revelai:open-tools", openTools);
+    return () => window.removeEventListener("revelai:open-tools", openTools);
+  }, []);
+
+  useEffect(() => {
     if (!open || catalog) return;
     api("/api/productivity/catalog")
       .then(data => { setCatalog(data); setRegions(data.regions || []); })
