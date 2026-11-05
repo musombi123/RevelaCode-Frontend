@@ -795,6 +795,32 @@ export function AuthProvider({
     );
 
 
+  // Refresh the cached profile from the authoritative /api/auth/me
+  // response so role changes and configured owner elevation take effect
+  // before the workspace selector chooses an admin or support dashboard.
+  const applyVerifiedUser = useCallback((profile = {}) => {
+    if (!profile || typeof profile !== "object") return null;
+
+    const normalized = sanitizeSessionIdentity(normalizeUser(profile));
+    if (!normalized.id) return null;
+
+    setUser(normalized);
+    setIsGuest(false);
+    setHasStarted(true);
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ user: normalized, isGuest: false }),
+      );
+    } catch (error) {
+      console.warn("Could not persist the backend-verified account profile.", error);
+    }
+
+    return normalized;
+  }, [normalizeUser]);
+
+
   /* =======================================================
      GUEST MODE
   ======================================================= */
@@ -1143,6 +1169,8 @@ export function AuthProvider({
         isAuthenticated,
 
         login,
+
+        applyVerifiedUser,
 
         guestMode,
 
