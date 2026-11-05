@@ -956,7 +956,7 @@ export default function InputBar({
               onClick={isGenerating ? onStop : submit}
               disabled={isGenerating ? !onStop : !canSend}
               aria-label={isGenerating ? "Stop generating" : "Send message"}
-              title={isGenerating ? "Stop generating" : "Send message (Enter)"
+              title={isGenerating ? "Stop generating" : "Send message (Enter)"}
               className={[
                 "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
