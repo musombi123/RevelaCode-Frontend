@@ -454,7 +454,7 @@ function Message({ message, onEdit, onReveal }) {
 
   const audioUrl = isSafeHttpUrl(message.audioUrl) ? message.audioUrl : null;
   const sources = normalizeSources(message.sources);
-  const visibleWithCitations = visible.replace(/\\[(\\d+)\\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`);
+  const visibleWithCitations = visible.replace(/\[(\d+)\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`);
   const documentMeta = message.metadata?.multimodal || null;
   const imageDownloads = Object.entries(message.metadata?.downloads || {}).filter(([format, url]) => ["png", "jpg", "pdf"].includes(format) && isSafeHttpUrl(url));
 
