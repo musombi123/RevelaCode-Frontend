@@ -409,6 +409,9 @@ export default function PreferencesDashboard({
           Customize how RevelaCode looks, reads,
           and feels across your devices.
         </p>
+        <button type="button" data-demo="account-center-revelaai-settings" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:settings-open"))} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200">
+          <Settings2 className="h-4 w-4" /> Open full RevelaAI personalisation settings
+        </button>
       </div>
 
       <div className="space-y-5">
