@@ -4,6 +4,7 @@ import { BookOpen, FileSpreadsheet, FileText, Globe2, Lock, Presentation, Search
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
 
 const PHASE_ONE_TOOLS = [
+  { id: "image_studio", title: "Image Studio", description: "Use the existing image generation and design workspace.", icon: Sparkles, phase: 1 },
   { id: "research_global", title: "Deep Search", description: "Global news, official sources and scholarly research.", icon: Globe2, phase: 1 },
   { id: "spreadsheet", title: "Spreadsheets", description: "Editable XLSX workbooks, formulas and CSV exports.", icon: FileSpreadsheet, phase: 1 },
   { id: "word", title: "Word Documents", description: "Editable DOCX reports, proposals and letters.", icon: FileText, phase: 1 },
@@ -177,6 +178,11 @@ export default function ProductivityToolsPanel({ onSend }) {
           {selectedTool.phase > 1 ? (
             <div className="mt-3 rounded-xl border border-slate-200 p-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
               <strong>{selectedTool.title}</strong> is scheduled for Phase {selectedTool.phase}. It is not activated yet, so this workspace will not pretend the tool is available. Smart AI Plus / Pro plan entitlements are being prepared through the existing billing system.
+            </div>
+          ) : selected === "image_studio" ? (
+            <div className="mt-3 rounded-xl border border-slate-200 p-3 text-xs dark:border-white/10">
+              <p className="text-slate-600 dark:text-slate-300">Image Studio remains on its existing image-generation route. This new tools panel does not replace or duplicate that provider.</p>
+              <button onClick={() => onSend?.("Open the existing RevelaAI Image Studio. I will describe the image I want to create next.")} className="mt-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-extrabold text-white">Continue in Image Studio</button>
             </div>
           ) : selected === "research_global" ? (
             <div className="mt-3 space-y-2 rounded-xl border border-slate-200 p-3 dark:border-white/10">
