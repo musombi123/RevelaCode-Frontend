@@ -5,6 +5,7 @@ import AdminLogin from "@/components/admin/AdminLogin.jsx";
 import SupportLogin from "@/components/support/SupportLogin.jsx";
 import AdminDashboard from "@/components/admin/AdminDashboard.jsx";
 import SupportDashboard from "@/components/support/SupportDashboard.jsx";
+import { hasPlatformAdminRole, hasSupportWorkspaceRole } from "@/auth/workspaceRoles.mjs";
 
 export default function PagesLoader({ initialAdminTab = "overview" }) {
   const { user, loading } = useAuth();
@@ -21,15 +22,13 @@ export default function PagesLoader({ initialAdminTab = "overview" }) {
     );
   }
 
-  // Platform owner/administrator roles use the full RevelaCode console.
-  const role = String(user.role || "").trim().toLowerCase();
-  if (["admin", "platform_admin", "super_admin", "revelacode_admin"].includes(role)) {
+  // Resolve roles from both the canonical role and the complete role set.
+  // Support Agents are the modern equivalent of the legacy "support" role.
+  if (hasPlatformAdminRole(user)) {
     return <AdminDashboard initialTab={initialAdminTab} />;
   }
 
-  // Support roles are limited to the ticket workspace and any specifically
-  // delegated Support Administrator sections.
-  if (["support", "support_admin"].includes(role)) {
+  if (hasSupportWorkspaceRole(user)) {
     return <SupportDashboard />;
   }
 
