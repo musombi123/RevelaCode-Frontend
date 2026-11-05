@@ -84,8 +84,8 @@ export default function ProductivityToolsPanel({ onSend }) {
 
   useEffect(() => {
     const openTools = () => { setOpen(true); setError(""); };
-    window.addEventListener("revelai:open-tools", openTools);
-    return () => window.removeEventListener("revelai:open-tools", openTools);
+    window.addEventListener("revelacode:open-tools", openTools);
+    return () => window.removeEventListener("revelacode:open-tools", openTools);
   }, []);
 
   useEffect(() => {
