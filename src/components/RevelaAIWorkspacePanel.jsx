@@ -7,10 +7,9 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
   const [filter,setFilter]=useState("");
   const [visible,setVisible]=useState(true);
   useEffect(()=>{if(!visible)return;document.body.dataset.revelaaiWorkspaceOpen="true";window.dispatchEvent(new CustomEvent("revelaai:workspace-opened"));const close=()=>setVisible(false);window.addEventListener("revelaai:workspace-request-close",close);return()=>{delete document.body.dataset.revelaaiWorkspaceOpen;window.removeEventListener("revelaai:workspace-request-close",close);window.dispatchEvent(new CustomEvent("revelaai:workspace-closed"));}},[visible]);
-  if(!visible)return null;
   const data=artifact?.data||artifact?.rows||[];
   const columns=useMemo(()=>Array.isArray(data)&&data.length&&typeof data[0]==="object"?Object.keys(data[0]):[],[data]);
-  if(!artifact)return null;
+  if(!visible||!artifact)return null;
   const download=artifact.download_url||artifact.url;
   return <section className="fixed inset-x-0 bottom-0 z-[90] flex max-h-[82dvh] flex-col rounded-t-3xl border border-slate-700 bg-slate-950 text-white shadow-2xl sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[min(760px,calc(100vw-2rem))] sm:rounded-2xl" data-demo="revelaai-workspace-panel" aria-label="Generated workspace">
     <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"><div className="min-w-0"><b className="block truncate text-sm">{artifact.title||artifact.filename||"Generated workspace"}</b><span className="text-[11px] text-slate-500">Output workspace · private by default</span></div><button onClick={()=>setVisible(false)} className="min-h-10 rounded-lg px-3 text-xs text-slate-300" aria-label="Close workspace">Close</button></div>
