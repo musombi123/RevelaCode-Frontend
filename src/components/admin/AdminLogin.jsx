@@ -43,7 +43,7 @@ function getMessage(payload, fallback) {
   );
 }
 
-function getToken(payload) {function getToken(payload) {
+function getToken(payload) {
   return (
     payload?.access_token ||
     payload?.accessToken ||
