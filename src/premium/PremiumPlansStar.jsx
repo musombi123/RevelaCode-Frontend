@@ -52,7 +52,7 @@ export default function PremiumPlansStar({ className = "" }) {
       aria-label="Premium plans"
       title="Premium plans"
       data-premium-plans-star="true"
-      className={`relative inline-flex h-12 w-12 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-amber-200 bg-white text-amber-600 shadow-sm transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 active:scale-95 dark:border-amber-900/60 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-amber-950/40 ${className}`}
+      className={`relative inline-flex h-12 w-auto min-w-12 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl px-3 border border-amber-200 bg-white text-amber-600 shadow-sm transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 active:scale-95 dark:border-amber-900/60 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-amber-950/40 ${className}`}
     >
       <Star
         className="h-5 w-5"
@@ -60,6 +60,7 @@ export default function PremiumPlansStar({ className = "" }) {
         fill={isPremium ? "#EAB308" : "none"}
         color={isPremium ? "#CA8A04" : "currentColor"}
       />
+      <span className="text-xs font-bold leading-none">Premium</span>
       {isPremium ? (
         <span className="absolute -right-1 -top-1 rounded-full border-2 border-white bg-amber-500 px-1.5 py-0.5 text-[8px] font-black leading-none text-white dark:border-slate-950">
           PRO
