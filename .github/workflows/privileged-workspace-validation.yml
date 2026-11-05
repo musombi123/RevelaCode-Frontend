@@ -1,0 +1,37 @@
+name: Privileged workspace validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/auth/**"
+      - "src/components/admin/AdminLogin.jsx"
+      - "src/components/admin/AdminSupportCenter.jsx"
+      - "src/components/AuthGate.jsx"
+      - "src/context/AuthContext.jsx"
+      - "src/app/pages.jsx"
+      - "src/components/support/**"
+      - "tests/privileged-workspaces.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/privileged-workspace-validation.yml"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run authentication and privileged workspace regression tests
+        run: npm run test:auth
+      - name: Build production frontend
+        run: npm run build
