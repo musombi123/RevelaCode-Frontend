@@ -31,6 +31,8 @@ import usePreferences from "./hooks/usePreferences.jsx";
 import { useTheme } from "./hooks/useTheme.jsx";
 import OfflineSyncStatus from "@/components/OfflineSyncStatus.jsx";
 import MfaSettings from "@/components/accounts/MfaSettings.jsx";
+import { useRevelaAISettings } from "@/ai/revelaAISettingsStore";
+import RevelaAISettingsPage from "@/components/RevelaAISettingsPage";
 
 /* =========================================================
    Constants
@@ -81,6 +83,9 @@ export default function PreferencesDashboard({
 
   const [copied, setCopied] =
     useState(false);
+
+  const [revelaAISettingsOpen, setRevelaAISettingsOpen] = useState(false);
+  const aiSettings = useRevelaAISettings();
 
   /*
    * Keep an explicit reading-scale state so the preference
@@ -384,6 +389,15 @@ export default function PreferencesDashboard({
         `/legal?${params.toString()}`;
     };
 
+  if (revelaAISettingsOpen) {
+    return (
+      <div className="w-full space-y-4" style={{ fontSize: `${readingScale}rem` }}>
+        <button type="button" onClick={() => setRevelaAISettingsOpen(false)} className="min-h-11 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">← Back to Account Center preferences</button>
+        <RevelaAISettingsPage settings={aiSettings.settings} updateSection={aiSettings.updateSection} resetSection={aiSettings.resetSection} saving={aiSettings.saving} error={aiSettings.error} />
+      </div>
+    );
+  }
+
   return (
     <div
       className="w-full"
@@ -409,7 +423,7 @@ export default function PreferencesDashboard({
           Customize how RevelaCode looks, reads,
           and feels across your devices.
         </p>
-        <button type="button" data-demo="account-center-revelaai-settings" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:settings-open"))} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200">
+        <button type="button" data-demo="account-center-revelaai-settings" onClick={() => setRevelaAISettingsOpen(true)} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200">
           <Settings2 className="h-4 w-4" /> Open full RevelaAI personalisation settings
         </button>
       </div>
