@@ -23,7 +23,6 @@ import {
 
 const API_BASE = resolveBackendBaseUrl(import.meta.env || {});
 
-function getMessage
 function getMessage(payload, fallback) {
   const candidates = [
     payload?.message,
