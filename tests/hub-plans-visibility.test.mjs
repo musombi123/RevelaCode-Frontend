@@ -83,3 +83,12 @@ test("all plan entry points use the standalone Premium modal, not dashboard plan
   assert.match(modal, /revenueApi\.startCheckout\(/);
   assert.match(modal, /revenueApi\.getCheckout\(/);
 });
+
+test("public welcome page does not publish subscription prices or plans", () => {
+  const welcome = source("src/pages/PlatformWelcomePage.jsx");
+  assert.doesNotMatch(welcome, /id="plans"|href="#plans"|revenueApi\.listPlans|Paid hub subscriptions|Plans built around each hub/);
+  assert.doesNotMatch(welcome, /useRevenueApi|cataloguePlans|PAID_PLAN_HUBS/);
+  const appShell = source("src/components/MainDashboardV2.jsx");
+  assert.match(appShell, /<PlansModal/);
+  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
+});
