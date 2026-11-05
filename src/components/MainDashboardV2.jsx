@@ -1450,7 +1450,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   <p className="text-xs font-black text-slate-900 dark:text-white">RevelaCode Premium</p>
                   <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Compare plans and available hub trials</p>
                 </div>
-                <PremiumPlansStar className="h-10 w-10 rounded-lg" />
+                <PremiumPlansStar className="h-10 w-auto min-w-10 px-3 rounded-lg" />
               </div>
             ) : null}
             {isGuest && !isAndroidHome && (
