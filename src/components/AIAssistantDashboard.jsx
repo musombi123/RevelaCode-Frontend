@@ -2064,7 +2064,7 @@ export default function AIAssistantDashboard({
                     max-w-3xl
                   "
                 >
-                  <ProductivityToolsPanel onSend={sendTextMessage} />
+                  <ProductivityToolsPanel onSend={sendTextMessage} reducedMode={freeMode} />
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     onSend={sendMessage}
@@ -2138,7 +2138,7 @@ export default function AIAssistantDashboard({
             >
               <div data-demo="ai-chat-input" className="mx-auto w-full max-w-4xl">
                 <div data-demo="ai-vision-tools">
-                  <ProductivityToolsPanel onSend={sendTextMessage} />
+                  <ProductivityToolsPanel onSend={sendTextMessage} reducedMode={freeMode} />
                   <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
