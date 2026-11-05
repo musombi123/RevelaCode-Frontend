@@ -1,0 +1,98 @@
+import React, { useEffect, useState } from "react";
+import { Check, RotateCcw, Save, Settings2 } from "lucide-react";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
+
+const SECTIONS = [
+  ["appearance", "Appearance", "Theme, accent, typography and chat density"],
+  ["language_region", "Language and region", "Interface language, AI language and regional formats"],
+  ["ai_behavior", "AI behaviour", "Response style, tone, role and custom instructions"],
+  ["search_research", "Search and research", "Regions, source preferences, citations and freshness"],
+  ["images", "Images", "Aspect ratio, visual style and export defaults"],
+  ["office_accounting", "Office and accounting", "Document templates, invoice identity and currency"],
+  ["voice", "Voice", "Voice, language, speed and playback"],
+  ["memory", "Memory and personalisation", "Memory controls and saved personalisation"],
+  ["notifications", "Notifications", "Job updates, product news and quiet hours"],
+  ["privacy", "Privacy and data", "History retention, exports and shared-link access"],
+  ["accessibility", "Accessibility", "Screen readers, touch targets, captions and charts"],
+  ["plan_usage", "Plan and usage", "Plan details, quotas and billing history"],
+  ["models_mode", "Models and mode", "Quality preference and backup model policy"],
+];
+
+const defaults = {
+  appearance: { theme: "system", accent: "emerald", font: "system", font_size: 16, density: "comfortable", message_width: "wide", style: "flat", code_theme: "dark", reduce_motion: false, high_contrast: false },
+  language_region: { interface_language: "en", ai_reply_language: "auto", country: "KE", timezone: "Africa/Nairobi", date_format: "DD/MM/YYYY", number_format: "1,234.56", currency: "KES", units: "metric", week_start: "monday" },
+  ai_behavior: { response_style: "balanced", tone: "friendly", reading_level: "general", role_preset: "developer", show_step_by_step: true, always_show_sources: true, ask_deep_search: true, about_me: "", custom_instructions: "" },
+  search_research: { default_mode: "deep", preferred_regions: ["global", "africa"], preferred_languages: ["en"], trusted_sources: "", blocked_domains: "", citation_style: "APA", freshness: "any" },
+  images: { aspect_ratio: "1:1", style: "natural", auto_enhance: true, save_format: "PNG", watermark: false },
+  office_accounting: { document_language: "en", template: "professional", page_size: "A4", default_font: "Aptos", company_name: "", company_address: "", vat_region: "KE", vat_rate: 16, financial_year_start: "01-01", currency: "KES", export_format: "DOCX" },
+  voice: { voice: "default", speed: 1, language: "en-KE", auto_read: false, mode: "push_to_talk" },
+  memory: { enabled: true, paused: false },
+  notifications: { email_jobs: true, in_app_jobs: true, daily_limits: true, plan_expiry: true, support_replies: true, product_news: false, quiet_start: "22:00", quiet_end: "07:00" },
+  privacy: { history_enabled: true, auto_delete_days: 0, shared_links: "anyone_with_link" },
+  accessibility: { screen_reader: false, large_targets: true, voice_captions: true, colour_blind_charts: true, keyboard_shortcuts: true },
+  plan_usage: {},
+  models_mode: { quality: "best", allow_backup: true },
+};
+
+function Field({ label, children, hint }) {
+  return <label className="grid gap-1.5 text-sm"><span className="font-medium text-slate-200">{label}</span>{children}{hint && <span className="text-xs text-slate-500">{hint}</span>}</label>;
+}
+function Input({ value, onChange, ...props }) {
+  return <input value={value ?? ""} onChange={(event) => onChange(event.target.value)} {...props} className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20" />;
+}
+function Select({ value, onChange, options }) {
+  return <select value={value ?? options[0][0]} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-400/60">{options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>;
+}
+function Toggle({ label, checked, onChange }) {
+  return <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[.025] px-3 py-2 text-sm"><span>{label}</span><input type="checkbox" checked={Boolean(checked)} onChange={(event) => onChange(event.target.checked)} className="h-5 w-5 accent-emerald-500" /></label>;
+}
+
+export default function RevelaAISettingsPage({ settings = {}, updateSection, resetSection, saving, error }) {
+  const [active, setActive] = useState("appearance");
+  const { setTheme } = useTheme();
+  const current = (section) => ({ ...defaults[section], ...(settings[section] || {}) });
+  const set = (section, key, value) => updateSection?.(section, { [key]: value });
+  useEffect(() => {
+    const theme = current("appearance").theme;
+    if (["light", "dark", "system"].includes(theme)) setTheme(theme);
+  }, [settings.appearance?.theme, setTheme]);
+
+  const section = current(active);
+  const textArea = (key, label, example) => <Field label={label} hint={example}><textarea value={section[key] || ""} maxLength={1500} onChange={(event) => set(active, key, event.target.value)} rows={4} className="w-full resize-y rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-400/60" /><span className="text-right text-[11px] text-slate-500">{(section[key] || "").length}/1500</span></Field>;
+  const textInput = (key, label) => <Field label={label}><Input value={section[key]} onChange={(value) => set(active, key, value)} /></Field>;
+  const select = (key, label, options) => <Field label={label}><Select value={section[key]} options={options} onChange={(value) => set(active, key, value)} /></Field>;
+  const toggle = (key, label) => <Toggle label={label} checked={section[key]} onChange={(value) => set(active, key, value)} />;
+
+  return <div className="grid min-h-[28rem] gap-4 lg:grid-cols-[220px_minmax(0,1fr)]" data-demo="revelaai-settings-page">
+    <aside className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible" aria-label="Settings sections">
+      {SECTIONS.map(([id, title, desc]) => <button key={id} type="button" onClick={() => setActive(id)} aria-current={active === id ? "page" : undefined} className={`min-w-max rounded-xl px-3 py-2.5 text-left text-sm transition ${active === id ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}><span className="block font-semibold">{title}</span><span className="hidden text-[10px] text-slate-500 lg:block">{desc}</span></button>)}
+    </aside>
+    <section className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/60 p-4 sm:p-5">
+      <div className="mb-5 flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-emerald-300"><Settings2 size={17}/><span className="text-xs font-bold uppercase tracking-wider">Personal settings</span></div><h2 className="mt-1 text-xl font-bold text-white">{SECTIONS.find(([id]) => id === active)?.[1]}</h2><p className="mt-1 text-xs text-slate-400">{SECTIONS.find(([id]) => id === active)?.[2]}</p></div><button type="button" onClick={() => resetSection?.(active)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-slate-300 hover:bg-white/5"><RotateCcw size={14}/> Reset</button></div>
+      {active === "appearance" && <div className="grid gap-3 sm:grid-cols-2">
+        {select("theme","Theme",[["light","Light"],["dark","Dark"],["system","System"],["scheduled","Scheduled"]])}
+        {select("accent","Accent colour",[["emerald","Emerald"],["blue","Blue"],["violet","Violet"],["amber","Amber"],["rose","Rose"],["cyan","Cyan"]])}
+        {select("font","Font",[["system","System"],["inter","Inter"],["serif","Serif"],["dyslexia","Dyslexia-friendly"]])}
+        <Field label={`Font size · ${section.font_size}px`}><input type="range" min="13" max="22" value={section.font_size} onChange={(event) => set(active,"font_size",Number(event.target.value))} className="w-full accent-emerald-500"/></Field>
+        {select("density","Message density",[["compact","Compact"],["comfortable","Comfortable"],["spacious","Spacious"]])}
+        {select("message_width","Message width",[["narrow","Narrow"],["wide","Wide"],["full","Full"]])}
+        {select("style","Chat style",[["bubble","Bubbles"],["flat","Flat"]])}
+        {select("code_theme","Code theme",[["dark","Dark"],["light","Light"],["system","System"]])}
+        {toggle("reduce_motion","Reduce motion")}{toggle("high_contrast","High contrast")}
+      </div>}
+      {active === "language_region" && <div className="grid gap-3 sm:grid-cols-2">{select("interface_language","Interface language",[["en","English"],["sw","Kiswahili"],["fr","Français"]])}{select("ai_reply_language","AI reply language",[["auto","Auto"],["en","English"],["sw","Kiswahili"],["fr","French"]])}{textInput("country","Country code")}{textInput("timezone","Time zone")}{select("date_format","Date format",[["DD/MM/YYYY","DD/MM/YYYY"],["MM/DD/YYYY","MM/DD/YYYY"],["YYYY-MM-DD","YYYY-MM-DD"]])}{select("number_format","Number format",[["1,234.56","1,234.56"],["1 234,56","1 234,56"],["1.234,56","1.234,56"]])}{textInput("currency","Currency code")}{select("units","Measurement units",[["metric","Metric"],["imperial","Imperial"]])}{select("week_start","Week starts",[["monday","Monday"],["sunday","Sunday"]])}</div>}
+      {active === "ai_behavior" && <div className="grid gap-3 sm:grid-cols-2">{select("response_style","Response style",[["concise","Concise"],["balanced","Balanced"],["detailed","Detailed"]])}{select("tone","Tone",[["friendly","Friendly"],["professional","Professional"],["teacher","Teacher"],["casual","Casual"]])}{select("reading_level","Reading level",[["simple","Simple"],["general","General"],["advanced","Advanced"]])}{select("role_preset","Role preset",[["student","Student"],["teacher","Teacher"],["business_owner","Business owner"],["farmer","Farmer"],["developer","Developer"],["researcher","Researcher"],["accountant","Accountant"]])}<div className="sm:col-span-2">{textArea("about_me","About me","Share only details you want RevelaAI to use when relevant.")}</div><div className="sm:col-span-2">{textArea("custom_instructions","How should RevelaAI respond?","Style and tone only. Safety, tools, permissions and plan limits cannot be overridden.")}</div>{toggle("show_step_by_step","Show step-by-step explanations")}{toggle("always_show_sources","Always show sources")}{toggle("ask_deep_search","Ask before Deep or Extreme search")}</div>}
+      {active === "search_research" && <div className="grid gap-3 sm:grid-cols-2">{select("default_mode","Default search mode",[["quick","Quick"],["deep","Deep"],["extreme","Extreme"]])}{select("citation_style","Citation style",[["APA","APA"],["MLA","MLA"],["Chicago","Chicago"],["IEEE","IEEE"],["Harvard","Harvard"]])}{select("freshness","Freshness preference",[["any","Any time"],["year","Past year"],["month","Past month"],["week","Past week"]])}{textInput("trusted_sources","Preferred trusted sources (comma separated)")}{textInput("blocked_domains","Blocked domains (comma separated)")}</div>}
+      {active === "images" && <div className="grid gap-3 sm:grid-cols-2">{select("aspect_ratio","Default aspect ratio",[["1:1","Square"],["16:9","Landscape"],["9:16","Portrait"],["4:3","4:3"],["3:2","3:2"]])}{select("style","Style preset",[["natural","Natural"],["photorealistic","Photorealistic"],["illustration","Illustration"],["cinematic","Cinematic"],["minimal","Minimal"]])}{select("save_format","Save format",[["PNG","PNG"],["JPEG","JPEG"],["WEBP","WEBP"]])}{toggle("auto_enhance","Auto-enhance prompts")}{toggle("watermark","Watermark (Plus)")}</div>}
+      {active === "office_accounting" && <div className="grid gap-3 sm:grid-cols-2">{select("document_language","Document language",[["en","English"],["sw","Kiswahili"],["fr","French"]])}{select("template","Document template",[["professional","Professional"],["academic","Academic"],["business","Business"],["minimal","Minimal"]])}{select("page_size","Page size",[["A4","A4"],["Letter","Letter"]])}{textInput("default_font","Default font")}{textInput("company_name","Company name")}{textInput("company_address","Company address")}{textInput("vat_region","VAT region")}{Field label="VAT rate (%)"><Input type="number" value={section.vat_rate} onChange={(value) => set(active,"vat_rate",Number(value))}/></Field>}{textInput("financial_year_start","Financial year start")}{textInput("currency","Default currency")}{select("export_format","Default export format",[["DOCX","DOCX"],["PDF","PDF"],["XLSX","XLSX"]])}</div>}
+      {active === "voice" && <div className="grid gap-3 sm:grid-cols-2">{select("voice","Voice",[["default","Default"],["female","Female"],["male","Male"]])}{select("language","Voice language",[["en-KE","English (Kenya)"],["sw-KE","Kiswahili"]])}<Field label={`Voice speed · ${section.speed}x`}><input type="range" min="0.7" max="1.5" step="0.1" value={section.speed} onChange={(event) => set(active,"speed",Number(event.target.value))} className="w-full accent-emerald-500"/></Field>{toggle("auto_read","Read replies automatically")}{select("mode","Voice mode",[["push_to_talk","Push-to-talk"],["hands_free","Hands-free"]])}<button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:voice-test"))} className="min-h-12 rounded-xl border border-emerald-400/30 text-sm text-emerald-200">Test voice</button></div>}
+      {active === "memory" && <div className="grid gap-3">{toggle("enabled","Remember things about me")}{toggle("paused","Pause memory")}<p className="text-xs leading-5 text-slate-400">Memory controls here govern RevelaAI's preference feature. Sensitive information should not be stored unless you explicitly add it. Review and deletion of individual saved facts requires the connected memory-management API.</p></div>}
+      {active === "notifications" && <div className="grid gap-2 sm:grid-cols-2">{toggle("email_jobs","Email when a job finishes")}{toggle("in_app_jobs","In-app job updates")}{toggle("daily_limits","Daily limit alerts")}{toggle("plan_expiry","Plan expiry alerts")}{toggle("support_replies","Support replies")}{toggle("product_news","Product news")}{textInput("quiet_start","Quiet hours start")}{textInput("quiet_end","Quiet hours end")}</div>}
+      {active === "privacy" && <div className="grid gap-3 sm:grid-cols-2">{toggle("history_enabled","Save chat history")}{select("auto_delete_days","Auto-delete history",[["0","Never"],["30","30 days"],["90","90 days"],["365","365 days"]])}{select("shared_links","Who can see shared links",[["anyone_with_link","Anyone with the link"],["signed_in","Signed-in users only"],["private","Only me"]])}<p className="text-xs text-slate-500 sm:col-span-2">Data export, account deletion and OAuth connection controls must use the account-security endpoints; this panel does not simulate those operations.</p></div>}
+      {active === "accessibility" && <div className="grid gap-2">{toggle("screen_reader","Screen-reader friendly mode")}{toggle("large_targets","Large touch targets")}{toggle("voice_captions","Voice captions")}{toggle("colour_blind_charts","Colour-blind safe charts")}{toggle("keyboard_shortcuts","Enable keyboard shortcuts")}</div>}
+      {active === "plan_usage" && <div className="rounded-xl border border-white/10 p-4 text-sm text-slate-300"><p>Plan and quota values are read from RevelaCode entitlements and the productivity catalogue, not edited here.</p><button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelacode:premium-open",{detail:{planCode:""}}))} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-400 px-4 font-bold text-slate-950"><Save size={15}/> View plans</button></div>}
+      {active === "models_mode" && <div className="grid gap-3 sm:grid-cols-2">{select("quality","Model preference",[["fast","Fast"],["best","Best quality"]])}{toggle("allow_backup","Allow backup model when the primary is unavailable")}</div>}
+      <div className="mt-6 flex min-h-8 items-center justify-between border-t border-white/10 pt-3 text-xs"><span className={error ? "text-amber-300" : "text-slate-500"} role="status">{error || (saving ? "Syncing settings…" : "Changes save automatically.")}</span><span className="inline-flex items-center gap-1 text-emerald-300"><Check size={13}/> Applied immediately</span></div>
+    </section>
+  </div>;
+}
