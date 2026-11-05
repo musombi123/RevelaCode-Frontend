@@ -1853,6 +1853,7 @@ export default function AIAssistantDashboard({
         onOpenVoice={openVoice}
         onOpenVision={openVision}
         onOpenIdentity={() => setIdentityOpen(true)}
+        onOpenTools={() => window.dispatchEvent(new CustomEvent("revelaai:open-tools"))}
         freeMode={freeMode}
         onToggleFreeMode={() => setFreeMode((current) => !current)}
       />
