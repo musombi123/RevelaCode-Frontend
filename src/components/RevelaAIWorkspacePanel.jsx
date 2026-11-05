@@ -1,0 +1,23 @@
+import React, { useMemo, useState } from "react";
+import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare } from "lucide-react";
+
+const TABS = [["preview","Preview",Eye],["data","Data",Database],["code","Code",Code2],["versions","Versions",History]];
+export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
+  const [tab,setTab]=useState("preview");
+  const [filter,setFilter]=useState("");
+  const data=artifact?.data||artifact?.rows||[];
+  const columns=useMemo(()=>Array.isArray(data)&&data.length&&typeof data[0]==="object"?Object.keys(data[0]):[],[data]);
+  if(!artifact)return null;
+  const download=artifact.download_url||artifact.url;
+  return <section className="fixed inset-x-0 bottom-0 z-[90] flex max-h-[82dvh] flex-col rounded-t-3xl border border-slate-700 bg-slate-950 text-white shadow-2xl sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[min(760px,calc(100vw-2rem))] sm:rounded-2xl" data-demo="revelaai-workspace-panel" aria-label="Generated workspace">
+    <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"><div className="min-w-0"><b className="block truncate text-sm">{artifact.title||artifact.filename||"Generated workspace"}</b><span className="text-[11px] text-slate-500">Output workspace · private by default</span></div><button onClick={()=>setTab("preview")} className="min-h-10 rounded-lg px-3 text-xs text-slate-300">Close</button></div>
+    <nav className="flex gap-1 overflow-x-auto border-b border-white/10 px-3 py-2" aria-label="Workspace tabs">{TABS.map(([id,label,Icon])=><button key={id} type="button" onClick={()=>setTab(id)} data-demo={`workspace-tab-${id}`} aria-pressed={tab===id} className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-xs ${tab===id?"bg-emerald-500/15 text-emerald-200":"text-slate-400 hover:bg-white/5"}`}><Icon size={14}/>{label}</button>)}</nav>
+    <div className="min-h-0 flex-1 overflow-auto p-4">
+      {tab==="preview"&&<div className="space-y-3"><p className="text-sm text-slate-300">{artifact.description||"Preview is available through the generated file link."}</p>{download&&<a href={download} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold"><Download size={15}/> Open / download file</a>}{artifact.preview_text&&<pre className="whitespace-pre-wrap rounded-xl bg-black/30 p-3 text-xs text-slate-300">{artifact.preview_text}</pre>}</div>}
+      {tab==="data"&&<div><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Filter rows…" className="mb-3 min-h-11 w-full rounded-xl border border-white/10 bg-slate-900 px-3 text-sm"/>{Array.isArray(data)&&data.length>0?<div className="max-h-[42dvh] overflow-auto"><table className="w-full border-collapse text-left text-xs"><thead className="sticky top-0 bg-slate-900"><tr>{columns.map(k=><th key={k} className="border-b border-white/10 p-2">{k}</th>)}</tr></thead><tbody>{data.filter(row=>JSON.stringify(row).toLowerCase().includes(filter.toLowerCase())).slice(0,500).map((row,i)=><tr key={i}>{columns.map(k=><td key={k} className="border-b border-white/5 p-2">{String(row[k]??"")}</td>)}</tr>)}</tbody></table></div>:<p className="text-sm text-slate-500">No structured data was returned for this output.</p>}</div>}
+      {tab==="code"&&<pre className="max-h-[42dvh] overflow-auto whitespace-pre-wrap rounded-xl bg-black/40 p-3 text-xs text-slate-300">{artifact.code||"No source code was attached to this output."}</pre>}
+      {tab==="versions"&&<p className="text-sm text-slate-500">Version history is not yet available for this artifact type.</p>}
+    </div>
+    <footer className="flex flex-wrap gap-2 border-t border-white/10 p-3"><button type="button" onClick={onAskAI} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-400/30 px-3 text-xs text-emerald-200"><MessageSquare size={14}/> Ask AI to change this</button>{download&&<button type="button" onClick={()=>navigator.clipboard?.writeText(download)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-slate-300"><Share2 size={14}/> Copy link</button>}<button type="button" onClick={()=>setTab("versions")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-slate-300"><RotateCcw size={14}/> History</button></footer>
+  </section>;
+}
