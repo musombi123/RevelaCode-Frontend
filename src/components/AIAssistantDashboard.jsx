@@ -8,6 +8,8 @@ import React, {
   useState,
 } from "react";
 
+import { App as CapacitorApp } from "@capacitor/app";
+
 import {
   Menu,
   Sparkles,
@@ -24,6 +26,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import RevelaAIProductivityHub from "@/components/RevelaAIProductivityHub";
+import RevelaAIHeaderControls from "@/components/RevelaAIHeaderControls";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
@@ -1818,6 +1821,57 @@ export default function AIAssistantDashboard({
     activeChat?.title ||
     "RevelaAI";
 
+  const latestAssistantMessage = [...messages].reverse().find((item) => item.role === "assistant" && item.status === "done");
+  const modelTier = freeMode || latestAssistantMessage?.metadata?.fallback || latestAssistantMessage?.metadata?.freeMode
+    ? "Reduced mode"
+    : latestAssistantMessage?.metadata?.modelTier === "backup"
+      ? "Backup"
+      : latestAssistantMessage?.metadata?.networkUsed
+        ? "Full"
+        : "Checking";
+
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  useEffect(() => {
+    const opened = () => setWorkspaceOpen(true);
+    const closed = () => setWorkspaceOpen(false);
+    window.addEventListener("revelaai:workspace-opened", opened);
+    window.addEventListener("revelaai:workspace-closed", closed);
+    return () => {
+      window.removeEventListener("revelaai:workspace-opened", opened);
+      window.removeEventListener("revelaai:workspace-closed", closed);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return undefined;
+    let listener;
+    let active = true;
+    CapacitorApp.addListener("backButton", () => {
+      if (workspaceOpen) {
+        window.dispatchEvent(new CustomEvent("revelaai:workspace-request-close"));
+        return;
+      }
+      if (identityOpen) {
+        setIdentityOpen(false);
+        return;
+      }
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+        return;
+      }
+      if (window.confirm("Leave RevelaAI? Your saved chats remain available next time.")) {
+        window.history.back();
+      }
+    }).then((handle) => {
+      listener = handle;
+      if (!active) handle.remove();
+    }).catch((error) => console.warn("Android back-button handler unavailable:", error));
+    return () => {
+      active = false;
+      listener?.remove();
+    };
+  }, [workspaceOpen, identityOpen, sidebarOpen]);
+
   /* =======================================================
      UI
   ======================================================= */
@@ -2015,6 +2069,7 @@ export default function AIAssistantDashboard({
               />
               New Chat
             </button>
+            <RevelaAIHeaderControls modelTier={modelTier} />
           </div>
         </header>
 
@@ -2071,6 +2126,13 @@ export default function AIAssistantDashboard({
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                     freeMode={freeMode}
+                    isGenerating={messages.some((message) => message.status === "loading")}
+                    onStop={() => {
+                      controllerRef.current?.abort();
+                      controllerRef.current = null;
+                      sendLockRef.current = false;
+                      setMessages((current) => current.filter((message) => message.status !== "loading"));
+                    }}
                   />
                 </div>
 
@@ -2144,6 +2206,13 @@ export default function AIAssistantDashboard({
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
+                  isGenerating={messages.some((message) => message.status === "loading")}
+                  onStop={() => {
+                    controllerRef.current?.abort();
+                    controllerRef.current = null;
+                    sendLockRef.current = false;
+                    setMessages((current) => current.filter((message) => message.status !== "loading"));
+                  }}
                   />
                 </div>
               </div>
