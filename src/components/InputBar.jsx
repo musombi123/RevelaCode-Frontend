@@ -30,6 +30,8 @@ const ACCEPTED_TYPES = [
   "image/*",
   ".pdf",
   ".docx",
+  ".xlsx",
+  ".pptx",
   ".txt",
   ".md",
   ".csv",
