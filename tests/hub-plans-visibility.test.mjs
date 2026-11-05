@@ -76,6 +76,8 @@ test("all plan entry points use the standalone Premium modal, not dashboard plan
 
   assert.match(appShell, /<PlansModal/);
   assert.match(source("src/premium/PremiumPlansStar.jsx"), /data-premium-plans-star="true"/);
+  assert.match(source("src/premium/PremiumPlansStar.jsx"), />Premium<\\/span>/);
+  assert.match(appShell, /PremiumPlansStar className="h-10 w-auto min-w-10 px-3 rounded-lg"/);
   assert.doesNotMatch(jumuiyaShell, /HubRevenueOffers|Plans and upgrade/);
   assert.doesNotMatch(aiDashboard, /AI trial &amp; plans|HubRevenueOffers|aiRevenueOpen/);
   assert.doesNotMatch(sidebar, /Plans|onOpenPlans/);
