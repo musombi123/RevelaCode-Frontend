@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Clock3, Inbox, Mail, RefreshCw, Search, ShieldCheck, Ticket, Users, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { resolveAdminBackendUrl } from "@/services/adminApi.jsx";
-import { hasSupportAdminRole } from "@/auth/workspaceRoles.mjs";
+import { hasSupportAdminRole, resolveWorkspaceRole } from "@/auth/workspaceRoles.mjs";
 
 const TABS = [
   ["inbox", "Support Inbox", Inbox],
@@ -42,6 +42,8 @@ export default function AdminSupportCenter({ initialView = "inbox" }) {
   const auth = useAuth();
   const { user, authFetch, getAccessToken, getTokenType } = auth;
   const isAdmin = hasSupportAdminRole(user);
+  // Resolve the authenticated workspace role once; JSX below uses it for least-privilege controls.
+  const role = resolveWorkspaceRole(user);
   const [view, setView] = useState(initialView);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState("");
