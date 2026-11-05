@@ -454,6 +454,7 @@ function Message({ message, onEdit, onReveal }) {
 
   const audioUrl = isSafeHttpUrl(message.audioUrl) ? message.audioUrl : null;
   const sources = normalizeSources(message.sources);
+  const visibleWithCitations = visible.replace(/\\[(\\d+)\\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`);
   const documentMeta = message.metadata?.multimodal || null;
   const imageDownloads = Object.entries(message.metadata?.downloads || {}).filter(([format, url]) => ["png", "jpg", "pdf"].includes(format) && isSafeHttpUrl(url));
 
@@ -592,11 +593,11 @@ function Message({ message, onEdit, onReveal }) {
                   </button>
                 </header>
                 <div className="w-full min-w-0 overflow-x-auto px-3 py-4 text-sm leading-relaxed text-slate-100 sm:px-4">
-                  <MarkdownBody text={visible.replace(/\\[(\\d+)\\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`)} />
+                  <MarkdownBody text={visibleWithCitations} />
                 </div>
               </section>
             ) : visible ? (
-              <MarkdownBody text={visible} />
+              <MarkdownBody text={visibleWithCitations} />
             ) : null}
 
             {revealing && (
@@ -629,7 +630,7 @@ function Message({ message, onEdit, onReveal }) {
                   </button>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  {[["Edit","Edit the previous generated image: "],["Enhance","Enhance the previous generated image while preserving its subject: "],["Variations","Create three visual variations of the previous generated image: "]].map(([label,prompt])=><button key={label} type="button" onClick={()=>window.dispatchEvent(new CustomEvent("revelaai:fill-composer",{detail:{text:prompt+String(message.sourcePrompt||message.text||"").slice(0,700)}}))} className="min-h-10 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-slate-300 hover:bg-white/5">{label}</button>)}
+                  {[["Edit","Edit the previous generated image: "],["Enhance","Enhance the previous generated image while preserving its subject: "],["Variations","Create three visual variations of the previous generated image: "]].map(([label,prompt])=><button key={label} type="button" onClick={()=>window.dispatchEvent(new CustomEvent("revelaai:fill-composer",{detail:{text:prompt+String(message.sourcePrompt||message.text||"").slice(0,700)}}))} className="min-h-12 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-slate-300 hover:bg-white/5">{label}</button>)}
                 </div>
               </div>
             )}
