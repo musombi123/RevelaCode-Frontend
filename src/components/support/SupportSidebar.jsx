@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { hasSupportAdminRole } from "@/auth/workspaceRoles.mjs";
 import {
   LayoutDashboard,
   Ticket,
@@ -27,8 +28,9 @@ export default function SupportSidebar({
   sidebarOpen = false,
   setSidebarOpen,
   role = "support",
+  roles = [],
 }) {
-  const supportAdmin = String(role || "").toLowerCase() === "support_admin";
+  const supportAdmin = hasSupportAdminRole(role, roles);
   const navigation = supportAdmin ? [
     ...views,
     { key: "supportCenter", label: "Support Team Center", icon: Headphones },
