@@ -29,6 +29,9 @@ export function collectWorkspaceRoles(...sources) {
     if (value && typeof value === "object") {
       add(value.roles);
       add(value.role);
+      add(value.user);
+      add(value.account);
+      add(value.data);
     }
   };
 
