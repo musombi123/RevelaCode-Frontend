@@ -74,7 +74,7 @@ export default function SupportDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.role, supportAdmin, getAccessToken, getTokenType, adminApi]);
+  }, [user, supportAdmin, getAccessToken, getTokenType, adminApi]);
 
   useEffect(() => {
     loadDashboard();
