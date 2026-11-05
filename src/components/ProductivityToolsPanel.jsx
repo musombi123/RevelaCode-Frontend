@@ -63,7 +63,7 @@ function buildSheetPayload(title, text) {
   return { title, sheets: [{ name: "Data", headers, rows }] };
 }
 
-export default function ProductivityToolsPanel({ onSend }) {
+export default function ProductivityToolsPanel({ onSend, reducedMode = false }) {
   const { user } = useAuth();
   const roles = [user?.role, ...(Array.isArray(user?.roles) ? user.roles : [])].map(value => String(value || "").toLowerCase());
   const isPlatformAdmin = roles.some(role => ["admin","platform_admin","super_admin","revelacode_admin"].includes(role));
@@ -188,14 +188,16 @@ export default function ProductivityToolsPanel({ onSend }) {
           <Sparkles size={15} /> Tools & Workspace
         </button>
         {catalog && (
-          <span className="text-[10px] text-slate-500 dark:text-slate-400">
-            AI tools tier: <strong className="uppercase">{catalog.tier}</strong>
+          <span className="text-right text-[10px] text-slate-500 dark:text-slate-400">
+            Tools plan: <strong className="uppercase">{catalog.tier}</strong>
+            <span className="block">Text route configured: {catalog.model?.provider || "none"} {catalog.model?.model ? "· " + catalog.model.model : ""}</span>
           </span>
         )}
       </div>
 
       {open && (
         <section className="mb-3 max-h-[70vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-slate-950 sm:p-4" aria-label="RevelaAI productivity tools">
+          {reducedMode && <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">Local-only reduced mode is enabled. Model-backed generation and live research may be unavailable; existing local tools remain accessible.</div>}
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Productivity Tools</h3>
