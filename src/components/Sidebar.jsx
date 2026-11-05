@@ -16,6 +16,7 @@ import {
   Mic,
   Camera,
   WifiOff,
+  Grid3X3,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -46,6 +47,7 @@ export default function Sidebar({
   onOpenVoice,
   onOpenVision,
   onOpenIdentity,
+  onOpenTools,
   freeMode = false,
   onToggleFreeMode,
   activeChatId = null,
@@ -212,6 +214,16 @@ export default function Sidebar({
             <Plus size={18} />
             New chat
           </Button>
+
+          <button
+            type="button"
+            onClick={() => { onOpenTools?.(); setOpen(false); }}
+            className="flex w-full items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2.5 text-left text-xs font-bold text-blue-100 transition hover:bg-blue-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50"
+            title="Open productivity tools and workspace"
+          >
+            <Grid3X3 size={15} className="shrink-0 text-blue-300" />
+            <span>Tools &amp; Workspace</span>
+          </button>
 
           <div className="grid grid-cols-2 gap-2">
             <button
