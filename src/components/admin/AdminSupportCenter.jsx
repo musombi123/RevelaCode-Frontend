@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Clock3, Inbox, Mail, RefreshCw, Search, ShieldCheck, Ticket, Users, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { resolveAdminBackendUrl } from "@/services/adminApi.jsx";
+import { hasSupportAdminRole } from "@/auth/workspaceRoles.mjs";
 
 const TABS = [
   ["inbox", "Support Inbox", Inbox],
@@ -40,8 +41,7 @@ function Status({ value }) {
 export default function AdminSupportCenter({ initialView = "inbox" }) {
   const auth = useAuth();
   const { user, authFetch, getAccessToken, getTokenType } = auth;
-  const role = String(user?.role || "").toLowerCase();
-  const isAdmin = ["super_admin", "support_admin"].includes(role);
+  const isAdmin = hasSupportAdminRole(user);
   const [view, setView] = useState(initialView);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState("");
