@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { BookOpen, FileSpreadsheet, FileText, Globe2, Lock, Presentation, Search, Sparkles, X, Download, ArrowUpRight } from "lucide-react";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -62,6 +63,11 @@ function buildSheetPayload(title, text) {
 }
 
 export default function ProductivityToolsPanel({ onSend }) {
+  const { user } = useAuth();
+  const roles = [user?.role, ...(Array.isArray(user?.roles) ? user.roles : [])].map(value => String(value || "").toLowerCase());
+  const isPlatformAdmin = roles.some(role => ["admin","platform_admin","super_admin","revelacode_admin"].includes(role));
+  const [adminTools, setAdminTools] = useState([]);
+  const [adminBusy, setAdminBusy] = useState("");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("research_global");
   const [catalog, setCatalog] = useState(null);
@@ -82,6 +88,28 @@ export default function ProductivityToolsPanel({ onSend }) {
       .then(data => { setCatalog(data); setRegions(data.regions || []); })
       .catch(err => setError(err.message));
   }, [open, catalog]);
+
+  useEffect(() => {
+    if (!open || !isPlatformAdmin) return;
+    api("/api/productivity/admin/tools")
+      .then(data => setAdminTools(data.tools || []))
+      .catch(() => setAdminTools([]));
+  }, [open, isPlatformAdmin]);
+
+  const toggleAdminTool = async tool => {
+    setAdminBusy(tool.id);
+    setError("");
+    try {
+      const updated = await api("/api/productivity/admin/tools/" + encodeURIComponent(tool.id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !tool.enabled, note: "Changed from the RevelaAI tools workspace" }),
+      });
+      setAdminTools(current => current.map(item => item.id === tool.id ? { ...item, enabled: updated.enabled } : item));
+      setCatalog(current => current ? ({ ...current, tools: (current.tools || []).map(item => item.id === tool.id ? { ...item, enabled: updated.enabled, locked: !updated.enabled } : item) }) : current);
+    } catch (err) { setError(err.message); }
+    finally { setAdminBusy(""); }
+  };
 
   const selectedTool = PHASE_ONE_TOOLS.find(tool => tool.id === selected) || PHASE_ONE_TOOLS[0];
   const selectedMeta = catalog?.tools?.find(tool => tool.id === selected);
@@ -174,6 +202,22 @@ export default function ProductivityToolsPanel({ onSend }) {
               );
             })}
           </div>
+
+          {isPlatformAdmin && adminTools.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <div className="mb-2 text-xs font-extrabold text-slate-800 dark:text-slate-100">Administrator tool switches</div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {adminTools.map(tool => (
+                  <div key={tool.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 dark:bg-slate-900">
+                    <span className="min-w-0 truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">{tool.id}</span>
+                    <button type="button" disabled={adminBusy === tool.id} onClick={() => toggleAdminTool(tool)} className={"rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold " + (tool.enabled ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200" : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300")}>
+                      {adminBusy === tool.id ? "Saving..." : tool.enabled ? "Enabled · Turn off" : "Disabled · Turn on"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {selectedTool.phase > 1 ? (
             <div className="mt-3 rounded-xl border border-slate-200 p-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
