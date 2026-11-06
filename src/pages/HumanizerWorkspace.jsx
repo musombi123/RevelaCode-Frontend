@@ -15,7 +15,7 @@ function saveText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
-export default function HumanizerWorkspace() {
+export default function HumanizerWorkspace({ embedded = false }) {
   const auth = useAuth();
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -163,7 +163,7 @@ export default function HumanizerWorkspace() {
   const changedPages = useMemo(() => pages.filter((page) => page.text !== page.originalText).length, [pages]);
 
   return (
-    <main className="min-h-[calc(100vh-5rem)] bg-slate-50 px-3 py-5 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8">
+    <main className={embedded ? "min-h-full bg-slate-50 px-3 py-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-5" : "min-h-[calc(100vh-5rem)] bg-slate-50 px-3 py-5 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-6 lg:px-8"}>
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between">
           <div>
