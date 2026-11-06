@@ -2121,15 +2121,15 @@ export default function AIAssistantDashboard({
             aria-modal="true"
             aria-labelledby="revelaai-identity-title"
             onClick={(event) => event.stopPropagation()}
-            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-emerald-400/20 bg-popover p-4 text-fg shadow-2xl sm:p-6"
+            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-accent/25 bg-popover p-4 text-fg shadow-2xl sm:p-6"
           >
             <header className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-300/20 to-cyan-400/10 text-emerald-200 ring-1 ring-emerald-300/20">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-300/20 to-cyan-400/10 text-accent ring-1 ring-emerald-300/20">
                   <Sparkles size={24} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-300">RevelaCode · Intelligence</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[.18em] text-accent">RevelaCode · Intelligence</p>
                   <h2 id="revelaai-identity-title" className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Meet RevelaAI</h2>
                   <p className="mt-1 text-xs text-muted">One adaptive assistant. A local-first fallback. Your conversation workspace.</p>
                 </div>
@@ -2150,19 +2150,19 @@ export default function AIAssistantDashboard({
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <article className="rounded-2xl border border-line bg-surface p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Sparkles size={16} className="text-emerald-300" /> Adaptive intelligence</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Sparkles size={16} className="text-accent" /> Adaptive intelligence</div>
                 <p className="mt-2 text-xs leading-5 text-muted">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-fg"><WifiOff size={16} className="text-emerald-300" /> Free mode</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><WifiOff size={16} className="text-accent" /> Free mode</div>
                 <p className="mt-2 text-xs leading-5 text-muted">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Mic size={16} className="text-emerald-300" /> Voice</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Mic size={16} className="text-accent" /> Voice</div>
                 <p className="mt-2 text-xs leading-5 text-muted">Browser speech recognition plus spoken replies where the device and browser support them.</p>
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Camera size={16} className="text-sky-300" /> Vision</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Camera size={16} className="text-chart-2" /> Vision</div>
                 <p className="mt-2 text-xs leading-5 text-muted">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
               </article>
             </div>
@@ -2173,7 +2173,7 @@ export default function AIAssistantDashboard({
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-emerald-300 px-3 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-emerald-200">
+              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-accent px-3 py-2.5 text-xs font-extrabold text-inverse transition hover:bg-accent-hover">
                 Use Free mode
               </button>
               <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
