@@ -88,8 +88,8 @@ function FullscreenAIAssistant({
             z-[10050]
             flex
             flex-col
-            bg-gray-100
-            dark:bg-gray-950
+            bg-app
+            text-fg
           "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -115,7 +115,7 @@ function FullscreenAIAssistant({
             >
               <div className="flex items-center gap-2">
                 <RevelaAIIcon size={24} />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">RevelaAI</h3>
+                <h3 className="font-bold text-fg">RevelaAI</h3>
               </div>
               <span
                 className="
@@ -183,8 +183,7 @@ function FullscreenAIAssistant({
                         mt-2
                         text-sm
                         leading-6
-                        text-gray-600
-                        dark:text-gray-300
+                        text-fg-secondary
                       "
                     >
                       Make sure you have a dashboard
@@ -192,10 +191,10 @@ function FullscreenAIAssistant({
                       <code
                         className="
                           rounded
-                          bg-gray-200
+                          bg-surface-2
                           px-1
                           py-0.5
-                          dark:bg-gray-800
+                          text-fg
                         "
                       >
                         ai
