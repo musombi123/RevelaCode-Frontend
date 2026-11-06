@@ -171,7 +171,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
       </div>
 
       <div className="hidden xl:block">{quota}</div>
-      <PremiumPlansStar className="!h-10 !min-w-10 !px-2" />
+      <PremiumPlansStar className="!h-12 !min-h-12 !min-w-12 !px-2" />
     </div>
   );
 }
