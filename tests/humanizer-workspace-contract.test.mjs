@@ -21,7 +21,16 @@ test("Humanizer opens inline inside the existing AI workspace", () => {
   assert.doesNotMatch(humanizer, /Please sign in to use the Humanizer/);
 });
 
-test("Productivity tools remain available from both AI composer states", () => {
+test("Productivity tools open from the InputBar attachment menu in both chat states", () => {
   const dashboard = read("../src/components/AIAssistantDashboard.jsx");
-  assert.equal((dashboard.match(/<ProductivityToolsPanel onSend=\{sendTextMessage\} \/>/g) || []).length, 2);
+  const input = read("../src/components/InputBar.jsx");
+  const tools = read("../src/components/ProductivityToolsPanel.jsx");
+  assert.equal((dashboard.match(/<InputBar/g) || []).length, 2);
+  assert.match(input, /label="Attachments and tools"/);
+  assert.match(input, /Upload a file or document/);
+  assert.match(input, /AI tools/);
+  assert.match(input, /setWorkspaceToolsOpen\(true\)/);
+  assert.match(input, /<ProductivityToolsPanel/);
+  assert.match(tools, /triggerless = false/);
+  assert.doesNotMatch(dashboard, /<ProductivityToolsPanel/);
 });
