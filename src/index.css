@@ -1921,6 +1921,9 @@ body {
 .revelaai-workspace :where(button, input, textarea, select, [role="button"]) {
   -webkit-tap-highlight-color: transparent;
 }
+.revelaai-workspace :where(input, textarea, select) {
+  caret-color: rgb(var(--accent-rgb));
+}
 
 .revelaai-workspace :where(button, input, textarea, select, a, [tabindex]):focus-visible {
   outline: 2px solid rgb(var(--focus-rgb) / .9);
@@ -2019,4 +2022,8 @@ html[data-theme="dark"] { --premium-rgb: 251 191 36; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.revelaai-workspace .shadow-dialog {
+  box-shadow: 0 24px 80px -12px rgb(var(--shadow-rgb) / .5);
 }
