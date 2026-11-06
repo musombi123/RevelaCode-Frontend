@@ -260,7 +260,7 @@ export default function Sidebar({
           "lg:static lg:z-auto lg:translate-x-0 lg:shadow-none",
           collapsed ? "lg:w-[72px]" : "lg:w-[280px]"
         ].join(" ")}>
-        <div className={"flex h-16 shrink-0 items-center justify-between border-b border-line px-3 " + (collapsed ? "lg:justify-center lg:px-2" : "")}>
+        <div className={"flex h-14 shrink-0 items-center justify-between border-b border-line px-3 " + (collapsed ? "lg:justify-center lg:px-2" : "")}>
           <div className={"flex min-w-0 items-center gap-3 " + (collapsed ? "lg:hidden" : "")}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-inverse shadow-sm" aria-hidden="true">
               <span className="text-2xl font-black leading-none">r</span>
