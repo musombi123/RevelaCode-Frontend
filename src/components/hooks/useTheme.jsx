@@ -1,25 +1,39 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const ThemeContext = createContext(null);
 const VALID_THEMES = ["light", "dark", "system"];
 
 function readTheme() {
   try {
-    const saved = localStorage.getItem("theme");
-    return VALID_THEMES.includes(saved) ? saved : "system";
+    const saved = window.localStorage.getItem("theme");
+    if (VALID_THEMES.includes(saved)) return saved;
+    const cached = JSON.parse(window.localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
+    const cachedTheme = cached?.appearance?.theme;
+    return VALID_THEMES.includes(cachedTheme) ? cachedTheme : "system";
   } catch {
     return "system";
   }
 }
 
+function applyResolvedTheme(root, mode, isSystemDark) {
+  const dark = mode === "dark" || (mode === "system" && isSystemDark);
+  const resolved = dark ? "dark" : "light";
+  root.classList.toggle("dark", dark);
+  root.classList.toggle("light", !dark);
+  root.dataset.theme = resolved;
+  root.dataset.themeMode = mode;
+  root.style.colorScheme = resolved;
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute("content", dark ? "#091015" : "#F7F9FB");
+  return resolved;
+}
+
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(readTheme);
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    if (typeof document === "undefined") return "dark";
+    return document.documentElement.dataset.theme || "dark";
+  });
 
   const setTheme = useCallback((nextTheme) => {
     if (!VALID_THEMES.includes(nextTheme)) return;
@@ -28,71 +42,50 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    let mediaQuery;
+    const media = typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-color-scheme: dark)")
+      : null;
 
-    const applyTheme = () => {
-      const useDark =
-        theme === "dark" ||
-        (theme === "system" && Boolean(mediaQuery?.matches));
-
-      root.classList.toggle("dark", useDark);
-      root.classList.toggle("light", !useDark);
-      root.dataset.theme = theme;
-      root.style.colorScheme = useDark ? "dark" : "light";
+    const apply = () => {
+      const next = applyResolvedTheme(root, theme, Boolean(media?.matches));
+      setResolvedTheme(next);
     };
 
     try {
-      localStorage.setItem("theme", theme);
+      window.localStorage.setItem("theme", theme);
     } catch {
-      // The current session still receives the selected theme.
+      // The selected theme remains active for this session.
     }
 
-    if (typeof window.matchMedia === "function") {
-      mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    }
+    apply();
 
-    applyTheme();
-
-    if (theme === "system" && mediaQuery) {
-      if (typeof mediaQuery.addEventListener === "function") {
-        mediaQuery.addEventListener("change", applyTheme);
-        return () => mediaQuery.removeEventListener("change", applyTheme);
+    if (theme === "system" && media) {
+      if (typeof media.addEventListener === "function") {
+        media.addEventListener("change", apply);
+        return () => media.removeEventListener("change", apply);
       }
-
-      // Compatibility for older Android WebViews.
-      mediaQuery.addListener?.(applyTheme);
-      return () => mediaQuery.removeListener?.(applyTheme);
+      // Older Android System WebViews expose addListener instead.
+      media.addListener?.(apply);
+      return () => media.removeListener?.(apply);
     }
-
     return undefined;
   }, [theme]);
 
   useEffect(() => {
     const syncThemeFromStorage = (event) => {
       if (event.key !== "theme") return;
-      const nextTheme = VALID_THEMES.includes(event.newValue)
-        ? event.newValue
-        : "system";
-      setThemeState(nextTheme);
+      setThemeState(VALID_THEMES.includes(event.newValue) ? event.newValue : "system");
     };
-
     window.addEventListener("storage", syncThemeFromStorage);
     return () => window.removeEventListener("storage", syncThemeFromStorage);
   }, []);
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  const value = useMemo(() => ({ theme, resolvedTheme, setTheme }), [theme, resolvedTheme, setTheme]);
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-
+  if (!context) throw new Error("useTheme must be used within a ThemeProvider");
   return context;
 }
