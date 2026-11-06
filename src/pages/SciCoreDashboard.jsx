@@ -290,7 +290,7 @@ export default function SciCoreDashboard() {
               </span>
             </div>
             <label className="block text-xs font-semibold text-slate-300">Public IPv4 or IPv6 address
-              <input value={blockIpValue} onChange={(event) => setBlockIpValue(event.target.value)} placeholder="203.0.113.10" maxLength={64}
+              <input value={blockIpValue} onChange={(event) => setBlockIpValue(event.target.value)} placeholder="Enter a confirmed public IP" maxLength={64}
                 className="mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"/>
             </label>
             <label className="block text-xs font-semibold text-slate-300">Reason / evidence
@@ -368,7 +368,27 @@ export default function SciCoreDashboard() {
           </div>
           {scanResult && <p className="mt-3 text-xs text-slate-400">{scanFindings} finding(s) returned · status: {scanResult.status || "scan returned"} · defensive_only: {String(scanResult.defensive_only)}</p>}
           <div className="mt-3"><ResultBlock value={scanResult} /></div>
-          <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">IP blocks are now enforced by RevelaCode Backend before platform routes run. Nginx and host-firewall recommendations remain advisory; this feature does not modify Render's network firewall.</p>
+          {scanResult?.threats?.filter((threat) => threat.ip).length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-bold text-slate-300">Source addresses surfaced by the scan</p>
+              {scanResult.threats.filter((threat) => threat.ip).map((threat) => {
+                const alreadyBlocked = ipBlocks.some((block) => block.ip === threat.ip);
+                return (
+                  <div key={threat.ip} className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0"><code className="text-xs font-bold text-rose-200">{threat.ip}</code><p className="mt-1 text-[11px] text-slate-500">{threat.type || "Authentication threat"} · {threat.count || 0} recorded failures</p></div>
+                    {alreadyBlocked || threat.auto_blocked ? (
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-200">Blocked</span>
+                    ) : (
+                      <button type="button" onClick={() => createIpBlock(threat.ip, `Sci-Core scan: ${threat.type || "suspicious authentication activity"} (${threat.count || 0} failures)`)}
+                        disabled={!!busy || !ipProtection?.persistent}
+                        className="min-h-11 shrink-0 rounded-lg border border-rose-400/30 px-3 text-xs font-bold text-rose-200 hover:bg-rose-400/10 disabled:opacity-45">Block this IP</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">IP blocks are enforced by RevelaCode Backend before platform routes run. Nginx and host-firewall recommendations remain advisory; this feature does not modify Render's network firewall.</p>
         </Panel>
 
         <Panel title="Disaster & Recovery Simulator" subtitle="Run controlled diagnostic scenarios and record the returned outcome." icon={Siren}>
