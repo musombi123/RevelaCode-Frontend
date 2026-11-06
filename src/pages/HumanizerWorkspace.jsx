@@ -38,7 +38,10 @@ export default function HumanizerWorkspace() {
       ? await auth.getAccessToken()
       : localStorage.getItem("revelacode_access_token") || localStorage.getItem("access_token") || localStorage.getItem("token") || "";
     const tokenType = typeof auth?.getTokenType === "function" ? await auth.getTokenType() : "Bearer";
-    if (!token) throw new Error("Please sign in to use the Humanizer.");
+    // The API is the authentication authority. Send the current session when
+    // available, but never redirect or block locally; the backend returns the
+    // authoritative 401/403 response if this session is not accepted.
+    if (!token) return {};
     return { Authorization: (tokenType || "Bearer") + " " + String(token).replace(/^Bearer\s+/i, "") };
   }
 
