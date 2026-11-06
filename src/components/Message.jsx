@@ -709,7 +709,7 @@ function Message({ message, onEdit, onReveal }) {
                     </a>
                   ))}
                 </div>
-                {Array.isArray(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries) && (message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).length > 0 && <details className="mt-3 rounded-xl border border-line bg-white/[.02] p-3"><summary className="cursor-pointer text-[11px] font-semibold text-muted">Show queries used</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted">{(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).slice(0,20).map((query,index)=><li key={index}>{String(query)}</li>)}</ul></details>}
+                {Array.isArray(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries) && (message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).length > 0 && <details className="mt-3 rounded-xl border border-line bg-surface-2 p-3"><summary className="cursor-pointer text-[11px] font-semibold text-muted">Show queries used</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted">{(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).slice(0,20).map((query,index)=><li key={index}>{String(query)}</li>)}</ul></details>}
               </div>
             )}
           </div>
