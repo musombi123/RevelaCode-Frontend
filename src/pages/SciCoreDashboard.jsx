@@ -344,7 +344,7 @@ export default function SciCoreDashboard() {
               </div>
             )}
             <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">
-              Automatic policy: {ipProtection?.automatic_blocking ? `${ipProtection.auto_block_threshold} failed login submissions within ${ipProtection.auto_block_window_minutes} minutes trigger a ${ipProtection.auto_block_duration_minutes}-minute block.` : "Automatic blocking is unavailable until the backend persistent block store is healthy."}
+              Automatic policy: {ipProtection?.automatic_blocking ? `${ipProtection.auto_block_threshold} failed login submissions within ${ipProtection.auto_block_window_minutes} minutes trigger a ${ipProtection.auto_block_duration_minutes}-minute block.` : "Automatic blocking requires a configured SCI_CORE_IP_ALLOWLIST for administrator egress addresses."}
             </div>
           </div>
         </div>
