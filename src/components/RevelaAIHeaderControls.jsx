@@ -75,7 +75,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
       {["quick", "deep", "extreme"].map((value) => (
         <button key={value} type="button" onClick={() => changeMode(value)}
           aria-pressed={mode === value}
-          className={"min-h-9 rounded-lg px-2.5 text-[10px] font-bold capitalize " + (mode === value ? "bg-accent/15 text-accent shadow-sm" : "text-muted hover:bg-surface hover:text-fg")}>
+          className={"min-h-12 rounded-lg px-2.5 text-[10px] font-bold capitalize " + (mode === value ? "bg-accent/15 text-accent shadow-sm" : "text-muted hover:bg-surface hover:text-fg")}>
           {value}
         </button>
       ))}
@@ -113,7 +113,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
       <div className="hidden xl:block">{modeButtons}</div>
 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:research-open"))}
-        aria-label="Open search" title="Search" className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg xl:flex">
+        aria-label="Open search" title="Search" className="hidden h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg xl:flex">
         <Search size={17}/>
       </button>
 
@@ -142,7 +142,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
             <span className="block truncate text-[11px] text-muted">{user?.contact || user?.email || "Signed-in session"}</span>
           </div>
           <button type="button" onClick={() => { setAvatarOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
-            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-left text-xs text-fg-secondary hover:bg-surface-2 hover:text-fg">
+            className="flex min-h-12 w-full items-center gap-2 rounded-xl px-3 text-left text-xs text-fg-secondary hover:bg-surface-2 hover:text-fg">
             <Settings2 size={15}/> Personal settings
           </button>
           <button type="button" onClick={() => { setAvatarOpen(false); window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } })); }}
@@ -163,7 +163,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
             onOpenFull={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}/>
           <div className="mt-3">{quota}</div>
           <button type="button" onClick={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:research-open")); }}
-            className="mt-2 flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Search size={15}/> Open search</button>
+            className="mt-2 flex min-h-12 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Search size={15}/> Open search</button>
           <button type="button" onClick={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
             className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Settings2 size={15}/> Account and settings</button>
           <p className="mt-2 border-t border-line pt-2 text-[10px] leading-4 text-muted">Adaptive routing · {modelTier}</p>
