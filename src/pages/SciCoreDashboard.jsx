@@ -6,6 +6,7 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").replace(/\/+$/, "");
+const BACKEND_API_BASE = String(import.meta.env.VITE_BACKEND_URL || "https://revelacode-backend.onrender.com").replace(/\/+$/, "");
 const cn = (...parts) => parts.filter(Boolean).join(" ");
 const pretty = (value) => typeof value === "string" ? value : JSON.stringify(value ?? {}, null, 2);
 
@@ -78,11 +79,41 @@ export default function SciCoreDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [ipProtection, setIpProtection] = useState(null);
+  const [ipBlocks, setIpBlocks] = useState([]);
+  const [currentIp, setCurrentIp] = useState("");
+  const [blockIpValue, setBlockIpValue] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  const [blockDuration, setBlockDuration] = useState("60");
 
   const getToken = useCallback(async () => {
     if (typeof auth?.getAccessToken === "function") return await auth.getAccessToken();
     return user?.accessToken || user?.access_token || "";
   }, [auth, user]);
+
+  const requestBackend = useCallback(async (path, options = {}) => {
+    if (!BACKEND_API_BASE) throw new Error("RevelaCode Backend URL is unavailable. Configure VITE_BACKEND_URL.");
+    const accessToken = await getToken();
+    const response = await fetch(`${BACKEND_API_BASE}${path}`, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${String(accessToken).replace(/^Bearer\s+/i, "")}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    const raw = await response.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch { data = { detail: raw }; }
+    if (!response.ok) {
+      const message = data?.message || data?.detail || data?.code || data?.error || `Security API request failed (${response.status})`;
+      const error = new Error(String(message));
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }, [getToken]);
 
   const request = useCallback(async (path, options = {}) => {
     if (!API_BASE) throw new Error("RevelaAI API base is unavailable. Set VITE_REVELAAI_API_BASE to override the default service URL.");
@@ -113,14 +144,20 @@ export default function SciCoreDashboard() {
     const results = await Promise.allSettled([
       request("/api/sci/shield/status"),
       request("/api/sci/shield/dashboard"),
+      requestBackend("/api/admin/security/ip-blocks"),
     ]);
     if (results[0].status === "fulfilled") setStatus(results[0].value);
     if (results[1].status === "fulfilled") setDashboard(results[1].value);
+    if (results[2].status === "fulfilled") {
+      setIpProtection(results[2].value?.protection || null);
+      setIpBlocks(Array.isArray(results[2].value?.blocks) ? results[2].value.blocks : []);
+      setCurrentIp(String(results[2].value?.current_ip || ""));
+    }
     const failures = results.filter((x) => x.status === "rejected");
     setLastUpdated(new Date());
     if (failures.length) setError(failures.map((x) => x.reason?.message || "Sci-Core endpoint unavailable").join(" · "));
-    if (results.every((x) => x.status === "fulfilled")) setNotice("Live status refreshed from RevelaAI Sci-Core.");
-  }, [request]);
+    if (results.every((x) => x.status === "fulfilled")) setNotice("Sci-Core status and backend IP enforcement refreshed from live APIs.");
+  }, [request, requestBackend]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -136,6 +173,56 @@ export default function SciCoreDashboard() {
       await refresh();
     } catch (e) {
       setError(`${key}: ${e.message}`);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const createIpBlock = async (ip = blockIpValue, reason = blockReason) => {
+    const normalizedIp = String(ip || "").trim();
+    const normalizedReason = String(reason || "").trim();
+    if (!normalizedIp || normalizedReason.length < 8) {
+      setError("Enter a public IP address and a reason of at least 8 characters.");
+      return;
+    }
+    if (!window.confirm(`Temporarily block ${normalizedIp} on the RevelaCode platform for ${blockDuration} minutes? This applies to public backend requests, not just this dashboard.`)) return;
+    setBusy("ip-block");
+    setError("");
+    setNotice("");
+    try {
+      const result = await requestBackend("/api/admin/security/ip-blocks", {
+        method: "POST",
+        body: JSON.stringify({
+          ip: normalizedIp,
+          reason: normalizedReason,
+          duration_minutes: Number(blockDuration),
+        }),
+      });
+      setNotice(`Blocked ${result?.block?.ip || normalizedIp}. Enforcement is active at the RevelaCode request boundary.`);
+      setBlockIpValue("");
+      setBlockReason("");
+      await refresh();
+    } catch (error) {
+      setError(`IP block: ${error.message}`);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const releaseIpBlock = async (ip) => {
+    if (!window.confirm(`Unblock ${ip}? Requests from this address will be accepted again if other controls allow them.`)) return;
+    setBusy("ip-unblock");
+    setError("");
+    setNotice("");
+    try {
+      await requestBackend("/api/admin/security/ip-blocks/unblock", {
+        method: "POST",
+        body: JSON.stringify({ ip, reason: "Released by platform administrator in Sci-Core" }),
+      });
+      setNotice(`Released the IP block for ${ip}.`);
+      await refresh();
+    } catch (error) {
+      setError(`IP unblock: ${error.message}`);
     } finally {
       setBusy("");
     }
@@ -185,12 +272,82 @@ export default function SciCoreDashboard() {
       {error && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0"><p className="font-bold">Action needs attention</p><p className="mt-1 break-words text-xs leading-5">{error}</p></div><button onClick={() => setError("")} className="ml-auto text-rose-200" aria-label="Dismiss error"><XCircle className="h-4 w-4" /></button></div>}
       {notice && <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs leading-5 text-emerald-200"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{notice}</div>}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-        <Metric label="Threats · last 24 hours" value={threats} detail="Persisted threat records reported by the API" icon={Activity} tone="amber" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-5">
+        <Metric label="Threats · last 24 hours" value={threats} detail="Persisted threat records reported by Sci-Core" icon={Activity} tone="amber" />
+        <Metric label="Active IP blocks" value={ipProtection?.persistent ? (ipProtection.active_blocks ?? "—") : "—"} detail={ipProtection?.persistent ? "Enforced by RevelaCode Backend" : "Persistent IP protection unavailable"} icon={ShieldCheck} tone="amber" />
         <Metric label="Research records" value={researchCount} detail="Saved research runs in Sci-Core storage" icon={BookOpen} tone="cyan" />
         <Metric label="Disaster records" value={disasterCount} detail="Recorded simulation and recovery diagnostics" icon={Siren} tone="violet" />
-        <Metric label="Shield state" value={/active/i.test(shieldState) ? "Active" : "Check API"} detail="Security scans do not automatically change firewall rules" icon={ShieldCheck} tone="green" />
+        <Metric label="Shield state" value={/active/i.test(shieldState) && ipProtection?.persistent ? "Active" : "Check API"} detail="Sci-Core scans plus backend IP enforcement" icon={ShieldCheck} tone="green" />
       </div>
+
+      <Panel title="Live IP Protection" subtitle="Block suspicious public addresses at the RevelaCode Backend request boundary. Blocks persist in the platform MongoDB." icon={ShieldCheck}>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+          <form onSubmit={(event) => { event.preventDefault(); createIpBlock(); }} className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold text-white">Block a suspicious IP</p>
+              <span className={cn("rounded-full border px-2 py-1 text-[10px] font-bold", ipProtection?.persistent ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-amber-400/25 bg-amber-400/10 text-amber-200")}>
+                {ipProtection?.persistent ? "Persistent enforcement ready" : "Enforcement storage unavailable"}
+              </span>
+            </div>
+            <label className="block text-xs font-semibold text-slate-300">Public IPv4 or IPv6 address
+              <input value={blockIpValue} onChange={(event) => setBlockIpValue(event.target.value)} placeholder="Enter a confirmed public IP" maxLength={64}
+                className="mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"/>
+            </label>
+            <label className="block text-xs font-semibold text-slate-300">Reason / evidence
+              <textarea value={blockReason} onChange={(event) => setBlockReason(event.target.value)} maxLength={300} rows={3} placeholder="Repeated failed login attempts, verified against authentication telemetry…" className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"/>
+            </label>
+            <label className="block text-xs font-semibold text-slate-300">Temporary block duration
+              <select value={blockDuration} onChange={(event) => setBlockDuration(event.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white">
+                <option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option><option value="1440">24 hours</option><option value="10080">7 days</option>
+              </select>
+            </label>
+            <button type="submit" disabled={!!busy || !ipProtection?.persistent || !blockIpValue.trim() || blockReason.trim().length < 8}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-45">
+              <ShieldCheck className="h-4 w-4"/>{busy === "ip-block" ? "Applying block…" : "Confirm IP block"}
+            </button>
+            <p className="text-[11px] leading-5 text-slate-500">Exact public IP only. Private/reserved IPs, CIDR ranges, your current administrator address and configured allowlist addresses are rejected.</p>
+            <p className="text-[11px] leading-5 text-slate-500">Current session address: <code className="text-slate-300">{currentIp || "not resolved"}</code></p>
+          </form>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div><p className="text-xs font-bold text-white">Active enforced blocks</p><p className="mt-1 text-[11px] text-slate-500">This list is read from the same database used by the live backend guard.</p></div>
+              <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[10px] text-slate-300">{ipBlocks.length} active</span>
+            </div>
+            {!ipProtection?.persistent ? (
+              <div className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-5 text-center">
+                <AlertTriangle className="mx-auto h-6 w-6 text-amber-300"/>
+                <p className="mt-2 text-xs font-semibold text-amber-100">IP block state could not be verified</p>
+                <p className="mt-1 text-[11px] text-slate-400">Sci-Core will not report zero active blocks while the authoritative backend store is unavailable. Restore MongoDB/backend connectivity and refresh.</p>
+              </div>
+            ) : ipBlocks.length ? (
+              <div className="space-y-2">
+                {ipBlocks.map((block) => (
+                  <div key={block.ip} className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2"><code className="text-sm font-bold text-rose-200">{block.ip}</code><span className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 text-[9px] font-bold text-rose-200">{block.source === "auto_bruteforce" ? "AUTO-BLOCKED" : "MANUAL"}</span></div>
+                      <p className="mt-1 break-words text-xs text-slate-300">{block.reason}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">Expires: {block.expires_at ? new Date(block.expires_at).toLocaleString() : "not specified"} · By: {block.created_by || "system"}</p>
+                    </div>
+                    <button type="button" onClick={() => releaseIpBlock(block.ip)} disabled={!!busy} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-emerald-400/30 px-3 text-xs font-bold text-emerald-200 hover:bg-emerald-400/10 disabled:opacity-50">
+                      {busy === "ip-unblock" ? "Releasing…" : "Unblock"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5 text-center">
+                <ShieldCheck className="mx-auto h-6 w-6 text-slate-500"/>
+                <p className="mt-2 text-xs font-semibold text-slate-300">No active IP blocks</p>
+                <p className="mt-1 text-[11px] text-slate-500">New verified automatic or administrator blocks will appear here.</p>
+              </div>
+            )}
+            <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">
+              Automatic policy: {ipProtection?.automatic_blocking ? `${ipProtection.auto_block_threshold} failed login submissions within ${ipProtection.auto_block_window_minutes} minutes trigger a ${ipProtection.auto_block_duration_minutes}-minute block.` : "Automatic blocking is unavailable until the backend persistent block store is healthy."}
+            </div>
+          </div>
+        </div>
+      </Panel>
 
       <div className="grid min-w-0 grid-cols-1 gap-5 2xl:grid-cols-2">
         <Panel title="Live Research Engine" subtitle="Query open research sources and save a traceable result." icon={Search}>
@@ -217,7 +374,27 @@ export default function SciCoreDashboard() {
           </div>
           {scanResult && <p className="mt-3 text-xs text-slate-400">{scanFindings} finding(s) returned · status: {scanResult.status || "scan returned"} · defensive_only: {String(scanResult.defensive_only)}</p>}
           <div className="mt-3"><ResultBlock value={scanResult} /></div>
-          <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">Firewall and Nginx output is advisory text only. This dashboard does not auto-block IPs or apply system configuration.</p>
+          {scanResult?.threats?.filter((threat) => threat.ip).length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-bold text-slate-300">Source addresses surfaced by the scan</p>
+              {scanResult.threats.filter((threat) => threat.ip).map((threat) => {
+                const alreadyBlocked = ipBlocks.some((block) => block.ip === threat.ip);
+                return (
+                  <div key={threat.ip} className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0"><code className="text-xs font-bold text-rose-200">{threat.ip}</code><p className="mt-1 text-[11px] text-slate-500">{threat.type || "Authentication threat"} · {threat.count || 0} recorded failures</p></div>
+                    {alreadyBlocked || threat.auto_blocked ? (
+                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-200">Blocked</span>
+                    ) : (
+                      <button type="button" onClick={() => createIpBlock(threat.ip, `Sci-Core scan: ${threat.type || "suspicious authentication activity"} (${threat.count || 0} failures)`)}
+                        disabled={!!busy || !ipProtection?.persistent}
+                        className="min-h-11 shrink-0 rounded-lg border border-rose-400/30 px-3 text-xs font-bold text-rose-200 hover:bg-rose-400/10 disabled:opacity-45">Block this IP</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] leading-5 text-amber-100">IP blocks are enforced by RevelaCode Backend before platform routes run. Nginx and host-firewall recommendations remain advisory; this feature does not modify Render's network firewall.</p>
         </Panel>
 
         <Panel title="Disaster & Recovery Simulator" subtitle="Run controlled diagnostic scenarios and record the returned outcome." icon={Siren}>
@@ -250,7 +427,7 @@ export default function SciCoreDashboard() {
       </div>
 
       <div className="rounded-2xl border border-slate-800 bg-[#0b1220] p-4 sm:p-5">
-        <div className="flex items-start gap-3"><TerminalSquare className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" /><div><h3 className="text-sm font-bold text-white">Operations boundary</h3><p className="mt-1 text-xs leading-5 text-slate-500">All controls require the backend's administrator authorization. If requests return 401/403, check that the signed-in account has the current admin role in RevelaCode, then verify CORS and <code>VITE_REVELAAI_API_BASE</code>. Sci-Core is designed for defensive monitoring and civilian research; no automatic firewall changes, code execution, or deployment are performed here.</p></div></div>
+        <div className="flex items-start gap-3"><TerminalSquare className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" /><div><h3 className="text-sm font-bold text-white">Operations boundary</h3><p className="mt-1 text-xs leading-5 text-slate-500">All controls require the backend's administrator authorization. If requests return 401/403, check that the signed-in account has the current admin role in RevelaCode, then verify CORS and <code>VITE_REVELAAI_API_BASE</code>. Sci-Core is designed for defensive monitoring and civilian research; IP blocks are enforced at the platform application boundary; host firewall changes, code execution and deployment are not performed here.</p></div></div>
       </div>
     </div>
   );
