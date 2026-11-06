@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Sparkles, MessageCircle,
   GraduationCap, Trash2, Pencil, Check, X, Mic, Camera, WifiOff, Search,
-  Pin, Settings2, FileText, History
+  Pin, Settings2, FileText, History, ChevronDown, Wrench
 } from "lucide-react";
 import { resolveChatTitle } from "@/components/utils/chatTitle";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -52,6 +52,7 @@ export default function Sidebar({
     catch { return false; }
   });
   const [search, setSearch] = useState("");
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(() => readStoredSet(PIN_STORAGE_KEY));
   const [confirmId, setConfirmId] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -217,6 +218,7 @@ export default function Sidebar({
   };
 
   const openTool = () => {
+    setToolsOpen(false);
     onOpenHumanizer?.();
     setOpen(false);
   };
@@ -259,39 +261,58 @@ export default function Sidebar({
         </div>
 
         <div className={"shrink-0 space-y-2 border-b border-line p-3 " + (collapsed ? "lg:px-2" : "")}>
-          <button type="button" data-demo="sidebar-new-chat" onClick={() => { onNewChat?.(); setOpen(false); }}
+          <button type="button" data-demo="sidebar-new-chat" onClick={() => { onNewChat?.(); setToolsOpen(false); setOpen(false); }}
             title="New chat" aria-label="New chat"
             className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-3 text-sm font-bold text-accent hover:bg-accent/15 active:scale-[.99] " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
             <Plus size={18}/><span className={collapsed ? "lg:hidden" : ""}>New chat</span>
           </button>
 
-          <div className={"grid grid-cols-2 gap-2 " + (collapsed ? "lg:grid-cols-1" : "")}>
-            <button type="button" onClick={() => { onOpenVoice?.(); setOpen(false); }} title="Talk to RevelaAI" aria-label="Voice"
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
-              <Mic size={16}/><span className={collapsed ? "lg:hidden" : ""}>Voice</span>
-            </button>
-            <button type="button" onClick={() => { onOpenVision?.(); setOpen(false); }} title="Explore with vision" aria-label="Vision"
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
-              <Camera size={16}/><span className={collapsed ? "lg:hidden" : ""}>Vision</span>
-            </button>
-          </div>
-
-          <button type="button" onClick={openTool} title="Open Humanizer tools" aria-label="Open tools"
-            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/35 hover:text-accent " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
-            <FileText size={16}/><span className={collapsed ? "lg:hidden" : ""}>Tools · Humanizer</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (collapsed) setCollapsed(false);
+              setToolsOpen((value) => !value);
+            }}
+            aria-expanded={toolsOpen}
+            aria-controls="revelaai-sidebar-tools"
+            title="Open voice, vision and specialist tools"
+            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/35 hover:text-accent " + (collapsed ? "lg:px-0" : "lg:justify-start")}
+          >
+            <Wrench size={16}/>
+            <span className={collapsed ? "lg:hidden" : ""}>Tools</span>
+            <ChevronDown size={14} className={"ml-auto transition-transform " + (toolsOpen ? "rotate-180" : "") + (collapsed ? "lg:hidden" : "")}/>
           </button>
 
-          <button type="button" role="switch" aria-checked={freeMode} onClick={() => onToggleFreeMode?.()}
-            title={freeMode ? "Turn off weak-network mode" : "Enable weak-network mode"}
-            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2.5 text-left hover:border-accent/35 " + (collapsed ? "lg:px-0" : "")}>
-            <WifiOff size={16} className={freeMode ? "text-accent" : "text-muted"}/>
-            <span className={"min-w-0 flex-1 text-left text-xs font-semibold text-fg-secondary " + (collapsed ? "lg:hidden" : "")}>
-              {freeMode ? "Weak-network free mode is on" : "Weak-network free mode"}
-            </span>
-            <span className={"relative h-6 w-11 shrink-0 rounded-full " + (freeMode ? "bg-accent" : "bg-line-strong") + (collapsed ? " lg:hidden" : "")}>
-              <span className={"absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all " + (freeMode ? "left-[24px]" : "left-1")}/>
-            </span>
-          </button>
+          {toolsOpen && (
+            <div id="revelaai-sidebar-tools" className="grid grid-cols-2 gap-2 rounded-xl border border-line bg-surface p-2">
+              <button type="button" onClick={() => { onOpenVoice?.(); setToolsOpen(false); setOpen(false); }}
+                title="Talk to RevelaAI" aria-label="Voice"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
+                <Mic size={15}/>Voice
+              </button>
+              <button type="button" onClick={() => { onOpenVision?.(); setToolsOpen(false); setOpen(false); }}
+                title="Explore with vision" aria-label="Vision"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
+                <Camera size={15}/>Vision
+              </button>
+              <button type="button" onClick={openTool} title="Open Selective Humanizer" aria-label="Open Humanizer"
+                className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
+                <FileText size={15}/>Selective Humanizer
+              </button>
+              <button type="button" role="switch" aria-checked={freeMode} onClick={() => onToggleFreeMode?.()}
+                title={freeMode ? "Turn off weak-network mode" : "Enable weak-network mode"}
+                className="col-span-2 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-3 text-left hover:border-accent/35"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <WifiOff size={15} className={freeMode ? "text-accent" : "text-muted"}/>
+                  <span className="min-w-0 text-xs font-semibold text-fg-secondary">Weak-network free mode</span>
+                </span>
+                <span className={"relative h-5 w-9 shrink-0 rounded-full " + (freeMode ? "bg-accent" : "bg-line-strong")}>
+                  <span className={"absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all " + (freeMode ? "left-[18px]" : "left-0.5")}/>
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className={"shrink-0 px-3 pb-2 pt-3 " + (collapsed ? "lg:px-2" : "")}>
@@ -393,14 +414,7 @@ export default function Sidebar({
             <span className={"rounded-full border border-accent/20 bg-accent/10 px-2 py-1 text-[9px] font-bold text-accent " + (collapsed ? "lg:hidden" : "")}>{planLabel}</span>
             <Settings2 size={15} className={"text-muted " + (collapsed ? "lg:hidden" : "")}/>
           </button>
-          <button type="button" onClick={() => onOpenIdentity?.()}
-            title="AI Identity" aria-label="Open AI Identity" className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
-            <Sparkles size={15}/><span className={collapsed ? "lg:hidden" : ""}>AI Identity</span>
-          </button>
-          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:settings-open"))}
-            title="Settings" aria-label="Open settings" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
-            <Settings2 size={15}/><span className={collapsed ? "lg:hidden" : ""}>Settings</span>
-          </button>
+
         </div>
       </aside>
     </>
