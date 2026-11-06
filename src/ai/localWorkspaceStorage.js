@@ -38,7 +38,7 @@ async function withStore(storeName, mode, operation) {
 
 export async function saveLocalFile(file, metadata = {}) {
   if (!(file instanceof Blob)) throw new TypeError("A file or Blob is required.");
-  const id = metadata.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+  const id = metadata.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
   const record = {
     id,
     name: String(metadata.name || file.name || "Untitled file").slice(0, 240),
