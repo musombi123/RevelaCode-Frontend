@@ -69,8 +69,6 @@ export default function Sidebar({
   })), [chats]);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
-  const rowsRef = useRef(rows);
-  rowsRef.current = rows;
 
   useEffect(() => {
     if (!onRenameChat) return;
@@ -290,7 +288,7 @@ export default function Sidebar({
             className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2.5 text-left hover:border-accent/35 " + (collapsed ? "lg:px-0" : "")}>
             <WifiOff size={16} className={freeMode ? "text-accent" : "text-muted"}/>
             <span className={"min-w-0 flex-1 text-left text-xs font-semibold text-fg-secondary " + (collapsed ? "lg:hidden" : "")}>
-              {freeMode ? "Weak-network mode on" : "Weak-network mode"}
+              {freeMode ? "Weak-network free mode is on" : "Weak-network free mode"}
             </span>
             <span className={"relative h-6 w-11 shrink-0 rounded-full " + (freeMode ? "bg-accent" : "bg-line-strong") + (collapsed ? " lg:hidden" : "")}>
               <span className={"absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all " + (freeMode ? "left-[24px]" : "left-1")}/>
@@ -397,8 +395,12 @@ export default function Sidebar({
             <span className={"rounded-full border border-accent/20 bg-accent/10 px-2 py-1 text-[9px] font-bold text-accent " + (collapsed ? "lg:hidden" : "")}>{planLabel}</span>
             <Settings2 size={15} className={"text-muted " + (collapsed ? "lg:hidden" : "")}/>
           </button>
+          <button type="button" onClick={() => onOpenIdentity?.()}
+            title="AI Identity" aria-label="Open AI Identity" className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
+            <Sparkles size={15}/><span className={collapsed ? "lg:hidden" : ""}>AI Identity</span>
+          </button>
           <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:settings-open"))}
-            title="Settings" aria-label="Open settings" className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
+            title="Settings" aria-label="Open settings" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
             <Settings2 size={15}/><span className={collapsed ? "lg:hidden" : ""}>Settings</span>
           </button>
         </div>
