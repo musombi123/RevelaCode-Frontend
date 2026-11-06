@@ -61,11 +61,11 @@ const EMOTION_STYLES = {
   spiritual: "bg-gradient-to-r from-green-900/40 to-emerald-800/30 border-green-500/30",
   prophetic: "bg-gradient-to-r from-purple-900/40 to-indigo-800/30 border-purple-500/30",
   technical: "bg-gradient-to-r from-blue-900/40 to-slate-800/30 border-blue-500/30",
-  user: "bg-revela-secondary text-white border-white/10",
-  neutral: "bg-revela-card text-white border-white/10",
+  user: "bg-revela-secondary text-fg border-line",
+  neutral: "bg-revela-card text-fg border-line",
 };
 
-const ERROR_STYLE = "bg-red-950/30 border-red-500/30 text-white";
+const ERROR_STYLE = "bg-red-950/30 border-red-500/30 text-fg";
 
 /* Copy-ready cards for clearly structured assistant deliverables. */
 function detectSpecialOutput(text) {
@@ -180,7 +180,7 @@ function useReveal(text, fresh) {
 
 const mdComponents = {
   p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+  strong: ({ children }) => <strong className="font-semibold text-fg">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
 
   h1: ({ children }) => <h1 className="mb-2 mt-4 text-lg font-bold first:mt-0">{children}</h1>,
@@ -207,15 +207,15 @@ const mdComponents = {
         checked={Boolean(checked)}
         readOnly
         disabled
-        className="mr-2 align-middle accent-emerald-500"
+        className="mr-2 align-middle accent-accent"
       />
     ) : null,
 
   a: ({ href, children }) =>
     isSafeHttpUrl(href) ? (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline decoration-emerald-400/30 underline-offset-2 hover:text-emerald-300">{children}</a>
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline decoration-emerald-400/30 underline-offset-2 hover:text-accent">{children}</a>
     ) : String(href || "").startsWith("#revelaai-source-") ? (
-      <a href={href} className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 text-[11px] font-bold text-emerald-300 underline">{children}</a>
+      <a href={href} className="inline-flex items-center rounded-md bg-accent/10 px-1.5 text-[11px] font-bold text-accent underline">{children}</a>
     ) : (
       <span>{children}</span>
     ),
@@ -228,17 +228,17 @@ const mdComponents = {
         alt={alt || ""}
         loading="lazy"
         referrerPolicy="no-referrer"
-        className="my-2 h-auto max-w-full rounded-xl border border-white/10"
+        className="my-2 h-auto max-w-full rounded-xl border border-line"
       />
     ) : null,
 
   blockquote: ({ children }) => (
-    <blockquote className="mb-3 border-l-2 border-emerald-500/50 pl-3 italic text-gray-300">
+    <blockquote className="mb-3 border-l-2 border-accent/50 pl-3 italic text-fg-secondary">
       {children}
     </blockquote>
   ),
 
-  hr: () => <hr className="my-4 border-white/10" />,
+  hr: () => <hr className="my-4 border-line" />,
 
   /*
    * react-markdown v9 no longer passes `inline`.
@@ -251,7 +251,7 @@ const mdComponents = {
 
     if (!isBlock) {
       return (
-        <code className="rounded bg-black/40 px-1.5 py-0.5 text-[0.85em] text-emerald-300">
+        <code className="rounded bg-code px-1.5 py-0.5 text-[0.85em] text-accent">
           {children}
         </code>
       );
@@ -264,13 +264,13 @@ const mdComponents = {
   pre: ({ children }) => <>{children}</>,
 
   table: ({ children }) => (
-    <div className="mb-3 overflow-x-auto rounded-xl border border-white/10 last:mb-0">
+    <div className="mb-3 overflow-x-auto rounded-xl border border-line last:mb-0">
       <table className="w-full border-collapse text-left text-xs sm:text-sm">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-white/10">{children}</thead>,
-  th: ({ children }) => <th className="border-b border-white/10 px-3 py-2 font-semibold">{children}</th>,
-  td: ({ children }) => <td className="border-b border-white/5 px-3 py-2 align-top">{children}</td>,
+  thead: ({ children }) => <thead className="bg-surface-2">{children}</thead>,
+  th: ({ children }) => <th className="border-b border-line px-3 py-2 font-semibold">{children}</th>,
+  td: ({ children }) => <td className="border-b border-line px-3 py-2 align-top">{children}</td>,
 };
 
 // Memoized so copy/edit state changes don't re-parse the markdown
@@ -299,13 +299,13 @@ function ImageViewer({ url, onClose }) {
       aria-modal="true"
       aria-label="Image viewer"
       onClick={onClose}
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-popover/95 p-4 backdrop-blur-sm"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close image"
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+        className="absolute right-4 top-4 rounded-full bg-surface-2 p-2 text-fg hover:bg-surface-3"
       >
         <X size={20} />
       </button>
@@ -323,7 +323,7 @@ function ImageViewer({ url, onClose }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(event) => event.stopPropagation()}
-        className="absolute bottom-5 flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/20"
+        className="absolute bottom-5 flex items-center gap-1.5 rounded-full bg-surface-2 px-4 py-2 text-xs font-semibold text-fg hover:bg-surface-3"
       >
         <ExternalLink size={13} /> Open original
       </a>
@@ -378,11 +378,11 @@ function EditBox({ initial, onSave, onCancel }) {
         onKeyDown={onKeyDown}
         rows={2}
         aria-label="Edit your message"
-        className="w-full resize-none rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+        className="w-full resize-none rounded-xl border border-line-strong bg-code px-3 py-2 text-sm text-fg outline-none focus:border-accent/60"
       />
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="hidden text-[10px] text-gray-400 sm:block">
+        <span className="hidden text-[10px] text-muted sm:block">
           Ctrl + Enter to send · Esc to cancel
         </span>
 
@@ -390,14 +390,14 @@ function EditBox({ initial, onSave, onCancel }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/10"
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-fg-secondary hover:bg-surface-2"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={submit}
-            className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-black hover:bg-emerald-400"
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-inverse hover:bg-accent-hover"
           >
             Save &amp; send
           </button>
@@ -501,7 +501,7 @@ function Message({ message, onEdit, onReveal }) {
 
   if (isSystem) {
     return (
-      <div role="status" className="mx-auto max-w-2xl rounded-full border border-emerald-400/25 bg-emerald-500/10 px-4 py-2 text-center text-xs font-medium text-emerald-200">
+      <div role="status" className="mx-auto max-w-2xl rounded-full border border-accent/25 bg-accent/10 px-4 py-2 text-center text-xs font-medium text-accent">
         {fullText}
       </div>
     );
@@ -519,7 +519,7 @@ function Message({ message, onEdit, onReveal }) {
             ? `rounded-2xl border px-4 py-3 text-sm leading-relaxed ${bubbleStyle}`
             : isError
               ? "rounded-xl border px-3 py-3 " + ERROR_STYLE
-              : "border-0 bg-transparent px-0 py-2 text-base leading-[1.7] text-gray-200 shadow-none"
+              : "border-0 bg-transparent px-0 py-2 text-base leading-[1.7] text-fg-secondary shadow-none"
         }`}
       >
         {/* ---------------- THINKING (fallback) ---------------- */}
@@ -529,7 +529,7 @@ function Message({ message, onEdit, onReveal }) {
         {!isThinking && isUser && (
           <div>
             {isVoice && (
-              <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-300/80">
+              <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-accent/80">
                 <Mic size={11} /> Voice
               </div>
             )}
@@ -548,7 +548,7 @@ function Message({ message, onEdit, onReveal }) {
                   <button
                     type="button"
                     onClick={() => setExpanded((open) => !open)}
-                    className="mt-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200"
+                    className="mt-1.5 text-xs font-semibold text-accent hover:text-accent"
                   >
                     {expanded ? "Show less" : "Show more"}
                   </button>
@@ -557,9 +557,9 @@ function Message({ message, onEdit, onReveal }) {
             )}
 
             {message.attachmentName && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-black/10 px-3 py-2 text-xs">
-                <FileText size={14} className="shrink-0 text-emerald-300" />
-                <span className="min-w-0 truncate text-gray-300">
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-xs">
+                <FileText size={14} className="shrink-0 text-accent" />
+                <span className="min-w-0 truncate text-fg-secondary">
                   {message.attachmentName}
                 </span>
               </div>
@@ -569,30 +569,30 @@ function Message({ message, onEdit, onReveal }) {
 
         {/* ---------------- ASSISTANT: ERROR ---------------- */}
         {!isThinking && !isUser && isError && (
-          <div role="alert" className="flex items-start gap-2 text-red-100">
-            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-400" />
+          <div role="alert" className="flex items-start gap-2 text-danger">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-danger" />
             <p className="break-words">{fullText}</p>
           </div>
         )}
 
         {/* ---------------- ASSISTANT: ANSWER ---------------- */}
         {!isThinking && !isUser && !isSystem && !isError && (
-          <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-gray-200">
+          <div className="w-full min-w-0 break-words text-[16px] leading-[1.7] text-fg-secondary">
             {visible && specialOutput && !revealing ? (
-              <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/90">
-                <header className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-700 bg-slate-800/90 px-3 py-2 sm:px-4">
-                  <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-slate-300">{specialOutput.label}</span>
+              <section className="my-3 w-full min-w-0 overflow-hidden rounded-xl border border-line bg-surface">
+                <header className="flex min-w-0 items-center justify-between gap-3 border-b border-line bg-surface-2 px-3 py-2 sm:px-4">
+                  <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-fg-secondary">{specialOutput.label}</span>
                   <button
                     type="button"
                     onClick={handleSpecialCopy}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line-strong bg-surface-3 px-3 py-1.5 text-xs font-semibold text-fg transition hover:bg-line-strong focus:outline-none focus:ring-2 focus:ring-accent/60"
                     aria-label={copied ? "Copied special output" : `Copy ${specialOutput.label}`}
                   >
                     {copied ? <Check size={13} /> : <Copy size={13} />}
                     {copied ? "Copied!" : "Copy"}
                   </button>
                 </header>
-                <div className="w-full min-w-0 overflow-x-auto px-3 py-4 text-sm leading-relaxed text-slate-100 sm:px-4">
+                <div className="w-full min-w-0 overflow-x-auto px-3 py-4 text-sm leading-relaxed text-fg sm:px-4">
                   <MarkdownBody text={visibleWithCitations} />
                 </div>
               </section>
@@ -604,7 +604,7 @@ function Message({ message, onEdit, onReveal }) {
               <button
                 type="button"
                 onClick={skip}
-                className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300"
+                className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted hover:text-fg-secondary"
               >
                 Skip
               </button>
@@ -618,7 +618,7 @@ function Message({ message, onEdit, onReveal }) {
                     type="button"
                     onClick={() => setViewerUrl(url)}
                     aria-label={`View generated image ${index + 1}`}
-                    className="block cursor-zoom-in overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+                    className="block cursor-zoom-in overflow-hidden rounded-2xl border border-line bg-surface-2"
                   >
                     <img
                       src={url}
@@ -630,7 +630,7 @@ function Message({ message, onEdit, onReveal }) {
                   </button>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  {[["Edit","Edit the previous generated image: "],["Enhance","Enhance the previous generated image while preserving its subject: "],["Variations","Create three visual variations of the previous generated image: "]].map(([label,prompt])=><button key={label} type="button" onClick={()=>window.dispatchEvent(new CustomEvent("revelaai:fill-composer",{detail:{text:prompt+String(message.sourcePrompt||message.text||"").slice(0,700)}}))} className="min-h-12 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-slate-300 hover:bg-white/5">{label}</button>)}
+                  {[["Edit","Edit the previous generated image: "],["Enhance","Enhance the previous generated image while preserving its subject: "],["Variations","Create three visual variations of the previous generated image: "]].map(([label,prompt])=><button key={label} type="button" onClick={()=>window.dispatchEvent(new CustomEvent("revelaai:fill-composer",{detail:{text:prompt+String(message.sourcePrompt||message.text||"").slice(0,700)}}))} className="min-h-12 rounded-lg border border-line px-3 text-[11px] font-semibold text-fg-secondary hover:bg-surface-2">{label}</button>)}
                 </div>
               </div>
             )}
@@ -644,7 +644,7 @@ function Message({ message, onEdit, onReveal }) {
                     download={`revelaai-design.${format}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-emerald-300 hover:bg-white/[0.09]"
+                    className="inline-flex items-center rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-accent hover:bg-surface-2"
                   >
                     Download {format.toUpperCase()}
                   </a>
@@ -653,8 +653,8 @@ function Message({ message, onEdit, onReveal }) {
             )}
 
             {!revealing && audioUrl && (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-                <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-emerald-300">
+              <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-accent">
                   <Volume2 size={14} />
                   RevelaAI voice response
                 </div>
@@ -663,8 +663,8 @@ function Message({ message, onEdit, onReveal }) {
             )}
 
             {!revealing && documentMeta?.type === "pdf" && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px] text-gray-400">
-                <FileText size={13} className="text-emerald-400" />
+              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2 text-[10px] text-muted">
+                <FileText size={13} className="text-accent" />
                 <span>{documentMeta.filename || "PDF document"}</span>
 
                 {documentMeta.pages != null && (
@@ -682,8 +682,8 @@ function Message({ message, onEdit, onReveal }) {
             )}
 
             {!revealing && sources.length > 0 && (
-              <div id={`revelaai-sources-${message.id}`} className="mt-4 border-t border-white/10 pt-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+              <div id={`revelaai-sources-${message.id}`} className="mt-4 border-t border-line pt-3">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">
                   Sources
                 </p>
 
@@ -695,21 +695,21 @@ function Message({ message, onEdit, onReveal }) {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-gray-400 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+                      className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted transition hover:border-line-strong hover:bg-surface-2 hover:text-fg"
                     >
-                      <ExternalLink size={12} className="shrink-0 text-emerald-400" />
+                      <ExternalLink size={12} className="shrink-0 text-accent" />
 
                       <span className="min-w-0 flex-1 truncate">{title}</span>
 
                       {host && host !== title && (
-                        <span className="hidden shrink-0 text-[10px] text-gray-600 sm:block">
+                        <span className="hidden shrink-0 text-[10px] text-muted sm:block">
                           {host}
                         </span>
                       )}
                     </a>
                   ))}
                 </div>
-                {Array.isArray(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries) && (message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).length > 0 && <details className="mt-3 rounded-xl border border-white/10 bg-white/[.02] p-3"><summary className="cursor-pointer text-[11px] font-semibold text-slate-400">Show queries used</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-slate-500">{(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).slice(0,20).map((query,index)=><li key={index}>{String(query)}</li>)}</ul></details>}
+                {Array.isArray(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries) && (message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).length > 0 && <details className="mt-3 rounded-xl border border-line bg-white/[.02] p-3"><summary className="cursor-pointer text-[11px] font-semibold text-muted">Show queries used</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted">{(message.metadata?.queries_used || message.metadata?.queriesUsed || message.metadata?.search_queries).slice(0,20).map((query,index)=><li key={index}>{String(query)}</li>)}</ul></details>}
               </div>
             )}
           </div>
@@ -723,7 +723,7 @@ function Message({ message, onEdit, onReveal }) {
             <button
               type="button"
               onClick={handleCopy}
-              className="text-gray-400 hover:text-white"
+              className="text-muted hover:text-fg"
               aria-label={copied ? "Copied" : "Copy message"}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -733,7 +733,7 @@ function Message({ message, onEdit, onReveal }) {
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="text-gray-400 hover:text-white"
+                className="text-muted hover:text-fg"
                 aria-label="Edit message"
               >
                 <Edit2 size={14} />
