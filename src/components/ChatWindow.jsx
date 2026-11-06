@@ -106,7 +106,7 @@ export default function ChatWindow({
                 rounded-2xl
                 border
                 border-line
-                bg-revela-card
+                bg-surface
                 px-4
                 py-3
                 shadow-sm
