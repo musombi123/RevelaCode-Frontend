@@ -137,7 +137,7 @@ export default function ThinkingStages({
               {i < visible.length - 1 && (
                 <span
                   className={`absolute left-[9px] top-5 bottom-0 w-px transition-colors duration-500 ${
-                    done ? "bg-emerald-500/50" : "bg-white/10"
+                    done ? "bg-accent/50" : "bg-surface-2"
                   }`}
                 />
               )}
@@ -145,7 +145,7 @@ export default function ThinkingStages({
               {/* Step icon */}
               <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                 {done && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-accent">
                     <Check size={12} strokeWidth={3} />
                   </span>
                 )}
@@ -153,12 +153,12 @@ export default function ThinkingStages({
                 {active && (
                   <Loader2
                     size={16}
-                    className="animate-spin text-emerald-400 motion-reduce:animate-none"
+                    className="animate-spin text-accent motion-reduce:animate-none"
                   />
                 )}
 
                 {!done && !active && (
-                  <span className="h-2 w-2 rounded-full border border-white/20" />
+                  <span className="h-2 w-2 rounded-full border border-line-strong" />
                 )}
               </span>
 
@@ -166,10 +166,10 @@ export default function ThinkingStages({
               <span
                 className={`pt-px text-sm transition-colors duration-300 ${
                   active
-                    ? "font-medium text-white"
+                    ? "font-medium text-fg"
                     : done
-                    ? "text-gray-400"
-                    : "text-gray-600"
+                    ? "text-muted"
+                    : "text-muted"
                 }`}
               >
                 {label}
