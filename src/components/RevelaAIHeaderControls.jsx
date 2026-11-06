@@ -110,10 +110,10 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         <Activity size={12}/><span className="truncate">Adaptive · {modelTier}</span>
       </span>
 
-      <div className="hidden lg:block">{modeButtons}</div>
+      <div className="hidden xl:block">{modeButtons}</div>
 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:research-open"))}
-        aria-label="Open search" title="Search" className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg md:flex">
+        aria-label="Open search" title="Search" className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg xl:flex">
         <Search size={17}/>
       </button>
 
@@ -130,7 +130,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         </div>}
       </div>
 
-      <div className="relative hidden sm:block">
+      <div className="relative hidden xl:block">
         <button type="button" onClick={() => { setAvatarOpen((value) => !value); setQuickOpen(false); }}
           aria-label="Open account menu" aria-expanded={avatarOpen}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-2 text-xs font-bold text-fg">
@@ -152,21 +152,24 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         </div>}
       </div>
 
-      <div className="sm:hidden relative">
+      <div className="xl:hidden relative">
         <button type="button" onClick={() => setOverflowOpen((value) => !value)} aria-label="More workspace controls"
           aria-expanded={overflowOpen} className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary">
           <MoreHorizontal size={18}/>
         </button>
-        {overflowOpen && <div className="absolute right-3 top-14 z-[120] w-[min(300px,calc(100vw-1.5rem))] rounded-2xl border border-line bg-popover p-3 text-fg shadow-2xl">
+        {overflowOpen && <div className="absolute right-3 top-14 z-[120] w-[min(320px,calc(100vw-1.5rem))] rounded-2xl border border-line bg-popover p-3 text-fg shadow-2xl">
           <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-fg">Search mode</span><ChevronDown size={14} className="text-muted"/></div>
           {modeButtons}
           <div className="mt-3">{quota}</div>
           <button type="button" onClick={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:research-open")); }}
             className="mt-2 flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Search size={15}/> Open search</button>
+          <button type="button" onClick={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
+            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Settings2 size={15}/> Account and settings</button>
+          <p className="mt-2 border-t border-line pt-2 text-[10px] leading-4 text-muted">Adaptive routing · {modelTier}</p>
         </div>}
       </div>
 
-      <div className="hidden sm:block">{quota}</div>
+      <div className="hidden xl:block">{quota}</div>
       <PremiumPlansStar className="!h-10 !min-w-10 !px-2" />
     </div>
   );
