@@ -31,8 +31,9 @@ test("support invitation acceptance uses the public preview and single-use accep
   assert.match(page, /confirm_password/);
   assert.match(page, /At least 12 characters/);
   assert.match(routes, /path="\/support-invitation"/);
-  assert.match(login, /"support_admin"/);
-  assert.match(login, /platformAdminRoles\.includes\(role\)/);
+  assert.match(login, /hasSupportWorkspaceRole/);
+  assert.match(login, /resolveWorkspaceRole/);
+  assert.match(login, /hasPlatformAdminRole/);
 });
 
 test("Support Admin receives a separate oversight, Study, policy and handbook workspace", () => {
