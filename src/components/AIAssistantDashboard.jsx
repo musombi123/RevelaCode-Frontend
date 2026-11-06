@@ -351,6 +351,12 @@ export default function AIAssistantDashboard({
   const [voiceActive, setVoiceActive] =
     useState(false);
   const [humanizerOpen, setHumanizerOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("tool") === "humanizer") {
+      setHumanizerOpen(true);
+    }
+  }, []);
 
   // The WelcomeScreen launches the very same camera control used by InputBar.
   const [visionReady, setVisionReady] = useState(false);
