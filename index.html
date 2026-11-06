@@ -31,6 +31,8 @@
         }
         var dark = mode === "dark" || (mode === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
         var root = document.documentElement;
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.setAttribute("content", dark ? "#091015" : "#F7F9FB");
         root.dataset.themeMode = mode;
         root.dataset.theme = dark ? "dark" : "light";
         root.classList.toggle("dark", dark);
