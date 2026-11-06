@@ -48,7 +48,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
 // These screens are also loaded lazily by the dashboard registry. Keep their
 // direct routes lazy as well so they can live in their own production chunks.
-const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));
+const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));\nconst HumanizerWorkspace = React.lazy(() => import("./pages/HumanizerWorkspace.jsx"));
 const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));
 
 function SPAWrapper({ children }) {
