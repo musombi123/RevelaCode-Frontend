@@ -99,7 +99,7 @@ export default function SciCoreDashboard() {
       headers: {
         Accept: "application/json",
         ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...(accessToken ? { Authorization: `Bearer ${String(accessToken).replace(/^Bearer\\s+/i, "")}` } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${String(accessToken).replace(/^Bearer\s+/i, "")}` } : {}),
         ...(options.headers || {}),
       },
     });
