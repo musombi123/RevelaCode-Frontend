@@ -1878,17 +1878,7 @@ export default function AIAssistantDashboard({
   return (
     <div
       data-demo="ai-overview"
-      className="
-        flex
-        h-full
-        min-h-0
-        min-w-0
-        overflow-hidden
-        bg-white
-        text-gray-900
-        dark:bg-revela-dark
-        dark:text-white
-      "
+      className="revelaai-workspace relative flex h-full min-h-0 min-w-0 overflow-hidden bg-app text-fg"
     >
       {/* ===================================================
           SIDEBAR
@@ -1929,22 +1919,8 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         <header
-          className="
-            flex
-            h-14
-            shrink-0
-            items-center
-            justify-between
-            gap-3
-            border-b
-            border-gray-200
-            bg-white/95
-            px-3
-            backdrop-blur-lg
-            dark:border-white/10
-            dark:bg-revela-dark/95
-            sm:px-4
-          "
+          data-theme-surface="header"
+          className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line bg-header px-3 sm:gap-3 sm:px-4"
         >
           <div className="flex min-w-0 items-center gap-2">
             <button
@@ -1964,13 +1940,13 @@ export default function AIAssistantDashboard({
                 justify-center
                 rounded-xl
                 border
-                border-white/10
-                bg-white/5
-                text-gray-300
+                border-line
+                bg-surface
+                text-fg-secondary
                 transition
-                hover:bg-white/10
-                hover:text-white
-                md:hidden
+                hover:bg-surface-2
+                hover:text-fg
+                lg:hidden
               "
               aria-label="Toggle AI sidebar"
             >
@@ -1989,7 +1965,7 @@ export default function AIAssistantDashboard({
                     truncate
                     text-sm
                     font-bold
-                    text-white
+                    text-fg
                   "
                 >
                   {hasConversation
@@ -2002,8 +1978,7 @@ export default function AIAssistantDashboard({
                 className="
                   truncate
                   text-[10px]
-                  text-gray-500
-                  dark:text-gray-500
+                  text-muted
                   sm:block
                 "
               >
@@ -2014,58 +1989,10 @@ export default function AIAssistantDashboard({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <div
-              className="
-                hidden
-                items-center
-                gap-1.5
-                rounded-full
-                border
-                border-emerald-500/20
-                bg-emerald-500/10
-                px-2.5
-                py-1.5
-                text-[10px]
-                font-bold
-                text-emerald-300
-                sm:flex
-              "
-            >
-              <ShieldCheck size={12} />
-              {freeMode ? "FREE MODE · LOCAL ONLY" : "ADAPTIVE MODE"}
-            </div>
 
 
 
-            <button
-              type="button"
-              onClick={
-                startNewChat
-              }
-              className="
-                hidden
-                items-center
-                gap-2
-                rounded-xl
-                border
-                border-white/10
-                bg-white/5
-                px-3
-                py-2
-                text-xs
-                font-bold
-                text-gray-300
-                transition
-                hover:bg-white/10
-                hover:text-white
-                sm:inline-flex
-              "
-            >
-              <MessageSquarePlus
-                size={14}
-              />
-              New Chat
-            </button>
+
             <RevelaAIHeaderControls modelTier={modelTier} />
           </div>
         </header>
@@ -2075,48 +2002,47 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         {!hasConversation ? (
-          <section
-            className="
-              relative
-              min-h-0
-              flex-1
-              overflow-y-auto
-              overscroll-contain
-            "
-          >
-            <div
-              className="
-                flex
-                min-h-full
-                w-full
-                items-center
-                justify-center
-                px-4
-                py-8
-                sm:px-6
-                sm:py-10
-              "
-            >
-              <div
-                className="
-                  flex
-                  w-full
-                  max-w-3xl
-                  flex-col
-                  items-center
-                  justify-center
-                "
-              >
-                <div data-demo="ai-vision-tools"><WelcomeScreen onSuggestion={sendTextMessage} onVoice={openVoice} onVision={openVision} visionAvailable={visionReady} /></div>
-
-                <div
-                  data-demo="ai-chat-input"
-                  className="
-                    mt-8
-                    w-full
-                    max-w-3xl
-                  "
-                >
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="RevelaAI welcome workspace">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4">
+              <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col items-center justify-center">
+                <div data-demo="ai-vision-tools" className="w-full">
+                  <WelcomeScreen onSuggestion={sendTextMessage} onVoice={openVoice} onVision={openVision} visionAvailable={visionReady} />
+                </div>
+              </div>
+            </div>
+            <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
+              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
+                <InputBar
+                  placeholder={hubInputPlaceholder}
+                  onSend={sendMessage}
+                  onMic={openVoice}
+                  onRegisterVision={registerVisionLauncher}
+                  freeMode={freeMode}
+                  isGenerating={messages.some((message) => message.status === "loading")}
+                  onStop={() => {
+                    controllerRef.current?.abort();
+                    controllerRef.current = null;
+                    sendLockRef.current = false;
+                    setMessages((current) => current.filter((message) => message.status !== "loading"));
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation workspace">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <ChatWindow
+                messages={messages}
+                regenerableId={regenerableId}
+                onRegenerate={regenerateResponse}
+                onFeedback={handleFeedback}
+                onDeleteMessage={handleDeleteMessage}
+              />
+            </div>
+            <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
+              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
+                <div data-demo="ai-vision-tools">
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     onSend={sendMessage}
@@ -2132,86 +2058,6 @@ export default function AIAssistantDashboard({
                     }}
                   />
                 </div>
-
-                <p
-                  className="
-                    mt-4
-                    text-center
-                    text-[10px]
-                    leading-5
-                    text-gray-500
-                    sm:text-xs
-                  "
-                >
-                  Ask about Scripture,
-                  prophecy, coding,
-                  education, business,
-                  agriculture, documents,
-                  images, or general knowledge.
-                </p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section
-            className="
-              flex
-              min-h-0
-              flex-1
-              flex-col
-              overflow-hidden
-            "
-          >
-            <div
-              className="
-                min-h-0
-                flex-1
-                overflow-y-auto
-                overscroll-contain
-              "
-            >
-              <ChatWindow
-                messages={messages}
-                regenerableId={regenerableId}
-                onRegenerate={regenerateResponse}
-                onFeedback={handleFeedback}
-                onDeleteMessage={handleDeleteMessage}
-              />
-            </div>
-
-            <div
-              className="
-                shrink-0
-                border-t
-                border-gray-200
-                bg-white/95
-                px-3
-                pb-3
-                pt-3
-                backdrop-blur-lg
-                dark:border-white/10
-                dark:bg-revela-dark/95
-                sm:px-4
-                sm:pb-4
-              "
-            >
-              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-4xl">
-                <div data-demo="ai-vision-tools">
-                  <InputBar
-                  placeholder={hubInputPlaceholder}
-                  onSend={sendMessage}
-                  onMic={openVoice}
-                  onRegisterVision={registerVisionLauncher}
-                  freeMode={freeMode}
-                  isGenerating={messages.some((message) => message.status === "loading")}
-                  onStop={() => {
-                    controllerRef.current?.abort();
-                    controllerRef.current = null;
-                    sendLockRef.current = false;
-                    setMessages((current) => current.filter((message) => message.status !== "loading"));
-                  }}
-                  />
-                </div>
               </div>
             </div>
           </section>
@@ -2220,7 +2066,7 @@ export default function AIAssistantDashboard({
 
       {identityOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-overlay/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
           role="presentation"
           onClick={() => setIdentityOpen(false)}
         >
@@ -2229,7 +2075,7 @@ export default function AIAssistantDashboard({
             aria-modal="true"
             aria-labelledby="revelaai-identity-title"
             onClick={(event) => event.stopPropagation()}
-            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-emerald-400/20 bg-slate-950 p-4 text-white shadow-2xl sm:p-6"
+            className="max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-emerald-400/20 bg-popover p-4 text-fg shadow-2xl sm:p-6"
           >
             <header className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -2239,58 +2085,58 @@ export default function AIAssistantDashboard({
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-[.18em] text-emerald-300">RevelaCode · Intelligence</p>
                   <h2 id="revelaai-identity-title" className="mt-1 text-xl font-black tracking-tight sm:text-2xl">Meet RevelaAI</h2>
-                  <p className="mt-1 text-xs text-slate-400">One adaptive assistant. A local-first fallback. Your conversation workspace.</p>
+                  <p className="mt-1 text-xs text-muted">One adaptive assistant. A local-first fallback. Your conversation workspace.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIdentityOpen(false)}
-                className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                className="rounded-xl border border-line p-2 text-muted transition hover:bg-surface-2 hover:text-fg"
                 aria-label="Close RevelaAI Identity"
               >
                 <X size={18} />
               </button>
             </header>
 
-            <p className="mt-5 text-sm leading-6 text-slate-300">
+            <p className="mt-5 text-sm leading-6 text-fg-secondary">
               RevelaAI routes questions through the configured AI service when Adaptive mode is available. When you choose Free mode—or the service cannot be reached—the dashboard can keep working with on-device rules and local media measurements.
             </p>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-white"><Sparkles size={16} className="text-emerald-300" /> Adaptive intelligence</div>
-                <p className="mt-2 text-xs leading-5 text-slate-400">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
+              <article className="rounded-2xl border border-line bg-surface p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Sparkles size={16} className="text-emerald-300" /> Adaptive intelligence</div>
+                <p className="mt-2 text-xs leading-5 text-muted">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
               </article>
-              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-white"><WifiOff size={16} className="text-emerald-300" /> Free mode</div>
-                <p className="mt-2 text-xs leading-5 text-slate-400">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
+              <article className="rounded-2xl border border-line bg-surface p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><WifiOff size={16} className="text-emerald-300" /> Free mode</div>
+                <p className="mt-2 text-xs leading-5 text-muted">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
               </article>
-              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-white"><Mic size={16} className="text-emerald-300" /> Voice</div>
-                <p className="mt-2 text-xs leading-5 text-slate-400">Browser speech recognition plus spoken replies where the device and browser support them.</p>
+              <article className="rounded-2xl border border-line bg-surface p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Mic size={16} className="text-emerald-300" /> Voice</div>
+                <p className="mt-2 text-xs leading-5 text-muted">Browser speech recognition plus spoken replies where the device and browser support them.</p>
               </article>
-              <article className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-white"><Camera size={16} className="text-sky-300" /> Vision</div>
-                <p className="mt-2 text-xs leading-5 text-slate-400">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
+              <article className="rounded-2xl border border-line bg-surface p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><Camera size={16} className="text-sky-300" /> Vision</div>
+                <p className="mt-2 text-xs leading-5 text-muted">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
               </article>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-              <p className="text-xs font-bold text-slate-200">Privacy and capability boundary</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">Free mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
+            <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-3">
+              <p className="text-xs font-bold text-fg-secondary">Privacy and capability boundary</p>
+              <p className="mt-1 text-xs leading-5 text-muted">Free mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-emerald-300 px-3 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-emerald-200">
                 Use Free mode
               </button>
-              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 Adaptive mode
               </button>
-              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 <Mic size={14} /> Voice
               </button>
-              <button type="button" onClick={() => { setIdentityOpen(false); openVision(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+              <button type="button" onClick={() => { setIdentityOpen(false); openVision(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 <Camera size={14} /> Vision
               </button>
             </div>
