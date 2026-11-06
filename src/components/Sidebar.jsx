@@ -214,7 +214,17 @@ export default function Sidebar({
             New chat
           </Button>
 
-          <button\n            type="button"\n            onClick={() => { navigate("/humanizer"); setOpen(false); }}\n            className="flex w-full items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2.5 text-left text-xs font-bold text-emerald-200 transition hover:bg-emerald-500/15"\n            title="Open selective PDF Humanizer"\n          >\n            <Sparkles size={16} />\n            Humanizer · PDF text editing\n          </button>\n\n          <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => { navigate("/humanizer"); setOpen(false); }}
+            className="flex w-full items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2.5 text-left text-xs font-bold text-emerald-200 transition hover:bg-emerald-500/15"
+            title="Open selective PDF Humanizer"
+          >
+            <Sparkles size={16} />
+            Humanizer · PDF text editing
+          </button>
+
+          <div className="grid grid-cols-2 gap-2">
 
             <button
               type="button"
