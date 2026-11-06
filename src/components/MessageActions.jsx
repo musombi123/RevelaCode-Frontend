@@ -32,7 +32,7 @@ function ActionButton({
       title={label}
       aria-label={label}
       aria-pressed={active || undefined}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-surface-2 disabled:cursor-wait ${
+      className={`flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-lg transition hover:bg-surface-2 disabled:cursor-wait ${
         active ? activeClass : danger ? "text-danger hover:text-red-300" : "text-muted hover:text-fg"
       }`}
     >
