@@ -89,10 +89,10 @@ function ToolButton({ label, onClick, disabled, active, children }) {
       className={[
         "group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
         "transition-colors duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         "disabled:cursor-not-allowed disabled:opacity-35",
         active
-          ? "bg-accent/15 text-emerald-300"
+          ? "bg-accent/15 text-accent"
           : "text-muted hover:bg-white/[0.07] hover:text-fg",
       ].join(" ")}
     >
@@ -654,7 +654,7 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={stopCamera}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-fg-secondary transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-fg-secondary transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
                 aria-label="Close camera"
               >
                 <X size={18} />
@@ -688,7 +688,7 @@ export default function InputBar({
               <div className="space-y-3 px-4 pt-3">
                 <div className="flex items-center gap-2 text-xs" role="status" aria-live="polite">
                   <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-slate-500"} />
-                  <span className={liveVisionActive ? "text-emerald-300" : "text-muted"}>
+                  <span className={liveVisionActive ? "text-accent" : "text-muted"}>
                     {liveVisionActive
                       ? "LIVE VISION ON · checking a frame about every 5 seconds"
                       : "Preview only · AI frame analysis is off"}
@@ -708,8 +708,8 @@ export default function InputBar({
                   placeholder="Describe the surroundings, read a sign, identify visible objects..."
                 />
                 {liveVisionResult && (
-                  <div className="max-h-36 overflow-y-auto rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3">
-                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                  <div className="max-h-36 overflow-y-auto rounded-xl border border-accent/20 bg-emerald-400/[0.06] p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
                       Latest frame understanding
                     </p>
                     <p className="whitespace-pre-wrap text-sm leading-5 text-fg">{liveVisionResult}</p>
@@ -783,7 +783,7 @@ export default function InputBar({
                 disabled={!cameraStream}
                 aria-pressed={torchOn}
                 className={[
-                  "flex w-16 flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 disabled:cursor-not-allowed disabled:opacity-40",
+                  "flex w-16 flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60 disabled:cursor-not-allowed disabled:opacity-40",
                   torchOn
                     ? "border-amber-300/40 bg-warning/10 text-warning"
                     : "border-line text-fg-secondary hover:bg-surface-2",
@@ -795,7 +795,7 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={stopCamera}
-                className="rounded-2xl border border-line px-4 text-sm text-fg-secondary transition hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="rounded-2xl border border-line px-4 text-sm text-fg-secondary transition hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
               >
                 Cancel
               </button>
@@ -826,7 +826,7 @@ export default function InputBar({
         {/* Drop overlay */}
         {dragging && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-popover/95 backdrop-blur-sm">
-            <p className="flex items-center gap-2 text-sm font-medium text-emerald-300">
+            <p className="flex items-center gap-2 text-sm font-medium text-accent">
               <Paperclip size={16} />
               Drop to attach
             </p>
@@ -844,7 +844,7 @@ export default function InputBar({
                   className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
                 />
               ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-emerald-400/20">
                   <FileText size={18} />
                 </div>
               )}
@@ -855,7 +855,7 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={() => setAttachedFile(null)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
                 aria-label="Remove attachment"
               >
                 <X size={14} />
@@ -868,7 +868,7 @@ export default function InputBar({
         <div className="px-4 pb-1 pt-3.5">
           {listening && (
             <div
-              className="mb-2 flex items-center gap-2.5 text-xs font-medium text-emerald-300"
+              className="mb-2 flex items-center gap-2.5 text-xs font-medium text-accent"
               role="status"
             >
               <span className="flex h-4 items-center gap-[3px]" aria-hidden="true">
@@ -926,7 +926,7 @@ export default function InputBar({
               </div>}
             </div>
 
-            <span className="mx-1.5 h-5 w-px bg-white/10" aria-hidden="true" />
+            <span className="mx-1.5 h-5 w-px bg-surface-3" aria-hidden="true" />
 
             {/* Voice language: segmented control */}
             <div
@@ -947,9 +947,9 @@ export default function InputBar({
                     onClick={() => setVoiceLanguage(language.code)}
                     className={[
                       "rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                       selected
-                        ? "bg-white/10 text-fg"
+                        ? "bg-surface-3 text-fg"
                         : "text-muted hover:text-fg-secondary",
                     ].join(" ")}
                   >
@@ -979,10 +979,10 @@ export default function InputBar({
               title={isGenerating ? "Stop generating" : "Send message (Enter)"}
               className={[
                 "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/70",
                 canSend
-                  ? "bg-gradient-to-b from-emerald-400 to-emerald-600 text-inverse shadow-lg shadow-emerald-500/25 hover:brightness-110 active:scale-95"
-                  : "cursor-not-allowed bg-white/[0.06] text-muted",
+                  ? "bg-accent text-inverse shadow-composer hover:bg-accent-hover active:scale-95"
+                  : "cursor-not-allowed bg-surface-3 text-muted",
               ].join(" ")}
             >
               {isGenerating ? <XCircle size={18} strokeWidth={2.5} /> : <ArrowUp size={18} strokeWidth={2.5} />}
