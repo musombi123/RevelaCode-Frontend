@@ -59,6 +59,8 @@ export default function Sidebar({
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState("");
   const inputRef = useRef(null);
+  const searchRef = useRef(null);
+  const asideRef = useRef(null);
   const finishedRef = useRef(false);
   const autoRenamed = useRef(new Set());
 
@@ -99,6 +101,40 @@ export default function Sidebar({
   }, [editingId]);
 
   useEffect(() => {
+    const focusSearch = () => {
+      setCollapsed(false);
+      window.setTimeout(() => searchRef.current?.focus(), 0);
+    };
+    const toggleCollapse = () => setCollapsed((value) => !value);
+    window.addEventListener("revelaai:focus-chat-search", focusSearch);
+    window.addEventListener("revelaai:toggle-sidebar-collapse", toggleCollapse);
+    return () => {
+      window.removeEventListener("revelaai:focus-chat-search", focusSearch);
+      window.removeEventListener("revelaai:toggle-sidebar-collapse", toggleCollapse);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open || window.matchMedia("(min-width: 1024px)").matches) return undefined;
+    const aside = asideRef.current;
+    if (!aside) return undefined;
+    const focusable = () => Array.from(aside.querySelectorAll("button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"));
+    const first = focusable()[0];
+    first?.focus();
+    const trap = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); setOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const firstItem = items[0], lastItem = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === firstItem) { event.preventDefault(); lastItem.focus(); }
+      else if (!event.shiftKey && document.activeElement === lastItem) { event.preventDefault(); firstItem.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
+  }, [open, setOpen]);
+
+  useEffect(() => {
     if (!confirmId) return undefined;
     const onKey = (event) => { if (event.key === "Escape") setConfirmId(null); };
     window.addEventListener("keydown", onKey);
@@ -112,7 +148,7 @@ export default function Sidebar({
       (chat.messages || []).some((message) => String(message.text || "").toLowerCase().includes(query))
     ).sort((a, b) => {
       const pinDifference = Number(pinnedIds.has(String(b.chat.id))) - Number(pinnedIds.has(String(a.chat.id)));
-      return pinDifference || Number(b.chat.updatedAt || b.chat.createdAt || 0) - Number(a.chat.updatedAt || a.chat.createdAt || 0);
+      return pinDifference || new Date(b.chat.updatedAt || b.chat.createdAt || 0).getTime() - new Date(a.chat.updatedAt || a.chat.createdAt || 0).getTime();
     });
   }, [rows, search, pinnedIds]);
 
@@ -176,7 +212,7 @@ export default function Sidebar({
     <>
       {open && <button type="button" aria-label="Close RevelaAI sidebar" onClick={() => setOpen(false)}
         className="fixed inset-0 z-40 bg-overlay/55 backdrop-blur-[2px] lg:hidden" />}
-      <aside aria-label="RevelaAI conversation navigation" data-demo="sidebar" data-theme-surface="sidebar"
+      <aside ref={asideRef} aria-label="RevelaAI conversation navigation" data-demo="sidebar" data-theme-surface="sidebar"
         className={[
           "fixed inset-y-0 left-0 z-50 flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-r border-line bg-sidebar text-fg shadow-2xl",
           "transition-[width,transform,background-color,border-color] duration-200 ease-out w-[min(88vw,280px)]",
@@ -186,7 +222,7 @@ export default function Sidebar({
         ].join(" ")}>
         <div className={"flex h-16 shrink-0 items-center justify-between border-b border-line px-3 " + (collapsed ? "lg:justify-center lg:px-2" : "")}>
           <div className={"flex min-w-0 items-center gap-3 " + (collapsed ? "lg:hidden" : "")}>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white shadow-sm" aria-hidden="true">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-inverse shadow-sm" aria-hidden="true">
               <span className="text-2xl font-black leading-none">r</span>
             </span>
             <span className="min-w-0">
@@ -194,7 +230,7 @@ export default function Sidebar({
               <span className="block truncate text-[10px] text-muted">Adaptive intelligence</span>
             </span>
           </div>
-          <span className={"hidden h-9 w-9 items-center justify-center rounded-xl bg-accent text-white font-black text-2xl " + (collapsed ? "lg:flex" : "")} aria-hidden="true">r</span>
+          <span className={"hidden h-9 w-9 items-center justify-center rounded-xl bg-accent text-inverse font-black text-2xl " + (collapsed ? "lg:flex" : "")} aria-hidden="true">r</span>
           <button type="button" onClick={() => {
             if (window.matchMedia("(min-width: 1024px)").matches) setCollapsed((value) => !value);
             else setOpen(false);
@@ -244,7 +280,7 @@ export default function Sidebar({
         <div className={"shrink-0 px-3 pb-2 pt-3 " + (collapsed ? "lg:px-2" : "")}>
           {!collapsed && <label className="relative block">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search chats"
+            <input ref={searchRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search chats"
               aria-label="Search conversations"
               className="min-h-10 w-full rounded-xl border border-line bg-input pl-9 pr-3 text-xs text-fg placeholder:text-muted outline-none focus:border-accent focus:ring-2 focus:ring-accent/15"/>
           </label>}
