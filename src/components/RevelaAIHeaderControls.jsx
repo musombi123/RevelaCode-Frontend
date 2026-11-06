@@ -44,6 +44,12 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
   const mode = settings.search_research?.default_mode || "deep";
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent("revelaai:mode-updated", {
+      detail: { mode: mode.charAt(0).toUpperCase() + mode.slice(1) },
+    }));
+  }, [mode]);
+
+  useEffect(() => {
     if (!catalogLoaded) return;
     const item = catalog?.tools?.find((entry) => entry.id === "research_global");
     window.dispatchEvent(new CustomEvent("revelaai:quota-updated", {
