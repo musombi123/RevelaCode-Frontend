@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, FileText, Loader2, Sparkles, Upload, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, FileText, Loader2, Sparkles, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
