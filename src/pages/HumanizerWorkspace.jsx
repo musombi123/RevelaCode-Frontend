@@ -28,6 +28,7 @@ export default function HumanizerWorkspace() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [geminiDraft, setGeminiDraft] = useState(null);
 
   const currentPage = pages[pageIndex] || null;
   const acceptedCount = Object.values(accepted).filter(Boolean).length;
@@ -50,6 +51,7 @@ export default function HumanizerWorkspace() {
     setSelection({ start, end, text });
     setSuggestions([]);
     setAccepted({});
+    setGeminiDraft(null);
     setNotice(text.trim() ? "Selection ready. Only this passage will be processed." : "Highlight a word or phrase in the page text.");
   }
 
@@ -69,7 +71,7 @@ export default function HumanizerWorkspace() {
       }));
       if (!extracted.length) throw new Error("No readable pages were found in this PDF.");
       setPages(extracted); setPageIndex(0); setDocumentName(payload.data.filename || file.name);
-      setSuggestions([]); setAccepted({}); setSelection({ start: 0, end: 0, text: "" });
+      setSuggestions([]); setAccepted({}); setGeminiDraft(null); setSelection({ start: 0, end: 0, text: "" });
       setNotice("Extracted " + extracted.length + " page(s). Select only the words or phrases you want to improve.");
     } catch (e) { setError(e.message || "PDF extraction failed."); }
     finally { setLoading(false); }
@@ -90,10 +92,47 @@ export default function HumanizerWorkspace() {
         ...item, id: pageIndex + "-" + selection.start + "-" + index,
         start: selection.start + Number(item.start), end: selection.start + Number(item.end),
       }));
-      setSuggestions(list); setAccepted({});
+      setSuggestions(list); setAccepted({}); setGeminiDraft(null);
       setNotice(list.length ? "Found " + list.length + " local suggestion(s). Nothing has changed yet." : "No safe local alternative was found. Your text remains unchanged.");
     } catch (e) { setError(e.message || "Suggestion request failed."); }
     finally { setLoading(false); }
+  }
+
+
+  async function generateWithGemini() {
+    if (!selection.text.trim()) { setError("Highlight the exact passage you want Gemini to produce first."); return; }
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const headers = await authHeaders();
+      const response = await fetch(API_BASE + "/api/humanizer/generate", {
+        method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ selected_text: selection.text, style: "natural" }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "Gemini could not produce this passage.");
+      const data = payload.data || {};
+      setGeminiDraft({
+        start: selection.start, end: selection.end, original: selection.text,
+        text: data.humanized_text || "", model: data.model || "Gemini",
+        fallbackUsed: Boolean(data.fallback_used),
+      });
+      setSuggestions([]); setAccepted({});
+      setNotice("Gemini produced a draft for the selected passage only. Review it before applying; your page is still unchanged.");
+    } catch (e) { setError(e.message || "Gemini generation failed."); }
+    finally { setLoading(false); }
+  }
+
+  function applyGeminiDraft() {
+    if (!geminiDraft || !currentPage) return;
+    if (currentPage.text.slice(geminiDraft.start, geminiDraft.end) !== geminiDraft.original) {
+      setError("The source passage changed after Gemini generated the draft. Select it again and regenerate.");
+      return;
+    }
+    const revised = currentPage.text.slice(0, geminiDraft.start) + geminiDraft.text + currentPage.text.slice(geminiDraft.end);
+    setPages((previous) => previous.map((page, index) => index === pageIndex ? { ...page, text: revised } : page));
+    setGeminiDraft(null); setSuggestions([]); setAccepted({});
+    setSelection({ start: 0, end: 0, text: "" });
+    setNotice("Applied the reviewed Gemini draft to the selected passage only. All other page text remains unchanged.");
   }
 
   function applyAccepted() {
@@ -125,13 +164,13 @@ export default function HumanizerWorkspace() {
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-300">REVELAAI · LOCAL LANGUAGE TOOLS</div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-300">REVELAAI · SELECTIVE HUMANIZATION</div>
             <h1 className="text-3xl font-bold tracking-tight">Selective Humanizer</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">Improve only the words and phrases you choose. No paid AI model is called.</p>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">Improve only the words and phrases you choose. Local alternatives are available instantly; Gemini generates a draft only when you explicitly request it.</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="rounded-lg bg-emerald-50 px-3 py-2 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">No model credits</span>
-            <span className="rounded-lg bg-slate-200 px-3 py-2 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Review before applying</span>
+            <span className="rounded-lg bg-emerald-50 px-3 py-2 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">Local suggestions available</span>
+            <span className="rounded-lg bg-slate-200 px-3 py-2 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Gemini runs on request</span>
           </div>
         </header>
 
@@ -148,9 +187,9 @@ export default function HumanizerWorkspace() {
             <h2 className="font-semibold">Private by design</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-400">
               <li>• The uploaded PDF is not stored by this endpoint.</li>
-              <li>• Suggestions use local rules, not Gemini or GPT.</li>
-              <li>• Only your selected passage is evaluated.</li>
-              <li>• Each replacement requires your approval.</li>
+              <li>• Local suggestions do not call a language model.</li>
+              <li>• Gemini receives only the passage you selected when you press its generation button.</li>
+              <li>• Gemini drafts and local replacements require your approval before they change the page.</li>
             </ul>
           </div>
         </section>
@@ -164,21 +203,41 @@ export default function HumanizerWorkspace() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
                 <div><h2 className="font-semibold">02 · Select text to improve</h2><p className="mt-1 text-xs text-slate-500">Highlight text inside the page editor.</p></div>
                 <div className="flex items-center gap-2">
-                  <button disabled={pageIndex === 0} onClick={() => { setPageIndex((v) => v - 1); setSuggestions([]); setSelection({start:0,end:0,text:""}); }} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40 dark:border-slate-700">Previous</button>
+                  <button disabled={pageIndex === 0} onClick={() => { setPageIndex((v) => v - 1); setSuggestions([]); setGeminiDraft(null); setSelection({start:0,end:0,text:""}); }} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40 dark:border-slate-700">Previous</button>
                   <span className="text-xs tabular-nums text-slate-500">{pageIndex + 1} / {pages.length}</span>
-                  <button disabled={pageIndex >= pages.length - 1} onClick={() => { setPageIndex((v) => v + 1); setSuggestions([]); setSelection({start:0,end:0,text:""}); }} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40 dark:border-slate-700">Next</button>
+                  <button disabled={pageIndex >= pages.length - 1} onClick={() => { setPageIndex((v) => v + 1); setSuggestions([]); setGeminiDraft(null); setSelection({start:0,end:0,text:""}); }} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40 dark:border-slate-700">Next</button>
                 </div>
               </div>
               <div className="p-4">
                 <textarea ref={editorRef} value={currentPage.text} onChange={(event) => setPages((previous) => previous.map((page,index) => index === pageIndex ? { ...page, text: event.target.value } : page))} onMouseUp={captureSelection} onKeyUp={captureSelection} onSelect={captureSelection} spellCheck className="min-h-[28rem] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 font-serif text-sm leading-7 text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:focus:ring-violet-950" placeholder="Extracted page text appears here…" />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-slate-500">{currentPage.text.length.toLocaleString()} characters · {currentPage.text.split(/\s+/).filter(Boolean).length} words</span><span className="text-xs text-slate-500">Selection: {selection.text.length} characters</span></div>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <button onClick={getSuggestions} disabled={loading || !selection.text.trim()} className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-40 dark:bg-violet-600 dark:hover:bg-violet-500">{loading ? "Processing…" : "Suggest alternatives for selection"}</button>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button onClick={getSuggestions} disabled={loading || !selection.text.trim()} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-40 dark:bg-violet-600 dark:hover:bg-violet-500">{loading ? "Processing…" : "Local suggestions"}</button>
+                  <button onClick={generateWithGemini} disabled={loading || !selection.text.trim()} className="rounded-xl border border-violet-300 bg-violet-50 px-5 py-3 text-sm font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-40 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-200 dark:hover:bg-violet-950"> {loading ? "Generating…" : "Produce with Gemini"}</button>
                 </div>
+                <p className="mt-2 text-[11px] leading-5 text-slate-500">The Gemini action sends only this selected passage to the configured Gemini text model. It may use your Gemini API quota or incur provider charges. If Gemini is unavailable, no other model is substituted.</p>
               </div>
             </div>
 
             <aside className="space-y-4">
+
+              {geminiDraft && (
+                <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-4 shadow-sm dark:border-violet-900 dark:bg-violet-950/30">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-semibold">Gemini draft · review required</h2>
+                    <span className="rounded-lg bg-violet-100 px-2 py-1 text-[11px] font-semibold text-violet-800 dark:bg-violet-900 dark:text-violet-200">{geminiDraft.model}</span>
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    <div><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Selected original</p><p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-white/80 p-3 text-sm dark:bg-slate-950/60">{geminiDraft.original}</p></div>
+                    <div><p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Gemini version</p><p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-white p-3 text-sm dark:bg-slate-950">{geminiDraft.text}</p></div>
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <button onClick={applyGeminiDraft} disabled={!geminiDraft.text.trim()} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40">Apply this passage</button>
+                    <button onClick={() => setGeminiDraft(null)} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900">Discard draft</button>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-500">Review the wording and verify that every fact, reference, and intended meaning is still correct before applying.</p>
+                </div>
+              )}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between"><h2 className="font-semibold">03 · Review suggestions</h2><span className="text-xs text-slate-500">{suggestions.length} found</span></div>
                 {suggestions.length === 0 ? <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-950">Your suggestions appear here. Nothing changes until you accept it.</p> : (
