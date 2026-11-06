@@ -365,6 +365,7 @@ export default function AIAssistantDashboard({
 
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
   const [identityOpen, setIdentityOpen] = useState(false);
+  const identityDialogRef = useRef(null);
   const [freeMode, setFreeMode] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -1873,6 +1874,25 @@ export default function AIAssistantDashboard({
   }, [workspaceOpen, identityOpen, sidebarOpen]);
 
   useEffect(() => {
+    if (!identityOpen) return undefined;
+    const dialog = identityDialogRef.current;
+    if (!dialog) return undefined;
+    const focusable = () => Array.from(dialog.querySelectorAll("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"));
+    focusable()[0]?.focus();
+    const trap = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); setIdentityOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
+  }, [identityOpen]);
+
+  useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return undefined;
     const updateViewport = () => {
@@ -2118,6 +2138,7 @@ export default function AIAssistantDashboard({
           onClick={() => setIdentityOpen(false)}
         >
           <section
+            ref={identityDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="revelaai-identity-title"
@@ -2174,13 +2195,13 @@ export default function AIAssistantDashboard({
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="rounded-xl bg-accent px-3 py-2.5 text-xs font-extrabold text-inverse transition hover:bg-accent-hover">
+              <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="min-h-12 rounded-xl bg-accent px-3 py-2.5 text-xs font-extrabold text-inverse transition hover:bg-accent-hover">
                 Use Free mode
               </button>
-              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
+              <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="min-h-12 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 Adaptive mode
               </button>
-              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
+              <button type="button" onClick={() => { setIdentityOpen(false); openVoice(); }} className="flex min-h-12 items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 <Mic size={14} /> Voice
               </button>
               <button type="button" onClick={() => { setIdentityOpen(false); openVision(); }} className="flex items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
