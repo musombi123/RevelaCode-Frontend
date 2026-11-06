@@ -1,6 +1,7 @@
 // src/components/Sidebar.jsx
 
-import { useEffect, useMemo, useRef, useState } from "react";\nimport { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   MessageSquare,
