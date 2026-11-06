@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import LocalWorkspaceStoragePanel from "@/components/LocalWorkspaceStoragePanel";
+import { saveLocalFile } from "@/ai/localWorkspaceStorage";
 import { BookOpen, FileSpreadsheet, FileText, Globe2, Lock, Presentation, Search, Sparkles, X, Download, ArrowUpRight } from "lucide-react";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -75,6 +76,7 @@ export default function ProductivityToolsPanel({ onSend }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [savingFile, setSavingFile] = useState("");
 
   useEffect(() => {
     if (!open || catalog) return;
@@ -127,6 +129,20 @@ export default function ProductivityToolsPanel({ onSend }) {
   };
 
   const absoluteLink = path => /^https?:\/\//i.test(path) ? path : API_BASE + path;
+  
+  const saveArtifactLocally = async file => {
+    const key = file.file_id || file.filename;
+    setSavingFile(key);
+    setError("");
+    try {
+      const response = await fetch(absoluteLink(file.download_url), { headers: authHeaders() });
+      if (!response.ok) throw new Error("The generated file could not be retrieved for local saving.");
+      const blob = await response.blob();
+      await saveLocalFile(blob, { name: file.filename || "RevelaAI-output", type: blob.type, category: "generated_artifact" });
+      setResult(previous => ({ ...previous, localSaved: [...(previous?.localSaved || []), key] }));
+    } catch (err) { setError(err.message || "Could not save this file locally."); }
+    finally { setSavingFile(""); }
+  };
 
   return (
     <div className="relative w-full">
@@ -240,7 +256,7 @@ export default function ProductivityToolsPanel({ onSend }) {
             <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-white/10">
               <p className="text-xs font-extrabold text-slate-900 dark:text-white">Workspace output is ready</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {downloadFiles.map((file,index) => <a key={file.file_id || index} href={absoluteLink(file.download_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> {file.filename}</a>)}
+                {downloadFiles.map((file,index) => { const key = file.file_id || file.filename; return <div key={key || index} className="flex flex-wrap gap-2"><a href={absoluteLink(file.download_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-[11px] font-bold text-white"><Download size={13}/> {file.filename}</a><button type="button" disabled={!!savingFile || (result.localSaved || []).includes(key)} onClick={() => saveArtifactLocally(file)} className="rounded-lg border border-slate-300 px-3 py-2 text-[11px] font-bold text-slate-700 disabled:opacity-50 dark:border-white/10 dark:text-slate-200">{savingFile === key ? "Saving…" : (result.localSaved || []).includes(key) ? "Saved locally" : "Save to local workspace"}</button></div>; })}
               </div>
               {result.artifact.preview?.sheets?.map(sheet => (
                 <div key={sheet.sheet} className="mt-3 overflow-x-auto">
