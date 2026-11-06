@@ -105,7 +105,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
 
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2" data-demo="ai-header-controls">
-      <span className="hidden max-w-[150px] items-center gap-1.5 truncate rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1.5 text-[10px] font-bold text-accent sm:inline-flex"
+      <span className="hidden max-w-[150px] items-center gap-1.5 truncate rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1.5 text-[10px] font-bold text-accent lg:inline-flex"
         title={"Adaptive routing · model health: " + modelTier} data-demo="ai-model-tier">
         <Activity size={12}/><span className="truncate">Adaptive · {modelTier}</span>
       </span>
@@ -120,7 +120,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
       <div className="relative">
         <button type="button" onClick={() => { setQuickOpen((value) => !value); setAvatarOpen(false); }}
           aria-label="Quick settings and theme" title="Quick settings" aria-expanded={quickOpen}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg"
+          className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg lg:flex"
           data-demo="theme-switch">
           <SlidersHorizontal size={17}/>
         </button>
@@ -158,8 +158,9 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
           <MoreHorizontal size={18}/>
         </button>
         {overflowOpen && <div className="absolute right-3 top-14 z-[120] w-[min(320px,calc(100vw-1.5rem))] rounded-2xl border border-line bg-popover p-3 text-fg shadow-2xl">
-          <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-fg">Search mode</span><ChevronDown size={14} className="text-muted"/></div>
-          {modeButtons}
+          <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-fg">Workspace controls</span><ChevronDown size={14} className="text-muted"/></div>
+          <RevelaAIQuickSettings settings={settings} updateSection={updateSection} onSearchModeChange={changeMode}
+            onOpenFull={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}/>
           <div className="mt-3">{quota}</div>
           <button type="button" onClick={() => { setOverflowOpen(false); window.dispatchEvent(new CustomEvent("revelaai:research-open")); }}
             className="mt-2 flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-xs text-fg-secondary hover:bg-surface-2"><Search size={15}/> Open search</button>
