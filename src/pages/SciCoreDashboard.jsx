@@ -12,7 +12,7 @@ const pretty = (value) => typeof value === "string" ? value : JSON.stringify(val
 
 function Metric({ label, value, detail, icon: Icon, tone = "cyan" }) {
   const tones = {
-    cyan: "border-accent/20 bg-cyan-400/5 text-accent",
+    cyan: "border-accent/20 bg-accent/5 text-accent",
     green: "border-success/20 bg-success/5 text-success",
     amber: "border-warning/20 bg-warning/5 text-warning",
     violet: "border-chart-3/20 bg-chart-3/5 text-chart-3",
@@ -272,7 +272,7 @@ export default function SciCoreDashboard() {
       </div>
 
       {error && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0"><p className="font-bold">Action needs attention</p><p className="mt-1 break-words text-xs leading-5">{error}</p></div><button onClick={() => setError("")} className="ml-auto text-danger" aria-label="Dismiss error"><XCircle className="h-4 w-4" /></button></div>}
-      {notice && <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs leading-5 text-success"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{notice}</div>}
+      {notice && <div role="status" className="flex items-start gap-2 rounded-xl border border-success/20 bg-success/5 p-3 text-xs leading-5 text-success"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{notice}</div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
         <Metric label="Threats · last 24 hours" value={threats} detail="Persisted threat records reported by the API" icon={Activity} tone="amber" />
