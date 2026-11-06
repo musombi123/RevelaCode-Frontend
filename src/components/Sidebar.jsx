@@ -214,25 +214,7 @@ export default function Sidebar({
           </Button>
 
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => { window.dispatchEvent(new CustomEvent("revelaai:tools-open")); setOpen(false); }}
-              data-demo="ai-sidebar-tools"
-              className="flex min-w-0 items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-2.5 py-2.5 text-left text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
-              title="Open all RevelaAI tools"
-            >
-              <Sparkles size={15} className="shrink-0 text-emerald-300" />
-              <span className="truncate">Tools</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { onOpenIdentity?.(); setOpen(false); }}
-              className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-2.5 text-left text-xs font-semibold text-gray-200 transition hover:border-emerald-400/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
-              title="What RevelaAI is and how to use it"
-            >
-              <Info size={15} className="shrink-0 text-emerald-300" />
-              <span className="truncate">AI Identity</span>
-            </button>
+
             <button
               type="button"
               onClick={() => { onOpenVoice?.(); setOpen(false); }}
