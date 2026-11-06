@@ -314,7 +314,13 @@ export default function SciCoreDashboard() {
               <div><p className="text-xs font-bold text-white">Active enforced blocks</p><p className="mt-1 text-[11px] text-slate-500">This list is read from the same database used by the live backend guard.</p></div>
               <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[10px] text-slate-300">{ipBlocks.length} active</span>
             </div>
-            {ipBlocks.length ? (
+            {!ipProtection?.persistent ? (
+              <div className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-5 text-center">
+                <AlertTriangle className="mx-auto h-6 w-6 text-amber-300"/>
+                <p className="mt-2 text-xs font-semibold text-amber-100">IP block state could not be verified</p>
+                <p className="mt-1 text-[11px] text-slate-400">Sci-Core will not report zero active blocks while the authoritative backend store is unavailable. Restore MongoDB/backend connectivity and refresh.</p>
+              </div>
+            ) : ipBlocks.length ? (
               <div className="space-y-2">
                 {ipBlocks.map((block) => (
                   <div key={block.ip} className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3 sm:flex-row sm:items-center sm:justify-between">
