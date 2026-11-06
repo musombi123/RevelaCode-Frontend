@@ -154,13 +154,23 @@ export default function InputBar({
       setText(value);
       requestAnimationFrame(() => textareaRef.current?.focus());
     };
+    const focusCommand = () => {
+      setText((current) => current || "/");
+      requestAnimationFrame(() => {
+        const field = textareaRef.current;
+        field?.focus();
+        if (field) field.setSelectionRange(field.value.length, field.value.length);
+      });
+    };
     window.addEventListener("revelaai:fill-composer", fillComposer);
+    window.addEventListener("revelaai:focus-composer-command", focusCommand);
     const updateMode = (event) => setComposerMode(String(event?.detail?.mode || "Adaptive"));
     const updateQuota = (event) => setQuotaSnapshot(event?.detail && Number.isFinite(Number(event.detail.remaining)) ? { remaining: Number(event.detail.remaining), limit: Number(event.detail.limit || 0) } : null);
     window.addEventListener("revelaai:mode-updated", updateMode);
     window.addEventListener("revelaai:quota-updated", updateQuota);
     return () => {
       window.removeEventListener("revelaai:fill-composer", fillComposer);
+      window.removeEventListener("revelaai:focus-composer-command", focusCommand);
       window.removeEventListener("revelaai:mode-updated", updateMode);
       window.removeEventListener("revelaai:quota-updated", updateQuota);
     };
@@ -633,7 +643,7 @@ export default function InputBar({
             if (event.target === event.currentTarget) stopCamera();
           }}
         >
-          <section className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-line bg-popover text-fg shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)] sm:rounded-3xl">
+          <section className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-line bg-popover text-fg shadow-dialog sm:rounded-3xl">
             <header className="flex items-center justify-between px-5 py-4">
               <div>
                 <h2 className="text-sm font-semibold tracking-tight">RevelaAI Camera</h2>
