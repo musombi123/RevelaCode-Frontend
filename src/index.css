@@ -1835,8 +1835,8 @@ html[data-theme="light"] {
   --fg-inverse: 255 255 255;
   --line: 218 227 230;
   --line-strong: 190 204 209;
-  --accent-rgb: 5 150 105;
-  --accent-hover-rgb: 4 120 87;
+  --accent-rgb: 4 120 87;
+  --accent-hover-rgb: 6 95 70;
   --accent-pressed-rgb: 6 95 70;
   --accent-soft-rgb: 5 150 105;
   --success-rgb: 5 122 85;
@@ -1854,7 +1854,7 @@ html[data-theme="light"] {
   --chart-3: 79 70 229;
   --chart-4: 180 83 9;
   --chart-5: 190 24 93;
-  --revelaai-accent: #059669;
+  --revelaai-accent: #047857;
   --revelaai-motion-duration: 150ms;
 }
 
@@ -1910,6 +1910,7 @@ body {
 }
 
 .revelaai-workspace {
+  height: var(--revelaai-visual-viewport-height, 100%);
   background: rgb(var(--app-bg));
   color: rgb(var(--fg));
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
