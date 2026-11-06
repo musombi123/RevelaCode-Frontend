@@ -92,7 +92,7 @@ function ToolButton({ label, onClick, disabled, active, children }) {
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50",
         "disabled:cursor-not-allowed disabled:opacity-35",
         active
-          ? "bg-emerald-500/15 text-emerald-300"
+          ? "bg-accent/15 text-emerald-300"
           : "text-muted hover:bg-white/[0.07] hover:text-fg",
       ].join(" ")}
     >
@@ -719,7 +719,7 @@ export default function InputBar({
                         setLiveVisionActive(true);
                       }}
                       disabled={!cameraStream || cameraBusy}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-inverse hover:bg-emerald-400 disabled:opacity-40"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-inverse hover:bg-accent-hover disabled:opacity-40"
                     >
                       <Camera size={16} />
                       Start Live Vision
@@ -762,7 +762,7 @@ export default function InputBar({
                 type="button"
                 onClick={captureFrame}
                 disabled={cameraBusy || !cameraStream}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-inverse shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-inverse shadow-lg shadow-emerald-500/20 transition hover:bg-accent-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {cameraBusy ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                 {cameraBusy ? "Analyzing..." : "Capture and send"}
@@ -834,7 +834,7 @@ export default function InputBar({
                   className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
                 />
               ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-emerald-300 ring-1 ring-emerald-400/20">
                   <FileText size={18} />
                 </div>
               )}
