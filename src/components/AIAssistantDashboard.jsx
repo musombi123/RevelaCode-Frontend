@@ -2037,7 +2037,7 @@ export default function AIAssistantDashboard({
                     <Pencil size={12} className="shrink-0 text-muted"/>
                   </button>
                 ) : (
-                  <h1 className="truncate text-sm font-bold text-fg">RevelaAI</h1>
+                  <h1 className="truncate text-sm font-bold text-fg">New chat</h1>
                 )}
               </div>
 
