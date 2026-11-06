@@ -89,8 +89,7 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
     root.style.setProperty("--accent-soft-rgb", rgb);
     root.style.setProperty("--revelaai-accent", accent);
     root.style.fontSize = `${Math.max(13, Math.min(22, Number(appearance.font_size) || 16))}px`;
-    root.style.setProperty("--revelaai-accent", appearance.accent === "custom" ? (appearance.custom_accent || "#10b981") : (accents[appearance.accent] || accents.emerald));
-    root.style.setProperty("--revelaai-motion-duration", appearance.reduce_motion ? "0ms" : "180ms");
+    root.style.setProperty("--revelaai-motion-duration", appearance.reduce_motion ? "0ms" : "150ms");
     root.dataset.revelaDensity = appearance.density || "comfortable";
     root.dataset.revelaChatStyle = appearance.style || "flat";
     root.dataset.revelaHighContrast = appearance.high_contrast ? "true" : "false";
