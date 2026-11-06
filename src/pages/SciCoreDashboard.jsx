@@ -84,11 +84,6 @@ export default function SciCoreDashboard() {
   const [blockReason, setBlockReason] = useState("");
   const [blockDuration, setBlockDuration] = useState("60");
   const [ipOperationResult, setIpOperationResult] = useState(null);
-  const [ipGuard, setIpGuard] = useState(null);
-  const [manualIp, setManualIp] = useState("");
-  const [blockReason, setBlockReason] = useState("");
-  const [blockDuration, setBlockDuration] = useState("60");
-  const [ipOperationResult, setIpOperationResult] = useState(null);
 
   const getToken = useCallback(async () => {
     if (typeof auth?.getAccessToken === "function") return await auth.getAccessToken();
@@ -233,91 +228,11 @@ export default function SciCoreDashboard() {
     });
   }, [scanResult]);
 
-  const submitIpBlock = async (event) => {
-    event.preventDefault();
-    const ip = manualIp.trim();
-    const reason = blockReason.trim();
-    if (!ip || reason.length < 8) return;
-    if (!window.confirm(
-      "Block " + ip + " at the RevelaAI application edge for " +
-      blockDuration + " minutes? This does not change Render's host firewall."
-    )) return;
-
-    setBusy("ip-block");
-    setError("");
-    setNotice("");
-    setIpOperationResult(null);
-    try {
-      const result = await request("/api/sci/ip-guard/block", {
-        method: "POST",
-        body: JSON.stringify({
-          ip,
-          reason,
-          duration_minutes: Number(blockDuration),
-          confirm: true,
-        }),
-      });
-      setIpOperationResult(result);
-      setNotice(result.message || (ip + " was blocked at the RevelaAI application edge."));
-      setManualIp("");
-      setBlockReason("");
-      await refresh();
-    } catch (e) {
-      setError("IP block: " + e.message);
-    } finally {
-      setBusy("");
-    }
-  };
-
-  const releaseIpBlock = async (ip) => {
-    if (!window.confirm(
-      "Release the active RevelaAI application-edge block for " + ip + "?"
-    )) return;
-    setBusy("ip-unblock:" + ip);
-    setError("");
-    setNotice("");
-    try {
-      const result = await request("/api/sci/ip-guard/unblock", {
-        method: "POST",
-        body: JSON.stringify({
-          ip,
-          reason: "Administrator reviewed the source and released the temporary block.",
-        }),
-      });
-      setNotice(result.message || (ip + " was unblocked."));
-      await refresh();
-    } catch (e) {
-      setError("IP unblock: " + e.message);
-    } finally {
-      setBusy("");
-    }
-  };
-
-  const stageThreatIp = (threat) => {
-    const candidate = String(threat?.ip || "").trim();
-    if (!candidate) return;
-    setManualIp(candidate);
-    setBlockReason("Security scan reported repeated authentication failures from this source.");
-    setIpOperationResult(null);
-    document.getElementById("sci-ip-block-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  const suspiciousIpCandidates = useMemo(() => {
-    const seen = new Set();
-    return (scanResult?.threats || []).filter((item) => {
-      const ip = String(item?.ip || "").trim();
-      if (!ip || seen.has(ip)) return false;
-      seen.add(ip);
-      return true;
-    });
-  }, [scanResult]);
-
   const counts = status?.counts || {};
   const threats = dashboard?.threats_last_24h ?? counts.threats ?? "—";
   const researchCount = dashboard?.research_count ?? counts.research ?? "—";
   const disasterCount = dashboard?.disasters_handled ?? counts.disasters ?? "—";
   const shieldState = status?.status || dashboard?.status || "awaiting connection";
-  const ipProtectionReady = ipGuard?.persistent === true && ipGuard?.status === "active";
   const ipProtectionReady = ipGuard?.persistent === true && ipGuard?.status === "active";
   const scanFindings = useMemo(() => {
     if (!scanResult) return 0;
