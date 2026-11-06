@@ -174,9 +174,12 @@ export default function Sidebar({
     const order = ["Pinned", "Today", "Yesterday", "Previous 7 days", "Earlier"];
     const grouped = new Map(order.map((label) => [label, []]));
     filteredRows.forEach((row) => {
-      if (pinnedIds.has(String(row.chat.id))) grouped.get("Pinned").push(row);
-      const bucket = dateBucket(row.chat.updatedAt || row.chat.createdAt);
-      grouped.get(bucket).push(row);
+      if (pinnedIds.has(String(row.chat.id))) {
+        grouped.get("Pinned").push(row);
+      } else {
+        const bucket = dateBucket(row.chat.updatedAt || row.chat.createdAt);
+        grouped.get(bucket).push(row);
+      }
     });
     return order.map((label) => ({ label, rows: grouped.get(label) })).filter((group) => group.rows.length);
   }, [filteredRows, pinnedIds]);
