@@ -859,17 +859,14 @@ export default function InputBar({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={[
-          "relative rounded-2xl border bg-input",
-          "shadow-composer",
-          "transition-[border-color,box-shadow] duration-200",
-          dragging
-            ? "border-accent ring-2 ring-accent/15 shadow-composer"
-            : "border-line focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/15 focus-within:shadow-composer",
+          "relative bg-transparent",
+          "transition-colors duration-150",
+          dragging ? "rounded-xl bg-accent/5 ring-2 ring-accent/30" : "",
         ].join(" ")}
       >
         {/* Drop overlay */}
         {dragging && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-popover/95 backdrop-blur-sm">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-popover/95 backdrop-blur-sm">
             <p className="flex items-center gap-2 text-sm font-medium text-accent">
               <Paperclip size={16} />
               Drop to attach
