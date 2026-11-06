@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import LocalWorkspaceStoragePanel from "@/components/LocalWorkspaceStoragePanel";
 import { BookOpen, FileSpreadsheet, FileText, Globe2, Lock, Presentation, Search, Sparkles, X, Download, ArrowUpRight } from "lucide-react";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -147,6 +148,7 @@ export default function ProductivityToolsPanel({ onSend }) {
 
       {open && (
         <section className="mb-3 max-h-[70vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-slate-950 sm:p-4" aria-label="RevelaAI productivity tools">
+          <LocalWorkspaceStoragePanel />
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Productivity Tools</h3>
