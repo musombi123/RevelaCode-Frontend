@@ -86,6 +86,7 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
     const rgb = match ? [parseInt(match[1].slice(0,2),16), parseInt(match[1].slice(2,4),16), parseInt(match[1].slice(4,6),16)].join(" ") : "5 150 105";
     root.style.setProperty("--accent-rgb", rgb);
     root.style.setProperty("--accent-hover-rgb", rgb);
+    root.style.setProperty("--accent-pressed-rgb", rgb);
     root.style.setProperty("--accent-soft-rgb", rgb);
     root.style.setProperty("--revelaai-accent", accent);
     root.style.fontSize = `${Math.max(13, Math.min(22, Number(appearance.font_size) || 16))}px`;
@@ -123,7 +124,7 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
         </Field></div>
         {section.theme==="scheduled"&&<><Field label="Dark mode starts"><Input value={section.scheduled_start||"19:00"} onChange={value=>set(active,"scheduled_start",value)} type="time"/></Field><Field label="Light mode starts"><Input value={section.scheduled_end||"07:00"} onChange={value=>set(active,"scheduled_end",value)} type="time"/></Field></>}
         {select("accent","Accent colour",[["emerald","Emerald"],["blue","Blue"],["violet","Violet"],["amber","Amber"],["rose","Rose"],["cyan","Cyan"],["custom","Custom"]])}
-        {section.accent==="custom"&&<Field label="Custom accent"><Input type="color" value={section.custom_accent||"#10b981"} onChange={value=>set(active,"custom_accent",value)}/></Field>}
+        {section.accent==="custom"&&<Field label="Custom accent"><Input type="color" value={section.custom_accent||"#047857"} onChange={value=>set(active,"custom_accent",value)}/></Field>}
         {select("font","Font",[["system","System"],["inter","Inter"],["serif","Serif"],["dyslexia","Dyslexia-friendly"]])}
         <Field label={`Font size · ${section.font_size}px`}><input type="range" min="13" max="22" value={section.font_size} onChange={(event) => set(active,"font_size",Number(event.target.value))} className="w-full accent-accent"/></Field>
         {select("density","Message density",[["compact","Compact"],["comfortable","Comfortable"],["spacious","Spacious"]])}
