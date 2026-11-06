@@ -48,7 +48,7 @@ import CoreMeshDashboard from "@/pages/CoreMeshDashboard.jsx";
 const adminPages = {
   coreMesh: {
     title: "USECT Core Mesh",
-    description: "Monitor and operate the integrated ZERO, Genesis (Core-One), and Infinite Mind (Core-Two) stack.",
+    description: "Operate ZERO, Genesis, Infinite Mind and the governed Evolver invention and improvement factory.",
     icon: Cpu,
     component: CoreMeshDashboard,
   },

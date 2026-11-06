@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 import { useAuth } from "@/context/AuthContext.jsx";
+import EvolverControlSurface from "@/pages/EvolverControlSurface.jsx";
 import {
   Activity,
   AlertTriangle,
@@ -11,6 +12,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   Zap,
 } from "lucide-react";
 
@@ -755,6 +757,15 @@ export default function CoreMeshDashboard() {
           </div>
         </div>
       )}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-300">
+            <Sparkles className="h-3.5 w-3.5" /> Evolver Factory
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Governed invention · measured improvement · durable learning</span>
+        </div>
+        <EvolverControlSurface authenticatedFetch={authenticatedFetch} />
+      </section>
     </div>
   );
 }
