@@ -39,13 +39,15 @@ module.exports = {
           4: "rgb(var(--chart-4) / <alpha-value>)",
           5: "rgb(var(--chart-5) / <alpha-value>)",
         },
+        // Backward-compatible legacy palette for modules outside the
+        // RevelaAI workspace. Workspace components use semantic aliases above.
         revela: {
-          dark: "rgb(var(--app-bg) / <alpha-value>)",
-          primary: "rgb(var(--header-bg) / <alpha-value>)",
-          secondary: "rgb(var(--accent-rgb) / <alpha-value>)",
-          accent: "rgb(var(--accent-rgb) / <alpha-value>)",
-          surface: "rgb(var(--surface-2) / <alpha-value>)",
-          card: "rgb(var(--surface) / <alpha-value>)",
+          dark: "#0f2027",
+          primary: "#203a43",
+          secondary: "#2c5364",
+          accent: "#22c55e",
+          surface: "#16262d",
+          card: "#1b2e36",
         },
       },
 
