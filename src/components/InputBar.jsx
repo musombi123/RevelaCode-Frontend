@@ -93,7 +93,7 @@ function ToolButton({ label, onClick, disabled, active, children }) {
         "disabled:cursor-not-allowed disabled:opacity-35",
         active
           ? "bg-accent/15 text-accent"
-          : "text-muted hover:bg-white/[0.07] hover:text-fg",
+          : "text-muted hover:bg-surface-3 hover:text-fg",
       ].join(" ")}
     >
       {children}
@@ -661,7 +661,7 @@ export default function InputBar({
               </button>
             </header>
 
-            <div className="relative mx-3 overflow-hidden rounded-2xl bg-black">
+            <div className="relative mx-3 overflow-hidden rounded-2xl bg-black" aria-label="Camera preview">
               {cameraStream ? (
                 <>
                   <video
@@ -687,7 +687,7 @@ export default function InputBar({
             {cameraStream && (
               <div className="space-y-3 px-4 pt-3">
                 <div className="flex items-center gap-2 text-xs" role="status" aria-live="polite">
-                  <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-slate-500"} />
+                  <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-muted"} />
                   <span className={liveVisionActive ? "text-accent" : "text-muted"}>
                     {liveVisionActive
                       ? "LIVE VISION ON · checking a frame about every 5 seconds"
