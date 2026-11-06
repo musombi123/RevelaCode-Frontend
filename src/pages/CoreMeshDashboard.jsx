@@ -380,7 +380,6 @@ export default function CoreMeshDashboard() {
 
   return (
     <div className="space-y-6">
-      <EvolverControlSurface authenticatedFetch={authenticatedFetch} />
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="relative border-b border-slate-200 px-5 py-6 dark:border-slate-800 sm:px-7">
           <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-indigo-500/10 to-transparent" />
