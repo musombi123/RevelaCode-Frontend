@@ -68,6 +68,16 @@ test("fullscreen and AI header heights are compact and redundant mode labels are
   assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
 });
 
+
+test("composer no longer renders a nested rounded border box", () => {
+  assert.match(input, /"relative bg-transparent"/);
+  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
+  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
+  assert.match(input, /"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl/);
+  assert.match(input, /label="Attachments and tools"/);
+  assert.match(input, /data-demo="ai-send-message"/);
+});
+
 test("Humanizer uses one compact upload card and keeps privacy guidance without a second info panel", () => {
   assert.match(humanizer, /Open a PDF/);
   assert.match(humanizer, /Privacy: the PDF is processed in memory/);
