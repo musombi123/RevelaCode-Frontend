@@ -70,18 +70,6 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
   const initials = String(user?.name || user?.full_name || user?.contact || "RC")
     .trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
-  const modeButtons = (
-    <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1" aria-label="Search depth" data-demo="mode-switch">
-      {["quick", "deep", "extreme"].map((value) => (
-        <button key={value} type="button" onClick={() => changeMode(value)}
-          aria-pressed={mode === value}
-          className={"min-h-12 rounded-lg px-2.5 text-[10px] font-bold capitalize " + (mode === value ? "bg-accent/15 text-accent shadow-sm" : "text-muted hover:bg-surface hover:text-fg")}>
-          {value}
-        </button>
-      ))}
-    </div>
-  );
-
   const quota = (
     <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-2 py-1.5" data-demo="quota-ring"
       title={catalogLoaded && search ? ("Deep Search: " + remaining + " of " + limit + " remaining today") : "Search quota"}>
@@ -110,8 +98,6 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         <Activity size={12}/><span className="truncate">Adaptive · {modelTier}</span>
       </span>
 
-      <div className="hidden lg:block">{modeButtons}</div>
-
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:research-open"))}
         aria-label="Open search" title="Search" className="hidden h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg lg:flex">
         <Search size={17}/>
@@ -127,6 +113,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         {quickOpen && <div className="absolute right-0 top-12 z-[120]">
           <RevelaAIQuickSettings settings={settings} updateSection={updateSection} onSearchModeChange={changeMode}
             onOpenFull={() => { setQuickOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}/>
+          <div className="mt-2">{quota}</div>
         </div>}
       </div>
 
@@ -170,7 +157,6 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         </div>}
       </div>
 
-      <div className="hidden xl:block">{quota}</div>
       <PremiumPlansStar className="!h-12 !min-h-12 !min-w-12 !px-2" />
     </div>
   );
