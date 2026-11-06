@@ -105,7 +105,7 @@ export default function ChatWindow({
               className="
                 rounded-2xl
                 border
-                border-white/10
+                border-line
                 bg-revela-card
                 px-4
                 py-3
