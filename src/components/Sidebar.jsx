@@ -69,6 +69,8 @@ export default function Sidebar({
   })), [chats]);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
 
   useEffect(() => {
     if (!onRenameChat) return;
