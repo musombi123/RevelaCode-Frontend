@@ -25,7 +25,6 @@ import {
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
-import RevelaAIProductivityHub from "@/components/RevelaAIProductivityHub";
 import RevelaAIHeaderControls from "@/components/RevelaAIHeaderControls";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import { useAuth } from "@/context/AuthContext";
@@ -1894,8 +1893,6 @@ export default function AIAssistantDashboard({
       {/* ===================================================
           SIDEBAR
       =================================================== */}
-
-      <RevelaAIProductivityHub />
 
       <Sidebar
         open={sidebarOpen}
