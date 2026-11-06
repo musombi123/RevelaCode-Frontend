@@ -106,7 +106,7 @@ export default function SciCoreDashboard() {
     let data = {};
     try { data = raw ? JSON.parse(raw) : {}; } catch { data = { detail: raw }; }
     if (!response.ok) {
-      const message = data?.error || data?.detail || data?.message || data?.code || `Request failed (${response.status})`;
+      const message = data?.error?.message || (typeof data?.error === "string" ? data.error : "") || data?.detail?.message || data?.detail || data?.message || data?.code || `Request failed (${response.status})`;
       const err = new Error(message);
       err.status = response.status;
       throw err;
@@ -234,6 +234,7 @@ export default function SciCoreDashboard() {
   const disasterCount = dashboard?.disasters_handled ?? counts.disasters ?? "—";
   const shieldState = status?.status || dashboard?.status || "awaiting connection";
   const ipProtectionReady = ipGuard?.persistent === true && ipGuard?.status === "active";
+  const ipClientIpVerified = Boolean(ipGuard?.client_ip);
   const scanFindings = useMemo(() => {
     if (!scanResult) return 0;
     return (scanResult.vulnerabilities?.length || 0) + (scanResult.threats?.length || 0) + (scanResult.cves?.length || 0);
@@ -241,8 +242,8 @@ export default function SciCoreDashboard() {
 
   return (
     <div className="min-w-0 space-y-5 text-fg">
-      <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-gradient-to-br from-[#10233b] via-[#0b1424] to-[#070b13] p-5 shadow-2xl sm:p-7">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-surface-2 p-5 shadow-2xl sm:p-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
@@ -348,6 +349,10 @@ export default function SciCoreDashboard() {
             Manual block controls stay disabled until the backend confirms MongoDB persistence. Configure MONGO_URI and the trusted Render client-IP header before enabling enforcement.
           </div>}
 
+          {ipProtectionReady && !ipClientIpVerified && <div role="alert" className="mt-3 rounded-xl border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
+            Trusted client-IP resolution is not configured for this request. Manual block controls remain disabled to protect the administrator's current session. Verify the Render X-Forwarded-For chain, then set the trusted proxy header and hop count in the RevelaAI service environment.
+          </div>}
+
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-2 p-3 text-[11px] text-fg-secondary">
             <span className="font-semibold">This connection's verified public IP:</span>
             <code className="font-mono text-accent">{ipGuard?.client_ip || "Not resolved"}</code>
@@ -377,7 +382,7 @@ export default function SciCoreDashboard() {
             </label>
             <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-2">
               <span className="text-[10px] text-muted">Requires current platform-admin authorization and explicit confirmation.</span>
-              <button type="submit" disabled={!ipProtectionReady || !!busy || manualIp.trim().length < 3 || blockReason.trim().length < 8}
+              <button type="submit" disabled={!ipProtectionReady || !ipClientIpVerified || !!busy || manualIp.trim().length < 3 || blockReason.trim().length < 8}
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-danger px-4 text-xs font-black text-inverse hover:bg-danger/85 disabled:cursor-not-allowed disabled:opacity-40">
                 <Ban className="h-4 w-4"/>{busy === "ip-block" ? "Blocking…" : "Confirm IP block"}
               </button>
