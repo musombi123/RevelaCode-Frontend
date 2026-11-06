@@ -23,6 +23,7 @@ test("AI sidebar exposes user actions and a persistent weak-network mode toggle"
   }
   assert.doesNotMatch(sidebar, /Plans|onOpenPlans/);
   assert.match(sidebar, /onToggleFreeMode/);
+  assert.match(sidebar, /aria-controls="revelaai-sidebar-tools"/);
   assert.match(sidebar, /onDeleteChat/);
   assert.match(sidebar, /onRenameChat/);
   assert.match(dashboard, /revelaai\.free_mode\.v1/);
