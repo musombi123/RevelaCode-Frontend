@@ -136,6 +136,7 @@ export default function InputBar({
   const [voiceLanguage, setVoiceLanguage] = useState("en-KE");
 
   const cameraVideoRef = useRef(null);
+  const cameraDialogRef = useRef(null);
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -233,6 +234,25 @@ export default function InputBar({
     video.srcObject = cameraStream;
     video.play?.().catch(() => {});
   }, [cameraOpen, cameraStream]);
+
+  useEffect(() => {
+    if (!cameraOpen) return undefined;
+    const dialog = cameraDialogRef.current;
+    if (!dialog) return undefined;
+    const focusable = () => Array.from(dialog.querySelectorAll("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"));
+    focusable()[0]?.focus();
+    const trap = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); stopCamera(); return; }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
+  }, [cameraOpen, stopCamera]);
 
   // Escape closes the camera.
   useEffect(() => {
@@ -643,7 +663,7 @@ export default function InputBar({
             if (event.target === event.currentTarget) stopCamera();
           }}
         >
-          <section className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-line bg-popover text-fg shadow-dialog sm:rounded-3xl">
+          <section ref={cameraDialogRef} className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-line bg-popover text-fg shadow-dialog sm:rounded-3xl">
             <header className="flex items-center justify-between px-5 py-4">
               <div>
                 <h2 className="text-sm font-semibold tracking-tight">RevelaAI Camera</h2>
