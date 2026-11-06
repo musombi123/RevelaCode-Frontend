@@ -49,7 +49,6 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 // These screens are also loaded lazily by the dashboard registry. Keep their
 // direct routes lazy as well so they can live in their own production chunks.
 const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));
-const HumanizerWorkspace = React.lazy(() => import("./pages/HumanizerWorkspace.jsx"));
 const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));
 
 function SPAWrapper({ children }) {
@@ -374,18 +373,9 @@ export default function App() {
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
               <Route path="/oauth/android-callback" element={<OAuthCallbackPage />} />
               <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
-              <Route
-                path="/humanizer"
-                element={
-                  <AuthGate>
-                    <Layout>
-                      <React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500" role="status">Loading Humanizer…</div>}>
-                        <HumanizerWorkspace />
-                      </React.Suspense>
-                    </Layout>
-                  </AuthGate>
-                }
-              />
+              {/* Legacy Humanizer links now open the tool inside the authenticated AI workspace.
+                  The Humanizer API remains the authority for authentication and authorization. */}
+              <Route path="/humanizer" element={<Navigate to="/app?hub=ai&tool=humanizer" replace />} />
 
               <Route
                 path="/accounts"
