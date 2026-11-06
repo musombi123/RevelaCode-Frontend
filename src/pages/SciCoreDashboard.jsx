@@ -196,6 +196,7 @@ export default function SciCoreDashboard() {
           ip: normalizedIp,
           reason: normalizedReason,
           duration_minutes: Number(blockDuration),
+          confirm: true,
         }),
       });
       setNotice(`Blocked ${result?.block?.ip || normalizedIp}. Enforcement is active at the RevelaCode request boundary.`);
