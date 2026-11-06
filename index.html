@@ -49,6 +49,8 @@
         root.classList.toggle("dark", dark);
         root.classList.toggle("light", !dark);
         root.style.colorScheme = dark ? "dark" : "light";
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.setAttribute("content", dark ? "#091015" : "#F7F9FB");
       })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
