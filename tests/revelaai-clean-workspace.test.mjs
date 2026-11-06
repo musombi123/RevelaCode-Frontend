@@ -52,9 +52,9 @@ test("new-chat composer sits directly below the welcome message instead of a sep
 test("the compact InputBar exposes upload, vision and productivity actions from the paperclip menu", () => {
   assert.match(input, /label="Attachments and tools"/);
   assert.match(input, /Upload a file or document/);
-  assert.match(input, /Capture with camera \\/ Vision/);
+  assert.ok(input.includes("Capture with camera / Vision"));
   assert.match(input, /Productivity tools and workspace/);
-  assert.match(input, /TOOL_COMMANDS\\.map/);
+  assert.ok(input.includes("TOOL_COMMANDS.map"));
   assert.match(input, /h-10 w-10 min-h-10 min-w-10/);
   assert.doesNotMatch(input, /Grounded when evidence is available/);
   assert.doesNotMatch(input, /label="Open tools"/);
