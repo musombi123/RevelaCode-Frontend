@@ -103,14 +103,28 @@ export default function Sidebar({
   useEffect(() => {
     const focusSearch = () => {
       setCollapsed(false);
+      setOpen(true);
       window.setTimeout(() => searchRef.current?.focus(), 0);
     };
     const toggleCollapse = () => setCollapsed((value) => !value);
+    const renameActiveChat = (event) => {
+      const id = event?.detail?.chatId;
+      const row = rows.find((item) => String(item.chat.id) === String(id));
+      if (!row) return;
+      finishedRef.current = false;
+      setConfirmId(null);
+      setDraft(row.title);
+      setEditingId(row.chat.id);
+      setCollapsed(false);
+      setOpen(true);
+    };
     window.addEventListener("revelaai:focus-chat-search", focusSearch);
     window.addEventListener("revelaai:toggle-sidebar-collapse", toggleCollapse);
+    window.addEventListener("revelaai:rename-active-chat", renameActiveChat);
     return () => {
       window.removeEventListener("revelaai:focus-chat-search", focusSearch);
       window.removeEventListener("revelaai:toggle-sidebar-collapse", toggleCollapse);
+      window.removeEventListener("revelaai:rename-active-chat", renameActiveChat);
     };
   }, []);
 
