@@ -6,7 +6,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const welcome = read("../src/components/WelcomeScreen.jsx");
 const sidebar = read("../src/components/Sidebar.jsx");
-const header = read("../src/components/RevelaAIHeaderControls.jsx");
+const input = read("../src/components/InputBar.jsx");
 const quickSettings = read("../src/components/RevelaAIQuickSettings.jsx");
 const dashboard = read("../src/components/AIAssistantDashboard.jsx");
 const humanizer = read("../src/pages/HumanizerWorkspace.jsx");
@@ -24,16 +24,48 @@ test("voice, vision, Humanizer and weak-network mode are grouped in one sidebar 
   assert.match(sidebar, /onOpenVision/);
   assert.match(sidebar, /onOpenHumanizer/);
   assert.match(sidebar, /Weak-network free mode/);
-  assert.match(sidebar, /AI Identity and settings/);
+  assert.match(sidebar, /AI Identity/);
+  assert.match(sidebar, /<RevelaAIQuickSettings/);
+  assert.match(sidebar, /aria-controls="revelaai-account-menu"/);
+  assert.match(sidebar, /revelaai:settings-open/);
   assert.doesNotMatch(sidebar, /Tools · Humanizer/);
 });
 
-test("search depth and quota are available in settings but not permanently displayed in the header", () => {
-  assert.doesNotMatch(header, /modeButtons/);
-  assert.match(header, /<RevelaAIQuickSettings/);
-  assert.match(header, /\{quota\}/);
+test("AI header controls are removed and appearance/search settings live in the sidebar account menu", () => {
+  assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
+  assert.match(sidebar, /<RevelaAIQuickSettings/);
+  assert.match(quickSettings, /Appearance/);
   assert.match(quickSettings, /Search mode/);
   for (const mode of ["quick", "deep", "extreme"]) assert.ok(quickSettings.includes(mode));
+});
+
+
+test("new-chat composer sits directly below the welcome message instead of a separate bottom dock", () => {
+  const welcome = dashboard.indexOf('<WelcomeScreen />');
+  const composer = dashboard.indexOf('data-demo="ai-chat-input"', welcome);
+  const chatBranch = dashboard.indexOf('aria-label="Conversation workspace"');
+  assert.ok(welcome >= 0 && composer > welcome && composer < chatBranch);
+  assert.match(dashboard, /max-w-\[700px\]/);
+  assert.doesNotMatch(dashboard, /<ProductivityToolsPanel/);
+});
+
+test("the compact InputBar exposes upload, vision and productivity actions from the paperclip menu", () => {
+  assert.match(input, /label="Attachments and tools"/);
+  assert.match(input, /Upload a file or document/);
+  assert.ok(input.includes("Capture with camera / Vision"));
+  assert.match(input, /Productivity tools and workspace/);
+  assert.ok(input.includes("TOOL_COMMANDS.map"));
+  assert.match(input, /h-10 w-10 min-h-10 min-w-10/);
+  assert.doesNotMatch(input, /Grounded when evidence is available/);
+  assert.doesNotMatch(input, /label="Open tools"/);
+});
+
+test("fullscreen and AI header heights are compact and redundant mode labels are removed", () => {
+  const shell = read("../src/components/MainDashboardV2.jsx");
+  assert.match(shell, /h-10 shrink-0 items-center justify-between/);
+  assert.doesNotMatch(shell, /FULLSCREEN MODE/);
+  assert.match(dashboard, /h-11 shrink-0 items-center justify-between/);
+  assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
 });
 
 test("Humanizer uses one compact upload card and keeps privacy guidance without a second info panel", () => {

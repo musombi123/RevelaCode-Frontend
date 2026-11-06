@@ -62,8 +62,15 @@ function buildSheetPayload(title, text) {
   return { title, sheets: [{ name: "Data", headers, rows }] };
 }
 
-export default function ProductivityToolsPanel({ onSend }) {
-  const [open, setOpen] = useState(false);
+export default function ProductivityToolsPanel({ onSend, open: controlledOpen, onClose, triggerless = false }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = typeof controlledOpen === "boolean";
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (nextValue) => {
+    const next = typeof nextValue === "function" ? nextValue(open) : nextValue;
+    if (!isControlled) setInternalOpen(next);
+    if (!next) onClose?.();
+  };
   const [selected, setSelected] = useState("research_global");
   const [catalog, setCatalog] = useState(null);
   const [regions, setRegions] = useState([]);
@@ -146,7 +153,7 @@ export default function ProductivityToolsPanel({ onSend }) {
 
   return (
     <div className="relative w-full">
-      <div className="mb-2 flex items-center justify-between gap-2">
+      {!triggerless && <div className="mb-2 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => { setOpen(value => !value); setError(""); }}
@@ -160,10 +167,10 @@ export default function ProductivityToolsPanel({ onSend }) {
             AI tools tier: <strong className="uppercase">{catalog.tier}</strong>
           </span>
         )}
-      </div>
+      </div>}
 
       {open && (
-        <section className="mb-3 max-h-[70vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-slate-950 sm:p-4" aria-label="RevelaAI productivity tools">
+        <section className={(triggerless ? "max-h-[min(70dvh,640px)] " : "mb-3 max-h-[70vh] ") + "overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-slate-950 sm:p-4"} aria-label="RevelaAI productivity tools">
           <LocalWorkspaceStoragePanel />
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>

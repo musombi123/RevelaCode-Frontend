@@ -102,7 +102,7 @@ function FullscreenAIAssistant({
           <header
             data-demo="fullscreen-mode-bar"
             data-theme-surface="header"
-            className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line bg-header px-3 text-fg sm:px-4"
+            className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-line bg-header px-3 text-fg sm:px-4"
           >
             <div
               className="
@@ -114,37 +114,21 @@ function FullscreenAIAssistant({
               "
             >
               <div className="flex items-center gap-2">
-                <RevelaAIIcon size={24} />
+                <RevelaAIIcon size={21} />
                 <h3 className="font-bold text-fg">RevelaAI</h3>
               </div>
-              <span
-                className="
-                  hidden
-                  rounded-full
-                  border
-                  border-accent/25
-                  bg-accent/10
-                  px-2
-                  py-1
-                  text-[10px]
-                  font-semibold
-                  text-accent
-                  sm:inline-flex
-                "
-              >
-                FULLSCREEN MODE
-              </span>
+
             </div>
 
             <button
               type="button"
               onClick={onClose}
               data-demo="fullscreen-mode-close"
-              className="flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl text-fg-secondary transition hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="flex h-9 w-9 min-h-9 min-w-9 items-center justify-center rounded-lg text-fg-secondary transition hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               title="Close AI"
               aria-label="Close AI"
             >
-              <X size={20} />
+              <X size={17} />
             </button>
           </header>
 

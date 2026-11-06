@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyzePixels } from "@/ai/v2-free/localIntelligence";
+import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import {
   ArrowUp,
   Mic,
@@ -87,7 +88,7 @@ function ToolButton({ label, onClick, disabled, active, children }) {
       aria-pressed={active}
       title={label}
       className={[
-        "group relative flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl",
+        "group relative flex h-10 w-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg",
         "transition-colors duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         "disabled:cursor-not-allowed disabled:opacity-35",
@@ -114,7 +115,8 @@ export default function InputBar({
   const [text, setText] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const [workspaceToolsOpen, setWorkspaceToolsOpen] = useState(false);
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -140,8 +142,7 @@ export default function InputBar({
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-  const [composerMode, setComposerMode] = useState("Adaptive");
-  const [quotaSnapshot, setQuotaSnapshot] = useState(null);
+  const attachmentMenuRef = useRef(null);
   const dragDepth = useRef(0);
 
   /* =======================================================
@@ -165,17 +166,30 @@ export default function InputBar({
     };
     window.addEventListener("revelaai:fill-composer", fillComposer);
     window.addEventListener("revelaai:focus-composer-command", focusCommand);
-    const updateMode = (event) => setComposerMode(String(event?.detail?.mode || "Adaptive"));
-    const updateQuota = (event) => setQuotaSnapshot(event?.detail && Number.isFinite(Number(event.detail.remaining)) ? { remaining: Number(event.detail.remaining), limit: Number(event.detail.limit || 0) } : null);
-    window.addEventListener("revelaai:mode-updated", updateMode);
-    window.addEventListener("revelaai:quota-updated", updateQuota);
     return () => {
       window.removeEventListener("revelaai:fill-composer", fillComposer);
       window.removeEventListener("revelaai:focus-composer-command", focusCommand);
-      window.removeEventListener("revelaai:mode-updated", updateMode);
-      window.removeEventListener("revelaai:quota-updated", updateQuota);
     };
   }, []);
+
+  useEffect(() => {
+    if (!attachmentMenuOpen) return undefined;
+    const closeOnOutside = (event) => {
+      if (!attachmentMenuRef.current?.contains(event.target)) setAttachmentMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setAttachmentMenuOpen(false);
+        setWorkspaceToolsOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [attachmentMenuOpen]);
 
   useEffect(
     () => () => {
@@ -626,7 +640,7 @@ export default function InputBar({
 
   const chooseCommand = (command) => {
     setText(command + " ");
-    setToolsOpen(false);
+    setAttachmentMenuOpen(false);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
@@ -643,7 +657,17 @@ export default function InputBar({
   ======================================================= */
 
   return (
-    <div className="w-full" data-demo="composer">
+    <div className="relative w-full" data-demo="composer">
+      {workspaceToolsOpen && (
+        <div className="absolute bottom-[calc(100%+10px)] left-0 right-0 z-[80]">
+          <ProductivityToolsPanel
+            open={workspaceToolsOpen}
+            onClose={() => setWorkspaceToolsOpen(false)}
+            triggerless
+            onSend={onSend}
+          />
+        </div>
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -835,7 +859,7 @@ export default function InputBar({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={[
-          "relative rounded-3xl border bg-input",
+          "relative rounded-2xl border bg-input",
           "shadow-composer",
           "transition-[border-color,box-shadow] duration-200",
           dragging
@@ -919,75 +943,97 @@ export default function InputBar({
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             aria-label={placeholder}
-            className="block max-h-[200px] min-h-[28px] w-full min-w-0 resize-none overflow-y-auto bg-transparent text-[15px] leading-7 text-fg outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="block max-h-[160px] min-h-[24px] w-full min-w-0 resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-fg outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1">
-          <div className="flex min-w-0 items-center gap-0.5">
-            <ToolButton
-              label="Attach a file"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={disabled}
-            >
-              <Paperclip size={18} />
-            </ToolButton>
-            <ToolButton label="Scan with camera" onClick={openCamera} disabled={disabled}>
-              <Camera size={18} />
-            </ToolButton>
-            <div className="relative">
-              <span data-demo="tools-button"><ToolButton label="Open tools" onClick={() => setToolsOpen(value => !value)} disabled={disabled} active={toolsOpen}>
-                <Sparkles size={18} />
-              </ToolButton></span>
-              {toolsOpen && <div className="absolute bottom-12 left-0 z-50 w-64 rounded-2xl border border-line bg-popover p-2 shadow-2xl" role="dialog" aria-label="Choose a RevelaAI tool" data-demo="ai-composer-tools">
-                <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted">Choose a tool</p>
-                <div className="grid grid-cols-2 gap-1">{TOOL_COMMANDS.map(([command,label,Icon])=><button key={command} type="button" onClick={()=>chooseCommand(command)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-left text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><span>{label}</span></button>)}</div>
-              </div>}
-            </div>
+        {/* Compact toolbar: attachments and tools share one menu. */}
+        <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
+          <div className="relative flex min-w-0 items-center gap-1" ref={attachmentMenuRef}>
+            <span data-demo="tools-button">
+              <ToolButton
+                label="Attachments and tools"
+                onClick={() => setAttachmentMenuOpen((value) => !value)}
+                disabled={disabled}
+                active={attachmentMenuOpen}
+              >
+                <Paperclip size={17}/>
+              </ToolButton>
+            </span>
 
-            <span className="mx-1.5 h-5 w-px bg-surface-3" aria-hidden="true" />
+            {attachmentMenuOpen && (
+              <div
+                className="absolute bottom-11 left-0 z-[90] max-h-[min(72dvh,620px)] w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-line bg-popover p-2.5 text-fg shadow-2xl"
+                role="dialog"
+                aria-label="Attachments and tools"
+                data-demo="ai-composer-tools"
+              >
+                <div className="flex items-center justify-between gap-3 px-1 pb-2">
+                  <div>
+                    <p className="text-xs font-bold text-fg">Add to your message</p>
+                    <p className="text-[10px] text-muted">Attach files or choose a tool</p>
+                  </div>
+                  <button type="button" onClick={() => setAttachmentMenuOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"
+                    aria-label="Close attachments and tools"><X size={15}/></button>
+                </div>
 
-            {/* Voice language: segmented control */}
-            <div
-              role="radiogroup"
-              aria-label="Voice recognition language"
-              className="hidden items-center rounded-lg bg-surface-2 p-0.5 min-[400px]:flex"
-            >
-              {VOICE_LANGUAGES.map((language) => {
-                const selected = voiceLanguage === language.code;
-                return (
-                  <button
-                    key={language.code}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    aria-label={language.name}
-                    title={language.name}
-                    onClick={() => setVoiceLanguage(language.code)}
-                    className={[
-                      "min-h-12 rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-                      selected
-                        ? "bg-surface-3 text-fg"
-                        : "text-muted hover:text-fg-secondary",
-                    ].join(" ")}
-                  >
-                    {language.label}
-                  </button>
-                );
-              })}
-            </div>
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); fileInputRef.current?.click(); }}
+                  disabled={disabled}
+                  className="flex min-h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40">
+                  <Paperclip size={15}/> Upload a file or document
+                </button>
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); openCamera(); }}
+                  disabled={disabled}
+                  className="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40">
+                  <Camera size={15}/> Capture with camera / Vision
+                </button>
+                <button type="button" onClick={() => { setAttachmentMenuOpen(false); setWorkspaceToolsOpen(true); }}
+                  disabled={disabled}
+                  className="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-xl border border-accent/25 bg-accent/8 px-3 text-left text-xs font-semibold text-accent hover:bg-accent/12 disabled:opacity-40">
+                  <Sparkles size={15}/> Productivity tools and workspace
+                </button>
+
+                <div className="my-2 border-t border-line"/>
+                <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[.14em] text-muted">AI tools</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {TOOL_COMMANDS.map(([command,label,Icon]) => (
+                    <button key={command} type="button" onClick={() => chooseCommand(command)}
+                      className="flex min-h-9 items-center gap-2 rounded-lg px-2 text-left text-[11px] text-fg-secondary hover:bg-surface-2 hover:text-fg">
+                      <Icon size={14}/><span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="my-2 border-t border-line"/>
+                <div className="flex items-center justify-between gap-3 px-1">
+                  <span className="text-[10px] font-semibold text-muted">Voice language</span>
+                  <div role="radiogroup" aria-label="Voice recognition language" className="flex items-center rounded-lg bg-surface-2 p-0.5">
+                    {VOICE_LANGUAGES.map((language) => {
+                      const selected = voiceLanguage === language.code;
+                      return (
+                        <button key={language.code} type="button" role="radio" aria-checked={selected}
+                          aria-label={language.name} title={language.name}
+                          onClick={() => setVoiceLanguage(language.code)}
+                          className={"min-h-8 rounded-md px-2.5 text-[10px] font-bold " + (selected ? "bg-surface-3 text-fg" : "text-muted hover:text-fg-secondary")}>
+                          {language.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1">
             <ToolButton
               label={listening ? "Stop listening" : "Dictate with your voice"}
               onClick={startSpeechRecognition}
               disabled={disabled}
               active={listening}
             >
-              <Mic size={18} className={listening ? "animate-pulse" : ""} />
+              <Mic size={17} className={listening ? "animate-pulse" : ""}/>
             </ToolButton>
 
             <button
@@ -998,32 +1044,23 @@ export default function InputBar({
               aria-label={isGenerating ? "Stop generating" : "Send message"}
               title={isGenerating ? "Stop generating" : "Send message (Enter)"}
               className={[
-                "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
+                "flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/70",
                 canSend
                   ? "bg-accent text-inverse shadow-composer hover:bg-accent-hover active:scale-95"
                   : "cursor-not-allowed bg-surface-3 text-muted",
               ].join(" ")}
             >
-              {isGenerating ? <XCircle size={18} strokeWidth={2.5} /> : <ArrowUp size={18} strokeWidth={2.5} />}
+              {isGenerating ? <XCircle size={17} strokeWidth={2.5}/> : <ArrowUp size={17} strokeWidth={2.5}/>}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Composer status and accessibility hint */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 pt-2" aria-live="polite">
-        <span className="truncate text-[10px] font-semibold text-fg-secondary">
-          {composerMode}{quotaSnapshot ? " · " + quotaSnapshot.remaining + " searches left" : ""}
-        </span>
-        <span className="text-[10px] text-muted">Grounded when evidence is available</span>
-      </div>
-      <div className="flex items-center justify-between gap-3 px-3 pt-1">
-        <p className="truncate text-[11px] text-muted">
-          <kbd className="font-sans font-medium text-fg-secondary">Enter</kbd> to send,{" "}
-          <kbd className="font-sans font-medium text-fg-secondary">Shift + Enter</kbd> for a new line
-        </p>
-        <span className="hidden shrink-0 text-[11px] font-medium text-muted sm:block">RevelaAI</span>
+      <div className="px-2 pt-1.5 text-[10px] text-muted">
+        <kbd className="font-sans font-medium text-fg-secondary">Enter</kbd> to send
+        <span className="px-1.5 text-line-strong">·</span>
+        <kbd className="font-sans font-medium text-fg-secondary">Shift + Enter</kbd> for a new line
       </div>
 
       {voiceError && (

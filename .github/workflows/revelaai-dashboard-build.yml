@@ -34,6 +34,8 @@ jobs:
         run: node --test tests/revelaai-dashboard-contract.test.mjs
       - name: Run clean workspace layout contracts
         run: node --test tests/revelaai-clean-workspace.test.mjs
+      - name: Run Humanizer and composer integration contracts
+        run: node --test tests/humanizer-workspace-contract.test.mjs
       - name: Run hub plans visibility contracts
         run: node --test tests/hub-plans-visibility.test.mjs
       - name: Run admin operations contracts
