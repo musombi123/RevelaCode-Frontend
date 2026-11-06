@@ -88,8 +88,8 @@ function FullscreenAIAssistant({
             z-[10050]
             flex
             flex-col
-            bg-gray-100
-            dark:bg-gray-950
+            bg-app
+            text-fg
           "
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -99,21 +99,10 @@ function FullscreenAIAssistant({
               AI HEADER
           ================================================= */}
 
-          <div
-            className="
-              flex
-              h-14
-              shrink-0
-              items-center
-              justify-between
-              border-b
-              border-gray-200
-              bg-white
-              px-3
-              dark:border-gray-800
-              dark:bg-gray-950
-              sm:px-4
-            "
+          <header
+            data-demo="fullscreen-mode-bar"
+            data-theme-surface="header"
+            className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line bg-header px-3 text-fg sm:px-4"
           >
             <div
               className="
@@ -126,23 +115,20 @@ function FullscreenAIAssistant({
             >
               <div className="flex items-center gap-2">
                 <RevelaAIIcon size={24} />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">RevelaAI</h3>
+                <h3 className="font-bold text-fg">RevelaAI</h3>
               </div>
               <span
                 className="
                   hidden
                   rounded-full
                   border
-                  border-green-200
-                  bg-green-100
+                  border-accent/25
+                  bg-accent/10
                   px-2
                   py-1
                   text-[10px]
                   font-semibold
-                  text-green-700
-                  dark:border-green-800/50
-                  dark:bg-green-900/30
-                  dark:text-green-300
+                  text-accent
                   sm:inline-flex
                 "
               >
@@ -153,21 +139,14 @@ function FullscreenAIAssistant({
             <button
               type="button"
               onClick={onClose}
-              className="
-                rounded-xl
-                p-2
-                text-gray-500
-                transition
-                hover:bg-gray-200
-                dark:text-gray-400
-                dark:hover:bg-gray-800
-              "
+              data-demo="fullscreen-mode-close"
+              className="flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl text-fg-secondary transition hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               title="Close AI"
               aria-label="Close AI"
             >
               <X size={20} />
             </button>
-          </div>
+          </header>
 
           {/* =================================================
               AI CONTENT
@@ -184,19 +163,16 @@ function FullscreenAIAssistant({
                       m-4
                       rounded-2xl
                       border
-                      border-gray-200
-                      bg-white
+                      border-line
+                      bg-surface
                       p-6
-                      shadow
-                      dark:border-gray-800
-                      dark:bg-gray-900
+                      shadow-lg
                     "
                   >
                     <h4
                       className="
                         font-semibold
-                        text-gray-900
-                        dark:text-gray-100
+                        text-fg
                       "
                     >
                       AI Dashboard Not Found
@@ -207,8 +183,7 @@ function FullscreenAIAssistant({
                         mt-2
                         text-sm
                         leading-6
-                        text-gray-600
-                        dark:text-gray-300
+                        text-fg-secondary
                       "
                     >
                       Make sure you have a dashboard
@@ -216,10 +191,10 @@ function FullscreenAIAssistant({
                       <code
                         className="
                           rounded
-                          bg-gray-200
+                          bg-surface-2
                           px-1
                           py-0.5
-                          dark:bg-gray-800
+                          text-fg
                         "
                       >
                         ai
@@ -228,10 +203,10 @@ function FullscreenAIAssistant({
                       <code
                         className="
                           rounded
-                          bg-gray-200
+                          bg-surface-2
                           px-1
                           py-0.5
-                          dark:bg-gray-800
+                          
                         "
                       >
                         DASHBOARDS

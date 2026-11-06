@@ -124,39 +124,39 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-      <section className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-emerald-400/20 bg-slate-950 p-3 text-white shadow-2xl sm:p-5">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-overlay/70 p-2 backdrop-blur-sm sm:items-center sm:p-4">
+      <section className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-accent/25 bg-popover p-3 text-fg shadow-2xl sm:p-5">
         <header className="mb-4 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-200">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
               <Sparkles size={18} />
             </span>
             <div className="min-w-0">
               <h2 className="text-sm font-bold">RevelaAI Voice</h2>
-              <p className="mt-0.5 text-[10px] text-slate-400">
+              <p className="mt-0.5 text-[10px] text-muted">
                 {freeMode ? "Free mode · local-only · no model API calls" : "Adaptive voice · local-first fallback"}
               </p>
             </div>
           </div>
-          <button type="button" onClick={close} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5" aria-label="End voice chat">
+          <button type="button" onClick={close} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-xs text-fg-secondary hover:bg-surface-2" aria-label="End voice chat">
             <PhoneOff size={14} /> End
           </button>
         </header>
 
-        <div className="mb-3 rounded-2xl border border-white/10 bg-white/[.025] p-3">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-slate-500">Choose a specialist</p>
+        <div className="mb-3 rounded-2xl border border-line bg-surface-2 p-3">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-muted">Choose a specialist</p>
           <LivingHubSelector value={activeHub} onChange={setActiveHub} compact />
         </div>
 
         <VoiceOrbFree onTranscript={handleTranscript} />
         {freeMode && (
-          <p className="mt-3 rounded-xl border border-emerald-300/15 bg-emerald-300/[.04] p-3 text-[11px] leading-5 text-emerald-100/80">
+          <p className="mt-3 rounded-xl border border-accent/20 bg-accent/5 p-3 text-[11px] leading-5 text-accent">
             Free voice mode uses this device's speech recognition, local rules and speech synthesis. On-device/browser support varies; no hosted AI request is made from this voice session.
           </p>
         )}
 
         {reply && (
-          <div className="mt-3 rounded-2xl border border-emerald-300/15 bg-emerald-300/[.04] p-3">
+          <div className="mt-3 rounded-2xl border border-accent/20 bg-accent/5 p-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-bold text-emerald-100">RevelaAI's reply</p>
               <button type="button" onClick={() => {
@@ -166,16 +166,16 @@ export default function RevelaAIVoiceChat({ sessionId, hub = "auto", memoryScope
                 utterance.lang = activeHub === "mahubiri" ? "en-KE" : "en-KE";
                 utterance.rate = 0.94;
                 window.speechSynthesis.speak(utterance);
-              }} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1.5 text-[10px] text-slate-300">
+              }} className="inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1.5 text-[10px] text-fg-secondary">
                 <Volume2 size={13} /> Replay
               </button>
             </div>
-            <p className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-slate-200">{reply}</p>
-            {speaking && <p className="mt-2 text-[10px] text-emerald-200">Speaking through the device speaker…</p>}
+            <p className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-fg-secondary">{reply}</p>
+            {speaking && <p className="mt-2 text-[10px] text-accent">Speaking through the device speaker…</p>}
           </div>
         )}
 
-        <p className="mt-3 text-[10px] leading-4 text-slate-500">
+        <p className="mt-3 text-[10px] leading-4 text-muted">
           Microphone and speech are browser/device features. Speech recognition may depend on the browser and network even though RevelaAI's response logic stays local. If voice permissions fail, use text or attach a file in the chat.
         </p>
       </section>

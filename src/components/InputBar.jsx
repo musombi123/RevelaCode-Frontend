@@ -87,13 +87,13 @@ function ToolButton({ label, onClick, disabled, active, children }) {
       aria-pressed={active}
       title={label}
       className={[
-        "group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+        "group relative flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl",
         "transition-colors duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         "disabled:cursor-not-allowed disabled:opacity-35",
         active
-          ? "bg-emerald-500/15 text-emerald-300"
-          : "text-slate-400 hover:bg-white/[0.07] hover:text-slate-100",
+          ? "bg-accent/15 text-accent"
+          : "text-muted hover:bg-surface-3 hover:text-fg",
       ].join(" ")}
     >
       {children}
@@ -136,9 +136,12 @@ export default function InputBar({
   const [voiceLanguage, setVoiceLanguage] = useState("en-KE");
 
   const cameraVideoRef = useRef(null);
+  const cameraDialogRef = useRef(null);
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [composerMode, setComposerMode] = useState("Adaptive");
+  const [quotaSnapshot, setQuotaSnapshot] = useState(null);
   const dragDepth = useRef(0);
 
   /* =======================================================
@@ -152,8 +155,26 @@ export default function InputBar({
       setText(value);
       requestAnimationFrame(() => textareaRef.current?.focus());
     };
+    const focusCommand = () => {
+      setText((current) => current || "/");
+      requestAnimationFrame(() => {
+        const field = textareaRef.current;
+        field?.focus();
+        if (field) field.setSelectionRange(field.value.length, field.value.length);
+      });
+    };
     window.addEventListener("revelaai:fill-composer", fillComposer);
-    return () => window.removeEventListener("revelaai:fill-composer", fillComposer);
+    window.addEventListener("revelaai:focus-composer-command", focusCommand);
+    const updateMode = (event) => setComposerMode(String(event?.detail?.mode || "Adaptive"));
+    const updateQuota = (event) => setQuotaSnapshot(event?.detail && Number.isFinite(Number(event.detail.remaining)) ? { remaining: Number(event.detail.remaining), limit: Number(event.detail.limit || 0) } : null);
+    window.addEventListener("revelaai:mode-updated", updateMode);
+    window.addEventListener("revelaai:quota-updated", updateQuota);
+    return () => {
+      window.removeEventListener("revelaai:fill-composer", fillComposer);
+      window.removeEventListener("revelaai:focus-composer-command", focusCommand);
+      window.removeEventListener("revelaai:mode-updated", updateMode);
+      window.removeEventListener("revelaai:quota-updated", updateQuota);
+    };
   }, []);
 
   useEffect(
@@ -213,6 +234,25 @@ export default function InputBar({
     video.srcObject = cameraStream;
     video.play?.().catch(() => {});
   }, [cameraOpen, cameraStream]);
+
+  useEffect(() => {
+    if (!cameraOpen) return undefined;
+    const dialog = cameraDialogRef.current;
+    if (!dialog) return undefined;
+    const focusable = () => Array.from(dialog.querySelectorAll("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"));
+    focusable()[0]?.focus();
+    const trap = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); stopCamera(); return; }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => document.removeEventListener("keydown", trap);
+  }, [cameraOpen, stopCamera]);
 
   // Escape closes the camera.
   useEffect(() => {
@@ -603,7 +643,7 @@ export default function InputBar({
   ======================================================= */
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-demo="composer">
       <input
         ref={fileInputRef}
         type="file"
@@ -615,7 +655,7 @@ export default function InputBar({
       {/* ---------------- Camera dialog ---------------- */}
       {cameraOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center sm:p-4"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-overlay/85 backdrop-blur-md sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label="RevelaAI camera"
@@ -623,25 +663,25 @@ export default function InputBar({
             if (event.target === event.currentTarget) stopCamera();
           }}
         >
-          <section className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-white/10 bg-slate-950 text-white shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)] sm:rounded-3xl">
+          <section ref={cameraDialogRef} className="w-full max-w-xl overflow-hidden rounded-t-3xl border border-line bg-popover text-fg shadow-dialog sm:rounded-3xl">
             <header className="flex items-center justify-between px-5 py-4">
               <div>
                 <h2 className="text-sm font-semibold tracking-tight">RevelaAI Camera</h2>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-muted">
                   Live Vision analyzes camera frames with RevelaAI while you enable it.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-fg-secondary transition-colors hover:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
                 aria-label="Close camera"
               >
                 <X size={18} />
               </button>
             </header>
 
-            <div className="relative mx-3 overflow-hidden rounded-2xl bg-black">
+            <div className="relative mx-3 overflow-hidden rounded-2xl bg-black" aria-label="Camera preview">
               {cameraStream ? (
                 <>
                   <video
@@ -659,7 +699,7 @@ export default function InputBar({
                 </>
               ) : (
                 <div className="flex h-56 items-center justify-center">
-                  <Camera size={28} className="text-slate-600" />
+                  <Camera size={28} className="text-muted" />
                 </div>
               )}
             </div>
@@ -667,15 +707,15 @@ export default function InputBar({
             {cameraStream && (
               <div className="space-y-3 px-4 pt-3">
                 <div className="flex items-center gap-2 text-xs" role="status" aria-live="polite">
-                  <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-slate-500"} />
-                  <span className={liveVisionActive ? "text-emerald-300" : "text-slate-400"}>
+                  <span className={liveVisionActive ? "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" : "h-2 w-2 rounded-full bg-muted"} />
+                  <span className={liveVisionActive ? "text-accent" : "text-muted"}>
                     {liveVisionActive
                       ? "LIVE VISION ON · checking a frame about every 5 seconds"
                       : "Preview only · AI frame analysis is off"}
                   </span>
-                  {liveVisionUpdatedAt && <span className="ml-auto text-slate-500">Updated {liveVisionUpdatedAt}</span>}
+                  {liveVisionUpdatedAt && <span className="ml-auto text-muted">Updated {liveVisionUpdatedAt}</span>}
                 </div>
-                <label htmlFor="revela-live-vision-prompt" className="block text-xs font-medium text-slate-300">
+                <label htmlFor="revela-live-vision-prompt" className="block text-xs font-medium text-fg-secondary">
                   What should RevelaAI look for?
                 </label>
                 <textarea
@@ -684,18 +724,18 @@ export default function InputBar({
                   onChange={(event) => setLiveVisionPrompt(event.target.value)}
                   maxLength={1200}
                   rows={2}
-                  className="w-full resize-y rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-400/50"
+                  className="w-full min-h-12 resize-y rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-fg outline-none placeholder:text-muted focus:border-accent/50"
                   placeholder="Describe the surroundings, read a sign, identify visible objects..."
                 />
                 {liveVisionResult && (
-                  <div className="max-h-36 overflow-y-auto rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3">
-                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                  <div className="max-h-36 overflow-y-auto rounded-xl border border-accent/20 bg-emerald-400/[0.06] p-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
                       Latest frame understanding
                     </p>
-                    <p className="whitespace-pre-wrap text-sm leading-5 text-slate-100">{liveVisionResult}</p>
+                    <p className="whitespace-pre-wrap text-sm leading-5 text-fg">{liveVisionResult}</p>
                   </div>
                 )}
-                <p className="text-[11px] leading-4 text-slate-500">
+                <p className="text-[11px] leading-4 text-muted">
                   While enabled, selected frames are sent to the configured vision model. This app endpoint does not store the camera images. Stop Live Vision to stop further frame requests.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -709,7 +749,7 @@ export default function InputBar({
                         setLiveVisionActive(true);
                       }}
                       disabled={!cameraStream || cameraBusy}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-40"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-inverse hover:bg-accent-hover disabled:opacity-40"
                     >
                       <Camera size={16} />
                       Start Live Vision
@@ -718,7 +758,7 @@ export default function InputBar({
                     <button
                       type="button"
                       onClick={stopLiveVision}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-2.5 text-sm font-semibold text-amber-100 hover:bg-amber-300/15"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-sm font-semibold text-warning hover:bg-warning/15"
                     >
                       Stop Live Vision
                     </button>
@@ -732,7 +772,7 @@ export default function InputBar({
                         stopCamera();
                         onSend?.(prompt, null, { visionResult: result, visionProvider: "gemini", liveVision: true });
                       }}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/5"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-fg hover:bg-surface-2"
                     >
                       Send analysis to chat
                     </button>
@@ -742,7 +782,7 @@ export default function InputBar({
             )}
 
             {cameraError && (
-              <p role="status" className="px-5 pt-3 text-xs leading-5 text-amber-300">
+              <p role="status" className="px-5 pt-3 text-xs leading-5 text-warning">
                 {cameraError}
               </p>
             )}
@@ -752,7 +792,7 @@ export default function InputBar({
                 type="button"
                 onClick={captureFrame}
                 disabled={cameraBusy || !cameraStream}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-inverse shadow-lg shadow-emerald-500/20 transition hover:bg-accent-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {cameraBusy ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                 {cameraBusy ? "Analyzing..." : "Capture and send"}
@@ -763,10 +803,10 @@ export default function InputBar({
                 disabled={!cameraStream}
                 aria-pressed={torchOn}
                 className={[
-                  "flex w-16 flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 disabled:cursor-not-allowed disabled:opacity-40",
+                  "flex w-16 flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60 disabled:cursor-not-allowed disabled:opacity-40",
                   torchOn
-                    ? "border-amber-300/40 bg-amber-300/10 text-amber-200"
-                    : "border-white/10 text-slate-300 hover:bg-white/5",
+                    ? "border-amber-300/40 bg-warning/10 text-warning"
+                    : "border-line text-fg-secondary hover:bg-surface-2",
                 ].join(" ")}
               >
                 <Flashlight size={16} />
@@ -775,13 +815,13 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={stopCamera}
-                className="rounded-2xl border border-white/10 px-4 text-sm text-slate-300 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="min-h-12 rounded-2xl border border-line px-4 text-sm text-fg-secondary transition hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
               >
                 Cancel
               </button>
             </div>
 
-            <p className="px-5 pb-4 text-[11px] leading-4 text-slate-500">
+            <p className="px-5 pb-4 text-[11px] leading-4 text-muted">
               Camera permission is controlled by your browser. Live model analysis starts only after you select Start Live Vision and stops when you stop it or close this dialog.
             </p>
           </section>
@@ -795,18 +835,18 @@ export default function InputBar({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={[
-          "relative rounded-3xl border bg-revela-card",
-          "shadow-[0_8px_32px_-8px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.04)]",
+          "relative rounded-3xl border bg-input",
+          "shadow-composer",
           "transition-[border-color,box-shadow] duration-200",
           dragging
-            ? "border-emerald-400/60 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]"
-            : "border-white/10 focus-within:border-emerald-400/30 focus-within:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.55),0_0_0_4px_rgba(16,185,129,0.07)]",
+            ? "border-accent ring-2 ring-accent/15 shadow-composer"
+            : "border-line focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/15 focus-within:shadow-composer",
         ].join(" ")}
       >
         {/* Drop overlay */}
         {dragging && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-slate-950/80 backdrop-blur-sm">
-            <p className="flex items-center gap-2 text-sm font-medium text-emerald-300">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-popover/95 backdrop-blur-sm">
+            <p className="flex items-center gap-2 text-sm font-medium text-accent">
               <Paperclip size={16} />
               Drop to attach
             </p>
@@ -816,7 +856,7 @@ export default function InputBar({
         {/* Attachment chip */}
         {attachedFile && (
           <div className="px-3 pt-3">
-            <div className="flex max-w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2 pr-3 sm:max-w-sm">
+            <div className="flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 pr-3 sm:max-w-sm">
               {previewUrl ? (
                 <img
                   src={previewUrl}
@@ -824,18 +864,18 @@ export default function InputBar({
                   className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
                 />
               ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-emerald-400/20">
                   <FileText size={18} />
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-slate-100">{attachedFile.name}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{formatSize(attachedFile.size)}</p>
+                <p className="truncate text-xs font-medium text-fg">{attachedFile.name}</p>
+                <p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setAttachedFile(null)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
                 aria-label="Remove attachment"
               >
                 <X size={14} />
@@ -848,7 +888,7 @@ export default function InputBar({
         <div className="px-4 pb-1 pt-3.5">
           {listening && (
             <div
-              className="mb-2 flex items-center gap-2.5 text-xs font-medium text-emerald-300"
+              className="mb-2 flex items-center gap-2.5 text-xs font-medium text-accent"
               role="status"
             >
               <span className="flex h-4 items-center gap-[3px]" aria-hidden="true">
@@ -865,8 +905,8 @@ export default function InputBar({
           )}
 
           {slashMatches.length > 0 && (
-            <div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-slate-950 p-2">
-              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-slate-200 hover:bg-white/10"><Icon size={14}/><b>{command}</b><span className="text-slate-500">{label}</span></button>)}
+            <div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">
+              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-12 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><b>{command}</b><span className="text-muted">{label}</span></button>)}
             </div>
           )}
           <textarea
@@ -879,7 +919,7 @@ export default function InputBar({
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             aria-label={placeholder}
-            className="block max-h-[200px] min-h-[28px] w-full min-w-0 resize-none overflow-y-auto bg-transparent text-[15px] leading-7 text-slate-100 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="block max-h-[200px] min-h-[28px] w-full min-w-0 resize-none overflow-y-auto bg-transparent text-[15px] leading-7 text-fg outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
 
@@ -897,22 +937,22 @@ export default function InputBar({
               <Camera size={18} />
             </ToolButton>
             <div className="relative">
-              <ToolButton label="Open tools" onClick={() => setToolsOpen(value => !value)} disabled={disabled} active={toolsOpen}>
+              <span data-demo="tools-button"><ToolButton label="Open tools" onClick={() => setToolsOpen(value => !value)} disabled={disabled} active={toolsOpen}>
                 <Sparkles size={18} />
-              </ToolButton>
-              {toolsOpen && <div className="absolute bottom-12 left-0 z-50 w-64 rounded-2xl border border-slate-700 bg-slate-950 p-2 shadow-2xl" role="dialog" aria-label="Choose a RevelaAI tool" data-demo="ai-composer-tools">
-                <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Choose a tool</p>
-                <div className="grid grid-cols-2 gap-1">{TOOL_COMMANDS.map(([command,label,Icon])=><button key={command} type="button" onClick={()=>chooseCommand(command)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-left text-xs text-slate-200 hover:bg-white/10"><Icon size={14}/><span>{label}</span></button>)}</div>
+              </ToolButton></span>
+              {toolsOpen && <div className="absolute bottom-12 left-0 z-50 w-64 rounded-2xl border border-line bg-popover p-2 shadow-2xl" role="dialog" aria-label="Choose a RevelaAI tool" data-demo="ai-composer-tools">
+                <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted">Choose a tool</p>
+                <div className="grid grid-cols-2 gap-1">{TOOL_COMMANDS.map(([command,label,Icon])=><button key={command} type="button" onClick={()=>chooseCommand(command)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-left text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><span>{label}</span></button>)}</div>
               </div>}
             </div>
 
-            <span className="mx-1.5 h-5 w-px bg-white/10" aria-hidden="true" />
+            <span className="mx-1.5 h-5 w-px bg-surface-3" aria-hidden="true" />
 
             {/* Voice language: segmented control */}
             <div
               role="radiogroup"
               aria-label="Voice recognition language"
-              className="flex items-center rounded-lg bg-white/[0.05] p-0.5"
+              className="hidden items-center rounded-lg bg-surface-2 p-0.5 min-[400px]:flex"
             >
               {VOICE_LANGUAGES.map((language) => {
                 const selected = voiceLanguage === language.code;
@@ -926,11 +966,11 @@ export default function InputBar({
                     title={language.name}
                     onClick={() => setVoiceLanguage(language.code)}
                     className={[
-                      "rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50",
+                      "min-h-12 rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                       selected
-                        ? "bg-white/10 text-slate-100"
-                        : "text-slate-500 hover:text-slate-300",
+                        ? "bg-surface-3 text-fg"
+                        : "text-muted hover:text-fg-secondary",
                     ].join(" ")}
                   >
                     {language.label}
@@ -959,10 +999,10 @@ export default function InputBar({
               title={isGenerating ? "Stop generating" : "Send message (Enter)"}
               className={[
                 "flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/70",
                 canSend
-                  ? "bg-gradient-to-b from-emerald-400 to-emerald-600 text-slate-950 shadow-lg shadow-emerald-500/25 hover:brightness-110 active:scale-95"
-                  : "cursor-not-allowed bg-white/[0.06] text-slate-600",
+                  ? "bg-accent text-inverse shadow-composer hover:bg-accent-hover active:scale-95"
+                  : "cursor-not-allowed bg-surface-3 text-muted",
               ].join(" ")}
             >
               {isGenerating ? <XCircle size={18} strokeWidth={2.5} /> : <ArrowUp size={18} strokeWidth={2.5} />}
@@ -971,25 +1011,29 @@ export default function InputBar({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between gap-3 px-3 pt-2">
-        <p className="truncate text-[11px] text-slate-500">
-          <kbd className="font-sans font-medium text-slate-400">Enter</kbd> to send,{" "}
-          <kbd className="font-sans font-medium text-slate-400">Shift + Enter</kbd> for a new line
-        </p>
-        <span className="hidden shrink-0 text-[11px] font-medium text-slate-600 sm:block">
-          RevelaAI
+      {/* Composer status and accessibility hint */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 pt-2" aria-live="polite">
+        <span className="truncate text-[10px] font-semibold text-fg-secondary">
+          {composerMode}{quotaSnapshot ? " · " + quotaSnapshot.remaining + " searches left" : ""}
         </span>
+        <span className="text-[10px] text-muted">Grounded when evidence is available</span>
+      </div>
+      <div className="flex items-center justify-between gap-3 px-3 pt-1">
+        <p className="truncate text-[11px] text-muted">
+          <kbd className="font-sans font-medium text-fg-secondary">Enter</kbd> to send,{" "}
+          <kbd className="font-sans font-medium text-fg-secondary">Shift + Enter</kbd> for a new line
+        </p>
+        <span className="hidden shrink-0 text-[11px] font-medium text-muted sm:block">RevelaAI</span>
       </div>
 
       {voiceError && (
-        <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">
+        <p className="px-3 pt-2 text-[11px] text-warning" role="status">
           {voiceError}
         </p>
       )}
 
       {!voiceSupported && (
-        <p className="px-3 pt-2 text-[11px] text-amber-300" role="status">
+        <p className="px-3 pt-2 text-[11px] text-warning" role="status">
           Speech recognition isn't supported in this browser. Try Chrome on Android.
         </p>
       )}
