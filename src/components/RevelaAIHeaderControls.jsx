@@ -43,9 +43,22 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
   const limit = Number(search?.daily_limit ?? 0);
   const mode = settings.search_research?.default_mode || "deep";
 
+  useEffect(() => {
+    if (!catalogLoaded) return;
+    const item = catalog?.tools?.find((entry) => entry.id === "research_global");
+    window.dispatchEvent(new CustomEvent("revelaai:quota-updated", {
+      detail: item
+        ? { remaining: Number(item.remaining ?? 0), limit: Number(item.daily_limit ?? 0) }
+        : null,
+    }));
+  }, [catalog, catalogLoaded]);
+
   const changeMode = (value) => {
     updateSection("search_research", { default_mode: value });
     onSearchModeChange?.(value);
+    window.dispatchEvent(new CustomEvent("revelaai:mode-updated", {
+      detail: { mode: value.charAt(0).toUpperCase() + value.slice(1) },
+    }));
   };
 
   const initials = String(user?.name || user?.full_name || user?.contact || "RC")
@@ -92,7 +105,6 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
       </span>
 
       <div className="hidden lg:block">{modeButtons}</div>
-      <div className="hidden xl:block">{quota}</div>
 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:research-open"))}
         aria-label="Open search" title="Search" className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg md:flex">
@@ -134,7 +146,7 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         </div>}
       </div>
 
-      <div className="sm:hidden">
+      <div className="sm:hidden relative">
         <button type="button" onClick={() => setOverflowOpen((value) => !value)} aria-label="More workspace controls"
           aria-expanded={overflowOpen} className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary">
           <MoreHorizontal size={18}/>
