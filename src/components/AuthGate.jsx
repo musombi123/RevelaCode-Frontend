@@ -4,6 +4,7 @@ import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
+import { readRefreshToken } from "@/auth/tokenStorage.mjs";
 import { collectWorkspaceRoles, resolveWorkspaceRole } from "@/auth/workspaceRoles.mjs";
 
 const API_BASE = resolveBackendBaseUrl(import.meta.env || {});
@@ -19,8 +20,12 @@ export default function AuthGate({ children, requiredRoles = [] }) {
   useEffect(() => {
     let active = true;
     const token = getAccessToken();
+    const refreshToken = readRefreshToken();
 
-    if (!token) {
+    // A missing access token does not necessarily mean the signed-in session
+    // has ended. authFetch can exchange a still-valid refresh token for a new
+    // access token while verifying /api/auth/me.
+    if (!token && !refreshToken) {
       setState("unauthenticated");
       setError("");
       return () => { active = false; };

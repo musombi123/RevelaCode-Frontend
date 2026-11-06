@@ -609,6 +609,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   // Hub dashboards own their workspace headers. Keep the shell header
   // for Home and utility/section screens to avoid stacked header bars.
   const hubViewsWithOwnHeader = new Set([
+    "ai",
     "faith",
     "education",
     "shamba",
