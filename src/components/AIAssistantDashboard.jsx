@@ -26,10 +26,8 @@ import {
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
-import RevelaAIHeaderControls from "@/components/RevelaAIHeaderControls";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
-import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
@@ -1998,7 +1996,7 @@ export default function AIAssistantDashboard({
         <header
           data-demo="fullscreen-mode-bar"
           data-theme-surface="header"
-          className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line bg-header px-3 sm:gap-3 sm:px-4"
+          className="relative z-30 flex h-11 shrink-0 items-center justify-between gap-2 border-b border-line bg-header px-3 sm:gap-3 sm:px-4"
         >
           <div className="flex min-w-0 items-center gap-2">
             <button
@@ -2051,27 +2049,11 @@ export default function AIAssistantDashboard({
                 )}
               </div>
 
-              <p
-                className="
-                  truncate
-                  text-[10px]
-                  text-muted
-                  sm:block
-                "
-              >
-                {activeBrainHubLabel}
-                {compactMode ? " · Personalized for " + activeHubLabel : " · RevelaCode assistant"}
-              </p>
+
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-
-
-
-
-            <RevelaAIHeaderControls modelTier={modelTier} />
-          </div>
+          <span className="w-1 shrink-0" aria-hidden="true"/>
         </header>
 
         {/* =================================================
@@ -2088,17 +2070,12 @@ export default function AIAssistantDashboard({
             </div>
           </section>
         ) : !hasConversation ? (
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="RevelaAI welcome workspace">
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4">
-              <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col items-center justify-center">
-                <div data-demo="ai-welcome-state" className="w-full">
-                  <WelcomeScreen />
-                </div>
+          <section className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" aria-label="RevelaAI welcome workspace">
+            <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-1 flex-col items-center justify-center gap-2 px-3 py-4 sm:px-5 sm:py-5">
+              <div data-demo="ai-welcome-state" className="w-full">
+                <WelcomeScreen />
               </div>
-            </div>
-            <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
-              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
-                <ProductivityToolsPanel onSend={sendTextMessage} />
+              <div data-demo="ai-chat-input" className="w-full max-w-[700px]">
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
@@ -2127,9 +2104,8 @@ export default function AIAssistantDashboard({
                 onDeleteMessage={handleDeleteMessage}
               />
             </div>
-            <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
-              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
-                <ProductivityToolsPanel onSend={sendTextMessage} />
+            <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-2 backdrop-blur-sm sm:px-5 sm:pb-2">
+              <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[700px]">
                 <div data-demo="ai-vision-tools">
                   <InputBar
                     placeholder={hubInputPlaceholder}
