@@ -28,6 +28,7 @@ import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import RevelaAIHeaderControls from "@/components/RevelaAIHeaderControls";
 import WelcomeScreen from "@/components/WelcomeScreen";
+import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
@@ -349,6 +350,7 @@ export default function AIAssistantDashboard({
 
   const [voiceActive, setVoiceActive] =
     useState(false);
+  const [humanizerOpen, setHumanizerOpen] = useState(false);
 
   // The WelcomeScreen launches the very same camera control used by InputBar.
   const [visionReady, setVisionReady] = useState(false);
@@ -1962,6 +1964,7 @@ export default function AIAssistantDashboard({
         onRenameChat={renameChat}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
+        onOpenHumanizer={() => setHumanizerOpen(true)}
         onOpenIdentity={() => setIdentityOpen(true)}
         freeMode={freeMode}
         onToggleFreeMode={() => setFreeMode((current) => !current)}
@@ -2068,7 +2071,20 @@ export default function AIAssistantDashboard({
             WORKSPACE BODY
         ================================================= */}
 
-        {!hasConversation ? (
+        {humanizerOpen ? (
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Humanizer workspace">
+            <div className="flex shrink-0 items-center justify-between border-b border-line bg-header px-4 py-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-fg">Selective Humanizer</p>
+                <p className="text-[11px] text-muted">Work on selected PDF text without leaving RevelaAI</p>
+              </div>
+              <button type="button" onClick={() => setHumanizerOpen(false)} className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-fg hover:bg-surface-2" aria-label="Return to chat">Back to chat</button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto bg-app">
+              <HumanizerWorkspace />
+            </div>
+          </section>
+        ) : !hasConversation ? (
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="RevelaAI welcome workspace">
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-4">
               <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col items-center justify-center">
