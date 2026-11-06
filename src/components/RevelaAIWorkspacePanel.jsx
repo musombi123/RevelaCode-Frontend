@@ -60,6 +60,14 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
       role="complementary"
     >
       <button type="button" aria-label="Resize workspace panel" title="Drag to resize"
+        onTouchStart={(event) => { resizeRef.current = { touchY: event.touches[0].clientY, mobile: true }; }}
+        onTouchEnd={(event) => {
+          if (resizeRef.current?.mobile) {
+            const delta = event.changedTouches[0].clientY - resizeRef.current.touchY;
+            resizeRef.current = null;
+            if (delta > 80) setVisible(false);
+          }
+        }}
         onPointerDown={(event) => {
           if (window.matchMedia("(max-width: 639px)").matches) return;
           resizeRef.current = { startX: event.clientX, width: panelWidth };
@@ -78,7 +86,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
           <b className="block truncate text-sm">{artifact.title || artifact.filename || "Generated workspace"}</b>
           <span className="text-[11px] text-muted">Output workspace · private by default</span>
         </div>
-        <button type="button" onClick={() => setVisible(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-fg-secondary hover:bg-surface-2"
+        <button type="button" onClick={() => setVisible(false)} className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-fg-secondary hover:bg-surface-2"
           aria-label="Close workspace"><X size={17}/></button>
       </header>
 
@@ -86,7 +94,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
         {TABS.map(([id, label, Icon]) => (
           <button key={id} type="button" onClick={() => setTab(id)} data-demo={"workspace-tab-" + id}
             aria-pressed={tab === id}
-            className={"flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-semibold " +
+            className={"flex min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-semibold " +
               (tab === id ? "bg-accent/12 text-accent" : "text-muted hover:bg-surface-2 hover:text-fg")}>
             <Icon size={14}/>{label}
           </button>
@@ -97,7 +105,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI }) {
         {tab === "preview" && <div className="space-y-3">
           <p className="text-sm text-fg-secondary">{artifact.description || "Preview is available through the generated file link."}</p>
           {download && <a href={download} target="_blank" rel="noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover">
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover">
             <Download size={15}/> Download original
           </a>}
           {artifact.preview?.type === "document" && <article className="space-y-3 rounded-xl border border-line bg-white p-4 text-slate-900 sm:p-6">
