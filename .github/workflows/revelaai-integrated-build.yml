@@ -22,5 +22,5 @@ jobs:
       - run: npm run test:auth
       - run: npm run test:platform-host
       - run: npm run test:demo
-      - run: node --test tests/humanizer-workspace-contract.test.mjs
+      - run: node --test tests/humanizer-workspace-contract.test.mjs tests/local-workspace-storage.test.mjs
       - run: npm run build
