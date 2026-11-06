@@ -339,14 +339,14 @@ export default function SciCoreDashboard() {
             </div>
             <div className="rounded-xl border border-line bg-surface-2 p-3">
               <p className="text-[10px] text-muted">Automatic trigger</p>
-              <p className="mt-1 text-sm font-black text-fg">{ipGuard?.automatic_blocking ? (ipGuard.auto_block_threshold + " failures / 5 min") : "Unavailable"}</p>
+              <p className="mt-1 text-sm font-black text-fg">{ipGuard?.automatic_blocking ? (ipGuard.auto_block_threshold + " failures / 5 min") : (ipGuard?.auto_block_requires_allowlist ? "Allowlist required" : "Unavailable")}</p>
               <p className="mt-1 text-[10px] text-muted">{ipGuard?.auto_block_duration_minutes || 30} min temporary block</p>
             </div>
           </div>
 
           {!ipProtectionReady && <div role="alert" className="mt-3 rounded-xl border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
             IP enforcement is not verified as active. {ipGuard?.error || "The backend has not confirmed persistent storage."}
-            Manual block controls stay disabled until the backend confirms MongoDB persistence. Configure MONGO_URI and the trusted Render client-IP header before enabling enforcement.
+            Manual block controls stay disabled until the backend confirms MongoDB persistence. Configure MONGO_URI and the trusted Cloudflare client-IP header before enabling enforcement. Automatic blocks also require a stable administrator egress IP in SCI_CORE_IP_ALLOWLIST.
           </div>}
 
           {ipProtectionReady && !ipClientIpVerified && <div role="alert" className="mt-3 rounded-xl border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
