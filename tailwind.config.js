@@ -15,6 +15,7 @@ module.exports = {
         "surface-2": "rgb(var(--surface-2) / <alpha-value>)",
         "surface-3": "rgb(var(--surface-3) / <alpha-value>)",
         input: "rgb(var(--input-bg) / <alpha-value>)",
+        code: "rgb(var(--code-bg) / <alpha-value>)",
         popover: "rgb(var(--popover-bg) / <alpha-value>)",
         overlay: "rgb(var(--overlay-bg) / <alpha-value>)",
         fg: "rgb(var(--fg) / <alpha-value>)",
