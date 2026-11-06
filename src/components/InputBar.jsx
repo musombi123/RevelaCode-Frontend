@@ -952,7 +952,7 @@ export default function InputBar({
             <div
               role="radiogroup"
               aria-label="Voice recognition language"
-              className="hidden items-center rounded-lg bg-surface-2 p-0.5 min-[360px]:flex"
+              className="hidden items-center rounded-lg bg-surface-2 p-0.5 min-[400px]:flex"
             >
               {VOICE_LANGUAGES.map((language) => {
                 const selected = voiceLanguage === language.code;
