@@ -19,20 +19,31 @@
       (function () {
         var mode = "system";
         try {
-          mode = localStorage.getItem("theme") || "system";
-          if (!["light", "dark", "system"].includes(mode)) {
-            var cached = JSON.parse(localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
-            mode = cached && cached.appearance && ["light", "dark", "system"].includes(cached.appearance.theme)
-              ? cached.appearance.theme
-              : "system";
+          var cached = JSON.parse(localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
+          var appearance = cached && cached.appearance ? cached.appearance : {};
+          mode = appearance.theme || localStorage.getItem("theme") || "system";
+          if (mode === "scheduled") {
+            var parts = new Intl.DateTimeFormat("en-GB", {
+              timeZone: "Africa/Nairobi",
+              hour: "2-digit",
+              minute: "2-digit",
+              hourCycle: "h23"
+            }).formatToParts(new Date());
+            var hour = Number(parts.find(function (part) { return part.type === "hour"; })?.value || 0);
+            var minute = Number(parts.find(function (part) { return part.type === "minute"; })?.value || 0);
+            var now = hour * 60 + minute;
+            var startParts = String(appearance.scheduled_start || "19:00").split(":").map(Number);
+            var endParts = String(appearance.scheduled_end || "07:00").split(":").map(Number);
+            var start = (startParts[0] || 0) * 60 + (startParts[1] || 0);
+            var end = (endParts[0] || 0) * 60 + (endParts[1] || 0);
+            mode = (start > end ? (now >= start || now < end) : (now >= start && now < end)) ? "dark" : "light";
           }
+          if (!["light", "dark", "system"].includes(mode)) mode = "system";
         } catch (_) {
           mode = "system";
         }
         var dark = mode === "dark" || (mode === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
         var root = document.documentElement;
-        var themeMeta = document.querySelector('meta[name="theme-color"]');
-        if (themeMeta) themeMeta.setAttribute("content", dark ? "#091015" : "#F7F9FB");
         root.dataset.themeMode = mode;
         root.dataset.theme = dark ? "dark" : "light";
         root.classList.toggle("dark", dark);
