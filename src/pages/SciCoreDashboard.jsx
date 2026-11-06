@@ -84,6 +84,11 @@ export default function SciCoreDashboard() {
   const [blockReason, setBlockReason] = useState("");
   const [blockDuration, setBlockDuration] = useState("60");
   const [ipOperationResult, setIpOperationResult] = useState(null);
+  const [ipGuard, setIpGuard] = useState(null);
+  const [manualIp, setManualIp] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  const [blockDuration, setBlockDuration] = useState("60");
+  const [ipOperationResult, setIpOperationResult] = useState(null);
 
   const getToken = useCallback(async () => {
     if (typeof auth?.getAccessToken === "function") return await auth.getAccessToken();
@@ -139,7 +144,7 @@ export default function SciCoreDashboard() {
         method: "POST",
         body: JSON.stringify(body),
       });
-      setter(result);
+      if (typeof setter === "function") setter(result);
       setNotice(successText);
       await refresh();
     } catch (e) {
@@ -228,11 +233,91 @@ export default function SciCoreDashboard() {
     });
   }, [scanResult]);
 
+  const submitIpBlock = async (event) => {
+    event.preventDefault();
+    const ip = manualIp.trim();
+    const reason = blockReason.trim();
+    if (!ip || reason.length < 8) return;
+    if (!window.confirm(
+      "Block " + ip + " at the RevelaAI application edge for " +
+      blockDuration + " minutes? This does not change Render's host firewall."
+    )) return;
+
+    setBusy("ip-block");
+    setError("");
+    setNotice("");
+    setIpOperationResult(null);
+    try {
+      const result = await request("/api/sci/ip-guard/block", {
+        method: "POST",
+        body: JSON.stringify({
+          ip,
+          reason,
+          duration_minutes: Number(blockDuration),
+          confirm: true,
+        }),
+      });
+      setIpOperationResult(result);
+      setNotice(result.message || (ip + " was blocked at the RevelaAI application edge."));
+      setManualIp("");
+      setBlockReason("");
+      await refresh();
+    } catch (e) {
+      setError("IP block: " + e.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const releaseIpBlock = async (ip) => {
+    if (!window.confirm(
+      "Release the active RevelaAI application-edge block for " + ip + "?"
+    )) return;
+    setBusy("ip-unblock:" + ip);
+    setError("");
+    setNotice("");
+    try {
+      const result = await request("/api/sci/ip-guard/unblock", {
+        method: "POST",
+        body: JSON.stringify({
+          ip,
+          reason: "Administrator reviewed the source and released the temporary block.",
+        }),
+      });
+      setNotice(result.message || (ip + " was unblocked."));
+      await refresh();
+    } catch (e) {
+      setError("IP unblock: " + e.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const stageThreatIp = (threat) => {
+    const candidate = String(threat?.ip || "").trim();
+    if (!candidate) return;
+    setManualIp(candidate);
+    setBlockReason("Security scan reported repeated authentication failures from this source.");
+    setIpOperationResult(null);
+    document.getElementById("sci-ip-block-form")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const suspiciousIpCandidates = useMemo(() => {
+    const seen = new Set();
+    return (scanResult?.threats || []).filter((item) => {
+      const ip = String(item?.ip || "").trim();
+      if (!ip || seen.has(ip)) return false;
+      seen.add(ip);
+      return true;
+    });
+  }, [scanResult]);
+
   const counts = status?.counts || {};
   const threats = dashboard?.threats_last_24h ?? counts.threats ?? "—";
   const researchCount = dashboard?.research_count ?? counts.research ?? "—";
   const disasterCount = dashboard?.disasters_handled ?? counts.disasters ?? "—";
   const shieldState = status?.status || dashboard?.status || "awaiting connection";
+  const ipProtectionReady = ipGuard?.persistent === true && ipGuard?.status === "active";
   const ipProtectionReady = ipGuard?.persistent === true && ipGuard?.status === "active";
   const scanFindings = useMemo(() => {
     if (!scanResult) return 0;
@@ -430,6 +515,120 @@ export default function SciCoreDashboard() {
           Scope: blocks are enforced by RevelaAI's ASGI application middleware after the trusted client IP is resolved. They do not modify Render's Cloudflare edge, Render host firewall, Nginx, or the separate RevelaCode Backend service. Configure <code>SCI_CORE_IP_ALLOWLIST</code> for stable administrator egress IPs and the trusted proxy header before using automated blocking.
         </p>
       </Panel>
+
+
+        <Panel
+          title="Live IP Protection"
+          subtitle="Persistent exact-IP blocks, automatic brute-force response, audit history and administrator release."
+          icon={Globe}
+          action={<button type="button" onClick={refresh} disabled={!!busy} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 text-xs font-bold text-fg-secondary hover:bg-surface-3 disabled:opacity-50"><RefreshCw className="h-3.5 w-3.5"/> Refresh</button>}
+        >
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="rounded-xl border border-line bg-surface-2 p-3">
+              <p className="text-[10px] text-muted">Protection status</p>
+              <p className={"mt-1 text-sm font-black " + (ipProtectionReady ? "text-success" : "text-warning")}>{ipGuard?.status || "Not verified"}</p>
+              <p className="mt-1 text-[10px] text-muted">{ipGuard?.enforcement || "Awaiting backend"}</p>
+            </div>
+            <div className="rounded-xl border border-line bg-surface-2 p-3">
+              <p className="text-[10px] text-muted">Active IP blocks</p>
+              <p className="mt-1 text-xl font-black text-fg">{ipGuard?.active_block_count ?? ipGuard?.active_blocks?.length ?? "—"}</p>
+              <p className="mt-1 text-[10px] text-muted">Persisted in MongoDB</p>
+            </div>
+            <div className="rounded-xl border border-line bg-surface-2 p-3">
+              <p className="text-[10px] text-muted">Automatic trigger</p>
+              <p className="mt-1 text-sm font-black text-fg">{ipGuard?.automatic_blocking ? (ipGuard.auto_block_threshold + " failures / 5 min") : "Unavailable"}</p>
+              <p className="mt-1 text-[10px] text-muted">{ipGuard?.auto_block_duration_minutes || 30} min temporary block</p>
+            </div>
+          </div>
+
+          {!ipProtectionReady && <div role="alert" className="mt-3 rounded-xl border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
+            IP enforcement is not verified as active. {ipGuard?.error || "The backend has not confirmed persistent storage."}
+            Manual block controls stay disabled until the backend confirms MongoDB persistence. Configure MONGO_URI and the trusted Render client-IP header before enabling enforcement.
+          </div>}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-2 p-3 text-[11px] text-fg-secondary">
+            <span className="font-semibold">This connection's verified public IP:</span>
+            <code className="font-mono text-accent">{ipGuard?.client_ip || "Not resolved"}</code>
+            <span className="text-muted">· Self-block is prevented by the API.</span>
+          </div>
+
+          <form id="sci-ip-block-form" onSubmit={submitIpBlock} className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <h3 className="text-xs font-bold text-fg">Block a suspicious public IP</h3>
+              <p className="mt-1 text-[10px] leading-4 text-muted">Exact IPv4 or IPv6 only. Private addresses, CIDR ranges, allowlisted IPs and this administrator session's own IP are rejected.</p>
+            </div>
+            <label className="block text-xs font-semibold text-fg-secondary">IP address
+              <input value={manualIp} onChange={(event) => setManualIp(event.target.value)} required maxLength={64} placeholder="203.0.113.25"
+                className="mt-1.5 min-h-11 w-full rounded-xl border border-line bg-input px-3 font-mono text-sm text-fg outline-none placeholder:text-muted focus:border-accent/60"/>
+            </label>
+            <label className="block text-xs font-semibold text-fg-secondary">Block duration
+              <select value={blockDuration} onChange={(event) => setBlockDuration(event.target.value)}
+                className="mt-1.5 min-h-11 w-full rounded-xl border border-line bg-input px-3 text-sm text-fg outline-none focus:border-accent/60">
+                <option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="360">6 hours</option><option value="1440">24 hours</option><option value="10080">7 days</option>
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-fg-secondary sm:col-span-2">Reason for blocking
+              <textarea value={blockReason} onChange={(event) => setBlockReason(event.target.value)} required minLength={8} maxLength={300} rows={2}
+                placeholder="Describe the observed suspicious behaviour and supporting evidence…"
+                className="mt-1.5 w-full resize-y rounded-xl border border-line bg-input px-3 py-2.5 text-sm text-fg outline-none placeholder:text-muted focus:border-accent/60"/>
+              <span className="mt-1 block text-right text-[10px] text-muted">{blockReason.length}/300</span>
+            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-2">
+              <span className="text-[10px] text-muted">Requires current platform-admin authorization and explicit confirmation.</span>
+              <button type="submit" disabled={!ipProtectionReady || !!busy || manualIp.trim().length < 3 || blockReason.trim().length < 8}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-danger px-4 text-xs font-black text-inverse hover:bg-danger/85 disabled:cursor-not-allowed disabled:opacity-40">
+                <Ban className="h-4 w-4"/>{busy === "ip-block" ? "Blocking…" : "Confirm IP block"}
+              </button>
+            </div>
+          </form>
+
+          {ipOperationResult && <div role="status" className="mt-3 rounded-xl border border-success/20 bg-success/5 p-3 text-xs text-success">
+            <p className="font-bold">{ipOperationResult.ip} · {ipOperationResult.status}</p>
+            <p className="mt-1">Enforcement: {ipOperationResult.enforcement || "application_edge"} · expires: {ipOperationResult.expires_at || "not reported"}</p>
+            <p className="mt-1 text-[10px] text-success/75">Host firewall changed: {String(ipOperationResult.host_firewall_changed ?? false)}</p>
+          </div>}
+
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-xs font-bold text-fg">Active blocks</h3><span className="text-[10px] text-muted">{ipGuard?.active_blocks?.length || 0} listed</span></div>
+            {(ipGuard?.active_blocks || []).length ? <div className="space-y-2">
+              {ipGuard.active_blocks.map((item) => <div key={item.ip} className="flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-mono text-sm font-bold text-fg">{item.ip}</p>
+                  <p className="mt-1 break-words text-[11px] text-fg-secondary">{item.reason}</p>
+                  <p className="mt-1 text-[10px] text-muted">{item.source} · expires {item.expires_at || "unknown"} · by {item.created_by || "unknown"}</p>
+                </div>
+                <button type="button" onClick={() => releaseIpBlock(item.ip)} disabled={!ipProtectionReady || !!busy}
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-success/25 px-3 text-xs font-bold text-success hover:bg-success/10 disabled:opacity-40">
+                  <Unlock className="h-3.5 w-3.5"/>{busy === "ip-unblock:" + item.ip ? "Releasing…" : "Unblock"}
+                </button>
+              </div>)}
+            </div> : <p className="rounded-xl border border-dashed border-line p-4 text-center text-xs text-muted">{ipProtectionReady ? "No active IP blocks." : "Active block list unavailable until persistent protection is healthy."}</p>}
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-fg"><ShieldAlert className="h-4 w-4 text-warning"/> Recent failed-auth signals</h3>
+              {(ipGuard?.recent_auth_failures || []).length ? <div className="max-h-52 space-y-1 overflow-auto">
+                {ipGuard.recent_auth_failures.slice(0, 20).map((item, index) => <div key={item.ip + item.created_at + index} className="flex flex-wrap justify-between gap-2 rounded-lg bg-surface-2 px-2.5 py-2 text-[10px]">
+                  <span className="font-mono text-fg">{item.ip}</span><span className="text-muted">{item.path} · {item.created_at}</span>
+                </div>)}
+              </div> : <p className="rounded-lg bg-surface-2 p-3 text-[11px] text-muted">No persisted failed-auth events reported.</p>}
+            </div>
+            <div>
+              <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-fg"><Clock3 className="h-4 w-4 text-accent"/> Block audit trail</h3>
+              {(ipGuard?.recent_events || []).length ? <div className="max-h-52 space-y-1 overflow-auto">
+                {ipGuard.recent_events.slice(0, 20).map((item, index) => <div key={item.ip + item.created_at + index} className="rounded-lg bg-surface-2 px-2.5 py-2 text-[10px]">
+                  <div className="flex flex-wrap justify-between gap-2"><span className="font-mono font-bold text-fg">{item.ip}</span><span className="uppercase text-accent">{item.action}</span></div>
+                  <p className="mt-1 break-words text-muted">{item.reason} · {item.actor} · {item.created_at}</p>
+                </div>)}
+              </div> : <p className="rounded-lg bg-surface-2 p-3 text-[11px] text-muted">No IP block events have been recorded.</p>}
+            </div>
+          </div>
+
+          <p className="mt-4 rounded-lg border border-warning/20 bg-warning/5 p-3 text-[11px] leading-5 text-warning">
+            Scope: blocks are enforced by RevelaAI's ASGI application middleware after a trusted client IP is resolved. They do not modify Render's Cloudflare edge, Render host firewall, Nginx, or the separate RevelaCode Backend service. Configure <code>SCI_CORE_IP_ALLOWLIST</code> for stable administrator egress IPs and the trusted proxy header before using automated blocking.
+          </p>
+        </Panel>
 
         <Panel title="Disaster & Recovery Simulator" subtitle="Run controlled diagnostic scenarios and record the returned outcome." icon={Siren}>
           <form onSubmit={(e) => { e.preventDefault(); runAction("disaster", "/api/sci/disaster/simulate", { type: disasterType }, setDisasterResult, "Simulation response received and displayed."); }} className="space-y-3">
