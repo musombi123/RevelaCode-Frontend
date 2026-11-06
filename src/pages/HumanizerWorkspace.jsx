@@ -23,7 +23,6 @@ export default function HumanizerWorkspace() {
   const [pages, setPages] = useState([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [selection, setSelection] = useState({ start: 0, end: 0, text: "" });
-  const [style, setStyle] = useState("natural");
   const [suggestions, setSuggestions] = useState([]);
   const [accepted, setAccepted] = useState({});
   const [loading, setLoading] = useState(false);
@@ -83,7 +82,7 @@ export default function HumanizerWorkspace() {
       const headers = await authHeaders();
       const response = await fetch(API_BASE + "/api/humanizer/suggest", {
         method: "POST", headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ selected_text: selection.text, style }),
+        body: JSON.stringify({ selected_text: selection.text, style: "natural" }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "Could not generate suggestions.");
@@ -174,9 +173,6 @@ export default function HumanizerWorkspace() {
                 <textarea ref={editorRef} value={currentPage.text} onChange={(event) => setPages((previous) => previous.map((page,index) => index === pageIndex ? { ...page, text: event.target.value } : page))} onMouseUp={captureSelection} onKeyUp={captureSelection} onSelect={captureSelection} spellCheck className="min-h-[28rem] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 font-serif text-sm leading-7 text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:focus:ring-violet-950" placeholder="Extracted page text appears here…" />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-slate-500">{currentPage.text.length.toLocaleString()} characters · {currentPage.text.split(/\s+/).filter(Boolean).length} words</span><span className="text-xs text-slate-500">Selection: {selection.text.length} characters</span></div>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <select value={style} onChange={(event) => setStyle(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
-                    <option value="natural">Natural voice</option><option value="clear">Clearer wording</option><option value="concise">More concise</option><option value="formal">Formal tone</option>
-                  </select>
                   <button onClick={getSuggestions} disabled={loading || !selection.text.trim()} className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-40 dark:bg-violet-600 dark:hover:bg-violet-500">{loading ? "Processing…" : "Suggest alternatives for selection"}</button>
                 </div>
               </div>
