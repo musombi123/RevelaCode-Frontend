@@ -143,8 +143,6 @@ export default function InputBar({
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const attachmentMenuRef = useRef(null);
-  const [composerMode, setComposerMode] = useState("Adaptive");
-  const [quotaSnapshot, setQuotaSnapshot] = useState(null);
   const dragDepth = useRef(0);
 
   /* =======================================================
