@@ -67,6 +67,8 @@ export default function Sidebar({
   const rows = useMemo(() => chats.map((chat) => ({
     chat, title: resolveChatTitle(chat), auto: !chat.titleLocked,
   })), [chats]);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
 
   useEffect(() => {
     if (!onRenameChat) return;
@@ -109,7 +111,7 @@ export default function Sidebar({
     const toggleCollapse = () => setCollapsed((value) => !value);
     const renameActiveChat = (event) => {
       const id = event?.detail?.chatId;
-      const row = rows.find((item) => String(item.chat.id) === String(id));
+      const row = rowsRef.current.find((item) => String(item.chat.id) === String(id));
       if (!row) return;
       finishedRef.current = false;
       setConfirmId(null);
