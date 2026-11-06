@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { resolveChatTitle } from "@/components/utils/chatTitle";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useRevelaAISettings } from "@/ai/revelaAISettingsStore";
+import RevelaAIQuickSettings from "@/components/RevelaAIQuickSettings";
 
 const MAX_RENAME_LENGTH = 60;
 const PIN_STORAGE_KEY = "revelaai.pinned_chats.v1";
@@ -47,12 +49,14 @@ export default function Sidebar({
   activeChatId = null,
 }) {
   const { user } = useAuth();
+  const { settings, updateSection } = useRevelaAISettings();
   const [collapsed, setCollapsed] = useState(() => {
     try { return window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true"; }
     catch { return false; }
   });
   const [search, setSearch] = useState("");
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState(() => readStoredSet(PIN_STORAGE_KEY));
   const [confirmId, setConfirmId] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -60,6 +64,7 @@ export default function Sidebar({
   const inputRef = useRef(null);
   const searchRef = useRef(null);
   const asideRef = useRef(null);
+  const accountMenuRef = useRef(null);
   const finishedRef = useRef(false);
   const autoRenamed = useRef(new Set());
 
@@ -148,6 +153,22 @@ export default function Sidebar({
     document.addEventListener("keydown", trap);
     return () => document.removeEventListener("keydown", trap);
   }, [open, setOpen]);
+
+  useEffect(() => {
+    if (!accountOpen) return undefined;
+    const closeOutside = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) setAccountOpen(false);
+    };
+    const closeEscape = (event) => {
+      if (event.key === "Escape") setAccountOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+    };
+  }, [accountOpen]);
 
   useEffect(() => {
     if (!confirmId) return undefined;
@@ -402,20 +423,71 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <div className={"shrink-0 border-t border-line p-3 " + (collapsed ? "lg:px-2" : "")}>
-          <button type="button" onClick={() => { onOpenIdentity?.(); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
-            className={"flex min-h-12 w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-2 text-left hover:bg-surface-3 " + (collapsed ? "lg:justify-center lg:px-0" : "")}
-            aria-label="Open account, AI Identity and settings"
-            title="Account, AI Identity and settings">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-inverse">{initials}</span>
-            <span className={"min-w-0 flex-1 " + (collapsed ? "lg:hidden" : "")}>
-              <span className="block truncate text-xs font-bold text-fg">{user?.name || user?.full_name || "Your account"}</span>
-              <span className="block truncate text-[10px] text-muted">Powered by RevelaCode</span>
-            </span>
-            <span className={"rounded-full border border-accent/20 bg-accent/10 px-2 py-1 text-[9px] font-bold text-accent " + (collapsed ? "lg:hidden" : "")}>{planLabel}</span>
-            <Settings2 size={15} className={"text-muted " + (collapsed ? "lg:hidden" : "")}/>
-          </button>
+        <div className={"shrink-0 border-t border-line p-2.5 " + (collapsed ? "lg:px-2" : "")}>
+          <div ref={accountMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setAccountOpen((value) => !value)}
+              aria-expanded={accountOpen}
+              aria-controls="revelaai-account-menu"
+              aria-label="Open account and settings"
+              title="Account and settings"
+              className={"flex min-h-11 w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-2 text-left transition hover:bg-surface-3 " + (collapsed ? "lg:justify-center lg:px-0" : "")}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-inverse">{initials}</span>
+              <span className={"min-w-0 flex-1 " + (collapsed ? "lg:hidden" : "")}>
+                <span className="block truncate text-xs font-bold text-fg">{user?.name || user?.full_name || "Your account"}</span>
+                <span className="block truncate text-[10px] text-muted">Account · AI settings</span>
+              </span>
+              <span className={"rounded-full border border-accent/20 bg-accent/10 px-2 py-1 text-[9px] font-bold text-accent " + (collapsed ? "lg:hidden" : "")}>{planLabel}</span>
+              <Settings2 size={15} className={"shrink-0 text-muted " + (collapsed ? "lg:hidden" : "")}/>
+            </button>
 
+            {accountOpen && (
+              <div
+                id="revelaai-account-menu"
+                role="dialog"
+                aria-label="RevelaAI account and settings"
+                className={"absolute bottom-[calc(100%+8px)] left-0 z-[100] w-[min(320px,calc(100vw-1rem))] max-h-[min(76dvh,680px)] overflow-y-auto rounded-2xl border border-line bg-popover p-3 text-fg shadow-2xl " + (collapsed ? "lg:left-[calc(100%+8px)] lg:bottom-0" : "")}
+              >
+                <div className="mb-3 flex items-center gap-2 border-b border-line pb-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-inverse">{initials}</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold text-fg">{user?.name || user?.full_name || "Your account"}</p>
+                    <p className="truncate text-[10px] text-muted">{user?.contact || user?.email || planLabel}</p>
+                  </div>
+                </div>
+
+                <RevelaAIQuickSettings
+                  settings={settings}
+                  updateSection={updateSection}
+                  onOpenFull={() => {
+                    setAccountOpen(false);
+                    window.dispatchEvent(new CustomEvent("revelaai:settings-open"));
+                  }}
+                />
+
+                <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-line pt-3">
+                  <button type="button" onClick={() => { setAccountOpen(false); onOpenIdentity?.(); }}
+                    className="flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-[11px] font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg">
+                    <Sparkles size={14}/> AI Identity
+                  </button>
+                  <button type="button" onClick={() => { setAccountOpen(false); window.dispatchEvent(new CustomEvent("revelaai:research-open")); }}
+                    className="flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-[11px] font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg">
+                    <Search size={14}/> Search
+                  </button>
+                  <button type="button" onClick={() => { setAccountOpen(false); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
+                    className="flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2 text-[11px] font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg">
+                    <Settings2 size={14}/> All settings
+                  </button>
+                  <button type="button" onClick={() => { setAccountOpen(false); window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } })); }}
+                    className="flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-accent/25 bg-accent/5 px-2 text-[11px] font-semibold text-accent hover:bg-accent/10">
+                    <Sparkles size={14}/> Plans
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     </>
