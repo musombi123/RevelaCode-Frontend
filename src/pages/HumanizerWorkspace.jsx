@@ -189,7 +189,7 @@ export default function HumanizerWorkspace() {
                   <div className="mt-4 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
                     {suggestions.map((item) => (
                       <label key={item.id} className="block cursor-pointer rounded-xl border border-slate-200 p-3 hover:border-violet-300 dark:border-slate-700 dark:hover:border-violet-700">
-                        <div className="flex items-start gap-3"><input type="checkbox" checked={Boolean(accepted[item.id])} onChange={(event) => setAccepted((old) => ({ ...old, [item.id]: event.target.checked }))} className="mt-1 h-4 w-4 accent-violet-600" /><div className="min-w-0 flex-1"><p className="break-words text-xs text-slate-500">Replace “{item.original}” with</p><p className="mt-1 break-words text-sm font-semibold text-violet-700 dark:text-violet-300">{item.replacement}</p><p className="mt-2 text-xs text-slate-500">{item.reason}</p></div></div>
+                        <div className="flex items-start gap-3"><input type="checkbox" checked={Boolean(accepted[item.id])} onChange={(event) => setAccepted((old) => { const next = { ...old }; suggestions.filter((candidate) => candidate.start === item.start && candidate.end === item.end).forEach((candidate) => { delete next[candidate.id]; }); if (event.target.checked) next[item.id] = true; return next; })} className="mt-1 h-4 w-4 accent-violet-600" /><div className="min-w-0 flex-1"><p className="break-words text-xs text-slate-500">Replace “{item.original}” with</p><p className="mt-1 break-words text-sm font-semibold text-violet-700 dark:text-violet-300">{item.replacement}</p><p className="mt-2 text-xs text-slate-500">{item.reason}</p></div></div>
                       </label>
                     ))}
                   </div>
