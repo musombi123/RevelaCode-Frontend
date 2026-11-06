@@ -19,14 +19,13 @@ const API_BASE = String(
 ).trim().replace(/\/+$/, "");
 
 function errorMessage(payload, status) {
-  return (
-    payload?.detail?.message ||
-    payload?.error?.message ||
-    payload?.message ||
-    payload?.detail ||
-    payload?.error?.code ||
-    "Evolver request failed (HTTP " + status + ")."
-  );
+  const detail = payload?.detail?.message || payload?.error?.message ||
+    payload?.message || payload?.detail || payload?.error?.code;
+  if (typeof detail === "string" && detail.trim()) return detail.trim();
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item?.msg || item?.message || String(item)).join("; ");
+  }
+  return "Evolver request failed (HTTP " + status + ").";
 }
 
 async function requestEvolver(path, options = {}, authenticatedFetch) {
@@ -138,9 +137,14 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
   }, [authenticatedFetch, systemId, brainCategory]);
 
   useEffect(() => {
-    refresh(false);
-    const timer = window.setInterval(() => refresh(true), 45000);
-    return () => window.clearInterval(timer);
+    // Tool scope and learning domain are editable. Debounce those changes so
+    // typing does not launch a request for every keystroke.
+    const initial = window.setTimeout(() => refresh(false), 250);
+    const interval = window.setInterval(() => refresh(true), 45000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
   }, [refresh]);
 
   useEffect(() => {
