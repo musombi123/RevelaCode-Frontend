@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Sparkles, MessageCircle,
   GraduationCap, Trash2, Pencil, Check, X, Mic, Camera, WifiOff, Search,
@@ -44,10 +43,9 @@ function dateBucket(value) {
 
 export default function Sidebar({
   open, setOpen, chats = [], onNewChat, onSelectChat, onDeleteChat, onRenameChat,
-  onOpenVoice, onOpenVision, onOpenIdentity, freeMode = false, onToggleFreeMode,
+  onOpenVoice, onOpenVision, onOpenHumanizer, onOpenIdentity, freeMode = false, onToggleFreeMode,
   activeChatId = null,
 }) {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(() => {
     try { return window.localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true"; }
@@ -219,7 +217,7 @@ export default function Sidebar({
   };
 
   const openTool = () => {
-    navigate("/humanizer");
+    onOpenHumanizer?.();
     setOpen(false);
   };
 
