@@ -1871,6 +1871,52 @@ export default function AIAssistantDashboard({
     };
   }, [workspaceOpen, identityOpen, sidebarOpen]);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+    const updateViewport = () => {
+      document.documentElement.style.setProperty("--revelaai-visual-viewport-height", Math.max(0, viewport.height) + "px");
+      document.documentElement.style.setProperty("--revelaai-visual-viewport-offset", viewport.offsetTop + "px");
+    };
+    viewport.addEventListener("resize", updateViewport);
+    viewport.addEventListener("scroll", updateViewport);
+    updateViewport();
+    return () => {
+      viewport.removeEventListener("resize", updateViewport);
+      viewport.removeEventListener("scroll", updateViewport);
+      document.documentElement.style.removeProperty("--revelaai-visual-viewport-height");
+      document.documentElement.style.removeProperty("--revelaai-visual-viewport-offset");
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleShortcuts = (event) => {
+      const modifier = event.ctrlKey || event.metaKey;
+      const key = String(event.key || "").toLowerCase();
+      const active = document.activeElement;
+      const typing = Boolean(active?.matches?.("input, textarea, select, [contenteditable='true']"));
+      if (modifier && key === "k") {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent("revelaai:focus-chat-search"));
+      } else if (modifier && event.shiftKey && key === "o") {
+        event.preventDefault();
+        startNewChat();
+      } else if (modifier && key === "b") {
+        event.preventDefault();
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+          window.dispatchEvent(new CustomEvent("revelaai:toggle-sidebar-collapse"));
+        } else {
+          setSidebarOpen((value) => !value);
+        }
+      } else if (event.key === "/" && !modifier && !event.altKey && !event.shiftKey && !typing) {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent("revelaai:focus-composer-command"));
+      }
+    };
+    window.addEventListener("keydown", handleShortcuts);
+    return () => window.removeEventListener("keydown", handleShortcuts);
+  }, [startNewChat]);
+
   /* =======================================================
      UI
   ======================================================= */
