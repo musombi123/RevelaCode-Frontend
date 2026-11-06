@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" data-theme="dark" data-theme-mode="system">
   <head>
     <!-- ======================================================
          DOCUMENT BASICS
@@ -14,6 +14,30 @@
 
     <meta name="theme-color" content="#020617" />
     <meta name="color-scheme" content="dark light" />
+
+    <script>
+      (function () {
+        var mode = "system";
+        try {
+          mode = localStorage.getItem("theme") || "system";
+          if (!["light", "dark", "system"].includes(mode)) {
+            var cached = JSON.parse(localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
+            mode = cached && cached.appearance && ["light", "dark", "system"].includes(cached.appearance.theme)
+              ? cached.appearance.theme
+              : "system";
+          }
+        } catch (_) {
+          mode = "system";
+        }
+        var dark = mode === "dark" || (mode === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var root = document.documentElement;
+        root.dataset.themeMode = mode;
+        root.dataset.theme = dark ? "dark" : "light";
+        root.classList.toggle("dark", dark);
+        root.classList.toggle("light", !dark);
+        root.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
