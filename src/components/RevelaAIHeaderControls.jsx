@@ -110,17 +110,17 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         <Activity size={12}/><span className="truncate">Adaptive · {modelTier}</span>
       </span>
 
-      <div className="hidden xl:block">{modeButtons}</div>
+      <div className="hidden lg:block">{modeButtons}</div>
 
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:research-open"))}
-        aria-label="Open search" title="Search" className="hidden h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg xl:flex">
+        aria-label="Open search" title="Search" className="hidden h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg lg:flex">
         <Search size={17}/>
       </button>
 
       <div className="relative">
         <button type="button" onClick={() => { setQuickOpen((value) => !value); setAvatarOpen(false); }}
           aria-label="Quick settings and theme" title="Quick settings" aria-expanded={quickOpen}
-          className="hidden h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg lg:flex"
+          className="hidden h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary hover:bg-surface-2 hover:text-fg lg:flex"
           data-demo="theme-switch">
           <SlidersHorizontal size={17}/>
         </button>
@@ -130,10 +130,10 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
         </div>}
       </div>
 
-      <div className="relative hidden xl:block">
+      <div className="relative hidden lg:block">
         <button type="button" onClick={() => { setAvatarOpen((value) => !value); setQuickOpen(false); }}
           aria-label="Open account menu" aria-expanded={avatarOpen}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface-2 text-xs font-bold text-fg">
+          className="flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-full border border-line bg-surface-2 text-xs font-bold text-fg">
           {initials}
         </button>
         {avatarOpen && <div className="absolute right-0 top-12 z-[120] w-60 rounded-2xl border border-line bg-popover p-2 text-fg shadow-2xl">
@@ -146,15 +146,15 @@ export default function RevelaAIHeaderControls({ modelTier = "Checking", onSearc
             <Settings2 size={15}/> Personal settings
           </button>
           <button type="button" onClick={() => { setAvatarOpen(false); window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } })); }}
-            className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-left text-xs text-fg-secondary hover:bg-surface-2 hover:text-fg">
+            className="flex min-h-12 w-full items-center gap-2 rounded-xl px-3 text-left text-xs text-fg-secondary hover:bg-surface-2 hover:text-fg">
             <UserCircle2 size={15}/> Plan and account
           </button>
         </div>}
       </div>
 
-      <div className="xl:hidden relative">
+      <div className="relative lg:hidden">
         <button type="button" onClick={() => setOverflowOpen((value) => !value)} aria-label="More workspace controls"
-          aria-expanded={overflowOpen} className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary">
+          aria-expanded={overflowOpen} className="flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-xl border border-line bg-surface text-fg-secondary">
           <MoreHorizontal size={18}/>
         </button>
         {overflowOpen && <div className="absolute right-3 top-14 z-[120] w-[min(320px,calc(100vw-1.5rem))] rounded-2xl border border-line bg-popover p-3 text-fg shadow-2xl">
