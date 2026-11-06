@@ -72,7 +72,8 @@ test("fullscreen and AI header heights are compact and redundant mode labels are
 test("composer no longer renders a nested rounded border box", () => {
   assert.match(input, /"relative bg-transparent"/);
   assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
-  assert.doesNotMatch(input, /shadow-composer/);
+  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
+  assert.match(input, /"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl/);
   assert.match(input, /label="Attachments and tools"/);
   assert.match(input, /data-demo="ai-send-message"/);
 });
