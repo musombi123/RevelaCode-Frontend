@@ -3,13 +3,37 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 const ThemeContext = createContext(null);
 const VALID_THEMES = ["light", "dark", "system"];
 
+function resolveScheduledTheme(appearance = {}) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Nairobi",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date());
+    const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+    const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+    const now = hour * 60 + minute;
+    const [startHour, startMinute] = String(appearance.scheduled_start || "19:00").split(":").map(Number);
+    const [endHour, endMinute] = String(appearance.scheduled_end || "07:00").split(":").map(Number);
+    const start = (startHour || 0) * 60 + (startMinute || 0);
+    const end = (endHour || 0) * 60 + (endMinute || 0);
+    const dark = start > end ? now >= start || now < end : now >= start && now < end;
+    return dark ? "dark" : "light";
+  } catch {
+    return "system";
+  }
+}
+
 function readTheme() {
   try {
-    const saved = window.localStorage.getItem("theme");
-    if (VALID_THEMES.includes(saved)) return saved;
     const cached = JSON.parse(window.localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
-    const cachedTheme = cached?.appearance?.theme;
-    return VALID_THEMES.includes(cachedTheme) ? cachedTheme : "system";
+    const appearance = cached?.appearance || {};
+    if (appearance.theme === "scheduled") return resolveScheduledTheme(appearance);
+    if (VALID_THEMES.includes(appearance.theme)) return appearance.theme;
+
+    const saved = window.localStorage.getItem("theme");
+    return VALID_THEMES.includes(saved) ? saved : "system";
   } catch {
     return "system";
   }
@@ -45,7 +69,6 @@ export function ThemeProvider({ children }) {
     const media = typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-color-scheme: dark)")
       : null;
-
     const apply = () => {
       const next = applyResolvedTheme(root, theme, Boolean(media?.matches));
       setResolvedTheme(next);
@@ -54,9 +77,8 @@ export function ThemeProvider({ children }) {
     try {
       window.localStorage.setItem("theme", theme);
     } catch {
-      // The selected theme remains active for this session.
+      // Session theme remains active when storage is unavailable.
     }
-
     apply();
 
     if (theme === "system" && media) {
