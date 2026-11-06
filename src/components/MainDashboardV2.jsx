@@ -203,10 +203,10 @@ function FullscreenAIAssistant({
                       <code
                         className="
                           rounded
-                          bg-gray-200
+                          bg-surface-2
                           px-1
                           py-0.5
-                          dark:bg-gray-800
+                          
                         "
                       >
                         DASHBOARDS
