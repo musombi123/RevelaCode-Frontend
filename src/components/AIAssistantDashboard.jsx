@@ -20,6 +20,7 @@ import {
   Mic,
   Camera,
   WifiOff,
+  Pencil,
 } from "lucide-react";
 
 import Sidebar from "@/components/Sidebar";
@@ -1965,6 +1966,7 @@ export default function AIAssistantDashboard({
         ================================================= */}
 
         <header
+          data-demo="fullscreen-mode-bar"
           data-theme-surface="header"
           className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line bg-header px-3 sm:gap-3 sm:px-4"
         >
@@ -2006,18 +2008,17 @@ export default function AIAssistantDashboard({
                   className="shrink-0 text-emerald-400"
                 />
 
-                <h1
-                  className="
-                    truncate
-                    text-sm
-                    font-bold
-                    text-fg
-                  "
-                >
-                  {hasConversation
-                    ? chatTitle
-                    : "RevelaAI"}
-                </h1>
+                {hasConversation ? (
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:rename-active-chat", { detail: { chatId: activeChatId } }))}
+                    title="Edit conversation title" aria-label="Edit conversation title"
+                    className="flex min-w-0 items-center gap-1.5 rounded-md text-left text-sm font-bold text-fg hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    data-demo="chat-title">
+                    <span className="max-w-[34vw] truncate sm:max-w-[42vw]">{chatTitle}</span>
+                    <Pencil size={12} className="shrink-0 text-muted"/>
+                  </button>
+                ) : (
+                  <h1 className="truncate text-sm font-bold text-fg">RevelaAI</h1>
+                )}
               </div>
 
               <p
