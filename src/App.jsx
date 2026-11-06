@@ -49,7 +49,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 // These screens are also loaded lazily by the dashboard registry. Keep their
 // direct routes lazy as well so they can live in their own production chunks.
 const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));
-const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));
+const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));\nconst HumanizerWorkspace = React.lazy(() => import("./components/HumanizerWorkspace.jsx"));
 
 function SPAWrapper({ children }) {
   const { hasStarted, loading } = useAuth();
@@ -362,7 +362,7 @@ export default function App() {
                     : <PlatformWelcomePage />
                 }
               />
-              <Route path="/app" element={<InteractiveWorkspaceRoute />} />
+              <Route path="/app" element={<InteractiveWorkspaceRoute />} />\n              <Route path="/humanizer" element={<AuthGate><React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500" role="status">Loading Humanizer…</div>}><HumanizerWorkspace /></React.Suspense></AuthGate>} />
               <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
