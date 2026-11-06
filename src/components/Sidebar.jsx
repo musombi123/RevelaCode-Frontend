@@ -257,7 +257,7 @@ export default function Sidebar({
             else setOpen(false);
           }} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-fg-secondary hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:ml-auto">
+            className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-fg-secondary hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:ml-auto">
             {collapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
           </button>
         </div>
@@ -271,7 +271,7 @@ export default function Sidebar({
 
           <div className={"grid grid-cols-2 gap-2 " + (collapsed ? "lg:grid-cols-1" : "")}>
             <button type="button" onClick={() => { onOpenVoice?.(); setOpen(false); }} title="Talk to RevelaAI" aria-label="Voice"
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
               <Mic size={16}/><span className={collapsed ? "lg:hidden" : ""}>Voice</span>
             </button>
             <button type="button" onClick={() => { onOpenVision?.(); setOpen(false); }} title="Explore with vision" aria-label="Vision"
@@ -281,19 +281,19 @@ export default function Sidebar({
           </div>
 
           <button type="button" onClick={openTool} title="Open Humanizer tools" aria-label="Open tools"
-            className={"flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/35 hover:text-accent " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
+            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/35 hover:text-accent " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
             <FileText size={16}/><span className={collapsed ? "lg:hidden" : ""}>Tools · Humanizer</span>
           </button>
 
           <button type="button" role="switch" aria-checked={freeMode} onClick={() => onToggleFreeMode?.()}
             title={freeMode ? "Turn off weak-network mode" : "Enable weak-network mode"}
-            className={"flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2.5 text-left hover:border-accent/35 " + (collapsed ? "lg:px-0" : "")}>
+            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-2.5 text-left hover:border-accent/35 " + (collapsed ? "lg:px-0" : "")}>
             <WifiOff size={16} className={freeMode ? "text-accent" : "text-muted"}/>
             <span className={"min-w-0 flex-1 text-left text-xs font-semibold text-fg-secondary " + (collapsed ? "lg:hidden" : "")}>
               {freeMode ? "Weak-network mode on" : "Weak-network mode"}
             </span>
-            <span className={"relative h-5 w-9 shrink-0 rounded-full " + (freeMode ? "bg-accent" : "bg-line-strong") + (collapsed ? " lg:hidden" : "")}>
-              <span className={"absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all " + (freeMode ? "left-[18px]" : "left-0.5")}/>
+            <span className={"relative h-6 w-11 shrink-0 rounded-full " + (freeMode ? "bg-accent" : "bg-line-strong") + (collapsed ? " lg:hidden" : "")}>
+              <span className={"absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all " + (freeMode ? "left-[24px]" : "left-1")}/>
             </span>
           </button>
         </div>
@@ -369,7 +369,7 @@ export default function Sidebar({
                               className="rounded-lg p-2 text-muted hover:bg-surface-3"><X size={14}/></button>
                           </> : <>
                             <button type="button" onClick={() => togglePin(chat.id)} aria-label={pinned ? "Unpin chat" : "Pin chat"} title={pinned ? "Unpin" : "Pin"}
-                              className="rounded-lg p-2 text-muted opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-surface-3 hover:text-accent"><Pin size={13}/></button>
+                              className="rounded-lg p-2 text-muted opacity-100 transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 hover:bg-surface-3 hover:text-accent"><Pin size={13}/></button>
                             {onRenameChat && <button type="button" onClick={() => startRename(chat,title)} aria-label={"Rename chat: " + title} title="Rename"
                               className="rounded-lg p-2 text-muted opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-surface-3 hover:text-fg"><Pencil size={13}/></button>}
                             <button type="button" onClick={() => setConfirmId(chat.id)} aria-label={"Delete chat: " + title} title="Delete"
@@ -389,7 +389,7 @@ export default function Sidebar({
           <button type="button" onClick={() => { onOpenIdentity?.(); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
             className={"flex min-h-12 w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-2 text-left hover:bg-surface-3 " + (collapsed ? "lg:justify-center lg:px-0" : "")}
             aria-label="Open account and settings">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">{initials}</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-inverse">{initials}</span>
             <span className={"min-w-0 flex-1 " + (collapsed ? "lg:hidden" : "")}>
               <span className="block truncate text-xs font-bold text-fg">{user?.name || user?.full_name || "Your account"}</span>
               <span className="block truncate text-[10px] text-muted">Powered by RevelaCode</span>
@@ -398,7 +398,7 @@ export default function Sidebar({
             <Settings2 size={15} className={"text-muted " + (collapsed ? "lg:hidden" : "")}/>
           </button>
           <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelaai:settings-open"))}
-            title="Settings" aria-label="Open settings" className="mt-1 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
+            title="Settings" aria-label="Open settings" className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-xs text-muted hover:bg-surface-2 hover:text-fg">
             <Settings2 size={15}/><span className={collapsed ? "lg:hidden" : ""}>Settings</span>
           </button>
         </div>
