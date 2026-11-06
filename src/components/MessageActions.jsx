@@ -19,7 +19,7 @@ function ActionButton({
   label,
   onClick,
   active = false,
-  activeClass = "text-emerald-400",
+  activeClass = "text-accent",
   danger = false,
   disabled = false,
   children,
@@ -32,8 +32,8 @@ function ActionButton({
       title={label}
       aria-label={label}
       aria-pressed={active || undefined}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 disabled:cursor-wait ${
-        active ? activeClass : danger ? "text-red-400 hover:text-red-300" : "text-gray-500 hover:text-white"
+      className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-surface-2 disabled:cursor-wait ${
+        active ? activeClass : danger ? "text-danger hover:text-red-300" : "text-muted hover:text-fg"
       }`}
     >
       {children}
@@ -143,7 +143,7 @@ export default function MessageActions({
       {!isError && (
         <>
           <ActionButton label={copied ? "Copied" : "Copy"} onClick={handleCopy}>
-            {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+            {copied ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
           </ActionButton>
 
           <ActionButton
@@ -151,7 +151,7 @@ export default function MessageActions({
             onClick={handleDownload}
             disabled={downloading}
             active={downloadFailed}
-            activeClass="text-red-400"
+            activeClass="text-danger"
           >
             {downloading ? (
               <Loader2 size={14} className="animate-spin" />
@@ -181,7 +181,7 @@ export default function MessageActions({
           <ActionButton
             label="Bad response"
             active={message.feedback === "dislike"}
-            activeClass="text-red-400"
+            activeClass="text-danger"
             onClick={() => onFeedback?.(message.id, "dislike")}
           >
             <ThumbsDown size={14} />
@@ -193,7 +193,7 @@ export default function MessageActions({
         <ActionButton
           label="Delete chart"
           onClick={handleDelete}
-          activeClass="text-red-400"
+          activeClass="text-danger"
           danger
         >
           <Trash2 size={14} />
