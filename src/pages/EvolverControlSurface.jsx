@@ -2,16 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
   Brain,
   CheckCircle2,
-  ChevronDown,
-  CircleHelp,
   Cpu,
-  FileCheck2,
-  FlaskConical,
-  GitBranch,
-  Layers3,
+  Layers,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -395,7 +389,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
             </Field>
           </div>
           <button type="submit" disabled={busy === "evolution" || objective.trim().length < 8 || !toolName.trim()} className={"mt-4 " + buttonClass}>
-            {busy === "evolution" ? <Loader2 className="h-4 w-4 animate-spin"/> : <GitBranch className="h-4 w-4"/>}
+            {busy === "evolution" ? <Loader2 className="h-4 w-4 animate-spin"/> : <Layers className="h-4 w-4"/>}
             Create Mongo-backed proposal
           </button>
         </form>
@@ -429,7 +423,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
                     <p className="mt-2 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{(item.hypotheses || []).slice(0, 2).join(" ")}</p>
                   </div>
                   <button type="button" onClick={() => setSelectedProposalId(item.proposal_id)} className={secondaryButtonClass}>
-                    {selectedProposalId === item.proposal_id ? "Selected" : "Review proposal"} <ArrowRight className="h-3.5 w-3.5"/>
+                    {selectedProposalId === item.proposal_id ? "Selected" : "Review proposal"} 
                   </button>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -449,11 +443,11 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
                 {selectedProposalId === item.proposal_id && (
                   <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 dark:border-slate-800 xl:grid-cols-2">
                     <form onSubmit={evaluateProposal} className="min-w-0">
-                      <h5 className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100"><FlaskConical className="h-4 w-4 text-indigo-500"/> Submit candidate measurements</h5>
+                      <h5 className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100"><Cpu className="h-4 w-4 text-indigo-500"/> Submit candidate measurements</h5>
                       <p className="mt-1 text-[10px] leading-4 text-slate-500">Only submit real candidate measurements with traceable evidence. These inputs are reviewed as supplied evidence, not cryptographically attested CI proof.</p>
                       <textarea value={evaluationJson} onChange={(event) => setEvaluationJson(event.target.value)} rows={6} spellCheck={false} className={inputClass + " font-mono text-[10px] leading-5"}/>
                       <button type="submit" disabled={busy === "evaluation"} className={"mt-3 " + secondaryButtonClass}>
-                        {busy === "evaluation" ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileCheck2 className="h-4 w-4"/>} Record evaluation
+                        {busy === "evaluation" ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Record evaluation
                       </button>
                     </form>
 
@@ -488,7 +482,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
           </div>
         ) : (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center dark:border-slate-700">
-            <GitBranch className="mx-auto h-6 w-6 text-slate-400"/>
+            <Layers className="mx-auto h-6 w-6 text-slate-400"/>
             <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-200">No evolution proposals in this scope yet</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Create a measurable proposal above. It will be recorded in MongoDB and available after process restarts.</p>
           </div>
@@ -507,7 +501,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
           </button>
         </form>
         <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-          <h3 className="flex items-center gap-2 text-xs font-black text-slate-900 dark:text-white"><Layers3 className="h-4 w-4 text-indigo-500"/> Capability inventory</h3>
+          <h3 className="flex items-center gap-2 text-xs font-black text-slate-900 dark:text-white"><Layers className="h-4 w-4 text-indigo-500"/> Capability inventory</h3>
           <p className="mt-1 text-[10px] leading-4 text-slate-500">This inventory is not a second tool registry. Genesis owns executable signed tools.</p>
           {errors.capabilities && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">{errors.capabilities}</p>}
           <div className="mt-3 max-h-64 space-y-2 overflow-auto pr-1">
@@ -533,7 +527,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
       )}
 
       <footer className="flex flex-wrap items-start gap-2 border-t border-slate-200 bg-slate-50 px-4 py-4 text-[10px] leading-5 text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 sm:px-6">
-        <CircleHelp className="mt-0.5 h-4 w-4 flex-shrink-0"/>
+        <Activity className="mt-0.5 h-4 w-4 flex-shrink-0"/>
         <p>MongoDB is the durable Evolver learning ledger. The browser only holds form state. Production self-modification, automatic merge, physical actuation and automatic tool activation remain disabled; risk-tier approvals stay with Genesis and the designated owner.</p>
       </footer>
     </section>
