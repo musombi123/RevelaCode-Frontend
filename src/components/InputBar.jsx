@@ -87,7 +87,7 @@ function ToolButton({ label, onClick, disabled, active, children }) {
       aria-pressed={active}
       title={label}
       className={[
-        "group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+        "group relative flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl",
         "transition-colors duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         "disabled:cursor-not-allowed disabled:opacity-35",
@@ -704,7 +704,7 @@ export default function InputBar({
                   onChange={(event) => setLiveVisionPrompt(event.target.value)}
                   maxLength={1200}
                   rows={2}
-                  className="w-full resize-y rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-fg outline-none placeholder:text-muted focus:border-emerald-400/50"
+                  className="w-full min-h-12 resize-y rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-fg outline-none placeholder:text-muted focus:border-accent/50"
                   placeholder="Describe the surroundings, read a sign, identify visible objects..."
                 />
                 {liveVisionResult && (
@@ -795,7 +795,7 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={stopCamera}
-                className="rounded-2xl border border-line px-4 text-sm text-fg-secondary transition hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
+                className="min-h-12 rounded-2xl border border-line px-4 text-sm text-fg-secondary transition hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
               >
                 Cancel
               </button>
@@ -855,7 +855,7 @@ export default function InputBar({
               <button
                 type="button"
                 onClick={() => setAttachedFile(null)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
+                className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
                 aria-label="Remove attachment"
               >
                 <X size={14} />
@@ -886,7 +886,7 @@ export default function InputBar({
 
           {slashMatches.length > 0 && (
             <div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">
-              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><b>{command}</b><span className="text-muted">{label}</span></button>)}
+              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-12 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><b>{command}</b><span className="text-muted">{label}</span></button>)}
             </div>
           )}
           <textarea
@@ -932,7 +932,7 @@ export default function InputBar({
             <div
               role="radiogroup"
               aria-label="Voice recognition language"
-              className="flex items-center rounded-lg bg-surface-2 p-0.5"
+              className="hidden items-center rounded-lg bg-surface-2 p-0.5 min-[360px]:flex"
             >
               {VOICE_LANGUAGES.map((language) => {
                 const selected = voiceLanguage === language.code;
@@ -946,7 +946,7 @@ export default function InputBar({
                     title={language.name}
                     onClick={() => setVoiceLanguage(language.code)}
                     className={[
-                      "rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
+                      "min-h-12 rounded-md px-2 py-1 text-[11px] font-semibold leading-none transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                       selected
                         ? "bg-surface-3 text-fg"
