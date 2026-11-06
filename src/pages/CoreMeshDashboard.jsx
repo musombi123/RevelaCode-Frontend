@@ -35,6 +35,13 @@ function coreMeshErrorMessage(payload, status) {
     typeof payload?.detail === "string" ? payload.detail : null,
     payload?.code,
   ];
+  const code = String(payload?.error?.code || payload?.code || "").trim().toLowerCase();
+  if (code === "session_revoked") {
+    return "Your RevelaCode session token was invalidated by an account or security update. Sign out, sign in again to obtain a fresh token, then refresh Core Mesh. The core services have not yet been checked, so this is not evidence that ZERO, Genesis, or Infinite Mind is offline.";
+  }
+  if (code === "token_expired" || code === "invalid_token") {
+    return "The current RevelaCode access token is no longer valid. Sign out, sign in again, then refresh Core Mesh. Core reachability has not yet been checked.";
+  }
   const message = candidates.find((value) => typeof value === "string" && value.trim());
   if (message) return message.trim();
   const structured = payload?.error ?? payload?.detail;
@@ -126,14 +133,16 @@ function DataPoint({ label, value }) {
   );
 }
 
-function StatusPill({ reachable }) {
+function StatusPill({ reachable, unknown = false }) {
   const classes = reachable
     ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-    : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+    : unknown
+      ? "border-slate-300 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+      : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
   return (
     <span className={"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] " + classes}>
-      <span className={"h-1.5 w-1.5 rounded-full " + (reachable ? "bg-emerald-500" : "bg-amber-500")} />
-      {reachable ? "Reachable" : "Unavailable"}
+      <span className={"h-1.5 w-1.5 rounded-full " + (reachable ? "bg-emerald-500" : unknown ? "bg-slate-400" : "bg-amber-500")} />
+      {reachable ? "Reachable" : unknown ? "Unknown" : "Unavailable"}
     </span>
   );
 }
@@ -217,6 +226,7 @@ export default function CoreMeshDashboard() {
   }, [refresh, refreshSignedTools, refreshConfigurationHealth]);
 
   const cores = snapshot?.cores || {};
+  const hasSnapshot = Boolean(snapshot);
   const onlineCount = useMemo(
     () => Object.values(cores).filter((core) => core?.reachable).length,
     [cores],
@@ -392,9 +402,9 @@ export default function CoreMeshDashboard() {
             </button>
           </div>
           <div className="relative mt-5 flex flex-wrap items-center gap-2">
-            <span className={"inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold " + (onlineCount === 3 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>
-              <span className={"h-1.5 w-1.5 rounded-full " + (onlineCount === 3 ? "bg-emerald-500" : "bg-amber-500")} />
-              {loading ? "Checking cores…" : (onlineCount + "/3 cores reachable")}
+            <span className={"inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold " + (hasSnapshot && onlineCount === 3 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>
+              <span className={"h-1.5 w-1.5 rounded-full " + (hasSnapshot && onlineCount === 3 ? "bg-emerald-500" : "bg-amber-500")} />
+              {loading ? "Checking cores…" : hasSnapshot ? (onlineCount + "/3 cores reachable") : error ? "Status unavailable" : "Status not yet received"}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-[10px] font-bold text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <ShieldCheck className="h-3.5 w-3.5" /> Human approval required
@@ -463,12 +473,12 @@ export default function CoreMeshDashboard() {
         )}
 
         {error && (
-          <div className="m-5 flex items-start gap-3 rounded-2xl border border-rose-300/60 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200">
+          <div className="m-5 flex items-start gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="font-bold">Status request failed</p>
+              <p className="font-bold">Core Mesh status unavailable</p>
               <p className="mt-1 break-words text-xs leading-5">{error}</p>
-              <p className="mt-1 text-xs opacity-80">Confirm the RevelaAI service is healthy and your signed-in session is valid, then refresh.</p>
+              <p className="mt-1 text-xs opacity-80">No core reachability result has been received. Resolve the status request first, then refresh to obtain the live ZERO, Genesis and Infinite Mind probes.</p>
             </div>
           </div>
         )}
@@ -495,7 +505,7 @@ export default function CoreMeshDashboard() {
                 <div className="p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <span className={"flex h-10 w-10 items-center justify-center rounded-xl " + colors.icon}><Icon className="h-5 w-5" /></span>
-                    <StatusPill reachable={Boolean(core.reachable)} />
+                    <StatusPill reachable={Boolean(core.reachable)} unknown={!hasSnapshot} />
                   </div>
                   <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">{item.title}</h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{item.subtitle}</p>
