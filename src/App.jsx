@@ -363,7 +363,7 @@ export default function App() {
                     : <PlatformWelcomePage />
                 }
               />
-              <Route path="/app" element={<InteractiveWorkspaceRoute />} />\n              <Route path="/humanizer" element={<AuthGate><React.Suspense fallback={<div className="flex min-h-[45vh] items-center justify-center p-6 text-sm text-slate-500" role="status">Loading Humanizer…</div>}><HumanizerWorkspace /></React.Suspense></AuthGate>} />
+              <Route path="/app" element={<InteractiveWorkspaceRoute />} />
               <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
