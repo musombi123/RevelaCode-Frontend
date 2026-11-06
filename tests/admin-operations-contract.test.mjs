@@ -40,7 +40,9 @@ test("Support Admin receives a separate oversight, Study, policy and handbook wo
   const dashboard = source("src/components/support/SupportDashboard.jsx");
   const sidebar = source("src/components/support/SupportSidebar.jsx");
   const operations = source("src/components/support/SupportAdminOperations.jsx");
-  assert.match(pages, /"support", "support_admin"/);
+  const roleResolver = source("src/auth/workspaceRoles.mjs");
+  assert.match(pages, /hasSupportWorkspaceRole\(user\)/);
+  assert.match(roleResolver, /"support",\s*"support_agent",\s*"support_admin"/);
   for (const key of ['"team"', '"study"', '"policies"', '"handbook"']) {
     assert.ok(sidebar.includes(key), `Expected Support Admin navigation for ${key}`);
     assert.ok(dashboard.includes(`activeView === ${key}`), `Expected Support Admin view for ${key}`);
