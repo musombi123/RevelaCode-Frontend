@@ -58,7 +58,7 @@ export default function PremiumPlansStar({ className = "" }) {
       <Star className="h-5 w-5" strokeWidth={2.2} fill={isPremium ? "currentColor" : "none"} color="currentColor"/>
       <span className="hidden text-xs font-bold leading-none sm:inline">Premium</span>
       {isPremium ? (
-        <span className="absolute -right-1 -top-1 rounded-full border-2 border-surface bg-premium px-1.5 py-0.5 text-[8px] font-black leading-none text-white">
+        <span className="absolute -right-1 -top-1 rounded-full border-2 border-surface bg-premium px-1.5 py-0.5 text-[8px] font-black leading-none text-inverse">
           PRO
         </span>
       ) : null}
