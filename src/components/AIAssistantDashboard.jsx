@@ -29,6 +29,7 @@ import InputBar from "@/components/InputBar";
 import RevelaAIHeaderControls from "@/components/RevelaAIHeaderControls";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
+import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import { useAuth } from "@/context/AuthContext";
 import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
@@ -2101,6 +2102,7 @@ export default function AIAssistantDashboard({
             </div>
             <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
               <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
+                <ProductivityToolsPanel onSend={sendTextMessage} />
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   onSend={sendMessage}
@@ -2131,6 +2133,7 @@ export default function AIAssistantDashboard({
             </div>
             <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-3 backdrop-blur-sm sm:px-5 sm:pb-3">
               <div data-demo="ai-chat-input" className="mx-auto w-full max-w-[768px]">
+                <ProductivityToolsPanel onSend={sendTextMessage} />
                 <div data-demo="ai-vision-tools">
                   <InputBar
                     placeholder={hubInputPlaceholder}
