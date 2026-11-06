@@ -12,6 +12,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   Zap,
 } from "lucide-react";
 
