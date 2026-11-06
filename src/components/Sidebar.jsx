@@ -405,7 +405,8 @@ export default function Sidebar({
         <div className={"shrink-0 border-t border-line p-3 " + (collapsed ? "lg:px-2" : "")}>
           <button type="button" onClick={() => { onOpenIdentity?.(); window.dispatchEvent(new CustomEvent("revelaai:settings-open")); }}
             className={"flex min-h-12 w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-2 text-left hover:bg-surface-3 " + (collapsed ? "lg:justify-center lg:px-0" : "")}
-            aria-label="Open account and settings">
+            aria-label="Open account, AI Identity and settings"
+            title="Account, AI Identity and settings">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-inverse">{initials}</span>
             <span className={"min-w-0 flex-1 " + (collapsed ? "lg:hidden" : "")}>
               <span className="block truncate text-xs font-bold text-fg">{user?.name || user?.full_name || "Your account"}</span>
