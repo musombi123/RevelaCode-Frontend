@@ -392,7 +392,6 @@ export default function AIAssistantDashboard({
 
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
-  const activeBrainHubLabel = "Adaptive intelligence";
   const hubInputPlaceholder = "Message RevelaAI…";
 
   const [
@@ -1829,14 +1828,7 @@ export default function AIAssistantDashboard({
     activeChat?.title ||
     "RevelaAI";
 
-  const latestAssistantMessage = [...messages].reverse().find((item) => item.role === "assistant" && item.status === "done");
-  const modelTier = freeMode || latestAssistantMessage?.metadata?.text_only_fallback || latestAssistantMessage?.metadata?.freeMode
-    ? "Reduced mode"
-    : latestAssistantMessage?.metadata?.model_tier === "backup" || latestAssistantMessage?.metadata?.fallback
-      ? "Backup"
-      : latestAssistantMessage?.metadata?.model_tier === "full" || latestAssistantMessage?.metadata?.networkUsed
-        ? "Full"
-        : "Checking";
+
 
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   useEffect(() => {
