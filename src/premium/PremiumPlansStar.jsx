@@ -53,7 +53,7 @@ export default function PremiumPlansStar({ className = "" }) {
       title="Premium plans"
       data-premium-plans-star="true"
       data-demo="premium-star"
-      className={"relative inline-flex h-10 w-auto min-w-10 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl border border-premium/30 bg-surface px-2.5 text-premium shadow-sm hover:bg-premium/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium/60 active:scale-95 " + className}
+      className={"relative inline-flex h-12 min-h-12 w-auto min-w-12 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-xl border border-premium/30 bg-surface px-2.5 text-premium shadow-sm hover:bg-premium/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium/60 active:scale-95 " + className}
     >
       <Star className="h-5 w-5" strokeWidth={2.2} fill={isPremium ? "currentColor" : "none"} color="currentColor"/>
       <span className="hidden text-xs font-bold leading-none sm:inline">Premium</span>
