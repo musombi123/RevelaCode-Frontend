@@ -16,7 +16,6 @@ import {
   RefreshCw,
   ShieldCheck,
   Sparkles,
-  WandSparkles,
 } from "lucide-react";
 
 const API_BASE = String(
@@ -336,7 +335,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
       <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-2">
         <form onSubmit={createInvention} className="min-w-0 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/15 sm:p-5">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300"><WandSparkles className="h-5 w-5"/></span>
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300"><Sparkles className="h-5 w-5"/></span>
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Invent a new capability</h3>
               <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">Genesis/Core-One researches and prepares an invention proposal. It is not automatically merged, published or deployed.</p>
