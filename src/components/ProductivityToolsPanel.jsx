@@ -27,7 +27,7 @@ function authHeaders() {
 async function api(path, options = {}) {
   const response = await fetch(API_BASE + path, {
     ...options,
-    headers: { Accept: "application/json", ...authHeaders(), ...(options.headers || {}) },
+    headers: { Accept: "application/json", "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", ...authHeaders(), ...(options.headers || {}) },
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
