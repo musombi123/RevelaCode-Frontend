@@ -482,7 +482,7 @@ export default function Sidebar({
                   </button>
                   <button type="button" onClick={() => { setAccountOpen(false); window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } })); }}
                     className="flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-accent/25 bg-accent/5 px-2 text-[11px] font-semibold text-accent hover:bg-accent/10">
-                    <Sparkles size={14}/> Plans
+                    <Sparkles size={14}/> Plan & billing
                   </button>
                 </div>
               </div>
