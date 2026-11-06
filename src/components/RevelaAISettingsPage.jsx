@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check, RotateCcw, Save, Settings2 } from "lucide-react";
+import { Check, RotateCcw, Save, Settings2, Sun, Moon, Monitor, Clock3 } from "lucide-react";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 
 const SECTIONS = [
@@ -52,6 +52,10 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
   const { setTheme } = useTheme();
   const current = (section) => ({ ...defaults[section], ...(settings[section] || {}) });
   const set = (section, key, value) => updateSection?.(section, { [key]: value });
+  const chooseTheme = (value) => {
+    if (["light", "dark", "system"].includes(value)) setTheme(value);
+    set("appearance", "theme", value);
+  };
   useEffect(() => {
     const appearance = current("appearance");
     const theme = appearance.theme;
@@ -107,7 +111,17 @@ export default function RevelaAISettingsPage({ settings = {}, updateSection, res
     <section className="min-w-0 rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <div className="mb-5 flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-accent"><Settings2 size={17}/><span className="text-xs font-bold uppercase tracking-wider">Personal settings</span></div><h2 className="mt-1 text-xl font-bold text-fg">{SECTIONS.find(([id]) => id === active)?.[1]}</h2><p className="mt-1 text-xs text-muted">{SECTIONS.find(([id]) => id === active)?.[2]}</p></div><button type="button" onClick={() => resetSection?.(active)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-xs text-fg-secondary hover:bg-surface-2"><RotateCcw size={14}/> Reset</button></div>
       {active === "appearance" && <div className="grid gap-3 sm:grid-cols-2">
-        <div data-demo="theme-switch">{select("theme","Theme",[["light","Light"],["dark","Dark"],["system","System"],["scheduled","Scheduled"]])}</div>
+        <div className="sm:col-span-2" data-demo="theme-switch"><Field label="Theme">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[[ "light", "Light", Sun ], [ "dark", "Dark", Moon ], [ "system", "System", Monitor ], [ "scheduled", "Scheduled", Clock3 ]].map(([value, label, Icon]) => (
+              <button key={value} type="button" onClick={() => chooseTheme(value)} aria-pressed={section.theme === value}
+                className={"flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold " +
+                  (section.theme === value ? "border-accent/45 bg-accent/10 text-accent" : "border-line bg-surface text-fg-secondary hover:bg-surface-2")}>
+                <Icon size={15}/>{label}
+              </button>
+            ))}
+          </div>
+        </Field></div>
         {section.theme==="scheduled"&&<><Field label="Dark mode starts"><Input value={section.scheduled_start||"19:00"} onChange={value=>set(active,"scheduled_start",value)} type="time"/></Field><Field label="Light mode starts"><Input value={section.scheduled_end||"07:00"} onChange={value=>set(active,"scheduled_end",value)} type="time"/></Field></>}
         {select("accent","Accent colour",[["emerald","Emerald"],["blue","Blue"],["violet","Violet"],["amber","Amber"],["rose","Rose"],["cyan","Cyan"],["custom","Custom"]])}
         {section.accent==="custom"&&<Field label="Custom accent"><Input type="color" value={section.custom_accent||"#10b981"} onChange={value=>set(active,"custom_accent",value)}/></Field>}
