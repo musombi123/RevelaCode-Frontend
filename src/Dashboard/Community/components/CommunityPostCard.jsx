@@ -456,8 +456,11 @@ export default function CommunityPostCard({
   const [liked, setLiked] =
     useState(
       Boolean(
-        post?.liked ||
-          post?.is_liked ||
+        post?.user_reacted ??
+          post?.is_reacted ??
+          post?.liked_by_user ??
+          post?.liked ??
+          post?.is_liked ??
           post?.user_liked
       )
     );
@@ -497,24 +500,18 @@ export default function CommunityPostCard({
     useState("");
 
   const [localLikes, setLocalLikes] =
-    useState(
-      Number(
-        post?.likes_count ??
-          post?.like_count ??
-          post?.likes ??
-          0
-      )
-    );
+    useState(() => {
+      const value = post?.reactions_count ?? post?.reaction_count ?? post?.likes_count ?? post?.like_count ?? post?.likes ?? 0;
+      const count = Number(value);
+      return Number.isFinite(count) ? Math.max(0, count) : 0;
+    });
 
   const [localComments, setLocalComments] =
-    useState(
-      Number(
-        post?.comments_count ??
-          post?.comment_count ??
-          post?.comments ??
-          0
-      )
-    );
+    useState(() => {
+      const value = post?.comments_count ?? post?.comment_count ?? (Array.isArray(post?.comments) ? post.comments.length : post?.comments) ?? 0;
+      const count = Number(value);
+      return Number.isFinite(count) ? Math.max(0, count) : 0;
+    });
 
   const [commentsOpen, setCommentsOpen] = useState(false);
 
