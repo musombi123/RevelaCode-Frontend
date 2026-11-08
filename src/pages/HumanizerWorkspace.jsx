@@ -296,9 +296,9 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">RevelaAI · Writing tool</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-fg sm:text-3xl">Selective Humanizer</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-secondary">Improve only the passage you select. Local alternatives are instant; Gemini drafts only when you request them.</p>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">RevelaAI · Writing Studio</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-fg sm:text-3xl">Humanizer Studio</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-secondary">A focused document studio for precise, user-approved edits. Paste text or open a PDF, review every suggestion, then export your revision.</p>
           </div>
           {pages.length > 0 && (
             <button onClick={exportText} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg-secondary hover:bg-surface-2">
