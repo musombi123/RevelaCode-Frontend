@@ -35,6 +35,7 @@ import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
 import ConnectionStatusBanner from "./ConnectionStatusBanner.jsx";
+import SDAQuarterlyBackgroundSync from "./faith/SDAQuarterlyBackgroundSync.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
@@ -1445,6 +1446,7 @@ const BIASHARA_SECTION_KEYS = new Set(
               : "min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
           >
             <ConnectionStatusBanner />
+            <SDAQuarterlyBackgroundSync />
 
             {!showShellHeader ? (
               <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-2.5 shadow-sm dark:border-amber-900/50 dark:bg-slate-900">
