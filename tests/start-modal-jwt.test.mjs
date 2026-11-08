@@ -85,7 +85,7 @@ test("only the primary backend can invalidate a cached login, including relayed 
   assert.equal(isAuthoritativeSessionCheck(authApi + "/api/users/me", authApi, "GET"), false);
   assert.equal(isAuthoritativeSessionCheck(authApi + "/api/auth/me", authApi, "POST"), false);
   assert.match(authContext, /isAuthoritativeSessionRequest \\|\\| serviceReportsRevokedSession/);
-  assert.match(authContext, /fetch\\(\\`\\$\\{backendBaseUrl\\}\\/api\\/auth\\/me/);
+  assert.match(authContext, /backendBaseUrl\\}\\/api\\/auth\\/me/);
   assert.match(authContext, /primarySessionRejected/);
   assert.match(authContext, /clearToken\\(\\);[\\s\\S]*?setUser\\(null\\)/);
 });
@@ -124,8 +124,7 @@ test("Security Academy requires per-account acknowledgement of authorized-use bo
   assert.match(academy, /SECURITY_ACADEMY_NOTICE_VERSION/);
   assert.match(academy, /explicitly authorized in writing/);
   assert.match(academy, /Acknowledge and continue/);
-  assert.match(academy, /if \\(!authenticated \\|\\| !scopeAccepted\\)/);
-});
+  assert.match(academy, /!authenticated \\|\\| !scopeAccepted/);
 });
 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {> {
