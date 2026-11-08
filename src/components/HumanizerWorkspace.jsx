@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, FileText, Loader2, Sparkles, Upload } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, FileText, Loader2, ShieldAlert, Sparkles, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -23,7 +23,7 @@ async function readResponse(response) {
 
 export default function HumanizerWorkspace() {
   const navigate = useNavigate();
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, authFetch } = useAuth();
   const fileInput = useRef(null);
   const pageEditor = useRef(null);
   const [file, setFile] = useState(null);
@@ -35,9 +35,64 @@ export default function HumanizerWorkspace() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [complianceStatus, setComplianceStatus] = useState("loading");
+  const [humanizerNotice, setHumanizerNotice] = useState(null);
+  const [complianceError, setComplianceError] = useState("");
 
   const currentPage = pages[activePage] || null;
   const acceptedCount = useMemo(() => Object.values(accepted).filter(Boolean).length, [accepted]);
+
+  useEffect(() => {
+    let active = true;
+    const loadCompliance = async () => {
+      if (!user || isGuest) {
+        setComplianceStatus("required");
+        return;
+      }
+      setComplianceStatus("loading");
+      setComplianceError("");
+      try {
+        const [noticeResponse, acknowledgementResponse] = await Promise.all([
+          authFetch(`${COMPLIANCE_API_BASE}/api/compliance/notices?feature=humanizer`, { method: "GET" }),
+          authFetch(`${COMPLIANCE_API_BASE}/api/compliance/acknowledgements`, { method: "GET" }),
+        ]);
+        const noticePayload = await noticeResponse.json().catch(() => ({}));
+        const acknowledgementPayload = await acknowledgementResponse.json().catch(() => ({}));
+        if (!noticeResponse.ok || !acknowledgementResponse.ok || noticePayload.success === false || acknowledgementPayload.success === false) {
+          throw new Error(noticePayload.message || acknowledgementPayload.message || "Could not load the Humanizer use notice.");
+        }
+        const notice = noticePayload.notice;
+        if (!notice?.version || !notice?.body) throw new Error("The Humanizer use notice is unavailable.");
+        if (!active) return;
+        setHumanizerNotice(notice);
+        const acknowledgement = acknowledgementPayload.acknowledgements?.humanizer;
+        setComplianceStatus(acknowledgement?.version === notice.version ? "accepted" : "required");
+      } catch (err) {
+        if (!active) return;
+        setComplianceStatus("error");
+        setComplianceError(err.message || "Could not verify the Humanizer notice.");
+      }
+    };
+    loadCompliance();
+    return () => { active = false; };
+  }, [user?.id, isGuest, authFetch]);
+
+  const acceptHumanizerNotice = async () => {
+    if (!humanizerNotice?.version) return;
+    setComplianceError("");
+    try {
+      const response = await authFetch(`${COMPLIANCE_API_BASE}/api/compliance/acknowledgements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feature: "humanizer", version: humanizerNotice.version, accepted: true }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success === false) throw new Error(payload.message || "Could not save your acknowledgement.");
+      setComplianceStatus("accepted");
+    } catch (err) {
+      setComplianceError(err.message || "Could not save your acknowledgement.");
+    }
+  };
 
   const uploadPdf = async (nextFile) => {
     if (!nextFile) return;
@@ -160,6 +215,22 @@ export default function HumanizerWorkspace() {
           </div>
           {pages.length > 0 && <button onClick={downloadText} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold dark:border-slate-700">Export revised text</button>}
         </header>
+
+        {complianceStatus !== "accepted" && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/20 sm:p-5" aria-live="polite">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" size={19}/>
+              <div className="min-w-0">
+                <h2 className="font-bold text-amber-950 dark:text-amber-100">Before using Humanizer</h2>
+                {complianceStatus === "loading" && <p className="mt-2 text-sm text-amber-900 dark:text-amber-200">Checking the current use notice…</p>}
+                {humanizerNotice && <><p className="mt-2 text-sm font-semibold text-amber-950 dark:text-amber-100">{humanizerNotice.title}</p><p className="mt-1 text-sm leading-6 text-amber-900 dark:text-amber-200">{humanizerNotice.body}</p></>}
+                {complianceError && <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">{complianceError}</p>}
+                <button type="button" onClick={acceptHumanizerNotice} disabled={!humanizerNotice || complianceStatus === "loading"} className="mt-4 rounded-xl bg-amber-900 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950">I have read and understand</button>
+                <p className="mt-2 text-[11px] text-amber-800 dark:text-amber-300">Your acknowledgement is saved to your RevelaCode account and is renewed if this notice materially changes.</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">

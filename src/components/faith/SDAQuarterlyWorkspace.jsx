@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpen, CalendarDays, ExternalLink, RefreshCw } from "lucide-react";
+import { BookOpen, CalendarDays, ExternalLink, RefreshCw, Sparkles, WifiOff } from "lucide-react";
+import SdaLessonAIChat from "./SdaLessonAIChat.jsx";
+import { readCachedApiResponse, writeCachedApiResponse } from "@/services/offlineHubSync.js";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -51,13 +53,17 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [aiLesson, setAiLesson] = useState(null);
 
   const sourceUrl = `https://www.sabbath.school/LessonBook?quarter=${quarter}&year=${year}`;
+  const cacheKey = `revelacode_sda_quarter:${year}:${quarter}`;
+  const [offlineMode, setOfflineMode] = useState(typeof navigator !== "undefined" && !navigator.onLine);
 
   const loadQuarter = async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
     setError("");
+    setOfflineMode(typeof navigator !== "undefined" && !navigator.onLine);
 
     try {
       const response = await fetch(
@@ -73,11 +79,30 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
       if (!response.ok) {
         throw new Error(payload?.message || payload?.error || `Quarter request failed (${response.status}).`);
       }
-      setMaterials(Array.isArray(payload?.materials) ? payload.materials : []);
+      const freshMaterials = Array.isArray(payload?.materials) ? payload.materials : [];
+      setMaterials(freshMaterials);
+      window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
+      const cachePayload = { materials: freshMaterials, savedAt: new Date().toISOString(), version: payload?.version || payload?.updated_at || "" };
+      await writeCachedApiResponse("public:sda-quarterly", `${API}/api/study/sda/quarter/${year}/${quarter}`, cachePayload);
+      try { localStorage.setItem(cacheKey, JSON.stringify(cachePayload)); } catch { /* IndexedDB remains the durable offline cache. */ }
     } catch (loadError) {
-      console.error("SDA Quarterly loading error:", loadError);
-      setError(loadError?.message || "Unable to load SDA Quarterly lessons.");
-      setMaterials([]);
+      let cached = null;
+      try {
+        const cachedResult = await readCachedApiResponse("public:sda-quarterly", `${API}/api/study/sda/quarter/${year}/${quarter}`);
+        cached = cachedResult.hit ? cachedResult.payload : null;
+      } catch { cached = null; }
+      if (!cached) {
+        try { cached = JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { cached = null; }
+      }
+      window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
+      if (Array.isArray(cached?.materials) && cached.materials.length) {
+        setMaterials(cached.materials);
+        setOfflineMode(true);
+        setError("Poor connection. Showing your downloaded SDA Quarterly lessons.");
+      } else {
+        setError(typeof navigator !== "undefined" && !navigator.onLine ? "No internet connection. Connect to download this quarter." : "Poor connection. SDA Quarterly could not refresh right now.");
+        setMaterials([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,9 +111,19 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
 
   useEffect(() => {
     loadQuarter();
+    // Revalidate the current quarter periodically while Faith remains open.
+    const refreshTimer = window.setInterval(() => loadQuarter({ silent: true }), 6 * 60 * 60 * 1000);
+    return () => window.clearInterval(refreshTimer);
     // Quarter selection intentionally controls this request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, quarter]);
+
+  useEffect(() => {
+    const updateConnection = () => setOfflineMode(!navigator.onLine);
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    return () => { window.removeEventListener("online", updateConnection); window.removeEventListener("offline", updateConnection); };
+  }, []);
 
   const sortedMaterials = useMemo(() => {
     return [...materials].sort((left, right) => {
@@ -142,7 +177,7 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-amber-200/70 bg-white/70 px-4 py-3 dark:border-amber-900/40 dark:bg-gray-950/30 sm:px-5">
-          <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortedMaterials.length} imported daily lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}</p>
+          <div className="flex flex-wrap items-center gap-2"><p className="text-xs font-semibold text-gray-600 dark:text-gray-300">{sortedMaterials.length} daily lesson{sortedMaterials.length === 1 ? "" : "s"} · Q{quarter} {year}</p>{offlineMode && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"><WifiOff size={11}/> Offline copy</span>}</div>
           <button type="button" onClick={() => loadQuarter({ silent: true })} disabled={refreshing || loading} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
           </button>
@@ -168,7 +203,8 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
             const dayLabel = meta.day || "";
             const summary = String(material?.description || material?.content || "").replace(/\s+/g, " ").trim();
             return (
-              <button key={lessonId(material) || `${year}-${quarter}-${index}`} type="button" onClick={() => openLesson(material)} className="group flex min-h-[128px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-800 sm:p-4">
+              <div key={lessonId(material) || `${year}-${quarter}-${index}`} className="group flex min-h-[150px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-800 sm:p-4">
+                <button type="button" onClick={() => openLesson(material)} className="flex flex-1 flex-col text-left">
                 <div className="flex w-full items-start justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                     <BookOpen size={12} /> {lessonLabel}
@@ -180,7 +216,11 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
                 {meta.memory_text && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">Memory text: {meta.memory_text}</p>}
                 {!meta.memory_text && summary && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">{summary}</p>}
                 <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-amber-700 dark:text-amber-300">Open lesson <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
-              </button>
+                </button>
+                <button type="button" onClick={() => setAiLesson((current) => lessonId(current) === lessonId(material) ? null : material)} className="mt-3 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-900 hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200">
+                  <Sparkles size={14}/> {lessonId(aiLesson) === lessonId(material) ? "Close AI Chat" : "AI Chat"}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -196,6 +236,8 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
           </a>
         </section>
       )}
+
+      {aiLesson && <SdaLessonAIChat key={lessonId(aiLesson)} material={aiLesson} onClose={() => setAiLesson(null)} />}
 
       {sortedMaterials.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-gray-800 dark:bg-gray-900">

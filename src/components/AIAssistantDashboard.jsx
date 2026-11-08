@@ -311,6 +311,28 @@ export default function AIAssistantDashboard({
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
   ].join(" ");
+    const complianceApiBaseValue = String(
+    import.meta.env.VITE_REVELACODE_API_URL ||
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    "https://revelacode-backend.onrender.com"
+  ).trim();
+  const complianceApiBase = complianceApiBaseValue.endsWith("/")
+    ? complianceApiBaseValue.slice(0, -1)
+    : complianceApiBaseValue;
+  const hubNoticeFeature = ({
+    faith: "faith_content",
+    bible: "faith_content",
+    prophecy: "faith_content",
+    education: "elimu_assistant",
+    shamba: "shamba_advisory",
+    biashara: "biashara_insights",
+  })[activeHub] || "";
+  const requiredNoticeFeatures = useMemo(
+    () => Array.from(new Set(["ai_chat", hubNoticeFeature].filter(Boolean))),
+    [hubNoticeFeature]
+  );
+
 
   const userScope =
     user?.id ||
@@ -344,6 +366,10 @@ export default function AIAssistantDashboard({
     useState(false);
   const [humanizerOpen, setHumanizerOpen] = useState(false);
   const [humanizerSeedText, setHumanizerSeedText] = useState("");
+  const [complianceStatus, setComplianceStatus] = useState("loading");
+  const [complianceNotices, setComplianceNotices] = useState([]);
+  const [complianceError, setComplianceError] = useState("");
+
   // The WelcomeScreen launches the very same camera control used by InputBar.
   const [visionReady, setVisionReady] = useState(false);
   const visionLauncherRef = useRef(null);
@@ -360,6 +386,82 @@ export default function AIAssistantDashboard({
   // The same centrally managed trials/prices/checkout UI is reused in RevelaAI.
   const [identityOpen, setIdentityOpen] = useState(false);
   const identityDialogRef = useRef(null);
+  useEffect(() => {
+    let active = true;
+    const loadRequiredNotices = async () => {
+      setComplianceStatus("loading");
+      setComplianceError("");
+      try {
+        const noticePayloads = await Promise.all(requiredNoticeFeatures.map(async (feature) => {
+          const response = await fetch(`${complianceApiBase}/api/compliance/notices?feature=${encodeURIComponent(feature)}`, {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.success === false || !payload.notice?.version) {
+            throw new Error(payload.message || `The ${feature} notice is unavailable.`);
+          }
+          return { feature, ...payload.notice };
+        }));
+        let acknowledgements = {};
+        if (user && !isGuest && typeof authFetch === "function") {
+          const response = await authFetch(`${complianceApiBase}/api/compliance/acknowledgements`, {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.success === false) {
+            throw new Error(payload.message || "Could not verify your saved acknowledgements.");
+          }
+          acknowledgements = payload.acknowledgements || {};
+        } else {
+          for (const notice of noticePayloads) {
+            try {
+              if (localStorage.getItem(`revela_compliance_ack:${notice.feature}:${notice.version}`) === "true") {
+                acknowledgements[notice.feature] = { version: notice.version };
+              }
+            } catch { /* Local acknowledgement is unavailable in private storage mode. */ }
+          }
+        }
+        if (!active) return;
+        setComplianceNotices(noticePayloads);
+        setComplianceStatus(noticePayloads.every((notice) => acknowledgements[notice.feature]?.version === notice.version) ? "accepted" : "required");
+      } catch (error) {
+        if (!active) return;
+        setComplianceStatus("error");
+        setComplianceError(error.message || "Could not load the required use notices.");
+      }
+    };
+    loadRequiredNotices();
+    return () => { active = false; };
+  }, [requiredNoticeFeatures, complianceApiBase, user?.id, isGuest, authFetch]);
+
+  const acceptRequiredNotices = async () => {
+    setComplianceError("");
+    try {
+      if (user && !isGuest && typeof authFetch === "function") {
+        for (const notice of complianceNotices) {
+          const response = await authFetch(`${complianceApiBase}/api/compliance/acknowledgements`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ feature: notice.feature, version: notice.version, accepted: true }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || payload.success === false) {
+            throw new Error(payload.message || `Could not save the ${notice.feature} acknowledgement.`);
+          }
+        }
+      } else {
+        for (const notice of complianceNotices) {
+          localStorage.setItem(`revela_compliance_ack:${notice.feature}:${notice.version}`, "true");
+        }
+      }
+      setComplianceStatus("accepted");
+    } catch (error) {
+      setComplianceError(error.message || "Could not save your acknowledgement.");
+    }
+  };
+
   const [freeMode, setFreeMode] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -845,6 +947,11 @@ export default function AIAssistantDashboard({
           return;
         }
 
+        if (selectedToolCommand !== "/humanize" && complianceStatus !== "accepted") {
+          setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
+          return;
+        }
+
         // A selected Humanizer tool opens its embedded workspace directly.
         // Tool selection itself is local state; the Humanizer service is called
         // only when the user runs an operation inside that workspace.
@@ -858,6 +965,7 @@ export default function AIAssistantDashboard({
           return;
         }
         sendLockRef.current = true;
+        window.dispatchEvent(new CustomEvent("revelacode:ai-interaction"));
 
         const currentMessages =
           messages;
@@ -1432,6 +1540,11 @@ export default function AIAssistantDashboard({
           const isNetworkFailure =
             error instanceof TypeError ||
             /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
+          if (isNetworkFailure) {
+            window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
+          } else {
+            window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
+          }
           const recentContext = currentMessages
             .filter((item) => item.role === "user" || item.role === "assistant")
             .slice(-6)
@@ -1445,7 +1558,7 @@ export default function AIAssistantDashboard({
             : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
           const visibleText = localFallback
             ? localFallback + "\n\n" + localFallbackNotice
-            : (error?.message || "Request failed. Please try again.");
+            : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
 
           if (localFallback) {
             void recordConversationTurn({
@@ -1508,6 +1621,7 @@ export default function AIAssistantDashboard({
         user,
         freeMode,
         authFetch,
+        complianceStatus,
       ]
     );
 
@@ -1658,7 +1772,7 @@ export default function AIAssistantDashboard({
 
   const regenerateResponse = useCallback(
     async (assistantId) => {
-      if (!activeChatId || assistantId !== regenerableId) return;
+      if (complianceStatus !== "accepted" || !activeChatId || assistantId !== regenerableId) return;
 
       const chatId = activeChatId;
       const index = messages.length - 1;
@@ -1814,7 +1928,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub, authFetch]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub, authFetch, complianceStatus]
   );
 
   /* =======================================================
@@ -2088,6 +2202,27 @@ export default function AIAssistantDashboard({
 
           <span className="w-1 shrink-0" aria-hidden="true"/>
         </header>
+
+        {!humanizerOpen && complianceStatus !== "accepted" && (
+          <section className="shrink-0 border-b border-amber-300/30 bg-amber-50 px-4 py-3 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100" aria-live="polite">
+            <div className="mx-auto flex w-full max-w-[900px] items-start gap-3">
+              <ShieldCheck size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300"/>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-bold">Before using RevelaAI</h2>
+                {complianceStatus === "loading" && <p className="mt-1 text-xs">Loading current use notices…</p>}
+                {complianceNotices.map((notice) => (
+                  <div key={notice.feature} className="mt-2">
+                    <p className="text-xs font-bold">{notice.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-amber-900 dark:text-amber-200">{notice.body}</p>
+                  </div>
+                ))}
+                {complianceError && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{complianceError}</p>}
+                <button type="button" onClick={acceptRequiredNotices} disabled={complianceStatus === "loading" || complianceStatus === "error" || !complianceNotices.length} className="mt-3 min-h-9 rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950">I have read and understand</button>
+                <p className="mt-1 text-[10px] text-amber-800 dark:text-amber-300">Acknowledgements are versioned. A material notice update requires a new acknowledgement.</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* =================================================
             WORKSPACE BODY

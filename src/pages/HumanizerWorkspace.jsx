@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+const API_BASE_VALUE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").trim();
+const API_BASE = API_BASE_VALUE.endsWith("/") ? API_BASE_VALUE.slice(0, -1) : API_BASE_VALUE;
+const COMPLIANCE_API_BASE_VALUE = String(import.meta.env.VITE_REVELACODE_API_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "https://revelacode-backend.onrender.com").trim();
+const COMPLIANCE_API_BASE = COMPLIANCE_API_BASE_VALUE.endsWith("/") ? COMPLIANCE_API_BASE_VALUE.slice(0, -1) : COMPLIANCE_API_BASE_VALUE;
 
 function saveText(filename, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -42,6 +45,8 @@ function mapAcceptedRangeToOriginal(page, pageNumber, start, end, replacement, a
 export default function HumanizerWorkspace({ embedded = false, initialText = "", onExportToChat = null }) {
   const auth = useAuth();
   const authFetch = auth?.authFetch;
+  const currentUser = auth?.user;
+  const isGuest = auth?.isGuest;
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
   const [pastedText, setPastedText] = useState("");
@@ -57,6 +62,59 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
   const [geminiDraft, setGeminiDraft] = useState(null);
   const [acceptedEdits, setAcceptedEdits] = useState([]);
   const [manualTextEdited, setManualTextEdited] = useState(false);
+  const [complianceStatus, setComplianceStatus] = useState("loading");
+  const [humanizerNotice, setHumanizerNotice] = useState(null);
+  const [complianceError, setComplianceError] = useState("");
+
+
+  useEffect(() => {
+    let active = true;
+    const loadNotice = async () => {
+      if (!currentUser || isGuest || typeof authFetch !== "function") {
+        setComplianceStatus("required");
+        return;
+      }
+      setComplianceStatus("loading");
+      try {
+        const [noticeResponse, acknowledgementResponse] = await Promise.all([
+          authFetch(`${COMPLIANCE_API_BASE}/api/compliance/notices?feature=humanizer`, { method: "GET" }),
+          authFetch(`${COMPLIANCE_API_BASE}/api/compliance/acknowledgements`, { method: "GET" }),
+        ]);
+        const noticePayload = await noticeResponse.json().catch(() => ({}));
+        const acknowledgementPayload = await acknowledgementResponse.json().catch(() => ({}));
+        if (!noticeResponse.ok || !acknowledgementResponse.ok || noticePayload.success === false || acknowledgementPayload.success === false) {
+          throw new Error(noticePayload.message || acknowledgementPayload.message || "Could not verify the Humanizer use notice.");
+        }
+        const notice = noticePayload.notice;
+        if (!notice?.version || !notice?.body) throw new Error("The Humanizer use notice is unavailable.");
+        if (!active) return;
+        setHumanizerNotice(notice);
+        setComplianceStatus(acknowledgementPayload.acknowledgements?.humanizer?.version === notice.version ? "accepted" : "required");
+      } catch (error) {
+        if (!active) return;
+        setComplianceStatus("error");
+        setComplianceError(error.message || "Could not load the Humanizer use notice.");
+      }
+    };
+    loadNotice();
+    return () => { active = false; };
+  }, [currentUser?.id, isGuest, authFetch]);
+
+  async function acceptHumanizerNotice() {
+    if (!humanizerNotice?.version) return;
+    setComplianceError("");
+    try {
+      const response = await authFetch(`${COMPLIANCE_API_BASE}/api/compliance/acknowledgements`, {
+        method: "POST",
+        body: JSON.stringify({ feature: "humanizer", version: humanizerNotice.version, accepted: true }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success === false) throw new Error(payload.message || "Could not save your acknowledgement.");
+      setComplianceStatus("accepted");
+    } catch (error) {
+      setComplianceError(error.message || "Could not save your acknowledgement.");
+    }
+  }
 
   useEffect(() => {
     const source = String(initialText || "").trim();
@@ -102,6 +160,7 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
   }
 
   function loadPastedText() {
+    if (complianceStatus !== "accepted") { setError("Review and acknowledge the Humanizer use notice before continuing."); return; }
     const source = String(pastedText || "").trim();
     if (!source) {
       setError("Paste or type the text you want to humanize first.");
@@ -129,6 +188,7 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
   }
 
   async function uploadPdf() {
+    if (complianceStatus !== "accepted") { setError("Review and acknowledge the Humanizer use notice before continuing."); return; }
     if (!file) return;
     setLoading(true); setError(""); setNotice("");
     try {
@@ -154,6 +214,7 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
   }
 
   async function getSuggestions() {
+    if (complianceStatus !== "accepted") { setError("Review and acknowledge the Humanizer use notice before continuing."); return; }
     if (!selection.text.trim()) { setError("Highlight a word or phrase in the page text first."); return; }
     setLoading(true); setError(""); setNotice("");
     try {
@@ -176,6 +237,7 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
 
 
   async function generateWithGemini() {
+    if (complianceStatus !== "accepted") { setError("Review and acknowledge the Humanizer use notice before continuing."); return; }
     if (!selection.text.trim()) { setError("Highlight the exact passage you want Gemini to produce first."); return; }
     setLoading(true); setError(""); setNotice("");
     try {
@@ -307,6 +369,17 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
             </button>
           )}
         </header>
+
+        {complianceStatus !== "accepted" && (
+          <section className="rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100" aria-live="polite">
+            <h2 className="text-sm font-bold">Before using Humanizer</h2>
+            {complianceStatus === "loading" && <p className="mt-2 text-xs">Checking the current use notice…</p>}
+            {humanizerNotice && <><p className="mt-2 text-xs font-bold">{humanizerNotice.title}</p><p className="mt-1 text-sm leading-6 text-amber-900 dark:text-amber-200">{humanizerNotice.body}</p></>}
+            {complianceError && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{complianceError}</p>}
+            <button type="button" onClick={acceptHumanizerNotice} disabled={!humanizerNotice || complianceStatus === "loading" || complianceStatus === "error"} className="mt-3 min-h-10 rounded-xl bg-amber-900 px-4 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950">I have read and understand</button>
+            <p className="mt-2 text-[10px] leading-4 text-amber-800 dark:text-amber-300">Your acknowledgement is stored against your RevelaCode account and renewed when this notice materially changes.</p>
+          </section>
+        )}
 
         <section className="rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="humanizer-upload-title">
           <div className="flex flex-wrap items-center justify-between gap-3">

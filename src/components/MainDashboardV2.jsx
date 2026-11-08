@@ -34,6 +34,8 @@ import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
+import SystemHomeNotifications from "./SystemHomeNotifications.jsx";
+import NetworkStatusBanner from "./NetworkStatusBanner.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
@@ -400,9 +402,33 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
       return;
     }
 
+    if (view === "ai") {
+      try {
+        if (localStorage.getItem("revelacode_ai_workspace_priority") === "true") {
+          setActiveView("ai");
+          setAIFullscreenOpen(true);
+          setSidebarOpen(false);
+          setMobileCategoryOpen(null);
+          return;
+        }
+      } catch { /* Navigation remains available when browser storage is restricted. */ }
+    }
+
     setActiveView(view);
     setSidebarOpen(false);
     setMobileCategoryOpen(null);
+  }, []);
+
+  useEffect(() => {
+    const recordAIUsage = () => {
+      try {
+        const interactions = Number(localStorage.getItem("revelacode_ai_workspace_interactions") || 0) + 1;
+        localStorage.setItem("revelacode_ai_workspace_interactions", String(interactions));
+        if (interactions >= 8) localStorage.setItem("revelacode_ai_workspace_priority", "true");
+      } catch { /* AI workspace remains accessible without usage preference storage. */ }
+    };
+    window.addEventListener("revelacode:ai-interaction", recordAIUsage);
+    return () => window.removeEventListener("revelacode:ai-interaction", recordAIUsage);
   }, []);
 
   useEffect(() => {
@@ -1332,7 +1358,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
                 {/* Notifications */}
 
-                <Notifications />
+                <Notifications onNavigate={handleNavigate} />
 
                 {/* Avatar */}
 
@@ -1396,6 +1422,8 @@ const BIASHARA_SECTION_KEYS = new Set(
               <Menu size={19} />
             </button>
           )}
+
+          <NetworkStatusBanner />
 
           {/* =================================================
               DASHBOARD CONTENT
@@ -1497,6 +1525,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                 )}
               </ErrorBoundary>
             </Suspense>
+            {activeView === "home" && (
+              <SystemHomeNotifications onNavigate={handleNavigate} />
+            )}
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}

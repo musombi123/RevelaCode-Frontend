@@ -3,6 +3,7 @@
 import React, {
   useMemo,
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -177,8 +178,20 @@ function formatRelativeTime(timestamp) {
 // COMPONENT
 // ============================================================
 
-export default function NotificationsBell() {
+export default function NotificationsBell({ onNavigate }) {
   const [open, setOpen] = useState(false);
+  const [systemNotifications, setSystemNotifications] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("revelacode_system_notifications") || "[]"); } catch { return []; }
+  });
+
+  useEffect(() => {
+    const sync = () => {
+      try { setSystemNotifications(JSON.parse(localStorage.getItem("revelacode_system_notifications") || "[]")); } catch { setSystemNotifications([]); }
+    };
+    window.addEventListener("revelacode:system-notification", sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener("revelacode:system-notification", sync); window.removeEventListener("storage", sync); };
+  }, []);
 
   const {
     notifications,
@@ -196,36 +209,41 @@ export default function NotificationsBell() {
   // ==========================================================
 
   const displayNotifications = useMemo(() => {
-    return [...notifications].sort(
-      (a, b) => {
-        const aTime = new Date(
-          a.timestamp || 0
-        ).getTime();
-
-        const bTime = new Date(
-          b.timestamp || 0
-        ).getTime();
-
-        return bTime - aTime;
-      }
-    );
-  }, [notifications]);
+    return [...systemNotifications, ...notifications].sort((a, b) => {
+      const aTime = new Date(a.timestamp || 0).getTime();
+      const bTime = new Date(b.timestamp || 0).getTime();
+      return bTime - aTime;
+    });
+  }, [notifications, systemNotifications]);
 
   // ==========================================================
   // HANDLE CLICK
   // ==========================================================
 
-  const handleNotificationClick = async (
-    notification
-  ) => {
-    if (!notification.read) {
+  const handleNotificationClick = async (notification) => {
+    if (notification.system) {
+      const updated = systemNotifications.map((item) =>
+        String(item.id) === String(notification.id) ? { ...item, read: true } : item
+      );
+      setSystemNotifications(updated);
+      try {
+        localStorage.setItem("revelacode_system_notifications", JSON.stringify(updated));
+      } catch { /* Session state still updates. */ }
+    } else if (!notification.read) {
       await markAsRead(notification.id);
     }
 
-    // Future:
-    // if (notification.url) {
-    //   window.open(notification.url, "_blank");
-    // }
+    const rawTarget = String(notification.hub || notification.destination || notification.target || "").toLowerCase();
+    const destination = ({
+      ai: "ai", revelaai: "ai", faith: "faith", scripture: "faith",
+      elimu: "education", school: "education", biashara: "biashara",
+      shamba: "shamba", community: "community", jumuiya: "community", home: "home",
+    })[rawTarget];
+    if (destination) onNavigate?.(destination);
+    else if (notification.url || notification.download_url) {
+      window.open(notification.url || notification.download_url, "_blank", "noopener,noreferrer");
+    }
+    setOpen(false);
   };
 
   // ==========================================================
@@ -275,7 +293,7 @@ export default function NotificationsBell() {
       >
         <Bell className="h-5 w-5" />
 
-        {unreadCount > 0 && (
+        {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 0 && (
           <span
             className="
               absolute
@@ -297,9 +315,9 @@ export default function NotificationsBell() {
               dark:ring-slate-950
             "
           >
-            {unreadCount > 99
+            {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 99
               ? "99+"
-              : unreadCount}
+              : unreadCount + systemNotifications.filter((item) => !item.read).length}
           </span>
         )}
       </button>
@@ -414,8 +432,8 @@ export default function NotificationsBell() {
                       dark:text-slate-400
                     "
                   >
-                    {unreadCount > 0
-                      ? `${unreadCount} unread`
+                    {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 0
+                      ? `${unreadCount + systemNotifications.filter((item) => !item.read).length} unread`
                       : "You're all caught up"}
                   </p>
                 </div>
@@ -490,7 +508,7 @@ export default function NotificationsBell() {
               <div className="max-h-[70vh] overflow-y-auto">
                 {/* LOADING */}
 
-                {loading && (
+                {loading && !displayNotifications.length && (
                   <div
                     className="
                       flex
@@ -532,7 +550,7 @@ export default function NotificationsBell() {
 
                 {/* ERROR */}
 
-                {!loading && error && (
+                {!loading && error && !displayNotifications.length && (
                   <div
                     className="
                       px-5
@@ -674,7 +692,6 @@ export default function NotificationsBell() {
                 {/* NOTIFICATIONS */}
 
                 {!loading &&
-                  !error &&
                   displayNotifications.length >
                     0 && (
                     <div>
