@@ -1340,7 +1340,7 @@ export default function CommunityDashboard({
                 <Compass size={16} /> Discover
               </button>
               <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition " + (workspacePage === "groups" ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5")}>
-                <Users size={16} /> Circles
+                <Users size={16} /> Networks
               </button>
               <button type="button" onClick={openComposer} data-demo="community-create-post" className="mb-1 flex w-full items-center gap-3 rounded-xl bg-slate-950 px-3 py-3 text-left text-xs font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
                 <Plus size={16} /> Create
