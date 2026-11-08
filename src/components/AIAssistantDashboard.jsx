@@ -311,12 +311,15 @@ export default function AIAssistantDashboard({
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
   ].join(" ");
-  const complianceApiBase = String(
+    const complianceApiBaseValue = String(
     import.meta.env.VITE_REVELACODE_API_URL ||
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_BACKEND_URL ||
     "https://revelacode-backend.onrender.com"
-  ).replace(/\/$/, "");
+  ).trim();
+  const complianceApiBase = complianceApiBaseValue.endsWith("/")
+    ? complianceApiBaseValue.slice(0, -1)
+    : complianceApiBaseValue;
   const hubNoticeFeature = ({
     faith: "faith_content",
     bible: "faith_content",
