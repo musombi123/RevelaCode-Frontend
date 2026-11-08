@@ -200,7 +200,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
             <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-300">Lesson companion</p><h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{aiLesson.title}</h3></div>
             <button type="button" onClick={() => setAiLesson(null)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 dark:border-gray-700 dark:text-gray-300">Close AI</button>
           </div>
-          <div className="h-[min(68dvh,680px)] min-h-[360px]"><Suspense fallback={<div className="p-6 text-sm text-gray-500">Opening lesson AI…</div>}><LessonAIWorkspace activeHub="faith" compactMode /></Suspense></div>
+          <div className="h-[min(68dvh,680px)] min-h-[360px]"><Suspense fallback={<div className="p-6 text-sm text-gray-500">Opening lesson AI…</div>}><LessonAIWorkspace activeHub="faith" compactMode lessonContext={aiLesson} /></Suspense></div>
         </section>
       )}
 
