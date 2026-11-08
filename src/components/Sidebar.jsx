@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Sparkles, MessageCircle,
   GraduationCap, Trash2, Pencil, Check, X, Mic, Camera, WifiOff, Search,
-  Pin, Settings2, FileText, History, ChevronDown, Wrench
+  Pin, Settings2, History, ChevronDown, Wrench
 } from "lucide-react";
 import { resolveChatTitle } from "@/components/utils/chatTitle";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -236,12 +236,6 @@ export default function Sidebar({
       else next.add(key);
       return next;
     });
-  };
-
-  const openTool = () => {
-    setToolsOpen(false);
-    onOpenHumanizer?.();
-    setOpen(false);
   };
 
   const initials = String(user?.name || user?.full_name || user?.contact || "R")
