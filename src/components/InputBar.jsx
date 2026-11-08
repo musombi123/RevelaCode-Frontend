@@ -22,6 +22,7 @@ import {
   Presentation,
   FileSpreadsheet,
   XCircle,
+  Sparkles,
 } from "lucide-react";
 
 /* =========================================================
