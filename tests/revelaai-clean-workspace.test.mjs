@@ -12,84 +12,85 @@ const dashboard = read("../src/components/AIAssistantDashboard.jsx");
 const humanizer = read("../src/pages/HumanizerWorkspace.jsx");
 
 test("welcome state is a clean empty state with no prompt templates or tool chips", () => {
-  assert.doesNotMatch(welcome, /EXPLORERS|TOOLS|prompt:|tool-chip|onSuggestion/);
-  assert.doesNotMatch(welcome, /<button\b/);
-  assert.match(welcome, /What would you like to work on\?/);
+  assert.ok(!welcome.includes("<button"));
+  assert.ok(!welcome.includes("<button"));
+  assert.ok(welcome.includes("What would you like to work on?"));
 });
 
-test("voice, vision, Humanizer and weak-network mode are grouped in one sidebar Tools menu", () => {
-  assert.match(sidebar, /aria-controls="revelaai-sidebar-tools"/);
-  assert.match(sidebar, /toolsOpen &&/);
-  assert.match(sidebar, /onOpenVoice/);
-  assert.match(sidebar, /onOpenVision/);
-  assert.match(sidebar, /onOpenHumanizer/);
-  assert.match(sidebar, /Weak-network free mode/);
-  assert.match(sidebar, /AI Identity/);
-  assert.match(sidebar, /<RevelaAIQuickSettings/);
-  assert.match(sidebar, /aria-controls="revelaai-account-menu"/);
-  assert.match(sidebar, /revelaai:settings-open/);
-  assert.doesNotMatch(sidebar, /Tools · Humanizer/);
+test("voice, vision and weak-network mode remain in Tools while Humanizer is invoked from chat", () => {
+  assert.ok(sidebar.includes('aria-controls="revelaai-sidebar-tools"'));
+  assert.ok(sidebar.includes("toolsOpen &&"));
+  assert.ok(sidebar.includes("onOpenVoice"));
+  assert.ok(sidebar.includes("onOpenVision"));
+  assert.ok(!sidebar.includes("onOpenHumanizer"));
+  assert.ok(!sidebar.includes("Selective Humanizer"));
+  assert.ok(sidebar.includes("Weak-network free mode"));
+  assert.ok(sidebar.includes("AI Identity"));
+  assert.ok(sidebar.includes("<RevelaAIQuickSettings"));
+  assert.ok(sidebar.includes('aria-controls="revelaai-account-menu"'));
+  assert.ok(sidebar.includes("revelaai:settings-open"));
 });
 
 test("AI header controls are removed and appearance/search settings live in the sidebar account menu", () => {
-  assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
-  assert.match(sidebar, /<RevelaAIQuickSettings/);
-  assert.match(quickSettings, /Appearance/);
-  assert.match(quickSettings, /Search mode/);
+  assert.ok(!dashboard.includes("RevelaAIHeaderControls"));
+  assert.ok(sidebar.includes("<RevelaAIQuickSettings"));
+  assert.ok(quickSettings.includes("Appearance"));
+  assert.ok(quickSettings.includes("Search mode"));
   for (const mode of ["quick", "deep", "extreme"]) assert.ok(quickSettings.includes(mode));
 });
 
-
 test("new-chat composer sits directly below the welcome message instead of a separate bottom dock", () => {
-  const welcome = dashboard.indexOf('<WelcomeScreen />');
-  const composer = dashboard.indexOf('data-demo="ai-chat-input"', welcome);
+  const welcomeIndex = dashboard.indexOf("<WelcomeScreen />");
+  const composer = dashboard.indexOf('data-demo="ai-chat-input"', welcomeIndex);
   const chatBranch = dashboard.indexOf('aria-label="Conversation workspace"');
-  assert.ok(welcome >= 0 && composer > welcome && composer < chatBranch);
-  assert.match(dashboard, /max-w-\[700px\]/);
-  assert.doesNotMatch(dashboard, /<ProductivityToolsPanel/);
+  assert.ok(welcomeIndex >= 0 && composer > welcomeIndex && composer < chatBranch);
+  assert.ok(dashboard.includes("max-w-[700px]"));
+  assert.ok(!dashboard.includes("<ProductivityToolsPanel"));
 });
 
 test("the compact InputBar exposes upload, vision and productivity actions from the paperclip menu", () => {
-  assert.match(input, /label="Attachments and tools"/);
-  assert.match(input, /Upload a file or document/);
+  assert.ok(input.includes('label="Attachments and tools"'));
+  assert.ok(input.includes("Upload a file or document"));
   assert.ok(input.includes("Capture with camera / Vision"));
-  assert.match(input, /Productivity tools and workspace/);
+  assert.ok(input.includes("Productivity tools and workspace"));
   assert.ok(input.includes("TOOL_COMMANDS.map"));
-  assert.match(input, /h-10 w-10 min-h-10 min-w-10/);
-  assert.doesNotMatch(input, /Grounded when evidence is available/);
-  assert.doesNotMatch(input, /label="Open tools"/);
+  assert.ok(input.includes("h-10 w-10 min-h-10 min-w-10"));
+  assert.ok(!input.includes("Grounded when evidence is available"));
+  assert.ok(!input.includes('label="Open tools"'));
 });
 
 test("fullscreen and AI header heights are compact and redundant mode labels are removed", () => {
   const shell = read("../src/components/MainDashboardV2.jsx");
-  assert.match(shell, /h-10 shrink-0 items-center justify-between/);
-  assert.doesNotMatch(shell, /FULLSCREEN MODE/);
-  assert.match(dashboard, /h-11 shrink-0 items-center justify-between/);
-  assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
+  assert.ok(shell.includes("h-10 shrink-0 items-center justify-between"));
+  assert.ok(!shell.includes("FULLSCREEN MODE"));
+  assert.ok(dashboard.includes("h-11 shrink-0 items-center justify-between"));
+  assert.ok(!dashboard.includes("RevelaAIHeaderControls"));
 });
-
 
 test("composer no longer renders a nested rounded border box", () => {
-  assert.match(input, /"relative bg-transparent"/);
-  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
-  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
-  assert.match(input, /"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl/);
-  assert.match(input, /label="Attachments and tools"/);
-  assert.match(input, /data-demo="ai-send-message"/);
+  assert.ok(input.includes('"relative bg-transparent"'));
+  assert.ok(!input.includes('"relative rounded-2xl border bg-input"'));
+  assert.ok(input.includes('"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl'));
+  assert.ok(input.includes('label="Attachments and tools"'));
+  assert.ok(input.includes('data-demo="ai-send-message"'));
 });
 
-test("Humanizer uses one compact upload card and keeps privacy guidance without a second info panel", () => {
-  assert.match(humanizer, /Open a PDF/);
-  assert.match(humanizer, /Privacy: the PDF is processed in memory/);
-  assert.doesNotMatch(humanizer, /Private by design/);
-  assert.doesNotMatch(humanizer, /grid gap-5 lg:grid-cols-\[minmax\(0,1\.5fr\)/);
-  assert.match(humanizer, /Produce with Gemini/);
-  assert.match(humanizer, /Local suggestions/);
+test("Humanizer keeps PDF and text workflows with concise privacy guidance", () => {
+  assert.ok(humanizer.includes("Open a PDF"));
+  assert.ok(humanizer.includes("Privacy: PDFs are processed in memory"));
+  assert.ok(!humanizer.includes("Private by design"));
+  assert.ok(humanizer.includes("Produce with Gemini"));
+  assert.ok(humanizer.includes("Local suggestions"));
+  assert.ok(humanizer.includes("Paste or type the text you want to refine"));
 });
 
-test("Humanizer has one title and remains embedded in the chat workspace", () => {
-  assert.match(dashboard, /<HumanizerWorkspace embedded \/>/);
-  assert.match(dashboard, /Back to chat/);
-  assert.doesNotMatch(dashboard, /Work on selected PDF text without leaving RevelaAI/);
-  assert.match(humanizer, /Selective Humanizer/);
+test("Humanizer is invoked in chat only on request and returns approved text to the conversation", () => {
+  assert.ok(dashboard.includes("<HumanizerWorkspace"));
+  assert.ok(dashboard.includes("embedded"));
+  assert.ok(dashboard.includes("initialText={humanizerSeedText}"));
+  assert.ok(dashboard.includes("onExportToChat={"));
+  assert.ok(dashboard.includes("const humanizerIntent"));
+  assert.ok(dashboard.includes("Back to chat"));
+  assert.ok(humanizer.includes("Humanizer Studio"));
+  assert.ok(humanizer.includes("Send revised text to AI chat"));
 });

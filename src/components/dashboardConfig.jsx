@@ -754,6 +754,11 @@ const AIAssistantDashboard =
     "RevelaAI",
   );
 
+const HumanizerDashboard = safeLazy(
+  () => import("@/pages/HumanizerWorkspace.jsx"),
+  "Humanizer Studio",
+);
+
 const SecurityAcademyDashboard = safeLazy(
   () => import("./SecurityAcademyDashboard.jsx"),
   "Security Academy",
@@ -1716,6 +1721,23 @@ function HomeDashboard({
         </div>
       </section>
 
+      <section aria-label={t("Writing Studio")} className="relative min-w-0 overflow-hidden rounded-[26px] border border-indigo-200/70 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white shadow-lg shadow-indigo-950/10 dark:border-indigo-400/20 sm:p-5">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-violet-400/15 blur-2xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-violet-200"><Sparkles size={23}/></span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-200">RevelaAI · Writing Studio</p>
+              <h2 className="mt-1 text-lg font-black tracking-tight sm:text-xl">Humanizer Studio</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-300 sm:text-sm">Refine selected words, paste text or open a PDF. Review every change and export your revised document.</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => onNavigate?.("humanizer")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-violet-100 active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
+            Open Humanizer <ArrowRight size={16}/>
+          </button>
+        </div>
+      </section>
+
       <section aria-label={t("Quick access to recent hubs")} className="min-w-0 space-y-2" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}>
         <div className="flex min-w-0 items-center justify-between gap-3 px-1"><div className="min-w-0"><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t(hasHubHistory ? "Your most-used spaces" : "Start with a connected hub")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
         <div className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-contain pb-2">
@@ -2044,6 +2066,15 @@ export const DASHBOARDS = [
     element: (
       <AIAssistantDashboard />
     ),
+  },
+
+  {
+    key: "humanizer",
+    title: "Humanizer Studio",
+    label: "Humanizer",
+    icon: Sparkles,
+    hidden: true,
+    element: <HumanizerDashboard />,
   },
 ];
 

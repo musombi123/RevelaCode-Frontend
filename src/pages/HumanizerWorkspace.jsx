@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -39,11 +39,12 @@ function mapAcceptedRangeToOriginal(page, pageNumber, start, end, replacement, a
   return { page: pageNumber, start: originalStart, end: originalEnd, original, replacement };
 }
 
-export default function HumanizerWorkspace({ embedded = false }) {
+export default function HumanizerWorkspace({ embedded = false, initialText = "", onExportToChat = null }) {
   const auth = useAuth();
   const authFetch = auth?.authFetch;
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
+  const [pastedText, setPastedText] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [pages, setPages] = useState([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -56,6 +57,24 @@ export default function HumanizerWorkspace({ embedded = false }) {
   const [geminiDraft, setGeminiDraft] = useState(null);
   const [acceptedEdits, setAcceptedEdits] = useState([]);
   const [manualTextEdited, setManualTextEdited] = useState(false);
+
+  useEffect(() => {
+    const source = String(initialText || "").trim();
+    if (!source) return;
+    setPastedText(source);
+    setFile(null);
+    setDocumentName("AI chat content");
+    setPages([{ page: 1, text: source, originalText: source, extractionMethod: "chat", layoutSupported: false, layoutReason: "Chat-generated text can be revised and exported as text. Upload the source PDF to preserve its original layout." }]);
+    setPageIndex(0);
+    setSelection({ start: 0, end: 0, text: "" });
+    setSuggestions([]);
+    setAccepted({});
+    setGeminiDraft(null);
+    setAcceptedEdits([]);
+    setManualTextEdited(false);
+    setError("");
+    setNotice("Content from your AI chat is ready. Select only the wording you want to refine.");
+  }, [initialText]);
 
   const currentPage = pages[pageIndex] || null;
   const acceptedCount = Object.values(accepted).filter(Boolean).length;
@@ -80,6 +99,33 @@ export default function HumanizerWorkspace({ embedded = false }) {
     setAccepted({});
     setGeminiDraft(null);
     setNotice(text.trim() ? "Selection ready. Only this passage will be processed." : "Highlight a word or phrase in the page text.");
+  }
+
+  function loadPastedText() {
+    const source = String(pastedText || "").trim();
+    if (!source) {
+      setError("Paste or type the text you want to humanize first.");
+      return;
+    }
+    setFile(null);
+    setDocumentName("Pasted text");
+    setPages([{
+      page: 1,
+      text: source,
+      originalText: source,
+      extractionMethod: "pasted",
+      layoutSupported: false,
+      layoutReason: "Pasted text can be revised and exported as text. PDF layout reconstruction requires an original PDF.",
+    }]);
+    setPageIndex(0);
+    setSelection({ start: 0, end: 0, text: "" });
+    setSuggestions([]);
+    setAccepted({});
+    setGeminiDraft(null);
+    setAcceptedEdits([]);
+    setManualTextEdited(false);
+    setError("");
+    setNotice("Text loaded. Select a word or phrase to receive focused suggestions.");
   }
 
   async function uploadPdf() {
@@ -246,9 +292,9 @@ export default function HumanizerWorkspace({ embedded = false }) {
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">RevelaAI · Writing tool</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-fg sm:text-3xl">Selective Humanizer</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-secondary">Improve only the passage you select. Local alternatives are instant; Gemini drafts only when you request them.</p>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">RevelaAI · Writing Studio</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-fg sm:text-3xl">Humanizer Studio</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-secondary">A focused document studio for precise, user-approved edits. Paste text or open a PDF, review every suggestion, then export your revision.</p>
           </div>
           {pages.length > 0 && (
             <button onClick={exportText} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg-secondary hover:bg-surface-2">
@@ -278,8 +324,27 @@ export default function HumanizerWorkspace({ embedded = false }) {
               {loading ? "Extracting…" : "Extract PDF text"}
             </button>
           </div>
+          <div className="mt-5 border-t border-line pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-fg">Or paste your text</h3>
+                <p className="mt-1 text-xs text-muted">Paste an essay, paragraph or selected passage directly into the studio.</p>
+              </div>
+              <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-muted">Text mode</span>
+            </div>
+            <textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} rows={5}
+              placeholder="Paste or type the text you want to refine…"
+              className="mt-3 min-h-32 w-full resize-y rounded-xl border border-line bg-input p-3 text-sm leading-6 text-fg outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10" />
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-muted">{pastedText.trim() ? pastedText.trim().split(/\\s+/).filter(Boolean).length.toLocaleString() + " words" : "Your original text is not changed until you approve edits."}</span>
+              <button type="button" onClick={loadPastedText} disabled={!pastedText.trim() || loading}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-inverse transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40">
+                Load text into studio
+              </button>
+            </div>
+          </div>
           <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-muted">
-            Privacy: the PDF is processed in memory. Local suggestions do not call Gemini; Gemini receives only the passage you select. No change is applied until you approve it.
+            Privacy: PDFs are processed in memory. Local suggestions do not call Gemini; Gemini receives only the passage you select. No change is applied until you approve it. Pasted text can be exported as revised TXT; original PDF layout export is available only when you upload a supported PDF.
           </p>
         </section>
 
@@ -287,8 +352,38 @@ export default function HumanizerWorkspace({ embedded = false }) {
         {notice && <div role="status" className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-accent">{notice}</div>}
 
         {pages.length > 0 && (
-          <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
-            <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+          <section className="grid items-start gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(19rem,0.82fr)]">
+            <aside className="space-y-3 xl:sticky xl:top-4">
+              <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-xs font-bold uppercase tracking-[.14em] text-muted">Document</h2>
+                  <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">{pages.length} page{pages.length === 1 ? "" : "s"}</span>
+                </div>
+                <p className="mt-3 break-words text-sm font-bold text-fg">{documentName || "Untitled document"}</p>
+                <p className="mt-1 text-[11px] leading-5 text-muted">{pages.reduce((total, page) => total + page.text.split(/\\s+/).filter(Boolean).length, 0).toLocaleString()} words · {changedPages} revised page{changedPages === 1 ? "" : "s"}</p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-3"><div className="h-full rounded-full bg-accent transition-all" style={{ width: (pages.length ? Math.min(100, changedPages / pages.length * 100) : 0) + "%" }} /></div>
+              </div>
+              <div className="rounded-2xl border border-line bg-surface p-3 shadow-sm">
+                <h3 className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-muted">Pages</h3>
+                <div className="flex gap-2 overflow-x-auto xl:flex-col xl:overflow-visible">
+                  {pages.map((page, index) => (
+                    <button key={page.page} type="button" onClick={() => { setPageIndex(index); setSuggestions([]); setGeminiDraft(null); setAccepted({}); setSelection({ start: 0, end: 0, text: "" }); }}
+                      aria-current={pageIndex === index ? "page" : undefined}
+                      className={"flex min-w-[132px] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition xl:min-w-0 " + (pageIndex === index ? "border-accent/40 bg-accent/10 text-accent" : "border-transparent text-fg-secondary hover:border-line hover:bg-surface-2")}>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-[11px] font-bold tabular-nums">{String(page.page).padStart(2, "0")}</span>
+                      <span className="min-w-0 flex-1"><span className="block text-xs font-bold">Page {page.page}</span><span className="mt-0.5 block text-[10px] text-muted">{page.text.split(/\\s+/).filter(Boolean).length} words</span></span>
+                      {page.text !== page.originalText ? <span className="h-2 w-2 shrink-0 rounded-full bg-success" title="Revised"/> : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-line bg-surface-2 p-3">
+                <p className="text-[11px] font-bold text-fg-secondary">Integrity controls</p>
+                <p className="mt-1 text-[11px] leading-5 text-muted">Only approved selections are changed. Unselected content stays untouched.</p>
+                <div className="mt-3 flex items-center justify-between text-[10px]"><span className="text-muted">Approved edits</span><strong className="tabular-nums text-accent">{acceptedEdits.length}</strong></div>
+              </div>
+            </aside>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
                 <div>
                   <h2 className="font-semibold">02 · Select text to improve</h2>
@@ -348,6 +443,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
                 <h2 className="font-semibold">04 · Export your revision</h2>
                 <p className="mt-2 text-sm text-muted">{changedPages} page(s) changed. The source PDF remains untouched.</p>
                 <button onClick={exportText} className="mt-4 w-full rounded-xl border border-line px-4 py-3 text-sm font-semibold text-fg-secondary hover:bg-surface-2">Download revised text (.txt)</button>
+                {typeof onExportToChat === "function" && <button type="button" onClick={() => onExportToChat(pages.map((page) => page.text).join("\n\n"))} disabled={!pages.length || !changedPages} className="mt-2 w-full rounded-xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm font-semibold text-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40">Send revised text to AI chat</button>}
                 <button onClick={exportPdf} disabled={!canExportPdf || loading} className="mt-2 w-full rounded-xl bg-success px-4 py-3 text-sm font-semibold text-inverse hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">Download revised PDF ({acceptedEdits.length} approved change(s))</button>
                 <p className="mt-3 text-[11px] leading-5 text-muted">
                   PDF export supports tracked, approved changes on native-text pages. It currently rejects OCR-only pages, partial-word or cross-line selections, unsupported fonts and replacements wider than the original selection.
