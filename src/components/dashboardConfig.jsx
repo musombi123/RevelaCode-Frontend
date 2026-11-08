@@ -1131,11 +1131,73 @@ function HomeDashboard({
   } = useNotifications(
     30000,
   );
+  const [systemUpdateRows, setSystemUpdateRows] = useState([]);
+
+  useEffect(() => {
+    const androidBuild = import.meta.env.VITE_ANDROID_APP === "true";
+    const windowsBuild = import.meta.env.VITE_TAURI_APP === "true";
+    if (!androidBuild && !windowsBuild) return undefined;
+    let active = true;
+    const checkRelease = async () => {
+      try {
+        const platform = androidBuild ? "android" : "windows";
+        const repo = androidBuild ? "RevelaCode-Android" : "RevelaCode-Windows";
+        const currentVersion = String(import.meta.env.VITE_APP_VERSION || (androidBuild ? "2.2.1" : "0.1.3")).replace(/^v/, "");
+        const response = await fetch(`https://api.github.com/repos/musombi123/${repo}/releases/latest`, {
+          headers: { Accept: "application/vnd.github+json" },
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const release = await response.json();
+        const latestVersion = String(release.tag_name || release.name || "").replace(/^v/i, "").match(/[0-9]+(?:\.[0-9]+)*/)?.[0] || "";
+        const compare = (left, right) => {
+          const a = left.split(".").map(Number);
+          const b = right.split(".").map(Number);
+          for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+            const delta = (a[i] || 0) - (b[i] || 0);
+            if (delta) return delta;
+          }
+          return 0;
+        };
+        if (!latestVersion || compare(latestVersion, currentVersion) <= 0) {
+          if (active) setSystemUpdateRows([]);
+          return;
+        }
+        const wanted = androidBuild ? /\.apk$/i : /RevelaCode-Windows-Setup\.exe$/i;
+        const asset = (release.assets || []).find((item) => wanted.test(String(item.name || "")));
+        const actionUrl = asset?.browser_download_url || release.html_url;
+        if (!actionUrl || !active) return;
+        const row = {
+          id: `system-update-${platform}-${latestVersion}`,
+          title: androidBuild ? `RevelaCode Android ${latestVersion} is available` : `RevelaCode Windows ${latestVersion} is available`,
+          text: androidBuild ? "Download the latest APK to update your RevelaCode app." : "Download and run the latest Windows installer to update RevelaCode.",
+          type: "system_update",
+          timestamp: release.published_at || release.created_at || new Date().toISOString(),
+          action_url: actionUrl,
+          hub: "settings",
+          read: false,
+        };
+        setSystemUpdateRows([row]);
+        try {
+          const seenKey = `revelacode_seen_update:${platform}:${latestVersion}`;
+          if (localStorage.getItem(seenKey) !== "true") {
+            localStorage.setItem(seenKey, "true");
+            setNotificationToast(row);
+          }
+        } catch { /* Update remains visible in the feed. */ }
+      } catch {
+        // Release lookup is optional; never expose GitHub/API errors in the UI.
+      }
+    };
+    checkRelease();
+    return () => { active = false; };
+  }, []);
+
   const [notificationToast, setNotificationToast] = useState(null);
   const seenNotificationIds = React.useRef(new Set());
 
   useEffect(() => {
-    const newest = [...(notifications || [])]
+    const newest = [...(notifications || []), ...systemUpdateRows]
       .filter((item) => item && item.id != null)
       .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())[0];
     if (!newest) return;
@@ -1146,11 +1208,11 @@ function HomeDashboard({
     setNotificationToast(newest);
     const timer = window.setTimeout(() => setNotificationToast((current) => String(current?.id) === id ? null : current), 10000);
     return () => window.clearTimeout(timer);
-  }, [notifications]);
+  }, [notifications, systemUpdateRows]);
 
   const openHomeNotification = async (notification) => {
     if (!notification) return;
-    if (!notification.read && typeof markAsRead === "function") await markAsRead(notification.id);
+    if (!String(notification.id).startsWith("system-update-") && !notification.read && typeof markAsRead === "function") await markAsRead(notification.id);
     const destination = String(
       notification.target_hub || notification.hub || notification.route || notification.workspace || ""
     ).trim().toLowerCase();
@@ -1171,7 +1233,7 @@ function HomeDashboard({
     setNotificationToast(null);
   };
 
-  const notificationRows = (notifications || [])
+  const notificationRows = [...(notifications || []), ...systemUpdateRows]
     .filter(Boolean)
     .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
     .slice(0, 6);
