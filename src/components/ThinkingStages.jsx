@@ -1,183 +1,88 @@
 // src/components/ThinkingStages.jsx
+import React, { useMemo } from "react";
+import { Check, LoaderCircle, Sparkles } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+const ADAPTIVE_STAGES = [
+  { id: "preparing", label: "Preparing your request", detail: "Organising prompt and conversation context" },
+  { id: "connecting", label: "Connecting to RevelaAI", detail: "Sending the request to the configured AI service" },
+  { id: "interpreting", label: "Response received", detail: "Reading the service response and available metadata" },
+  { id: "composing", label: "Preparing your answer", detail: "Formatting the result for this conversation" },
+  { id: "streaming", label: "Streaming response", detail: "Displaying the answer as it is generated" },
+];
 
-/* =========================================================
-   STAGE SETS (match the modes used in enrichPrompt)
-========================================================= */
+const LOCAL_STAGES = [
+  { id: "preparing", label: "Preparing your request", detail: "Organising prompt and conversation context" },
+  { id: "local-reasoning", label: "Running local reasoning", detail: "Using the on-device fallback engine" },
+  { id: "composing", label: "Preparing your answer", detail: "Formatting the local result" },
+  { id: "streaming", label: "Streaming response", detail: "Displaying the answer incrementally" },
+];
 
-const STAGE_SETS = {
-  bible: [
-    "Reading your question...",
-    "Locating scripture references...",
-    "Cross-checking related passages...",
-    "Interpreting context and meaning...",
-    "Writing the response...",
-  ],
-  prophecy: [
-    "Reading your question...",
-    "Scanning prophetic passages...",
-    "Interpreting symbolic meaning...",
-    "Cross-checking patterns...",
-    "Writing the response...",
-  ],
-  developer: [
-    "Reading your question...",
-    "Analyzing the code context...",
-    "Identifying the likely cause...",
-    "Preparing a fix...",
-    "Writing the response...",
-  ],
-  agriculture: [
-    "Reading your question...",
-    "Reviewing farming knowledge...",
-    "Weighing practical options...",
-    "Preparing recommendations...",
-    "Writing the response...",
-  ],
-  business: [
-    "Reading your question...",
-    "Analyzing the business context...",
-    "Comparing approaches...",
-    "Preparing recommendations...",
-    "Writing the response...",
-  ],
-  education: [
-    "Reading your question...",
-    "Identifying the key concepts...",
-    "Structuring the explanation...",
-    "Preparing examples...",
-    "Writing the response...",
-  ],
-  general: [
-    "Reading your question...",
-    "Gathering relevant knowledge...",
-    "Reasoning through the answer...",
-    "Checking for accuracy...",
-    "Writing the response...",
-  ],
-};
+const FILE_STAGES = [
+  { id: "preparing", label: "Preparing your request", detail: "Checking the attached file and prompt" },
+  { id: "local-analysis", label: "Analyzing attachment", detail: "Extracting document content or measuring media on this device" },
+  { id: "connecting", label: "Connecting to RevelaAI", detail: "Sending extracted observations for interpretation" },
+  { id: "interpreting", label: "Response received", detail: "Reading the service response" },
+  { id: "composing", label: "Preparing your answer", detail: "Combining analysis and relevant context" },
+  { id: "streaming", label: "Streaming response", detail: "Displaying the result incrementally" },
+];
 
-export function getStagesForPrompt(text = "") {
-  const t = String(text).toLowerCase();
-  const has = (...words) => words.some((w) => t.includes(w));
+export default function ThinkingStages({ stage = "preparing", prompt = "" }) {
+  const stages = useMemo(() => {
+    if (stage === "local-reasoning") return LOCAL_STAGES;
+    if (stage === "local-analysis") return FILE_STAGES;
+    return ADAPTIVE_STAGES;
+  }, [stage]);
 
-  if (has("bible", "verse", "scripture")) return STAGE_SETS.bible;
-  if (has("prophecy", "beast", "666")) return STAGE_SETS.prophecy;
-  if (has("code", "programming", "error", "react", "python"))
-    return STAGE_SETS.developer;
-  if (has("farm", "agriculture", "crop", "shamba"))
-    return STAGE_SETS.agriculture;
-  if (has("business", "sales", "marketing", "biashara"))
-    return STAGE_SETS.business;
-  if (has("school", "education", "student", "learning"))
-    return STAGE_SETS.education;
-
-  return STAGE_SETS.general;
-}
-
-/* =========================================================
-   COMPONENT
-========================================================= */
-
-export default function ThinkingStages({
-  stages,
-  prompt = "",
-  interval = 900,
-  showPending = true,
-  onDone,
-}) {
-  const list = useMemo(
-    () => (stages?.length ? stages : getStagesForPrompt(prompt)),
-    [stages, prompt]
-  );
-
-  const [index, setIndex] = useState(0);
-  const isLast = index >= list.length - 1;
-
-  // Restart if the stage list changes (new question)
-  const listKey = list.join("|");
-  useEffect(() => {
-    setIndex(0);
-  }, [listKey]);
-
-  useEffect(() => {
-    // The last stage stays active until this component unmounts
-    if (isLast) {
-      if (!onDone) return;
-      const t = setTimeout(onDone, 300);
-      return () => clearTimeout(t);
-    }
-
-    const t = setTimeout(() => setIndex((i) => i + 1), interval);
-    return () => clearTimeout(t);
-  }, [isLast, index, interval, onDone]);
-
-  const visible = showPending ? list : list.slice(0, index + 1);
+  const activeIndex = Math.max(0, stages.findIndex((item) => item.id === stage));
+  const active = stages[activeIndex] || stages[0];
 
   return (
-    <div className="min-w-[14rem] max-w-sm">
-      {/* Screen readers announce only the current step */}
-      <span className="sr-only" role="status" aria-live="polite">
-        {list[index]}
-      </span>
+    <section className="w-full min-w-[15rem] max-w-sm" aria-label="RevelaAI live progress">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-accent">
+          <Sparkles size={14} />
+          <span className="absolute inset-0 animate-ping rounded-full border border-accent/30 motion-reduce:animate-none" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-fg">RevelaAI is working</p>
+          <p className="text-[11px] text-muted">Live request progress</p>
+        </div>
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
+      </div>
 
-      <ol aria-hidden="true">
-        {visible.map((label, i) => {
-          const done = i < index;
-          const active = i === index;
-
+      <ol className="space-y-2.5" aria-label={active.label}>
+        {stages.map((item, index) => {
+          const done = index < activeIndex;
+          const current = index === activeIndex;
           return (
-            <li
-              key={`${i}-${label}`}
-              className="relative flex gap-3 pb-2.5 last:pb-0"
-            >
-              {/* Connector line to the next step */}
-              {i < visible.length - 1 && (
-                <span
-                  className={`absolute left-[9px] top-5 bottom-0 w-px transition-colors duration-500 ${
-                    done ? "bg-accent/50" : "bg-surface-2"
-                  }`}
-                />
-              )}
-
-              {/* Step icon */}
-              <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-                {done && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-accent">
+            <li key={item.id} className="relative flex gap-3">
+              <span className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
+                {done ? (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/15 text-accent">
                     <Check size={12} strokeWidth={3} />
                   </span>
-                )}
-
-                {active && (
-                  <Loader2
-                    size={16}
-                    className="animate-spin text-accent motion-reduce:animate-none"
-                  />
-                )}
-
-                {!done && !active && (
-                  <span className="h-2 w-2 rounded-full border border-line-strong" />
+                ) : current ? (
+                  <LoaderCircle size={17} className="animate-spin text-accent motion-reduce:animate-none" />
+                ) : (
+                  <span className="h-2 w-2 rounded-full border border-line-strong bg-surface" />
                 )}
               </span>
-
-              {/* Step label */}
-              <span
-                className={`pt-px text-sm transition-colors duration-300 ${
-                  active
-                    ? "font-medium text-fg"
-                    : done
-                    ? "text-muted"
-                    : "text-muted"
-                }`}
-              >
-                {label}
-              </span>
+              <div className={`min-w-0 flex-1 pb-1 transition-opacity duration-300 ${current ? "opacity-100" : done ? "opacity-65" : "opacity-40"}`}>
+                <p className={`text-xs leading-5 ${current ? "font-semibold text-fg" : "text-muted"}`}>{item.label}</p>
+                {current && <p className="text-[10px] leading-4 text-muted">{item.detail}</p>}
+              </div>
+              {current && <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />}
             </li>
           );
         })}
       </ol>
-    </div>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface-2">
+        <div
+          className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+          style={{ width: `${Math.max(8, ((activeIndex + 1) / stages.length) * 100)}%` }}
+        />
+      </div>
+      <span className="sr-only" role="status" aria-live="polite">{active.label}</span>
+    </section>
   );
 }
