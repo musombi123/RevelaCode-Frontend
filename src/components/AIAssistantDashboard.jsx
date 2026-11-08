@@ -276,6 +276,7 @@ export default function AIAssistantDashboard({
   onOpenAI,
   activeHub = "home",
   compactMode = false,
+  lessonContext = null,
 }) {
   const {
     user,
@@ -310,7 +311,14 @@ export default function AIAssistantDashboard({
   const hubContext = [
     "ACTIVE REVELACODE WORKSPACE: " + activeHubLabel + ".",
     "PERSONALIZATION RULE: Tailor answers, examples, recommendations, and next steps to this workspace when relevant. If the user asks an unrelated question, answer it normally. Do not claim access to private workspace records unless those records are actually included in the request context.",
-  ].join(" ");
+    lessonContext ? "CURRENT SDA SABBATH SCHOOL LESSON CONTEXT: " + JSON.stringify({
+      title: lessonContext.title || "",
+      date: lessonContext.date || "",
+      day: lessonContext.day || "",
+      memory_text: lessonContext.memoryText || "",
+      lesson_text: String(lessonContext.text || "").slice(0, 18000),
+    }) + ". Treat this as the lesson the user is studying. Answer questions in this context, distinguish lesson text from your explanation, and do not invent quotations or references." : "",
+  ].filter(Boolean).join(" ");
 
   const userScope =
     user?.id ||
