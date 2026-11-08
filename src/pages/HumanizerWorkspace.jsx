@@ -209,7 +209,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
 
   function exportText() {
     if (!pages.length) return;
-    const output = pages.map((page) => "--- Page " + page.page + " ---\\n" + page.text).join("\\n\\n");
+    const output = pages.map((page) => "--- Page " + page.page + " ---\n" + page.text).join("\n\n");
     saveText(documentName || "document.pdf", output);
   }
 
@@ -230,7 +230,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = (documentName || "document.pdf").replace(/\\.pdf$/i, "") + "-humanized.pdf";
+      anchor.download = (documentName || "document.pdf").replace(/\.pdf$/i, "") + "-humanized.pdf";
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
