@@ -26,6 +26,75 @@ export default function SystemHomeNotifications({ onNavigate }) {
     return () => window.removeEventListener("revelacode:system-notification", receive);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const compare = (latest, installed) => {
+      const a = String(latest || "").replace(/^v/i, "").split(".").map(Number);
+      const b = String(installed || "").replace(/^v/i, "").split(".").map(Number);
+      for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+        const left = Number(a[index] || 0), right = Number(b[index] || 0);
+        if (left !== right) return left > right;
+      }
+      return false;
+    };
+    const announce = (item) => {
+      if (cancelled) return;
+      const id = `release-${item.platform}-${item.version}`;
+      try {
+        if (localStorage.getItem(`revelacode_update_seen:${id}`) === "true") return;
+        localStorage.setItem(`revelacode_update_seen:${id}`, "true");
+      } catch { /* Notification remains useful without persistent dismissal. */ }
+      window.dispatchEvent(new CustomEvent("revelacode:system-notification", { detail: item }));
+    };
+    const check = async () => {
+      const isAndroid = import.meta.env.VITE_ANDROID_APP === "true" ||
+        /Android/i.test(navigator.userAgent) && /Capacitor|wv/i.test(navigator.userAgent);
+      const isWindowsDesktop = Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
+      if (isAndroid) {
+        try {
+          const { App } = await import("@capacitor/app");
+          const installed = await App.getInfo();
+          const response = await fetch("https://api.github.com/repos/musombi123/RevelaCode-Android/releases/latest", { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
+          if (!response.ok) throw new Error("release lookup unavailable");
+          const release = await response.json();
+          const apk = (release.assets || []).find((asset) => String(asset.name).toLowerCase().endsWith(".apk"));
+          if (apk && compare(release.tag_name, installed.version)) announce({
+            id: `android-${release.tag_name}`, platform: "android", version: release.tag_name,
+            title: `RevelaCode Android ${release.tag_name} is available`,
+            message: "A newer Android installer is ready. Download the APK and install it to update this app.",
+            download_url: apk.browser_download_url,
+          });
+        } catch { /* Release checks must never interrupt app startup. */ }
+      }
+      if (isWindowsDesktop) {
+        try {
+          const installed = String(import.meta.env.VITE_WINDOWS_APP_VERSION || "");
+          if (!installed) return;
+          const response = await fetch("https://api.github.com/repos/musombi123/RevelaCode-Windows/releases/latest", { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
+          if (!response.ok) throw new Error("release lookup unavailable");
+          const release = await response.json();
+          const installer = (release.assets || []).find((asset) => /setup.*\.exe$/i.test(asset.name));
+          if (installer && compare(release.tag_name, installed)) announce({
+            id: `windows-${release.tag_name}`, platform: "windows", version: release.tag_name,
+            title: `RevelaCode for Windows ${release.tag_name} is available`,
+            message: "A newer Windows installer is ready. Download and run it to update your desktop app.",
+            download_url: installer.browser_download_url,
+          });
+        } catch { /* Release checks must never interrupt app startup. */ }
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const timers = notifications.map((item) => window.setTimeout(
+      () => setDismissed((current) => new Set(current).add(String(item.id))),
+      10000
+    ));
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [notifications]);
+
   const items = [
     ...systemItems,
     ...notifications.slice(0, 5).map((item) => ({ ...item, system: false })),
