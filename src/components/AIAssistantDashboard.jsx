@@ -351,13 +351,6 @@ export default function AIAssistantDashboard({
     useState(false);
   const [humanizerOpen, setHumanizerOpen] = useState(false);
   const [humanizerSeedText, setHumanizerSeedText] = useState("");
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).get("tool") === "humanizer") {
-      setHumanizerOpen(true);
-    }
-  }, []);
-
   // The WelcomeScreen launches the very same camera control used by InputBar.
   const [visionReady, setVisionReady] = useState(false);
   const visionLauncherRef = useRef(null);
@@ -1969,7 +1962,6 @@ export default function AIAssistantDashboard({
         onRenameChat={renameChat}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
-        onOpenHumanizer={() => setHumanizerOpen(true)}
         onOpenIdentity={() => setIdentityOpen(true)}
         freeMode={freeMode}
         onToggleFreeMode={() => setFreeMode((current) => !current)}
