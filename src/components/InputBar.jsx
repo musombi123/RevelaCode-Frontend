@@ -912,7 +912,7 @@ export default function InputBar({
         )}
 
         {/* One unified composer surface: the textarea stays visually borderless. */}
-        <div className="overflow-hidden rounded-2xl border border-line bg-surface/35 transition-colors focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/10">
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface/35 transition-colors focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/10" ref={attachmentMenuRef}>
         {/* Text entry: always on its own row so it is never squeezed on mobile */}
         <div className="px-4 pb-1 pt-3.5">
           {listening && (
@@ -953,8 +953,8 @@ export default function InputBar({
         </div>
 
         {/* Compact toolbar: attachments and tools share one menu. */}
-        <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
-          <div className="relative flex min-w-0 items-center gap-1" ref={attachmentMenuRef}>
+        <div className="flex flex-col items-stretch gap-2 px-2 pb-2 pt-1">
+          <div className="relative flex w-full min-w-0 flex-col items-stretch gap-1">
             <span data-demo="tools-button">
               <ToolButton
                 label="Attachments and tools"
@@ -968,7 +968,7 @@ export default function InputBar({
 
             {attachmentMenuOpen && (
               <div
-                className="absolute bottom-11 left-0 z-[90] max-h-[min(72dvh,620px)] w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-line bg-popover p-2.5 text-fg shadow-2xl"
+                className="w-full max-h-[min(48dvh,420px)] overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 text-fg shadow-inner animate-in fade-in slide-in-from-top-1 duration-150"
                 role="dialog"
                 aria-label="Attachments and tools"
                 data-demo="ai-composer-tools"
@@ -1025,7 +1025,7 @@ export default function InputBar({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex w-full shrink-0 items-center justify-end gap-1">
             <ToolButton
               label={listening ? "Stop listening" : "Dictate with your voice"}
               onClick={startSpeechRecognition}
