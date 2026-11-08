@@ -1260,7 +1260,7 @@ export default function CommunityDashboard({
 
   return (
     <div data-demo="community-overview" className={"min-h-[70vh] w-full " + (communityDark ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900")}>
-      <div className="mx-auto grid w-full max-w-[1680px] grid-cols-1 gap-3 px-3 pb-28 pt-3 sm:px-4 lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[184px_minmax(0,1fr)_272px]">
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-3 px-3 pb-28 pt-3 sm:px-4 lg:grid-cols-[196px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[204px_minmax(0,1fr)_280px]">
         {/* Desktop left rail */}
         <aside className="hidden min-w-0 lg:block">
           <div className="sticky top-4 space-y-3">
@@ -1269,7 +1269,7 @@ export default function CommunityDashboard({
                 <img src="/Logo.png" alt="RevelaCode" className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 object-contain p-1 dark:border-white/10" />
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-black">Jumuiya</span>
-                  <span className="block text-xs text-slate-400">Community</span>
+                  <span className="block text-[10px] text-slate-400">Your community, connected</span>
                 </span>
               </div>
             </div>
@@ -1291,7 +1291,7 @@ export default function CommunityDashboard({
               </button>
             </nav>
             <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Quick access</p>
+              <p className="px-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Explore more</p>
               <button type="button" onClick={() => navigate("community-marketplace")} className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ShoppingBag size={14} /> Marketplace</button>
               <button type="button" onClick={() => navigate("community-people")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><User size={14} /> Member directory</button>
               <button type="button" onClick={() => navigate("community-invite-members")} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><UserPlus size={14} /> Invite members</button>
@@ -1311,13 +1311,13 @@ export default function CommunityDashboard({
           ) : (
             <>
               
-              <header className="mb-3 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm shadow-slate-950/[0.03] dark:border-white/10 dark:bg-[#0d1729] sm:p-3.5">
+              <header className="mb-3 rounded-[22px] border border-slate-200/90 bg-white p-3 shadow-sm shadow-slate-950/[0.03] dark:border-white/[0.08] dark:bg-[#0d1729] sm:p-3.5">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex shrink-0 items-center gap-2.5">
                     <img src="/Logo.png" alt="RevelaCode" className="h-9 w-9 rounded-xl border border-slate-200 object-contain p-1 dark:border-white/10 sm:h-10 sm:w-10" />
-                    <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">RevelaCode</p>
-                      <p className="text-sm font-black tracking-tight text-slate-950 dark:text-white sm:text-base">Community</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">REVELACODE</p>
+                      <p className="text-[15px] font-black tracking-tight text-slate-950 dark:text-white sm:text-base">Jumuiya</p>
                     </div>
                   </div>
                   <form onSubmit={submitDiscovery} className="order-3 flex min-w-0 w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-white/10 dark:bg-slate-950 md:order-none md:ml-2 md:w-auto md:flex-1 md:px-3">
@@ -1358,16 +1358,16 @@ export default function CommunityDashboard({
                 </div>
               </header>
 
-              <section aria-label="Create a Community post" className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+              <section aria-label="Create a Community post" className="mb-4 overflow-hidden rounded-[22px] border border-slate-200/90 bg-white shadow-sm shadow-slate-950/[0.03] dark:border-white/[0.08] dark:bg-[#0d1729]">
                 <div className="flex items-center gap-3 p-3.5 sm:p-4">
                   {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? (
                     <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-white/10" />
                   ) : (
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-700 text-xs font-black text-white">{displayName.slice(0, 2).toUpperCase()}</span>
                   )}
-                  <button type="button" onClick={openComposer} className="flex min-h-11 min-w-0 flex-1 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-left text-xs font-semibold text-slate-500 transition hover:border-cyan-400 hover:bg-cyan-50/60 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-white/5">Share something useful with your community…</button>
+                  <button type="button" onClick={openComposer} className="flex min-h-11 min-w-0 flex-1 items-center rounded-full border border-slate-200 bg-slate-50 px-4 text-left text-xs font-semibold text-slate-500 transition hover:border-cyan-400 hover:bg-cyan-50/60 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-slate-300 dark:hover:bg-white/5">Share something useful with your community…</button>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 px-3 py-2.5 dark:border-white/10 sm:gap-2 sm:px-4">
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 px-3 py-2 dark:border-white/[0.07] sm:gap-2 sm:px-4">
                   <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ImageIcon size={15} className="text-emerald-600 dark:text-emerald-300" /> Photo / video</button>
                   <button type="button" onClick={() => navigate("community-circles")} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><FileText size={15} className="text-violet-600 dark:text-violet-300" /> Find a network</button>
                   <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={15} className="text-cyan-600 dark:text-cyan-300" /> Start a discussion</button>
@@ -1389,7 +1389,7 @@ export default function CommunityDashboard({
                 onCreatePost={() => navigate("community-composer")}
               />
 
-              <section aria-label="Latest Community posts" className="mb-5 mt-5">
+              <section aria-label="Latest Community posts" className="mb-5 mt-6">
                 <div className="mb-3 flex items-end justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">Community stream</p>
@@ -1398,7 +1398,7 @@ export default function CommunityDashboard({
                   </div>
                   <button type="button" onClick={() => navigate("community-feed")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">View all <ArrowRight size={12} /></button>
                 </div>
-                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]" aria-label="Community feed views">
+                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" aria-label="Community feed views">
                   {PULSE_MODES.map((mode) => (
                     <button
                       key={mode.value}
@@ -1624,15 +1624,15 @@ export default function CommunityDashboard({
       </div>
 
       {/* Floating phone navigation dock */}
-      <nav aria-label="Jumuiya Community navigation" className="fixed bottom-3 left-1/2 z-[90] grid w-[min(94vw,420px)] -translate-x-1/2 grid-cols-5 items-end gap-1 rounded-[26px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/15 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95 lg:hidden">
+      <nav aria-label="Jumuiya Community navigation" className="fixed inset-x-3 bottom-[max(10px,env(safe-area-inset-bottom))] z-[90] mx-auto grid w-auto max-w-[440px] grid-cols-5 items-end gap-1 rounded-[24px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:border-white/[0.09] dark:bg-[#101c2e]/95 lg:hidden">
         <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <Home size={18} /> Home
         </button>
-        <button type="button" onClick={() => navigate("community-circles")} aria-current={workspacePage === "groups" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "groups" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
-          <Users size={18} /> Networks
+        <button type="button" onClick={() => navigate("community-discover")} aria-current={activeSurface === "discovery" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (activeSurface === "discovery" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+          <Compass size={18} /> Discover
         </button>
-        <button type="button" onClick={openComposer} aria-label="Create a Jumuiya community matter" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-xs font-black text-cyan-700 dark:text-cyan-300">
-          <span className="-mt-5 flex h-14 w-14 items-center justify-center bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-600/25 transition active:scale-95" style={{ clipPath: "polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%)" }}>
+        <button type="button" onClick={openComposer} aria-label="Create a Community post" className="flex min-w-0 flex-col items-center justify-center gap-1 pb-1 text-xs font-black text-cyan-700 dark:text-cyan-300">
+          <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-600/25 transition active:scale-95">
             <Plus size={25} strokeWidth={2.5} />
           </span>
           Create
