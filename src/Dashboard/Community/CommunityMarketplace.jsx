@@ -98,7 +98,7 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
   const location = String(listing?.location || "").trim();
 
   return (
-    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/10 dark:bg-slate-900 dark:hover:border-cyan-700/50 sm:p-5">
+    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/[0.08] dark:bg-[#0d1729] dark:hover:border-cyan-700/50 sm:p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
           <ShoppingBag size={19} />
@@ -177,7 +177,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="community-marketplace-form-title"
-        className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:rounded-3xl sm:p-6"
+        className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/[0.08] dark:bg-[#0d1729] sm:rounded-3xl sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -196,7 +196,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
             onClick={() => { if (typeof onClose === "function") onClose(); }}
             disabled={saving}
             aria-label="Close listing form"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/[0.08] dark:hover:bg-white/5"
           >
             <X size={18} />
           </button>
@@ -215,7 +215,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.title}
               onChange={(event) => { if (typeof onChange === "function") onChange("title", event.target.value); }}
               placeholder="What are you offering?"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
             />
           </div>
 
@@ -231,7 +231,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.description}
               onChange={(event) => { if (typeof onChange === "function") onChange("description", event.target.value); }}
               placeholder="Describe condition, what is included, delivery options or the service you provide."
-              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
             />
             <p className="mt-1 text-right text-[10px] text-slate-400">{form.description.length}/2000</p>
           </div>
@@ -245,7 +245,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 id="marketplace-category"
                 value={form.category}
                 onChange={(event) => { if (typeof onChange === "function") onChange("category", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               >
                 {CATEGORIES.filter((item) => item.value).map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
@@ -263,7 +263,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.location}
                 onChange={(event) => { if (typeof onChange === "function") onChange("location", event.target.value); }}
                 placeholder="e.g. Mombasa or Online"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               />
             </div>
           </div>
@@ -281,7 +281,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.price}
                 onChange={(event) => { if (typeof onChange === "function") onChange("price", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               />
             </div>
             <div>
@@ -296,7 +296,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.quantity_available}
                 onChange={(event) => { if (typeof onChange === "function") onChange("quantity_available", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -309,7 +309,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.unit}
                 onChange={(event) => { if (typeof onChange === "function") onChange("unit", event.target.value); }}
                 placeholder="piece, hour, kg…"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               />
             </div>
           </div>
@@ -325,7 +325,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               type="button"
               onClick={() => { if (typeof onClose === "function") onClose(); }}
               disabled={saving}
-              className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+              className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/5"
             >
               Cancel
             </button>
@@ -585,14 +585,14 @@ export default function CommunityMarketplace({ onNavigate }) {
         <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
           <p className="font-black">Marketplace could not be refreshed.</p>
           <p className="mt-1 break-words">{loadError}</p>
-          <button type="button" onClick={() => loadListings()} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 font-bold text-rose-700 dark:bg-slate-900 dark:text-rose-300">
+          <button type="button" onClick={() => loadListings()} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 font-bold text-rose-700 dark:bg-[#0d1729] dark:text-rose-300">
             <RefreshCw size={13} />
             Try again
           </button>
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/[0.08] dark:bg-[#0d1729] sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search marketplace</span>
@@ -602,7 +602,7 @@ export default function CommunityMarketplace({ onNavigate }) {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search products, skills, services or places…"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/10 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white dark:focus:bg-slate-950"
             />
           </label>
           <button
@@ -610,7 +610,7 @@ export default function CommunityMarketplace({ onNavigate }) {
             onClick={() => loadListings({ quiet: true })}
             disabled={refreshing || loading}
             aria-label="Refresh marketplace"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/5"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             Refresh
@@ -657,7 +657,7 @@ export default function CommunityMarketplace({ onNavigate }) {
         {loading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-900">
+              <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/[0.08] dark:bg-[#0d1729]">
                 <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
                 <div className="mt-4 h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
                 <div className="mt-3 h-3 w-full rounded bg-slate-100 dark:bg-slate-800" />
@@ -681,7 +681,7 @@ export default function CommunityMarketplace({ onNavigate }) {
             })}
           </div>
         ) : (
-          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center dark:border-white/10 dark:bg-slate-900">
+          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center dark:border-white/[0.08] dark:bg-[#0d1729]">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
               <ShoppingBag size={23} />
             </div>
@@ -708,7 +708,7 @@ export default function CommunityMarketplace({ onNavigate }) {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/60">
+      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/[0.08] dark:bg-[#0d1729]/60">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <Sparkles size={16} />
@@ -740,14 +740,14 @@ export default function CommunityMarketplace({ onNavigate }) {
 
       {deleteCandidate ? (
         <div className="fixed inset-0 z-[85] flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <section role="dialog" aria-modal="true" aria-labelledby="remove-listing-title" className="w-full max-w-md rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:rounded-3xl sm:p-6">
+          <section role="dialog" aria-modal="true" aria-labelledby="remove-listing-title" className="w-full max-w-md rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/[0.08] dark:bg-[#0d1729] sm:rounded-3xl sm:p-6">
             <h2 id="remove-listing-title" className="text-lg font-black text-slate-950 dark:text-white">Remove this listing?</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               “{deleteCandidate?.title || "Your listing"}” will no longer appear in the active marketplace. This action can’t be undone from this screen.
             </p>
             {loadError ? <p role="alert" className="mt-3 text-xs text-rose-600 dark:text-rose-300">{loadError}</p> : null}
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setDeleteCandidate(null)} disabled={Boolean(deletingId)} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 dark:border-white/10 dark:text-slate-300">Keep listing</button>
+              <button type="button" onClick={() => setDeleteCandidate(null)} disabled={Boolean(deletingId)} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 dark:border-white/[0.08] dark:text-slate-300">Keep listing</button>
               <button type="button" onClick={handleDeleteListing} disabled={Boolean(deletingId)} className="min-h-11 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-black text-white disabled:opacity-60">
                 {deletingId ? "Removing…" : "Remove listing"}
               </button>
