@@ -18,11 +18,11 @@ export default function MfaSettings() {
   const [mfaRecoveryCodes, setMfaRecoveryCodes] = useState([]);
   const [trustedDevices, setTrustedDevices] = useState([]);
 
-  const mfaRequest = async (path, payload = null) => {
+  const mfaRequest = async (path, payload = null, methodOverride = null) => {
     const apiBase = String(baseUrl || "").trim().replace(/\/+$/, "");
     if (!apiBase) throw new Error("Backend URL is not configured.");
     const options = {
-      method: arguments.length > 2 && arguments[2] ? arguments[2] : (payload ? "POST" : "GET"),
+      method: methodOverride || (payload ? "POST" : "GET"),
       headers: payload ? { "Content-Type": "application/json" } : {},
     };
     if (payload) options.body = JSON.stringify(payload);
