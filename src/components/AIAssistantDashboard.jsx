@@ -261,7 +261,10 @@ const normalizeAIResponse = (
 
 const sanitizeAIResponseMetadata = (value) => {
   const metadata = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
-  ["core_mesh", "coreMesh", "usect_zero_tool", "usectZeroTool"].forEach((key) => delete metadata[key]);
+  delete metadata.core_mesh;
+  delete metadata.coreMesh;
+  delete metadata.usect_zero_tool;
+  delete metadata.usectZeroTool;
   return metadata;
 };
 
