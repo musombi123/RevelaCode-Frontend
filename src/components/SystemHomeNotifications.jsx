@@ -28,9 +28,14 @@ export default function SystemHomeNotifications({ onNavigate }) {
 
   useEffect(() => {
     let cancelled = false;
+    const normalizeVersion = (value) => {
+      const match = String(value || "").match(/\\d+(?:\\.\\d+){1,3}/);
+      return match ? match[0].split(".").map(Number) : [];
+    };
     const compare = (latest, installed) => {
-      const a = String(latest || "").replace(/^v/i, "").split(".").map(Number);
-      const b = String(installed || "").replace(/^v/i, "").split(".").map(Number);
+      const a = normalizeVersion(latest);
+      const b = normalizeVersion(installed);
+      if (!a.length || !b.length) return false;
       for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
         const left = Number(a[index] || 0), right = Number(b[index] || 0);
         if (left !== right) return left > right;
