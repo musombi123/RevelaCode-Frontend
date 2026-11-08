@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyzePixels } from "@/ai/v2-free/localIntelligence";
 import { useAuth } from "@/context/AuthContext.jsx";
-import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import {
   ArrowUp,
   Mic,
@@ -24,6 +23,7 @@ import {
   FileSpreadsheet,
   Sparkles,
   XCircle,
+  WandSparkles,
 } from "lucide-react";
 
 /* =========================================================
@@ -69,6 +69,7 @@ const TOOL_COMMANDS = [
   ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
   ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
   ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
+  ["/humanize", "Humanizer", WandSparkles],
 ];
 
 const formatSize = (bytes) =>
@@ -118,7 +119,7 @@ export default function InputBar({
   const [attachedFile, setAttachedFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
-  const [workspaceToolsOpen, setWorkspaceToolsOpen] = useState(false);
+  const [selectedToolCommand, setSelectedToolCommand] = useState(null);
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -182,7 +183,6 @@ export default function InputBar({
     const closeOnEscape = (event) => {
       if (event.key === "Escape") {
         setAttachmentMenuOpen(false);
-        setWorkspaceToolsOpen(false);
       }
     };
     document.addEventListener("pointerdown", closeOnOutside);
@@ -620,11 +620,15 @@ export default function InputBar({
     if (!canSend) return;
 
     recognitionRef.current?.stop?.();
-    const command = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper)\b/i)?.[1]?.toLowerCase() || null;
-    onSend?.(value, attachedFile, { toolCommand: command });
+    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|humanize)\b/i)?.[1]?.toLowerCase();
+    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
+    const command = selectedCommand || typedCommand || null;
+    const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
+    onSend?.(value, attachedFile, { toolCommand: command ? `/${command}` : null, toolLabel });
 
     setText("");
     setAttachedFile(null);
+    setSelectedToolCommand(null);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
@@ -633,7 +637,9 @@ export default function InputBar({
     : [];
 
   const chooseCommand = (command) => {
-    setText(command + " ");
+    const selected = TOOL_COMMANDS.find(([item]) => item === command);
+    if (!selected) return;
+    setSelectedToolCommand(selected);
     setAttachmentMenuOpen(false);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
@@ -652,16 +658,6 @@ export default function InputBar({
 
   return (
     <div className="relative w-full" data-demo="composer">
-      {workspaceToolsOpen && (
-        <div className="absolute bottom-[calc(100%+10px)] left-0 right-0 z-[80]">
-          <ProductivityToolsPanel
-            open={workspaceToolsOpen}
-            onClose={() => setWorkspaceToolsOpen(false)}
-            triggerless
-            onSend={onSend}
-          />
-        </div>
-      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -868,6 +864,22 @@ export default function InputBar({
           </div>
         )}
 
+        {/* Selected tool chip: selection is local UI state; no request is made until submit. */}
+        {selectedToolCommand && (() => {
+          const SelectedIcon = selectedToolCommand[2];
+          return (
+            <div className="px-3 pt-3">
+              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent">
+                <SelectedIcon size={14} aria-hidden="true" />
+                <span>{selectedToolCommand[1]}</span>
+                <button type="button" onClick={() => setSelectedToolCommand(null)} className="ml-1 rounded-full p-0.5 hover:bg-accent/15" aria-label={`Remove ${selectedToolCommand[1]} tool`}>
+                  <X size={13}/>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Attachment chip */}
         {attachedFile && (
           <div className="px-3 pt-3">
@@ -981,18 +993,12 @@ export default function InputBar({
                   className="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40">
                   <Camera size={15}/> Capture with camera / Vision
                 </button>
-                <button type="button" onClick={() => { setAttachmentMenuOpen(false); setWorkspaceToolsOpen(true); }}
-                  disabled={disabled}
-                  className="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-xl border border-accent/25 bg-accent/8 px-3 text-left text-xs font-semibold text-accent hover:bg-accent/12 disabled:opacity-40">
-                  <Sparkles size={15}/> Productivity tools and workspace
-                </button>
-
                 <div className="my-2 border-t border-line"/>
                 <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[.14em] text-muted">AI tools</p>
                 <div className="grid grid-cols-2 gap-1">
                   {TOOL_COMMANDS.map(([command,label,Icon]) => (
-                    <button key={command} type="button" onClick={() => chooseCommand(command)}
-                      className="flex min-h-9 items-center gap-2 rounded-lg px-2 text-left text-[11px] text-fg-secondary hover:bg-surface-2 hover:text-fg">
+                    <button key={command} type="button" onClick={() => chooseCommand(command)} aria-pressed={selectedToolCommand?.[0] === command}
+                      className={"flex min-h-9 items-center gap-2 rounded-lg px-2 text-left text-[11px] hover:bg-surface-2 hover:text-fg " + (selectedToolCommand?.[0] === command ? "bg-accent/10 text-accent" : "text-fg-secondary")}>
                       <Icon size={14}/><span>{label}</span>
                     </button>
                   ))}
