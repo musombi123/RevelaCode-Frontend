@@ -965,6 +965,7 @@ export default function AIAssistantDashboard({
           return;
         }
         sendLockRef.current = true;
+        window.dispatchEvent(new CustomEvent("revelacode:ai-interaction"));
 
         const currentMessages =
           messages;
