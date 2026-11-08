@@ -1859,7 +1859,6 @@ function HomeDashboard({
           </div>
         </section>
         {renderHomeNotifications()}
-        </div>
         {notificationToast && (
           <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 left-3 right-3 z-[120] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
             <Bell size={18} className="shrink-0 text-blue-600"/>
