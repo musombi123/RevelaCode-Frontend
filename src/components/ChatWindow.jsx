@@ -15,9 +15,10 @@ export default function ChatWindow({
 }) {
   const endRef = useRef(null);
 
-  const isTyping =
-    messages.length > 0 &&
-    messages[messages.length - 1]?.status === "loading";
+  const loadingMessage = messages.findLast
+    ? messages.findLast((message) => message?.status === "loading")
+    : [...messages].reverse().find((message) => message?.status === "loading");
+  const isTyping = Boolean(loadingMessage);
 
   /* =======================================================
      LAST USER PROMPT
@@ -112,7 +113,7 @@ export default function ChatWindow({
                 shadow-sm
               "
             >
-              <ThinkingStages prompt={lastUserText} />
+              <ThinkingStages prompt={lastUserText} stage={loadingMessage?.stage || "preparing"} />
             </div>
           </div>
         )}
