@@ -1757,7 +1757,7 @@ export default function CommunityFeed({
                                 alt={media.fileName || getTitle(post)}
                                 loading="lazy"
                                 decoding="async"
-                                className={`w-full object-cover ${mediaItems.length === 1 ? "max-h-[520px]" : "h-full"}`}
+                                className="block h-auto max-h-[78vh] max-h-[78svh] w-full object-contain"
                                 onError={(event) => {
                                   event.currentTarget.closest("button")?.classList.add("hidden");
                                 }}
