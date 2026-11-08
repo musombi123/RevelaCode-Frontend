@@ -1,6 +1,6 @@
 // src/components/ThinkingStages.jsx
 import React, { useMemo } from "react";
-import { Check, LoaderCircle, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 
 const ADAPTIVE_STAGES = [
   { id: "preparing", label: "Preparing your request", detail: "Organising prompt and conversation context" },
@@ -70,7 +70,7 @@ export default function ThinkingStages({ stage = "preparing", prompt = "" }) {
                     <Check size={12} strokeWidth={3} />
                   </span>
                 ) : current ? (
-                  <LoaderCircle size={17} className="animate-spin text-accent motion-reduce:animate-none" />
+                  <Loader2 size={17} className="animate-spin text-accent motion-reduce:animate-none" />
                 ) : (
                   <span className="h-2 w-2 rounded-full border border-line-strong bg-surface" />
                 )}
