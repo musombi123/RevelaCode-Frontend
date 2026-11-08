@@ -1557,7 +1557,7 @@ export default function AIAssistantDashboard({
             : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
           const visibleText = localFallback
             ? localFallback + "\n\n" + localFallbackNotice
-            : (error?.message || "Request failed. Please try again.");
+            : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
 
           if (localFallback) {
             void recordConversationTurn({
