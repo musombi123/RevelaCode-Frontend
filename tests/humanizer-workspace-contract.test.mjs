@@ -48,6 +48,8 @@ test("Composer tool selection is local and executes only with the submitted chat
   assert.ok(input.includes("selectedToolCommand"));
   assert.ok(input.includes("setSelectedToolCommand(selected)"));
   assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(dashboard.includes('if (selectedToolCommand === "/humanize" && !attachedFile)'));
+  assert.ok(dashboard.includes("setHumanizerSeedText(cleaned);"));
   assert.ok(!input.includes("setWorkspaceToolsOpen"));
   assert.ok(!input.includes("<ProductivityToolsPanel"));
   assert.ok(tools.includes("/api/productivity/catalog"));
