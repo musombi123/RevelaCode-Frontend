@@ -102,7 +102,7 @@ test("composer uses one rounded glass surface with accessible responsive control
   assert.ok(input.includes("sm:bottom-[calc(100%+12px)]"));
   assert.ok(input.includes("fixed inset-x-0 bottom-0"));
   assert.ok(input.includes("h-11 w-11"));
-  assert.ok(input.includes('aria-label={isGenerating?"Stop generating":"Send message"}'));
+  assert.ok(input.includes('aria-label={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"}'));
   assert.ok(input.includes("textareaFocused"));
   assert.ok(input.includes('data-demo="ai-send-message"'));
 });
