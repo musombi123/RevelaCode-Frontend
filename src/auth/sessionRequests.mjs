@@ -31,3 +31,41 @@ export function isAuthoritativeSessionCheck(
     return false;
   }
 }
+
+
+/**
+ * Recognize only an explicit platform-session revocation returned by a
+ * connected service that delegates identity validation to RevelaCode.
+ * A generic 401 from an external service is not sufficient to log out.
+ */
+export function isExplicitRevokedSessionResponse(status, payload) {
+  if (Number(status) !== 401 || !payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const nestedError = payload.error && typeof payload.error === "object"
+    ? payload.error
+    : {};
+  const detail = payload.detail && typeof payload.detail === "object"
+    ? payload.detail
+    : {};
+  const code = String(
+    payload.code ||
+    payload.error_code ||
+    nestedError.code ||
+    detail.code ||
+    "",
+  ).trim().toLowerCase();
+
+  if (code === "session_revoked") return true;
+
+  const message = [
+    payload.message,
+    typeof payload.error === "string" ? payload.error : "",
+    nestedError.message,
+    typeof payload.detail === "string" ? payload.detail : "",
+    detail.message,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return /this session has been revoked/.test(message);
+}
