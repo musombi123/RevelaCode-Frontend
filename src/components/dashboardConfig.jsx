@@ -1221,13 +1221,19 @@ function HomeDashboard({
       elimu: "education", school: "education", business: "biashara", farming: "shamba",
     };
     const hub = hubAliases[destination] || destination;
-    if (["home", "faith", "education", "shamba", "biashara", "community", "ai", "humanizer", "settings", "profile"].includes(hub)) {
+    if (String(notification.id).startsWith("system-update-") && (notification.action_url || notification.url)) {
+      const target = String(notification.action_url || notification.url);
+      try {
+        const parsed = new URL(target, window.location.origin);
+        if (parsed.protocol === "https:") window.location.assign(parsed.href);
+      } catch { /* Ignore malformed release links. */ }
+    } else if (["home", "faith", "education", "shamba", "biashara", "community", "ai", "humanizer", "settings", "profile"].includes(hub)) {
       onNavigate?.(hub);
     } else if (notification.action_url || notification.url) {
       const target = String(notification.action_url || notification.url);
       try {
         const parsed = new URL(target, window.location.origin);
-        if (parsed.origin === window.location.origin || /^https:$/.test(parsed.protocol)) window.location.assign(parsed.href);
+        if (parsed.origin === window.location.origin || parsed.protocol === "https:") window.location.assign(parsed.href);
       } catch { /* Ignore malformed notification links. */ }
     }
     setNotificationToast(null);
