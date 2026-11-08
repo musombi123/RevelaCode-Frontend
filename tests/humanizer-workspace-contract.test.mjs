@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("Humanizer opens inline inside the existing AI workspace", () => {
+test("Humanizer is a standalone Home workspace with a natural-language inline chat handoff", () => {
   const dashboard = read("../src/components/AIAssistantDashboard.jsx");
   const sidebar = read("../src/components/Sidebar.jsx");
   const app = read("../src/App.jsx");
@@ -12,7 +12,7 @@ test("Humanizer opens inline inside the existing AI workspace", () => {
 
   assert.match(dashboard, /import HumanizerWorkspace from ["']@\/pages\/HumanizerWorkspace["']/);
   assert.match(dashboard, /setHumanizerOpen\(true\)/);
-  assert.match(dashboard, /<HumanizerWorkspace embedded \/>/);
+  assert.match(dashboard, /<HumanizerWorkspace[\\s\\S]*?embedded[\\s\\S]*?initialText=\\{humanizerSeedText\\}/);
   assert.match(dashboard, /onOpenHumanizer=\{\(\) => setHumanizerOpen\(true\)\}/);
   assert.match(sidebar, /onOpenHumanizer/);
   assert.doesNotMatch(sidebar, /navigate\(["']\/humanizer["']\)/);
