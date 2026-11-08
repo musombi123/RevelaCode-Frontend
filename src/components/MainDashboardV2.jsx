@@ -404,9 +404,6 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
     if (view === "ai") {
       try {
-        const visits = Number(localStorage.getItem("revelacode_ai_workspace_visits") || 0) + 1;
-        localStorage.setItem("revelacode_ai_workspace_visits", String(visits));
-        if (visits >= 4) localStorage.setItem("revelacode_ai_workspace_priority", "true");
         if (localStorage.getItem("revelacode_ai_workspace_priority") === "true") {
           setActiveView("ai");
           setAIFullscreenOpen(true);
@@ -420,6 +417,18 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     setActiveView(view);
     setSidebarOpen(false);
     setMobileCategoryOpen(null);
+  }, []);
+
+  useEffect(() => {
+    const recordAIUsage = () => {
+      try {
+        const interactions = Number(localStorage.getItem("revelacode_ai_workspace_interactions") || 0) + 1;
+        localStorage.setItem("revelacode_ai_workspace_interactions", String(interactions));
+        if (interactions >= 8) localStorage.setItem("revelacode_ai_workspace_priority", "true");
+      } catch { /* AI workspace remains accessible without usage preference storage. */ }
+    };
+    window.addEventListener("revelacode:ai-interaction", recordAIUsage);
+    return () => window.removeEventListener("revelacode:ai-interaction", recordAIUsage);
   }, []);
 
   useEffect(() => {
