@@ -17,7 +17,8 @@ test("Humanizer opens inline inside the existing AI workspace", () => {
   assert.match(sidebar, /onOpenHumanizer/);
   assert.doesNotMatch(sidebar, /navigate\(["']\/humanizer["']\)/);
   assert.match(app, /path="\/humanizer" element=\{<Navigate to="\/app\?hub=ai&tool=humanizer" replace \/>\}/);
-  assert.match(humanizer, /if \(!token\) return \{\};/);
+  assert.match(humanizer, /requireAuthenticatedFetch/);
+  assert.doesNotMatch(humanizer, /revelacode_access_token|revelacode_token_type|Authorization:/);
   assert.doesNotMatch(humanizer, /Please sign in to use the Humanizer/);
   assert.match(humanizer, /mapAcceptedRangeToOriginal/);
   assert.match(humanizer, /accepted_replacements/);
