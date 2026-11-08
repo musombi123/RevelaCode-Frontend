@@ -18,6 +18,8 @@ export default function SystemHomeNotifications({ onNavigate }) {
       const item = event?.detail;
       if (!item || !item.title) return;
       const id = String(item.id || `system-${Date.now()}`);
+      const saved = (() => { try { return JSON.parse(localStorage.getItem("revelacode_system_notifications") || "[]"); } catch { return []; } })();
+      try { localStorage.setItem("revelacode_system_notifications", JSON.stringify([{ ...item, id, timestamp: item.timestamp || new Date().toISOString(), system: true, read: false }, ...saved.filter((entry) => String(entry.id) !== id)].slice(0, 50))); } catch { /* Home notification still displays for this session. */ }
       setSystemItems((current) => [{ ...item, id, timestamp: item.timestamp || new Date().toISOString(), system: true }, ...current].slice(0, 8));
       setDismissed((current) => { const next = new Set(current); next.delete(id); return next; });
       window.setTimeout(() => setDismissed((current) => new Set(current).add(id)), 10000);
