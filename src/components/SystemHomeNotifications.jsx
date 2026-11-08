@@ -31,7 +31,7 @@ export default function SystemHomeNotifications({ onNavigate }) {
   useEffect(() => {
     let cancelled = false;
     const normalizeVersion = (value) => {
-      const match = String(value || "").match(/\\d+(?:\\.\\d+){1,3}/);
+      const match = String(value || "").match(/\d+(?:\.\d+){1,3}/);
       return match ? match[0].split(".").map(Number) : [];
     };
     const compare = (latest, installed) => {
