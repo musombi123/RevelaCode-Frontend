@@ -107,6 +107,17 @@ test("only an explicit revoked-session 401 from a connected service triggers pri
   assert.match(authContext, /primarySessionRejected/);
 });
 
+test("AI chat and Humanizer continue to require their current use notices", async () => {
+  const aiWorkspace = await readFile(new URL("../src/components/AIAssistantDashboard.jsx", import.meta.url), "utf8");
+  const humanizer = await readFile(new URL("../src/pages/HumanizerWorkspace.jsx", import.meta.url), "utf8");
+  assert.ok(aiWorkspace.includes("ai_chat"));
+  assert.ok(aiWorkspace.includes('complianceStatus !== "accepted"'));
+  assert.ok(humanizer.includes("feature=humanizer"));
+  assert.ok(humanizer.includes('feature: "humanizer"'));
+  assert.ok(humanizer.includes("acceptHumanizerNotice"));
+  assert.ok(humanizer.includes('complianceStatus !== "accepted"'));
+});
+
 test("school and business hosted websites share privacy and cookie preference controls", async () => {
   const schoolSite = await readFile(new URL("../src/pages/jumuiya/ElimuPublicSchoolPage.jsx", import.meta.url), "utf8");
   const businessSite = await readFile(new URL("../src/pages/jumuiya/BiasharaPublicWebsitePage.jsx", import.meta.url), "utf8");
