@@ -597,6 +597,7 @@ export default function CommunityDashboard({
 
         case "community-feed":
         case "community-activity":
+          setShareDraft(null);
           setWorkspacePage("feed");
           return;
 
@@ -1204,6 +1205,7 @@ export default function CommunityDashboard({
           onNavigate={navigate}
           onEditPost={(post) => {
             setEditingPost(post);
+            setShareDraft(null);
             setWorkspacePage("composer");
           }}
         />
