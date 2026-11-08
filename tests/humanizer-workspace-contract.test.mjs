@@ -21,7 +21,9 @@ test("Humanizer is a standalone Home workspace with a natural-language inline ch
   assert.ok(app.includes('path="/humanizer" element={<Navigate to="/app?hub=humanizer" replace />}'));
   assert.ok(registry.includes('key: "humanizer"'));
   assert.ok(registry.includes('onNavigate?.("humanizer")'));
-  assert.ok(humanizer.includes("if (!token) return {};"));
+  assert.ok(humanizer.includes("const authFetch = auth?.authFetch;"));
+  assert.ok(humanizer.includes("function requireAuthenticatedFetch()"));
+  assert.ok(humanizer.includes("return authFetch;"));
   assert.ok(!humanizer.includes("Please sign in to use the Humanizer"));
   assert.ok(humanizer.includes("mapAcceptedRangeToOriginal"));
   assert.ok(humanizer.includes("accepted_replacements"));
