@@ -1985,7 +1985,8 @@ export default function AIAssistantDashboard({
   return (
     <div
       data-demo="ai-overview"
-      className="revelaai-workspace relative flex h-full min-h-0 min-w-0 overflow-hidden bg-app text-fg"
+      className="revelaai-workspace relative flex h-[100dvh] min-h-0 min-w-0 overflow-hidden bg-app text-fg"
+      style={{ height: "var(--revelaai-visual-viewport-height, 100dvh)" }}
     >
       {/* ===================================================
           SIDEBAR
@@ -2145,7 +2146,7 @@ export default function AIAssistantDashboard({
           </section>
         ) : (
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation workspace">
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6">
               <ChatWindow
                 messages={messages}
                 regenerableId={regenerableId}
