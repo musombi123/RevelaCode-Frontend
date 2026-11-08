@@ -37,7 +37,7 @@ test("Humanizer is a standalone Home workspace with a natural-language inline ch
   assert.ok(humanizer.includes("xl:grid-cols-[220px_minmax(0,1fr)_minmax(19rem,0.82fr)]"));
 });
 
-test("Productivity tools open from the InputBar attachment menu in both chat states", () => {
+test("Composer tool selection is local and executes only with the submitted chat message", () => {
   const dashboard = read("../src/components/AIAssistantDashboard.jsx");
   const input = read("../src/components/InputBar.jsx");
   const tools = read("../src/components/ProductivityToolsPanel.jsx");
@@ -45,8 +45,12 @@ test("Productivity tools open from the InputBar attachment menu in both chat sta
   assert.ok(input.includes('label="Attachments and tools"'));
   assert.ok(input.includes("Upload a file or document"));
   assert.ok(input.includes("AI tools"));
-  assert.ok(input.includes("setWorkspaceToolsOpen(true)"));
-  assert.ok(input.includes("<ProductivityToolsPanel"));
-  assert.ok(tools.includes("triggerless = false"));
+  assert.ok(input.includes("selectedToolCommand"));
+  assert.ok(input.includes("setSelectedToolCommand(selected)"));
+  assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(!input.includes("setWorkspaceToolsOpen"));
+  assert.ok(!input.includes("<ProductivityToolsPanel"));
+  assert.ok(tools.includes("/api/productivity/catalog"));
+  assert.ok(tools.includes("/api/productivity/research"));
   assert.ok(!dashboard.includes("<ProductivityToolsPanel"));
 });
