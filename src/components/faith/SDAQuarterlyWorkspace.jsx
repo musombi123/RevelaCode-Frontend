@@ -82,9 +82,12 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
       if (payload?.success === false) throw new Error("connection");
       setMaterials(Array.isArray(payload?.materials) ? payload.materials : []);
       setConnectionState("online");
+      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
       await writeCachedApiResponse("sda-quarterly-public", requestUrl, payload);
       try { localStorage.setItem(cacheKey, JSON.stringify({ payload, savedAt: Date.now() })); } catch { /* IndexedDB remains primary. */ }
     } catch {
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: offline ? "offline" : "poor" } }));
       const cached = await readCachedApiResponse("sda-quarterly-public", requestUrl).catch(() => ({ hit: false }));
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { /* Ignore corrupt cache. */ }
