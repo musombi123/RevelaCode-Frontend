@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Sparkles, MessageCircle,
   GraduationCap, Trash2, Pencil, Check, X, Mic, Camera, WifiOff, Search,
-  Pin, Settings2, FileText, History, ChevronDown, Wrench
+  Pin, Settings2, History, ChevronDown, Wrench
 } from "lucide-react";
 import { resolveChatTitle } from "@/components/utils/chatTitle";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -238,12 +238,6 @@ export default function Sidebar({
     });
   };
 
-  const openTool = () => {
-    setToolsOpen(false);
-    onOpenHumanizer?.();
-    setOpen(false);
-  };
-
   const initials = String(user?.name || user?.full_name || user?.contact || "R")
     .trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const planLabel = user?.subscription?.plan_name || user?.plan_name || user?.plan?.name || "Free";
@@ -315,10 +309,6 @@ export default function Sidebar({
                 title="Explore with vision" aria-label="Vision"
                 className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
                 <Camera size={15}/>Vision
-              </button>
-              <button type="button" onClick={openTool} title="Open Selective Humanizer" aria-label="Open Humanizer"
-                className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
-                <FileText size={15}/>Selective Humanizer
               </button>
               <button type="button" role="switch" aria-checked={freeMode} onClick={() => onToggleFreeMode?.()}
                 title={freeMode ? "Turn off weak-network mode" : "Enable weak-network mode"}
