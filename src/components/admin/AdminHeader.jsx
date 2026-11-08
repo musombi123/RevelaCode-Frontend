@@ -21,7 +21,7 @@ export default function AdminHeader() {
           className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-800 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
         >
           <Home size={17} aria-hidden="true" />
-          <span>Return to public site</span>
+          <span>RevelaCode public</span>
         </Link>
         <button
           type="button"
