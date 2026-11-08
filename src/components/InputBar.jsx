@@ -22,7 +22,6 @@ import {
   Presentation,
   FileSpreadsheet,
   XCircle,
-  WandSparkles,
 } from "lucide-react";
 
 /* =========================================================
@@ -68,7 +67,7 @@ const TOOL_COMMANDS = [
   ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
   ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
   ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
-  ["/humanize", "Humanizer", WandSparkles],
+  ["/humanize", "Humanizer", Sparkles],
 ];
 
 const formatSize = (bytes) =>
