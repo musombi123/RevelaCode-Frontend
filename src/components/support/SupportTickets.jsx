@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
 import SupportTicketDetails from "./SupportTicketDetails.jsx";
 import SupportResolveModal from "./SupportResolveModal.jsx";
+import { hasSupportAdminRole } from "@/auth/workspaceRoles.mjs";
 import { readSupportResponse, supportApiUrl, supportAuthHeaders } from "./supportApi.js";
 
 const PAGE_SIZE = 20;
@@ -20,7 +21,7 @@ function statusClass(status) {
 
 export default function SupportTickets() {
   const { user, getAccessToken, getTokenType } = useAuth();
-  const supportAdmin = String(user?.role || "").toLowerCase() === "support_admin";
+  const supportAdmin = hasSupportAdminRole(user);
   const [tickets, setTickets] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: PAGE_SIZE });
   const [page, setPage] = useState(1);
