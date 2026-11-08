@@ -188,6 +188,8 @@ export default function CommunityMediaCards({
     [posts],
   );
 
+  if (!mediaPosts.length) return null;
+
   return (
     <section aria-labelledby="community-media-title" className="mt-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -198,10 +200,10 @@ export default function CommunityMediaCards({
             </span>
             <div>
               <h2 id="community-media-title" className="text-lg font-black tracking-tight text-slate-950 dark:text-white">
-                Community in frames
+                Community highlights
               </h2>
               <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-                Photos and clips shared by real members
+                Recent photos, clips and moments from members
               </p>
             </div>
           </div>
@@ -216,7 +218,7 @@ export default function CommunityMediaCards({
       </div>
 
       {mediaPosts.length ? (
-        <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
+        <div className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
           {mediaPosts.map(({ post, media, index }) => {
             const leadMedia = media[0];
             const author = getAuthor(post);
@@ -228,13 +230,13 @@ export default function CommunityMediaCards({
             return (
               <article
                 key={getPostId(post, index)}
-                className="group w-[min(76vw,255px)] flex-none snap-start overflow-hidden rounded-[25px] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"
+                className="group w-[min(70vw,220px)] flex-none snap-start overflow-hidden rounded-[25px] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"
               >
                 <button
                   type="button"
                   onClick={() => typeof onOpenPost === "function" && onOpenPost(post)}
                   aria-label={`Open media post: ${title}`}
-                  className="relative block aspect-[4/4.7] w-full overflow-hidden bg-slate-200 text-left dark:bg-slate-800"
+                  className="relative block aspect-[16/10] w-full overflow-hidden bg-slate-200 text-left dark:bg-slate-800"
                 >
                   {isVideo ? (
                     <video
