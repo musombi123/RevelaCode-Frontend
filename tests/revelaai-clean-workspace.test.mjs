@@ -59,7 +59,8 @@ test("the unified composer exposes inline attachments, searchable grouped tools 
   assert.ok(input.includes("Search AI tools"));
   assert.ok(input.includes("selectedToolCommand"));
   assert.ok(input.includes("setSelectedToolCommand(selected)"));
-  assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(input.includes("onSend?.(value, attachedFile, {"));
+  assert.ok(input.includes("toolCommand: command ?"));
   assert.ok(input.includes("aria-expanded={attachmentMenuOpen}"));
   assert.ok(input.includes("safe-area-inset-bottom"));
   assert.ok(!input.includes("setWorkspaceToolsOpen"));
