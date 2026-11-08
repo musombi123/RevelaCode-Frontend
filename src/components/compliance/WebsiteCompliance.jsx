@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Cookie, ShieldCheck, Settings2, X } from "lucide-react";
 
-const API_BASE = String(
+const API_BASE_VALUE = String(
   import.meta.env.VITE_REVELACODE_API_URL ||
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_BACKEND_URL ||
   "https://revelacode-backend.onrender.com"
-).replace(/\/$/, "");
+).trim();
+const API_BASE = API_BASE_VALUE.endsWith("/") ? API_BASE_VALUE.slice(0, -1) : API_BASE_VALUE;
 
 const DEFAULT_PREFERENCES = {
   essential: true,
