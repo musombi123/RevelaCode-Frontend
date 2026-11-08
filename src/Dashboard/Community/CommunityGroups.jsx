@@ -160,7 +160,7 @@ function EmptyState({
         flex flex-col items-center justify-center
         rounded-3xl border border-dashed border-slate-200
         bg-white px-6 py-12 text-center
-        dark:border-white/10 dark:bg-slate-900
+        dark:border-white/[0.08] dark:bg-[#0d1729]
       "
     >
       <div
@@ -214,10 +214,10 @@ function GroupCard({
   return (
     <article
       className="
-        flex h-full flex-col rounded-3xl border
-        border-slate-200 bg-white p-5 shadow-sm
-        transition hover:-translate-y-0.5 hover:shadow-md
-        dark:border-white/10 dark:bg-slate-900
+        flex h-full flex-col rounded-[22px] border
+        border-slate-200/90 bg-white p-4 shadow-sm
+        transition hover:-translate-y-0.5 hover:border-cyan-300/60 hover:shadow-md
+        dark:border-white/[0.08] dark:bg-[#0d1729]
       "
     >
       <div className="flex items-start justify-between gap-3">
@@ -1253,11 +1253,11 @@ export default function CommunityGroups({
         <section
           className="
             overflow-hidden rounded-[28px]
-            border border-cyan-200/70
-            bg-gradient-to-br from-cyan-600
-            via-cyan-600 to-teal-700
+            border border-cyan-400/20
+            bg-gradient-to-br from-[#071827]
+            via-[#0d2d43] to-[#07566a]
             px-5 py-6 text-white shadow-xl
-            shadow-cyan-900/10
+            shadow-slate-950/30
             dark:border-cyan-500/20
             sm:px-7 sm:py-8
           "
@@ -1388,9 +1388,9 @@ export default function CommunityGroups({
 
         <section
           className="
-            rounded-3xl border border-slate-200
-            bg-white p-4 dark:border-white/10
-            dark:bg-slate-900 sm:p-5
+            rounded-3xl border border-slate-200/90
+            bg-white p-4 dark:border-white/[0.08]
+            dark:bg-[#0d1729] sm:p-5
           "
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
