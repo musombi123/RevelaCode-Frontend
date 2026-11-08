@@ -845,6 +845,15 @@ export default function AIAssistantDashboard({
           return;
         }
 
+        // A selected Humanizer tool opens its embedded workspace directly.
+        // Tool selection itself is local state; the Humanizer service is called
+        // only when the user runs an operation inside that workspace.
+        if (selectedToolCommand === "/humanize" && !attachedFile) {
+          setHumanizerSeedText(cleaned);
+          setHumanizerOpen(true);
+          return;
+        }
+
         if (sendLockRef.current) {
           return;
         }
