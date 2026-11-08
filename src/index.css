@@ -2027,3 +2027,26 @@ html[data-theme="dark"] { --premium-rgb: 251 191 36; }
 .revelaai-workspace .shadow-dialog {
   box-shadow: 0 24px 80px -12px rgb(var(--shadow-rgb) / .5);
 }
+
+
+/* Android soft-keyboard viewport correction for the RevelaAI workspace. */
+.revelaai-workspace.revelaai-keyboard-open {
+  height: var(--revela-visible-height) !important;
+  max-height: var(--revela-visible-height) !important;
+  min-height: 0 !important;
+}
+
+.revelaai-workspace.revelaai-keyboard-open > main {
+  min-height: 0 !important;
+  height: 100%;
+}
+
+.revelaai-workspace.revelaai-keyboard-open [aria-label="Conversation workspace"] {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.revelaai-workspace.revelaai-keyboard-open [aria-label="Conversation workspace"] > .min-h-0.flex-1 {
+  min-height: 0 !important;
+  overscroll-behavior: contain;
+}
