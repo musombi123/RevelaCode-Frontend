@@ -316,7 +316,7 @@ export default function AIAssistantDashboard({
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_BACKEND_URL ||
     "https://revelacode-backend.onrender.com"
-  ).replace(/\\/$/, "");
+  ).replace(/\/$/, "");
   const hubNoticeFeature = ({
     faith: "faith_content",
     bible: "faith_content",
