@@ -55,6 +55,7 @@ import CommunityPeopleDirectory from "@/Dashboard/Community/CommunityPeopleDirec
 import CommunityInviteMembers from "@/Dashboard/Community/CommunityInviteMembers.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import CommunityProfileWorkspace from "@/Dashboard/Community/CommunityProfileWorkspace.jsx";
+import { consumePendingCommunityShareDraft } from "@/lib/communityShare.js";
 
 // ============================================================
 // TEMPORARY HUB REDIRECTS
@@ -543,6 +544,16 @@ export default function CommunityDashboard({
   const [composerCategory, setComposerCategory] = useState("general");
   const [backendHealth, setBackendHealth] = useState("checking");
   const [communityProfile, setCommunityProfile] = useState(null);
+  const [shareDraft, setShareDraft] = useState(null);
+
+  useEffect(() => {
+    const pendingDraft = consumePendingCommunityShareDraft();
+    if (!pendingDraft) return;
+    setShareDraft(pendingDraft);
+    setEditingPost(null);
+    setComposerCategory("general");
+    setWorkspacePage("composer");
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -563,6 +574,7 @@ export default function CommunityDashboard({
         case "community":
         case "community-home":
         case "community-hub-community":
+          setShareDraft(null);
           setWorkspacePage("home");
           setActiveSurface("pulse");
           return;
@@ -590,6 +602,7 @@ export default function CommunityDashboard({
 
         case "community-composer":
           setEditingPost(null);
+          setShareDraft(null);
           setComposerCategory("general");
           setWorkspacePage("composer");
           return;
@@ -1053,6 +1066,7 @@ export default function CommunityDashboard({
 
   const openComposer = useCallback(() => {
     setEditingPost(null);
+    setShareDraft(null);
     navigate("community-composer");
   }, [navigate]);
 
@@ -1204,6 +1218,7 @@ export default function CommunityDashboard({
         <CommunityComposer
           initialPost={editingPost}
           initialCategory={composerCategory}
+          shareDraft={shareDraft}
           onNavigate={navigate}
         />
       </div>
