@@ -899,6 +899,8 @@ export default function InputBar({
           </div>
         )}
 
+        {/* One unified composer surface: the textarea stays visually borderless. */}
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface/35 transition-colors focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/10">
         {/* Text entry: always on its own row so it is never squeezed on mobile */}
         <div className="px-4 pb-1 pt-3.5">
           {listening && (
@@ -934,7 +936,7 @@ export default function InputBar({
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             aria-label={placeholder}
-            className="block max-h-[160px] min-h-[24px] w-full min-w-0 resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-fg outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="!m-0 block max-h-[160px] min-h-[24px] w-full min-w-0 resize-none overflow-y-auto !border-0 !bg-transparent !shadow-none !outline-none !ring-0 text-[14px] leading-6 text-fg placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50 focus:!border-0 focus:!outline-none focus:!ring-0 focus-visible:!outline-none"
           />
         </div>
 
@@ -1045,6 +1047,7 @@ export default function InputBar({
               {isGenerating ? <XCircle size={17} strokeWidth={2.5}/> : <ArrowUp size={17} strokeWidth={2.5}/>}
             </button>
           </div>
+        </div>
         </div>
       </div>
 
