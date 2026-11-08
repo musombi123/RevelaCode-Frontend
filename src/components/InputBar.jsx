@@ -38,7 +38,12 @@ import {
 ========================================================= */
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const MAX_TEXTAREA_HEIGHT = 200;
+const MAX_TEXTAREA_HEIGHT = 160;
+
+export const TOOL_MODES = {
+  "/image": { kind: "image-studio", defaultMode: "generate", modes: [{value:"generate",label:"Generate",placeholder:"Describe the image you want",action:"Generate"},{value:"edit",label:"Edit",placeholder:"Describe how to edit the image",action:"Edit"},{value:"merge",label:"Merge",placeholder:"Describe how the images should be combined",action:"Merge"},{value:"enhance",label:"Enhance",placeholder:"Describe how to enhance the image",action:"Enhance"}] },
+  "/search": { kind: "deep-search", defaultMode: "deep", modes: [{value:"quick",label:"Quick",placeholder:"What should I research?",action:"Search"},{value:"deep",label:"Deep",placeholder:"What should I research in depth?",action:"Search"},{value:"intensive",label:"Intensive",placeholder:"Define the research question and evidence needed",action:"Research"}] },
+};
 
 const ACCEPTED_TYPES = [
   "image/*",
@@ -121,6 +126,12 @@ export default function InputBar({
   const [dragging, setDragging] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [selectedToolCommand, setSelectedToolCommand] = useState(null);
+  const [toolMode, setToolMode] = useState({});
+  const [imageAspect, setImageAspect] = useState("1:1");
+  const [imageStyle, setImageStyle] = useState("photorealistic");
+  const [imageCount, setImageCount] = useState(1);
+  const [searchSources, setSearchSources] = useState({ web: true, news: false, academic: false });
+  const [searchTimeRange, setSearchTimeRange] = useState("Any time");
   const [toolsQuery, setToolsQuery] = useState("");
   const [textareaFocused, setTextareaFocused] = useState(false);
 
@@ -616,6 +627,11 @@ export default function InputBar({
      SUBMIT
   ======================================================= */
 
+  const activeToolCommand = selectedToolCommand?.[0] || null;
+  const activeModeConfig = activeToolCommand ? TOOL_MODES[activeToolCommand] : null;
+  const activeMode = activeModeConfig ? (toolMode[activeToolCommand] || activeModeConfig.defaultMode) : null;
+  const activeModeDefinition = activeModeConfig?.modes?.find((mode) => mode.value === activeMode);
+  const effectivePlaceholder = activeModeDefinition?.placeholder || placeholder;
   const canSend = !disabled && (text.trim().length > 0 || Boolean(attachedFile));
 
   const submit = () => {
@@ -627,7 +643,12 @@ export default function InputBar({
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
     const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
-    onSend?.(value, attachedFile, { toolCommand: command ? `/${command}` : null, toolLabel });
+    onSend?.(value, attachedFile, {
+      toolCommand: command ? `/${command}` : null,
+      toolLabel,
+      toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
+      toolOptions: command === "image" ? { aspectRatio: imageAspect, style: imageStyle, imageCount } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+    });
 
     setText("");
     setAttachedFile(null);
@@ -642,8 +663,8 @@ export default function InputBar({
   const chooseCommand = (command) => {
     const selected = TOOL_COMMANDS.find(([item]) => item === command);
     if (!selected) return;
-    setText((current) => current.replace(/^\/[a-z]+\s*/i, ""));
     setSelectedToolCommand(selected);
+    if (TOOL_MODES[command]) setToolMode((current) => ({ ...current, [command]: TOOL_MODES[command].defaultMode }));
     setAttachmentMenuOpen(false);
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
@@ -884,8 +905,34 @@ export default function InputBar({
             {attachedFile&&<div className="mb-3 flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 sm:max-w-sm">{previewUrl?<img src={previewUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover"/>:<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-accent"><FileText size={20}/></span>}<div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-fg">{attachedFile.name}</p><p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p></div><button type="button" onClick={()=>setAttachedFile(null)} aria-label="Remove attachment" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-surface-3"><X size={16}/></button></div>}
             {listening&&<div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-500" role="status" aria-live="polite"><span className="flex h-4 items-center gap-[3px]">{[6,12,8,14,7,11,5].map((height,i)=><span key={i} className="w-[3px] animate-pulse rounded-full bg-rose-500" style={{height:height+"px",animationDelay:(i*90)+"ms"}}/>)}</span>Listening in {VOICE_LANGUAGES.find(l=>l.code===voiceLanguage)?.name} · tap mic to stop</div>}
             {slashMatches.length>0&&<div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">{slashMatches.map(([command,label,Icon])=><button key={command} type="button" role="option" aria-selected="false" onClick={()=>chooseCommand(command)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={16}/><b>{command}</b><span className="text-muted">{label}</span></button>)}</div>}
-            <textarea ref={textareaRef} rows={1} value={text} disabled={disabled} placeholder={placeholder} onChange={e=>setText(e.target.value)} onKeyDown={handleKeyDown} onPaste={handlePaste} onFocus={()=>setTextareaFocused(true)} onBlur={()=>setTextareaFocused(false)} aria-label={placeholder} className="block max-h-[160px] min-h-[28px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-6 text-fg outline-none placeholder:text-muted focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-50"/>
+            <textarea ref={textareaRef} rows={1} value={text} disabled={disabled} placeholder={effectivePlaceholder} onChange={e=>setText(e.target.value)} onKeyDown={handleKeyDown} onPaste={handlePaste} onFocus={()=>setTextareaFocused(true)} onBlur={()=>setTextareaFocused(false)} aria-label={effectivePlaceholder} className="block max-h-[min(160px,40dvh)] min-h-[28px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-6 text-fg outline-none placeholder:text-muted focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-50"/>
           </div>
+          {activeModeConfig?.kind === "image-studio" && (
+            <div className="border-t border-line/70 px-3 py-2">
+              {(activeMode === "edit" || activeMode === "merge") && <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-16 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line-strong bg-surface-2 text-[10px] font-semibold text-muted hover:border-accent hover:text-accent"><Plus size={16}/>Add image</button>
+                {attachedFile?.type?.startsWith("image/") && previewUrl && <img src={previewUrl} alt="Selected image" className="h-16 w-16 shrink-0 rounded-xl border border-line object-cover"/>}
+                {activeMode === "merge" && <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-16 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line-strong bg-surface-2 text-[10px] font-semibold text-muted"><Plus size={16}/>Add another</button>}
+              </div>}
+              <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 [scrollbar-width:thin]">
+                <div className="flex shrink-0 rounded-xl bg-surface-2 p-1" role="group" aria-label="Image mode">
+                  {activeModeConfig.modes.map((mode) => <button key={mode.value} type="button" onClick={() => setToolMode((current) => ({ ...current, "/image": mode.value }))} aria-pressed={activeMode === mode.value} className={"min-h-8 rounded-lg px-2.5 text-[11px] font-semibold " + (activeMode === mode.value ? "bg-surface-3 text-fg shadow-sm" : "text-muted hover:text-fg")}>{mode.label}</button>)}
+                </div>
+                <div className="flex shrink-0 items-center gap-1" aria-label="Aspect ratio">
+                  {["1:1","16:9","9:16"].map((ratio) => <button key={ratio} type="button" onClick={() => setImageAspect(ratio)} aria-pressed={imageAspect === ratio} className={"min-h-8 rounded-full border px-2.5 text-[11px] font-semibold " + (imageAspect === ratio ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-muted")}>{ratio}</button>)}
+                </div>
+                <select value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} aria-label="Image style" className="h-8 shrink-0 rounded-full border border-line bg-surface-2 px-3 text-[11px] font-semibold text-fg"><option value="photorealistic">Photorealistic</option><option value="illustration">Illustration</option><option value="cinematic">Cinematic</option><option value="3d">3D render</option><option value="watercolor">Watercolor</option><option value="minimal">Minimal</option></select>
+                <div className="flex h-8 shrink-0 items-center gap-2 rounded-full border border-line px-2"><button type="button" onClick={() => setImageCount((n) => Math.max(1,n-1))} disabled={imageCount<=1} aria-label="Fewer images">−</button><span className="text-[11px] font-semibold">{imageCount}</span><button type="button" onClick={() => setImageCount((n) => Math.min(4,n+1))} disabled={imageCount>=4} aria-label="More images">+</button></div>
+              </div>
+            </div>
+          )}
+          {activeModeConfig?.kind === "deep-search" && (
+            <div className="border-t border-line/70 px-3 py-2"><div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 [scrollbar-width:thin]">
+              <div className="flex shrink-0 rounded-xl bg-surface-2 p-1" role="group" aria-label="Research depth">{activeModeConfig.modes.map((mode) => <button key={mode.value} type="button" onClick={() => setToolMode((current) => ({ ...current, "/search": mode.value }))} aria-pressed={activeMode === mode.value} className={"min-h-8 rounded-lg px-3 text-[11px] font-semibold " + (activeMode === mode.value ? "bg-surface-3 text-fg shadow-sm" : "text-muted")}>{mode.label}</button>)}</div>
+              {[["web","Web"],["news","News"],["academic","Academic"]].map(([key,label]) => <button key={key} type="button" onClick={() => setSearchSources((current) => ({ ...current, [key]: !current[key] }))} aria-pressed={searchSources[key]} className={"min-h-8 shrink-0 rounded-full border px-3 text-[11px] font-semibold " + (searchSources[key] ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-muted")}>{label}</button>)}
+              <select value={searchTimeRange} onChange={(event) => setSearchTimeRange(event.target.value)} aria-label="Research time range" className="h-8 shrink-0 rounded-full border border-line bg-surface-2 px-3 text-[11px] font-semibold text-fg"><option>Any time</option><option>Past 24 hours</option><option>Past week</option><option>Past month</option><option>Past year</option></select>
+            </div></div>
+          )}
           <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-2">
             <div className="flex min-w-0 items-center gap-1.5">
               <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Add attachment" aria-expanded={attachmentMenuOpen} className={"flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"bg-surface-2 text-accent":"text-muted")}><Plus size={20}/></button>
@@ -893,7 +940,7 @@ export default function InputBar({
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <button type="button" onClick={startSpeechRecognition} disabled={disabled||!voiceSupported} aria-label={listening?"Stop voice dictation":"Dictate with your voice"} title={listening?"Stop listening":"Voice input"} className={"flex h-11 w-11 items-center justify-center rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 "+(listening?"bg-rose-500/10 text-rose-500 ring-2 ring-rose-500/40 animate-pulse":"text-muted hover:bg-surface-2 hover:text-fg")}><Mic size={19}/></button>
-              <button type="button" data-demo="ai-send-message" onClick={isGenerating?onStop:submit} disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":"Send message"} title={isGenerating?"Stop generating":"Send message"} className={"flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<ArrowUp size={20} strokeWidth={2.6}/>}</button>
+              <button type="button" data-demo="ai-send-message" onClick={isGenerating?onStop:submit} disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} title={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} className={"flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<><span className="mr-1 hidden text-[11px] font-bold sm:inline">{activeModeDefinition?.action || ""}</span><ArrowUp size={20} strokeWidth={2.6}/></>}</button>
             </div>
           </div>
         </div>
