@@ -37,6 +37,7 @@ import Notifications from "./accounts/Notifications.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
+import HubShareAction from "@/components/HubShareAction.jsx";
 import PlansModal from "@/premium/PlansModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
@@ -137,6 +138,15 @@ function FullscreenAIAssistant({
           ================================================= */}
 
           <div className="min-h-0 flex-1 overflow-hidden">
+            {!["home", "community"].includes(activeView) ? (
+              <div className="mx-auto mb-2 flex w-full max-w-5xl justify-end">
+                <HubShareAction
+                  activeHub={activeView}
+                  activeHubLabel={activeDashboard?.title || activeView}
+                  onNavigate={handleNavigate}
+                />
+              </div>
+            ) : null}
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {aiElement ? (
