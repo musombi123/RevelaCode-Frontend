@@ -178,23 +178,27 @@ async function parseResponse(response) {
   }
 
   if (!response.ok) {
+    if (response.status >= 500) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "poor" } }));
+      }
+      throw new JumuiyaAPIError(
+        "Poor connection — this RevelaCode service is temporarily unavailable. Please try again shortly.",
+        response.status,
+        "service_unavailable",
+      );
+    }
     const errorData = payload?.error;
-
     const message =
       errorData?.message ||
       payload?.message ||
       payload?.detail ||
-      `Request failed with HTTP ${response.status}.`;
+      "Your request could not be completed. Please check the details and try again.";
 
     throw new JumuiyaAPIError(
       message,
       response.status,
-      errorData?.code ||
-        payload?.code ||
-        `http_${response.status}`,
-      errorData?.details ||
-        payload?.details ||
-        null,
+      errorData?.code || payload?.code || `http_${response.status}`,
     );
   }
 
@@ -355,19 +359,23 @@ async function performRequest(
       if (queued) throw createOfflineQueuedError();
     }
 
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: offline ? "offline" : "poor" } }));
+    }
     throw new JumuiyaAPIError(
-      `Unable to reach the Jumuiya backend at ${url}. The browser received no HTTP response. Check the backend URL, availability, and CORS configuration.`,
+      offline
+        ? "Offline — this action needs a connection. Your saved content remains available."
+        : "Poor connection — we could not reach RevelaCode. Please try again when your connection improves.",
       0,
       "network_error",
-      {
-        url,
-        method,
-        cause: originalMessage,
-      },
     );
   }
 
   const payload = await parseResponse(response);
+  if (typeof window !== "undefined" && response.ok) {
+    window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
+  }
   if (cacheScope && method === "GET" && response.ok) {
     await writeCachedApiResponse(cacheScope, url, payload);
   }
