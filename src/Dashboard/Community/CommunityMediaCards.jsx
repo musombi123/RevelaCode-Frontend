@@ -127,38 +127,8 @@ function getAuthor(post) {
   ).trim();
 }
 
-function getDate(post) {
-  const value = post?.created_at || post?.createdAt || post?.timestamp || post?.time;
-  if (!value) return "Recently shared";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Recently shared";
-  const now = Date.now();
-  const elapsed = Math.max(0, now - date.getTime());
-  const minutes = Math.floor(elapsed / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(elapsed / 3600000);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(elapsed / 86400000);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-KE", { day: "numeric", month: "short" });
-}
-
-function getInitials(name) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "C";
-}
-
 function getPostTitle(post) {
   return String(post?.title || post?.subject || post?.headline || "").trim() || "A moment from the community";
-}
-
-function getPostBody(post) {
-  return String(post?.body || post?.content || post?.text || post?.description || "").trim();
-}
-
-function getHub(post) {
-  const hub = String(post?.hub || post?.source_hub || "community").trim();
-  return hub.charAt(0).toUpperCase() + hub.slice(1);
 }
 
 function getPostId(post, index) {
@@ -181,8 +151,6 @@ export default function CommunityMediaCards({
       .slice(0, 12),
     [posts],
   );
-
-  if (!mediaPosts.length) return null;
 
   return (
     <section aria-labelledby="community-media-title" className="mt-5">
