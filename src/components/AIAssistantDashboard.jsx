@@ -979,7 +979,7 @@ export default function AIAssistantDashboard({
         };
 
         try {
-          updateLoadingStage(attachedFile ? "local-analysis" : freeMode ? "local-reasoning" : "connecting");
+          updateLoadingStage(attachedFile ? (freeMode ? "local-analysis-only" : "local-analysis") : freeMode ? "local-reasoning" : "connecting");
           /*
            * Local-first global brain: specialist routing, memory and visual math
            * stay on-device. Model / asset failures degrade to pixel math or text.
