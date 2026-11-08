@@ -1665,7 +1665,7 @@ function HomeDashboard({
 
   if (isAndroidAppBuild) {
     return (
-      <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden px-3 py-2 sm:px-4">
+      <div className="rc-android-home mx-auto flex h-full min-h-0 w-full max-w-[900px] flex-col gap-3 overflow-hidden px-3 py-2 sm:px-4">
         <section
           data-demo="home-welcome"
           aria-label={t("RevelaCode home")}
@@ -1702,7 +1702,8 @@ function HomeDashboard({
           </button>
         </section>
 
-        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-y-auto overscroll-contain pb-2">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-2">
+        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0">
           <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
             <div className="min-w-0">
               <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
@@ -1750,6 +1751,7 @@ function HomeDashboard({
           </div>
         </section>
         {renderHomeNotifications()}
+        </div>
         {notificationToast && (
           <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 left-3 right-3 z-[120] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
             <Bell size={18} className="shrink-0 text-blue-600"/>
