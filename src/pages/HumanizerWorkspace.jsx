@@ -275,7 +275,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
             {documentName && <span className="max-w-full truncate rounded-lg bg-surface-2 px-3 py-1.5 text-xs text-fg-secondary">{documentName}</span>}
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <input type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] || null)}
+            <input type="file" accept="application/pdf,.pdf" onChange={(event) => { setFile(event.target.files?.[0] || null); setPages([]); setPageIndex(0); setAcceptedEdits([]); setManualTextEdited(false); setSuggestions([]); setAccepted({}); setGeminiDraft(null); setSelection({ start: 0, end: 0, text: "" }); setDocumentName(""); }}
               className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-input p-2 text-sm text-fg file:mr-3 file:rounded-lg file:border-0 file:bg-surface-3 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-fg-secondary" />
             <button onClick={uploadPdf} disabled={!file || loading}
               className="min-h-11 shrink-0 rounded-xl bg-chart-3 px-5 py-2.5 text-sm font-bold text-inverse transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
