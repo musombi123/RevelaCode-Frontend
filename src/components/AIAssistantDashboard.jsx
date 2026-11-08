@@ -1619,6 +1619,21 @@ export default function AIAssistantDashboard({
       ]
     );
 
+  // Lesson-aware AI handoff: SDA Quarterly places its study prompt in a
+  // one-shot local handoff, then this workspace consumes it without redirecting.
+  const lessonPromptConsumedRef = useRef(false);
+  useEffect(() => {
+    if (!isReady || lessonPromptConsumedRef.current || typeof window === "undefined") return;
+    let prompt = "";
+    try {
+      prompt = String(localStorage.getItem("revelacode_pending_ai_prompt") || "").trim();
+      if (prompt) localStorage.removeItem("revelacode_pending_ai_prompt");
+    } catch { prompt = ""; }
+    if (!prompt) return;
+    lessonPromptConsumedRef.current = true;
+    sendMessage(prompt, null);
+  }, [isReady, sendMessage]);
+
   /* =======================================================
      TEXT COMPATIBILITY HANDLER
   ======================================================= */
