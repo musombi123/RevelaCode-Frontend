@@ -450,19 +450,20 @@ export default function SecurityAcademyDashboard() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [scopeConfirmed, setScopeConfirmed] = useState(false);
-  const [scopeAccepted, setScopeAccepted] = useState(false);
+  const [acceptedNoticeKey, setAcceptedNoticeKey] = useState("");
   const noticeStorageKey = useMemo(
     () => `revela_security_academy_notice:${String(user?.id || user?.user_id || "unknown")}:${SECURITY_ACADEMY_NOTICE_VERSION}`,
     [user?.id, user?.user_id],
   );
+  const scopeAccepted = acceptedNoticeKey === noticeStorageKey;
 
   const authenticated = Boolean(isAuthenticated && !isGuest);
 
   useEffect(() => {
     try {
-      setScopeAccepted(localStorage.getItem(noticeStorageKey) === "true");
+      setAcceptedNoticeKey(localStorage.getItem(noticeStorageKey) === "true" ? noticeStorageKey : "");
     } catch {
-      setScopeAccepted(false);
+      setAcceptedNoticeKey("");
     }
     setScopeConfirmed(false);
   }, [noticeStorageKey]);
@@ -473,7 +474,7 @@ export default function SecurityAcademyDashboard() {
     } catch {
       // The current view can continue after the user explicitly acknowledges.
     }
-    setScopeAccepted(true);
+    setAcceptedNoticeKey(noticeStorageKey);
   };
 
   const loadCourses = useCallback(async () => {
