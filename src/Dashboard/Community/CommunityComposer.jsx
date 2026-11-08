@@ -13,6 +13,7 @@ import {
   Megaphone,
   Plus,
   Send,
+  Share2,
   Sparkles,
   Users,
   X,
@@ -136,6 +137,7 @@ export default function CommunityComposer({
   onNavigate,
   initialPost = null,
   initialCategory = "general",
+  shareDraft = null,
 }) {
   const { user } = useAuth();
 
@@ -165,16 +167,16 @@ export default function CommunityComposer({
   // ==========================================================
 
   const [postTitle, setPostTitle] =
-    useState(() => String(initialPost?.title || initialPost?.subject || ""));
+    useState(() => String(shareDraft?.title || initialPost?.title || initialPost?.subject || ""));
 
   const [postBody, setPostBody] =
-    useState(() => String(initialPost?.body || initialPost?.content || initialPost?.text || ""));
+    useState(() => String(shareDraft?.body || initialPost?.body || initialPost?.content || initialPost?.text || ""));
 
   const [postCategory, setPostCategory] =
     useState(initialCategoryChoice);
 
   const [postHub, setPostHub] =
-    useState(() => String(initialPost?.hub || initialPost?.source_hub || "community"));
+    useState(() => String(shareDraft?.hub || initialPost?.hub || initialPost?.source_hub || "community"));
 
   const [postLocation, setPostLocation] =
     useState(() => String(initialPost?.location || ""));
@@ -218,7 +220,7 @@ export default function CommunityComposer({
   }, [attachmentFiles]);
 
   const [externalLink, setExternalLink] =
-    useState(() => String(initialPost?.action?.target || ""));
+    useState(() => String(shareDraft?.sourceUrl || initialPost?.action?.target || ""));
 
   // ==========================================================
   // USER DATA
@@ -671,6 +673,16 @@ export default function CommunityComposer({
                 </div>
               </div>
             </div>
+
+            {shareDraft ? (
+              <div className="mx-5 mt-4 flex items-start gap-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3.5 py-3 dark:mx-6">
+                <Share2 size={15} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-300" />
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-100">Shared from {shareDraft.sourceHubLabel || "another RevelaCode hub"}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">Review the title, summary and audience below. The source link is attached as an optional post action.</p>
+                </div>
+              </div>
+            ) : null}
 
             {/* FORM */}
 
