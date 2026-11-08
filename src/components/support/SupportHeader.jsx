@@ -33,7 +33,7 @@ export default function SupportHeader({ user, sidebarOpen, setSidebarOpen, logou
           className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-xs font-bold text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-600 sm:gap-2 sm:px-3 sm:text-sm"
         >
           <Home size={16} aria-hidden="true" />
-          <span>Return to public site</span>
+          <span>RevelaCode public</span>
         </Link>
         <div className="hidden text-right sm:block">
           <p className="max-w-48 truncate text-sm font-semibold text-slate-800">{user?.fullName || user?.full_name || "Support agent"}</p>
