@@ -985,6 +985,7 @@ export default function CommunityDashboard({
         discoveryQuery.trim().slice(0, 100),
       );
 
+      setWorkspacePage("home");
       setSubmittedIntent(discoveryIntent);
       setActiveSurface("discovery");
       setReloadToken((value) => value + 1);
@@ -1169,31 +1170,89 @@ export default function CommunityDashboard({
   // Existing Community workspaces
   // ----------------------------------------------------------
 
-  const renderBackMenu = () => (
-    <div className="mb-3 flex items-center justify-between">
-      <PremiumPlansStar />
-      <div className="relative">
-        <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">
-          <Menu size={14} /> RevelaCode menu <ChevronDown size={12} />
-        </button>
-        {backMenuOpen ? (
-          <>
-            <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
-            <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
-              <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspace</p>
-              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
-                <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
+  const renderBackMenu = () => {
+    const workspaceTitle = ({
+      feed: "Community feed",
+      composer: "Create a post",
+      notifications: "Notifications",
+      marketplace: "Marketplace",
+      "contact-settings": "Contact settings",
+      people: "People",
+      invite: "Invite members",
+      groups: "Networks",
+      chats: "Chats",
+      me: "My space",
+    })[workspacePage] || "Community";
+
+    return (
+      <header className="mb-3 rounded-[22px] border border-slate-200/90 bg-white p-3 shadow-sm shadow-slate-950/[0.03] dark:border-white/[0.08] dark:bg-[#0d1729]">
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => navigate("community-home")} className="flex min-w-0 shrink-0 items-center gap-2.5 text-left" aria-label="Return to Community home">
+            <img src="/Logo.png" alt="" className="h-9 w-9 rounded-xl border border-slate-200 object-contain p-1 dark:border-white/10" />
+            <span className="min-w-0">
+              <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">JUMUIYA</span>
+              <span className="block max-w-[150px] truncate text-sm font-black text-slate-950 dark:text-white">{workspaceTitle}</span>
+            </span>
+          </button>
+
+          <form onSubmit={submitDiscovery} className="order-3 flex min-w-0 w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-white/[0.08] dark:bg-[#07111e] md:order-none md:ml-2 md:w-auto md:flex-1">
+            <Search size={15} className="shrink-0 text-slate-400" />
+            <input
+              type="search"
+              value={discoveryQuery}
+              onChange={(event) => setDiscoveryQuery(event.target.value)}
+              maxLength={100}
+              placeholder="Search people, groups, posts or topics…"
+              aria-label="Search Community"
+              className="h-8 min-w-0 flex-1 bg-transparent text-xs text-slate-800 outline-none placeholder:text-slate-400 dark:text-white"
+            />
+            {discoveryQuery ? (
+              <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10">
+                <X size={13} />
               </button>
-              <div className="my-1 border-t border-slate-100 dark:border-white/10" />
-              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
-              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
-              <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("elimu"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+            ) : null}
+            <button type="submit" className="hidden h-8 shrink-0 items-center gap-1 rounded-lg bg-slate-950 px-2.5 text-[10px] font-black text-white dark:bg-cyan-400 dark:text-slate-950 sm:inline-flex">
+              <Search size={12} /> Search
+            </button>
+          </form>
+
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <PremiumPlansStar />
+            <button type="button" onClick={() => navigate("community-notifications")} aria-label="Open notifications" title="Notifications" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">
+              <Bell size={16} />
+            </button>
+            <button type="button" onClick={() => navigate("community-me")} aria-label="Open my profile" title="My space" className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-500/50 bg-slate-100 dark:bg-slate-800">
+              {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? (
+                <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-black text-slate-700 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>
+              )}
+            </button>
+            <div className="relative">
+              <button type="button" onClick={() => setBackMenuOpen((open) => !open)} aria-expanded={backMenuOpen} aria-haspopup="menu" aria-label="Open RevelaCode hubs" title="RevelaCode hubs" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">
+                <Menu size={16} />
+              </button>
+              {backMenuOpen ? (
+                <>
+                  <button type="button" aria-label="Close RevelaCode menu" className="fixed inset-0 z-[95] cursor-default" onClick={() => setBackMenuOpen(false)} />
+                  <div role="menu" className="absolute right-0 top-11 z-[100] w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-white/10 dark:bg-[#0d1729]">
+                    <p className="px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">RevelaCode workspaces</p>
+                    <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); if (typeof onNavigate === "function") onNavigate("home"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-black text-slate-800 hover:bg-cyan-50 dark:text-white dark:hover:bg-white/5">
+                      <ArrowRight size={14} className="rotate-180" /> Back to RevelaCode
+                    </button>
+                    <div className="my-1 border-t border-slate-100 dark:border-white/10" />
+                    <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("biashara"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Target size={14} /> Biashara</button>
+                    <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("shamba"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><Leaf size={14} /> Shamba</button>
+                    <button type="button" role="menuitem" onClick={() => { setBackMenuOpen(false); redirectToHub("elimu"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><GraduationCap size={14} /> Elimu</button>
+                  </div>
+                </>
+              ) : null}
             </div>
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
+          </div>
+        </div>
+      </header>
+    );
+  };
 
 
   if (workspacePage === "feed") {
