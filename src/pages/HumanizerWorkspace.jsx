@@ -15,6 +15,30 @@ function saveText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function mapAcceptedRangeToOriginal(page, pageNumber, start, end, replacement, acceptedEdits) {
+  const pageEdits = acceptedEdits.filter((edit) => edit.page === pageNumber).sort((a, b) => a.start - b.start);
+  let delta = 0;
+  for (const edit of pageEdits) {
+    const currentStart = edit.start + delta;
+    const currentEnd = currentStart + edit.replacement.length;
+    if (start < currentEnd && end > currentStart) {
+      throw new Error("This passage overlaps an earlier approved change. Export the text revision or undo that change before editing this passage.");
+    }
+    if (currentEnd <= start) {
+      delta += edit.replacement.length - (edit.end - edit.start);
+    } else if (currentStart >= end) {
+      break;
+    }
+  }
+  const originalStart = start - delta;
+  const originalEnd = end - delta;
+  const original = page.originalText.slice(originalStart, originalEnd);
+  if (!original || original !== page.text.slice(start, end)) {
+    throw new Error("The selected passage cannot be mapped safely to the original PDF. Re-open the source PDF before applying more changes.");
+  }
+  return { page: pageNumber, start: originalStart, end: originalEnd, original, replacement };
+}
+
 export default function HumanizerWorkspace({ embedded = false }) {
   const auth = useAuth();
   const editorRef = useRef(null);
@@ -29,9 +53,13 @@ export default function HumanizerWorkspace({ embedded = false }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [geminiDraft, setGeminiDraft] = useState(null);
+  const [acceptedEdits, setAcceptedEdits] = useState([]);
+  const [manualTextEdited, setManualTextEdited] = useState(false);
 
   const currentPage = pages[pageIndex] || null;
   const acceptedCount = Object.values(accepted).filter(Boolean).length;
+  const pdfExportUnsupported = acceptedEdits.some((edit) => !pages.find((page) => page.page === edit.page)?.layoutSupported);
+  const canExportPdf = Boolean(file && acceptedEdits.length && !manualTextEdited && !pdfExportUnsupported);
 
   async function authHeaders() {
     const token = typeof auth?.getAccessToken === "function"
@@ -71,10 +99,13 @@ export default function HumanizerWorkspace({ embedded = false }) {
       const extracted = (payload.data.pages || []).map((page) => ({
         page: page.page, text: page.text || "", originalText: page.text || "",
         extractionMethod: page.extraction_method || "native",
+        layoutSupported: Boolean(page.layout_supported),
+        layoutReason: page.layout_reason || "",
       }));
       if (!extracted.length) throw new Error("No readable pages were found in this PDF.");
       setPages(extracted); setPageIndex(0); setDocumentName(payload.data.filename || file.name);
       setSuggestions([]); setAccepted({}); setGeminiDraft(null); setSelection({ start: 0, end: 0, text: "" });
+      setAcceptedEdits([]); setManualTextEdited(false);
       setNotice("Extracted " + extracted.length + " page(s). Select only the words or phrases you want to improve.");
     } catch (e) { setError(e.message || "PDF extraction failed."); }
     finally { setLoading(false); }
@@ -131,8 +162,18 @@ export default function HumanizerWorkspace({ embedded = false }) {
       setError("The source passage changed after Gemini generated the draft. Select it again and regenerate.");
       return;
     }
+    let sourceEdit = null;
+    if (!manualTextEdited) {
+      try {
+        sourceEdit = mapAcceptedRangeToOriginal(currentPage, currentPage.page, geminiDraft.start, geminiDraft.end, geminiDraft.text, acceptedEdits);
+      } catch (mappingError) {
+        setError(mappingError.message);
+        return;
+      }
+    }
     const revised = currentPage.text.slice(0, geminiDraft.start) + geminiDraft.text + currentPage.text.slice(geminiDraft.end);
     setPages((previous) => previous.map((page, index) => index === pageIndex ? { ...page, text: revised } : page));
+    if (sourceEdit) setAcceptedEdits((previous) => [...previous, sourceEdit]);
     setGeminiDraft(null); setSuggestions([]); setAccepted({});
     setSelection({ start: 0, end: 0, text: "" });
     setNotice("Applied the reviewed Gemini draft to the selected passage only. All other page text remains unchanged.");
@@ -142,6 +183,17 @@ export default function HumanizerWorkspace({ embedded = false }) {
     const chosen = suggestions.filter((item) => accepted[item.id]);
     if (!chosen.length || !currentPage) return;
     const ordered = [...chosen].sort((a, b) => b.start - a.start);
+    const sourceEdits = [];
+    if (!manualTextEdited) {
+      try {
+        for (const item of chosen) {
+          sourceEdits.push(mapAcceptedRangeToOriginal(currentPage, currentPage.page, item.start, item.end, item.replacement, acceptedEdits));
+        }
+      } catch (mappingError) {
+        setError(mappingError.message);
+        return;
+      }
+    }
     let revised = currentPage.text;
     for (const item of ordered) {
       if (revised.slice(item.start, item.end) !== item.original) {
@@ -150,14 +202,45 @@ export default function HumanizerWorkspace({ embedded = false }) {
       revised = revised.slice(0, item.start) + item.replacement + revised.slice(item.end);
     }
     setPages((previous) => previous.map((page, index) => index === pageIndex ? { ...page, text: revised } : page));
+    if (sourceEdits.length) setAcceptedEdits((previous) => [...previous, ...sourceEdits]);
     setSuggestions([]); setAccepted({}); setSelection({ start: 0, end: 0, text: "" });
     setNotice("Applied " + chosen.length + " approved change(s) to page " + currentPage.page + ". Unselected text was left unchanged.");
   }
 
   function exportText() {
     if (!pages.length) return;
-    const output = pages.map((page) => "--- Page " + page.page + " ---\n" + page.text).join("\n\n");
+    const output = pages.map((page) => "--- Page " + page.page + " ---\\n" + page.text).join("\\n\\n");
     saveText(documentName || "document.pdf", output);
+  }
+
+  async function exportPdf() {
+    if (!canExportPdf || !file) return;
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const headers = await authHeaders();
+      const body = new FormData();
+      body.append("file", file);
+      body.append("accepted_replacements", JSON.stringify(acceptedEdits));
+      const response = await fetch(API_BASE + "/api/humanizer/pdf/reconstruct", { method: "POST", headers, body });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error?.message || "The PDF could not be reconstructed safely.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = (documentName || "document.pdf").replace(/\\.pdf$/i, "") + "-humanized.pdf";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice("Revised PDF created with " + acceptedEdits.length + " approved replacement(s). The original PDF remains unchanged.");
+    } catch (exportError) {
+      setError(exportError.message || "PDF reconstruction failed.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const changedPages = useMemo(() => pages.filter((page) => page.text !== page.originalText).length, [pages]);
@@ -174,6 +257,11 @@ export default function HumanizerWorkspace({ embedded = false }) {
           {pages.length > 0 && (
             <button onClick={exportText} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-semibold text-fg-secondary hover:bg-surface-2">
               Export revised text
+            </button>
+          )}
+          {canExportPdf && (
+            <button onClick={exportPdf} disabled={loading} className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-success px-3 py-2 text-xs font-semibold text-inverse hover:opacity-90 disabled:opacity-40">
+              {loading ? "Building PDF…" : "Download revised PDF"}
             </button>
           )}
         </header>
@@ -206,7 +294,11 @@ export default function HumanizerWorkspace({ embedded = false }) {
           <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
             <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
-                <div><h2 className="font-semibold">02 · Select text to improve</h2><p className="mt-1 text-xs text-muted">Highlight text inside the page editor.</p></div>
+                <div>
+                  <h2 className="font-semibold">02 · Select text to improve</h2>
+                  <p className="mt-1 text-xs text-muted">Highlight text inside the page editor.</p>
+                  <p className="mt-1 text-[11px] text-muted">{currentPage.layoutSupported ? "Native text geometry detected on this page." : (currentPage.layoutReason || "This page can be edited as text, but safe PDF reconstruction is unavailable.")}</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <button disabled={pageIndex === 0} onClick={() => { setPageIndex((v) => v - 1); setSuggestions([]); setGeminiDraft(null); setSelection({start:0,end:0,text:""}); }} className="rounded-lg border border-line px-3 py-2 text-xs text-fg-secondary hover:bg-surface-2 disabled:opacity-40">Previous</button>
                   <span className="text-xs tabular-nums text-muted">{pageIndex + 1} / {pages.length}</span>
@@ -214,7 +306,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
                 </div>
               </div>
               <div className="p-4">
-                <textarea ref={editorRef} value={currentPage.text} onChange={(event) => setPages((previous) => previous.map((page,index) => index === pageIndex ? { ...page, text: event.target.value } : page))} onMouseUp={captureSelection} onKeyUp={captureSelection} onSelect={captureSelection} spellCheck className="min-h-[28rem] w-full resize-y rounded-xl border border-line bg-surface-2 p-4 font-serif text-sm leading-7 text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/10" placeholder="Extracted page text appears here…" />
+                <textarea ref={editorRef} value={currentPage.text} onChange={(event) => { setManualTextEdited(true); setPages((previous) => previous.map((page,index) => index === pageIndex ? { ...page, text: event.target.value } : page)); }} onMouseUp={captureSelection} onKeyUp={captureSelection} onSelect={captureSelection} spellCheck className="min-h-[28rem] w-full resize-y rounded-xl border border-line bg-surface-2 p-4 font-serif text-sm leading-7 text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/10" placeholder="Extracted page text appears here…" />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-muted">{currentPage.text.length.toLocaleString()} characters · {currentPage.text.split(/\s+/).filter(Boolean).length} words</span><span className="text-xs text-muted">Selection: {selection.text.length} characters</span></div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <button onClick={getSuggestions} disabled={loading || !selection.text.trim()} className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-inverse hover:bg-accent-hover disabled:opacity-40">{loading ? "Processing…" : "Local suggestions"}</button>
@@ -258,9 +350,14 @@ export default function HumanizerWorkspace({ embedded = false }) {
               </div>
               <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm  ">
                 <h2 className="font-semibold">04 · Export your revision</h2>
-                <p className="mt-2 text-sm text-muted">{changedPages} page(s) changed. Export the revised extracted text. The source PDF remains untouched.</p>
+                <p className="mt-2 text-sm text-muted">{changedPages} page(s) changed. The source PDF remains untouched.</p>
                 <button onClick={exportText} className="mt-4 w-full rounded-xl border border-line px-4 py-3 text-sm font-semibold text-fg-secondary hover:bg-surface-2">Download revised text (.txt)</button>
-                <p className="mt-3 text-[11px] leading-5 text-muted">This first release does not yet reconstruct PDF layout. Scanned PDFs require local Tesseract OCR on the server.</p>
+                <button onClick={exportPdf} disabled={!canExportPdf || loading} className="mt-2 w-full rounded-xl bg-success px-4 py-3 text-sm font-semibold text-inverse hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">Download revised PDF ({acceptedEdits.length} approved change(s))</button>
+                <p className="mt-3 text-[11px] leading-5 text-muted">
+                  PDF export supports tracked, approved changes on native-text pages. It currently rejects OCR-only pages, partial-word or cross-line selections, unsupported fonts and replacements wider than the original selection.
+                  {manualTextEdited ? " Manual textarea edits are not mapped to PDF coordinates; use TXT export or re-open the source PDF to create a PDF revision." : ""}
+                  {pdfExportUnsupported ? " At least one approved edit is on a page without supported native text geometry." : ""}
+                </p>
               </div>
             </aside>
           </section>
