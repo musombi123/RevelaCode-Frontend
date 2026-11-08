@@ -605,7 +605,7 @@ export default function CommunityFeed({
   // ==========================================================
 
   return (
-      <div className="space-y-5 pb-10">
+      <div className="mx-auto w-full max-w-4xl space-y-4 pb-10">
 
         {/* ====================================================
             PAGE HEADER
@@ -613,15 +613,15 @@ export default function CommunityFeed({
 
         <section
           className="
-            rounded-[24px]
+            rounded-[22px]
             border
-            border-slate-200
+            border-slate-200/90
             bg-white
-            p-5
+            p-4
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
-            sm:p-6
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
+            sm:p-5
           "
         >
           <div
@@ -745,12 +745,12 @@ export default function CommunityFeed({
           className="
             rounded-[22px]
             border
-            border-slate-200
+            border-slate-200/90
             bg-white
-            p-4
+            p-3.5
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
           "
         >
           <div
@@ -1518,7 +1518,7 @@ export default function CommunityFeed({
                   className="
                     group/feed-card
                     overflow-hidden
-                    rounded-[26px]
+                    rounded-[22px]
                     border
                     border-slate-200/90
                     bg-white
@@ -1528,14 +1528,14 @@ export default function CommunityFeed({
                     hover:-translate-y-0.5
                     hover:border-cyan-200
                     hover:shadow-[0_18px_45px_-22px_rgba(8,145,178,0.28)]
-                    dark:border-white/[0.09]
-                    dark:bg-slate-900/95
+                    dark:border-white/[0.08]
+                    dark:bg-[#0d1729]
                     dark:hover:border-cyan-400/30
                   "
                 >
                   {/* POST HEADER */}
 
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     <div
                       className="
                         flex
@@ -1781,7 +1781,7 @@ export default function CommunityFeed({
                       justify-between
                       border-t
                       border-slate-100
-                      px-5
+                      px-4
                       py-3
                       text-[11px]
                       text-slate-400
@@ -1837,7 +1837,7 @@ export default function CommunityFeed({
                         justify-center
                         gap-2
                         px-3
-                        py-3.5
+                        py-3
                         text-xs
                         font-bold
                         transition
