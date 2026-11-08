@@ -34,6 +34,7 @@ import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
+import SystemHomeNotifications from "./SystemHomeNotifications.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
@@ -398,6 +399,21 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const handleNavigate = useCallback((view) => {
     if (!view) {
       return;
+    }
+
+    if (view === "ai") {
+      try {
+        const visits = Number(localStorage.getItem("revelacode_ai_workspace_visits") || 0) + 1;
+        localStorage.setItem("revelacode_ai_workspace_visits", String(visits));
+        if (visits >= 4) localStorage.setItem("revelacode_ai_workspace_priority", "true");
+        if (localStorage.getItem("revelacode_ai_workspace_priority") === "true") {
+          setActiveView("ai");
+          setAIFullscreenOpen(true);
+          setSidebarOpen(false);
+          setMobileCategoryOpen(null);
+          return;
+        }
+      } catch { /* Navigation remains available when browser storage is restricted. */ }
     }
 
     setActiveView(view);
@@ -1497,6 +1513,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                 )}
               </ErrorBoundary>
             </Suspense>
+            {activeView === "home" && (
+              <SystemHomeNotifications onNavigate={handleNavigate} />
+            )}
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
