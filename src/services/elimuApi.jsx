@@ -441,6 +441,8 @@ export function createElimuApiClient({
       );
     }
 
+    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
+
     const requestId =
       readHeader(response.headers, "x-request-id") ||
       readHeader(response.headers, "request-id") ||
