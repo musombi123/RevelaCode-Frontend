@@ -260,12 +260,12 @@ const normalizeAIResponse = (
 };
 
 const sanitizeAIResponseMetadata = (value) => {
-  const metadata = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
-  delete metadata.core_mesh;
-  delete metadata.coreMesh;
-  delete metadata.usect_zero_tool;
-  delete metadata.usectZeroTool;
-  return metadata;
+  const responseMeta = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
+  delete responseMeta.core_mesh;
+  delete responseMeta.coreMesh;
+  delete responseMeta.usect_zero_tool;
+  delete responseMeta.usectZeroTool;
+  return responseMeta;
 };
 
 /* =========================================================
