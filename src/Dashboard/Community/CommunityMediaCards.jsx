@@ -1,13 +1,7 @@
 import React, { useMemo } from "react";
 import {
-  ArrowUpRight,
-  Camera,
-  Clapperboard,
-  Heart,
-  MessageCircle,
   Play,
   Plus,
-  Sparkles,
 } from "lucide-react";
 
 function flattenMediaCandidate(candidate, target) {
@@ -257,4 +251,4 @@ export default function CommunityMediaCards({
       ) : null}
     </section>
   );
-}}
+
