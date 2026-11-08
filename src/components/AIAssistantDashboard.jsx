@@ -1070,6 +1070,7 @@ export default function AIAssistantDashboard({
             
             if (typeof authFetch === "function") {
               try {
+                updateLoadingStage("connecting");
                 const perceptionResponse = await authFetch(`${apiBase}/ai`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json",  },
@@ -1089,6 +1090,7 @@ export default function AIAssistantDashboard({
                   }),
                 });
                 const perceptionPayload = await perceptionResponse.json().catch(() => null);
+                updateLoadingStage("interpreting");
                 const perceptionData = perceptionPayload?.data || perceptionPayload || {};
                 const interpreted = perceptionData.response || perceptionData.content || perceptionData.answer || perceptionData.text || perceptionPayload?.response || perceptionPayload?.answer;
                 if (perceptionResponse.ok && typeof interpreted === "string" && interpreted.trim()) {
@@ -1240,6 +1242,7 @@ export default function AIAssistantDashboard({
             const observations = localText;
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             try {
+              updateLoadingStage("connecting");
               const visionResponse = await authFetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
@@ -1264,6 +1267,7 @@ export default function AIAssistantDashboard({
                 }),
               });
               const visionPayload = await visionResponse.json().catch(() => null);
+              updateLoadingStage("interpreting");
               const visionData = visionPayload?.data || visionPayload || {};
               const visionReply = visionData?.response || visionData?.content || visionData?.answer || visionData?.text || visionPayload?.message;
               if (!visionResponse.ok || typeof visionReply !== "string" || !visionReply.trim()) {
