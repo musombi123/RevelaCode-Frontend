@@ -261,6 +261,7 @@ export default function StartModal() {
     const requestOptions = {
       method: "POST",
       headers,
+      credentials: "include",
       body: JSON.stringify(payload),
     };
 
