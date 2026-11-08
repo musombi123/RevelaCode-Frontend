@@ -7,6 +7,7 @@ const DEFAULT_BACKEND_URL = "https://revelacode-backend.onrender.com";
  */
 export function resolveBackendBaseUrl(env = {}) {
   const candidates = [
+    env.VITE_REVELACODE_API_URL,
     env.VITE_API_BASE_URL,
     env.VITE_BACKEND_URL,
     env.VITE_REVELACODE_URL,

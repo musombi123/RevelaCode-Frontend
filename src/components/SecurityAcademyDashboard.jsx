@@ -439,19 +439,46 @@ function CourseWorkspace({ detail, authFetch, onBack, onRefresh }) {
   );
 }
 
+const SECURITY_ACADEMY_NOTICE_VERSION = "security-academy-scope-v1";
+
 export default function SecurityAcademyDashboard() {
-  const { authFetch, isAuthenticated, isGuest } = useAuth();
+  const { authFetch, isAuthenticated, isGuest, user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  const [scopeConfirmed, setScopeConfirmed] = useState(false);
+  const noticeStorageKey = useMemo(
+    () => `revela_security_academy_notice:${String(user?.id || user?.user_id || "unknown")}:${SECURITY_ACADEMY_NOTICE_VERSION}`,
+    [user?.id, user?.user_id],
+  );
+  const [acceptedNoticeKey, setAcceptedNoticeKey] = useState("");
+  const scopeAccepted = acceptedNoticeKey === noticeStorageKey;
 
   const authenticated = Boolean(isAuthenticated && !isGuest);
 
+  useEffect(() => {
+    try {
+      setAcceptedNoticeKey(localStorage.getItem(noticeStorageKey) === "true" ? noticeStorageKey : "");
+    } catch {
+      setAcceptedNoticeKey("");
+    }
+    setScopeConfirmed(false);
+  }, [noticeStorageKey]);
+
+  const acceptScopeNotice = () => {
+    try {
+      localStorage.setItem(noticeStorageKey, "true");
+    } catch {
+      // The current view can continue after the user explicitly acknowledges.
+    }
+    setAcceptedNoticeKey(noticeStorageKey);
+  };
+
   const loadCourses = useCallback(async () => {
-    if (!authenticated) {
+    if (!authenticated || !scopeAccepted) {
       setCourses([]);
       setLoading(false);
       return;
@@ -466,7 +493,7 @@ export default function SecurityAcademyDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [authFetch, authenticated]);
+  }, [authFetch, authenticated, scopeAccepted]);
 
   useEffect(() => {
     loadCourses();
@@ -513,6 +540,41 @@ export default function SecurityAcademyDashboard() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-300/10 text-cyan-200"><ShieldCheck size={28} /></div>
           <h1 className="mt-5 text-2xl font-black">Security Academy</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Sign in with your RevelaCode account to access the reverse-engineering courses and save lesson and assessment progress to your private learning record.</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (!scopeAccepted) {
+    return (
+      <div className="mx-auto max-w-4xl p-4 sm:p-8">
+        <section className="rounded-[28px] border border-slate-800 bg-[#07182b] p-7 text-white shadow-xl sm:p-10">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-300/10 text-cyan-200"><ShieldCheck size={28} /></div>
+          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Required learning notice · {SECURITY_ACADEMY_NOTICE_VERSION}</p>
+          <h1 className="mt-2 text-2xl font-black">Authorized security learning only</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Security Academy is educational material, not permission to test a system. Work only on devices, applications, binaries, accounts, and networks you own or are explicitly authorized in writing to assess. Do not use these lessons to access another person’s data, bypass access controls, disrupt services, or scan third-party systems without permission.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Labs are examples and may not match every environment. Validate changes in isolated test environments, preserve evidence, and obtain qualified review before applying security changes. Course completion is not a professional certification, legal authorization, or guarantee that a system is secure.
+          </p>
+          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-cyan-200/20 bg-white/[0.06] p-4 text-sm leading-6 text-slate-200">
+            <input
+              type="checkbox"
+              checked={scopeConfirmed}
+              onChange={(event) => setScopeConfirmed(event.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 accent-cyan-500"
+            />
+            <span>I have read this notice and will use the Academy only within systems and environments I own or am authorized to assess.</span>
+          </label>
+          <button
+            type="button"
+            onClick={acceptScopeNotice}
+            disabled={!scopeConfirmed}
+            className="mt-4 min-h-11 rounded-xl bg-cyan-600 px-5 py-3 text-xs font-black text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Acknowledge and continue
+          </button>
         </section>
       </div>
     );

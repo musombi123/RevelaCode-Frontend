@@ -43,6 +43,13 @@ test("backend URL resolution uses the backend deployment variable and has a prod
   );
 });
 
+test("the canonical RevelaCode origin honors the explicit compliance API variable", () => {
+  assert.equal(
+    resolveBackendBaseUrl({ VITE_REVELACODE_API_URL: "https://primary.example.test/" }),
+    "https://primary.example.test",
+  );
+});
+
 test("admin and support entry points use backend-verified role data", async () => {
   const [login, pages, gate, auth] = await Promise.all([
     readFile(new URL("../src/components/admin/AdminLogin.jsx", import.meta.url), "utf8"),
