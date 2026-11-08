@@ -553,8 +553,8 @@ export default function CommunityComposer({
               text-slate-600
               transition
               hover:bg-slate-50
-              dark:border-white/10
-              dark:bg-slate-900
+              dark:border-white/[0.08]
+              dark:bg-[#0d1729]
               dark:text-slate-300
               dark:hover:bg-white/5
             "
@@ -603,7 +603,7 @@ export default function CommunityComposer({
               border-slate-200
               bg-white
               shadow-sm
-              dark:border-white/10
+              dark:border-white/[0.08]
               dark:bg-slate-900
             "
           >
@@ -818,7 +818,7 @@ export default function CommunityComposer({
                       disabled:cursor-not-allowed
                       disabled:opacity-60
                       dark:border-white/10
-                      dark:bg-slate-950
+                      dark:bg-[#07111e]
                       dark:text-white
                       dark:focus:bg-slate-950
                     "
@@ -971,7 +971,7 @@ export default function CommunityComposer({
                                 ${
                                   active
                                     ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400"
-                                    : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"
+                                    : "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-300"
                                 }
                               `}
                             >
