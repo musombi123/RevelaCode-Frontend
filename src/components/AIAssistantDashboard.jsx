@@ -968,9 +968,13 @@ export default function AIAssistantDashboard({
           ? `Generate an image of: ${cleaned}`
           : selectedToolCommand === "/humanize"
             ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\n\n${cleaned}`
-            : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
-              ? `${selectedToolCommand} ${cleaned}`.trim()
-              : cleaned;
+            : selectedToolCommand === "/image"
+              ? `Image Studio request. Mode: ${inputMeta?.toolMode || "generate"}. Options: ${JSON.stringify(inputMeta?.toolOptions || {})}. Follow these settings exactly where supported. User brief: ${cleaned}`
+              : selectedToolCommand === "/search"
+                ? `Deep Search request. Depth and source preferences: ${JSON.stringify(inputMeta?.toolOptions || {})}. Research question: ${cleaned}`
+                : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
+                  ? `${selectedToolCommand} ${cleaned}`.trim()
+                  : cleaned;
 
         const updateLoadingStage = (stage) => {
           setMessages((previous) => previous.map((message) =>
