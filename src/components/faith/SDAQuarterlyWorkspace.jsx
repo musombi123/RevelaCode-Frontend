@@ -249,7 +249,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
                 </button>
                 <button type="button" onClick={() => openLessonAI(material)} className="mt-3 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-extrabold text-indigo-800 transition hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70"><Sparkles size={14}/> AI Chat for this lesson</button>
               </article>
-
+            );
           })}
         </div>
       ) : (
