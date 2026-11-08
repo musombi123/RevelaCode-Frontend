@@ -167,7 +167,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-4 pb-6">
-      <header className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
+      <header className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#0d1729]">
         <div className="relative h-36 overflow-hidden sm:h-52 lg:h-60">
           {profile.cover_url ? (
             <img
@@ -204,7 +204,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
         <div className="px-4 pb-5 sm:px-7">
           <div className="-mt-12 flex flex-wrap items-end justify-between gap-4 sm:-mt-16">
             <div className="flex min-w-0 items-end gap-3 sm:gap-4">
-              <div className="relative h-24 w-24 shrink-0 rounded-full border-4 border-white bg-slate-950 shadow-xl dark:border-slate-900 sm:h-32 sm:w-32">
+              <div className="relative h-24 w-24 shrink-0 rounded-full border-4 border-white bg-slate-950 shadow-xl dark:border-[#0d1729] sm:h-32 sm:w-32">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -247,7 +247,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
           <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-6">
             <div className="flex items-center gap-2"><Sparkles size={16} className="text-cyan-600 dark:text-cyan-300" /><h2 className="text-sm font-black text-slate-950 dark:text-white">Identity & introduction</h2></div>
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Show other members who you are and what you are building.</p>
-            <label className="mt-5 block"><span className="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-200">Display name</span><input value={profile.full_name} onChange={(event) => changeField("full_name", event.target.value)} maxLength={160} required disabled={loading || saving} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white" placeholder="Your name" /></label>
+            <label className="mt-5 block"><span className="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-200">Display name</span><input value={profile.full_name} onChange={(event) => changeField("full_name", event.target.value)} maxLength={160} required disabled={loading || saving} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-semibold outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-[#07111e] dark:text-white" placeholder="Your name" /></label>
             <label className="mt-4 block"><span className="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-200">About you</span><textarea value={profile.bio} onChange={(event) => changeField("bio", event.target.value)} maxLength={1000} rows={4} disabled={loading || saving} className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white" placeholder="Your work, interests, skills, or community focus…" /><span className="mt-1 block text-right text-[10px] text-slate-400">{profile.bio.length}/1000</span></label>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label><span className="mb-2 block text-xs font-bold text-slate-700 dark:text-slate-200">County</span><input value={profile.county} onChange={(event) => changeField("county", event.target.value)} maxLength={100} disabled={loading || saving} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm outline-none focus:border-cyan-500 dark:border-white/10 dark:bg-slate-950 dark:text-white" placeholder="e.g. Mombasa" /></label>
