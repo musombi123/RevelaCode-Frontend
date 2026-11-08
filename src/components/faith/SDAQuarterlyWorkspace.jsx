@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ExternalLink, RefreshCw, Sparkles, WifiOff } from "lucide-react";
+import SdaLessonAIChat from "./SdaLessonAIChat.jsx";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -43,7 +44,7 @@ function formatLessonDate(value) {
   });
 }
 
-export default function SDAQuarterlyWorkspace({ onOpen, onOpenAI }) {
+export default function SDAQuarterlyWorkspace({ onOpen }) {
   const [initial] = useState(kenyaQuarterNow);
   const [year, setYear] = useState(initial.year);
   const [quarter, setQuarter] = useState(initial.quarter);
@@ -51,6 +52,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onOpenAI }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [aiLesson, setAiLesson] = useState(null);
 
   const sourceUrl = `https://www.sabbath.school/LessonBook?quarter=${quarter}&year=${year}`;
   const cacheKey = `revelacode_sda_quarter:${year}:${quarter}`;
@@ -203,12 +205,9 @@ export default function SDAQuarterlyWorkspace({ onOpen, onOpenAI }) {
                 {!meta.memory_text && summary && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">{summary}</p>}
                 <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-amber-700 dark:text-amber-300">Open lesson <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
                 </button>
-                <button type="button" onClick={() => {
-                  const title = material?.title || meta.lesson_title || `Lesson ${index + 1}`;
-                  const context = [title, meta.lesson_date, meta.memory_text, material?.description, material?.content].filter(Boolean).join("\n\n");
-                  try { localStorage.setItem("revelacode_pending_ai_prompt", `Help me study this SDA Sabbath School lesson. Explain the key ideas, answer questions from the lesson, and quiz me. Use this lesson as context:\n\n${context}`); } catch { /* AI can still open without persisted context. */ }
-                  onOpenAI?.();
-                }} className="mt-3 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"><Sparkles size={14}/> Ask AI about this lesson</button>
+                <button type="button" onClick={() => setAiLesson((current) => lessonId(current) === lessonId(material) ? null : material)} className="mt-3 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-900 hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200">
+                  <Sparkles size={14}/> {lessonId(aiLesson) === lessonId(material) ? "Close AI Chat" : "AI Chat"}
+                </button>
               </div>
             );
           })}
@@ -225,6 +224,8 @@ export default function SDAQuarterlyWorkspace({ onOpen, onOpenAI }) {
           </a>
         </section>
       )}
+
+      {aiLesson && <SdaLessonAIChat key={lessonId(aiLesson)} material={aiLesson} onClose={() => setAiLesson(null)} />}
 
       {sortedMaterials.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-gray-800 dark:bg-gray-900">
