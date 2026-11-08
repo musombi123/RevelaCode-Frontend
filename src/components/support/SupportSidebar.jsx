@@ -61,7 +61,7 @@ export default function SupportSidebar({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">RevelaCode</p>
-            <h1 className="truncate text-base font-bold text-slate-900">{supportAdmin ? "Support Admin workspace" : "Support workspace"}</h1>
+            <h1 className="truncate text-base font-bold text-slate-900">{supportAdmin ? "Support Admin workspace" : (String(role || roles?.[0] || "support").toLowerCase() === "support_agent" ? "Support Agent workspace" : "Support workspace")}</h1>
           </div>
           <button
             type="button"
