@@ -87,7 +87,7 @@ export default function SupportAdminOperations() {
 
   const stats = overview?.stats || {};
   const recent = tickets;
-  const supportAgents = team.filter((item) => String(item.role).toLowerCase() === "support");
+  const supportAgents = team.filter((item) => ["support", "support_agent"].includes(String(item.role).toLowerCase()));
 
   const metrics = [
     { label: "All tickets", value: stats.total, icon: Ticket },
