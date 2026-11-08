@@ -191,149 +191,70 @@ export default function CommunityMediaCards({
   if (!mediaPosts.length) return null;
 
   return (
-    <section aria-labelledby="community-media-title" className="mt-7">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <section aria-labelledby="community-media-title" className="mt-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-md shadow-cyan-900/10">
-              <Sparkles size={15} />
-            </span>
-            <div>
-              <h2 id="community-media-title" className="text-lg font-black tracking-tight text-slate-950 dark:text-white">
-                Community highlights
-              </h2>
-              <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-                Recent photos, clips and moments from members
-              </p>
-            </div>
-          </div>
+          <h2 id="community-media-title" className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
+            Community moments
+          </h2>
+          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+            Photos and clips members have shared
+          </p>
         </div>
         <button
           type="button"
           onClick={() => typeof onCreatePost === "function" && onCreatePost()}
-          className="inline-flex min-h-9 items-center gap-2 rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300"
+          className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-extrabold text-cyan-800 transition hover:bg-cyan-500/15 dark:text-cyan-200"
         >
-          <Plus size={14} /> Share a moment
+          <Plus size={12} /> Share a moment
         </button>
       </div>
 
-      {mediaPosts.length ? (
-        <div className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
-          {mediaPosts.map(({ post, media, index }) => {
-            const leadMedia = media[0];
-            const author = getAuthor(post);
-            const body = getPostBody(post);
-            const title = getPostTitle(post);
-            const isVideo = leadMedia.kind === "video";
-            const hub = getHub(post);
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none]">
+        <button
+          type="button"
+          onClick={() => typeof onCreatePost === "function" && onCreatePost()}
+          className="flex w-[68px] shrink-0 snap-start flex-col items-center gap-1.5 text-center"
+          aria-label="Create a Community moment"
+        >
+          <span className="relative flex h-[68px] w-[68px] items-center justify-center rounded-full border-2 border-dashed border-cyan-500/60 bg-cyan-500/10 text-cyan-700 transition hover:bg-cyan-500/15 dark:text-cyan-200">
+            <Plus size={24} />
+          </span>
+          <span className="w-full truncate text-[10px] font-bold text-slate-700 dark:text-slate-200">Your moment</span>
+        </button>
 
-            return (
-              <article
-                key={getPostId(post, index)}
-                className="group w-[min(70vw,220px)] flex-none snap-start overflow-hidden rounded-[25px] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900"
-              >
-                <button
-                  type="button"
-                  onClick={() => typeof onOpenPost === "function" && onOpenPost(post)}
-                  aria-label={`Open media post: ${title}`}
-                  className="relative block aspect-[16/10] w-full overflow-hidden bg-slate-200 text-left dark:bg-slate-800"
-                >
+        {mediaPosts.map(({ post, media, index }) => {
+          const leadMedia = media[0];
+          const author = getAuthor(post);
+          const title = getPostTitle(post);
+          const isVideo = leadMedia.kind === "video";
+          return (
+            <button
+              key={getPostId(post, index)}
+              type="button"
+              onClick={() => typeof onOpenPost === "function" && onOpenPost(post)}
+              title={title}
+              aria-label={`Open media shared by ${author}: ${title}`}
+              className="flex w-[68px] shrink-0 snap-start flex-col items-center gap-1.5 text-center"
+            >
+              <span className="relative block h-[68px] w-[68px] overflow-hidden rounded-full bg-slate-200 p-[3px] ring-2 ring-cyan-500/70 ring-offset-2 ring-offset-white dark:bg-slate-800 dark:ring-offset-[#0b1421]">
+                <span className="block h-full w-full overflow-hidden rounded-full">
                   {isVideo ? (
-                    <video
-                      src={leadMedia.url}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                      aria-label={leadMedia.fileName || title}
-                    />
+                    <video src={leadMedia.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
                   ) : (
-                    <img
-                      src={leadMedia.url}
-                      alt={leadMedia.fileName || title}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                      onError={(event) => {
-                        event.currentTarget.style.opacity = "0";
-                      }}
-                    />
+                    <img src={leadMedia.url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-slate-950/5" />
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-slate-950/55 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.08em] text-white backdrop-blur-md">
-                      {isVideo ? <Clapperboard size={11} /> : <Camera size={11} />}
-                      {isVideo ? "Video" : "Photo"}{media.length > 1 ? ` +${media.length - 1}` : ""}
-                    </span>
-                    <span className="max-w-[110px] truncate rounded-full border border-white/20 bg-slate-950/50 px-2.5 py-1.5 text-[9px] font-bold text-white backdrop-blur-md">
-                      {hub}
-                    </span>
-                  </div>
-                  {isVideo ? (
-                    <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/50 bg-slate-950/45 text-white shadow-xl backdrop-blur-md">
-                      <Play size={18} fill="currentColor" className="ml-0.5" />
-                    </span>
-                  ) : null}
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <span className="mb-2 inline-flex rounded-full bg-white/15 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/90 backdrop-blur-md">
-                      {String(post?.category || post?.type || "Community").replace(/[_-]/g, " ")}
-                    </span>
-                    <h3 className="line-clamp-2 break-words text-sm font-black leading-5 text-white">
-                      {title}
-                    </h3>
-                    {body ? (
-                      <p className="mt-1.5 line-clamp-2 break-words text-[10px] leading-4 text-white/75">
-                        {body}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span className="absolute bottom-3 right-3 flex h-8 w-8 translate-y-2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white opacity-0 backdrop-blur-md transition group-hover:translate-y-0 group-hover:opacity-100">
-                    <ArrowUpRight size={15} />
-                  </span>
-                </button>
-                <div className="flex items-center gap-2.5 p-3.5">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-cyan-500 to-violet-600 text-[10px] font-black text-white">
-                    {getInitials(author)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-black text-slate-900 dark:text-white">{author}</p>
-                    <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">{getDate(post)}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2 text-slate-400">
-                    <span className="inline-flex items-center gap-1 text-[10px]" aria-label="Reactions">
-                      <Heart size={12} /> {Number(post?.reactions_count ?? post?.likes_count ?? post?.likes ?? 0) || 0}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[10px]" aria-label="Comments">
-                      <MessageCircle size={12} /> {Number(post?.comments_count ?? post?.comment_count ?? 0) || 0}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="mt-4 flex flex-col gap-4 rounded-[25px] border border-dashed border-slate-300 bg-gradient-to-r from-cyan-50/70 via-white to-violet-50/60 p-5 dark:border-white/10 dark:from-cyan-950/20 dark:via-slate-900 dark:to-violet-950/20 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm dark:bg-slate-800 dark:text-cyan-300">
-              <Camera size={22} />
-            </span>
-            <div>
-              <h3 className="text-sm font-black text-slate-950 dark:text-white">Your community’s next great moment starts here.</h3>
-              <p className="mt-1 max-w-md text-xs leading-5 text-slate-600 dark:text-slate-400">
-                There are no media posts in this live result yet. Add up to four photos or clips to one post and make it worth stopping for.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => typeof onCreatePost === "function" && onCreatePost()}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-black text-slate-700 transition hover:border-cyan-400 dark:border-white/10 dark:bg-slate-950 dark:text-white"
-          >
-            <Plus size={14} /> Create media post
-          </button>
-        </div>
-      )}
+                </span>
+                {isVideo ? <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/50 bg-slate-950/80 text-white"><Play size={9} fill="currentColor" /></span> : null}
+              </span>
+              <span className="w-full truncate text-[10px] font-bold text-slate-700 dark:text-slate-200">{author}</span>
+            </button>
+          );
+        })}
+      </div>
+      {!mediaPosts.length ? (
+        <p className="mt-1 text-[10px] text-slate-400">New member photos and videos will appear here.</p>
+      ) : null}
     </section>
   );
-}
+}}
