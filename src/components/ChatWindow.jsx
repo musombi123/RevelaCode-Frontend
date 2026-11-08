@@ -50,6 +50,23 @@ export default function ChatWindow({
     });
   }, [messages.length]);
 
+  useEffect(() => {
+    const scrollToLatest = () => {
+      window.requestAnimationFrame(() => {
+        endRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      });
+    };
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", scrollToLatest);
+    viewport?.addEventListener("scroll", scrollToLatest);
+    window.addEventListener("resize", scrollToLatest, { passive: true });
+    return () => {
+      viewport?.removeEventListener("resize", scrollToLatest);
+      viewport?.removeEventListener("scroll", scrollToLatest);
+      window.removeEventListener("resize", scrollToLatest);
+    };
+  }, []);
+
   return (
     <div
       className="
