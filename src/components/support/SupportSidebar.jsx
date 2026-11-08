@@ -20,6 +20,7 @@ const views = [
   { key: "tickets", label: "Support tickets", icon: Ticket },
   { key: "history", label: "Team history", icon: History },
   { key: "analytics", label: "Analytics", icon: BarChart3 },
+  { key: "supportCenter", label: "Email inbox", icon: Headphones },
 ];
 
 export default function SupportSidebar({
@@ -32,8 +33,7 @@ export default function SupportSidebar({
 }) {
   const supportAdmin = hasSupportAdminRole(role, roles);
   const navigation = supportAdmin ? [
-    ...views,
-    { key: "supportCenter", label: "Support Team Center", icon: Headphones },
+    ...views.map((item) => item.key === "supportCenter" ? { ...item, label: "Support Team Center" } : item),
     { key: "team", label: "Team operations", icon: Users },
     { key: "study", label: "Study Hub management", icon: BookOpen },
     { key: "policies", label: "Policies and terms", icon: ShieldCheck },
