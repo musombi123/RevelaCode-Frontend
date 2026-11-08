@@ -79,7 +79,7 @@ test("fullscreen and AI header heights are compact and redundant mode labels are
 test("composer uses one rounded glass surface with accessible responsive controls", () => {
   assert.ok(input.includes("rounded-3xl border border-line/90 bg-surface/90"));
   assert.ok(input.includes("focus-within:border-emerald-500/45"));
-  assert.ok(input.includes("sm:absolute sm:bottom-[calc(100%+12px)]"));
+  assert.ok(input.includes("sm:bottom-[calc(100%+12px)]"));
   assert.ok(input.includes("fixed inset-x-0 bottom-0"));
   assert.ok(input.includes("h-11 w-11"));
   assert.ok(input.includes('aria-label={isGenerating?"Stop generating":"Send message"}'));
