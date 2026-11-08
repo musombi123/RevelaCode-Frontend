@@ -177,7 +177,7 @@ function formatRelativeTime(timestamp) {
 // COMPONENT
 // ============================================================
 
-export default function NotificationsBell() {
+export default function NotificationsBell({ onNavigate }) {
   const [open, setOpen] = useState(false);
 
   const {
@@ -215,17 +215,13 @@ export default function NotificationsBell() {
   // HANDLE CLICK
   // ==========================================================
 
-  const handleNotificationClick = async (
-    notification
-  ) => {
-    if (!notification.read) {
-      await markAsRead(notification.id);
-    }
-
-    // Future:
-    // if (notification.url) {
-    //   window.open(notification.url, "_blank");
-    // }
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) await markAsRead(notification.id);
+    const rawTarget = String(notification.hub || notification.destination || notification.target || "").toLowerCase();
+    const destination = ({ ai: "ai", revelaai: "ai", faith: "faith", scripture: "faith", elimu: "education", school: "education", biashara: "biashara", shamba: "shamba", community: "community", jumuiya: "community", home: "home" })[rawTarget];
+    if (destination) onNavigate?.(destination);
+    else if (notification.url || notification.download_url) window.open(notification.url || notification.download_url, "_blank", "noopener,noreferrer");
+    setOpen(false);
   };
 
   // ==========================================================
