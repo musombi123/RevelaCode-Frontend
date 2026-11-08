@@ -1539,6 +1539,11 @@ export default function AIAssistantDashboard({
           const isNetworkFailure =
             error instanceof TypeError ||
             /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
+          if (isNetworkFailure) {
+            window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
+          } else {
+            window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
+          }
           const recentContext = currentMessages
             .filter((item) => item.role === "user" || item.role === "assistant")
             .slice(-6)
