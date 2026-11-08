@@ -1945,6 +1945,39 @@ export default function AIAssistantDashboard({
     return () => window.removeEventListener("keydown", handleShortcuts);
   }, [startNewChat]);
 
+  // Keep the AI workspace inside Android's visible viewport when the
+  // soft keyboard overlays the WebView. The composer remains in normal flex
+  // flow, so the conversation shrinks instead of being covered by the keyboard.
+  useEffect(() => {
+    const workspace = document.querySelector(".revelaai-workspace");
+    if (!workspace) return undefined;
+
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      const visibleHeight = viewport?.height || window.innerHeight;
+      const keyboardLikelyOpen = window.innerHeight - visibleHeight > 120;
+      if (keyboardLikelyOpen) {
+        workspace.style.setProperty("--revela-visible-height", `${Math.round(visibleHeight)}px`);
+        workspace.classList.add("revelaai-keyboard-open");
+      } else {
+        workspace.style.removeProperty("--revela-visible-height");
+        workspace.classList.remove("revelaai-keyboard-open");
+      }
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport, { passive: true });
+    viewport?.addEventListener("resize", updateViewport);
+    viewport?.addEventListener("scroll", updateViewport);
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("scroll", updateViewport);
+      workspace.style.removeProperty("--revela-visible-height");
+      workspace.classList.remove("revelaai-keyboard-open");
+    };
+  }, []);
+
   /* =======================================================
      UI
   ======================================================= */
