@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ExternalLink, RefreshCw, Sparkles, WifiOff } from "lucide-react";
 import SdaLessonAIChat from "./SdaLessonAIChat.jsx";
+import { readCachedApiResponse, writeCachedApiResponse } from "@/services/offlineHubSync.js";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -81,10 +82,18 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
       const freshMaterials = Array.isArray(payload?.materials) ? payload.materials : [];
       setMaterials(freshMaterials);
       window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
-      try { localStorage.setItem(cacheKey, JSON.stringify({ materials: freshMaterials, savedAt: new Date().toISOString(), version: payload?.version || payload?.updated_at || "" })); } catch { /* Live quarter remains usable if storage is blocked. */ }
+      const cachePayload = { materials: freshMaterials, savedAt: new Date().toISOString(), version: payload?.version || payload?.updated_at || "" };
+      await writeCachedApiResponse("public:sda-quarterly", `${API}/api/study/sda/quarter/${year}/${quarter}`, cachePayload);
+      try { localStorage.setItem(cacheKey, JSON.stringify(cachePayload)); } catch { /* IndexedDB remains the durable offline cache. */ }
     } catch (loadError) {
       let cached = null;
-      try { cached = JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { cached = null; }
+      try {
+        const cachedResult = await readCachedApiResponse("public:sda-quarterly", `${API}/api/study/sda/quarter/${year}/${quarter}`);
+        cached = cachedResult.hit ? cachedResult.payload : null;
+      } catch { cached = null; }
+      if (!cached) {
+        try { cached = JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { cached = null; }
+      }
       window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
       if (Array.isArray(cached?.materials) && cached.materials.length) {
         setMaterials(cached.materials);
@@ -102,6 +111,9 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
 
   useEffect(() => {
     loadQuarter();
+    // Revalidate the current quarter periodically while Faith remains open.
+    const refreshTimer = window.setInterval(() => loadQuarter({ silent: true }), 6 * 60 * 60 * 1000);
+    return () => window.clearInterval(refreshTimer);
     // Quarter selection intentionally controls this request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, quarter]);
