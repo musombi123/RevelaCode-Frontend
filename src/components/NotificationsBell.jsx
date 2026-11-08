@@ -315,9 +315,9 @@ export default function NotificationsBell({ onNavigate }) {
               dark:ring-slate-950
             "
           >
-            {unreadCount > 99
+            {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 99
               ? "99+"
-              : unreadCount}
+              : unreadCount + systemNotifications.filter((item) => !item.read).length}
           </span>
         )}
       </button>
@@ -432,8 +432,8 @@ export default function NotificationsBell({ onNavigate }) {
                       dark:text-slate-400
                     "
                   >
-                    {unreadCount > 0
-                      ? `${unreadCount} unread`
+                    {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 0
+                      ? `${unreadCount + systemNotifications.filter((item) => !item.read).length} unread`
                       : "You're all caught up"}
                   </p>
                 </div>
