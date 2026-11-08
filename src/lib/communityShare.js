@@ -3,8 +3,9 @@ export const COMMUNITY_SHARE_DRAFT_KEY = "revelacode.community.shareDraft.v1";
 const MAX_DRAFT_AGE_MS = 60 * 60 * 1000;
 
 export function savePendingCommunityShareDraft(draft) {
-  if (typeof window === "undefined" || !window.sessionStorage) return false;
+  if (typeof window === "undefined") return false;
   try {
+    if (!window.sessionStorage) return false;
     window.sessionStorage.setItem(
       COMMUNITY_SHARE_DRAFT_KEY,
       JSON.stringify({ ...draft, createdAt: Date.now() }),
@@ -17,8 +18,9 @@ export function savePendingCommunityShareDraft(draft) {
 }
 
 export function consumePendingCommunityShareDraft() {
-  if (typeof window === "undefined" || !window.sessionStorage) return null;
+  if (typeof window === "undefined") return null;
   try {
+    if (!window.sessionStorage) return null;
     const raw = window.sessionStorage.getItem(COMMUNITY_SHARE_DRAFT_KEY);
     if (!raw) return null;
     window.sessionStorage.removeItem(COMMUNITY_SHARE_DRAFT_KEY);
