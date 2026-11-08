@@ -42,12 +42,13 @@ test("Composer tool selection is local and executes only with the submitted chat
   const input = read("../src/components/InputBar.jsx");
   const tools = read("../src/components/ProductivityToolsPanel.jsx");
   assert.equal((dashboard.match(/<InputBar/g) || []).length, 2);
-  assert.ok(input.includes('label="Attachments and tools"'));
-  assert.ok(input.includes("Upload a file or document"));
-  assert.ok(input.includes("AI tools"));
+  assert.ok(input.includes('aria-label="Attachments and AI tools"'));
+  assert.ok(input.includes("Upload file"));
+  assert.ok(input.includes("Search AI tools"));
   assert.ok(input.includes("selectedToolCommand"));
   assert.ok(input.includes("setSelectedToolCommand(selected)"));
-  assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(input.includes("onSend?.(value, attachedFile, {"));
+  assert.ok(input.includes("toolCommand: command ?"));
   assert.ok(dashboard.includes('if (selectedToolCommand === "/humanize" && !attachedFile)'));
   assert.ok(dashboard.includes("setHumanizerSeedText(cleaned);"));
   assert.ok(!input.includes("setWorkspaceToolsOpen"));
