@@ -450,11 +450,11 @@ export default function SecurityAcademyDashboard() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [scopeConfirmed, setScopeConfirmed] = useState(false);
-  const [acceptedNoticeKey, setAcceptedNoticeKey] = useState("");
   const noticeStorageKey = useMemo(
     () => `revela_security_academy_notice:${String(user?.id || user?.user_id || "unknown")}:${SECURITY_ACADEMY_NOTICE_VERSION}`,
     [user?.id, user?.user_id],
   );
+  const [acceptedNoticeKey, setAcceptedNoticeKey] = useState("");
   const scopeAccepted = acceptedNoticeKey === noticeStorageKey;
 
   const authenticated = Boolean(isAuthenticated && !isGuest);
