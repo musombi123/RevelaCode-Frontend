@@ -48,12 +48,18 @@ test("new-chat composer sits directly below the welcome message instead of a sep
   assert.ok(!dashboard.includes("<ProductivityToolsPanel"));
 });
 
-test("the compact InputBar exposes upload, vision and productivity actions from the paperclip menu", () => {
+test("the compact InputBar exposes upload, vision and local selectable AI tools from the paperclip menu", () => {
   assert.ok(input.includes('label="Attachments and tools"'));
   assert.ok(input.includes("Upload a file or document"));
   assert.ok(input.includes("Capture with camera / Vision"));
-  assert.ok(input.includes("Productivity tools and workspace"));
+  assert.ok(input.includes("AI tools"));
   assert.ok(input.includes("TOOL_COMMANDS.map"));
+  assert.ok(input.includes("selectedToolCommand"));
+  assert.ok(input.includes("setSelectedToolCommand(selected)"));
+  assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(!input.includes("setWorkspaceToolsOpen"));
+  assert.ok(!input.includes("Productivity tools and workspace"));
+  assert.ok(!input.includes("<ProductivityToolsPanel"));
   assert.ok(input.includes("h-10 w-10 min-h-10 min-w-10"));
   assert.ok(!input.includes("Grounded when evidence is available"));
   assert.ok(!input.includes('label="Open tools"'));
