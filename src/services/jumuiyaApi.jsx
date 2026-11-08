@@ -370,6 +370,7 @@ async function performRequest(
     );
   }
 
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
   const payload = await parseResponse(response);
   if (cacheScope && method === "GET" && response.ok) {
     await writeCachedApiResponse(cacheScope, url, payload);
