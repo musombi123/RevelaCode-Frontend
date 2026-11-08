@@ -64,10 +64,11 @@ export default function WebsiteCompliance({ tenantType, tenantId, primary = "#04
           throw new Error(payload.message || "Website privacy information is temporarily unavailable.");
         }
         if (!active) return;
-        setPolicies(payload.policies || null);
+        const currentPolicies = payload.policies || null;
+        setPolicies(currentPolicies);
         try {
           const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-          if (saved?.preferences) {
+          if (saved?.preferences && saved?.policy_version === currentPolicies?.version) {
             setPreferences({ ...DEFAULT_PREFERENCES, ...saved.preferences, essential: true });
             setBannerOpen(false);
           } else {
