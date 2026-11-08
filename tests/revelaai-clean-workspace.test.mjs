@@ -68,6 +68,25 @@ test("the unified composer exposes inline attachments, searchable grouped tools 
   assert.ok(input.includes("bg-gradient-to-br from-emerald-400 to-emerald-600"));
   assert.ok(input.includes("data-demo=\"ai-send-message\""));
 });
+test("mode-aware tools adapt the composer in place and preserve the draft", () => {
+  assert.ok(input.includes("export const TOOL_MODES"));
+  assert.ok(input.includes('"/image": { kind: "image-studio"'));
+  assert.ok(input.includes('"/search": { kind: "deep-search"'));
+  assert.ok(input.includes("setSelectedToolCommand(selected)"));
+  assert.ok(!input.includes('setText((current) => current.replace(/^\\/[a-z]+\\s*/i, ""))'));
+  assert.ok(input.includes("Describe the image you want"));
+  assert.ok(input.includes("What should I research?"));
+  assert.ok(input.includes('aria-label="Image mode"'));
+  assert.ok(input.includes('aria-label="Aspect ratio"'));
+  assert.ok(input.includes('aria-label="Image style"'));
+  assert.ok(input.includes('aria-label="Research depth"'));
+  assert.ok(input.includes('aria-label="Research time range"'));
+  assert.ok(input.includes("overflow-x-auto whitespace-nowrap"));
+  assert.ok(input.includes("toolOptions:"));
+  assert.ok(dashboard.includes("Image Studio request. Mode:"));
+  assert.ok(dashboard.includes("Deep Search request. Depth and source preferences:"));
+});
+
 test("fullscreen and AI header heights are compact and redundant mode labels are removed", () => {
   const shell = read("../src/components/MainDashboardV2.jsx");
   assert.ok(shell.includes("h-10 shrink-0 items-center justify-between"));
