@@ -1349,7 +1349,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
                 {/* Notifications */}
 
-                <Notifications />
+                <Notifications onNavigate={handleNavigate} />
 
                 {/* Avatar */}
 
