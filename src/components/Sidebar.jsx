@@ -45,7 +45,7 @@ function dateBucket(value) {
 
 export default function Sidebar({
   open, setOpen, chats = [], onNewChat, onSelectChat, onDeleteChat, onRenameChat,
-  onOpenVoice, onOpenVision, onOpenHumanizer, onOpenIdentity, freeMode = false, onToggleFreeMode,
+  onOpenVoice, onOpenVision, onOpenIdentity, freeMode = false, onToggleFreeMode,
   activeChatId = null,
 }) {
   const { user } = useAuth();
