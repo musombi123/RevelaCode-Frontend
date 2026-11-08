@@ -359,19 +359,17 @@ async function performRequest(
       if (queued) throw createOfflineQueuedError();
     }
 
-    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: offline ? "offline" : "poor" } }));
+      window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
     }
     throw new JumuiyaAPIError(
-      offline
-        ? "Offline — this action needs a connection. Your saved content remains available."
-        : "Poor connection — we could not reach RevelaCode. Please try again when your connection improves.",
+      "Poor connection. Please try again when your internet connection is stable.",
       0,
       "network_error",
     );
   }
 
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
   const payload = await parseResponse(response);
   if (typeof window !== "undefined" && response.ok) {
     window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));

@@ -254,6 +254,39 @@ export default function PlatformWelcomePage() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [greetingIndex, setGreetingIndex] = React.useState(0);
   const [greetingVisible, setGreetingVisible] = React.useState(true);
+  const [androidRelease, setAndroidRelease] = React.useState(null);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("https://api.github.com/repos/musombi123/RevelaCode-Android/releases/latest", {
+      headers: { Accept: "application/vnd.github+json" },
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Latest Android release is not available yet.");
+        return response.json();
+      })
+      .then((release) => {
+        const apk = Array.isArray(release.assets)
+          ? release.assets.find((asset) => asset.name === "RevelaCode-Android.apk")
+          : null;
+        if (!apk || !release.tag_name) return;
+
+        setAndroidRelease({
+          version: String(release.tag_name).replace(/^v/i, ""),
+          publishedAt: release.published_at || release.created_at || null,
+        });
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          console.warn("Could not load the latest RevelaCode Android release.", error);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   React.useEffect(() => {
     const query = typeof window.matchMedia === "function"
@@ -495,7 +528,7 @@ export default function PlatformWelcomePage() {
               className="inline-flex min-h-14 items-center justify-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3.5 text-sm font-bold text-blue-800 transition-transform hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:border-blue-800 dark:hover:bg-blue-950"
             >
               <Smartphone size={18} aria-hidden="true" />
-              Download Android
+              {androidRelease ? `Download Android v${androidRelease.version}` : "Download Android"}
               <Download size={16} aria-hidden="true" />
             </a>
             <a
@@ -508,8 +541,25 @@ export default function PlatformWelcomePage() {
             </a>
           </div>
 
-          <p className="welcome-entrance mt-4 max-w-2xl text-xs leading-6 text-slate-500 dark:text-slate-400" style={{ "--welcome-delay": "1.25s" }}>
-            Windows and Android downloads start directly from their installer links. The web app opens in this browser.
+          <p
+            className="welcome-entrance mt-4 max-w-2xl text-xs leading-6 text-slate-500 dark:text-slate-400"
+            style={{ "--welcome-delay": "1.2s" }}
+            aria-live="polite"
+          >
+            {androidRelease ? (
+              <>
+                Latest Android release: <strong className="font-bold text-slate-700 dark:text-slate-200">v{androidRelease.version}</strong>
+                {androidRelease.publishedAt
+                  ? ` · Published ${new Date(androidRelease.publishedAt).toLocaleDateString()}`
+                  : ""}
+                {" · "}The download link always serves the latest published APK.
+              </>
+            ) : (
+              "Android downloads always point to the latest published APK. Release details appear here after the first signed release is published."
+            )}
+          </p>
+          <p className="welcome-entrance mt-2 max-w-2xl text-[11px] leading-5 text-slate-400 dark:text-slate-500" style={{ "--welcome-delay": "1.3s" }}>
+            Windows downloads start directly from their installer link. The web app opens in this browser.
           </p>
 
           <div className="welcome-entrance mt-12 grid w-full max-w-4xl grid-cols-2 gap-0 border-t border-slate-200 pt-6 dark:border-slate-800 sm:grid-cols-4" style={{ "--welcome-delay": "1.4s" }} aria-label="RevelaCode ecosystem">

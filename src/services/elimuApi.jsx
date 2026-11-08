@@ -430,13 +430,18 @@ export function createElimuApiClient({
         if (queued) throw createOfflineQueuedError();
       }
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
+      }
       throw createApiError(
-        "Unable to reach the Elimu service. Check your connection and try again.",
+        "Poor connection. Please try again when your internet connection is stable.",
         0,
         null,
         { url, method: verb },
       );
     }
+
+    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
 
     const requestId =
       readHeader(response.headers, "x-request-id") ||

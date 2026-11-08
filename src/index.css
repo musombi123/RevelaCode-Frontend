@@ -2055,3 +2055,18 @@ html[data-theme="dark"] { --premium-rgb: 251 191 36; }
   min-height: 0 !important;
   overscroll-behavior: contain;
 }
+
+/* RevelaCode AdMob Native Ads: reserve a valid Small-template slot. */
+/* The v8.2.1 plugin renders this custom element as the native ad's HTML anchor.
+   Small-template slots must be at least 120 x 120 CSS px. Keep a little
+   vertical headroom so Android density rounding cannot collapse the slot. */
+capacitor-admob-native {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 120px !important;
+  height: clamp(120px, 34vw, 168px) !important;
+  min-height: 120px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}

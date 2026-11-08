@@ -605,7 +605,7 @@ export default function CommunityFeed({
   // ==========================================================
 
   return (
-      <div className="mx-auto w-full max-w-4xl space-y-4 pb-10">
+      <div className="mx-auto w-full max-w-5xl space-y-5 pb-10">
 
         {/* ====================================================
             PAGE HEADER
@@ -1535,7 +1535,7 @@ export default function CommunityFeed({
                 >
                   {/* POST HEADER */}
 
-                  <div className="p-4 sm:p-5">
+                  <div className="p-5 sm:p-6">
                     <div
                       className="
                         flex
@@ -1737,11 +1737,11 @@ export default function CommunityFeed({
                     </button>
 
                     {mediaItems.length > 0 ? (
-                      <div className={`mt-4 grid gap-2 overflow-hidden rounded-2xl ${mediaItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                      <div className={`mt-5 grid grid-cols-1 gap-3 overflow-hidden rounded-2xl ${mediaItems.length > 1 ? "sm:grid-cols-2" : ""}`}>
                         {mediaItems.map((media, mediaIndex) => (
                           <div
                             key={media.id || media.url}
-                            className={`relative block w-full overflow-hidden rounded-xl bg-slate-100 text-left ring-1 ring-black/5 dark:bg-slate-800 dark:ring-white/10 ${mediaItems.length === 1 ? "max-h-[520px]" : "aspect-[4/3]"}`}
+                            className="relative block min-w-0 w-full overflow-hidden rounded-xl bg-slate-100 text-left ring-1 ring-black/5 dark:bg-slate-800 dark:ring-white/10"
                           >
                             {media.kind === "video" ? (
                               <video
@@ -1749,7 +1749,7 @@ export default function CommunityFeed({
                                 controls
                                 playsInline
                                 preload="metadata"
-                                className={`w-full object-cover ${mediaItems.length === 1 ? "max-h-[520px]" : "h-full"}`}
+                                className="block h-auto max-h-[78vh] max-h-[78svh] w-full object-contain"
                               />
                             ) : (
                               <img
@@ -1757,7 +1757,7 @@ export default function CommunityFeed({
                                 alt={media.fileName || getTitle(post)}
                                 loading="lazy"
                                 decoding="async"
-                                className={`w-full object-cover ${mediaItems.length === 1 ? "max-h-[520px]" : "h-full"}`}
+                                className="block h-auto max-h-[78vh] max-h-[78svh] w-full object-contain"
                                 onError={(event) => {
                                   event.currentTarget.closest("button")?.classList.add("hidden");
                                 }}

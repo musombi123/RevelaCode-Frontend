@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { isAuthoritativeSessionCheck } from "../src/auth/sessionRequests.mjs";
+import { isAuthoritativeSessionCheck, isExplicitRevokedSessionResponse } from "../src/auth/sessionRequests.mjs";
 
 const startModal = await readFile(new URL("../src/components/StartModal.jsx", import.meta.url), "utf8");
 const authContext = await readFile(new URL("../src/context/AuthContext.jsx", import.meta.url), "utf8");
@@ -73,19 +73,70 @@ test("authenticated requests refresh once and retry with the replacement bearer 
   assert.match(authContext, /fetch\(refreshUrl,\s*\{/);
   assert.match(authContext, /persistToken\(nextToken, nextTokenType, nextRefreshToken\)/);
   assert.match(authContext, /response = await fetch\(url, \{ \.\.\.options, headers: retryHeaders \}\)/);
-  assert.match(authContext, /response\.status === 401 &&\s*requestWasAuthenticated &&\s*isAuthoritativeSessionRequest/);
+  assert.ok(authContext.includes("(isAuthoritativeSessionRequest || serviceReportsRevokedSession)"));
   assert.match(authContext, /isAuthoritativeSessionCheck\(/);
 });
 
-test("only a 401 from the authoritative RevelaCode session endpoint can clear the global login", () => {
+test("only the primary backend can invalidate a cached login, including relayed session revocation", () => {
   const authApi = "https://backend.revelacode.co.ke";
   assert.equal(isAuthoritativeSessionCheck(authApi + "/api/auth/me", authApi, "GET"), true);
   assert.equal(isAuthoritativeSessionCheck("https://revelaai.onrender.com/api/core-mesh/dashboard", authApi, "GET"), false);
   assert.equal(isAuthoritativeSessionCheck("https://revelaai.onrender.com/api/security-academy/courses", authApi, "GET"), false);
   assert.equal(isAuthoritativeSessionCheck(authApi + "/api/users/me", authApi, "GET"), false);
   assert.equal(isAuthoritativeSessionCheck(authApi + "/api/auth/me", authApi, "POST"), false);
-  assert.match(authContext, /response\.status === 401 &&\s*requestWasAuthenticated &&\s*isAuthoritativeSessionRequest/);
-  assert.match(authContext, /clearToken\(\);[\s\S]*?setUser\(null\)/);
+  assert.ok(authContext.includes("(isAuthoritativeSessionRequest || serviceReportsRevokedSession)"));
+  assert.ok(authContext.includes("`${backendBaseUrl}/api/auth/me`"));
+  assert.ok(authContext.includes("primarySessionRejected"));
+  assert.ok(authContext.includes("clearToken();"));
+  assert.ok(authContext.includes("setUser(null);"));
+});
+
+test("only an explicit revoked-session 401 from a connected service triggers primary session verification", () => {
+  assert.equal(
+    isExplicitRevokedSessionResponse(401, { error: { code: "session_revoked", message: "This session has been revoked. Sign in again." } }),
+    true,
+  );
+  assert.equal(
+    isExplicitRevokedSessionResponse(401, { error: { code: "unauthorized", message: "Not allowed." } }),
+    false,
+  );
+  assert.equal(
+    isExplicitRevokedSessionResponse(403, { error: { code: "session_revoked" } }),
+    false,
+  );
+  assert.match(authContext, /initiallyRevokedSession/);
+  assert.match(authContext, /primarySessionRejected/);
+});
+
+test("AI chat and Humanizer continue to require their current use notices", async () => {
+  const aiWorkspace = await readFile(new URL("../src/components/AIAssistantDashboard.jsx", import.meta.url), "utf8");
+  const humanizer = await readFile(new URL("../src/pages/HumanizerWorkspace.jsx", import.meta.url), "utf8");
+  assert.ok(aiWorkspace.includes("ai_chat"));
+  assert.ok(aiWorkspace.includes('complianceStatus !== "accepted"'));
+  assert.ok(humanizer.includes("feature=humanizer"));
+  assert.ok(humanizer.includes('feature: "humanizer"'));
+  assert.ok(humanizer.includes("acceptHumanizerNotice"));
+  assert.ok(humanizer.includes('complianceStatus !== "accepted"'));
+});
+
+test("school and business hosted websites share privacy and cookie preference controls", async () => {
+  const schoolSite = await readFile(new URL("../src/pages/jumuiya/ElimuPublicSchoolPage.jsx", import.meta.url), "utf8");
+  const businessSite = await readFile(new URL("../src/pages/jumuiya/BiasharaPublicWebsitePage.jsx", import.meta.url), "utf8");
+  const websiteCompliance = await readFile(new URL("../src/components/compliance/WebsiteCompliance.jsx", import.meta.url), "utf8");
+  assert.match(schoolSite, /<WebsiteCompliance tenantType="school"/);
+  assert.match(businessSite, /<WebsiteCompliance tenantType="business"/);
+  assert.match(websiteCompliance, /Cookie policy/);
+  assert.match(websiteCompliance, /cookie-consent/);
+  assert.match(websiteCompliance, /Reject optional/);
+  assert.match(websiteCompliance, /policy_version/);
+});
+
+test("Security Academy requires per-account acknowledgement of authorized-use boundaries", async () => {
+  const academy = await readFile(new URL("../src/components/SecurityAcademyDashboard.jsx", import.meta.url), "utf8");
+  assert.match(academy, /SECURITY_ACADEMY_NOTICE_VERSION/);
+  assert.match(academy, /explicitly authorized in writing/);
+  assert.match(academy, /Acknowledge and continue/);
+  assert.ok(academy.includes("if (!authenticated || !scopeAccepted)"));
 });
 
 test("AuthGate fails closed unless the server confirms an identity and current roles", () => {

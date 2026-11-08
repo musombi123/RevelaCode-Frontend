@@ -1777,8 +1777,7 @@ function HomeDashboard({
           </button>
         </section>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-2">
-        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0">
+        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-y-auto overscroll-contain pb-2">
           <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
             <div className="min-w-0">
               <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
@@ -1823,6 +1822,40 @@ function HomeDashboard({
                 </button>
               );
             })}
+          </div>
+
+          <div data-demo="home-quick-tools" className="mt-3">
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+              <div>
+                <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
+                  {t("AI & Security tools")}
+                </h2>
+                <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                  {t("Writing support and practical security learning")}
+                </p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
+                {t("Tools")}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => onNavigate?.("humanizer")} data-demo="home-tool-humanizer" aria-label={t("Open Humanizer Studio")} className="group flex min-h-[68px] min-w-0 items-center gap-2.5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-900/60 dark:from-violet-950/50 dark:to-slate-900">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-200"><Sparkles size={18} strokeWidth={2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{t("Humanizer")}</span>
+                  <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">{t("Refine your writing")}</span>
+                </span>
+                <ArrowRight size={15} className="shrink-0 text-violet-600 dark:text-violet-300" />
+              </button>
+              <button type="button" onClick={() => onNavigate?.("security-academy")} data-demo="home-tool-security-academy" aria-label={t("Open Security Academy")} className="group flex min-h-[68px] min-w-0 items-center gap-2.5 rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:border-cyan-900/60 dark:from-cyan-950/50 dark:to-slate-900">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/60 dark:text-cyan-200"><ShieldCheck size={18} strokeWidth={2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{t("Security Academy")}</span>
+                  <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">{t("Learn defensive security")}</span>
+                </span>
+                <ArrowRight size={15} className="shrink-0 text-cyan-600 dark:text-cyan-300" />
+              </button>
+            </div>
           </div>
         </section>
         {renderHomeNotifications()}

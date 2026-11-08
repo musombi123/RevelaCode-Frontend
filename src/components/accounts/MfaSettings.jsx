@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, KeyRound, RefreshCw } from "lucide-react";
+import { ShieldCheck, KeyRound, RefreshCw, MonitorSmartphone, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 const baseUrl = import.meta.env.VITE_REVELACODE_URL
@@ -16,12 +16,13 @@ export default function MfaSettings() {
   const [mfaMessage, setMfaMessage] = useState("");
   const [mfaError, setMfaError] = useState("");
   const [mfaRecoveryCodes, setMfaRecoveryCodes] = useState([]);
+  const [trustedDevices, setTrustedDevices] = useState([]);
 
-  const mfaRequest = async (path, payload = null) => {
+  const mfaRequest = async (path, payload = null, methodOverride = null) => {
     const apiBase = String(baseUrl || "").trim().replace(/\/+$/, "");
     if (!apiBase) throw new Error("Backend URL is not configured.");
     const options = {
-      method: payload ? "POST" : "GET",
+      method: methodOverride || (payload ? "POST" : "GET"),
       headers: payload ? { "Content-Type": "application/json" } : {},
     };
     if (payload) options.body = JSON.stringify(payload);
@@ -41,10 +42,18 @@ export default function MfaSettings() {
       if (!user || !authFetch) return;
       try {
         const status = await mfaRequest("/api/auth/mfa/status");
-        if (!cancelled) setMfaStatus({
-          enabled: Boolean(status.enabled),
-          recovery_codes_remaining: Number(status.recovery_codes_remaining || 0),
-        });
+        let devices = [];
+        if (status.enabled) {
+          const devicePayload = await mfaRequest("/api/auth/mfa/devices");
+          devices = Array.isArray(devicePayload.devices) ? devicePayload.devices : [];
+        }
+        if (!cancelled) {
+          setMfaStatus({
+            enabled: Boolean(status.enabled),
+            recovery_codes_remaining: Number(status.recovery_codes_remaining || 0),
+          });
+          setTrustedDevices(devices);
+        }
       } catch (error) {
         if (!cancelled) setMfaError(error.message || "Could not load authenticator status.");
       }
@@ -52,6 +61,21 @@ export default function MfaSettings() {
     loadMfaStatus();
     return () => { cancelled = true; };
   }, [user?.id, authFetch]);
+
+  const revokeTrustedDevice = async (deviceId) => {
+    setMfaError("");
+    setMfaMessage("");
+    try {
+      setMfaBusy(true);
+      await mfaRequest(`/api/auth/mfa/devices/${encodeURIComponent(deviceId)}`, null, "DELETE");
+      setTrustedDevices((current) => current.filter((device) => device.id !== deviceId));
+      setMfaMessage("Trusted device revoked. It will need authenticator verification at its next sign-in.");
+    } catch (error) {
+      setMfaError(error.message || "Could not revoke this device.");
+    } finally {
+      setMfaBusy(false);
+    }
+  };
 
   const startMfaSetup = async () => {
     setMfaError("");
@@ -117,6 +141,7 @@ export default function MfaSettings() {
       setMfaBusy(true);
       const result = await mfaRequest("/api/auth/mfa/disable", { password: mfaPassword, code: mfaCode.trim() });
       setMfaStatus({ enabled: false, recovery_codes_remaining: 0 });
+      setTrustedDevices([]);
       setMfaRecoveryCodes([]);
       setMfaSetup(null);
       setMfaCode("");
@@ -233,6 +258,27 @@ export default function MfaSettings() {
               <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
                 {mfaStatus.recovery_codes_remaining} recovery codes remain. Keep unused codes somewhere separate from your device.
               </p>
+              <div className="mt-5 rounded-xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/10">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white"><MonitorSmartphone className="h-4 w-4 text-emerald-600"/> Trusted devices</div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">30-day trust</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">After you verify a new device, RevelaCode trusts that browser or app installation for a limited period. Revoke anything you do not recognize.</p>
+                {trustedDevices.length ? (
+                  <div className="mt-3 space-y-2">
+                    {trustedDevices.map((device) => (
+                      <div key={device.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5 dark:border-white/10">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{device.label || "Trusted device"}</p>
+                          <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">Last used: {device.last_used_at ? new Date(device.last_used_at).toLocaleString() : "Not available"}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">Expires: {device.expires_at ? new Date(device.expires_at).toLocaleDateString() : "Unknown"}</p>
+                        </div>
+                        <button type="button" onClick={() => revokeTrustedDevice(device.id)} disabled={mfaBusy} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/30"><Trash2 className="h-3.5 w-3.5"/> Revoke</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">No active trusted devices yet. Your current device will appear after your next successful authenticator sign-in.</p>}
+              </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Current password</span>

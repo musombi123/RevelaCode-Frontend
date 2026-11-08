@@ -198,7 +198,7 @@ function NativeAdMobPlacement({ config }) {
   return (
     <aside
       aria-label="Sponsored advertisement"
-      className="my-5 rounded-2xl border border-slate-200 bg-white p-2.5 dark:border-white/10 dark:bg-slate-900"
+      className="my-5 box-border w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2.5 dark:border-white/10 dark:bg-slate-900"
     >
       <div className="mb-1.5 flex min-h-[15px] items-center justify-between gap-2 px-1">
         <span className="inline-flex min-h-[15px] min-w-[15px] items-center text-[10px] font-black uppercase leading-[15px] tracking-[0.12em] text-slate-400">
@@ -248,7 +248,7 @@ function WebAdSensePlacement({ config }) {
   return (
     <aside
       aria-label="Advertisement"
-      className="my-6 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900 sm:p-4"
+      className="my-5 box-border w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2.5 dark:border-white/10 dark:bg-slate-900 sm:p-4"
     >
       <div className="mb-2 flex min-h-[15px] items-center justify-between gap-3">
         <span className="inline-flex min-h-[15px] min-w-[15px] items-center text-[10px] font-black uppercase leading-[15px] tracking-[0.12em] text-slate-400">
@@ -261,7 +261,7 @@ function WebAdSensePlacement({ config }) {
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ display: "block", width: "100%", minHeight: "100px" }}
+        style={{ display: "block", width: "100%", maxWidth: "100%", minWidth: 0, minHeight: "100px", boxSizing: "border-box" }}
         data-ad-format={config.adsenseFormat}
         data-ad-layout-key={
           config.adsenseFormat === "fluid" ? COMMUNITY_AD_LAYOUT_KEY : undefined

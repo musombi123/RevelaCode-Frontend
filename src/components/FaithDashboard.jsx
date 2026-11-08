@@ -760,7 +760,7 @@ export default function FaithDashboard({
           "Sabbath School lessons in the Faith hub. Choose a quarter, read imported daily lessons, or open the official quarterly source.",
           closeStudyView
         )}
-        <SDAQuarterlyWorkspace onOpen={openMaterial} />
+        <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} />
       </div>
     );
   }

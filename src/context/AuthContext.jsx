@@ -15,7 +15,8 @@ import {
   clearStoredTokens,
 } from "@/auth/tokenStorage.mjs";
 import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
-import { isAuthoritativeSessionCheck } from "@/auth/sessionRequests.mjs";
+import { isAuthoritativeSessionCheck, isExplicitRevokedSessionResponse } from "@/auth/sessionRequests.mjs";
+import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
 
 /* =========================================================
    CONTEXT
@@ -996,12 +997,13 @@ export function AuthProvider({
         }
 
         const requestUrl = String(url);
+        const backendBaseUrl = resolveBackendBaseUrl(import.meta.env || {});
         const requestMethod = String(options.method || "GET").toUpperCase();
         let requestPath = "";
         try {
           requestPath = new URL(
             requestUrl,
-            String(import.meta.env.VITE_API_URL || window.location.origin),
+            backendBaseUrl || window.location.origin,
           ).pathname;
         } catch {
           // Invalid request URLs cannot invalidate the platform session.
@@ -1009,7 +1011,7 @@ export function AuthProvider({
         const isAuthEntryRequest = /^\/api\/(?:login|register|request-code|verify|request-reset|verify-reset|reset-password)(?:\/|$)/i.test(requestPath);
         const isAuthoritativeSessionRequest = isAuthoritativeSessionCheck(
           requestUrl,
-          String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, ""),
+          backendBaseUrl,
           requestMethod,
         );
         // Track whether a credential was sent. A connected service rejecting
@@ -1019,9 +1021,17 @@ export function AuthProvider({
           headers.has("Authorization") || readRefreshToken()
         );
         let response = await fetch(url, { ...options, headers });
+        const initial401Payload = response.status === 401
+          ? await response.clone().json().catch(() => ({}))
+          : {};
+        const initiallyRevokedSession = isExplicitRevokedSessionResponse(
+          response.status,
+          initial401Payload,
+        );
 
         if (
           response.status === 401 &&
+          !initiallyRevokedSession &&
           !requestUrl.includes("/api/auth/refresh") &&
           !isAuthEntryRequest
         ) {
@@ -1030,12 +1040,9 @@ export function AuthProvider({
           if (refreshToken) {
             try {
               let refreshUrl = "";
-              const configuredBase = String(
-                import.meta.env.VITE_API_URL ||
-                ""
-              ).trim().replace(/\/+$/, "");
+              const configuredBase = backendBaseUrl;
 
-              refreshUrl = configuredBase ? `${configuredBase}/api/auth/refresh` : "/api/auth/refresh";
+              refreshUrl = `${configuredBase}/api/auth/refresh`;
 
               const refreshResponse = await fetch(refreshUrl, {
                 method: "POST",
@@ -1105,23 +1112,58 @@ export function AuthProvider({
           }
         }
 
+        const final401Payload = response.status === 401
+          ? await response.clone().json().catch(() => ({}))
+          : {};
+        const serviceReportsRevokedSession = isExplicitRevokedSessionResponse(
+          response.status,
+          final401Payload,
+        );
+
         if (
           response.status === 401 &&
           requestWasAuthenticated &&
-          isAuthoritativeSessionRequest
+          (isAuthoritativeSessionRequest || serviceReportsRevokedSession)
         ) {
-          // Only the primary RevelaCode session endpoint may invalidate the
-          // global session. RevelaAI, Core Mesh, Security Academy and other
-          // connected services can reject a token independently; keep those
-          // failures local to their workspace instead of logging the user out.
-          clearToken();
-          try {
-            localStorage.removeItem(STORAGE_KEY);
-          } catch {
-            // Ignore blocked storage.
+          // A connected workspace may relay the primary backend's explicit
+          // session_revoked response. Confirm it with RevelaCode directly
+          // before clearing the shared login; unrelated remote 401s stay local.
+          let primarySessionRejected = isAuthoritativeSessionRequest;
+          if (!primarySessionRejected) {
+            const authorization = headers.get("Authorization") || "";
+            if (authorization) {
+              try {
+                const verification = await fetch(`${backendBaseUrl}/api/auth/me`, {
+                  method: "GET",
+                  headers: {
+                    Authorization: authorization,
+                    Accept: "application/json",
+                  },
+                  cache: "no-store",
+                  credentials: "omit",
+                });
+                primarySessionRejected = verification.status === 401;
+              } catch (verificationError) {
+                // A network failure is not proof that the platform session is revoked.
+                console.warn(
+                  "Could not confirm the session state with RevelaCode; keeping the cached login.",
+                  verificationError,
+                );
+              }
+            }
           }
-          setUser(null);
-          setIsGuest(false);
+
+          if (primarySessionRejected) {
+            clearToken();
+            try {
+              localStorage.removeItem(STORAGE_KEY);
+            } catch {
+              // Ignore blocked storage.
+            }
+            setUser(null);
+            setIsGuest(false);
+            setHasStarted(false);
+          }
         }
 
         return response;

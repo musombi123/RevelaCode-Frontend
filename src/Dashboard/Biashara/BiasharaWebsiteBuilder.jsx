@@ -4,6 +4,7 @@ import {
   ShieldCheck, Trash2, Upload, Video,
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import WebsitePolicyManager from "@/components/compliance/WebsitePolicyManager.jsx";
 
 const DEFAULT_SETTINGS = {
   headline: "",
@@ -548,6 +549,8 @@ export default function BiasharaWebsiteBuilder({ business }) {
           </form>
         )}
       </section>
+
+      <WebsitePolicyManager tenantType="business" tenantId={String(business?.id || business?._id || site?.business?.id || site?.business?._id || "")}/>
 
       <section className="rounded-[1.5rem] border border-white bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

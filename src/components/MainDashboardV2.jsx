@@ -34,8 +34,8 @@ import { DASHBOARDS } from "./dashboardConfig.jsx";
 import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
-import ConnectionStatusBanner from "./ConnectionStatusBanner.jsx";
-import SDAQuarterlyBackgroundSync from "./faith/SDAQuarterlyBackgroundSync.jsx";
+import SystemHomeNotifications from "./SystemHomeNotifications.jsx";
+import NetworkStatusBanner from "./NetworkStatusBanner.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
@@ -444,13 +444,33 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
       return;
     }
 
-    if (view !== "ai") {
-      aiReturnViewRef.current = view;
-      try { window.localStorage.setItem("revelacode_last_non_ai_hub", view); } catch { /* Ignore storage failure. */ }
+    if (view === "ai") {
+      try {
+        if (localStorage.getItem("revelacode_ai_workspace_priority") === "true") {
+          setActiveView("ai");
+          setAIFullscreenOpen(true);
+          setSidebarOpen(false);
+          setMobileCategoryOpen(null);
+          return;
+        }
+      } catch { /* Navigation remains available when browser storage is restricted. */ }
     }
+
     setActiveView(view);
     setSidebarOpen(false);
     setMobileCategoryOpen(null);
+  }, []);
+
+  useEffect(() => {
+    const recordAIUsage = () => {
+      try {
+        const interactions = Number(localStorage.getItem("revelacode_ai_workspace_interactions") || 0) + 1;
+        localStorage.setItem("revelacode_ai_workspace_interactions", String(interactions));
+        if (interactions >= 8) localStorage.setItem("revelacode_ai_workspace_priority", "true");
+      } catch { /* AI workspace remains accessible without usage preference storage. */ }
+    };
+    window.addEventListener("revelacode:ai-interaction", recordAIUsage);
+    return () => window.removeEventListener("revelacode:ai-interaction", recordAIUsage);
   }, []);
 
   useEffect(() => {
@@ -1385,7 +1405,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
                 {/* Notifications */}
 
-                <Notifications />
+                <Notifications onNavigate={handleNavigate} />
 
                 {/* Avatar */}
 
@@ -1450,6 +1470,8 @@ const BIASHARA_SECTION_KEYS = new Set(
             </button>
           )}
 
+          <NetworkStatusBanner />
+
           {/* =================================================
               DASHBOARD CONTENT
           ================================================= */}
@@ -1457,7 +1479,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           <section
             id="revelacode-dashboard-content"
             className={isAndroidHome
-              ? "min-w-0 flex-1 overflow-hidden bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
+              ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain touch-pan-y bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] dark:bg-slate-950"
               : "min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
           >
             <ConnectionStatusBanner />
@@ -1549,6 +1571,9 @@ const BIASHARA_SECTION_KEYS = new Set(
                 )}
               </ErrorBoundary>
             </Suspense>
+            {activeView === "home" && (
+              <SystemHomeNotifications onNavigate={handleNavigate} />
+            )}
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
