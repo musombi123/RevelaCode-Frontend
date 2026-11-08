@@ -1189,12 +1189,13 @@ export default function AIAssistantDashboard({
             const responseMeta = sanitizeAIResponseMetadata(payload?.meta);
 
             if (!response.ok) {
-              throw new Error(
-                response.status === 502 || response.status === 503 || response.status === 504
-                  ? "RevelaAI is waking up, please wait 20 seconds..."
-                  : (payload?.message || payload?.error?.message || "RevelaAI could not complete the request. Please try again.")
-              );
+              if (response.status >= 500) {
+                window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "poor" } }));
+                throw new Error("Poor connection — RevelaAI could not reach its service. Please try again shortly.");
+              }
+              throw new Error(payload?.message || "RevelaAI could not complete the request. Please try again.");
             }
+            window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
 
             const imagePayload = payload?.data || payload || {};
             const remoteImageUrls = Array.isArray(imagePayload?.urls)
@@ -1439,7 +1440,11 @@ export default function AIAssistantDashboard({
 
           const isNetworkFailure =
             error instanceof TypeError ||
-            /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
+            /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout|poor connection/i.test(String(error?.message || ""));
+          if (isNetworkFailure) {
+            const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+            window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: offline ? "offline" : "poor" } }));
+          }
           const recentContext = currentMessages
             .filter((item) => item.role === "user" || item.role === "assistant")
             .slice(-6)
