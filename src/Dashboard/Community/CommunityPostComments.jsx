@@ -213,9 +213,9 @@ export default function CommunityPostComments({
         role="dialog"
         aria-modal="true"
         aria-labelledby="community-comments-heading"
-        className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900 sm:rounded-3xl"
+        className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[26px] border border-slate-200 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#0d1729] sm:rounded-[26px]"
       >
-        <header className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 dark:border-white/10 sm:px-6">
+        <header className="flex items-start gap-3 border-b border-slate-100 px-4 py-4 dark:border-white/[0.08] sm:px-6">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
             <MessageCircle size={20} />
           </div>
@@ -235,7 +235,7 @@ export default function CommunityPostComments({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 px-4 py-4 dark:bg-[#091421] sm:px-6">
           {error ? (
             <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
               <div className="flex items-start gap-2">
@@ -260,7 +260,7 @@ export default function CommunityPostComments({
           {loading && comments.length === 0 ? (
             <div className="space-y-3" aria-label="Loading comments">
               {[0, 1, 2].map((item) => (
-                <div key={item} className="flex gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/70">
+                <div key={item} className="flex gap-3 rounded-2xl bg-white p-3 dark:bg-white/[0.035]">
                   <div className="h-9 w-9 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700" />
                   <div className="flex-1 space-y-2">
                     <div className="h-3 w-28 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
@@ -279,7 +279,7 @@ export default function CommunityPostComments({
           ) : (
             <div className="space-y-3">
               {comments.map((comment) => (
-                <article key={comment.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 dark:border-white/5 dark:bg-slate-800/60">
+                <article key={comment.id} className="flex gap-3 rounded-2xl border border-slate-200/70 bg-white p-3.5 dark:border-white/[0.06] dark:bg-[#101e30]">
                   {comment.authorAvatar ? (
                     <img src={comment.authorAvatar} alt="" loading="lazy" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                   ) : (
@@ -300,7 +300,7 @@ export default function CommunityPostComments({
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="border-t border-slate-100 bg-white p-4 dark:border-white/10 dark:bg-slate-900 sm:p-5">
+        <form onSubmit={handleSubmit} className="border-t border-slate-200/80 bg-white p-4 dark:border-white/[0.08] dark:bg-[#0d1729] sm:p-5">
           {notice ? <p role="status" className="mb-3 rounded-xl bg-cyan-50 px-3 py-2.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200">{notice}</p> : null}
           {submitError ? <p role="alert" className="mb-3 rounded-xl bg-rose-50 px-3 py-2.5 text-xs leading-5 text-rose-800 dark:bg-rose-950/30 dark:text-rose-200">{submitError}</p> : null}
           <label htmlFor="community-new-comment" className="mb-2 block text-xs font-black text-slate-800 dark:text-slate-100">Add a comment</label>
@@ -312,11 +312,11 @@ export default function CommunityPostComments({
             maxLength={3000}
             rows={3}
             placeholder="Write something helpful or thoughtful…"
-            className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+            className="w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
           />
           <div className="mt-3 flex flex-col-reverse items-stretch justify-between gap-3 sm:flex-row sm:items-center">
             <p className="text-[10px] text-slate-400">{commentBody.length}/3000 characters · Posting as {currentUserName}</p>
-            <button type="submit" disabled={submitting || !commentBody.trim() || !postId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-3 text-xs font-black text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" disabled={submitting || !commentBody.trim() || !postId} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
               {submitting ? "Publishing…" : "Post comment"}
             </button>
