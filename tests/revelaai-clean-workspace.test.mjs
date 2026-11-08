@@ -48,23 +48,26 @@ test("new-chat composer sits directly below the welcome message instead of a sep
   assert.ok(!dashboard.includes("<ProductivityToolsPanel"));
 });
 
-test("the compact InputBar exposes upload, vision and local selectable AI tools from the paperclip menu", () => {
-  assert.ok(input.includes('label="Attachments and tools"'));
-  assert.ok(input.includes("Upload a file or document"));
-  assert.ok(input.includes("Capture with camera / Vision"));
-  assert.ok(input.includes("AI tools"));
-  assert.ok(input.includes("TOOL_COMMANDS.map"));
+test("the unified composer exposes inline attachments, searchable grouped tools and local selection", () => {
+  assert.ok(input.includes('aria-label="Attachments and AI tools"'));
+  assert.ok(input.includes("Upload file"));
+  assert.ok(input.includes("Camera / Vision"));
+  assert.ok(input.includes('title:"Create"'));
+  assert.ok(input.includes('title:"Analyze"'));
+  assert.ok(input.includes('title:"Science"'));
+  assert.ok(input.includes('title:"Writing"'));
+  assert.ok(input.includes("Search AI tools"));
   assert.ok(input.includes("selectedToolCommand"));
   assert.ok(input.includes("setSelectedToolCommand(selected)"));
   assert.ok(input.includes("onSend?.(value, attachedFile, { toolCommand:"));
+  assert.ok(input.includes("aria-expanded={attachmentMenuOpen}"));
+  assert.ok(input.includes("safe-area-inset-bottom"));
   assert.ok(!input.includes("setWorkspaceToolsOpen"));
   assert.ok(!input.includes("Productivity tools and workspace"));
   assert.ok(!input.includes("<ProductivityToolsPanel"));
-  assert.ok(input.includes("h-10 w-10 min-h-10 min-w-10"));
-  assert.ok(!input.includes("Grounded when evidence is available"));
-  assert.ok(!input.includes('label="Open tools"'));
+  assert.ok(input.includes("bg-gradient-to-br from-emerald-400 to-emerald-600"));
+  assert.ok(input.includes("data-demo=\"ai-send-message\""));
 });
-
 test("fullscreen and AI header heights are compact and redundant mode labels are removed", () => {
   const shell = read("../src/components/MainDashboardV2.jsx");
   assert.ok(shell.includes("h-10 shrink-0 items-center justify-between"));
@@ -73,14 +76,16 @@ test("fullscreen and AI header heights are compact and redundant mode labels are
   assert.ok(!dashboard.includes("RevelaAIHeaderControls"));
 });
 
-test("composer no longer renders a nested rounded border box", () => {
-  assert.ok(input.includes('"relative bg-transparent"'));
-  assert.ok(!input.includes('"relative rounded-2xl border bg-input"'));
-  assert.ok(input.includes('"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl'));
-  assert.ok(input.includes('label="Attachments and tools"'));
+test("composer uses one rounded glass surface with accessible responsive controls", () => {
+  assert.ok(input.includes("rounded-3xl border border-line/90 bg-surface/90"));
+  assert.ok(input.includes("focus-within:border-emerald-500/45"));
+  assert.ok(input.includes("sm:absolute sm:bottom-[calc(100%+12px)]"));
+  assert.ok(input.includes("fixed inset-x-0 bottom-0"));
+  assert.ok(input.includes("h-11 w-11"));
+  assert.ok(input.includes('aria-label={isGenerating?"Stop generating":"Send message"}'));
+  assert.ok(input.includes("textareaFocused"));
   assert.ok(input.includes('data-demo="ai-send-message"'));
 });
-
 test("Humanizer keeps PDF and text workflows with concise privacy guidance", () => {
   assert.ok(humanizer.includes("Open a PDF"));
   assert.ok(humanizer.includes("Privacy: PDFs are processed in memory"));
