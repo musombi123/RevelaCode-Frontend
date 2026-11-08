@@ -600,6 +600,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     "biashara",
     "community",
     "payments",
+    "humanizer",
   ]);
   const showShellHeader = !hubViewsWithOwnHeader.has(activeView);
 
