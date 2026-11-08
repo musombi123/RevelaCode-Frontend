@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyzePixels } from "@/ai/v2-free/localIntelligence";
+import { useAuth } from "@/context/AuthContext.jsx";
 import ProductivityToolsPanel from "@/components/ProductivityToolsPanel";
 import {
   ArrowUp,
@@ -112,6 +113,7 @@ export default function InputBar({
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
 }) {
+  const { authFetch } = useAuth();
   const [text, setText] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -357,12 +359,8 @@ export default function InputBar({
       ].filter(Boolean).join("\n\n");
     }
 
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Sign in to RevelaCode to use model-based Live Vision, or enable Free mode for on-device pixel analysis.");
+    if (typeof authFetch !== "function") {
+      throw new Error("RevelaCode's authenticated request service is unavailable. Retry after the session service is ready.");
     }
 
     const image = canvas.toDataURL("image/jpeg", 0.72);
@@ -371,13 +369,9 @@ export default function InputBar({
       import.meta.env.VITE_REVELAAI_API_BASE ||
       "https://revelaai.onrender.com"
     ).replace(/\/+$/, "");
-    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
-    const response = await fetch(`${apiBase}/api/vision/analyze`, {
+    const response = await authFetch(`${apiBase}/api/vision/analyze`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${tokenType} ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       signal,
       body: JSON.stringify({
         image,
@@ -489,7 +483,7 @@ export default function InputBar({
         visionRequestRef.current = null;
       }
     };
-  }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame, freeMode]);
+  }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame, freeMode, authFetch]);
 
   /* =======================================================
      VOICE
