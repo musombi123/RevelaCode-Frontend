@@ -2055,7 +2055,7 @@ export default function AIAssistantDashboard({
         {humanizerOpen ? (
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Humanizer workspace">
             <div className="flex shrink-0 justify-end border-b border-line bg-header px-3 py-1.5 sm:px-4">
-              <button type="button" onClick={() => setHumanizerOpen(false)} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg" aria-label="Return to chat">Back to chat</button>
+              <button type="button" onClick={() => { setHumanizerOpen(false); setHumanizerSeedText(""); }} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg" aria-label="Return to chat">Back to chat</button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto bg-app">
               <HumanizerWorkspace
