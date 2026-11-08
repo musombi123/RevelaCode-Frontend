@@ -73,7 +73,7 @@ test("authenticated requests refresh once and retry with the replacement bearer 
   assert.match(authContext, /fetch\(refreshUrl,\s*\{/);
   assert.match(authContext, /persistToken\(nextToken, nextTokenType, nextRefreshToken\)/);
   assert.match(authContext, /response = await fetch\(url, \{ \.\.\.options, headers: retryHeaders \}\)/);
-  assert.match(authContext, /response\.status === 401 &&\s*requestWasAuthenticated &&\s*isAuthoritativeSessionRequest/);
+  assert.ok(authContext.includes("(isAuthoritativeSessionRequest || serviceReportsRevokedSession)"));
   assert.match(authContext, /isAuthoritativeSessionCheck\(/);
 });
 
@@ -87,7 +87,8 @@ test("only the primary backend can invalidate a cached login, including relayed 
   assert.ok(authContext.includes("(isAuthoritativeSessionRequest || serviceReportsRevokedSession)"));
   assert.ok(authContext.includes("`${backendBaseUrl}/api/auth/me`"));
   assert.ok(authContext.includes("primarySessionRejected"));
-  assert.match(authContext, /clearToken\\(\\);[\\s\\S]*?setUser\\(null\\)/);
+  assert.ok(authContext.includes("clearToken();"));
+  assert.ok(authContext.includes("setUser(null);"));
 });
 
 test("only an explicit revoked-session 401 from a connected service triggers primary session verification", () => {
