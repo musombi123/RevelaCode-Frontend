@@ -21,7 +21,6 @@ import {
   BookOpen,
   Presentation,
   FileSpreadsheet,
-  Sparkles,
   XCircle,
   WandSparkles,
 } from "lucide-react";
@@ -639,6 +638,7 @@ export default function InputBar({
   const chooseCommand = (command) => {
     const selected = TOOL_COMMANDS.find(([item]) => item === command);
     if (!selected) return;
+    setText((current) => current.replace(/^\/[a-z]+\s*/i, ""));
     setSelectedToolCommand(selected);
     setAttachmentMenuOpen(false);
     requestAnimationFrame(() => textareaRef.current?.focus());
