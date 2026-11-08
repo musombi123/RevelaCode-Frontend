@@ -150,6 +150,20 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
     });
   };
 
+  const openLessonAI = (material) => {
+    const meta = lessonMetadata(material);
+    const context = {
+      id: lessonId(material),
+      title: material?.title || meta.lesson_title || "SDA Quarterly lesson",
+      text: String(material?.content || material?.description || ""),
+      day: meta.day,
+      date: meta.lesson_date,
+      memoryText: meta.memory_text,
+    };
+    setAiLesson(context);
+    onAskAI?.(context);
+  };
+
   return (
     <div className="space-y-4">
       <section className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm dark:border-amber-900/50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20">
@@ -219,21 +233,23 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
             const lessonLabel = meta.lesson_number ? `Lesson ${meta.lesson_number}` : "Daily lesson";
             const dayLabel = meta.day || "";
             const summary = String(material?.description || material?.content || "").replace(/\s+/g, " ").trim();
+            const title = material?.title || meta.lesson_title || `Lesson ${index + 1}`;
             return (
-              <button key={lessonId(material) || `${year}-${quarter}-${index}`} type="button" onClick={() => openLesson(material)} className="group flex min-h-[128px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-800 sm:p-4">
-                <div className="flex w-full items-start justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                    <BookOpen size={12} /> {lessonLabel}
-                  </span>
-                  <span className="shrink-0 text-[10px] font-semibold text-gray-500 dark:text-gray-400">{dateLabel}</span>
-                </div>
-                <h3 className="mt-2 line-clamp-2 text-sm font-black leading-5 text-gray-900 dark:text-white">{material?.title || meta.lesson_title || `Lesson ${index + 1}`}</h3>
-                {dayLabel && <p className="mt-1 text-xs font-bold text-amber-700 dark:text-amber-300">{dayLabel}</p>}
-                {meta.memory_text && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">Memory text: {meta.memory_text}</p>}
-                {!meta.memory_text && summary && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">{summary}</p>}
-                <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-amber-700 dark:text-amber-300">Open lesson <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
-              </button>
-            );
+              <article key={lessonId(material) || `${year}-${quarter}-${index}`} className="flex min-h-[160px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-800 sm:p-4">
+                <button type="button" onClick={() => openLesson(material)} className="group flex min-w-0 flex-1 flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"><BookOpen size={12} /> {lessonLabel}</span>
+                    <span className="shrink-0 text-[10px] font-semibold text-gray-500 dark:text-gray-400">{dateLabel}</span>
+                  </div>
+                  <h3 className="mt-2 line-clamp-2 text-sm font-black leading-5 text-gray-900 dark:text-white">{title}</h3>
+                  {dayLabel && <p className="mt-1 text-xs font-bold text-amber-700 dark:text-amber-300">{dayLabel}</p>}
+                  {meta.memory_text && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">Memory text: {meta.memory_text}</p>}
+                  {!meta.memory_text && summary && <p className="mt-1 line-clamp-2 text-xs leading-4 text-gray-500 dark:text-gray-400">{summary}</p>}
+                  <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-bold text-amber-700 dark:text-amber-300">Open lesson <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" /></span>
+                </button>
+                <button type="button" onClick={() => openLessonAI(material)} className="mt-3 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-extrabold text-indigo-800 transition hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70"><Sparkles size={14}/> AI Chat for this lesson</button>
+              </article>
+
           })}
         </div>
       ) : (
@@ -246,24 +262,6 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
           <a href={sourceUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-black text-white transition hover:bg-amber-600">
             Open official quarterly <ExternalLink size={15} />
           </a>
-        </section>
-      )}
-
-      {sortedMaterials.length > 0 && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Study a daily lesson with AI</p><span className="text-[10px] text-amber-700 dark:text-amber-300">Faith lesson context</span></div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {sortedMaterials.slice(0, 7).map((material) => {
-              const meta = lessonMetadata(material);
-              const id = lessonId(material);
-              const title = material?.title || meta.lesson_title || "SDA Quarterly lesson";
-              return <button key={id} type="button" onClick={() => {
-                const context = { id, title, text: String(material?.content || material?.description || ""), day: meta.day, date: meta.lesson_date, memoryText: meta.memory_text };
-                setAiLesson(context);
-                onAskAI?.(context);
-              }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-[11px] font-bold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-gray-900 dark:text-amber-200"><Sparkles size={13}/> AI Chat · {meta.day || title}</button>;
-            })}
-          </div>
         </section>
       )}
 
