@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
+import WebsitePolicyManager from "@/components/compliance/WebsitePolicyManager.jsx";
 
 const DEFAULT_WEBSITE_THEME = {
   primary: "#047857",
@@ -976,6 +977,8 @@ export default function ElimuWebsiteSettings({ school, onNavigate }) {
           ))}
         </div>
       </section>
+
+      <WebsitePolicyManager tenantType="school" tenantId={String(school?.id || school?._id || "")}/>
 
       <section className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-2xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
