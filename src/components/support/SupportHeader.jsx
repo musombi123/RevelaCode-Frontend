@@ -37,7 +37,7 @@ export default function SupportHeader({ user, sidebarOpen, setSidebarOpen, logou
         </Link>
         <div className="hidden text-right sm:block">
           <p className="max-w-48 truncate text-sm font-semibold text-slate-800">{user?.fullName || user?.full_name || "Support agent"}</p>
-          <p className="text-xs capitalize text-slate-500">{user?.role || "support"} account</p>
+          <p className="text-xs capitalize text-slate-500">{["support", "support_agent"].includes(String(user?.role || "").toLowerCase()) ? "Support Agent" : String(user?.role || "support").replaceAll("_", " ")} account</p>
         </div>
         <button
           type="button"
