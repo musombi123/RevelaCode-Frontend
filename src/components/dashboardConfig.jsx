@@ -1127,6 +1127,7 @@ function HomeDashboard({
     unreadCount,
     loading:
       notificationsLoading,
+    markAsRead,
   } = useNotifications(
     30000,
   );
@@ -1147,8 +1148,9 @@ function HomeDashboard({
     return () => window.clearTimeout(timer);
   }, [notifications]);
 
-  const openHomeNotification = (notification) => {
+  const openHomeNotification = async (notification) => {
     if (!notification) return;
+    if (!notification.read && typeof markAsRead === "function") await markAsRead(notification.id);
     const destination = String(
       notification.target_hub || notification.hub || notification.route || notification.workspace || ""
     ).trim().toLowerCase();
@@ -1663,7 +1665,7 @@ function HomeDashboard({
 
   if (isAndroidAppBuild) {
     return (
-      <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_1fr] gap-3 overflow-hidden px-3 py-2 sm:px-4">
+      <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden px-3 py-2 sm:px-4">
         <section
           data-demo="home-welcome"
           aria-label={t("RevelaCode home")}
@@ -1700,7 +1702,7 @@ function HomeDashboard({
           </button>
         </section>
 
-        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-hidden">
+        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-y-auto overscroll-contain pb-2">
           <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
             <div className="min-w-0">
               <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
