@@ -3,7 +3,7 @@ import { WifiOff, SignalLow } from "lucide-react";
 
 function readInitialState() {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return "offline";
-  const type = String(navigator?.connection?.effectiveType || "").toLowerCase();
+  const type = typeof navigator !== "undefined" ? String(navigator.connection?.effectiveType || "").toLowerCase() : "";
   return ["slow-2g", "2g"].includes(type) ? "poor" : "online";
 }
 
