@@ -907,7 +907,8 @@ export default function AIAssistantDashboard({
           createMessage(
             "assistant",
             "Thinking…",
-            "loading"
+            "loading",
+            { stage: "preparing" }
           );
 
         /*
@@ -971,7 +972,14 @@ export default function AIAssistantDashboard({
               ? `${selectedToolCommand} ${cleaned}`.trim()
               : cleaned;
 
+        const updateLoadingStage = (stage) => {
+          setMessages((previous) => previous.map((message) =>
+            message.id === loadingId ? { ...message, stage } : message
+          ));
+        };
+
         try {
+          updateLoadingStage(attachedFile ? "local-analysis" : freeMode ? "local-reasoning" : "connecting");
           /*
            * Local-first global brain: specialist routing, memory and visual math
            * stay on-device. Model / asset failures degrade to pixel math or text.
@@ -1127,6 +1135,7 @@ export default function AIAssistantDashboard({
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             let response;
             try {
+              updateLoadingStage("connecting");
               response = await authFetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
@@ -1162,6 +1171,7 @@ export default function AIAssistantDashboard({
               payload = null;
             }
 
+            updateLoadingStage("interpreting");
             const responseMeta = sanitizeAIResponseMetadata(payload?.meta);
 
             if (!response.ok) {
@@ -1293,6 +1303,7 @@ export default function AIAssistantDashboard({
           }
 
           // Local/offline turns never access branch-local hosted payload variables.
+          updateLoadingStage("composing");
         const normalized = {
             text: cleanAssistantAnswer(localText) || "I couldn't complete that analysis. Please try again.",
             imageUrls: localImageUrls,
@@ -1312,6 +1323,7 @@ export default function AIAssistantDashboard({
           };
 
           // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
+          updateLoadingStage("streaming");
           const streamText = normalized.text || "RevelaAI returned an empty response.";
           await new Promise((resolve) => {
             let cursor = 0;
