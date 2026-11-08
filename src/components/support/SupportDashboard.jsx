@@ -136,7 +136,7 @@ export default function SupportDashboard() {
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">{supportAdmin ? "Support administration" : "Support team"}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">{supportAdmin ? "Support Admin workspace" : "Support Agent workspace"}</p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{meta.title}</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{meta.description}</p>
             </div>
