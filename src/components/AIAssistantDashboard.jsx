@@ -33,23 +33,6 @@ import RevelaAIVoiceChat from "@/ai/RevelaAIVoiceChat";
 import { answerLocally, readLocalDocument } from "@/ai/v2-free/localIntelligence";
 import { analyzeLocalImageForChat, analyzeLocalVideoForChat, recordConversationTurn, recordLocalDiagnostic } from "@/ai/v2-free/livingBrain";
 
-// Reuse the existing RevelaCode session token for authenticated AI requests.
-// No token is ever copied into chat content or logged.
-const getRevelaCodeAuthHeaders = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    if (!token) return {};
-    const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
-    return { Authorization: `${tokenType} ${token}` };
-  } catch {
-    return {};
-  }
-};
-
 /* =========================================================
    CONSTANTS
 ========================================================= */
@@ -276,6 +259,15 @@ const normalizeAIResponse = (
   };
 };
 
+const sanitizeAIResponseMetadata = (value) => {
+  const responseMeta = value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
+  delete responseMeta.core_mesh;
+  delete responseMeta.coreMesh;
+  delete responseMeta.usect_zero_tool;
+  delete responseMeta.usectZeroTool;
+  return responseMeta;
+};
+
 /* =========================================================
    MAIN DASHBOARD
 ========================================================= */
@@ -289,6 +281,7 @@ export default function AIAssistantDashboard({
     user,
     isGuest,
     isReady,
+    authFetch,
   } = useAuth();
 
   /*
@@ -443,26 +436,17 @@ export default function AIAssistantDashboard({
   ======================================================= */
 
   useEffect(() => {
-    if (!isReady || isGuest || !userScope || userScope === "anonymous" || typeof window === "undefined") {
+    if (!isReady || isGuest || !userScope || userScope === "anonymous" || typeof window === "undefined" || typeof authFetch !== "function") {
       return undefined;
     }
-
-    const token =
-      localStorage.getItem("revelacode_access_token") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token");
-    if (!token) return undefined;
 
     const controller = new AbortController();
     const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
     const identity = String(user?.user_id || user?.userId || userScope);
 
-    fetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history?hub=${encodeURIComponent(activeBrainHub)}`, {
+    authFetch(`${apiBase}/api/memory/${encodeURIComponent(identity)}/history?hub=${encodeURIComponent(activeBrainHub)}`, {
       method: "GET",
-      headers: {
-        Authorization: `${localStorage.getItem("revelacode_token_type") || "Bearer"} ${token}`,
-        Accept: "application/json",
-      },
+      headers: { Accept: "application/json" },
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -513,7 +497,7 @@ export default function AIAssistantDashboard({
       });
 
     return () => controller.abort();
-  }, [isReady, isGuest, userScope, user?.user_id, user?.userId, activeBrainHub]);
+  }, [isReady, isGuest, userScope, user?.user_id, user?.userId, activeBrainHub, authFetch]);
 
   /* =======================================================
      PERSIST USER-SCOPED CHATS
@@ -1061,19 +1045,17 @@ export default function AIAssistantDashboard({
           // The image itself is not uploaded to a paid vision provider.
           if (attachedFile && localText && !attachedFile.type?.startsWith("video/") && !freeMode) {
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-            const tokenHeaders = getRevelaCodeAuthHeaders();
-            if (Object.keys(tokenHeaders).length) {
+            
+            if (typeof authFetch === "function") {
               try {
-                const perceptionResponse = await fetch(`${apiBase}/ai`, {
+                const perceptionResponse = await authFetch(`${apiBase}/ai`, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json", ...tokenHeaders },
+                  headers: { "Content-Type": "application/json",  },
                   signal: controller.signal,
                   body: JSON.stringify({
                     message: cleaned || (attachedFile.type?.startsWith("image/")
                       ? "Interpret the image using only the local perception findings below. State limitations clearly."
                       : "Analyze the document using only the extracted content below."),
-                    user_id: String(user?.id || user?.user_id || user?.userId || ""),
-                    userId: String(user?.id || user?.user_id || user?.userId || ""),
                     hub: "auto",
                     sessionId: String(chatId || activeChatId || ""),
                     conversationId: String(chatId || activeChatId || ""),
@@ -1093,7 +1075,7 @@ export default function AIAssistantDashboard({
                   localSources = Array.isArray(perceptionPayload?.sources) ? perceptionPayload.sources : [];
                   brainMetadata = {
                     ...brainMetadata,
-                    ...(perceptionPayload?.meta || {}),
+                    ...sanitizeAIResponseMetadata(perceptionPayload?.meta),
                     engine: perceptionPayload?.meta?.model || perceptionPayload?.meta?.provider || "revelaai-text-over-local-perception",
                     network: true,
                     networkUsed: true,
@@ -1131,18 +1113,16 @@ export default function AIAssistantDashboard({
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             let response;
             try {
-              response = await fetch(`${apiBase}/ai`, {
+              response = await authFetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
                 "Content-Type": "application/json",
-                ...getRevelaCodeAuthHeaders(),
-                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                
+                
               },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: requestMessage || cleaned,
-                  user_id: String(userScope || ""),
-                  userId: String(userScope || ""),
                   hub: "auto",
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
@@ -1167,6 +1147,8 @@ export default function AIAssistantDashboard({
             } catch {
               payload = null;
             }
+
+            const responseMeta = sanitizeAIResponseMetadata(payload?.meta);
 
             if (!response.ok) {
               throw new Error(
@@ -1234,18 +1216,16 @@ export default function AIAssistantDashboard({
             const observations = localText;
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
             try {
-              const visionResponse = await fetch(`${apiBase}/ai`, {
+              const visionResponse = await authFetch(`${apiBase}/ai`, {
                 method: "POST",
                 headers: {
                 "Content-Type": "application/json",
-                ...getRevelaCodeAuthHeaders(),
-                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                
+                
               },
                 signal: controller.signal,
                 body: JSON.stringify({
                   message: cleaned || "Analyze the attached media using the available observations.",
-                  user_id: String(userScope || ""),
-                  userId: String(userScope || ""),
                   hub: "auto",
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
@@ -1269,7 +1249,7 @@ export default function AIAssistantDashboard({
               localType = "vision-chat";
               brainMetadata = {
                 ...brainMetadata,
-                ...(visionPayload?.meta || {}),
+                ...sanitizeAIResponseMetadata(visionPayload?.meta),
                 hub: visionData?.hub_used || visionData?.hub || visionData?.domain || visionPayload?.meta?.hub || brainMetadata.hub,
                 hub_used: visionData?.hub_used || visionData?.hubUsed || visionPayload?.meta?.hub_used,
                 hub_requested: visionData?.hub_requested || visionData?.hubRequested || visionPayload?.meta?.hub_requested,
@@ -1298,13 +1278,7 @@ export default function AIAssistantDashboard({
             }
           }
 
-          // Core Mesh/tool routing diagnostics are internal metadata, not part of the user-facing chat UI.
-        const responseMeta = { ...(payload?.meta || {}) };
-        delete responseMeta.core_mesh;
-        delete responseMeta.coreMesh;
-        delete responseMeta.usect_zero_tool;
-        delete responseMeta.usectZeroTool;
-
+          // Local/offline turns never access branch-local hosted payload variables.
         const normalized = {
             text: cleanAssistantAnswer(localText) || "I couldn't complete that analysis. Please try again.",
             imageUrls: localImageUrls,
@@ -1499,6 +1473,7 @@ export default function AIAssistantDashboard({
         userScope,
         user,
         freeMode,
+        authFetch,
       ]
     );
 
@@ -1692,18 +1667,16 @@ export default function AIAssistantDashboard({
           : userMessage.text;
 
         const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-        const response = await fetch(`${apiBase}/ai`, {
+        const response = await authFetch(`${apiBase}/ai`, {
           method: "POST",
           headers: {
                 "Content-Type": "application/json",
-                ...getRevelaCodeAuthHeaders(),
-                ...(/^[a-f\d]{24}$/i.test(String(userScope || "")) ? { userId: String(userScope) } : {}),
+                
+                
               },
           signal: controller.signal,
           body: JSON.stringify({
             message: regenerateMessage,
-            user_id: String(userScope || ""),
-            userId: String(userScope || ""),
             hub: "auto",
             sessionId: String(chatId || activeChatId || ""),
             conversationId: String(chatId || activeChatId || ""),
@@ -1750,7 +1723,7 @@ export default function AIAssistantDashboard({
           imageUrls,
           sources: Array.isArray(payload?.sources) ? payload.sources : [],
           metadata: {
-            ...(payload?.meta || {}),
+            ...sanitizeAIResponseMetadata(payload?.meta),
             hub: resultData?.hub_used || resultData?.hub || resultData?.domain || payload?.meta?.hub,
             hub_used: resultData?.hub_used || resultData?.hubUsed || payload?.meta?.hub_used,
             hub_requested: resultData?.hub_requested || resultData?.hubRequested || payload?.meta?.hub_requested,
@@ -1807,7 +1780,7 @@ export default function AIAssistantDashboard({
         if (controllerRef.current === controller) controllerRef.current = null;
       }
     },
-    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub]
+    [activeChatId, regenerableId, messages, updateChat, hubContext, userScope, activeBrainHub, authFetch]
   );
 
   /* =======================================================
