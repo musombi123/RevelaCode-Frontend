@@ -5,6 +5,8 @@ import { analyzePixels } from "@/ai/v2-free/localIntelligence";
 import { useAuth } from "@/context/AuthContext.jsx";
 import {
   ArrowUp,
+  Plus,
+  Check,
   Mic,
   Paperclip,
   X,
@@ -119,6 +121,8 @@ export default function InputBar({
   const [dragging, setDragging] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [selectedToolCommand, setSelectedToolCommand] = useState(null);
+  const [toolsQuery, setToolsQuery] = useState("");
+  const [textareaFocused, setTextareaFocused] = useState(false);
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -842,225 +846,58 @@ export default function InputBar({
         </div>
       )}
 
-      {/* ---------------- Composer ---------------- */}
-      <div
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={[
-          "relative bg-transparent",
-          "transition-colors duration-150",
-          dragging ? "rounded-xl bg-accent/5 ring-2 ring-accent/30" : "",
-        ].join(" ")}
-      >
-        {/* Drop overlay */}
-        {dragging && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-popover/95 backdrop-blur-sm">
-            <p className="flex items-center gap-2 text-sm font-medium text-accent">
-              <Paperclip size={16} />
-              Drop to attach
-            </p>
+      {/* Unified, mobile-first composer */}
+      <div onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className="relative w-full">
+        {dragging && <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-popover/95 backdrop-blur-md ring-2 ring-emerald-400/60"><p className="flex items-center gap-2 text-sm font-semibold text-accent"><Paperclip size={18}/> Drop to attach</p></div>}
+
+        {attachmentMenuOpen && <>
+          <button type="button" aria-label="Close tools menu" onClick={()=>setAttachmentMenuOpen(false)} className="fixed inset-0 z-[90] bg-black/35 backdrop-blur-[2px] sm:hidden"/>
+          <section ref={attachmentMenuRef} role="dialog" aria-label="Attachments and AI tools"
+            className="fixed inset-x-0 bottom-0 z-[100] max-h-[min(78dvh,680px)] overflow-y-auto rounded-t-3xl border border-line bg-popover p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-fg shadow-2xl sm:absolute sm:inset-auto sm:bottom-[calc(100%+12px)] sm:left-16 sm:right-0 sm:max-h-[min(70dvh,620px)] sm:rounded-2xl sm:p-4">
+            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line-strong sm:hidden"/>
+            <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold">Tools & attachments</h3><p className="mt-0.5 text-xs text-muted">Choose what you want RevelaAI to do</p></div><button type="button" onClick={()=>setAttachmentMenuOpen(false)} aria-label="Close tools menu" className="flex h-11 w-11 items-center justify-center rounded-xl text-muted hover:bg-surface-2"><X size={18}/></button></div>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} disabled={disabled} className="flex min-h-12 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40"><Paperclip size={18}/> Upload file</button>
+              <button type="button" onClick={()=>{setAttachmentMenuOpen(false);openCamera();}} disabled={disabled} className="flex min-h-12 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40"><Camera size={18}/> Camera / Vision</button>
+            </div>
+            <div className="relative mt-4"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input value={toolsQuery} onChange={e=>setToolsQuery(e.target.value)} placeholder="Find a tool..." aria-label="Search AI tools" className="h-11 w-full rounded-xl border border-line bg-surface px-9 text-sm text-fg placeholder:text-muted outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10"/></div>
+            {[
+              {title:"Create",ids:["/image","/deck","/doc","/sheet"]},
+              {title:"Analyze",ids:["/search","/data","/ledger"]},
+              {title:"Science",ids:["/quantum","/robot"]},
+              {title:"Writing",ids:["/paper","/humanize"]},
+            ].map(group=>{
+              const descriptions={"/image":"Generate and refine visuals","/deck":"Build presentation slides","/doc":"Draft structured documents","/sheet":"Work with spreadsheets","/search":"Research across the web","/data":"Explore and interpret data","/ledger":"Work through financial records","/quantum":"Explore quantum concepts","/robot":"Design robotics systems","/paper":"Prepare academic publications","/humanize":"Improve natural tone and clarity"};
+              const items=TOOL_COMMANDS.filter(([cmd,label])=>group.ids.includes(cmd)&&(label+" "+cmd).toLowerCase().includes(toolsQuery.trim().toLowerCase()));
+              if(!items.length)return null;
+              return <div key={group.title} className="mt-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-muted">{group.title}</p><div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                {items.map(([command,label,Icon])=>{const selected=selectedToolCommand?.[0]===command;return <button key={command} type="button" onClick={()=>chooseCommand(command)} aria-pressed={selected} className={"flex min-h-14 items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-surface-2 "+(selected?"bg-emerald-500/10 text-accent":"text-fg-secondary")}><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2"><Icon size={18}/></span><span className="min-w-0 flex-1"><b className="block text-xs text-fg">{label}</b><span className="mt-0.5 block text-[10px] text-muted">{descriptions[command]}</span></span>{selected&&<Check size={17} className="text-accent"/>}</button>;})}
+              </div></div>;
+            })}
+            <div className="mt-4 flex items-center justify-between border-t border-line pt-3"><span className="text-xs font-medium text-muted">Voice recognition language</span><div role="radiogroup" aria-label="Voice recognition language" className="flex rounded-xl bg-surface-2 p-1">{VOICE_LANGUAGES.map(language=>{const selected=voiceLanguage===language.code;return <button key={language.code} type="button" role="radio" aria-checked={selected} aria-label={language.name} onClick={()=>setVoiceLanguage(language.code)} className={"min-h-9 rounded-lg px-3 text-xs font-bold "+(selected?"bg-surface-3 text-fg shadow-sm":"text-muted")}>{language.label}</button>;})}</div></div>
+          </section>
+        </>}
+
+        <div className="overflow-hidden rounded-3xl border border-line/90 bg-surface/90 shadow-[0_8px_30px_rgba(0,0,0,0.10)] backdrop-blur-xl transition-all duration-200 ease-out focus-within:border-emerald-500/45 focus-within:shadow-[0_0_0_3px_rgba(16,185,129,0.10),0_12px_36px_rgba(0,0,0,0.12)]">
+          <div className="px-4 pt-3.5">
+            {selectedToolCommand&&(()=>{const Icon=selectedToolCommand[2];return <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 py-1.5 pl-2.5 pr-1.5 text-xs font-semibold text-accent"><Icon size={15}/><span className="truncate">{selectedToolCommand[1]}</span><button type="button" onClick={()=>setSelectedToolCommand(null)} aria-label={"Remove "+selectedToolCommand[1]} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-emerald-500/15"><X size={14}/></button></div>;})()}
+            {attachedFile&&<div className="mb-3 flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 sm:max-w-sm">{previewUrl?<img src={previewUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover"/>:<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-accent"><FileText size={20}/></span>}<div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-fg">{attachedFile.name}</p><p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p></div><button type="button" onClick={()=>setAttachedFile(null)} aria-label="Remove attachment" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-surface-3"><X size={16}/></button></div>}
+            {listening&&<div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-500" role="status" aria-live="polite"><span className="flex h-4 items-center gap-[3px]">{[6,12,8,14,7,11,5].map((height,i)=><span key={i} className="w-[3px] animate-pulse rounded-full bg-rose-500" style={{height:height+"px",animationDelay:(i*90)+"ms"}}/>)}</span>Listening in {VOICE_LANGUAGES.find(l=>l.code===voiceLanguage)?.name} · tap mic to stop</div>}
+            {slashMatches.length>0&&<div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">{slashMatches.map(([command,label,Icon])=><button key={command} type="button" role="option" aria-selected="false" onClick={()=>chooseCommand(command)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={16}/><b>{command}</b><span className="text-muted">{label}</span></button>)}</div>}
+            <textarea ref={textareaRef} rows={1} value={text} disabled={disabled} placeholder={placeholder} onChange={e=>setText(e.target.value)} onKeyDown={handleKeyDown} onPaste={handlePaste} onFocus={()=>setTextareaFocused(true)} onBlur={()=>setTextareaFocused(false)} aria-label={placeholder} className="block max-h-[160px] min-h-[28px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-6 text-fg outline-none placeholder:text-muted focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-50"/>
           </div>
-        )}
-
-        {/* Selected tool chip: selection is local UI state; no request is made until submit. */}
-        {selectedToolCommand && (() => {
-          const SelectedIcon = selectedToolCommand[2];
-          return (
-            <div className="px-3 pt-3">
-              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent">
-                <SelectedIcon size={14} aria-hidden="true" />
-                <span>{selectedToolCommand[1]}</span>
-                <button type="button" onClick={() => setSelectedToolCommand(null)} className="ml-1 rounded-full p-0.5 hover:bg-accent/15" aria-label={`Remove ${selectedToolCommand[1]} tool`}>
-                  <X size={13}/>
-                </button>
-              </div>
+          <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Add attachment" aria-expanded={attachmentMenuOpen} className={"flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"bg-surface-2 text-accent":"text-muted")}><Plus size={20}/></button>
+              <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Open AI tools" aria-expanded={attachmentMenuOpen} className={"flex h-11 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"border-emerald-500/30 bg-emerald-500/10 text-accent":"border-line text-fg-secondary hover:bg-surface-2")}><Sparkles size={16}/> Tools</button>
             </div>
-          );
-        })()}
-
-        {/* Attachment chip */}
-        {attachedFile && (
-          <div className="px-3 pt-3">
-            <div className="flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 pr-3 sm:max-w-sm">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt=""
-                  className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
-                />
-              ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-emerald-400/20">
-                  <FileText size={18} />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-fg">{attachedFile.name}</p>
-                <p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAttachedFile(null)}
-                className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/60"
-                aria-label="Remove attachment"
-              >
-                <X size={14} />
-              </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button type="button" onClick={startSpeechRecognition} disabled={disabled||!voiceSupported} aria-label={listening?"Stop voice dictation":"Dictate with your voice"} title={listening?"Stop listening":"Voice input"} className={"flex h-11 w-11 items-center justify-center rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 "+(listening?"bg-rose-500/10 text-rose-500 ring-2 ring-rose-500/40 animate-pulse":"text-muted hover:bg-surface-2 hover:text-fg")}><Mic size={19}/></button>
+              <button type="button" data-demo="ai-send-message" onClick={isGenerating?onStop:submit} disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":"Send message"} title={isGenerating?"Stop generating":"Send message"} className={"flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<ArrowUp size={20} strokeWidth={2.6}/>}</button>
             </div>
-          </div>
-        )}
-
-        {/* One unified composer surface: the textarea stays visually borderless. */}
-        <div className="overflow-hidden rounded-2xl border border-line bg-surface/35 transition-colors focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/10" ref={attachmentMenuRef}>
-        {/* Text entry: always on its own row so it is never squeezed on mobile */}
-        <div className="px-4 pb-1 pt-3.5">
-          {listening && (
-            <div
-              className="mb-2 flex items-center gap-2.5 text-xs font-medium text-accent"
-              role="status"
-            >
-              <span className="flex h-4 items-center gap-[3px]" aria-hidden="true">
-                {[6, 12, 8, 14, 7, 11, 5].map((height, i) => (
-                  <span
-                    key={i}
-                    className="w-[3px] animate-pulse rounded-full bg-emerald-400"
-                    style={{ height: `${height}px`, animationDelay: `${i * 90}ms` }}
-                  />
-                ))}
-              </span>
-              Listening in {VOICE_LANGUAGES.find((l) => l.code === voiceLanguage)?.name}
-            </div>
-          )}
-
-          {slashMatches.length > 0 && (
-            <div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">
-              {slashMatches.map(([command,label,Icon]) => <button key={command} type="button" role="option" aria-selected="false" onClick={() => chooseCommand(command)} className="inline-flex min-h-12 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={14}/><b>{command}</b><span className="text-muted">{label}</span></button>)}
-            </div>
-          )}
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={text}
-            disabled={disabled}
-            placeholder={placeholder}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            aria-label={placeholder}
-            className="!m-0 block max-h-[160px] min-h-[24px] w-full min-w-0 resize-none overflow-y-auto !border-0 !bg-transparent !shadow-none !outline-none !ring-0 text-[14px] leading-6 text-fg placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50 focus:!border-0 focus:!outline-none focus:!ring-0 focus-visible:!outline-none"
-          />
-        </div>
-
-        {/* Compact toolbar: attachments and tools share one menu. */}
-        <div className="flex flex-col items-stretch gap-2 px-2 pb-2 pt-1">
-          <div className="relative flex w-full min-w-0 flex-col items-stretch gap-1">
-            <span data-demo="tools-button">
-              <ToolButton
-                label="Attachments and tools"
-                onClick={() => setAttachmentMenuOpen((value) => !value)}
-                disabled={disabled}
-                active={attachmentMenuOpen}
-              >
-                <Paperclip size={17}/>
-              </ToolButton>
-            </span>
-
-            {attachmentMenuOpen && (
-              <div
-                className="w-full max-h-[min(48dvh,420px)] overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 text-fg shadow-inner animate-in fade-in slide-in-from-top-1 duration-150"
-                role="dialog"
-                aria-label="Attachments and tools"
-                data-demo="ai-composer-tools"
-              >
-                <div className="flex items-center justify-between gap-3 px-1 pb-2">
-                  <div>
-                    <p className="text-xs font-bold text-fg">Add to your message</p>
-                    <p className="text-[10px] text-muted">Attach files or choose a tool</p>
-                  </div>
-                  <button type="button" onClick={() => setAttachmentMenuOpen(false)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"
-                    aria-label="Close attachments and tools"><X size={15}/></button>
-                </div>
-
-                <button type="button" onClick={() => { setAttachmentMenuOpen(false); fileInputRef.current?.click(); }}
-                  disabled={disabled}
-                  className="flex min-h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40">
-                  <Paperclip size={15}/> Upload a file or document
-                </button>
-                <button type="button" onClick={() => { setAttachmentMenuOpen(false); openCamera(); }}
-                  disabled={disabled}
-                  className="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-40">
-                  <Camera size={15}/> Capture with camera / Vision
-                </button>
-                <div className="my-2 border-t border-line"/>
-                <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-[.14em] text-muted">AI tools</p>
-                <div className="grid grid-cols-2 gap-1">
-                  {TOOL_COMMANDS.map(([command,label,Icon]) => (
-                    <button key={command} type="button" onClick={() => chooseCommand(command)} aria-pressed={selectedToolCommand?.[0] === command}
-                      className={"flex min-h-9 items-center gap-2 rounded-lg px-2 text-left text-[11px] hover:bg-surface-2 hover:text-fg " + (selectedToolCommand?.[0] === command ? "bg-accent/10 text-accent" : "text-fg-secondary")}>
-                      <Icon size={14}/><span>{label}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="my-2 border-t border-line"/>
-                <div className="flex items-center justify-between gap-3 px-1">
-                  <span className="text-[10px] font-semibold text-muted">Voice language</span>
-                  <div role="radiogroup" aria-label="Voice recognition language" className="flex items-center rounded-lg bg-surface-2 p-0.5">
-                    {VOICE_LANGUAGES.map((language) => {
-                      const selected = voiceLanguage === language.code;
-                      return (
-                        <button key={language.code} type="button" role="radio" aria-checked={selected}
-                          aria-label={language.name} title={language.name}
-                          onClick={() => setVoiceLanguage(language.code)}
-                          className={"min-h-8 rounded-md px-2.5 text-[10px] font-bold " + (selected ? "bg-surface-3 text-fg" : "text-muted hover:text-fg-secondary")}>
-                          {language.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex w-full shrink-0 items-center justify-end gap-1">
-            <ToolButton
-              label={listening ? "Stop listening" : "Dictate with your voice"}
-              onClick={startSpeechRecognition}
-              disabled={disabled}
-              active={listening}
-            >
-              <Mic size={17} className={listening ? "animate-pulse" : ""}/>
-            </ToolButton>
-
-            <button
-              type="button"
-              data-demo="ai-send-message"
-              onClick={isGenerating ? onStop : submit}
-              disabled={isGenerating ? !onStop : !canSend}
-              aria-label={isGenerating ? "Stop generating" : "Send message"}
-              title={isGenerating ? "Stop generating" : "Send message (Enter)"}
-              className={[
-                "flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/70",
-                canSend
-                  ? "bg-accent text-inverse shadow-composer hover:bg-accent-hover active:scale-95"
-                  : "cursor-not-allowed bg-surface-3 text-muted",
-              ].join(" ")}
-            >
-              {isGenerating ? <XCircle size={17} strokeWidth={2.5}/> : <ArrowUp size={17} strokeWidth={2.5}/>}
-            </button>
           </div>
         </div>
-        </div>
-      </div>
-
-      <div className="px-2 pt-1.5 text-[10px] text-muted">
-        <kbd className="font-sans font-medium text-fg-secondary">Enter</kbd> to send
-        <span className="px-1.5 text-line-strong">·</span>
-        <kbd className="font-sans font-medium text-fg-secondary">Shift + Enter</kbd> for a new line
+        {textareaFocused&&<p className="hidden px-3 pt-1.5 text-[10px] text-muted sm:block"><kbd className="font-sans">Enter</kbd> to send <span className="px-1">·</span><kbd className="font-sans">Shift + Enter</kbd> for new line</p>}
       </div>
 
       {voiceError && (
