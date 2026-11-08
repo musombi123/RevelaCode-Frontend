@@ -1040,12 +1040,9 @@ export function AuthProvider({
           if (refreshToken) {
             try {
               let refreshUrl = "";
-              const configuredBase = String(
-                import.meta.env.VITE_API_URL ||
-                ""
-              ).trim().replace(/\/+$/, "");
+              const configuredBase = backendBaseUrl;
 
-              refreshUrl = configuredBase ? `${configuredBase}/api/auth/refresh` : "/api/auth/refresh";
+              refreshUrl = `${configuredBase}/api/auth/refresh`;
 
               const refreshResponse = await fetch(refreshUrl, {
                 method: "POST",
