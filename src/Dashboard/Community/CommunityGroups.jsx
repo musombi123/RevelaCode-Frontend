@@ -418,7 +418,7 @@ function CreateGroupModal({
               id="create-community-group-title"
               className="mt-2 text-xl font-black text-slate-900 dark:text-white"
             >
-              Create a group
+              Create a network
             </h2>
 
             <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
@@ -1270,7 +1270,7 @@ export default function CommunityGroups({
                 </div>
 
                 <span className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-50/90">
-                  Community Groups
+                  Community Networks
                 </span>
               </div>
 
@@ -1300,7 +1300,7 @@ export default function CommunityGroups({
                   "
                 >
                   <Plus size={16} />
-                  Create a group
+                  Create a network
                 </button>
 
                 <button
@@ -1339,7 +1339,7 @@ export default function CommunityGroups({
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             {
-              label: "Groups available",
+              label: "Networks available",
               value: formatNumber(groups.length),
               icon: Users,
             },
@@ -1537,7 +1537,7 @@ export default function CommunityGroups({
                 </p>
 
                 <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
-                  My groups
+                  My networks
                 </h2>
               </div>
 
@@ -1570,7 +1570,7 @@ export default function CommunityGroups({
               </p>
 
               <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
-                Featured groups
+                Featured networks
               </h2>
             </div>
 
@@ -1598,7 +1598,7 @@ export default function CommunityGroups({
               </p>
 
               <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
-                Discover more groups
+                Discover more networks
               </h2>
             </div>
 
@@ -1626,7 +1626,7 @@ export default function CommunityGroups({
                 ? "Try another search or category, or create a group for your community."
                 : "There are no groups to display yet. Create the first group and invite people to join."
             }
-            actionLabel="Create a group"
+            actionLabel="Create a network"
             onAction={() => {
               setCreateError("");
               setCreateOpen(true);
