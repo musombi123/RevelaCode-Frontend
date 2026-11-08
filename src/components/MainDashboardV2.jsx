@@ -88,10 +88,12 @@ function FullscreenAIAssistant({
             inset-0
             z-[10050]
             flex
+            h-[100dvh]
             flex-col
             bg-app
             text-fg
           "
+          style={{ height: "var(--revelaai-visual-viewport-height, 100dvh)" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
