@@ -17,12 +17,12 @@ test("welcome state is a clean empty state with no prompt templates or tool chip
   assert.match(welcome, /What would you like to work on\?/);
 });
 
-test("voice, vision, Humanizer and weak-network mode are grouped in one sidebar Tools menu", () => {
+test("voice, vision and weak-network mode remain in Tools while Humanizer is invoked from chat", () => {
   assert.match(sidebar, /aria-controls="revelaai-sidebar-tools"/);
   assert.match(sidebar, /toolsOpen &&/);
   assert.match(sidebar, /onOpenVoice/);
   assert.match(sidebar, /onOpenVision/);
-  assert.match(sidebar, /onOpenHumanizer/);
+  assert.doesNotMatch(sidebar, /onOpenHumanizer|Selective Humanizer/);
   assert.match(sidebar, /Weak-network free mode/);
   assert.match(sidebar, /AI Identity/);
   assert.match(sidebar, /<RevelaAIQuickSettings/);
@@ -80,7 +80,7 @@ test("composer no longer renders a nested rounded border box", () => {
 
 test("Humanizer uses one compact upload card and keeps privacy guidance without a second info panel", () => {
   assert.match(humanizer, /Open a PDF/);
-  assert.match(humanizer, /Privacy: the PDF is processed in memory/);
+  assert.match(humanizer, /Privacy: PDFs are processed in memory/);
   assert.doesNotMatch(humanizer, /Private by design/);
   assert.doesNotMatch(humanizer, /grid gap-5 lg:grid-cols-\[minmax\(0,1\.5fr\)/);
   assert.match(humanizer, /Produce with Gemini/);
@@ -91,5 +91,5 @@ test("Humanizer has one title and remains embedded in the chat workspace", () =>
   assert.match(dashboard, /<HumanizerWorkspace embedded \/>/);
   assert.match(dashboard, /Back to chat/);
   assert.doesNotMatch(dashboard, /Work on selected PDF text without leaving RevelaAI/);
-  assert.match(humanizer, /Selective Humanizer/);
+  assert.match(humanizer, /Humanizer Studio/);\n  assert.match(humanizer, /Paste or type the text you want to refine/);
 });
