@@ -350,13 +350,7 @@ export default function AIAssistantDashboard({
   const [voiceActive, setVoiceActive] =
     useState(false);
   const [humanizerOpen, setHumanizerOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).get("tool") === "humanizer") {
-      setHumanizerOpen(true);
-    }
-  }, []);
-
+  const [humanizerSeedText, setHumanizerSeedText] = useState("");
   // The WelcomeScreen launches the very same camera control used by InputBar.
   const [visionReady, setVisionReady] = useState(false);
   const visionLauncherRef = useRef(null);
@@ -852,6 +846,9 @@ export default function AIAssistantDashboard({
         const cleaned =
           String(text || "")
             .trim();
+
+        const humanizerIntent = /\bhumaniz(?:e|ing)\b/i.test(cleaned);
+        const directHumanizerText = cleaned.match(/(?:humaniz(?:e|ing)(?:\s+it)?|make\s+it\s+sound\s+natural)\s*[:—-]\s*([\s\S]+)$/i)?.[1]?.trim() || "";
 
         /*
          * A file can be sent without a typed prompt.
@@ -1407,6 +1404,10 @@ export default function AIAssistantDashboard({
               return updated;
             }
           );
+          if (humanizerIntent) {
+            setHumanizerSeedText(directHumanizerText || normalized.text);
+            setHumanizerOpen(true);
+          }
         } catch (error) {
           if (
             error?.name ===
@@ -1961,7 +1962,6 @@ export default function AIAssistantDashboard({
         onRenameChat={renameChat}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
-        onOpenHumanizer={() => setHumanizerOpen(true)}
         onOpenIdentity={() => setIdentityOpen(true)}
         freeMode={freeMode}
         onToggleFreeMode={() => setFreeMode((current) => !current)}
@@ -2055,10 +2055,28 @@ export default function AIAssistantDashboard({
         {humanizerOpen ? (
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Humanizer workspace">
             <div className="flex shrink-0 justify-end border-b border-line bg-header px-3 py-1.5 sm:px-4">
-              <button type="button" onClick={() => setHumanizerOpen(false)} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg" aria-label="Return to chat">Back to chat</button>
+              <button type="button" onClick={() => { setHumanizerOpen(false); setHumanizerSeedText(""); }} className="min-h-9 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 hover:text-fg" aria-label="Return to chat">Back to chat</button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto bg-app">
-              <HumanizerWorkspace embedded />
+              <HumanizerWorkspace
+                embedded
+                initialText={humanizerSeedText}
+                onExportToChat={(revisedText) => {
+                  const safeText = String(revisedText || "").trim();
+                  if (!safeText) return;
+                  const resultMessage = createMessage("assistant", safeText, "done", {
+                    contentType: "humanizer-result",
+                    sourcePrompt: "Humanizer Studio · approved revision",
+                  });
+                  setMessages((previous) => {
+                    const updated = [...previous, resultMessage];
+                    if (activeChatId) updateChat(activeChatId, updated);
+                    return updated;
+                  });
+                  setHumanizerOpen(false);
+                  setHumanizerSeedText("");
+                }}
+              />
             </div>
           </section>
         ) : !hasConversation ? (
