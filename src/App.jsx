@@ -373,9 +373,8 @@ export default function App() {
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
               <Route path="/oauth/android-callback" element={<OAuthCallbackPage />} />
               <Route path="/support/payment-retry" element={<SupportPaymentRetryPage />} />
-              {/* Legacy Humanizer links now open the tool inside the authenticated AI workspace.
-                  The Humanizer API remains the authority for authentication and authorization. */}
-              <Route path="/humanizer" element={<Navigate to="/app?hub=ai&tool=humanizer" replace />} />
+              {/* Humanizer is a first-class workspace, independent of the AI chat shell. */}
+              <Route path="/humanizer" element={<Navigate to="/app?hub=humanizer" replace />} />
 
               <Route
                 path="/accounts"
