@@ -355,8 +355,11 @@ async function performRequest(
       if (queued) throw createOfflineQueuedError();
     }
 
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
+    }
     throw new JumuiyaAPIError(
-      `Unable to reach the Jumuiya backend at ${url}. The browser received no HTTP response. Check the backend URL, availability, and CORS configuration.`,
+      "Poor connection. Please try again when your internet connection is stable.",
       0,
       "network_error",
       {
