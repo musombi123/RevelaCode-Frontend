@@ -246,8 +246,14 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     ? initialDashboardKey
     : defaultDashboard;
 
-  const [activeView, setActiveView] =
-    useState(initialDashboard);
+  const [activeView, setActiveView] = useState(() => {
+    if (initialDashboardKey) return initialDashboard;
+    try {
+      return window.localStorage.getItem("revelacode_ai_priority") === "true" ? "ai" : initialDashboard;
+    } catch {
+      return initialDashboard;
+    }
+  });
   const [sessionRestoreAttempted, setSessionRestoreAttempted] = useState(false);
   const sessionLoadedScopeRef = useRef("");
 
@@ -256,8 +262,44 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
 
-  const [aiFullscreenOpen, setAIFullscreenOpen] =
-    useState(false);
+  const [aiFullscreenOpen, setAIFullscreenOpen] = useState(() => {
+    if (initialDashboardKey) return false;
+    try {
+      return window.localStorage.getItem("revelacode_ai_priority") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const aiReturnViewRef = useRef((() => {
+    if (initialDashboardKey) return initialDashboard;
+    try {
+      const saved = window.localStorage.getItem("revelacode_last_non_ai_hub");
+      return DASHBOARDS.some((item) => item.key === saved && saved !== "ai") ? saved : initialDashboard;
+    } catch {
+      return initialDashboard;
+    }
+  })());
+  const recordAIWorkspaceUse = useCallback(() => {
+    try {
+      const previous = Number(window.localStorage.getItem("revelacode_ai_open_count") || 0);
+      const next = Math.min(1000, previous + 1);
+      window.localStorage.setItem("revelacode_ai_open_count", String(next));
+      if (next >= 3) window.localStorage.setItem("revelacode_ai_priority", "true");
+    } catch { /* AI remains available when browser storage is restricted. */ }
+  }, []);
+  const openAIWorkspace = useCallback(() => {
+    aiReturnViewRef.current = activeView === "ai" ? "home" : activeView;
+    recordAIWorkspaceUse();
+    setAIFullscreenOpen(true);
+  }, [activeView, recordAIWorkspaceUse]);
+  const closeAIWorkspace = useCallback(() => {
+    setAIFullscreenOpen(false);
+    try {
+      window.localStorage.setItem("revelacode_ai_priority", "false");
+      window.localStorage.setItem("revelacode_ai_open_count", "0");
+    } catch { /* Ignore storage failure. */ }
+    if (activeView === "ai") setActiveView(aiReturnViewRef.current || "home");
+  }, [activeView]);
 
   const [aiWidgetOpen, setAIWidgetOpen] = useState(false);
   const [aiWidgetMinimized, setAIWidgetMinimized] = useState(false);
@@ -634,20 +676,25 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const showShellHeader = !hubViewsWithOwnHeader.has(activeView);
 
   const openAIWidget = useCallback(() => {
+    recordAIWorkspaceUse();
     setAIWidgetOpen(true);
     setAIWidgetMinimized(false);
-  }, []);
+  }, [recordAIWorkspaceUse]);
 
   const closeAIWidget = useCallback(() => {
     setAIWidgetOpen(false);
     setAIWidgetMinimized(false);
+    try {
+      window.localStorage.setItem("revelacode_ai_priority", "false");
+      window.localStorage.setItem("revelacode_ai_open_count", "0");
+    } catch { /* Ignore storage failure. */ }
   }, []);
 
   const maximizeAIWidget = useCallback(() => {
     setAIWidgetOpen(false);
     setAIWidgetMinimized(false);
-    setAIFullscreenOpen(true);
-  }, []);
+    openAIWorkspace();
+  }, [openAIWorkspace]);
 
   /* =========================================================
      Navigation Entries
@@ -773,7 +820,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
       <FullscreenAIAssistant
         open={aiFullscreenOpen}
-        onClose={() => setAIFullscreenOpen(false)}
+        onClose={closeAIWorkspace}
         aiElement={
           aiDashboardElement
             ? React.cloneElement(aiDashboardElement, { activeHub: activeHubKey })
@@ -1435,6 +1482,8 @@ const BIASHARA_SECTION_KEYS = new Set(
               ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain touch-pan-y bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] dark:bg-slate-950"
               : "min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
           >
+            <ConnectionStatusBanner />
+            <SDAQuarterlyBackgroundSync />
 
             {!showShellHeader ? (
               <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-2.5 shadow-sm dark:border-amber-900/50 dark:bg-slate-900">
@@ -1479,10 +1528,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                       isGuest,
                       onNavigate:
                         handleNavigate,
-                      onOpenAI: () =>
-                        setAIFullscreenOpen(
-                          true
-                        ),
+                      onOpenAI: openAIWorkspace,
                       onRequestSignIn: () =>
                         setShowStartModal(true),
                     }

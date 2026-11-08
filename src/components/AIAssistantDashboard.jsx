@@ -276,6 +276,7 @@ export default function AIAssistantDashboard({
   onOpenAI,
   activeHub = "home",
   compactMode = false,
+  lessonContext = null,
 }) {
   const {
     user,
@@ -1289,12 +1290,13 @@ export default function AIAssistantDashboard({
             const responseMeta = sanitizeAIResponseMetadata(payload?.meta);
 
             if (!response.ok) {
-              throw new Error(
-                response.status === 502 || response.status === 503 || response.status === 504
-                  ? "RevelaAI is waking up, please wait 20 seconds..."
-                  : (payload?.message || payload?.error?.message || "RevelaAI could not complete the request. Please try again.")
-              );
+              if (response.status >= 500) {
+                window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "poor" } }));
+                throw new Error("Poor connection — RevelaAI could not reach its service. Please try again shortly.");
+              }
+              throw new Error(payload?.message || "RevelaAI could not complete the request. Please try again.");
             }
+            window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
 
             const imagePayload = payload?.data || payload || {};
             const remoteImageUrls = Array.isArray(imagePayload?.urls)

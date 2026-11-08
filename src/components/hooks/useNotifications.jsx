@@ -49,9 +49,12 @@ export function useNotifications(refreshInterval = 12000) {
         .map(normalizeNotification)
         .filter(Boolean);
       setNotifications(normalized);
+      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
       return normalized;
     } catch (err) {
-      setError(err?.message || "Failed to load Jumuiya notifications.");
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: offline ? "offline" : "poor" } }));
+      setError(offline ? "Offline — notifications will refresh when you reconnect." : "Poor connection — notifications could not be refreshed.");
       return [];
     } finally {
       setLoading(false);
@@ -87,7 +90,7 @@ export function useNotifications(refreshInterval = 12000) {
       ));
       return true;
     } catch (err) {
-      setError(err?.message || "Failed to mark notification as read.");
+      setError("Poor connection — we could not update this notification. Try again when connected.");
       return false;
     }
   }, [api]);
@@ -101,7 +104,7 @@ export function useNotifications(refreshInterval = 12000) {
       setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
       return true;
     } catch (err) {
-      setError(err?.message || "Failed to mark notifications as read.");
+      setError("Poor connection — we could not update your notifications. Try again when connected.");
       return false;
     }
   }, [api]);

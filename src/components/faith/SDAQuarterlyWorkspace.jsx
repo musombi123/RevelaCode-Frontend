@@ -45,7 +45,7 @@ function formatLessonDate(value) {
   });
 }
 
-export default function SDAQuarterlyWorkspace({ onOpen }) {
+export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
   const [initial] = useState(kenyaQuarterNow);
   const [year, setYear] = useState(initial.year);
   const [quarter, setQuarter] = useState(initial.quarter);
@@ -66,18 +66,14 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
     setOfflineMode(typeof navigator !== "undefined" && !navigator.onLine);
 
     try {
-      const response = await fetch(
-        `${API}/api/study/sda/quarter/${year}/${quarter}`,
-        {
-          method: "GET",
-          headers: { Accept: "application/json" },
-          credentials: "include",
-          cache: "no-store",
-        }
-      );
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || payload?.error || `Quarter request failed (${response.status}).`);
+      if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("offline");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 12000);
+      let response;
+      try {
+        response = await fetch(requestUrl, { method: "GET", headers: { Accept: "application/json" }, credentials: "include", cache: "no-store", signal: controller.signal });
+      } finally {
+        window.clearTimeout(timeout);
       }
       const freshMaterials = Array.isArray(payload?.materials) ? payload.materials : [];
       setMaterials(freshMaterials);
@@ -108,7 +104,6 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
       setRefreshing(false);
     }
   };
-
   useEffect(() => {
     loadQuarter();
     // Revalidate the current quarter periodically while Faith remains open.
@@ -141,6 +136,20 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
       id,
       title: material?.title || lessonMetadata(material).lesson_title || "SDA Quarterly lesson",
     });
+  };
+
+  const openLessonAI = (material) => {
+    const meta = lessonMetadata(material);
+    const context = {
+      id: lessonId(material),
+      title: material?.title || meta.lesson_title || "SDA Quarterly lesson",
+      text: String(material?.content || material?.description || ""),
+      day: meta.day,
+      date: meta.lesson_date,
+      memoryText: meta.memory_text,
+    };
+    setAiLesson(context);
+    onAskAI?.(context);
   };
 
   return (
@@ -190,6 +199,16 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
         </div>
       )}
 
+      {aiLesson && (
+        <section className="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm dark:border-indigo-900/50 dark:bg-gray-950">
+          <div className="flex items-center justify-between gap-3 border-b border-indigo-100 px-4 py-3 dark:border-indigo-900/50">
+            <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-300">Lesson companion</p><h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{aiLesson.title}</h3></div>
+            <button type="button" onClick={() => setAiLesson(null)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 dark:border-gray-700 dark:text-gray-300">Close AI</button>
+          </div>
+          <div className="h-[min(68dvh,680px)] min-h-[360px]"><Suspense fallback={<div className="p-6 text-sm text-gray-500">Opening lesson AI…</div>}><LessonAIWorkspace activeHub="faith" compactMode lessonContext={aiLesson} /></Suspense></div>
+        </section>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-12 text-sm font-semibold text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
           <RefreshCw size={18} className="animate-spin" /> Loading SDA Quarterly…
@@ -202,6 +221,7 @@ export default function SDAQuarterlyWorkspace({ onOpen }) {
             const lessonLabel = meta.lesson_number ? `Lesson ${meta.lesson_number}` : "Daily lesson";
             const dayLabel = meta.day || "";
             const summary = String(material?.description || material?.content || "").replace(/\s+/g, " ").trim();
+            const title = material?.title || meta.lesson_title || `Lesson ${index + 1}`;
             return (
               <div key={lessonId(material) || `${year}-${quarter}-${index}`} className="group flex min-h-[150px] min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-amber-800 sm:p-4">
                 <button type="button" onClick={() => openLesson(material)} className="flex flex-1 flex-col text-left">

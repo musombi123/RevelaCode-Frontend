@@ -1127,8 +1127,150 @@ function HomeDashboard({
     unreadCount,
     loading:
       notificationsLoading,
+    markAsRead,
   } = useNotifications(
     30000,
+  );
+  const [systemUpdateRows, setSystemUpdateRows] = useState([]);
+
+  useEffect(() => {
+    const androidBuild = import.meta.env.VITE_ANDROID_APP === "true";
+    const windowsBuild = import.meta.env.VITE_TAURI_APP === "true";
+    if (!androidBuild && !windowsBuild) return undefined;
+    let active = true;
+    const checkRelease = async () => {
+      try {
+        const platform = androidBuild ? "android" : "windows";
+        const repo = androidBuild ? "RevelaCode-Android" : "RevelaCode-Windows";
+        const currentVersion = String(import.meta.env.VITE_APP_VERSION || (androidBuild ? "2.2.1" : "0.1.3")).replace(/^v/, "");
+        const response = await fetch(`https://api.github.com/repos/musombi123/${repo}/releases/latest`, {
+          headers: { Accept: "application/vnd.github+json" },
+          cache: "no-store",
+        });
+        if (!response.ok) return;
+        const release = await response.json();
+        const latestVersion = String(release.tag_name || release.name || "").replace(/^v/i, "").match(/[0-9]+(?:\.[0-9]+)*/)?.[0] || "";
+        const compare = (left, right) => {
+          const a = left.split(".").map(Number);
+          const b = right.split(".").map(Number);
+          for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+            const delta = (a[i] || 0) - (b[i] || 0);
+            if (delta) return delta;
+          }
+          return 0;
+        };
+        if (!latestVersion || compare(latestVersion, currentVersion) <= 0) {
+          if (active) setSystemUpdateRows([]);
+          return;
+        }
+        const wanted = androidBuild ? /\.apk$/i : /RevelaCode-Windows-Setup\.exe$/i;
+        const asset = (release.assets || []).find((item) => wanted.test(String(item.name || "")));
+        const actionUrl = asset?.browser_download_url || release.html_url;
+        if (!actionUrl || !active) return;
+        let alreadySeen = false;
+        try {
+          const seenKey = `revelacode_seen_update:${platform}:${latestVersion}`;
+          alreadySeen = localStorage.getItem(seenKey) === "true";
+          if (!alreadySeen) localStorage.setItem(seenKey, "true");
+        } catch { /* Update remains visible in the feed. */ }
+        const row = {
+          id: `system-update-${platform}-${latestVersion}`,
+          title: androidBuild ? `RevelaCode Android ${latestVersion} is available` : `RevelaCode Windows ${latestVersion} is available`,
+          text: androidBuild ? "Download the latest APK to update your RevelaCode app." : "Download and run the latest Windows installer to update RevelaCode.",
+          type: "system_update",
+          timestamp: release.published_at || release.created_at || new Date().toISOString(),
+          action_url: actionUrl,
+          hub: "settings",
+          read: alreadySeen,
+        };
+        setSystemUpdateRows([row]);
+      } catch {
+        // Release lookup is optional; never expose GitHub/API errors in the UI.
+      }
+    };
+    checkRelease();
+    return () => { active = false; };
+  }, []);
+
+  const [notificationToast, setNotificationToast] = useState(null);
+  const seenNotificationIds = React.useRef(new Set());
+  const notificationFeedInitialized = React.useRef(false);
+
+  useEffect(() => {
+    const all = [...(notifications || []), ...systemUpdateRows]
+      .filter((item) => item && item.id != null)
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+    if (!notificationFeedInitialized.current) {
+      if (notificationsLoading) return;
+      all.forEach((item) => seenNotificationIds.current.add(String(item.id)));
+      notificationFeedInitialized.current = true;
+      return;
+    }
+    const unseen = all.filter((item) => !seenNotificationIds.current.has(String(item.id)));
+    if (!unseen.length) return;
+    unseen.forEach((item) => seenNotificationIds.current.add(String(item.id)));
+    const newest = unseen[0];
+    if (newest.read) return;
+    setNotificationToast(newest);
+    const id = String(newest.id);
+    const timer = window.setTimeout(() => setNotificationToast((current) => String(current?.id) === id ? null : current), 10000);
+    return () => window.clearTimeout(timer);
+  }, [notifications, systemUpdateRows, notificationsLoading]);
+
+  const openHomeNotification = async (notification) => {
+    if (!notification) return;
+    if (!String(notification.id).startsWith("system-update-") && !notification.read && typeof markAsRead === "function") await markAsRead(notification.id);
+    const destination = String(
+      notification.target_hub || notification.hub || notification.route || notification.workspace || ""
+    ).trim().toLowerCase();
+    const hubAliases = {
+      scripture: "faith", bible: "faith", study: "faith", sda: "faith", quarterly: "faith",
+      elimu: "education", school: "education", business: "biashara", farming: "shamba",
+    };
+    const hub = hubAliases[destination] || destination;
+    if (String(notification.id).startsWith("system-update-") && (notification.action_url || notification.url)) {
+      const target = String(notification.action_url || notification.url);
+      try {
+        const parsed = new URL(target, window.location.origin);
+        if (parsed.protocol === "https:") window.location.assign(parsed.href);
+      } catch { /* Ignore malformed release links. */ }
+    } else if (["home", "faith", "education", "shamba", "biashara", "community", "ai", "humanizer", "settings", "profile"].includes(hub)) {
+      onNavigate?.(hub);
+    } else if (notification.action_url || notification.url) {
+      const target = String(notification.action_url || notification.url);
+      try {
+        const parsed = new URL(target, window.location.origin);
+        if (parsed.origin === window.location.origin || parsed.protocol === "https:") window.location.assign(parsed.href);
+      } catch { /* Ignore malformed notification links. */ }
+    }
+    setNotificationToast(null);
+  };
+
+  const notificationRows = [...(notifications || []), ...systemUpdateRows]
+    .filter(Boolean)
+    .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+    .slice(0, 6);
+
+  const renderHomeNotifications = () => (
+    <section aria-label={t("System notifications")} className="min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0"><h2 className="text-sm font-black text-slate-950 dark:text-white">{t("Notifications")}</h2><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{t("Updates and activity from your RevelaCode hubs.")}</p></div>
+        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{formatNumber((unreadCount || 0) + systemUpdateRows.filter((item) => !item.read).length)} {t("unread")}</span>
+      </div>
+      {notificationRows.length ? (
+        <div className="mt-2 divide-y divide-slate-100 dark:divide-white/10">
+          {notificationRows.map((item) => (
+            <button key={item.id} type="button" onClick={() => openHomeNotification(item)} className="flex min-h-14 w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-white/5">
+              <span className={"h-2.5 w-2.5 shrink-0 rounded-full " + (item.read ? "bg-slate-300 dark:bg-slate-700" : "bg-blue-500")}/>
+              <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold text-slate-900 dark:text-white">{item.title || item.text || item.message || t("RevelaCode notification")}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{item.text || item.message || item.description || ""}</span></span>
+              <span className="shrink-0 text-[10px] font-semibold text-slate-400">{formatDateTime(item.timestamp)}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">{notificationsLoading ? t("Checking for notifications…") : t("You are all caught up.")}</p>
+      )}
+    </section>
   );
 
   const [
@@ -1598,7 +1740,7 @@ function HomeDashboard({
 
   if (isAndroidAppBuild) {
     return (
-      <div className="rc-android-home mx-auto grid h-full min-h-0 w-full max-w-[900px] grid-rows-[auto_1fr] gap-3 overflow-hidden px-3 py-2 sm:px-4">
+      <div className="rc-android-home mx-auto flex h-full min-h-0 w-full max-w-[900px] flex-col gap-3 overflow-hidden px-3 py-2 sm:px-4">
         <section
           data-demo="home-welcome"
           aria-label={t("RevelaCode home")}
@@ -1716,6 +1858,15 @@ function HomeDashboard({
             </div>
           </div>
         </section>
+        {renderHomeNotifications()}
+        </div>
+        {notificationToast && (
+          <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 left-3 right-3 z-[120] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
+            <Bell size={18} className="shrink-0 text-blue-600"/>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">{notificationToast.title || "RevelaCode notification"}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{notificationToast.text || notificationToast.message}</span></span>
+            <span className="text-[10px] font-bold text-blue-600">{t("Open")}</span>
+          </button>
+        )}
       </div>
     );
   }
@@ -1803,6 +1954,16 @@ function HomeDashboard({
           })}
         </div>
       </section>
+
+      {renderHomeNotifications()}
+
+      {notificationToast && (
+        <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 right-4 z-[120] flex w-[min(92vw,420px)] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
+          <Bell size={18} className="shrink-0 text-blue-600"/>
+          <span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">{notificationToast.title || "RevelaCode notification"}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{notificationToast.text || notificationToast.message}</span></span>
+          <span className="text-[10px] font-bold text-blue-600">{t("Open")}</span>
+        </button>
+      )}
 
       <section aria-label={t("Ecosystem overview")} className="min-w-0 rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-5" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 580px" }}>
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">{t("Ecosystem Overview")}</h2><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{t("A live snapshot of your connected RevelaCode services.")}</p></div><span className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"><span className={"h-2 w-2 rounded-full " + (isGuest ? "bg-slate-400" : ecosystemLoading || notificationsLoading ? "animate-pulse bg-amber-500 motion-reduce:animate-none" : "bg-emerald-500")} />{isGuest ? t("Explore mode") : ecosystemLoading || notificationsLoading ? t("Syncing data") : t("Connected services")}</span></div>
