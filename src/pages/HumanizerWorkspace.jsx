@@ -356,8 +356,38 @@ export default function HumanizerWorkspace({ embedded = false, initialText = "",
         {notice && <div role="status" className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-accent">{notice}</div>}
 
         {pages.length > 0 && (
-          <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
-            <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+          <section className="grid items-start gap-4 xl:grid-cols-[220px_minmax(0,1fr)_minmax(19rem,0.82fr)]">
+            <aside className="space-y-3 xl:sticky xl:top-4">
+              <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-xs font-bold uppercase tracking-[.14em] text-muted">Document</h2>
+                  <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">{pages.length} page{pages.length === 1 ? "" : "s"}</span>
+                </div>
+                <p className="mt-3 break-words text-sm font-bold text-fg">{documentName || "Untitled document"}</p>
+                <p className="mt-1 text-[11px] leading-5 text-muted">{pages.reduce((total, page) => total + page.text.split(/\\s+/).filter(Boolean).length, 0).toLocaleString()} words · {changedPages} revised page{changedPages === 1 ? "" : "s"}</p>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-3"><div className="h-full rounded-full bg-accent transition-all" style={{ width: (pages.length ? Math.min(100, changedPages / pages.length * 100) : 0) + "%" }} /></div>
+              </div>
+              <div className="rounded-2xl border border-line bg-surface p-3 shadow-sm">
+                <h3 className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-muted">Pages</h3>
+                <div className="flex gap-2 overflow-x-auto xl:flex-col xl:overflow-visible">
+                  {pages.map((page, index) => (
+                    <button key={page.page} type="button" onClick={() => { setPageIndex(index); setSuggestions([]); setGeminiDraft(null); setAccepted({}); setSelection({ start: 0, end: 0, text: "" }); }}
+                      aria-current={pageIndex === index ? "page" : undefined}
+                      className={"flex min-w-[132px] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition xl:min-w-0 " + (pageIndex === index ? "border-accent/40 bg-accent/10 text-accent" : "border-transparent text-fg-secondary hover:border-line hover:bg-surface-2")}>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-[11px] font-bold tabular-nums">{String(page.page).padStart(2, "0")}</span>
+                      <span className="min-w-0 flex-1"><span className="block text-xs font-bold">Page {page.page}</span><span className="mt-0.5 block text-[10px] text-muted">{page.text.split(/\\s+/).filter(Boolean).length} words</span></span>
+                      {page.text !== page.originalText ? <span className="h-2 w-2 shrink-0 rounded-full bg-success" title="Revised"/> : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-line bg-surface-2 p-3">
+                <p className="text-[11px] font-bold text-fg-secondary">Integrity controls</p>
+                <p className="mt-1 text-[11px] leading-5 text-muted">Only approved selections are changed. Unselected content stays untouched.</p>
+                <div className="mt-3 flex items-center justify-between text-[10px]"><span className="text-muted">Approved edits</span><strong className="tabular-nums text-accent">{acceptedEdits.length}</strong></div>
+              </div>
+            </aside>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
                 <div>
                   <h2 className="font-semibold">02 · Select text to improve</h2>
