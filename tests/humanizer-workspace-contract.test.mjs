@@ -21,11 +21,11 @@ test("Humanizer opens inline inside the existing AI workspace", () => {
   assert.doesNotMatch(humanizer, /Please sign in to use the Humanizer/);
   assert.match(humanizer, /mapAcceptedRangeToOriginal/);
   assert.match(humanizer, /accepted_replacements/);
-  assert.match(humanizer, /\\/api\\/humanizer\\/pdf\\/reconstruct/);
+  assert.match(humanizer, /\/api\/humanizer\/pdf\/reconstruct/);
   assert.match(humanizer, /async function exportPdf/);
-  assert.match(humanizer, /canExportPdf = Boolean\\(file && acceptedEdits\\.length && !manualTextEdited && !pdfExportUnsupported\\)/);
-  assert.match(humanizer, /layoutSupported: Boolean\\(page\\.layout_supported\\)/);
-  assert.match(humanizer, /Download revised text \\(\\.txt\\)/);
+  assert.match(humanizer, /canExportPdf = Boolean\(file && acceptedEdits\.length && !manualTextEdited && !pdfExportUnsupported\)/);
+  assert.match(humanizer, /layoutSupported: Boolean\(page\.layout_supported\)/);
+  assert.match(humanizer, /Download revised text \(\.txt\)/);
 });
 
 test("Productivity tools open from the InputBar attachment menu in both chat states", () => {
