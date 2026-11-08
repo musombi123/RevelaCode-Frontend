@@ -508,7 +508,7 @@ export default function NotificationsBell({ onNavigate }) {
               <div className="max-h-[70vh] overflow-y-auto">
                 {/* LOADING */}
 
-                {loading && (
+                {loading && !displayNotifications.length && (
                   <div
                     className="
                       flex
@@ -550,7 +550,7 @@ export default function NotificationsBell({ onNavigate }) {
 
                 {/* ERROR */}
 
-                {!loading && error && (
+                {!loading && error && !displayNotifications.length && (
                   <div
                     className="
                       px-5
@@ -692,7 +692,6 @@ export default function NotificationsBell({ onNavigate }) {
                 {/* NOTIFICATIONS */}
 
                 {!loading &&
-                  !error &&
                   displayNotifications.length >
                     0 && (
                     <div>
