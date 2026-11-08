@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
@@ -39,7 +39,7 @@ function mapAcceptedRangeToOriginal(page, pageNumber, start, end, replacement, a
   return { page: pageNumber, start: originalStart, end: originalEnd, original, replacement };
 }
 
-export default function HumanizerWorkspace({ embedded = false }) {
+export default function HumanizerWorkspace({ embedded = false, initialText = "", onExportToChat = null }) {
   const auth = useAuth();
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -56,6 +56,24 @@ export default function HumanizerWorkspace({ embedded = false }) {
   const [geminiDraft, setGeminiDraft] = useState(null);
   const [acceptedEdits, setAcceptedEdits] = useState([]);
   const [manualTextEdited, setManualTextEdited] = useState(false);
+
+  useEffect(() => {
+    const source = String(initialText || "").trim();
+    if (!source) return;
+    setPastedText(source);
+    setFile(null);
+    setDocumentName("AI chat content");
+    setPages([{ page: 1, text: source, originalText: source, extractionMethod: "chat", layoutSupported: false, layoutReason: "Chat-generated text can be revised and exported as text. Upload the source PDF to preserve its original layout." }]);
+    setPageIndex(0);
+    setSelection({ start: 0, end: 0, text: "" });
+    setSuggestions([]);
+    setAccepted({});
+    setGeminiDraft(null);
+    setAcceptedEdits([]);
+    setManualTextEdited(false);
+    setError("");
+    setNotice("Content from your AI chat is ready. Select only the wording you want to refine.");
+  }, [initialText]);
 
   const currentPage = pages[pageIndex] || null;
   const acceptedCount = Object.values(accepted).filter(Boolean).length;
@@ -399,6 +417,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
                 <h2 className="font-semibold">04 · Export your revision</h2>
                 <p className="mt-2 text-sm text-muted">{changedPages} page(s) changed. The source PDF remains untouched.</p>
                 <button onClick={exportText} className="mt-4 w-full rounded-xl border border-line px-4 py-3 text-sm font-semibold text-fg-secondary hover:bg-surface-2">Download revised text (.txt)</button>
+                {typeof onExportToChat === "function" && <button type="button" onClick={() => onExportToChat(pages.map((page) => page.text).join("\n\n"))} disabled={!pages.length || !changedPages} className="mt-2 w-full rounded-xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm font-semibold text-accent hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40">Send revised text to AI chat</button>}
                 <button onClick={exportPdf} disabled={!canExportPdf || loading} className="mt-2 w-full rounded-xl bg-success px-4 py-3 text-sm font-semibold text-inverse hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">Download revised PDF ({acceptedEdits.length} approved change(s))</button>
                 <p className="mt-3 text-[11px] leading-5 text-muted">
                   PDF export supports tracked, approved changes on native-text pages. It currently rejects OCR-only pages, partial-word or cross-line selections, unsupported fonts and replacements wider than the original selection.
