@@ -1195,20 +1195,28 @@ function HomeDashboard({
 
   const [notificationToast, setNotificationToast] = useState(null);
   const seenNotificationIds = React.useRef(new Set());
+  const notificationFeedInitialized = React.useRef(false);
 
   useEffect(() => {
-    const newest = [...(notifications || []), ...systemUpdateRows]
+    const all = [...(notifications || []), ...systemUpdateRows]
       .filter((item) => item && item.id != null)
-      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())[0];
-    if (!newest) return;
-    const id = String(newest.id);
-    if (seenNotificationIds.current.has(id)) return;
-    seenNotificationIds.current.add(id);
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+    if (!notificationFeedInitialized.current) {
+      if (notificationsLoading) return;
+      all.forEach((item) => seenNotificationIds.current.add(String(item.id)));
+      notificationFeedInitialized.current = true;
+      return;
+    }
+    const unseen = all.filter((item) => !seenNotificationIds.current.has(String(item.id)));
+    if (!unseen.length) return;
+    unseen.forEach((item) => seenNotificationIds.current.add(String(item.id)));
+    const newest = unseen[0];
     if (newest.read) return;
     setNotificationToast(newest);
+    const id = String(newest.id);
     const timer = window.setTimeout(() => setNotificationToast((current) => String(current?.id) === id ? null : current), 10000);
     return () => window.clearTimeout(timer);
-  }, [notifications, systemUpdateRows]);
+  }, [notifications, systemUpdateRows, notificationsLoading]);
 
   const openHomeNotification = async (notification) => {
     if (!notification) return;
