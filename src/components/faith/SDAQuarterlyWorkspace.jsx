@@ -78,10 +78,12 @@ export default function SDAQuarterlyWorkspace({ onOpen, onOpenAI }) {
       }
       const freshMaterials = Array.isArray(payload?.materials) ? payload.materials : [];
       setMaterials(freshMaterials);
+      window.dispatchEvent(new CustomEvent("revelacode:connection-restored"));
       try { localStorage.setItem(cacheKey, JSON.stringify({ materials: freshMaterials, savedAt: new Date().toISOString(), version: payload?.version || payload?.updated_at || "" })); } catch { /* Live quarter remains usable if storage is blocked. */ }
     } catch (loadError) {
       let cached = null;
       try { cached = JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { cached = null; }
+      window.dispatchEvent(new CustomEvent("revelacode:connection-poor"));
       if (Array.isArray(cached?.materials) && cached.materials.length) {
         setMaterials(cached.materials);
         setOfflineMode(true);
