@@ -263,13 +263,22 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
 
   const [aiFullscreenOpen, setAIFullscreenOpen] = useState(() => {
+    if (initialDashboardKey) return false;
     try {
       return window.localStorage.getItem("revelacode_ai_priority") === "true";
     } catch {
       return false;
     }
   });
-  const aiReturnViewRef = useRef(initialDashboard);
+  const aiReturnViewRef = useRef((() => {
+    if (initialDashboardKey) return initialDashboard;
+    try {
+      const saved = window.localStorage.getItem("revelacode_last_non_ai_hub");
+      return DASHBOARDS.some((item) => item.key === saved && saved !== "ai") ? saved : initialDashboard;
+    } catch {
+      return initialDashboard;
+    }
+  })());
   const recordAIWorkspaceUse = useCallback(() => {
     try {
       const previous = Number(window.localStorage.getItem("revelacode_ai_open_count") || 0);
@@ -285,7 +294,10 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   }, [activeView, recordAIWorkspaceUse]);
   const closeAIWorkspace = useCallback(() => {
     setAIFullscreenOpen(false);
-    try { window.localStorage.setItem("revelacode_ai_priority", "false"); } catch { /* Ignore storage failure. */ }
+    try {
+      window.localStorage.setItem("revelacode_ai_priority", "false");
+      window.localStorage.setItem("revelacode_ai_open_count", "0");
+    } catch { /* Ignore storage failure. */ }
     if (activeView === "ai") setActiveView(aiReturnViewRef.current || "home");
   }, [activeView]);
 
@@ -652,7 +664,10 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const closeAIWidget = useCallback(() => {
     setAIWidgetOpen(false);
     setAIWidgetMinimized(false);
-    try { window.localStorage.setItem("revelacode_ai_priority", "false"); } catch { /* Ignore storage failure. */ }
+    try {
+      window.localStorage.setItem("revelacode_ai_priority", "false");
+      window.localStorage.setItem("revelacode_ai_open_count", "0");
+    } catch { /* Ignore storage failure. */ }
   }, []);
 
   const maximizeAIWidget = useCallback(() => {
