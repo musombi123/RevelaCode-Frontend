@@ -9,7 +9,7 @@ function destinationFor(item) {
 }
 
 export default function SystemHomeNotifications({ onNavigate }) {
-  const { notifications, loading } = useNotifications(30000);
+  const { notifications, loading, markAsRead } = useNotifications(30000);
   const [systemItems, setSystemItems] = useState([]);
   const [dismissed, setDismissed] = useState(() => new Set());
 
@@ -49,7 +49,7 @@ export default function SystemHomeNotifications({ onNavigate }) {
     const check = async () => {
       const isAndroid = import.meta.env.VITE_ANDROID_APP === "true" ||
         /Android/i.test(navigator.userAgent) && /Capacitor|wv/i.test(navigator.userAgent);
-      const isWindowsDesktop = Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
+      const isWindowsDesktop = import.meta.env.VITE_TAURI_APP === "true" || Boolean(window.__TAURI__ || window.__TAURI_INTERNALS__);
       if (isAndroid) {
         try {
           const { App } = await import("@capacitor/app");
@@ -68,7 +68,8 @@ export default function SystemHomeNotifications({ onNavigate }) {
       }
       if (isWindowsDesktop) {
         try {
-          const installed = String(import.meta.env.VITE_WINDOWS_APP_VERSION || "");
+          let installed = String(import.meta.env.VITE_WINDOWS_APP_VERSION || "");
+          if (!installed && window.__TAURI__?.app?.getVersion) installed = await window.__TAURI__.app.getVersion();
           if (!installed) return;
           const response = await fetch("https://api.github.com/repos/musombi123/RevelaCode-Windows/releases/latest", { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
           if (!response.ok) throw new Error("release lookup unavailable");
@@ -104,6 +105,7 @@ export default function SystemHomeNotifications({ onNavigate }) {
   if (!items.length) return null;
 
   const openItem = (item) => {
+    if (!item.system && !item.read) void markAsRead?.(item.id);
     const hub = destinationFor(item);
     if (hub) onNavigate?.(hub);
     else if (item.url || item.download_url) window.open(item.url || item.download_url, "_blank", "noopener,noreferrer");
