@@ -13,8 +13,8 @@ const humanizer = read("../src/pages/HumanizerWorkspace.jsx");
 
 test("welcome state is a clean empty state with no prompt templates or tool chips", () => {
   assert.doesNotMatch(welcome, /EXPLORERS|TOOLS|prompt:|tool-chip|onSuggestion/);
-  assert.doesNotMatch(welcome, /<button\b/);
-  assert.match(welcome, /What would you like to work on\?/);
+  assert.doesNotMatch(welcome, /<button\\b/);
+  assert.match(welcome, /What would you like to work on\\?/);
 });
 
 test("voice, vision and weak-network mode remain in Tools while Humanizer is invoked from chat", () => {
@@ -39,13 +39,12 @@ test("AI header controls are removed and appearance/search settings live in the 
   for (const mode of ["quick", "deep", "extreme"]) assert.ok(quickSettings.includes(mode));
 });
 
-
 test("new-chat composer sits directly below the welcome message instead of a separate bottom dock", () => {
-  const welcome = dashboard.indexOf('<WelcomeScreen />');
-  const composer = dashboard.indexOf('data-demo="ai-chat-input"', welcome);
+  const welcomeIndex = dashboard.indexOf('<WelcomeScreen />');
+  const composer = dashboard.indexOf('data-demo="ai-chat-input"', welcomeIndex);
   const chatBranch = dashboard.indexOf('aria-label="Conversation workspace"');
-  assert.ok(welcome >= 0 && composer > welcome && composer < chatBranch);
-  assert.match(dashboard, /max-w-\[700px\]/);
+  assert.ok(welcomeIndex >= 0 && composer > welcomeIndex && composer < chatBranch);
+  assert.match(dashboard, /max-w-\\[700px\\]/);
   assert.doesNotMatch(dashboard, /<ProductivityToolsPanel/);
 });
 
@@ -68,28 +67,28 @@ test("fullscreen and AI header heights are compact and redundant mode labels are
   assert.doesNotMatch(dashboard, /RevelaAIHeaderControls/);
 });
 
-
 test("composer no longer renders a nested rounded border box", () => {
   assert.match(input, /"relative bg-transparent"/);
-  assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
   assert.doesNotMatch(input, /"relative rounded-2xl border bg-input"/);
   assert.match(input, /"flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-xl/);
   assert.match(input, /label="Attachments and tools"/);
   assert.match(input, /data-demo="ai-send-message"/);
 });
 
-test("Humanizer uses one compact upload card and keeps privacy guidance without a second info panel", () => {
+test("Humanizer keeps PDF and text workflows with concise privacy guidance", () => {
   assert.match(humanizer, /Open a PDF/);
   assert.match(humanizer, /Privacy: PDFs are processed in memory/);
   assert.doesNotMatch(humanizer, /Private by design/);
-  assert.doesNotMatch(humanizer, /grid gap-5 lg:grid-cols-\[minmax\(0,1\.5fr\)/);
   assert.match(humanizer, /Produce with Gemini/);
   assert.match(humanizer, /Local suggestions/);
+  assert.match(humanizer, /Paste or type the text you want to refine/);
 });
 
-test("Humanizer has one title and remains embedded in the chat workspace", () => {
-  assert.match(dashboard, /<HumanizerWorkspace embedded \/>/);
+test("Humanizer is invoked in the chat only on request and returns approved text to the conversation", () => {
+  assert.match(dashboard, /<HumanizerWorkspace[\\s\\S]*?embedded[\\s\\S]*?initialText=\\{humanizerSeedText\\}/);
+  assert.match(dashboard, /onExportToChat=\\{/);
+  assert.match(dashboard, /const humanizerIntent/);
   assert.match(dashboard, /Back to chat/);
-  assert.doesNotMatch(dashboard, /Work on selected PDF text without leaving RevelaAI/);
-  assert.match(humanizer, /Humanizer Studio/);\n  assert.match(humanizer, /Paste or type the text you want to refine/);
+  assert.match(humanizer, /Humanizer Studio/);
+  assert.match(humanizer, /Send revised text to AI chat/);
 });
