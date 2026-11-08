@@ -138,15 +138,6 @@ function FullscreenAIAssistant({
           ================================================= */}
 
           <div className="min-h-0 flex-1 overflow-hidden">
-            {!["home", "community"].includes(activeView) ? (
-              <div className="mx-auto mb-2 flex w-full max-w-5xl justify-end">
-                <HubShareAction
-                  activeHub={activeView}
-                  activeHubLabel={activeDashboard?.title || activeView}
-                  onNavigate={handleNavigate}
-                />
-              </div>
-            ) : null}
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {aiElement ? (
@@ -1439,6 +1430,15 @@ const BIASHARA_SECTION_KEYS = new Set(
                 </button>
               </div>
             )}
+            {!["home", "community"].includes(activeView) ? (
+              <div className="mx-auto mb-2 flex w-full max-w-5xl justify-end">
+                <HubShareAction
+                  activeHub={activeView}
+                  activeHubLabel={activeDashboard?.title || activeView}
+                  onNavigate={handleNavigate}
+                />
+              </div>
+            ) : null}
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {activeComponent ? (
