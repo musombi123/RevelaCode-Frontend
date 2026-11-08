@@ -801,19 +801,20 @@ export default function CommunityPostCard({
       className={`
         relative
         overflow-hidden
-        rounded-[24px]
+        rounded-[22px]
         border
-        border-slate-200
+        border-slate-200/90
         bg-white
-        shadow-sm
+        shadow-[0_8px_28px_-22px_rgba(15,23,42,0.35)]
         transition
+        hover:border-cyan-300/70
         hover:shadow-md
-        dark:border-white/10
-        dark:bg-slate-900
+        dark:border-white/[0.08]
+        dark:bg-[#0d1729]
         ${
           compact
             ? "p-4"
-            : "p-5 sm:p-6"
+            : "p-4 sm:p-5"
         }
       `}
     >
@@ -865,7 +866,7 @@ export default function CommunityPostCard({
               text-white
               ring-2
               ring-white
-              dark:ring-slate-900
+              dark:ring-[#0d1729]
             "
             aria-label={`Open ${authorName}'s profile`}
           >
@@ -1193,8 +1194,8 @@ export default function CommunityPostCard({
             uppercase
             tracking-wide
             text-cyan-700
-            dark:bg-cyan-950/30
-            dark:text-cyan-400
+            dark:bg-cyan-500/10
+            dark:text-cyan-200
           "
         >
           {category}
@@ -1209,7 +1210,7 @@ export default function CommunityPostCard({
             text-[9px]
             font-bold
             text-slate-500
-            dark:bg-slate-800
+            dark:bg-white/[0.06]
             dark:text-slate-300
           "
         >
@@ -1436,7 +1437,7 @@ export default function CommunityPostCard({
           border-b
           border-slate-100
           pb-3
-          text-[10px]
+          text-[11px]
           font-medium
           text-slate-400
           dark:border-white/5
@@ -1525,7 +1526,7 @@ export default function CommunityPostCard({
             rounded-xl
             px-2
             py-2.5
-            text-[10px]
+            text-[11px]
             font-bold
             transition
             ${
@@ -1689,7 +1690,7 @@ export default function CommunityPostCard({
             text-[9px]
             font-bold
             text-slate-400
-            dark:bg-slate-800/60
+            dark:bg-white/[0.035]
           "
         >
           <Check size={11} />
