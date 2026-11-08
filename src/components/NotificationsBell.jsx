@@ -3,6 +3,7 @@
 import React, {
   useMemo,
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -179,6 +180,18 @@ function formatRelativeTime(timestamp) {
 
 export default function NotificationsBell({ onNavigate }) {
   const [open, setOpen] = useState(false);
+  const [systemNotifications, setSystemNotifications] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("revelacode_system_notifications") || "[]"); } catch { return []; }
+  });
+
+  useEffect(() => {
+    const sync = () => {
+      try { setSystemNotifications(JSON.parse(localStorage.getItem("revelacode_system_notifications") || "[]")); } catch { setSystemNotifications([]); }
+    };
+    window.addEventListener("revelacode:system-notification", sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener("revelacode:system-notification", sync); window.removeEventListener("storage", sync); };
+  }, []);
 
   const {
     notifications,
@@ -216,7 +229,7 @@ export default function NotificationsBell({ onNavigate }) {
   // ==========================================================
 
   const handleNotificationClick = async (notification) => {
-    if (!notification.read) await markAsRead(notification.id);
+    if (notification.system) {\n      const updated = systemNotifications.map((item) => String(item.id) === String(notification.id) ? { ...item, read: true } : item);\n      setSystemNotifications(updated);\n      try { localStorage.setItem("revelacode_system_notifications", JSON.stringify(updated)); } catch { /* Session state still updates. */ }\n    } else if (!notification.read) await markAsRead(notification.id);
     const rawTarget = String(notification.hub || notification.destination || notification.target || "").toLowerCase();
     const destination = ({ ai: "ai", revelaai: "ai", faith: "faith", scripture: "faith", elimu: "education", school: "education", biashara: "biashara", shamba: "shamba", community: "community", jumuiya: "community", home: "home" })[rawTarget];
     if (destination) onNavigate?.(destination);
@@ -271,7 +284,7 @@ export default function NotificationsBell({ onNavigate }) {
       >
         <Bell className="h-5 w-5" />
 
-        {unreadCount > 0 && (
+        {(unreadCount + systemNotifications.filter((item) => !item.read).length) > 0 && (
           <span
             className="
               absolute
