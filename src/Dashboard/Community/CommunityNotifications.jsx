@@ -431,8 +431,8 @@ export default function CommunityNotifications({
             border-slate-200
             bg-white
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
           "
         >
           <div
@@ -582,7 +582,7 @@ export default function CommunityNotifications({
                   hover:bg-slate-50
                   disabled:cursor-not-allowed
                   disabled:opacity-50
-                  dark:border-white/10
+                  dark:border-white/[0.08]
                   dark:text-slate-300
                   dark:hover:bg-white/5
                   sm:flex-none
@@ -640,7 +640,7 @@ export default function CommunityNotifications({
           <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
             <p className="font-black">{actionError ? "Notification action needs attention" : "Notifications could not be loaded"}</p>
             <p className="mt-1">{actionError || notificationError}</p>
-            <button type="button" onClick={refreshNotifications} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-bold text-amber-800 dark:bg-slate-900 dark:text-amber-200">
+            <button type="button" onClick={refreshNotifications} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-bold text-amber-800 dark:bg-[#0d1729] dark:text-amber-200">
               <RefreshCw size={12} /> Try again
             </button>
           </div>
@@ -666,8 +666,8 @@ export default function CommunityNotifications({
               bg-white
               p-4
               shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
+              dark:border-white/[0.08]
+              dark:bg-[#0d1729]
             "
           >
             <div
@@ -739,8 +739,8 @@ export default function CommunityNotifications({
               bg-white
               p-4
               shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
+              dark:border-white/[0.08]
+              dark:bg-[#0d1729]
             "
           >
             <div
@@ -792,8 +792,8 @@ export default function CommunityNotifications({
               bg-white
               p-4
               shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
+              dark:border-white/[0.08]
+              dark:bg-[#0d1729]
             "
           >
             <div
@@ -845,8 +845,8 @@ export default function CommunityNotifications({
               bg-white
               p-4
               shadow-sm
-              dark:border-white/10
-              dark:bg-slate-900
+              dark:border-white/[0.08]
+              dark:bg-[#0d1729]
             "
           >
             <div
@@ -903,8 +903,8 @@ export default function CommunityNotifications({
             bg-white
             p-4
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
           "
         >
           <div
@@ -960,8 +960,8 @@ export default function CommunityNotifications({
                   focus:bg-white
                   focus:ring-4
                   focus:ring-cyan-500/10
-                  dark:border-white/10
-                  dark:bg-slate-950
+                  dark:border-white/[0.08]
+                  dark:bg-[#07111e]
                   dark:text-white
                   dark:focus:bg-slate-950
                 "
@@ -1057,8 +1057,8 @@ export default function CommunityNotifications({
             border-slate-200
             bg-white
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
           "
         >
           <div
@@ -1445,7 +1445,7 @@ export default function CommunityNotifications({
                             shadow-sm
                             ring-1
                             ring-slate-200
-                            dark:bg-slate-900
+                            dark:bg-[#0d1729]
                             dark:ring-white/10
                           "
                         >
@@ -1477,7 +1477,7 @@ export default function CommunityNotifications({
                           shadow-sm
                           ring-1
                           ring-slate-200
-                          dark:bg-slate-900
+                          dark:bg-[#0d1729]
                           dark:ring-white/10
                         "
                       >
@@ -1504,8 +1504,8 @@ export default function CommunityNotifications({
             bg-white
             p-5
             shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
+            dark:border-white/[0.08]
+            dark:bg-[#0d1729]
             sm:p-6
           "
         >
@@ -1592,7 +1592,7 @@ export default function CommunityNotifications({
                 text-slate-600
                 transition
                 hover:bg-slate-50
-                dark:border-white/10
+                dark:border-white/[0.08]
                 dark:text-slate-300
                 dark:hover:bg-white/5
               "
