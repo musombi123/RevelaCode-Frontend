@@ -1367,7 +1367,7 @@ export default function CommunityDashboard({
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 px-3 py-2.5 dark:border-white/10 sm:gap-2 sm:px-4">
                   <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><ImageIcon size={15} className="text-emerald-600 dark:text-emerald-300" /> Photo / video</button>
-                  <button type="button" onClick={() => navigate("community-circles")} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><FileText size={15} className="text-violet-600 dark:text-violet-300" /> Share PDF to a group</button>
+                  <button type="button" onClick={() => navigate("community-circles")} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><FileText size={15} className="text-violet-600 dark:text-violet-300" /> Find a network</button>
                   <button type="button" onClick={openComposer} className="inline-flex min-h-9 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"><MessageCircle size={15} className="text-cyan-600 dark:text-cyan-300" /> Start a discussion</button>
                 </div>
               </section>
@@ -1391,10 +1391,27 @@ export default function CommunityDashboard({
                 <div className="mb-3 flex items-end justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">Community stream</p>
-                    <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">Latest from your community</h2>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Real posts and conversations from the connected Community service.</p>
+                    <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">The community feed</h2>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Ideas, questions, opportunities and updates shared across Jumuiya.</p>
                   </div>
                   <button type="button" onClick={() => navigate("community-feed")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">View all <ArrowRight size={12} /></button>
+                </div>
+                <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]" aria-label="Community feed views">
+                  {PULSE_MODES.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => {
+                        setPulseMode(mode.value);
+                        setWorkspacePage("home");
+                        setActiveSurface("pulse");
+                      }}
+                      aria-pressed={pulseMode === mode.value && activeSurface === "pulse"}
+                      className={"min-h-9 shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-extrabold transition " + (pulseMode === mode.value && activeSurface === "pulse" ? "border-cyan-500 bg-cyan-500 text-slate-950" : "border-slate-200 bg-white text-slate-500 hover:border-cyan-300 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300")}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
                 </div>
                 {loading ? (
                   <LoadingState />
@@ -1619,7 +1636,7 @@ export default function CommunityDashboard({
           Create
         </button>
         <button type="button" onClick={() => navigate("community-chats")} data-demo="community-chat-nav" aria-current={workspacePage === "chats" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "chats" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
-          <MessageCircle size={18} /> Matters
+          <MessageCircle size={18} /> Chats
         </button>
         <button type="button" onClick={() => navigate("community-me")} aria-current={workspacePage === "me" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "me" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <User size={18} /> My space
