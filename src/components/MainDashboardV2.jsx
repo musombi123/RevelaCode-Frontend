@@ -35,6 +35,7 @@ import Loading from "./common/Loading.jsx";
 import AvatarMenu from "./accounts/AvatarMenu.jsx";
 import Notifications from "./accounts/Notifications.jsx";
 import SystemHomeNotifications from "./SystemHomeNotifications.jsx";
+import NetworkStatusBanner from "./NetworkStatusBanner.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
@@ -1412,6 +1413,8 @@ const BIASHARA_SECTION_KEYS = new Set(
               <Menu size={19} />
             </button>
           )}
+
+          <NetworkStatusBanner />
 
           {/* =================================================
               DASHBOARD CONTENT
