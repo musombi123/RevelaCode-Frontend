@@ -32,6 +32,7 @@ import {
   Users,
 } from "lucide-react";
 import { useElimuApi } from "@/services/elimuApi.jsx";
+import WebsiteCompliance from "@/components/compliance/WebsiteCompliance.jsx";
 
 const NAV_ITEMS = [
   { path: "", label: "Home", icon: School },
@@ -1446,6 +1447,8 @@ export default function ElimuPublicSchoolPage({ customDomainMode = false } = {})
           </div>
         </div>
       </footer>
+
+      <WebsiteCompliance tenantType="school" tenantId={text(school, ["id", "_id"])} primary={websiteTheme.primary}/>
 
       {selectedMedia && (
         <div
