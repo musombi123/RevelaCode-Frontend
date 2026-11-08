@@ -365,11 +365,11 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">
             <MessageCircle size={13} />
-            Matters
+            Chats & matters
           </div>
-          <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">Conversations with a purpose.</h1>
+          <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">Your conversations, with clear next steps.</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Each matter should stay attached to the need or offer that started it, with an explicit Open → Agreed → Done progress.
+            Keep discussions connected to the people, needs and offers that started them. Where the backend supports it, track progress from Open to Agreed to Done.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -428,7 +428,7 @@ export default function CommunityMattersWorkspace({ api, currentUserId }) {
       <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[minmax(230px,0.78fr)_minmax(0,1.5fr)]">
         <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900 sm:p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-black text-slate-900 dark:text-white">Your matters</h2>
+            <h2 className="text-sm font-black text-slate-900 dark:text-white">Your conversations</h2>
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500 dark:bg-slate-800 dark:text-slate-300">{matterResult.items.length}</span>
           </div>
           <div className="space-y-4">
