@@ -1629,7 +1629,7 @@ export default function CommunityDashboard({
 
       {/* Floating phone navigation dock */}
       <nav aria-label="Jumuiya Community navigation" className="fixed inset-x-3 bottom-[max(10px,env(safe-area-inset-bottom))] z-[90] mx-auto grid w-auto max-w-[440px] grid-cols-5 items-end gap-1 rounded-[24px] border border-slate-200/90 bg-white/95 p-2 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:border-white/[0.09] dark:bg-[#101c2e]/95 lg:hidden">
-        <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "home" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
+        <button type="button" onClick={() => navigate("community-home")} aria-current={workspacePage === "home" && activeSurface !== "discovery" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (workspacePage === "home" && activeSurface !== "discovery" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
           <Home size={18} /> Home
         </button>
         <button type="button" onClick={() => navigate("community-discover")} aria-current={activeSurface === "discovery" ? "page" : undefined} className={"flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-black " + (activeSurface === "discovery" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-400")}>
