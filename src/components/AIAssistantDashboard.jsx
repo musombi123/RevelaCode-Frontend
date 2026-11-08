@@ -831,7 +831,8 @@ export default function AIAssistantDashboard({
           String(text || "")
             .trim();
 
-        const humanizerIntent = /\bhumaniz(?:e|ing)\b/i.test(cleaned);
+        const selectedToolCommand = String(inputMeta?.toolCommand || "").trim().toLowerCase();
+        const humanizerIntent = selectedToolCommand === "/humanize" || /\bhumaniz(?:e|ing)\b/i.test(cleaned);
         const directHumanizerText = cleaned.match(/(?:humaniz(?:e|ing)(?:\s+it)?|make\s+it\s+sound\s+natural)\s*[:—-]\s*([\s\S]+)$/i)?.[1]?.trim() || "";
 
         /*
@@ -955,7 +956,11 @@ export default function AIAssistantDashboard({
         // The frontend only preserves the explicit image-generation follow-up.
         const requestMessage = imageDescriptionFollowup
           ? `Generate an image of: ${cleaned}`
-          : cleaned;
+          : selectedToolCommand === "/humanize"
+            ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\n\n${cleaned}`
+            : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
+              ? `${selectedToolCommand} ${cleaned}`.trim()
+              : cleaned;
 
         try {
           /*
@@ -1053,7 +1058,7 @@ export default function AIAssistantDashboard({
                   headers: { "Content-Type": "application/json",  },
                   signal: controller.signal,
                   body: JSON.stringify({
-                    message: cleaned || (attachedFile.type?.startsWith("image/")
+                    message: requestMessage || (attachedFile.type?.startsWith("image/")
                       ? "Interpret the image using only the local perception findings below. State limitations clearly."
                       : "Analyze the document using only the extracted content below."),
                     hub: "auto",
@@ -1225,7 +1230,7 @@ export default function AIAssistantDashboard({
               },
                 signal: controller.signal,
                 body: JSON.stringify({
-                  message: cleaned || "Analyze the attached media using the available observations.",
+                  message: requestMessage || "Analyze the attached media using the available observations.",
                   hub: "auto",
                   sessionId: String(chatId || activeChatId || ""),
                   conversationId: String(chatId || activeChatId || ""),
