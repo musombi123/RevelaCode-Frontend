@@ -41,6 +41,7 @@ function mapAcceptedRangeToOriginal(page, pageNumber, start, end, replacement, a
 
 export default function HumanizerWorkspace({ embedded = false }) {
   const auth = useAuth();
+  const authFetch = auth?.authFetch;
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
   const [documentName, setDocumentName] = useState("");
@@ -61,16 +62,11 @@ export default function HumanizerWorkspace({ embedded = false }) {
   const pdfExportUnsupported = acceptedEdits.some((edit) => !pages.find((page) => page.page === edit.page)?.layoutSupported);
   const canExportPdf = Boolean(file && acceptedEdits.length && !manualTextEdited && !pdfExportUnsupported);
 
-  async function authHeaders() {
-    const token = typeof auth?.getAccessToken === "function"
-      ? await auth.getAccessToken()
-      : localStorage.getItem("revelacode_access_token") || localStorage.getItem("access_token") || localStorage.getItem("token") || "";
-    const tokenType = typeof auth?.getTokenType === "function" ? await auth.getTokenType() : "Bearer";
-    // The API is the authentication authority. Send the current session when
-    // available, but never redirect or block locally; the backend returns the
-    // authoritative 401/403 response if this session is not accepted.
-    if (!token) return {};
-    return { Authorization: (tokenType || "Bearer") + " " + String(token).replace(/^Bearer\s+/i, "") };
+  function requireAuthenticatedFetch() {
+    if (typeof authFetch !== "function") {
+      throw new Error("RevelaCode's authenticated request service is unavailable. Reload the workspace session and retry.");
+    }
+    return authFetch;
   }
 
   function captureSelection() {
@@ -90,10 +86,10 @@ export default function HumanizerWorkspace({ embedded = false }) {
     if (!file) return;
     setLoading(true); setError(""); setNotice("");
     try {
-      const headers = await authHeaders();
+      const request = requireAuthenticatedFetch();
       const body = new FormData();
       body.append("file", file);
-      const response = await fetch(API_BASE + "/api/humanizer/pdf/extract", { method: "POST", headers, body });
+      const response = await request(API_BASE + "/api/humanizer/pdf/extract", { method: "POST", body });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload?.success) throw new Error(payload?.error?.message || "Could not extract this PDF.");
       const extracted = (payload.data.pages || []).map((page) => ({
@@ -115,9 +111,9 @@ export default function HumanizerWorkspace({ embedded = false }) {
     if (!selection.text.trim()) { setError("Highlight a word or phrase in the page text first."); return; }
     setLoading(true); setError(""); setNotice("");
     try {
-      const headers = await authHeaders();
-      const response = await fetch(API_BASE + "/api/humanizer/suggest", {
-        method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+      const request = requireAuthenticatedFetch();
+      const response = await request(API_BASE + "/api/humanizer/suggest", {
+        method: "POST",
         body: JSON.stringify({ selected_text: selection.text, style: "natural" }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -137,9 +133,9 @@ export default function HumanizerWorkspace({ embedded = false }) {
     if (!selection.text.trim()) { setError("Highlight the exact passage you want Gemini to produce first."); return; }
     setLoading(true); setError(""); setNotice("");
     try {
-      const headers = await authHeaders();
-      const response = await fetch(API_BASE + "/api/humanizer/generate", {
-        method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+      const request = requireAuthenticatedFetch();
+      const response = await request(API_BASE + "/api/humanizer/generate", {
+        method: "POST",
         body: JSON.stringify({ selected_text: selection.text, style: "natural" }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -217,11 +213,11 @@ export default function HumanizerWorkspace({ embedded = false }) {
     if (!canExportPdf || !file) return;
     setLoading(true); setError(""); setNotice("");
     try {
-      const headers = await authHeaders();
+      const request = requireAuthenticatedFetch();
       const body = new FormData();
       body.append("file", file);
       body.append("accepted_replacements", JSON.stringify(acceptedEdits));
-      const response = await fetch(API_BASE + "/api/humanizer/pdf/reconstruct", { method: "POST", headers, body });
+      const response = await request(API_BASE + "/api/humanizer/pdf/reconstruct", { method: "POST", body });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload?.error?.message || "The PDF could not be reconstructed safely.");
