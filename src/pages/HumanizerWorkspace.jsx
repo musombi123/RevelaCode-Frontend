@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-const COMPLIANCE_API_BASE = String(import.meta.env.VITE_REVELACODE_API_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "https://revelacode-backend.onrender.com").replace(/\/$/, "");
+const API_BASE_VALUE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").trim();
+const API_BASE = API_BASE_VALUE.endsWith("/") ? API_BASE_VALUE.slice(0, -1) : API_BASE_VALUE;
+const COMPLIANCE_API_BASE_VALUE = String(import.meta.env.VITE_REVELACODE_API_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || "https://revelacode-backend.onrender.com").trim();
+const COMPLIANCE_API_BASE = COMPLIANCE_API_BASE_VALUE.endsWith("/") ? COMPLIANCE_API_BASE_VALUE.slice(0, -1) : COMPLIANCE_API_BASE_VALUE;
 
 function saveText(filename, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
