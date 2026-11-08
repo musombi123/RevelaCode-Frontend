@@ -209,31 +209,40 @@ export default function NotificationsBell({ onNavigate }) {
   // ==========================================================
 
   const displayNotifications = useMemo(() => {
-    return [...notifications].sort(
-      (a, b) => {
-        const aTime = new Date(
-          a.timestamp || 0
-        ).getTime();
-
-        const bTime = new Date(
-          b.timestamp || 0
-        ).getTime();
-
-        return bTime - aTime;
-      }
-    );
-  }, [notifications]);
+    return [...systemNotifications, ...notifications].sort((a, b) => {
+      const aTime = new Date(a.timestamp || 0).getTime();
+      const bTime = new Date(b.timestamp || 0).getTime();
+      return bTime - aTime;
+    });
+  }, [notifications, systemNotifications]);
 
   // ==========================================================
   // HANDLE CLICK
   // ==========================================================
 
   const handleNotificationClick = async (notification) => {
-    if (notification.system) {\n      const updated = systemNotifications.map((item) => String(item.id) === String(notification.id) ? { ...item, read: true } : item);\n      setSystemNotifications(updated);\n      try { localStorage.setItem("revelacode_system_notifications", JSON.stringify(updated)); } catch { /* Session state still updates. */ }\n    } else if (!notification.read) await markAsRead(notification.id);
+    if (notification.system) {
+      const updated = systemNotifications.map((item) =>
+        String(item.id) === String(notification.id) ? { ...item, read: true } : item
+      );
+      setSystemNotifications(updated);
+      try {
+        localStorage.setItem("revelacode_system_notifications", JSON.stringify(updated));
+      } catch { /* Session state still updates. */ }
+    } else if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+
     const rawTarget = String(notification.hub || notification.destination || notification.target || "").toLowerCase();
-    const destination = ({ ai: "ai", revelaai: "ai", faith: "faith", scripture: "faith", elimu: "education", school: "education", biashara: "biashara", shamba: "shamba", community: "community", jumuiya: "community", home: "home" })[rawTarget];
+    const destination = ({
+      ai: "ai", revelaai: "ai", faith: "faith", scripture: "faith",
+      elimu: "education", school: "education", biashara: "biashara",
+      shamba: "shamba", community: "community", jumuiya: "community", home: "home",
+    })[rawTarget];
     if (destination) onNavigate?.(destination);
-    else if (notification.url || notification.download_url) window.open(notification.url || notification.download_url, "_blank", "noopener,noreferrer");
+    else if (notification.url || notification.download_url) {
+      window.open(notification.url || notification.download_url, "_blank", "noopener,noreferrer");
+    }
     setOpen(false);
   };
 
