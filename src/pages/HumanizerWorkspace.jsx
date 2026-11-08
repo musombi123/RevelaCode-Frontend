@@ -43,6 +43,7 @@ export default function HumanizerWorkspace({ embedded = false }) {
   const auth = useAuth();
   const editorRef = useRef(null);
   const [file, setFile] = useState(null);
+  const [pastedText, setPastedText] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [pages, setPages] = useState([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -84,6 +85,33 @@ export default function HumanizerWorkspace({ embedded = false }) {
     setAccepted({});
     setGeminiDraft(null);
     setNotice(text.trim() ? "Selection ready. Only this passage will be processed." : "Highlight a word or phrase in the page text.");
+  }
+
+  function loadPastedText() {
+    const source = String(pastedText || "").trim();
+    if (!source) {
+      setError("Paste or type the text you want to humanize first.");
+      return;
+    }
+    setFile(null);
+    setDocumentName("Pasted text");
+    setPages([{
+      page: 1,
+      text: source,
+      originalText: source,
+      extractionMethod: "pasted",
+      layoutSupported: false,
+      layoutReason: "Pasted text can be revised and exported as text. PDF layout reconstruction requires an original PDF.",
+    }]);
+    setPageIndex(0);
+    setSelection({ start: 0, end: 0, text: "" });
+    setSuggestions([]);
+    setAccepted({});
+    setGeminiDraft(null);
+    setAcceptedEdits([]);
+    setManualTextEdited(false);
+    setError("");
+    setNotice("Text loaded. Select a word or phrase to receive focused suggestions.");
   }
 
   async function uploadPdf() {
@@ -282,8 +310,27 @@ export default function HumanizerWorkspace({ embedded = false }) {
               {loading ? "Extracting…" : "Extract PDF text"}
             </button>
           </div>
+          <div className="mt-5 border-t border-line pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-fg">Or paste your text</h3>
+                <p className="mt-1 text-xs text-muted">Paste an essay, paragraph or selected passage directly into the studio.</p>
+              </div>
+              <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-muted">Text mode</span>
+            </div>
+            <textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} rows={5}
+              placeholder="Paste or type the text you want to refine…"
+              className="mt-3 min-h-32 w-full resize-y rounded-xl border border-line bg-input p-3 text-sm leading-6 text-fg outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10" />
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-muted">{pastedText.trim() ? pastedText.trim().split(/\\s+/).filter(Boolean).length.toLocaleString() + " words" : "Your original text is not changed until you approve edits."}</span>
+              <button type="button" onClick={loadPastedText} disabled={!pastedText.trim() || loading}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-inverse transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40">
+                Load text into studio
+              </button>
+            </div>
+          </div>
           <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-muted">
-            Privacy: the PDF is processed in memory. Local suggestions do not call Gemini; Gemini receives only the passage you select. No change is applied until you approve it.
+            Privacy: PDFs are processed in memory. Local suggestions do not call Gemini; Gemini receives only the passage you select. No change is applied until you approve it. Pasted text can be exported as revised TXT; original PDF layout export is available only when you upload a supported PDF.
           </p>
         </section>
 
