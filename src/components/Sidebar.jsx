@@ -316,10 +316,6 @@ export default function Sidebar({
                 className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-2 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
                 <Camera size={15}/>Vision
               </button>
-              <button type="button" onClick={openTool} title="Open Selective Humanizer" aria-label="Open Humanizer"
-                className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-surface-2 px-3 text-xs font-semibold text-fg-secondary hover:border-accent/40 hover:text-accent">
-                <FileText size={15}/>Selective Humanizer
-              </button>
               <button type="button" role="switch" aria-checked={freeMode} onClick={() => onToggleFreeMode?.()}
                 title={freeMode ? "Turn off weak-network mode" : "Enable weak-network mode"}
                 className="col-span-2 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-line bg-surface-2 px-3 text-left hover:border-accent/35"
