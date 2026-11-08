@@ -26,9 +26,17 @@ const FILE_STAGES = [
   { id: "streaming", label: "Streaming response", detail: "Displaying the result incrementally" },
 ];
 
+const LOCAL_FILE_STAGES = [
+  { id: "preparing", label: "Preparing your request", detail: "Checking the attached file and prompt" },
+  { id: "local-analysis-only", label: "Analyzing on this device", detail: "Extracting document content or measuring media locally" },
+  { id: "composing", label: "Preparing your answer", detail: "Formatting the on-device analysis" },
+  { id: "streaming", label: "Streaming response", detail: "Displaying the result incrementally" },
+];
+
 export default function ThinkingStages({ stage = "preparing", prompt = "" }) {
   const stages = useMemo(() => {
     if (stage === "local-reasoning") return LOCAL_STAGES;
+    if (stage === "local-analysis-only") return LOCAL_FILE_STAGES;
     if (stage === "local-analysis") return FILE_STAGES;
     return ADAPTIVE_STAGES;
   }, [stage]);
