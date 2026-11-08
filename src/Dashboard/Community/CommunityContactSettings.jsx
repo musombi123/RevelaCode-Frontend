@@ -139,7 +139,7 @@ export default function CommunityContactSettings({ onBack }) {
         <button
           type="button"
           onClick={() => { if (typeof onBack === "function") onBack(); }}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-white/5"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-white/[0.08] dark:bg-[#0d1729] dark:text-slate-300 dark:hover:bg-white/5"
           aria-label="Back to Community"
         >
           <ArrowLeft size={17} />
@@ -154,7 +154,7 @@ export default function CommunityContactSettings({ onBack }) {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-7">
+      <div className="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#0d1729] sm:p-7">
         <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-400/10 blur-3xl" />
 
         <div className="relative flex items-start gap-4">
@@ -178,7 +178,7 @@ export default function CommunityContactSettings({ onBack }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="relative mt-6 space-y-5">
-            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 dark:border-white/10 dark:hover:border-cyan-500/30">
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-cyan-200 dark:border-white/[0.08] dark:hover:border-cyan-500/30">
               <input
                 type="checkbox"
                 checked={enabled}
@@ -222,7 +222,7 @@ export default function CommunityContactSettings({ onBack }) {
                   setError("");
                 }}
                 placeholder="+254712345678"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/10 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
               />
               <p className="mt-2 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
                 Use your full international number, including the country code. Example: +254712345678. Only enable contact if you are comfortable receiving messages from other members.
@@ -260,7 +260,7 @@ export default function CommunityContactSettings({ onBack }) {
               <button
                 type="button"
                 onClick={() => { if (typeof onBack === "function") onBack(); }}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/5"
               >
                 Back to Community
               </button>
