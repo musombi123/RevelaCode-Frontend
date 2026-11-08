@@ -2063,8 +2063,9 @@ html[data-theme="dark"] { --premium-rgb: 251 191 36; }
 capacitor-admob-native {
   display: block !important;
   width: 100% !important;
+  max-width: 100% !important;
   min-width: 120px !important;
-  height: 140px !important;
+  height: clamp(120px, 34vw, 168px) !important;
   min-height: 120px !important;
   box-sizing: border-box !important;
   overflow: visible !important;
