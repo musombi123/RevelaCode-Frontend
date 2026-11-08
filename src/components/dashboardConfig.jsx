@@ -1167,6 +1167,12 @@ function HomeDashboard({
         const asset = (release.assets || []).find((item) => wanted.test(String(item.name || "")));
         const actionUrl = asset?.browser_download_url || release.html_url;
         if (!actionUrl || !active) return;
+        let alreadySeen = false;
+        try {
+          const seenKey = `revelacode_seen_update:${platform}:${latestVersion}`;
+          alreadySeen = localStorage.getItem(seenKey) === "true";
+          if (!alreadySeen) localStorage.setItem(seenKey, "true");
+        } catch { /* Update remains visible in the feed. */ }
         const row = {
           id: `system-update-${platform}-${latestVersion}`,
           title: androidBuild ? `RevelaCode Android ${latestVersion} is available` : `RevelaCode Windows ${latestVersion} is available`,
@@ -1175,16 +1181,9 @@ function HomeDashboard({
           timestamp: release.published_at || release.created_at || new Date().toISOString(),
           action_url: actionUrl,
           hub: "settings",
-          read: false,
+          read: alreadySeen,
         };
         setSystemUpdateRows([row]);
-        try {
-          const seenKey = `revelacode_seen_update:${platform}:${latestVersion}`;
-          if (localStorage.getItem(seenKey) !== "true") {
-            localStorage.setItem(seenKey, "true");
-            setNotificationToast(row);
-          }
-        } catch { /* Update remains visible in the feed. */ }
       } catch {
         // Release lookup is optional; never expose GitHub/API errors in the UI.
       }
@@ -1256,7 +1255,7 @@ function HomeDashboard({
     <section aria-label={t("System notifications")} className="min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-slate-900 sm:p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0"><h2 className="text-sm font-black text-slate-950 dark:text-white">{t("Notifications")}</h2><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{t("Updates and activity from your RevelaCode hubs.")}</p></div>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{formatNumber((unreadCount || 0) + systemUpdateRows.length)} {t("unread")}</span>
+        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{formatNumber((unreadCount || 0) + systemUpdateRows.filter((item) => !item.read).length)} {t("unread")}</span>
       </div>
       {notificationRows.length ? (
         <div className="mt-2 divide-y divide-slate-100 dark:divide-white/10">
