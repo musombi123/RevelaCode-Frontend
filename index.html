@@ -302,6 +302,9 @@
     ></script>
   
     <style>
+      #revelacode-startup-loader { position:fixed; inset:0; z-index:2147482000; display:grid; place-items:center; background:#0a0f16; color:#e2e8f0; font:600 14px/1.4 Inter,system-ui,sans-serif; text-align:center; }
+      #revelacode-startup-loader .spinner { width:30px; height:30px; margin:0 auto 14px; border-radius:50%; border:3px solid rgba(255,255,255,.18); border-top-color:#10b981; animation:revela-spin .8s linear infinite; }
+      @keyframes revela-spin { to { transform:rotate(360deg); } }
       #revelacode-launch-splash[hidden] { display: none !important; }
       #revelacode-launch-splash {
         position: fixed;
@@ -382,6 +385,7 @@
       <img alt="RevelaCode — Code. Innovate. Transform." />
     </div>
     <div id="root"></div>
+    <div id="revelacode-startup-loader" role="status" aria-live="polite"><div><div class="spinner"></div><div>Starting RevelaCode…</div></div></div>
 
     <script type="module" src="/src/main.jsx"></script>
   </body>
