@@ -51,7 +51,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 const BibleDashboard = React.lazy(() => import("./components/BibleDashboard.jsx"));
 const UserAccountDashboard = React.lazy(() => import("./components/UserAccountDashboard.jsx"));
 
-function SPAWrapper({ children }) {
+function SPAWrapper({ children, deferStartModal = false }) {
   const { hasStarted, loading } = useAuth();
 
   if (loading) {
@@ -65,7 +65,10 @@ function SPAWrapper({ children }) {
     );
   }
 
-  if (!hasStarted) return <StartModal />;
+  // /app delegates sign-in and guest entry to MainDashboardV2 so the
+  // workspace and its authentication modal share one lifecycle. Other
+  // protected SPA routes retain the wrapper-level entry modal.
+  if (!hasStarted && !deferStartModal) return <StartModal />;
 
   return children;
 }
@@ -128,7 +131,7 @@ function NativeOAuthDeepLinkHandler() {
 
 function InternalDashboard({ initialHub = null }) {
   return (
-    <SPAWrapper>
+    <SPAWrapper deferStartModal>
       <Layout>
         <MainDashboardV2 initialDashboardKey={initialHub} />
       </Layout>
