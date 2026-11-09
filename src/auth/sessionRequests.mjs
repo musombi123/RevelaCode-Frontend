@@ -76,7 +76,14 @@ export function isExplicitRevokedSessionResponse(status, payload) {
  * authenticated session after the user signs in or refreshes in another task.
  */
 export function isSameSessionCredential(currentToken, authorizationHeader) {
-  const current = String(currentToken || "").trim().replace(/^Bearer\\s+/i, "");
-  const attempted = String(authorizationHeader || "").trim().replace(/^\\S+\\s+/, "");
-  return Boolean(current && attempted && current === attempted);
+  const currentValue = String(currentToken || "").trim();
+  const current = currentValue.toLowerCase().startsWith("bearer ")
+    ? currentValue.slice(7).trim()
+    : currentValue;
+  const attempted = String(authorizationHeader || "").trim();
+  const separator = attempted.indexOf(" ");
+  const attemptedToken = separator >= 0
+    ? attempted.slice(separator + 1).trim()
+    : attempted;
+  return Boolean(current && attemptedToken && current === attemptedToken);
 }
