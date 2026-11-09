@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeSessionIdentity } from "../src/auth/sessionIdentity.mjs";
+import { isSameSessionCredential } from "../src/auth/sessionRequests.mjs";
 
 test("removes direct access and refresh credentials from cached profile identity", () => {
   const input = {
@@ -49,4 +50,11 @@ test("does not mutate the source account object", () => {
   const original = structuredClone(input);
   sanitizeSessionIdentity(input);
   assert.deepEqual(input, original);
+});
+
+test("a late 401 only matches the credential that made the request", () => {
+  assert.equal(isSameSessionCredential("fresh.jwt.value", "Bearer old.jwt.value"), false);
+  assert.equal(isSameSessionCredential("fresh.jwt.value", "Bearer fresh.jwt.value"), true);
+  assert.equal(isSameSessionCredential("Bearer fresh.jwt.value", "Bearer fresh.jwt.value"), true);
+  assert.equal(isSameSessionCredential("", "Bearer old.jwt.value"), false);
 });
