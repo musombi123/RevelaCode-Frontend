@@ -1,9 +1,6 @@
 
 import React, { useEffect, useRef } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
-import { registerPlugin } from "@capacitor/core";
-
-const NativeBrowser = registerPlugin("Browser");
 import {
   BrowserRouter,
   Routes,
@@ -102,7 +99,6 @@ function NativeOAuthDeepLinkHandler() {
         if (handledUrl.current === dedupeKey) return;
         handledUrl.current = dedupeKey;
 
-        NativeBrowser.close().catch(() => {});
         navigate(`/oauth/callback${query ? `?${query}` : ""}`, { replace: true });
       } catch (error) {
         console.warn("Could not process the Google OAuth app callback.", error);
