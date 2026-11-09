@@ -37,6 +37,7 @@ import Notifications from "./accounts/Notifications.jsx";
 import SystemHomeNotifications from "./SystemHomeNotifications.jsx";
 import NetworkStatusBanner from "./NetworkStatusBanner.jsx";
 import ConnectionStatusBanner from "./ConnectionStatusBanner.jsx";
+import SDAQuarterlyBackgroundSync from "./faith/SDAQuarterlyBackgroundSync.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
