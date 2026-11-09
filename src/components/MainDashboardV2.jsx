@@ -323,8 +323,6 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const offlineScope = isAuthenticated ? offlineScopeForUser(user) : "";
   const currentSearch = searchParams.toString();
 
-  const isGuest =
-    user?.role === "guest";
 
   // Restore the last active hub only when a direct hub link did not request
   // a different workspace. IndexedDB survives tab closure and app restarts.
