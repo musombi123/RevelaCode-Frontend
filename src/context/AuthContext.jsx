@@ -151,7 +151,7 @@ export function AuthProvider({
               const response = await fetch(`${backendBaseUrl}/api/auth/me`, {
                 method: "GET",
                 headers: {
-                  Authorization: `${readStoredTokenType() || "Bearer"} ${String(storedToken).replace(/^Bearer\\s+/i, "")}`,
+                  Authorization: `${readStoredTokenType() || "Bearer"} ${String(storedToken).replace(/^Bearer\s+/i, "")}`,
                   Accept: "application/json",
                 },
                 credentials: "include",
