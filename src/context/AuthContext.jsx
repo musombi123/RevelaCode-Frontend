@@ -115,72 +115,94 @@ export function AuthProvider({
   ======================================================= */
 
   useEffect(() => {
-    try {
-      const stored =
-        localStorage.getItem(
-          STORAGE_KEY
-        );
+    let active = true;
 
-      const storedToken =
-        readAccessToken();
+    const restoreSession = async () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const storedToken = readAccessToken();
+        let cachedIsGuest = false;
 
-      if (stored) {
-        try {
-          const parsed =
-            JSON.parse(
-              stored
-            );
-
-          if (
-            parsed?.user
-          ) {
-            setUser(
-              sanitizeSessionIdentity(parsed.user)
-            );
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            cachedIsGuest = Boolean(parsed?.isGuest);
+            if (parsed?.user) {
+              setUser(sanitizeSessionIdentity(parsed.user));
+            }
+            setIsGuest(cachedIsGuest);
+          } catch (error) {
+            console.warn("Invalid stored authentication session. Clearing it.", error);
+            localStorage.removeItem(STORAGE_KEY);
+            clearStoredTokens();
+            setUser(null);
+            setIsGuest(false);
           }
+        }
 
-          setIsGuest(
-            Boolean(
-              parsed?.isGuest
-            )
-          );
-        } catch (error) {
-          console.warn(
-            "Invalid stored authentication session. Clearing it.",
-            error
-          );
+        // A cached profile/JWT is not proof that the session is still valid.
+        // Confirm it with RevelaCode before the app decides whether to show
+        // the sign-in/start modal. Network failures preserve offline access;
+        // an authoritative 401 clears the expired/revoked session.
+        if (storedToken && !cachedIsGuest) {
+          const backendBaseUrl = resolveBackendBaseUrl(import.meta.env || {});
+          if (backendBaseUrl) {
+            try {
+              const response = await fetch(`${backendBaseUrl}/api/auth/me`, {
+                method: "GET",
+                headers: {
+                  Authorization: `${readStoredTokenType() || "Bearer"} ${String(storedToken).replace(/^Bearer\\s+/i, "")}`,
+                  Accept: "application/json",
+                },
+                credentials: "include",
+                cache: "no-store",
+              });
 
-          localStorage.removeItem(
-            STORAGE_KEY
-          );
+              if (response.status === 401 && active) {
+                clearStoredTokens();
+                localStorage.removeItem(STORAGE_KEY);
+                setUser(null);
+                setIsGuest(false);
+              } else if (response.ok && active) {
+                const payload = await response.json().catch(() => ({}));
+                const profile =
+                  payload?.user ||
+                  payload?.data?.user ||
+                  payload?.data?.data?.user ||
+                  payload?.data?.data ||
+                  payload?.data ||
+                  payload?.account ||
+                  null;
 
-          setUser(null);
-          setIsGuest(false);
+                if (profile && typeof profile === "object") {
+                  const verifiedUser = sanitizeSessionIdentity(profile);
+                  setUser(verifiedUser);
+                  setIsGuest(false);
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    user: verifiedUser,
+                    isGuest: false,
+                  }));
+                }
+              }
+            } catch (verificationError) {
+              console.warn("Could not verify the cached session; retaining offline session data.", verificationError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to restore authentication session:", error);
+      } finally {
+        if (active) {
+          setLoading(false);
+          setHasStarted(true);
+          setHydrated(true);
         }
       }
+    };
 
-      /*
-       * A persisted JWT means the application
-       * has an authenticated session available.
-       */
-      if (storedToken) {
-        setHasStarted(true);
-      } else {
-        setHasStarted(true);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to restore authentication session:",
-        error
-      );
-    } finally {
-      setLoading(false);
-      setHasStarted(true);
-      setHydrated(true);
-    }
-  }, [
-    readAccessToken,
-  ]);
+    restoreSession();
+    return () => { active = false; };
+  }, [readAccessToken]);
 
 
   /* =======================================================
