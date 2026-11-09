@@ -514,13 +514,11 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   ========================================================= */
 
   useEffect(() => {
-    if (!user) {
-      setShowStartModal(true);
-      return;
-    }
-
-    setShowStartModal(false);
-  }, [user]);
+    // The app entry modal is required whenever there is no verified
+    // authenticated session. A cached guest identity (or stale profile
+    // without a JWT) must not bypass the start/sign-in entry screen.
+    setShowStartModal(!isAuthenticated);
+  }, [isAuthenticated]);
 
   const handleStartComplete = useCallback(() => {
     setShowStartModal(false);
