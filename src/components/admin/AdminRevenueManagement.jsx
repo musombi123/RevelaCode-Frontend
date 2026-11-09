@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useAdminApi } from "@/services/adminApi.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
 
 const STREAMS = [
   ["smart_ai", "Smart AI"],
@@ -367,6 +368,11 @@ function EditPlanForm({ plan, saving, onCancel, onSave, billingEnabled, billingK
 
 export default function AdminRevenueManagement() {
   const adminApi = useAdminApi();
+  const { user } = useAuth();
+  const isSuperAdmin = [
+    user?.role,
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ].some((role) => String(role || "").trim().toLowerCase() === "super_admin");
   const [overview, setOverview] = useState(null);
   const [overviewError, setOverviewError] = useState("");
   const [plans, setPlans] = useState([]);
@@ -421,6 +427,12 @@ export default function AdminRevenueManagement() {
   }, [adminApi]);
 
   const loadPlans = useCallback(async (signal) => {
+    if (isSuperAdmin) {
+      setPlans([]);
+      setPlansError("");
+      setPlansLoading(false);
+      return;
+    }
     setPlansLoading(true);
     setPlansError("");
     try {
@@ -461,7 +473,7 @@ export default function AdminRevenueManagement() {
     } finally {
       if (!signal?.aborted) setPlansLoading(false);
     }
-  }, [adminApi]);
+  }, [adminApi, isSuperAdmin]);
 
   const loadCheckouts = useCallback(async (signal) => {
     setCheckoutsLoading(true);
@@ -828,7 +840,8 @@ export default function AdminRevenueManagement() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+      {!isSuperAdmin && (
+<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">Effective plans</h3>
@@ -874,8 +887,10 @@ export default function AdminRevenueManagement() {
           <span>{formatCount(plans.filter((plan) => plan.status === "retired").length)} retired plans</span>
         </div>
       </section>
+)}
 
-      <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-slate-900 sm:p-6">
+      {!isSuperAdmin && (
+<section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-900/50 dark:bg-slate-900 sm:p-6">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"><Smartphone className="h-5 w-5" /></span>
           <div>
@@ -921,6 +936,7 @@ export default function AdminRevenueManagement() {
           </div>
         ) : null}
       </section>
+)}
 
       <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -934,7 +950,8 @@ export default function AdminRevenueManagement() {
       {notice ? <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{notice}</div> : null}
       {actionError ? <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{actionError}</div> : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+      {!isSuperAdmin && (
+<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div><h3 className="text-base font-bold text-slate-900 dark:text-white">Pricing catalogue</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Create or edit plan proposals for any supported hub. Retire plans instead of deleting their history.</p></div>
           <div className="flex flex-wrap gap-2">
@@ -1058,6 +1075,7 @@ export default function AdminRevenueManagement() {
           </div>
         )}
       </section>
+)}
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="border-b border-slate-200 p-5 dark:border-slate-800 sm:p-6">
