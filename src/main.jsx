@@ -2,6 +2,7 @@ import React from "react";
 import { Capacitor } from "@capacitor/core";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { ErrorBoundary } from "./components/common/ErrorBoundary.jsx";
 import { ThemeProvider } from "./components/hooks/useTheme.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { HistoryProvider } from "./context/HistoryContext.jsx";
@@ -149,17 +150,37 @@ if (typeof window !== "undefined") {
   }
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <HistoryProvider>
-          <App />
-        </HistoryProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <HistoryProvider>
+            <App />
+          </HistoryProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
+requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("revelacode-startup-loader")?.remove()));
+window.setTimeout(() => document.getElementById("revelacode-startup-loader")?.remove(), 12000);
+
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  const showStartupError = (message) => {
+    let panel = document.getElementById("revelacode-dev-error");
+    if (!panel) {
+      panel = document.createElement("pre");
+      panel.id = "revelacode-dev-error";
+      panel.style.cssText = "position:fixed;inset:12px;z-index:2147483647;overflow:auto;white-space:pre-wrap;padding:18px;border:1px solid #ef4444;border-radius:12px;background:#1f0b10;color:#fecaca;font:13px/1.5 monospace";
+      document.body.appendChild(panel);
+    }
+    panel.textContent = "RevelaCode startup error\\n\\n" + message;
+  };
+  window.addEventListener("error", (event) => showStartupError(event.error?.stack || event.message || "Unknown window error"));
+  window.addEventListener("unhandledrejection", (event) => showStartupError(event.reason?.stack || String(event.reason || "Unhandled promise rejection")));
+}
 
 if (launchSplash) {
   // Keep the splash visible until the first React frame is painted, with a
