@@ -15,7 +15,7 @@ import {
   clearStoredTokens,
 } from "@/auth/tokenStorage.mjs";
 import { sanitizeSessionIdentity } from "@/auth/sessionIdentity.mjs";
-import { isAuthoritativeSessionCheck, isExplicitRevokedSessionResponse } from "@/auth/sessionRequests.mjs";
+import { isAuthoritativeSessionCheck, isExplicitRevokedSessionResponse, isSameSessionCredential } from "@/auth/sessionRequests.mjs";
 import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
 
 /* =========================================================
