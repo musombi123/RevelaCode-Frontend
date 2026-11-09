@@ -55,3 +55,17 @@ test("platform admins can select a school and send protected Elimu staff invitat
   assert.match(dashboard, /schoolStaffInvitations/);
   assert.match(sidebar, /School Staff Invitations/);
 });
+
+
+test("Elimu invitation links preserve login context and open through Android App Links", () => {
+  const routes = read("src/App.jsx");
+  const login = read("src/components/StartModal.jsx");
+  const invitation = read("src/pages/ElimuInvitationPage.jsx");
+
+  assert.match(routes, /path="\\/elimu-invitation"/);
+  assert.match(routes, /isVerifiedElimuInvitationLink/);
+  assert.match(routes, /navigate\\(localPath, \\{ replace: true \\}\\)/);
+  assert.match(login, /window\\.location\\.pathname === "\\/elimu-invitation"/);
+  assert.match(invitation, /acceptStaffInvitation/);
+  assert.match(invitation, /identityMatchesInvitation/);
+});
