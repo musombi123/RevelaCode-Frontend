@@ -45,140 +45,46 @@ import {
 import usePreferences from "./hooks/usePreferences.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import DemoLauncher from "@/demo/DemoLauncher.jsx";
+import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 
 /* ======================================================
    HARDENED SAFE LAZY LOADING
 ====================================================== */
 
-function safeLazy(
-  importFn,
-  name,
-) {
-  const LazyComp = lazy(() =>
-    importFn().catch((error) => {
-      console.error(
-        `🚨 LAZY LOAD FAIL → ${name}:`,
-        error,
-      );
-
-      return {
-        default: function LazyLoadFallback() {
-          return (
-            <div
-              className="
-                flex
-                min-h-[240px]
-                items-center
-                justify-center
-                p-6
-              "
-            >
-              <div
-                className="
-                  w-full
-                  max-w-md
-                  rounded-2xl
-                  border
-                  border-red-200
-                  bg-red-50
-                  p-5
-                  text-center
-                  dark:border-red-900/50
-                  dark:bg-red-950/20
-                "
-              >
-                <p
-                  className="
-                    text-sm
-                    font-semibold
-                    text-red-700
-                    dark:text-red-400
-                  "
-                >
-                  {name} failed to load.
-                </p>
-
-                <p
-                  className="
-                    mt-1
-                    text-xs
-                    leading-5
-                    text-red-600/80
-                    dark:text-red-400/80
-                  "
-                >
-                  The workspace could not be loaded.
-                  Try another section or refresh the
-                  application.
-                </p>
-              </div>
-            </div>
-          );
-        },
-      };
-    }),
-  );
-
-  return function SafeLazyComponent(
-    props,
-  ) {
-    return (
-      <Suspense
-        fallback={
-          <div
-            className="
-              flex
-              min-h-[240px]
-              items-center
-              justify-center
-              p-6
-            "
-          >
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                rounded-2xl
-                border
-                border-gray-200
-                bg-white
-                px-4
-                py-3
-                text-sm
-                text-gray-500
-                shadow-sm
-                dark:border-gray-800
-                dark:bg-gray-900
-                dark:text-gray-400
-              "
-            >
-              <span
-                className="
-                  h-2.5
-                  w-2.5
-                  animate-pulse
-                  rounded-full
-                  bg-indigo-500
-                "
-              />
-
-              <span>
-                Loading {name}…
-              </span>
-            </div>
-          </div>
-        }
-      >
+function safeLazy(importFn, name) {
+  const LazyComp = lazy(async () => {
+    const retryKey = `revelacode-chunk-reload:${name}`;
+    try {
+      const module = await importFn();
+      try { sessionStorage.removeItem(retryKey); } catch {}
+      return module;
+    } catch (firstError) {
+      console.error(`Lazy chunk failed for ${name}; retrying once.`, firstError);
+      try {
+        await new Promise((resolve) => window.setTimeout(resolve, 350));
+        const module = await importFn();
+        try { sessionStorage.removeItem(retryKey); } catch {}
+        return module;
+      } catch (retryError) {
+        let didReload = false;
+        try {
+          didReload = sessionStorage.getItem(retryKey) === "1";
+          if (!didReload) sessionStorage.setItem(retryKey, "1");
+        } catch { didReload = true; }
+        if (!didReload && typeof window !== "undefined") window.location.reload();
+        console.error(`Lazy chunk retry failed for ${name}.`, retryError);
+        throw retryError;
+      }
+    }
+  });
+  return function SafeLazyComponent(props) {
+    return <ErrorBoundary>
+      <Suspense fallback={<div role="status" className="flex min-h-[240px] items-center justify-center gap-3 p-6 text-sm text-slate-400"><span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />Loading {name}…</div>}>
         <LazyComp {...props} />
       </Suspense>
-    );
+    </ErrorBoundary>;
   };
 }
-
-/* ======================================================
-   HOME DATA HELPERS
-====================================================== */
 
 function formatNumber(
   value,
