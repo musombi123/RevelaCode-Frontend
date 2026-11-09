@@ -162,6 +162,13 @@ export function AuthProvider({
               // let a late 401 for the old credential erase a newer session.
               const credentialIsStillCurrent =
                 readAccessToken() === storedToken;
+              if (response.status === 401) {
+                const rejection = await response.clone().json().catch(() => ({}));
+                console.warn("RevelaCode rejected the stored login session.", {
+                  status: response.status,
+                  code: rejection?.code || rejection?.error_code || "unspecified",
+                });
+              }
               if (response.status === 401 && active && credentialIsStillCurrent) {
                 clearStoredTokens();
                 localStorage.removeItem(STORAGE_KEY);
