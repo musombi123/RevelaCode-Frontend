@@ -158,12 +158,16 @@ export function AuthProvider({
                 cache: "no-store",
               });
 
-              if (response.status === 401 && active) {
+              // This verification may have started before a fresh login. Never
+              // let a late 401 for the old credential erase a newer session.
+              const credentialIsStillCurrent =
+                readAccessToken() === storedToken;
+              if (response.status === 401 && active && credentialIsStillCurrent) {
                 clearStoredTokens();
                 localStorage.removeItem(STORAGE_KEY);
                 setUser(null);
                 setIsGuest(false);
-              } else if (response.ok && active) {
+              } else if (response.ok && active && credentialIsStillCurrent) {
                 const payload = await response.json().catch(() => ({}));
                 const profile =
                   payload?.user ||
@@ -1042,6 +1046,7 @@ export function AuthProvider({
         let requestWasAuthenticated = Boolean(
           headers.has("Authorization") || readRefreshToken()
         );
+        let credentialUsed = headers.get("Authorization") || "";
         let response = await fetch(url, { ...options, headers });
         const initial401Payload = response.status === 401
           ? await response.clone().json().catch(() => ({}))
@@ -1126,6 +1131,7 @@ export function AuthProvider({
                 }
 
                 requestWasAuthenticated = true;
+                credentialUsed = retryHeaders.get("Authorization") || "";
                 response = await fetch(url, { ...options, headers: retryHeaders });
               }
             } catch (error) {
@@ -1175,7 +1181,13 @@ export function AuthProvider({
             }
           }
 
-          if (primarySessionRejected) {
+          // Ignore late failures from requests made with a token that has
+          // since been replaced by a successful login or refresh.
+          const credentialIsStillCurrent = isSameSessionCredential(
+            readAccessToken(),
+            credentialUsed,
+          );
+          if (primarySessionRejected && credentialIsStillCurrent) {
             clearToken();
             try {
               localStorage.removeItem(STORAGE_KEY);
