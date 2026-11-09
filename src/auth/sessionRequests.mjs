@@ -69,3 +69,14 @@ export function isExplicitRevokedSessionResponse(status, payload) {
 
   return /this session has been revoked/.test(message);
 }
+
+
+/**
+ * Prevent an in-flight request made with an older JWT from clearing a newer
+ * authenticated session after the user signs in or refreshes in another task.
+ */
+export function isSameSessionCredential(currentToken, authorizationHeader) {
+  const current = String(currentToken || "").trim().replace(/^Bearer\\s+/i, "");
+  const attempted = String(authorizationHeader || "").trim().replace(/^\\S+\\s+/, "");
+  return Boolean(current && attempted && current === attempted);
+}
