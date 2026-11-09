@@ -318,7 +318,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const { theme, setTheme } =
     useTheme();
 
-  const { user, logout, isAuthenticated } =
+  const { user, isGuest, logout, isAuthenticated } =
     useAuth();
   const offlineScope = isAuthenticated ? offlineScopeForUser(user) : "";
   const currentSearch = searchParams.toString();
@@ -514,11 +514,11 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   ========================================================= */
 
   useEffect(() => {
-    // The app entry modal is required whenever there is no verified
-    // authenticated session. A cached guest identity (or stale profile
-    // without a JWT) must not bypass the start/sign-in entry screen.
-    setShowStartModal(!isAuthenticated);
-  }, [isAuthenticated]);
+    // Guests have deliberately completed the entry flow and must be allowed
+    // into public workspaces. Non-guest users need a verified JWT; no user
+    // (or a cached identity without a valid session) must see the entry modal.
+    setShowStartModal(!user || (!isGuest && !isAuthenticated));
+  }, [user, isGuest, isAuthenticated]);
 
   const handleStartComplete = useCallback(() => {
     setShowStartModal(false);
