@@ -832,11 +832,15 @@ export default function AdminRevenueManagement() {
           </div>
         </div>
 
-        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-6">
+        <div className={"grid gap-3 p-4 sm:p-6 " + (isSuperAdmin ? "sm:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-4")}>
           <MetricCard title="Transaction intents" value={metrics.total_intents} description="All recorded purchase requests" icon={ClipboardList} />
           <MetricCard title="Pending intents" value={metrics.pending_intents} description="Not confirmed revenue" icon={Clock3} />
-          <MetricCard title="Effective paid plans" value={effectivePaidPlans.length} description="Can accept live M-PESA checkout now" icon={CheckCircle2} />
-          <MetricCard title="Available paid plans" value={availablePaidPlans.length} description="Marked Available in the catalogue" icon={CircleDollarSign} />
+          {!isSuperAdmin ? (
+            <>
+              <MetricCard title="Effective paid plans" value={effectivePaidPlans.length} description="Can accept live M-PESA checkout now" icon={CheckCircle2} />
+              <MetricCard title="Available paid plans" value={availablePaidPlans.length} description="Marked Available in the catalogue" icon={CircleDollarSign} />
+            </>
+          ) : null}
         </div>
       </section>
 
