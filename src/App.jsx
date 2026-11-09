@@ -18,6 +18,7 @@ import StartModal from "./components/StartModal.jsx";
 import AndroidPermissionSetup from "./components/AndroidPermissionSetup.jsx";
 import ElimuPublicSchoolPage from "./pages/jumuiya/ElimuPublicSchoolPage.jsx";
 import ElimuInvitationPage from "./pages/ElimuInvitationPage.jsx";
+import ElimuTestingWelcomePage from "./pages/ElimuTestingWelcomePage.jsx";
 import BiasharaInvitationPage from "./pages/BiasharaInvitationPage.jsx";
 import SupportInvitationPage from "./pages/SupportInvitationPage.jsx";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage.jsx";
@@ -547,6 +548,8 @@ export default function App() {
               <Route path="/b/:businessSlug" element={<BiasharaPublicWebsitePage />} />
 
               {/* Public school websites: /school-slug, /school-slug/about, etc. */}
+              <Route path="/elimu-testing" element={<ElimuTestingWelcomePage />} />
+
               <Route
                 path="/elimu-invitation"
                 element={
