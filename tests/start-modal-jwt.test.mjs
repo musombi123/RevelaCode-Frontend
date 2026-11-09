@@ -40,7 +40,8 @@ test("Android Google sign-in launches a browser and handles OAuth deep links", (
   assert.match(app, /isVerifiedAndroidAppLink/);
   assert.match(app, /parsed\.host === "revelacode\.co\.ke"/);
   assert.match(app, /parsed\.pathname === "\/oauth\/android-callback"/);
-  assert.match(app, /NativeBrowser\.close\(\)/);
+  assert.match(app, /CapacitorApp\.addListener\("appUrlOpen"/);
+  assert.doesNotMatch(app, /NativeBrowser\.close\(/);
 });
 
 test("Android support invitation Google acceptance uses the Android callback", async () => {
