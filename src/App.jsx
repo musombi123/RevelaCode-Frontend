@@ -80,7 +80,7 @@ function NativeOAuthDeepLinkHandler() {
     let listener;
     let active = true;
 
-    const processOAuthUrl = (value) => {
+    const processAppUrl = (value) => {
       if (!active || !value) return;
       try {
         const parsed = new URL(String(value));
@@ -88,33 +88,42 @@ function NativeOAuthDeepLinkHandler() {
           parsed.protocol === "com.revelacode.app:" &&
           parsed.hostname === "oauth" &&
           parsed.pathname === "/callback";
-        const isVerifiedAndroidAppLink =
+        const isVerifiedAndroidOAuthLink =
           parsed.protocol === "https:" &&
           parsed.host === "revelacode.co.ke" &&
           parsed.pathname === "/oauth/android-callback";
-        if (!isLegacyCustomScheme && !isVerifiedAndroidAppLink) return;
+        const isVerifiedElimuInvitationLink =
+          parsed.protocol === "https:" &&
+          parsed.host === "revelacode.co.ke" &&
+          parsed.pathname === "/elimu-invitation";
+
+        if (!isLegacyCustomScheme && !isVerifiedAndroidOAuthLink && !isVerifiedElimuInvitationLink) return;
 
         const query = parsed.searchParams.toString();
-        const dedupeKey = `${parsed.protocol}//${parsed.host}${parsed.pathname}?${query}`;
+        const suffix = query ? `?${query}` : "";
+        const dedupeKey = `${parsed.protocol}//${parsed.host}${parsed.pathname}${suffix}${parsed.hash || ""}`;
         if (handledUrl.current === dedupeKey) return;
         handledUrl.current = dedupeKey;
 
-        navigate(`/oauth/callback${query ? `?${query}` : ""}`, { replace: true });
+        const localPath = isVerifiedElimuInvitationLink
+          ? `/elimu-invitation${suffix}${parsed.hash || ""}`
+          : `/oauth/callback${suffix}`;
+        navigate(localPath, { replace: true });
       } catch (error) {
-        console.warn("Could not process the Google OAuth app callback.", error);
+        console.warn("Could not process the RevelaCode app link.", error);
       }
     };
 
-    CapacitorApp.addListener("appUrlOpen", ({ url }) => processOAuthUrl(url))
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => processAppUrl(url))
       .then(handle => {
         listener = handle;
         if (!active) handle.remove();
       })
-      .catch(error => console.warn("Native OAuth deep-link listener could not start.", error));
+      .catch(error => console.warn("Native app-link listener could not start.", error));
 
     CapacitorApp.getLaunchUrl()
-      .then(launch => processOAuthUrl(launch?.url))
-      .catch(error => console.warn("Could not inspect the Android OAuth launch URL.", error));
+      .then(launch => processAppUrl(launch?.url))
+      .catch(error => console.warn("Could not inspect the Android launch URL.", error));
 
     return () => {
       active = false;
