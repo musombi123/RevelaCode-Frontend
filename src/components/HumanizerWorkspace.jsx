@@ -2,18 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, FileText, Loader2, ShieldAlert, Sparkles, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
 
-const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-
-function authHeaders() {
-  try {
-    const token = localStorage.getItem("revelacode_access_token") || localStorage.getItem("access_token") || localStorage.getItem("token");
-    const type = localStorage.getItem("revelacode_token_type") || "Bearer";
-    return token ? { Authorization: `${type} ${token}` } : {};
-  } catch {
-    return {};
-  }
-}
+const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").trim().replace(/\/+$/, "");
+const COMPLIANCE_API_BASE = resolveBackendBaseUrl(import.meta.env || {});
 
 async function readResponse(response) {
   const payload = await response.json().catch(() => ({}));
@@ -105,9 +97,8 @@ export default function HumanizerWorkspace() {
     try {
       const form = new FormData();
       form.append("file", nextFile);
-      const response = await fetch(`${API_BASE}/api/humanizer/pdf/extract`, {
+      const response = await authFetch(`${API_BASE}/api/humanizer/pdf/extract`, {
         method: "POST",
-        headers: authHeaders(),
         body: form,
       });
       const data = await readResponse(response);
@@ -145,9 +136,9 @@ export default function HumanizerWorkspace() {
     if (!selection) return;
     setBusy(true); setError(""); setNotice("");
     try {
-      const response = await fetch(`${API_BASE}/api/humanizer/suggest`, {
+      const response = await authFetch(`${API_BASE}/api/humanizer/suggest`, {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           selected_text: selection.text,
           context_before: selection.before,
@@ -171,9 +162,9 @@ export default function HumanizerWorkspace() {
     const chosen = suggestions.filter((item, index) => accepted[index]);
     setBusy(true); setError("");
     try {
-      const response = await fetch(`${API_BASE}/api/humanizer/apply`, {
+      const response = await authFetch(`${API_BASE}/api/humanizer/apply`, {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source_text: selection.text, accepted_replacements: chosen }),
       });
       const data = await readResponse(response);
