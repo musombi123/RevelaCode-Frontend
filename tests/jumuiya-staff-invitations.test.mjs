@@ -31,7 +31,7 @@ test("Biashara exposes invitation creation, one-time share link, and authenticat
   assert.match(page, /emailMatches/);
   assert.match(page, /\/app\?hub=biashara/);
   assert.match(api, /team\/invitations\/accept/);
-  assert.match(routes, /path="\/biashara\/invitation"/);
+  assert.match(routes, /path="\/elimu-invitation"/);
 });
 
 test("Biashara Team remains reachable in small/simple workspaces", () => {
@@ -62,10 +62,10 @@ test("Elimu invitation links preserve login context and open through Android App
   const login = read("src/components/StartModal.jsx");
   const invitation = read("src/pages/ElimuInvitationPage.jsx");
 
-  assert.match(routes, /path="\\/elimu-invitation"/);
+  assert.match(routes, /path="\/elimu-invitation"/);
   assert.match(routes, /isVerifiedElimuInvitationLink/);
-  assert.match(routes, /navigate\\(localPath, \\{ replace: true \\}\\)/);
-  assert.match(login, /window\\.location\\.pathname === "\\/elimu-invitation"/);
+  assert.match(routes, /navigate\(localPath, \{ replace: true \}\)/);
+  assert.match(login, /window\.location\.pathname === "\/elimu-invitation"/);
   assert.match(invitation, /acceptStaffInvitation/);
   assert.match(invitation, /identityMatchesInvitation/);
 });
