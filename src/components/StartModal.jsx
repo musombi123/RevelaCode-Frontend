@@ -668,6 +668,9 @@ const completeLogin = (data = {}) => {
     contact:
       resolvedContact,
 
+    username:
+      data?.username || level1?.username || level2?.username || user?.username || "",
+
     role:
       resolvedRole,
 
@@ -782,6 +785,7 @@ const completeLogin = (data = {}) => {
     role: resolvedRole,
     fullName: resolvedFullName,
     contact: resolvedContact,
+    username: authUser.username,
     tokenType,
   };
 };
