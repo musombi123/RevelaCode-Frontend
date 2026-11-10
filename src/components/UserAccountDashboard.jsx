@@ -852,7 +852,13 @@ export default function UserAccountDashboard({
           created_at: "2026-01-01T00:00:00.000Z",
           ...DEMO_ACCOUNT.profile,
         }
-      : userData;
+      : {
+          // The legacy contact-based profile endpoint may omit newer auth
+          // fields. Keep the canonical /api/auth/me identity (including the
+          // generated username) while allowing fresh profile data to win.
+          ...(authUser || {}),
+          ...(userData || {}),
+        };
 
     if (isGuest && !isDemoApiActive()) {
       return (
@@ -942,6 +948,12 @@ export default function UserAccountDashboard({
                       <p className="mt-1 break-words text-sm text-slate-500 dark:text-slate-400">
                         {safeUserData?.contact || authUser?.contact || "Contact not provided"}
                       </p>
+                      <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+                        <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Username</span>
+                        <span className="min-w-0 break-all text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                          {safeUserData?.username ? `@${safeUserData.username}` : "Being assigned"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
