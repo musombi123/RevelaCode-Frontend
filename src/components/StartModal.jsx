@@ -105,6 +105,11 @@ export default function StartModal() {
   ] = useState("");
 
   const [
+    username,
+    setUsername,
+  ] = useState("");
+
+  const [
     contact,
     setContact,
   ] = useState("");
@@ -159,6 +164,7 @@ export default function StartModal() {
     setMessage("");
 
     setFullName("");
+    setUsername("");
     setContact("");
 
     setPassword("");
@@ -312,6 +318,7 @@ export default function StartModal() {
       "/api/register",
       {
         full_name: fullName,
+        username: username.trim().toLowerCase(),
         contact,
         password,
         confirm_password:
@@ -1043,6 +1050,11 @@ const completeLogin = (data = {}) => {
             "Enter your full name."
           );
 
+          return;
+        }
+
+        if (!/^[a-z][a-z0-9._]{2,19}$/.test(username.trim().toLowerCase())) {
+          setError("Username must be 3–20 characters, start with a letter, and contain only letters, numbers, dots or underscores.");
           return;
         }
 
@@ -1969,6 +1981,30 @@ const completeLogin = (data = {}) => {
 
 
                   {/* =================================================
+                      USERNAME
+                  ================================================= */}
+
+                  {step === "form" && mode === "register" && (
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm font-medium">Username</span>
+                      <div className="relative">
+                        <UserPlus size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 20))}
+                          placeholder="Choose a unique username"
+                          autoComplete="username"
+                          minLength={3}
+                          maxLength={20}
+                          required
+                          className="w-full rounded-xl border border-slate-200 bg-[#f4f8f6] py-4 pl-10 pr-3 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/5"
+                        />
+                      </div>
+                      <span className="mt-1 block text-xs text-slate-500">3–20 characters · letters, numbers, dots and underscores.</span>
+                    </label>
+                  )}
+
+                  {/* =================================================
                       CONTACT
                   ================================================= */}
 
@@ -1986,7 +2022,7 @@ const completeLogin = (data = {}) => {
                             font-medium
                           "
                         >
-                          {mode === "register" ? "Email address" : "Email or contact"}
+                          {mode === "register" ? "Email address" : "Username, email or phone"}
                         </span>
 
                         <div className="relative">
@@ -2009,7 +2045,7 @@ const completeLogin = (data = {}) => {
                                 e.target.value
                               )
                             }
-                            placeholder="Email or phone"
+                            placeholder={mode === "login" ? "Username, email or phone" : "Email address"}
                             autoComplete="username"
                             className="
                               w-full
