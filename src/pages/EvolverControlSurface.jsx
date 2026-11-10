@@ -5,6 +5,7 @@ import {
   Brain,
   CheckCircle2,
   Cpu,
+  GitBranch,
   Layers,
   Loader2,
   RefreshCw,
