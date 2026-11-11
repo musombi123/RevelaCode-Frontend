@@ -191,3 +191,100 @@ export function formatSmartMemoryContext(memory) {
 }
 
 export const REVELAAI_API_BASE = API_BASE;
+
+
+function workspaceErrorMessage(payload, status) {
+  const detail = payload?.detail;
+  const message = payload?.error?.message || payload?.message ||
+    (typeof detail === "string" ? detail : Array.isArray(detail) ? detail.map((item) => item?.msg || item?.message || "Invalid request").join("; ") : "") ||
+    `RevelaAI workspace request failed (HTTP ${status}).`;
+  return String(message);
+}
+
+async function readWorkspaceResponse(response) {
+  let payload = {};
+  try { payload = await response.json(); } catch { /* Preserve HTTP error context below. */ }
+  if (!response.ok || payload?.status === "error" || payload?.success === false) {
+    throw new Error(workspaceErrorMessage(payload, response.status));
+  }
+  return payload?.data && typeof payload.data === "object" && !payload.task
+    ? { ...payload, ...payload.data }
+    : payload;
+}
+
+/**
+ * Execute the shared RevelaAI workspace endpoint. Internal processors are
+ * selected by the backend; the frontend never configures individual tool URLs.
+ */
+export async function executeRevelaAIWorkspace({
+  authFetch,
+  payload = {},
+  files = [],
+  signal,
+}) {
+  if (typeof authFetch !== "function") {
+    throw new Error("Authenticated RevelaAI requests are unavailable. Sign in again and retry.");
+  }
+  const attachments = (Array.isArray(files) ? files : [files]).filter((item) => item && item.file);
+  const hasAttachments = attachments.length > 0;
+  let body;
+  const headers = {};
+  let endpoint = `${API_BASE}/api/workspace/execute`;
+
+  if (hasAttachments) {
+    body = new FormData();
+    const complex = new Set(["official_metadata", "image_options", "sections", "slides", "dataset", "operations"]);
+    for (const [key, value] of Object.entries(payload || {})) {
+      if (value === undefined || value === null) continue;
+      body.append(key, complex.has(key) ? JSON.stringify(value) : String(value));
+    }
+    attachments.slice(0, 8).forEach(({ file, fieldName = "logo" }) => {
+      body.append(fieldName, file, file.name || "revelaai-attachment");
+    });
+    endpoint = `${API_BASE}/api/workspace/execute/multipart`;
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(payload || {});
+  }
+
+  const response = await authFetch(endpoint, { method: "POST", headers, body, signal });
+  return readWorkspaceResponse(response);
+}
+
+/**
+ * Send a camera/upload frame to the existing authenticated Live Vision route.
+ * This is used for general vision as well as Shamba's structured leaf/soil mode.
+ */
+export async function analyzeRevelaAIVision({
+  authFetch,
+  image,
+  mimeType = "image/jpeg",
+  prompt = "",
+  hub = "smart_ai",
+  analysisType = null,
+  analysisContext = {},
+  signal,
+}) {
+  if (typeof authFetch !== "function") {
+    throw new Error("Authenticated RevelaAI requests are unavailable. Sign in again and retry.");
+  }
+  const response = await authFetch(`${API_BASE}/api/vision/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    signal,
+    body: JSON.stringify({
+      image,
+      mimeType,
+      prompt,
+      hub,
+      ...(analysisType ? { analysisType } : {}),
+      ...(analysisContext && typeof analysisContext === "object" ? { analysisContext } : {}),
+    }),
+  });
+  const payload = await readWorkspaceResponse(response);
+  const data = payload?.data && typeof payload.data === "object" ? payload.data : payload;
+  if (typeof data?.reply !== "string" || !data.reply.trim()) {
+    throw new Error("RevelaAI Live Vision returned no usable analysis.");
+  }
+  return { ...payload, ...data };
+}

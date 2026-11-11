@@ -32,6 +32,8 @@ jobs:
         run: npm run test:offline-ai
       - name: Run RevelaAI dashboard contracts
         run: node --test tests/revelaai-dashboard-contract.test.mjs
+      - name: Run unified workspace and Shamba camera integration contracts
+        run: npm run test:revelaai-workspace
       - name: Run clean workspace layout contracts
         run: node --test tests/revelaai-clean-workspace.test.mjs
       - name: Run Humanizer and composer integration contracts

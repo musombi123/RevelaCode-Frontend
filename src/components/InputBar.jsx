@@ -5,6 +5,9 @@ import { analyzePixels } from "@/ai/v2-free/localIntelligence";
 import { useAuth } from "@/context/AuthContext.jsx";
 import {
   ArrowUp,
+  Code2,
+  LayoutDashboard,
+  Megaphone,
   Plus,
   Check,
   Mic,
@@ -74,7 +77,8 @@ const TOOL_COMMANDS = [
   ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
   ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
   ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
-  ["/humanize", "Humanizer", Sparkles],
+  ["/code", "Code generation", Code2], ["/ui", "UI prototype", LayoutDashboard],
+  ["/promo", "Campaign studio", Megaphone], ["/humanize", "Humanizer", Sparkles],
 ];
 
 const formatSize = (bytes) =>
@@ -646,7 +650,7 @@ export default function InputBar({
     if (!canSend) return;
 
     recognitionRef.current?.stop?.();
-    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|humanize)\b/i)?.[1]?.toLowerCase();
+    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
     const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
@@ -890,12 +894,12 @@ export default function InputBar({
             </div>
             <div className="relative mt-4"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><input value={toolsQuery} onChange={e=>setToolsQuery(e.target.value)} placeholder="Find a tool..." aria-label="Search AI tools" className="h-11 w-full rounded-xl border border-line bg-surface px-9 text-sm text-fg placeholder:text-muted outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10"/></div>
             {[
-              {title:"Create",ids:["/image","/deck","/doc","/sheet"]},
+              {title:"Create & design",ids:["/image","/deck","/doc","/sheet","/ui"]},
               {title:"Analyze",ids:["/search","/data","/ledger"]},
-              {title:"Science",ids:["/quantum","/robot"]},
-              {title:"Writing",ids:["/paper","/humanize"]},
+              {title:"Development",ids:["/code","/quantum","/robot"]},
+              {title:"Marketing & writing",ids:["/promo","/paper","/humanize"]},
             ].map(group=>{
-              const descriptions={"/image":"Generate and refine visuals","/deck":"Build presentation slides","/doc":"Draft structured documents","/sheet":"Work with spreadsheets","/search":"Research across the web","/data":"Explore and interpret data","/ledger":"Work through financial records","/quantum":"Explore quantum concepts","/robot":"Design robotics systems","/paper":"Prepare academic publications","/humanize":"Improve natural tone and clarity"};
+              const descriptions={"/image":"Generate or apply supported image edits","/deck":"Build presentation slides","/doc":"Draft Word documents, official letters and PDF exports","/sheet":"Create structured Excel workbooks","/search":"Research across the web","/data":"Profile datasets, calculate statistics and build charts","/ledger":"Build a finance or accounting workbook","/quantum":"Explore quantum concepts","/robot":"Design robotics systems","/paper":"Prepare academic publications","/code":"Generate validated source-code files","/ui":"Build a responsive HTML interface prototype","/promo":"Create a marketing campaign and visual poster","/humanize":"Improve natural tone and clarity"};
               const items=TOOL_COMMANDS.filter(([cmd,label])=>group.ids.includes(cmd)&&(label+" "+cmd).toLowerCase().includes(toolsQuery.trim().toLowerCase()));
               if(!items.length)return null;
               return <div key={group.title} className="mt-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-muted">{group.title}</p><div className="grid grid-cols-1 gap-1 sm:grid-cols-2">

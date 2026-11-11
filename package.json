@@ -13,7 +13,8 @@
     "test:demo": "node --test tests/demo-session.test.mjs",
     "test:offline-ai": "node --test tests/offline-ai.test.mjs tests/revelaai-offline-session.test.mjs",
     "test:jumuiya-samples": "node --test tests/admin-jumuiya-samples.test.mjs",
-    "test:staff-invitations": "node --test tests/jumuiya-staff-invitations.test.mjs"
+    "test:staff-invitations": "node --test tests/jumuiya-staff-invitations.test.mjs",
+    "test:revelaai-workspace": "node --test tests/revelaai-workspace-integration.test.mjs"
   },
   "engines": {
     "node": "22.x"
