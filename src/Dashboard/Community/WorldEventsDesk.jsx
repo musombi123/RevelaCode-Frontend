@@ -24,7 +24,7 @@ function storageKeys(user) {
   const identity = String(user?.id || user?._id || user?.user_id || user?.userId || user?.username || "guest")
     .trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 80) || "guest";
   const prefix = "revelacode_world_events_v1_" + identity;
-  return { preferences: prefix + "_preferences", saved: prefix + "_saved", hidden: prefix + "_hidden" };
+  return { preferences: prefix + "_preferences", saved: prefix + "_saved", hidden: prefix + "_hidden", affinity: prefix + "_affinity" };
 }
 
 function readJson(key, fallback) {
