@@ -60,7 +60,7 @@ export default function ShambaDiagnosticsPanel({
         {isLeaf ? (
           <>
             <div className="flex items-center gap-2"><Bug size={17} className="text-[#54DDA0]"/><p className="text-[12px] font-extrabold text-white">Inspect a crop leaf</p></div>
-            <p className={"mt-1 text-[10px] leading-4 " + MUTED}>Capture the affected leaf close-up. Take a second photo of the underside if insects, eggs or webbing may be present.</p>
+            <p className={"mt-1 text-[10px] leading-4 " + MUTED}>Frame the affected leaf clearly, with lesion edges and any visible pest damage in focus. When underside symptoms matter, capture a separate close-up and run a second scan so each image gets its own assessment.</p>
             <label className="mt-3 block text-[10px] font-bold text-[#A9C0CC]">Crop name (optional)</label>
             <input value={cropName} onChange={(event) => setCropName(event.target.value)} placeholder={farm?.primary_crop || farm?.crop_name || "e.g. Maize, tomato, kale"} className="mt-1 w-full rounded-xl border border-[#21465D] bg-[#071B2B] px-3 py-2.5 text-[11px] text-white outline-none placeholder:text-[#6D899A]"/>
           </>

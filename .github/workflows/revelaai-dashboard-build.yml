@@ -7,6 +7,24 @@ on:
     branches: [main, feat/revelaai-dashboard-free-mode-voice-vision]
 
 jobs:
+  workspace-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run unified workspace and Shamba camera contract tests
+        run: npm run test:revelaai-workspace
+      - name: Build production frontend
+        run: npm run build
+
   frontend-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
