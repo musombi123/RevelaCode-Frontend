@@ -624,7 +624,7 @@ function SourceLink({ source }) {
   );
 }
 
-export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin, onOpenAI }) {
+export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin, onOpenAI, onBack }) {
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("All languages");
   const [tradition, setTradition] = useState("All perspectives");
@@ -747,7 +747,7 @@ export default function AncientWordRootsWorkspace({ onOpenAcademy, onLogin, onOp
   };
 
   return (
-    <FaithWorkspaceLayout page="word-roots" contextData={{ term: selected.term, transliteration: selected.transliteration, language: selected.language, reference: (selected.passages || []).map((item) => item.label).join(", ") }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => setQuery("")}>
+    <FaithWorkspaceLayout page="word-roots" contextData={{ term: selected.term, transliteration: selected.transliteration, language: selected.language, reference: (selected.passages || []).map((item) => item.label).join(", ") }} onOpenAI={onOpenAI} onBack={onBack || (() => window.history.back())} onPrimaryAction={() => setQuery("")}>
     <div className="space-y-4">
       <section className="overflow-hidden rounded-2xl border border-violet-200 bg-gradient-to-br from-slate-950 via-violet-950 to-indigo-950 p-4 text-white shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
