@@ -36,7 +36,7 @@ function needsDeepStudy(question) {
 }
 
 function normalizeSources(payload) {
-  const list = Array.isArray(payload?.sources) ? payload.sources : Array.isArray(payload?.data?.sources) ? payload.data.sources : [];
+  const list = Array.isArray(payload?.sources) ? payload.sources : Array.isArray(payload?.data?.sources) ? payload.data.sources : Array.isArray(payload?.meta?.sources) ? payload.meta.sources : Array.isArray(payload?.data?.meta?.sources) ? payload.data.meta.sources : [];
   return list.map((source, index) => {
     const url = String(source?.url || source?.uri || source?.link || "").trim();
     return {
@@ -185,8 +185,10 @@ export function InlineAskBar({ contextType = "faith", contextData = {}, placehol
       const result = payload?.data || payload || {};
       const text = result?.response || result?.content || result?.answer || result?.text || payload?.response || payload?.answer || payload?.message;
       if (typeof text !== "string" || !text.trim()) throw new Error("RevelaAI returned an empty answer. Please retry.");
+      const cleanAnswer = text.trim();
+      const words = cleanAnswer.split(/\s+/).filter(Boolean);
       setSources(normalizeSources(payload));
-      setAnswer(text.trim());
+      setAnswer(words.length > 120 ? words.slice(0, 120).join(" ") + "…" : cleanAnswer);
     } catch (requestError) {
       if (requestError?.name !== "AbortError") setError(requestError?.message || "The answer could not be loaded. Please retry.");
     } finally {
@@ -264,11 +266,13 @@ const PANEL_COPY = {
 const PANEL_TABS = { bible: ["Cross-references", "Word roots", "EGW", "My notes"] };
 
 export function StudyPanel({ page = "faith", contextData = {}, tabs }) {
+  const { user } = useAuth();
+  const noteOwner = String(user?.id || user?._id || user?.user_id || "guest");
   const panelTabs = tabs || PANEL_TABS[page] || ["Study guide", "My notes"];
   const [activeTab, setActiveTab] = useState(panelTabs[0]);
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
-  const storageKey = "revelacode_faith_workspace_note_v1_" + String(page);
+  const storageKey = "revelacode_faith_workspace_note_v1_" + noteOwner + "_" + String(page);
 
   useEffect(() => { try { setNote(localStorage.getItem(storageKey) || ""); } catch { setNote(""); } }, [storageKey]);
 
