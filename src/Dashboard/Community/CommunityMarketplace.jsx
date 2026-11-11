@@ -60,6 +60,14 @@ function listingId(listing) {
   return value === undefined || value === null ? "" : String(value);
 }
 
+function shortNumber(value) {
+  const number = Number(value) || 0;
+  return new Intl.NumberFormat("en-KE", {
+    notation: number >= 1000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(number);
+}
+
 function formatPrice(listing) {
   const raw = Number(listing?.price);
   if (!Number.isFinite(raw)) return "Ask for price";
@@ -217,17 +225,17 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="community-marketplace-form-title"
-        className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/[0.08] dark:bg-[#0d1729] sm:rounded-3xl sm:p-6"
+        className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/[0.10] bg-[#0d1729] p-5 text-slate-100 shadow-[0_24px_70px_rgba(0,0,0,.5)] sm:rounded-3xl sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">
               Community exchange
             </p>
-            <h2 id="community-marketplace-form-title" className="mt-1 text-xl font-black text-slate-950 dark:text-white">
+            <h2 id="community-marketplace-form-title" className="mt-1 text-xl font-black text-white">
               Create a listing
             </h2>
-            <p className="mt-1 text-xs leading-5 text-blue-100/75">
+            <p className="mt-1 text-xs leading-5 text-slate-400">
               Share a useful product or service with the Jumuiya community.
             </p>
           </div>
@@ -236,7 +244,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
             onClick={() => { if (typeof onClose === "function") onClose(); }}
             disabled={saving}
             aria-label="Close listing form"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/[0.08] dark:hover:bg-white/5"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] text-slate-400 transition hover:bg-white/[0.05] hover:text-white disabled:opacity-50"
           >
             <X size={18} />
           </button>
@@ -244,7 +252,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
 
         <form onSubmit={(event) => { if (typeof onSubmit === "function") onSubmit(event); else event.preventDefault(); }} className="mt-5 space-y-4">
           <div>
-            <label htmlFor="marketplace-title" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+            <label htmlFor="marketplace-title" className="mb-1.5 block text-xs font-bold text-slate-300">
               Listing title *
             </label>
             <input
@@ -255,12 +263,12 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.title}
               onChange={(event) => { if (typeof onChange === "function") onChange("title", event.target.value); }}
               placeholder="What are you offering?"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3.5 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15"
             />
           </div>
 
           <div>
-            <label htmlFor="marketplace-description" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+            <label htmlFor="marketplace-description" className="mb-1.5 block text-xs font-bold text-slate-300">
               Details
             </label>
             <textarea
@@ -271,21 +279,21 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               value={form.description}
               onChange={(event) => { if (typeof onChange === "function") onChange("description", event.target.value); }}
               placeholder="Describe condition, what is included, delivery options or the service you provide."
-              className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+              className="w-full resize-y rounded-xl border border-white/[0.08] bg-[#07111e] px-3.5 py-3 text-sm leading-5 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15"
             />
             <p className="mt-1 text-right text-[10px] text-slate-400">{form.description.length}/2000</p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor="marketplace-category" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label htmlFor="marketplace-category" className="mb-1.5 block text-xs font-bold text-slate-300">
                 Category
               </label>
               <select
                 id="marketplace-category"
                 value={form.category}
                 onChange={(event) => { if (typeof onChange === "function") onChange("category", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-sm text-white outline-none focus:border-cyan-400"
               >
                 {CATEGORIES.filter((item) => item.value).map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
@@ -293,7 +301,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
               </select>
             </div>
             <div>
-              <label htmlFor="marketplace-location" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label htmlFor="marketplace-location" className="mb-1.5 block text-xs font-bold text-slate-300">
                 Location
               </label>
               <input
@@ -303,14 +311,14 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.location}
                 onChange={(event) => { if (typeof onChange === "function") onChange("location", event.target.value); }}
                 placeholder="e.g. Mombasa or Online"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-sm text-white outline-none focus:border-cyan-400"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
-              <label htmlFor="marketplace-price" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label htmlFor="marketplace-price" className="mb-1.5 block text-xs font-bold text-slate-300">
                 Price (KES) *
               </label>
               <input
@@ -321,11 +329,11 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.price}
                 onChange={(event) => { if (typeof onChange === "function") onChange("price", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-sm text-white outline-none focus:border-cyan-400"
               />
             </div>
             <div>
-              <label htmlFor="marketplace-quantity" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label htmlFor="marketplace-quantity" className="mb-1.5 block text-xs font-bold text-slate-300">
                 Quantity *
               </label>
               <input
@@ -336,11 +344,11 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 step="0.01"
                 value={form.quantity_available}
                 onChange={(event) => { if (typeof onChange === "function") onChange("quantity_available", event.target.value); }}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-sm text-white outline-none focus:border-cyan-400"
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label htmlFor="marketplace-unit" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              <label htmlFor="marketplace-unit" className="mb-1.5 block text-xs font-bold text-slate-300">
                 Sold per
               </label>
               <input
@@ -349,7 +357,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
                 value={form.unit}
                 onChange={(event) => { if (typeof onChange === "function") onChange("unit", event.target.value); }}
                 placeholder="piece, hour, kg…"
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white"
+                className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-sm text-white outline-none focus:border-cyan-400"
               />
             </div>
           </div>
@@ -360,19 +368,19 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
             </div>
           ) : null}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-white/5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-white/[0.08] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={() => { if (typeof onClose === "function") onClose(); }}
               disabled={saving}
-              className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/5"
+              className="min-h-11 rounded-xl border border-white/[0.10] px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-white/[0.05] disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-2.5 text-xs font-black text-[#08213c] shadow-sm transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Publishing…" : "Publish listing"}
               <ArrowLeft className="rotate-180" size={14} />
