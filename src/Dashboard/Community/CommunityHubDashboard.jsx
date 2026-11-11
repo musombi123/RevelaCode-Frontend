@@ -36,9 +36,9 @@ import CommunityMediaCards from "@/Dashboard/Community/CommunityMediaCards.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
 import WorldEventsDesk from "@/Dashboard/Community/WorldEventsDesk.jsx";
 
-// Pexels free-to-use community lifestyle photo by Kewal Nagda.
+// Pexels free-to-use community lifestyle photo by Boko Shots.
 const HERO_IMAGE =
-  "https://images.pexels.com/photos/33235949/pexels-photo-33235949.jpeg?auto=compress&cs=tinysrgb&w=1800";
+  "https://images.pexels.com/photos/19834919/pexels-photo-19834919.jpeg?auto=compress&cs=tinysrgb&w=1800";
 const CITY_IMAGE =
   "https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=82&w=1200";
 
