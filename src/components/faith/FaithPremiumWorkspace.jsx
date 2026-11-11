@@ -485,11 +485,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   }
 
   if (loading) {
-    return <FaithWorkspaceLayout page="academy" contextData={{ status: "Loading courses" }} onOpenAI={onOpenAI} onBack={onBack || (() => onNavigate?.("faith"))} onPrimaryAction={() => setTab("courses")}><div className="flex min-h-[260px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div></FaithWorkspaceLayout>;
+    return <FaithWorkspaceLayout page="academy" contextData={{ status: "Loading courses" }} onOpenAI={onOpenAI} onBack={onBack || (() => onNavigate?.("faith"))} onNavigate={onNavigate} onPrimaryAction={() => setTab("courses")}><div className="flex min-h-[260px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div></FaithWorkspaceLayout>;
   }
 
   return (
-    <FaithWorkspaceLayout page="academy" contextData={{ course: selectedCourse?.title || "Course catalogue", lesson: selectedLessonSlug || "" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => setTab("courses")}>
+    <FaithWorkspaceLayout page="academy" contextData={{ course: selectedCourse?.title || "Course catalogue", lesson: selectedLessonSlug || "" }} onOpenAI={onOpenAI} onBack={onBack || (() => onNavigate?.("faith"))} onNavigate={onNavigate} onPrimaryAction={() => setTab("courses")}>
     <div className="space-y-4">
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-800 via-violet-800 to-purple-900 p-4 text-white shadow-md sm:p-6">
         <div className="pointer-events-none absolute -right-14 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
