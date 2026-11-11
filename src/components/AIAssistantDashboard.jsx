@@ -1259,7 +1259,7 @@ export default function AIAssistantDashboard({
             let files = [];
 
             if (workspaceCommand === "/doc" || workspaceCommand === "/paper") {
-              workspacePayload = { ...workspacePayload, task: "document", format: "word", document_style: "auto" };
+              workspacePayload = { ...workspacePayload, task: "document", format: /\bpdf\b/i.test(workspacePrompt) ? "pdf" : "word", document_style: "auto" };
               if (attachedFile?.type?.startsWith("image/")) {
                 files = [{ file: attachedFile, fieldName: "logo" }];
                 workspacePayload = { ...workspacePayload, image_placement: "header", image_width_inches: 1.2 };
@@ -1297,7 +1297,7 @@ export default function AIAssistantDashboard({
               const mode = inputMeta?.toolMode || "generate";
               if (mode === "generate") {
                 const options = inputMeta?.toolOptions || {};
-                const ratio = ({ "1:1": "1:1", "16:9": "16:9", "9:16": "9:16" })[options.aspectRatio] || "1:1";
+                const ratio = ({ "1:1": "1:1", "4:5": "4:5", "16:9": "16:9", "9:16": "9:16" })[options.aspectRatio] || "1:1";
                 workspacePayload = {
                   ...workspacePayload, task: "image",
                   image_options: { aspect_ratio: ratio, output_format: "png", use_ai_background: true },
@@ -2599,7 +2599,7 @@ export default function AIAssistantDashboard({
           artifact={workspaceArtifact}
           onClose={() => setWorkspaceArtifact(null)}
           onAskAI={() => {
-            const revisionPrompt = "Revise the latest generated artifact. Preserve correct facts and only make the changes I specify: ";
+            const revisionPrompt = "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
             window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
             setWorkspaceArtifact(null);
           }}
