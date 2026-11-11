@@ -2577,6 +2577,18 @@ export default function AIAssistantDashboard({
         )}
       </main>
 
+      {workspaceArtifact && (
+        <RevelaAIWorkspacePanel
+          artifact={workspaceArtifact}
+          onClose={() => setWorkspaceArtifact(null)}
+          onAskAI={() => {
+            const revisionPrompt = "Revise the latest generated artifact. Preserve correct facts and only make the changes I specify: ";
+            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
+            setWorkspaceArtifact(null);
+          }}
+        />
+      )}
+
       {identityOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center bg-overlay/70 p-2 backdrop-blur-sm sm:items-center sm:p-4"
