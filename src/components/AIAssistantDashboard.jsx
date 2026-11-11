@@ -65,6 +65,20 @@ function readBrowserFileAsDataUrl(file) {
   });
 }
 
+function inferWorkspaceCommand(prompt, attachedFile) {
+  const text = String(prompt || "").toLowerCase();
+  const imageAttached = Boolean(attachedFile?.type?.startsWith("image/"));
+  if (/\b(official|formal|business|institutional)\b.{0,45}\b(letter|memo|proposal|submission|report|notice)\b|\b(create|draft|write|prepare|generate)\b.{0,50}\b(official letter|formal letter|memorandum|business letter|institutional proposal|word document|pdf report)\b/.test(text)) return "/doc";
+  if (/\b(create|make|prepare|generate|build)\b.{0,45}\b(powerpoint|presentation|slide deck|slides)\b|\b(presentation|powerpoint|slide deck)\b/.test(text)) return "/deck";
+  if (/\b(create|make|prepare|generate|build)\b.{0,45}\b(excel|spreadsheet|workbook|financial model|ledger template)\b/.test(text)) return "/sheet";
+  if (/\b(analy[sz]e|profile|audit|summari[sz]e)\b.{0,55}\b(dataset|csv|spreadsheet data|table data|records)\b/.test(text) && attachedFile) return "/data";
+  if (/\b(generate|write|create|build)\b.{0,45}\b(source code|python script|javascript|typescript|sql query|program|function|class)\b/.test(text)) return "/code";
+  if (/\b(create|design|build|prototype|generate)\b.{0,45}\b(responsive (web|admin|dashboard|mobile)|website prototype|web app interface|ui prototype|dashboard interface|html interface)\b/.test(text)) return "/ui";
+  if (/\b(create|generate|design|prepare)\b.{0,50}\b(marketing campaign|campaign kit|promotional poster|advertising flyer|brand promotion|social media campaign)\b/.test(text)) return "/promo";
+  if (/\b(generate|create|draw|design)\b.{0,40}\b(image|illustration|logo|graphic)\b/.test(text) && !imageAttached) return "/image";
+  return null;
+}
+
 function workspaceDownloadUrl(value) {
   if (typeof value === "string") return value;
   return value?.download_url || value?.url || null;
@@ -99,8 +113,11 @@ function buildWorkspaceArtifact(result, title, prompt) {
     chart_url: chartUrl,
     downloads,
     analysis: result?.analysis || null,
-    data: result?.analysis?.preview_rows || result?.data || [],
-    code: result?.code || "",
+    data: result?.analysis?.preview_rows || (Array.isArray(result?.analysis?.columns) ? result.analysis.columns.map((item) => ({
+      column: item.column, type: item.type, non_empty: item.non_empty,
+      missing: item.missing, missing_pct: item.missing_pct, unique: item.unique,
+    })) : result?.data || []),
+    code: result?.source_preview || result?.code || "",
     campaign: campaign || null,
     verification: result?.verification || null,
     source_prompt: prompt,
@@ -1230,7 +1247,7 @@ export default function AIAssistantDashboard({
           updateLoadingStage(attachedFile ? (freeMode ? "local-analysis-only" : "local-analysis") : freeMode ? "local-reasoning" : "connecting");
 
           const workspaceCommands = new Set(["/doc", "/deck", "/sheet", "/data", "/ledger", "/paper", "/code", "/ui", "/promo", "/image"]);
-          const workspaceCommand = selectedToolCommand;
+          const workspaceCommand = selectedToolCommand || inferWorkspaceCommand(cleaned, attachedFile);
           const runWorkspace = workspaceCommands.has(workspaceCommand) && !(workspaceCommand === "/image" && inputMeta?.toolMode === "merge");
           if (runWorkspace) {
             if (freeMode) throw new Error("Switch to Adaptive mode to generate hosted documents, workbooks, code files, designs or campaign assets. Free mode remains local-only.");
