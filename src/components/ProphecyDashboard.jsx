@@ -2952,6 +2952,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
       page="prophecy"
       contextData={{ topic: searchInput || "Daniel and Revelation", references: (decodedData || []).slice(0, 3).map((item) => item?.reference || item?.title).filter(Boolean) }}
       onOpenAI={onOpenAI}
+      onNavigate={onNavigate}
       onBack={() => onNavigate?.("faith")}
       onPrimaryAction={() => setSearchInput((current) => current.trim() || "Daniel 2")}
     >
