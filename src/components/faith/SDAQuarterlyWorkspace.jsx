@@ -46,7 +46,7 @@ function formatLessonDate(value) {
   });
 }
 
-export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI }) {
+export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI, onBack }) {
   const [initial] = useState(kenyaQuarterNow);
   const [year, setYear] = useState(initial.year);
   const [quarter, setQuarter] = useState(initial.quarter);
@@ -187,7 +187,7 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI }) {
   };
 
   return (
-    <FaithWorkspaceLayout page="quarterly" contextData={{ year, quarter, day: selectedWeekday, lesson: todayLesson?.title || todayMeta.lesson_title || "" }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => todayLesson ? openLesson(todayLesson) : loadQuarter()}>
+    <FaithWorkspaceLayout page="quarterly" contextData={{ year, quarter, day: selectedWeekday, lesson: todayLesson?.title || todayMeta.lesson_title || "" }} onOpenAI={onOpenAI} onBack={onBack || (() => window.history.back())} onPrimaryAction={() => todayLesson ? openLesson(todayLesson) : loadQuarter()}>
     <div className="space-y-4">
       <section className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm dark:border-amber-900/50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20">
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
