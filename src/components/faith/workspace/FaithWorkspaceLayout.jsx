@@ -303,4 +303,3 @@ export default function FaithWorkspaceLayout({ page, title, description, filterC
   );
 }
 
-export { AIHandoffBar };
