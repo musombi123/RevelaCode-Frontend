@@ -33,6 +33,15 @@ function resolveId(item) {
   );
 }
 
+function readCachedBookmarks(userId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("revelacode_faith_saved_study_v1_" + String(userId || "guest")) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function BookmarksPanel({
   userId,
   onOpen,
@@ -40,7 +49,7 @@ export default function BookmarksPanel({
   const [
     bookmarks,
     setBookmarks,
-  ] = useState([]);
+  ] = useState(() => readCachedBookmarks(userId));
 
   const [
     loading,
@@ -118,33 +127,29 @@ export default function BookmarksPanel({
               ? data.bookmarks
               : [];
 
-          setBookmarks(
-            materials
-              .map(
-                (item) => ({
-                  ...item,
-                  id:
-                    resolveId(
-                      item
-                    ),
-                })
-              )
-              .filter(
-                (item) =>
-                  item.id
-              )
-          );
+          const normalized = materials
+            .map((item) => ({ ...item, id: resolveId(item) }))
+            .filter((item) => item.id);
+          setBookmarks(normalized);
+          try {
+            localStorage.setItem("revelacode_faith_saved_study_v1_" + String(userId || "guest"), JSON.stringify(normalized));
+          } catch {
+            // Server-backed bookmarks remain usable if device storage is full.
+          }
         } catch (err) {
           console.error(
             "Bookmarks Error:",
             err
           );
 
-          setBookmarks([]);
-
+          const cached = readCachedBookmarks(userId);
+          setBookmarks(cached);
           setError(
-            err?.message ||
-              "Unable to load saved study materials."
+            cached.length
+              ? "Offline ready · Showing saved study materials stored on this device."
+              : (typeof navigator !== "undefined" && !navigator.onLine
+                ? "You are offline and no saved study copy is available on this device yet."
+                : (err?.message || "Unable to load saved study materials."))
           );
         } finally {
           setLoading(false);
