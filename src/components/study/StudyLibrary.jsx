@@ -148,6 +148,7 @@ export default function StudyLibrary({
   onOpenAtlas,
   onOpenWordRoots,
   onOpenAI,
+  onBack,
 }) {
   const [materials, setMaterials] =
     useState([]);
@@ -335,7 +336,7 @@ export default function StudyLibrary({
 
   if (loading) {
     return (
-      <FaithWorkspaceLayout page="library" contextData={{ category: topicFilter, search: search || "All materials" }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => { setSearch(""); setTopicFilter("all"); }}>
+      <FaithWorkspaceLayout page="library" contextData={{ category: topicFilter, search: search || "All materials" }} onOpenAI={onOpenAI} onBack={onBack || (() => window.history.back())} onPrimaryAction={() => { setSearch(""); setTopicFilter("all"); }}>
       <div data-demo="faith-study-root" className="space-y-6">
         <div>
           <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
