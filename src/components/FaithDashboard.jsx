@@ -997,13 +997,7 @@ export default function FaithDashboard({
           space-y-4
         "
       >
-        {renderStudyHeader(
-          "Study Library",
-          "Browse the study materials uploaded to RevelaCode and open a lesson for reading and deeper study.",
-          closeStudyView
-        )}
-
-        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} />
+        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} />
       </div>
     );
   }
@@ -1059,28 +1053,19 @@ export default function FaithDashboard({
   if (faithSection === "atlas") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        {renderStudyHeader(
-          "Faith Atlas",
-          "Explore connected passages and investigate the difference between textual observations and theological interpretations.",
-          closeStudyView
-        )}
-        <FaithAtlas userId={userId} onOpenReference={openBibleReference} />
+        <FaithAtlas userId={userId} onOpenReference={openBibleReference} onOpenAI={onOpenAI} />
       </div>
     );
   }
   if (faithSection === "premium") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        {renderStudyHeader(
-          "Faith Academy",
-          "Structured courses, source-grounded study assistance, private learning records, and church study groups.",
-          closeStudyView
-        )}
         <FaithPremiumWorkspace
           user={user}
           isGuest={isGuest}
           onLogin={onLogin}
           onNavigate={navigateTo}
+          onOpenAI={onOpenAI}
         />
       </div>
     );
@@ -1088,11 +1073,6 @@ export default function FaithDashboard({
   if (faithSection === "quarterly") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        {renderStudyHeader(
-          "SDA Quarterly",
-          "Sabbath School lessons in the Faith hub. Choose a quarter, read imported daily lessons, or open the official quarterly source.",
-          closeStudyView
-        )}
         <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} />
       </div>
     );
@@ -1101,14 +1081,10 @@ export default function FaithDashboard({
   if (faithSection === "word-roots") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        {renderStudyHeader(
-          "Ancient Word Roots",
-          "Explore Hebrew, Aramaic, Koine Greek, and Qur'anic Arabic in context—with respectful, source-aware theological perspectives.",
-          closeStudyView
-        )}
         <AncientWordRootsWorkspace
           onOpenAcademy={openFaithAcademy}
           onLogin={onLogin}
+          onOpenAI={onOpenAI}
         />
       </div>
     );
