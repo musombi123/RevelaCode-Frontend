@@ -264,6 +264,11 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(null);
 
+  // Router hooks must be initialized before callbacks/effects that capture them.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [aiFullscreenOpen, setAIFullscreenOpen] = useState(() => {
     if (initialDashboardKey) return false;
     try {
@@ -338,11 +343,6 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const [premiumRequestedPlanCode, setPremiumRequestedPlanCode] = useState("");
   const pendingPremiumPlanCode = useRef("");
   const [resumePremiumAfterLogin, setResumePremiumAfterLogin] = useState(false);
-
-  const [searchParams, setSearchParams] =
-    useSearchParams();
-  const location = useLocation();
-  const navigate = useNavigate();
 
   const { theme, setTheme } =
     useTheme();
