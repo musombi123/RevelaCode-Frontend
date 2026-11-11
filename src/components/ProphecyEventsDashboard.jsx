@@ -1054,7 +1054,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300">
             <Globe2 className="h-3 w-3" />
             Global Event Monitor
           </div>
@@ -1175,7 +1175,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
           <div className="min-w-0 flex-1">
             <label
               htmlFor="event-location"
-              className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400"
+              className="mb-1.5 block text-[0.625rem] font-bold uppercase tracking-[0.14em] text-gray-400"
             >
               Location
             </label>
@@ -1232,7 +1232,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
           <div className="min-w-0 flex-1">
             <label
               htmlFor="event-category"
-              className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400"
+              className="mb-1.5 block text-[0.625rem] font-bold uppercase tracking-[0.14em] text-gray-400"
             >
               Category
             </label>
@@ -1292,7 +1292,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
           {/* Count */}
 
           <div className="rounded-xl bg-gray-50 px-4 py-3 text-center dark:bg-gray-950 lg:min-w-[150px]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-gray-400">
               Results
             </p>
 
@@ -1310,7 +1310,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
         {(location ||
           category) && (
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
-            <span className="text-[11px] font-medium text-gray-400">
+            <span className="text-[0.6875rem] font-medium text-gray-400">
               Active filters:
             </span>
 
@@ -1320,7 +1320,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                 onClick={() =>
                   changeLocation("")
                 }
-                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300"
+                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[0.6875rem] font-semibold text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300"
               >
                 {location} ×
               </button>
@@ -1332,7 +1332,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                 onClick={() =>
                   changeCategory("")
                 }
-                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300"
+                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[0.6875rem] font-semibold text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-300"
               >
                 {CATEGORY_LABELS[
                   category
@@ -1477,7 +1477,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-2">
                               {event.source && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-[0.625rem] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                                   📰{" "}
                                   {
                                     event.source
@@ -1486,7 +1486,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                               )}
 
                               {event.publishedAt && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400">
+                                <span className="inline-flex items-center gap-1 text-[0.625rem] font-medium text-gray-400">
                                   <Clock3 className="h-3 w-3" />
                                   {formatDate(
                                     event.publishedAt
@@ -1539,7 +1539,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
 
                             <div className="min-w-0 flex-1">
                               <div className="mb-1 flex items-center justify-between gap-2">
-                                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-300">
+                                <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-300">
                                   What this means
                                 </p>
                               </div>
@@ -1690,7 +1690,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                             <div className="mb-2 flex items-center gap-2">
                               <BookOpen className="h-4 w-4 text-green-600" />
 
-                              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
+                              <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-gray-400">
                                 Related Scriptures
                               </p>
                             </div>
@@ -1761,7 +1761,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                                   bg-indigo-50
                                   px-2.5
                                   py-1.5
-                                  text-[10px]
+                                  text-[0.625rem]
                                   font-bold
                                   text-indigo-700
                                   dark:border-indigo-900/40
@@ -1781,7 +1781,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
 
                         {event.location
                           ?.country && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-[10px] font-bold text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-[0.625rem] font-bold text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                             <MapPin className="h-3 w-3" />
 
                             {
@@ -1838,7 +1838,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
                         </button>
 
                         {sourceUrl && (
-                          <p className="mt-2 text-center text-[10px] text-gray-400">
+                          <p className="mt-2 text-center text-[0.625rem] text-gray-400">
                             Opens the original report in a new
                             browser tab.
                           </p>
@@ -2031,7 +2031,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
 
-              <p className="text-[11px] leading-5 text-gray-500 dark:text-gray-400">
+              <p className="text-[0.6875rem] leading-5 text-gray-500 dark:text-gray-400">
                 Prophetic event classifications are
                 provided for study and contextual
                 exploration. A news event being matched to a
