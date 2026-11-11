@@ -99,7 +99,7 @@ export function FaithMobileBottomNav({
   hidden = false,
 }) {
   if (hidden) return null;
-  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  const nativeAndroid = (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
   const keepDockInAndroidLandscape = nativeAndroid;
   const items = [
     { key: "home", label: "Home", icon: Home, action: onHome },
@@ -504,7 +504,7 @@ export function WorkspaceHeader({
   const chips = Array.isArray(filterChips) ? filterChips : (meta.chips || []);
   const heading = title || meta.title || "Faith workspace";
   const intro = description || meta.description || "Study, reflect and explore Scripture.";
-  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  const nativeAndroid = (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
   return (
     <header className={"sticky top-0 z-30 -mx-1 rounded-2xl border p-3 shadow-sm backdrop-blur-md sm:p-4 " + (nativeAndroid ? "border-white/10 bg-[#041726]/95 text-white" : "border-slate-200/70 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95")}>
       <div className="flex min-w-0 items-center gap-2">
@@ -636,7 +636,7 @@ export default function FaithWorkspaceLayout({
   const navActive = page === "missionpulse" ? "mission" : page === "profile" ? "me" : ["quarterly", "bible", "prophecy", "events", "referential", "library", "word-roots", "academy", "atlas"].includes(page) ? "study" : "home";
   const chips = Array.isArray(filterChips) ? filterChips : (meta.chips || []);
   const touchStart = useRef(null);
-  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  const nativeAndroid = (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
   const handleAskOverlay = useCallback((open) => setOverlay((current) => open ? "answer" : current === "answer" ? "" : current), []);
   const closeOverlay = () => setOverlay("");
 
