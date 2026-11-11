@@ -36,6 +36,8 @@ import {
   Target,
 } from "lucide-react";
 
+import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
+
 const API_URL = import.meta.env.VITE_API_URL;
 const REVELAAI_URL =
   import.meta.env.VITE_REVELAAI_URL;
@@ -675,7 +677,7 @@ function CollapsibleSection({
    MAIN DASHBOARD
 ========================================================= */
 
-export default function ProphecyDashboard() {
+export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
   const { isGuest } = useAuth();
   const { addProphecyHistory } = useHistory();
 
@@ -2946,6 +2948,13 @@ export default function ProphecyDashboard() {
   ======================================================= */
 
   return (
+    <FaithWorkspaceLayout
+      page="prophecy"
+      contextData={{ topic: searchInput || "Daniel and Revelation", references: (decodedData || []).slice(0, 3).map((item) => item?.reference || item?.title).filter(Boolean) }}
+      onOpenAI={onOpenAI}
+      onBack={() => onNavigate?.("faith")}
+      onPrimaryAction={() => setSearchInput((current) => current.trim() || "Daniel 2")}
+    >
     <div
       className={`
         min-w-0
@@ -3569,5 +3578,6 @@ export default function ProphecyDashboard() {
         </div>
       </div>
     </div>
+    </FaithWorkspaceLayout>
   );
 }
