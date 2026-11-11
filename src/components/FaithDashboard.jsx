@@ -348,7 +348,7 @@ export default function FaithDashboard({
 
       const storedDays = JSON.parse(localStorage.getItem(studyDaysKey) || "[]");
       const daySet = new Set(Array.isArray(storedDays) ? storedDays.filter((day) => typeof day === "string") : []);
-      if (activity.lastActivityTime) {
+      if (activity.lastActivityTime && /(faith|bible|scripture|prophecy|referential|quarter|missionpulse)/i.test(activity.lastDashboard || "")) {
         const lastActivityDate = new Date(activity.lastActivityTime);
         const lastActivityKey = faithLocalDateKey(lastActivityDate);
         if (lastActivityKey) daySet.add(lastActivityKey);
@@ -477,9 +477,6 @@ export default function FaithDashboard({
     ? featuredLesson.title || featuredLessonMeta.lesson_title || "Sabbath School lesson"
     : "";
   const featuredMemoryVerse = featuredLessonMeta.memory_text || featuredLessonMeta.memory_verse || "";
-  const hasContinueActivity = Boolean(activity.lastActivity || activity.lastActivityTime);
-  const continueDescription = activity.lastActivity || "Pick up your Faith journey from where you last stopped.";
-  const continueRelativeTime = faithRelativeTime(activity.lastActivityTime);
   const faithHistory = useMemo(() => {
     return (Array.isArray(userHistory) ? userHistory : []).filter((entry) => {
       const searchable = [
@@ -494,6 +491,35 @@ export default function FaithDashboard({
       return /(faith|bible|scripture|study|sda|quarter|prophecy|referential|missionpulse)/.test(searchable);
     });
   }, [userHistory]);
+  const historyStudyDays = useMemo(
+    () => Array.from(new Set(faithHistory
+      .map((entry) => faithLocalDateKey(entry?.timestamp || entry?.createdAt || entry?.created_at))
+      .filter(Boolean))).sort().slice(-180),
+    [faithHistory]
+  );
+  useEffect(() => {
+    const currentDays = homeSnapshot.studyDays || [];
+    const mergedDays = Array.from(new Set([...currentDays, ...historyStudyDays])).sort().slice(-180);
+    if (mergedDays.length === currentDays.length && mergedDays.every((day, index) => day === currentDays[index])) return;
+    try {
+      localStorage.setItem(studyDaysKey, JSON.stringify(mergedDays));
+    } catch {
+      // History remains the source for this session when storage is unavailable.
+    }
+    setHomeSnapshot((current) => ({ ...current, studyDays: mergedDays }));
+  }, [historyStudyDays, homeSnapshot.studyDays, studyDaysKey]);
+
+  const latestFaithActivity = faithHistory[0] || null;
+  const hasContinueActivity = Boolean(
+    activity.lastActivity || activity.lastActivityTime || latestFaithActivity
+  );
+  const continueDescription = activity.lastActivity ||
+    latestFaithActivity?.input ||
+    latestFaithActivity?.fileName ||
+    "Pick up your Faith journey from where you last stopped.";
+  const continueRelativeTime = faithRelativeTime(
+    activity.lastActivityTime || latestFaithActivity?.timestamp || latestFaithActivity?.createdAt
+  );
 
 
 
