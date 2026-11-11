@@ -808,7 +808,7 @@ export default function FaithDashboard({
                   bg-indigo-100
                   px-2.5
                   py-1
-                  text-[10px]
+                  text-[0.625rem]
                   font-black
                   uppercase
                   tracking-[0.12em]
@@ -827,7 +827,7 @@ export default function FaithDashboard({
                     bg-emerald-100
                     px-2.5
                     py-1
-                    text-[10px]
+                    text-[0.625rem]
                     font-black
                     uppercase
                     tracking-[0.12em]
@@ -1348,7 +1348,7 @@ export default function FaithDashboard({
       <header aria-label="Faith and Scripture workspace" className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/30 sm:p-6">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
               <BookOpen size={14} /> Faith &amp; Scripture
             </div>
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
@@ -1356,17 +1356,17 @@ export default function FaithDashboard({
                 {sabbathInfo.active ? "Happy Sabbath" : "Welcome"}, {displayName}
               </h1>
               {!isGuest && (
-                <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.625rem] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
                   <BadgeCheck size={13} /> Verified
                 </span>
               )}
-              {isGuest && <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">Guest session</span>}
+              {isGuest && <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[0.625rem] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">Guest session</span>}
             </div>
             <p className="mt-1 max-w-2xl text-sm leading-5 text-slate-600 dark:text-slate-300">A focused place to study Scripture, prepare for Sabbath School and follow Christ in daily life.</p>
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
             <span className={sabbathInfo.active ? "inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200" : "inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"}>
-              <Sun size={16} /> {sabbathInfo.label} <span className="text-[10px] font-medium opacity-70">approx.</span>
+              <Sun size={16} /> {sabbathInfo.label} <span className="text-[0.625rem] font-medium opacity-70">approx.</span>
             </span>
             <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
               <Flame size={16} className="text-orange-500" /> {studyStreak} day{studyStreak === 1 ? "" : "s"} streak
@@ -1405,7 +1405,7 @@ export default function FaithDashboard({
         <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+              <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
                 <CalendarDays size={14} /> This week's Sabbath School
               </div>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Make space for the Word</h2>
@@ -1429,7 +1429,7 @@ export default function FaithDashboard({
           ) : featuredLesson ? (
             <div className="mt-4 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[0.625rem] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
                   {featuredLessonMeta.lesson_number ? "Lesson " + featuredLessonMeta.lesson_number : "Daily lesson"}
                 </span>
                 {featuredLessonMeta.day && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{featuredLessonMeta.day}</span>}
@@ -1437,7 +1437,7 @@ export default function FaithDashboard({
               <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-6 text-slate-900 dark:text-white">{featuredLessonTitle}</h3>
               {featuredMemoryVerse ? (
                 <blockquote className="mt-3 rounded-xl border-l-2 border-amber-400 bg-amber-50/70 px-3 py-2.5 text-xs leading-5 text-slate-700 dark:bg-amber-950/20 dark:text-slate-200">
-                  <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Memory verse</span>
+                  <span className="mb-1 block text-[0.625rem] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Memory verse</span>
                   {featuredMemoryVerse}
                 </blockquote>
               ) : (
@@ -1459,7 +1459,7 @@ export default function FaithDashboard({
             <div className="mt-3 grid grid-cols-7 gap-1.5" aria-label={weeklyStudyCount + " of 7 study days completed"}>
               {studyWeekDays.map((day) => (
                 <div key={day.key} className="min-w-0 text-center">
-                  <span className="text-[10px] font-semibold text-slate-400">{day.label}</span>
+                  <span className="text-[0.625rem] font-semibold text-slate-400">{day.label}</span>
                   <span className={day.active ? "mt-1 block h-1.5 rounded-full bg-indigo-600" : "mt-1 block h-1.5 rounded-full bg-slate-100 dark:bg-slate-800"} />
                 </div>
               ))}
@@ -1478,7 +1478,7 @@ export default function FaithDashboard({
         <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300">
+              <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300">
                 <History size={14} /> Continue where you left off
               </div>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Your next study session</h2>
@@ -1507,7 +1507,7 @@ export default function FaithDashboard({
             </div>
           ) : hasContinueActivity ? (
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Last study item</p>
+              <p className="text-[0.625rem] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Last study item</p>
               <h3 className="mt-1 break-words text-sm font-semibold leading-5 text-slate-900 dark:text-white">{continueDescription}</h3>
               {continueRelativeTime && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Last active {continueRelativeTime}</p>}
             </div>
@@ -1537,10 +1537,10 @@ export default function FaithDashboard({
         </div>
         <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button type="button" onClick={openSDAQuarterly} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 active:scale-[0.98] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"><CalendarDays size={16}/>Quarterly</button>
-          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><ScrollText size={16}/>EGW Writings <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
-          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><BookOpen size={16}/>28 Beliefs <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
+          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><ScrollText size={16}/>EGW Writings <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
+          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><BookOpen size={16}/>28 Beliefs <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
           <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-800 active:scale-[0.98] dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200"><Compass size={16}/>Sanctuary</button>
-          <button type="button" onClick={() => setComingSoonFeature("SDA Hymnal")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><Book size={16}/>Hymnal <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
+          <button type="button" onClick={() => setComingSoonFeature("SDA Hymnal")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><Book size={16}/>Hymnal <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
         </div>
       </section>
 
@@ -1554,21 +1554,21 @@ export default function FaithDashboard({
         <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
           <button type="button" onClick={openSDAQuarterly} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-900 motion-reduce:transform-none motion-reduce:transition-none">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><CalendarDays size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Quarterly</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Sabbath School</span></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Quarterly</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Sabbath School</span></span>
           </button>
           <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ScrollText size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">EGW Writings</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Devotional library</span></span>
-            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">EGW Writings</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Devotional library</span></span>
+            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
           </button>
           <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><BookOpen size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">28 Beliefs</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">SDA foundations</span></span>
-            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">28 Beliefs</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">SDA foundations</span></span>
+            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
           </button>
           <button type="button" onClick={() => navigateTo("prophecy")} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Compass size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Sanctuary</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Daniel &amp; Revelation</span></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Sanctuary</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Daniel &amp; Revelation</span></span>
           </button>
         </div>
       </section>
@@ -1599,10 +1599,10 @@ export default function FaithDashboard({
 
       <section aria-label="More Faith learning" className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
         <button type="button" onClick={openFaithAtlas} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-          <div className="flex items-center justify-between gap-2"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Map size={20} /></span><span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200">New preview</span></div>
+          <div className="flex items-center justify-between gap-2"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Map size={20} /></span><span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[0.625rem] font-bold text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200">New preview</span></div>
           <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Faith Atlas</span>
           <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore connections across Daniel, Revelation and sanctuary themes.</span>
-          <span className="mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Interpretations are clearly labeled for investigation.</span>
+          <span className="mt-2 text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Interpretations are clearly labeled for investigation.</span>
         </button>
         <button type="button" onClick={openFaithAcademy} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><GraduationCap size={20} /></span>
@@ -1621,7 +1621,7 @@ export default function FaithDashboard({
       <section aria-label="Verse of the day" className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={20} /></span>
         <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">Verse of the day</div>
+          <div className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">Verse of the day</div>
           <blockquote className="mt-1 text-sm font-medium leading-6 text-slate-800 dark:text-slate-100">“{verseOfDay.text}”</blockquote>
           <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{verseOfDay.reference} · KJV</p>
         </div>
@@ -1660,13 +1660,13 @@ export default function FaithDashboard({
       </section>
 
       <footer aria-label="Faith study shortcuts" className="grid min-w-0 grid-cols-3 gap-2 rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:gap-3 sm:p-3">
-        <button type="button" onClick={() => setFaithSection("history")} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+        <button type="button" onClick={() => setFaithSection("history")} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
           <History size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study History</span>
         </button>
-        <button type="button" onClick={openBookmarks} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+        <button type="button" onClick={openBookmarks} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
           <Bookmark size={16} className="shrink-0 text-amber-600 dark:text-amber-300" /><span className="min-w-0">Saved Study</span>
         </button>
-        <button type="button" onClick={openStudy} data-demo="faith-study-library" className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+        <button type="button" onClick={openStudy} data-demo="faith-study-library" className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
           <Library size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study Library</span>
         </button>
       </footer>
