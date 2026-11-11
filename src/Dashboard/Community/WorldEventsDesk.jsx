@@ -186,7 +186,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
         <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-cyan-100">
-              <Globe2 size={12} /> {publisher.name || "RevelaCode"} · {publisher.label || "Official World Desk"}
+              <Globe2 size={12} /> {publisher.name || "RevelaCode"} {publisher.handle || "@revelacode"} · {publisher.label || "Official World Desk"}
             </span>
             <h2 className="mt-3 text-xl font-black tracking-tight sm:text-2xl">{title}</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-blue-100/85">
