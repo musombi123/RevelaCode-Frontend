@@ -1101,7 +1101,6 @@ export default function FaithDashboard({
           onNavigate={navigateTo}
           onOpenAI={onOpenAI}
           onBack={closeStudyView}
-          onNavigate={onNavigate}
         />
       </div>
     );
