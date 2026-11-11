@@ -209,7 +209,7 @@ export default function CommunityHubDashboard({
   ];
 
   const quickLinks = [
-    { label: "Saved posts", icon: Heart, action: () => onNavigate("community-feed") },
+    { label: "Community feed", icon: Heart, action: () => onNavigate("community-feed") },
     { label: "Your groups", icon: Users, action: () => onNavigate("community-circles") },
     { label: "Marketplace listings", icon: ShoppingBag, action: () => onNavigate("community-marketplace") },
     { label: "Settings", icon: Settings, action: () => onNavigate("community-contact-settings") },
