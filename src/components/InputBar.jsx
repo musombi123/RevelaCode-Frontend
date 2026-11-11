@@ -118,9 +118,14 @@ export default function InputBar({
   freeMode = false,
   disabled = false,
   placeholder = "Ask RevelaAI anything...",
+  initialDraft = "",
 }) {
   const { authFetch } = useAuth();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => String(initialDraft || ""));
+
+  useEffect(() => {
+    if (initialDraft) setText(String(initialDraft));
+  }, [initialDraft]);
   const [attachedFile, setAttachedFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
