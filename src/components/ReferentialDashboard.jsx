@@ -91,7 +91,7 @@ export default function StudyDashboard({
 
   if (selectedMaterial?.id) {
     return (
-      <FaithWorkspaceLayout page="referential" title="Study reader" contextData={{ material: selectedMaterial?.title || "Saved study material" }} onOpenAI={onOpenAI} onBack={() => setSelectedMaterial(null)} onPrimaryAction={() => setSelectedMaterial(null)}>
+      <FaithWorkspaceLayout page="referential" title="Study reader" contextData={{ material: selectedMaterial?.title || "Saved study material" }} onOpenAI={onOpenAI} onNavigate={onNavigate} onBack={() => setSelectedMaterial(null)} onPrimaryAction={() => setSelectedMaterial(null)}>
       <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
         {/* Reader header */}
         <div className="flex-shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
@@ -143,7 +143,7 @@ export default function StudyDashboard({
   ======================================================= */
 
   return (
-    <FaithWorkspaceLayout page="referential" contextData={{ theme: "Biblical themes and cross references" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+    <FaithWorkspaceLayout page="referential" contextData={{ theme: "Biblical themes and cross references" }} onOpenAI={onOpenAI} onNavigate={onNavigate} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
     <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* Study header */}
       <div className="flex-shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
