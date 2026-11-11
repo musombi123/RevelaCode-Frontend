@@ -29,6 +29,7 @@ import {
   saveCachedLibrary,
 } from "./studyMaterialCache.js";
 import StudyReferenceTools from "./StudyReferenceTools.jsx";
+import FaithWorkspaceLayout from "../faith/workspace/FaithWorkspaceLayout.jsx";
 
 const API = (
   import.meta.env.VITE_API_URL ||
@@ -146,6 +147,7 @@ export default function StudyLibrary({
   onOpenReference,
   onOpenAtlas,
   onOpenWordRoots,
+  onOpenAI,
 }) {
   const [materials, setMaterials] =
     useState([]);
@@ -333,6 +335,7 @@ export default function StudyLibrary({
 
   if (loading) {
     return (
+      <FaithWorkspaceLayout page="library" contextData={{ category: topicFilter, search: search || "All materials" }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => { setSearch(""); setTopicFilter("all"); }}>
       <div data-demo="faith-study-root" className="space-y-6">
         <div>
           <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -355,6 +358,7 @@ export default function StudyLibrary({
           )}
         </div>
       </div>
+      </FaithWorkspaceLayout>
     );
   }
 
@@ -363,6 +367,7 @@ export default function StudyLibrary({
   ======================================================= */
 
   return (
+    <FaithWorkspaceLayout page="library" contextData={{ category: topicFilter, search: search || "All materials" }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => { setSearch(""); setTopicFilter("all"); }}>
     <div data-demo="faith-study-root" className="space-y-6">
       {/* =================================================
           HEADER
@@ -653,5 +658,6 @@ export default function StudyLibrary({
         </div>
       )}
     </div>
+    </FaithWorkspaceLayout>
   );
 }
