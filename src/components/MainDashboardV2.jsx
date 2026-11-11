@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -289,11 +289,34 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
       if (next >= 3) window.localStorage.setItem("revelacode_ai_priority", "true");
     } catch { /* AI remains available when browser storage is restricted. */ }
   }, []);
-  const openAIWorkspace = useCallback(() => {
-    aiReturnViewRef.current = activeView === "ai" ? "home" : activeView;
+  const openAIWorkspace = useCallback((handoff = null) => {
+    aiReturnViewRef.current = activeView === "ai" ? "faith" : activeView;
+    if (handoff && typeof handoff === "object") {
+      setFaithAIHandoff(handoff);
+      try { sessionStorage.setItem("revelacode_faith_ai_handoff", JSON.stringify(handoff)); } catch { /* React state and router state remain available. */ }
+      navigate(location.pathname + location.search + location.hash, {
+        replace: true,
+        state: { ...(location.state || {}), faithAIHandoff: handoff, openFaithAI: true },
+      });
+    }
     recordAIWorkspaceUse();
     setAIFullscreenOpen(true);
-  }, [activeView, recordAIWorkspaceUse]);
+  }, [activeView, recordAIWorkspaceUse, navigate, location.pathname, location.search, location.hash, location.state]);
+
+  useEffect(() => {
+    const handoff = location.state?.faithAIHandoff;
+    if (!handoff || location.state?.openFaithAI !== true) return;
+    setFaithAIHandoff(handoff);
+    setActiveView("faith");
+    aiReturnViewRef.current = "faith";
+    recordAIWorkspaceUse();
+    setAIFullscreenOpen(true);
+    try { sessionStorage.setItem("revelacode_faith_ai_handoff", JSON.stringify(handoff)); } catch { /* The React state still carries the draft. */ }
+    navigate(location.pathname + location.search + location.hash, {
+      replace: true,
+      state: { ...(location.state || {}), faithAIHandoff: null, openFaithAI: false },
+    });
+  }, [location.key]);
   const closeAIWorkspace = useCallback(() => {
     setAIFullscreenOpen(false);
     try {
@@ -303,6 +326,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     if (activeView === "ai") setActiveView(aiReturnViewRef.current || "home");
   }, [activeView]);
 
+  const [faithAIHandoff, setFaithAIHandoff] = useState(null);
   const [aiWidgetOpen, setAIWidgetOpen] = useState(false);
   const [aiWidgetMinimized, setAIWidgetMinimized] = useState(false);
 
@@ -316,6 +340,8 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   const [searchParams, setSearchParams] =
     useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const { theme, setTheme } =
     useTheme();
@@ -821,7 +847,7 @@ const BIASHARA_SECTION_KEYS = new Set(
         onClose={closeAIWorkspace}
         aiElement={
           aiDashboardElement
-            ? React.cloneElement(aiDashboardElement, { activeHub: activeHubKey })
+            ? React.cloneElement(aiDashboardElement, { activeHub: activeHubKey, initialHandoff: faithAIHandoff })
             : null
         }
       />
