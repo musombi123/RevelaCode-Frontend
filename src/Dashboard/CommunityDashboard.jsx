@@ -44,6 +44,7 @@ import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
 import CommunityHubDashboard from "@/Dashboard/Community/CommunityHubDashboard.jsx";
+import CommunityWorkspaceFrame from "@/Dashboard/Community/CommunityWorkspaceFrame.jsx";
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
@@ -1259,8 +1260,25 @@ export default function CommunityDashboard({
 
   if (workspacePage === "feed") {
     return (
-      <div className="min-w-0">
-        {renderBackMenu()}
+      <CommunityWorkspaceFrame
+        header={renderBackMenu()}
+        user={user}
+        profile={communityProfile}
+        displayName={displayName}
+        activePage="feed"
+        onNavigate={navigate}
+        onCreatePost={openComposer}
+        onOpenPillar={(key) => {
+          if (key === "biashara" || key === "shamba" || key === "elimu") {
+            redirectToHub(key);
+            return;
+          }
+          selectIntent(key === "health" ? "help" : "connect");
+        }}
+        onBackToApp={() => {
+          if (typeof onNavigate === "function") onNavigate("home");
+        }}
+      >
         <CommunityFeed
           currentUser={{ ...(user || {}), community_profile: communityProfile }}
           onNavigate={navigate}
@@ -1270,7 +1288,7 @@ export default function CommunityDashboard({
             setWorkspacePage("composer");
           }}
         />
-      </div>
+      </CommunityWorkspaceFrame>
     );
   }
 
@@ -1293,7 +1311,29 @@ export default function CommunityDashboard({
   }
 
   if (workspacePage === "marketplace") {
-    return <div className="min-w-0">{renderBackMenu()}<CommunityMarketplace onNavigate={navigate} /></div>;
+    return (
+      <CommunityWorkspaceFrame
+        header={renderBackMenu()}
+        user={user}
+        profile={communityProfile}
+        displayName={displayName}
+        activePage="marketplace"
+        onNavigate={navigate}
+        onCreatePost={openComposer}
+        onOpenPillar={(key) => {
+          if (key === "biashara" || key === "shamba" || key === "elimu") {
+            redirectToHub(key);
+            return;
+          }
+          selectIntent(key === "health" ? "help" : "connect");
+        }}
+        onBackToApp={() => {
+          if (typeof onNavigate === "function") onNavigate("home");
+        }}
+      >
+        <CommunityMarketplace onNavigate={navigate} />
+      </CommunityWorkspaceFrame>
+    );
   }
 
   if (workspacePage === "contact-settings") {
