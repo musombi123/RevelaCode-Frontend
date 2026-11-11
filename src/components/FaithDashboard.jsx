@@ -44,6 +44,7 @@ import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
+import { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 const FAITH_VERSES = [
   { reference: "Psalm 119:105", text: "Thy word is a lamp unto my feet, and a light unto my path." },
@@ -261,6 +262,7 @@ export default function FaithDashboard({
   ======================================================= */
 
   const [faithSection, setFaithSection] = useState("home");
+  const [backPrompt, setBackPrompt] = useState("");
   const [studyTopic, setStudyTopic] = useState("all");
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [studyReturnSection, setStudyReturnSection] = useState("study");
@@ -718,6 +720,20 @@ export default function FaithDashboard({
     setFaithSection(studyReturnSection || "study");
   };
 
+  const handleFaithNativeBack = useCallback(() => {
+    if (comingSoonFeature) { setComingSoonFeature(""); return true; }
+    if (selectedSource) { setSelectedSource(null); setFaithSection(sourceReturnSection || "home"); return true; }
+    if (selectedMaterial) { goBackFromReader(); return true; }
+    if (faithSection !== "home") { closeStudyView(); return true; }
+    return false;
+  }, [comingSoonFeature, selectedSource, sourceReturnSection, selectedMaterial, faithSection, studyReturnSection]);
+
+  useFaithAndroidBack({
+    enabled: faithSection === "home",
+    isHome: true,
+    onBackAction: handleFaithNativeBack,
+    onPrompt: setBackPrompt,
+  });
 
   /* =======================================================
      INTERNAL STUDY HEADER
@@ -1316,8 +1332,10 @@ export default function FaithDashboard({
   return (
     <div
       data-demo="faith-overview"
-      className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden pb-24 sm:space-y-6 sm:p-1 sm:pb-0"
+      className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-6 sm:p-1 sm:pb-0"
     >
+      <FaithOfflineBanner />
+      <PullToRefreshSurface onRefresh={loadHomeSnapshot}>
       <header aria-label="Faith and Scripture workspace" className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/30 sm:p-6">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
@@ -1352,7 +1370,7 @@ export default function FaithDashboard({
       <form onSubmit={submitGlobalSearch} role="search" className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-200/70 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-4">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Search a Bible verse, topic or EGW quote</span>
-          <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Sparkles size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-500" />
           <input
             type="search"
             value={globalSearch}
@@ -1503,7 +1521,21 @@ export default function FaithDashboard({
         </article>
       </section>
 
-      <section aria-labelledby="faith-essentials-heading" className="space-y-3">
+      <section aria-label="SDA essentials" className="space-y-3 sm:hidden">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">SDA essentials</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Swipe to open a core study collection.</p>
+        </div>
+        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <button type="button" onClick={openSDAQuarterly} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 active:scale-[0.98] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"><CalendarDays size={16}/>Quarterly</button>
+          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><ScrollText size={16}/>EGW Writings <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
+          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><BookOpen size={16}/>28 Beliefs <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
+          <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-800 active:scale-[0.98] dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200"><Compass size={16}/>Sanctuary</button>
+          <button type="button" onClick={() => setComingSoonFeature("SDA Hymnal")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><Book size={16}/>Hymnal <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">Soon</span></button>
+        </div>
+      </section>
+
+      <section aria-labelledby="faith-essentials-heading" className="hidden space-y-3 sm:block">
         <div className="flex items-end justify-between gap-3">
           <div>
             <h2 id="faith-essentials-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">SDA essentials</h2>
@@ -1545,7 +1577,7 @@ export default function FaithDashboard({
                 key={tool.key}
                 type="button"
                 onClick={() => tool.key === "missionpulse" ? window.location.assign("/faith/missionpulse") : navigateTo(tool.key)}
-                className="group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none"
+                className={(tool.key === "missionpulse" ? "col-span-2 sm:col-span-1 " : "") + "group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Icon size={20} /></span>
                 <span className="mt-3 block min-w-0 text-sm font-semibold text-slate-900 dark:text-white">{tool.title}</span>
@@ -1643,6 +1675,16 @@ export default function FaithDashboard({
         </section>
       )}
 
+      <FaithMobileBottomNav
+        active="home"
+        onHome={() => setFaithSection("home")}
+        onStudy={() => openStudy("all")}
+        onAskAI={() => onOpenAI?.()}
+        onMission={() => window.location.assign("/faith/missionpulse")}
+        onMe={() => onNavigate?.("profile")}
+      />
+      {backPrompt && <div role="status" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[65] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-lg sm:bottom-5">{backPrompt}</div>}
+
       {comingSoonFeature && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setComingSoonFeature(""); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="faith-coming-soon-title" className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
@@ -1656,6 +1698,7 @@ export default function FaithDashboard({
           </section>
         </div>
       )}
+      </PullToRefreshSurface>
     </div>
   );
 }
