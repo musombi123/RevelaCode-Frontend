@@ -36,8 +36,9 @@ import CommunityMediaCards from "@/Dashboard/Community/CommunityMediaCards.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
 import WorldEventsDesk from "@/Dashboard/Community/WorldEventsDesk.jsx";
 
+// Pexels free-to-use community lifestyle photo by Kewal Nagda.
 const HERO_IMAGE =
-  "https://images.pexels.com/photos/33235949/pexels-photo-33235949/free-photo-of-smiling-woman-using-smartphone-outdoors.jpeg?auto=compress&dpr=1&h=1100&w=1800";
+  "https://images.pexels.com/photos/33235949/pexels-photo-33235949.jpeg?auto=compress&cs=tinysrgb&w=1800";
 const CITY_IMAGE =
   "https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=82&w=1200";
 
@@ -473,6 +474,11 @@ export default function CommunityHubDashboard({
                 </div>
               ) : null}
 
+              {/* Events stay visible on smaller screens; desktop uses the insight rail. */}
+              <div className="xl:hidden">
+                <WorldEventsDesk user={user} compact initialLimit={3} />
+              </div>
+
               {/* Existing, data-backed media and feed workspaces */}
               <CommunityMediaCards
                 posts={posts}
@@ -564,6 +570,17 @@ export default function CommunityHubDashboard({
             </aside>
           </div>
         </div>
+
+        {/* Bottom dock on desktop, aligned to the content area beside the rail */}
+        <nav aria-label="Jumuiya desktop navigation" className="fixed bottom-0 left-[208px] right-0 z-30 hidden border-t border-[#e4e8f6] bg-white/90 px-6 py-2 shadow-[0_-8px_28px_rgba(11,30,74,.07)] backdrop-blur-xl lg:flex">
+          <div className="mx-auto grid w-full max-w-[760px] grid-cols-5 items-center gap-3">
+            <button type="button" onClick={() => onNavigate("community-home")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-blue-700"><Home size={18} />Home</button>
+            <button type="button" onClick={() => onNavigate("community-discover")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500"><Compass size={18} />Discover</button>
+            <button type="button" onClick={onCreatePost} aria-label="Create post" className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-blue-700"><span className="-mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Plus size={22} /></span>Create</button>
+            <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500"><UsersRound size={18} />Networks</button>
+            <button type="button" onClick={onProfile} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500">{avatar ? <img src={avatar} alt="" className="h-[18px] w-[18px] rounded-full object-cover" /> : <UserRound size={18} />}Me</button>
+          </div>
+        </nav>
 
         {/* Bottom dock on mobile */}
         <nav aria-label="Jumuiya navigation" className="fixed inset-x-3 bottom-[max(9px,env(safe-area-inset-bottom))] z-40 mx-auto grid max-w-[460px] grid-cols-5 items-end gap-1 rounded-[23px] border border-[#e2e7f7] bg-white/95 p-2 shadow-[0_12px_35px_rgba(11,30,74,.18)] backdrop-blur-xl lg:hidden">
