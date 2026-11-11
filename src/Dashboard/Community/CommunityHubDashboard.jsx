@@ -3,16 +3,13 @@ import {
   ArrowRight,
   Bell,
   BookOpen,
-  BriefcaseBusiness,
+  Briefcase,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
   Compass,
-  Globe2,
   GraduationCap,
   Heart,
   Home,
-  Leaf,
   MapPin,
   Menu,
   MessageCircle,
@@ -24,11 +21,10 @@ import {
   ShoppingBag,
   Sparkles,
   Store,
-  TrendingUp,
   Trophy,
-  UserRound,
+  TrendingUp,
+  User,
   Users,
-  UsersRound,
   X,
 } from "lucide-react";
 
@@ -206,10 +202,10 @@ export default function CommunityHubDashboard({
     { label: "Community", helper: "Jumuiya", icon: Home, action: () => onNavigate("community-home"), active: true },
     { label: "Discover", helper: "Explore more", icon: Compass, action: () => onNavigate("community-discover") },
     { label: "Marketplace", helper: "Buy & sell", icon: Store, action: () => onNavigate("community-marketplace") },
-    { label: "Groups", helper: "Join & engage", icon: UsersRound, action: () => onNavigate("community-circles") },
+    { label: "Groups", helper: "Join & engage", icon: Users, action: () => onNavigate("community-circles") },
     { label: "Messages", helper: "Chat & connect", icon: MessageCircle, action: () => onNavigate("community-chats") },
     { label: "Notifications", helper: "Stay updated", icon: Bell, action: onNotifications },
-    { label: "My Space", helper: "Profile & settings", icon: UserRound, action: onProfile },
+    { label: "My Space", helper: "Profile & settings", icon: User, action: onProfile },
   ];
 
   const quickLinks = [
@@ -369,8 +365,8 @@ export default function CommunityHubDashboard({
 
               {/* Main destinations */}
               <section aria-label="Community destinations" className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-2.5">
-                <HubButton icon={UsersRound} title="People" subtitle="Connect" color="blue" onClick={() => onNavigate("community-people")} />
-                <HubButton icon={BriefcaseBusiness} title="Opportunities" subtitle="Find work" color="teal" onClick={() => onSelectIntent("work")} />
+                <HubButton icon={Users} title="People" subtitle="Connect" color="blue" onClick={() => onNavigate("community-people")} />
+                <HubButton icon={Briefcase} title="Opportunities" subtitle="Find work" color="teal" onClick={() => onSelectIntent("work")} />
                 <HubButton icon={CalendarDays} title="Events" subtitle="Join events" color="coral" onClick={onCreateEvent} />
                 <HubButton icon={Users} title="Groups" subtitle="Belong" color="blue" onClick={() => onNavigate("community-circles")} />
                 <HubButton icon={ShoppingBag} title="Marketplace" subtitle="Trade" color="amber" onClick={() => onNavigate("community-marketplace")} />
@@ -433,7 +429,7 @@ export default function CommunityHubDashboard({
                     </div>
                   ) : (
                     <div className="flex min-h-[156px] flex-col items-center justify-center rounded-xl bg-[#f7f9ff] px-4 text-center">
-                      <UsersRound size={22} className="text-blue-500" />
+                      <Users size={22} className="text-blue-500" />
                       <p className="mt-2 text-xs font-extrabold text-[#172344]">Your community is waiting</p>
                       <p className="mt-1 text-[10px] leading-4 text-slate-500">Be the first to share an update or invite someone in.</p>
                       <button type="button" onClick={onCreatePost} className="mt-3 text-[10px] font-extrabold text-blue-600">Create an update <ArrowRight size={11} className="inline" /></button>
@@ -447,11 +443,11 @@ export default function CommunityHubDashboard({
                 <div className="rounded-[20px] border border-[#e4e8f6] bg-white p-3.5 shadow-[0_4px_18px_rgba(25,48,104,.045)] sm:p-4">
                   <SectionHeading title="Quick Access" />
                   <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
-                    <QuickAction icon={UsersRound} title="Join a Group" color="blue" onClick={() => onNavigate("community-circles")} />
+                    <QuickAction icon={Users} title="Join a Group" color="blue" onClick={() => onNavigate("community-circles")} />
                     <QuickAction icon={Plus} title="Post an Update" color="amber" onClick={onCreatePost} />
                     <QuickAction icon={Store} title="Find Services" color="teal" onClick={() => onSelectIntent("help")} />
                     <QuickAction icon={BookOpen} title="Explore Courses" color="sky" onClick={() => onSelectIntent("learn")} />
-                    <QuickAction icon={BriefcaseBusiness} title="Check Jobs" color="violet" onClick={() => onSelectIntent("work")} />
+                    <QuickAction icon={Briefcase} title="Check Jobs" color="violet" onClick={() => onSelectIntent("work")} />
                     <QuickAction icon={CalendarDays} title="Plan an Event" color="pink" onClick={onCreateEvent} />
                   </div>
                 </div>
@@ -577,8 +573,8 @@ export default function CommunityHubDashboard({
             <button type="button" onClick={() => onNavigate("community-home")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-blue-700"><Home size={18} />Home</button>
             <button type="button" onClick={() => onNavigate("community-discover")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500"><Compass size={18} />Discover</button>
             <button type="button" onClick={onCreatePost} aria-label="Create post" className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-blue-700"><span className="-mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Plus size={22} /></span>Create</button>
-            <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500"><UsersRound size={18} />Networks</button>
-            <button type="button" onClick={onProfile} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500">{avatar ? <img src={avatar} alt="" className="h-[18px] w-[18px] rounded-full object-cover" /> : <UserRound size={18} />}Me</button>
+            <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500"><Users size={18} />Networks</button>
+            <button type="button" onClick={onProfile} className="flex flex-col items-center gap-1 py-1 text-[10px] font-extrabold text-slate-500">{avatar ? <img src={avatar} alt="" className="h-[18px] w-[18px] rounded-full object-cover" /> : <User size={18} />}Me</button>
           </div>
         </nav>
 
@@ -590,9 +586,9 @@ export default function CommunityHubDashboard({
             <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Plus size={23} /></span>
             Create
           </button>
-          <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><UsersRound size={18} />Networks</button>
+          <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><Users size={18} />Networks</button>
           <button type="button" onClick={onProfile} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500">
-            {avatar ? <img src={avatar} alt="" className="h-[18px] w-[18px] rounded-full object-cover" /> : <UserRound size={18} />}
+            {avatar ? <img src={avatar} alt="" className="h-[18px] w-[18px] rounded-full object-cover" /> : <User size={18} />}
             Me
           </button>
         </nav>
