@@ -11,6 +11,7 @@ import {
 import StudyLayout from "@/components/study/StudyLayout";
 import StudyFeed from "@/components/study/StudyFeed";
 import StudyReader from "@/components/study/StudyReader";
+import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 /* =========================================================
    MATERIAL ID
@@ -35,6 +36,8 @@ const resolveMaterialId = (material) => {
 
 export default function StudyDashboard({
   user,
+  onOpenAI,
+  onNavigate,
 }) {
   const [
     selectedMaterial,
@@ -88,6 +91,7 @@ export default function StudyDashboard({
 
   if (selectedMaterial?.id) {
     return (
+      <FaithWorkspaceLayout page="referential" title="Study reader" contextData={{ material: selectedMaterial?.title || "Saved study material" }} onOpenAI={onOpenAI} onBack={() => setSelectedMaterial(null)} onPrimaryAction={() => setSelectedMaterial(null)}>
       <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
         {/* Reader header */}
         <div className="flex-shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
@@ -130,6 +134,7 @@ export default function StudyDashboard({
           />
         </div>
       </section>
+      </FaithWorkspaceLayout>
     );
   }
 
@@ -138,6 +143,7 @@ export default function StudyDashboard({
   ======================================================= */
 
   return (
+    <FaithWorkspaceLayout page="referential" contextData={{ theme: "Biblical themes and cross references" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
     <section className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* Study header */}
       <div className="flex-shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
@@ -172,5 +178,6 @@ export default function StudyDashboard({
         </StudyLayout>
       </div>
     </section>
+    </FaithWorkspaceLayout>
   );
 }
