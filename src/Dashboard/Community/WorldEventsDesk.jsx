@@ -81,7 +81,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
   const [error, setError] = useState("");
   const [showPreferences, setShowPreferences] = useState(false);
   const [showSources, setShowSources] = useState(false);
-  const [expanded, setExpanded] = useState({});
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [activeVideo, setActiveVideo] = useState("");
   const [showAll, setShowAll] = useState(false);
 
@@ -253,16 +253,21 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
               const isSaved = savedIds.includes(event.id);
               const videoId = event.youtube_video_id || "";
               const playing = activeVideo === event.id;
-              const expandedCard = Boolean(expanded[event.id]);
               return (
                 <article key={event.id} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-indigo-200 hover:shadow-md dark:border-white/10 dark:bg-slate-950/40 dark:hover:border-indigo-800">
-                  {event.urlToImage ? (
-                    <div className="relative overflow-hidden bg-slate-100 dark:bg-slate-900">
-                      <img src={event.urlToImage} alt="" loading="lazy" className="aspect-[16/8] w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                      <span className="absolute left-3 top-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white">{event.region || "world"}</span>
-                      {videoId ? <button type="button" onClick={() => { learnFromEvent(event); setActiveVideo(playing ? "" : event.id); }} className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-[10px] font-black text-white shadow-lg"><Play size={13} fill="currentColor" /> {playing ? "Close video" : "Watch video"}</button> : null}
-                    </div>
-                  ) : null}
+                  <div className="relative aspect-[16/8] overflow-hidden bg-gradient-to-br from-[#101b45] via-[#263b79] to-[#315f93]">
+                    {event.urlToImage ? (
+                      <img src={event.urlToImage} alt={event.headline || "World event"} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/80">
+                        <Globe2 size={34} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em]">World Events · {event.region || "World"}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-slate-950/10" />
+                    <span className="absolute left-3 top-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white">{event.region || "world"}</span>
+                    {videoId ? <button type="button" onClick={() => { learnFromEvent(event); setActiveVideo(playing ? "" : event.id); }} className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-[10px] font-black text-white shadow-lg"><Play size={13} fill="currentColor" /> {playing ? "Close video" : "Watch video"}</button> : null}
+                  </div>
                   <div className="space-y-3 p-3.5 sm:p-4">
                     <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold text-slate-400">
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-300"><Newspaper size={11} /> {event.source || "Publisher"}</span>
@@ -270,22 +275,10 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
                       {(event.categories || []).slice(0, 2).map((category) => <span key={category} className="rounded-full bg-indigo-50 px-2 py-1 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">{category.replace(/_/g, " ")}</span>)}
                     </div>
                     <h3 className="text-sm font-black leading-5 text-slate-950 dark:text-white sm:text-base">{event.headline}</h3>
-                    {event.description ? <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">{event.description}</p> : null}
-                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
-                      <p className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300"><Sparkles size={12} /> Why it matters</p>
-                      <p className="mt-1.5 text-xs leading-5 text-indigo-950 dark:text-indigo-100">{event.why_it_matters}</p>
-                    </div>
-                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-900/30 dark:bg-emerald-950/15">
-                      <p className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-800 dark:text-emerald-300"><HeartHandshake size={12} /> Life lesson</p>
-                      <p className="mt-1.5 text-xs leading-5 text-emerald-950 dark:text-emerald-100">{event.life_lesson}</p>
-                      {event.reflection_question ? <p className="mt-2 border-t border-emerald-200/70 pt-2 text-[11px] font-bold leading-5 text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-200">{event.reflection_question}</p> : null}
-                    </div>
-                    {event.faith_reflection ? (
-                      <details className="rounded-xl border border-slate-200 px-3 py-2.5 dark:border-white/10">
-                        <summary className="cursor-pointer text-[10px] font-bold text-slate-600 dark:text-slate-300">Optional SDA reflection</summary>
-                        <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{event.faith_reflection}</p>
-                      </details>
-                    ) : null}
+                    {event.description ? <p className="line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{event.description}</p> : null}
+                    <button type="button" onClick={() => { learnFromEvent(event); setSelectedEvent(event); }} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-slate-950">
+                      View more <ArrowUpRight size={14} />
+                    </button>
                     {playing && videoId ? (
                       <div className="overflow-hidden rounded-xl bg-black">
                         <iframe title={event.headline} src={"https://www.youtube-nocookie.com/embed/" + encodeURIComponent(videoId) + "?autoplay=1&rel=0"} className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
@@ -338,6 +331,45 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
         ) : null}
       </div>
     </section>
+      {selectedEvent ? (
+        <div className="fixed inset-0 z-[140] flex items-end justify-center bg-slate-950/75 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedEvent(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="world-event-story-title" className="max-h-[94dvh] w-full max-w-4xl overflow-y-auto rounded-t-3xl border border-white/10 bg-white shadow-2xl dark:bg-slate-950 sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/95 sm:px-6">
+              <div className="min-w-0">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">RevelaCode · Official World Desk</p>
+                <p className="truncate text-xs font-bold text-slate-500 dark:text-slate-400">World Events & Life Lessons</p>
+              </div>
+              <button type="button" onClick={() => setSelectedEvent(null)} aria-label="Close story" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"><X size={18} /></button>
+            </div>
+            <div className="relative aspect-[16/7] min-h-[180px] overflow-hidden bg-gradient-to-br from-[#101b45] via-[#263b79] to-[#315f93] sm:min-h-[260px]">
+              {selectedEvent.urlToImage ? <img src={selectedEvent.urlToImage} alt={selectedEvent.headline || "World event"} className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} /> : <div className="absolute inset-0 flex items-center justify-center text-white/70"><Globe2 size={54} /></div>}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/15 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-7">
+                <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">{selectedEvent.region || "World"}</span>
+                <h2 id="world-event-story-title" className="mt-3 max-w-3xl text-xl font-black leading-tight text-white sm:text-3xl">{selectedEvent.headline}</h2>
+              </div>
+            </div>
+            <article className="space-y-5 px-4 py-5 sm:px-7 sm:py-7">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900"><Newspaper size={13} /> {selectedEvent.source || "Publisher"}</span>
+                <span className="inline-flex items-center gap-1.5"><Clock3 size={13} /> {relativeDate(selectedEvent.publishedAt)}</span>
+                {(selectedEvent.categories || []).map((category) => <span key={category} className="rounded-full bg-indigo-50 px-2.5 py-1.5 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200">{category.replace(/_/g, " ")}</span>)}
+              </div>
+              <section className="max-w-3xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">What happened</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700 dark:text-slate-200">{selectedEvent.description || "The publisher has not supplied a summary. Read the original report for the full account."}</p>
+              </section>
+              {selectedEvent.why_it_matters ? <section className="max-w-3xl rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/25 sm:p-5"><p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-indigo-700 dark:text-indigo-300"><Sparkles size={15} /> Why it matters</p><p className="mt-2 text-sm leading-7 text-indigo-950 dark:text-indigo-100">{selectedEvent.why_it_matters}</p></section> : null}
+              {selectedEvent.life_lesson ? <section className="max-w-3xl rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20 sm:p-5"><p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-800 dark:text-emerald-300"><HeartHandshake size={15} /> Life lesson</p><p className="mt-2 text-sm leading-7 text-emerald-950 dark:text-emerald-100">{selectedEvent.life_lesson}</p>{selectedEvent.reflection_question ? <p className="mt-3 border-t border-emerald-200 pt-3 text-sm font-bold leading-6 text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-200">{selectedEvent.reflection_question}</p> : null}</section> : null}
+              {selectedEvent.faith_reflection ? <details className="max-w-3xl rounded-2xl border border-slate-200 px-4 py-3 dark:border-white/10"><summary className="cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-200">Optional faith reflection</summary><p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{selectedEvent.faith_reflection}</p></details> : null}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
+                <button type="button" onClick={() => toggleSave(selectedEvent)} aria-pressed={savedIds.includes(selectedEvent.id)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 dark:border-white/10 dark:text-slate-200"><Bookmark size={14} /> {savedIds.includes(selectedEvent.id) ? "Saved on this device" : "Save story"}</button>
+                <a href={selectedEvent.url} target="_blank" rel="noopener noreferrer" onClick={() => learnFromEvent(selectedEvent)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-700">Read original publisher report <ExternalLink size={13} /></a>
+              </div>
+            </article>
+          </section>
+        </div>
+      ) : null}
   );
 }
 
