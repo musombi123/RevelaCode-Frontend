@@ -122,7 +122,7 @@ function Button({ children, onClick, disabled = false, variant = "primary", type
   return <button type={type} onClick={onClick} disabled={disabled} className={base + (styles[variant] || styles.primary) + " " + className}>{children}</button>;
 }
 
-export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavigate, onOpenAI }) {
+export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavigate, onOpenAI, onBack }) {
   const [tab, setTab] = useState("courses");
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState("");
@@ -485,7 +485,7 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   }
 
   if (loading) {
-    return <FaithWorkspaceLayout page="academy" contextData={{ status: "Loading courses" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => setTab("courses")}><div className="flex min-h-[260px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div></FaithWorkspaceLayout>;
+    return <FaithWorkspaceLayout page="academy" contextData={{ status: "Loading courses" }} onOpenAI={onOpenAI} onBack={onBack || (() => onNavigate?.("faith"))} onPrimaryAction={() => setTab("courses")}><div className="flex min-h-[260px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div></FaithWorkspaceLayout>;
   }
 
   return (
