@@ -298,8 +298,9 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
         replace: true,
         state: { ...(location.state || {}), faithAIHandoff: handoff, openFaithAI: true },
       });
+    } else {
+      recordAIWorkspaceUse();
     }
-    recordAIWorkspaceUse();
     setAIFullscreenOpen(true);
   }, [activeView, recordAIWorkspaceUse, navigate, location.pathname, location.search, location.hash, location.state]);
 
