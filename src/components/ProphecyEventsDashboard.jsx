@@ -666,6 +666,22 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
         /*
          * If API URL isn't configured, use cache instead.
          */
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          const cached = readCachedEvents();
+          if (cached?.events?.length) {
+            setEvents(cached.events);
+            setCachedAt(cached.savedAt);
+            setUsingCachedData(true);
+            setError("Offline ready · Live events are paused. Showing saved event reports.");
+          } else {
+            setEvents([]);
+            setUsingCachedData(false);
+            setError("You are offline and no saved event reports are available on this device yet.");
+          }
+          setLoading(false);
+          return;
+        }
+
         if (!API_URL) {
           const cached =
             readCachedEvents();
