@@ -8,6 +8,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
+import FaithWorkspaceLayout from "./workspace/FaithWorkspaceLayout.jsx";
 
 const PRIORITY_FAITH_COURSES = Object.freeze([
   "three-angels-messages",
@@ -121,7 +122,7 @@ function Button({ children, onClick, disabled = false, variant = "primary", type
   return <button type={type} onClick={onClick} disabled={disabled} className={base + (styles[variant] || styles.primary) + " " + className}>{children}</button>;
 }
 
-export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavigate }) {
+export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavigate, onOpenAI }) {
   const [tab, setTab] = useState("courses");
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState("");
@@ -484,10 +485,11 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
   }
 
   if (loading) {
-    return <div className="flex min-h-[260px] items-center justify-center gap-3 text-sm text-slate-500"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div>;
+    return <FaithWorkspaceLayout page="academy" contextData={{ status: "Loading courses" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => setTab("courses")}><div className="flex min-h-[260px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="animate-spin" size={20} /> Loading Faith Academy…</div></FaithWorkspaceLayout>;
   }
 
   return (
+    <FaithWorkspaceLayout page="academy" contextData={{ course: selectedCourse?.title || "Course catalogue", lesson: selectedLessonSlug || "" }} onOpenAI={onOpenAI} onBack={() => onNavigate?.("faith")} onPrimaryAction={() => setTab("courses")}>
     <div className="space-y-4">
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-800 via-violet-800 to-purple-900 p-4 text-white shadow-md sm:p-6">
         <div className="pointer-events-none absolute -right-14 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
@@ -743,5 +745,6 @@ export default function FaithPremiumWorkspace({ isGuest = false, onLogin, onNavi
         <p className="text-[10px] leading-5 text-slate-400">Editorial note: courses are structured study aids with source links; they are not official rulings. AI answers can make mistakes. Check cited passages and authoritative documents, and treat disputed interpretations as disputed.</p>
       </div>
     </div>
+    </FaithWorkspaceLayout>
   );
 }
