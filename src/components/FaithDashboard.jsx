@@ -1681,4 +1681,3 @@ export default function FaithDashboard({
     </div>
   );
 }
-}
