@@ -117,6 +117,14 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
             <img src={artifact.image_url} alt={artifact.title || "Generated RevelaAI image"} className="max-h-[55dvh] w-full object-contain"/>
             <figcaption className="p-2 text-xs text-muted">{artifact.image_caption || "Generated visual asset"}</figcaption>
           </figure>}
+          {artifact.campaign && <div className="space-y-3 rounded-xl border border-line bg-surface-2 p-3">
+            <div><span className="text-[10px] font-bold uppercase tracking-wide text-muted">Campaign headline</span><h3 className="mt-1 text-lg font-black text-fg">{artifact.campaign.headline}</h3></div>
+            {artifact.campaign.supporting_message && <p className="text-sm leading-6 text-fg-secondary">{artifact.campaign.supporting_message}</p>}
+            {artifact.campaign.social_caption && <div><b className="text-xs text-fg">Social caption</b><p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-fg-secondary">{artifact.campaign.social_caption}</p></div>}
+            {artifact.campaign.whatsapp_message && <div><b className="text-xs text-fg">WhatsApp message</b><p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-fg-secondary">{artifact.campaign.whatsapp_message}</p></div>}
+            {artifact.campaign.call_to_action && <div><b className="text-xs text-fg">Call to action</b><p className="mt-1 text-xs text-accent">{artifact.campaign.call_to_action}</p></div>}
+            {Array.isArray(artifact.campaign.hashtags) && artifact.campaign.hashtags.length > 0 && <p className="text-xs text-muted">{artifact.campaign.hashtags.join(" ")}</p>}
+          </div>}
           {artifact.chart_url && <figure className="overflow-hidden rounded-xl border border-line bg-surface-2 p-2"><img src={artifact.chart_url} alt="Dataset analysis chart" className="w-full object-contain"/><figcaption className="p-2 text-xs text-muted">Deterministic chart from the supplied dataset</figcaption></figure>}
           {artifact.downloads && Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").length>0 && <div className="flex flex-wrap gap-2">
             {Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").map(([format,url])=><a key={format} href={url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2">Download {format.toUpperCase()}</a>)}
