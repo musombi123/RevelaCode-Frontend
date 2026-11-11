@@ -10,12 +10,20 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const [visible, setVisible] = useState(true);
   const [panelWidth, setPanelWidth] = useState(440);
   const resizeRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    setVisible(true);
+    setTab("preview");
+    setFilter("");
+  }, [artifact]);
 
   useEffect(() => {
     if (!visible) return undefined;
     document.body.dataset.revelaaiWorkspaceOpen = "true";
     window.dispatchEvent(new CustomEvent("revelaai:workspace-opened"));
-    const close = () => setVisible(false);
+    const close = () => { setVisible(false); onCloseRef.current?.(); };
     window.addEventListener("revelaai:workspace-request-close", close);
     return () => {
       delete document.body.dataset.revelaaiWorkspaceOpen;
