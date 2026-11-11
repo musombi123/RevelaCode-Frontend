@@ -299,6 +299,17 @@ export default function AIAssistantDashboard({
         handoff = null;
       }
     }
+    if (!handoff) {
+      try {
+        const savedDraft = sessionStorage.getItem("revelacode_faith_ai_draft") || "";
+        if (savedDraft) {
+          setFaithDraftText(savedDraft);
+          return;
+        }
+      } catch {
+        // The active composer can still keep its own in-memory draft.
+      }
+    }
     const question = String(handoff?.question || "").trim();
     if (!question) return;
     const signature = question + "|" + JSON.stringify(handoff?.contextData || {});
