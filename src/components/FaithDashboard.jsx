@@ -263,6 +263,8 @@ export default function FaithDashboard({
 
   const [faithSection, setFaithSection] = useState("home");
   const [backPrompt, setBackPrompt] = useState("");
+  const [homeKeyboardOpen, setHomeKeyboardOpen] = useState(false);
+  const homeSearchRef = useRef(null);
   const [studyTopic, setStudyTopic] = useState("all");
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [studyReturnSection, setStudyReturnSection] = useState("study");
@@ -721,6 +723,7 @@ export default function FaithDashboard({
   };
 
   const handleFaithNativeBack = useCallback(() => {
+    if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) { document.activeElement.blur(); setHomeKeyboardOpen(false); return true; }
     if (comingSoonFeature) { setComingSoonFeature(""); return true; }
     if (selectedSource) { setSelectedSource(null); setFaithSection(sourceReturnSection || "home"); return true; }
     if (selectedMaterial) { goBackFromReader(); return true; }
@@ -1688,6 +1691,7 @@ export default function FaithDashboard({
         onAskAI={() => onOpenAI?.()}
         onMission={() => window.location.assign("/faith/missionpulse")}
         onMe={() => onNavigate?.("profile")}
+        hidden={homeKeyboardOpen}
       />
       {backPrompt && <div role="status" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[65] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-lg sm:bottom-5">{backPrompt}</div>}
 
