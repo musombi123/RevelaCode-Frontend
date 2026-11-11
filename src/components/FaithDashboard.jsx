@@ -44,7 +44,7 @@ import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
-import { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
+import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 const FAITH_VERSES = [
   { reference: "Psalm 119:105", text: "Thy word is a lamp unto my feet, and a light unto my path." },
@@ -1000,14 +1000,20 @@ export default function FaithDashboard({
 
   if (faithSection === "source-viewer") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        {renderStudyHeader(
-          selectedSource?.title || "Study Reference",
-          "Read the selected research source inside RevelaCode where the publisher permits it, and return directly to your lesson.",
-          () => { setSelectedSource(null); setFaithSection(sourceReturnSection || "study"); }
-        )}
-        <StudyResourceViewer source={selectedSource} />
-      </div>
+      <FaithWorkspaceLayout
+        page="library"
+        title={selectedSource?.title || "Study Reference"}
+        description="Read the selected research source inside RevelaCode where the publisher permits it."
+        contextData={{ source: selectedSource?.title || selectedSource?.url || "Study source" }}
+        onOpenAI={onOpenAI}
+        onBack={() => { setSelectedSource(null); setFaithSection(sourceReturnSection || "study"); }}
+        onNavigate={onNavigate}
+        panel={false}
+      >
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="min-w-0">
+          <StudyResourceViewer source={selectedSource} />
+        </div>
+      </FaithWorkspaceLayout>
     );
   }
 
@@ -1036,16 +1042,18 @@ export default function FaithDashboard({
           space-y-4
         "
       >
-        {renderStudyHeader(
-          "Saved Study",
-          "Access the study materials you have bookmarked for later reading.",
-          closeStudyView
-        )}
-
-        <BookmarksPanel
-          userId={userId}
-          onOpen={openMaterial}
-        />
+        <FaithWorkspaceLayout
+          page="library"
+          title="Saved Study"
+          description="Access study materials bookmarked for later reading."
+          contextData={{ collection: "Saved Study" }}
+          onOpenAI={onOpenAI}
+          onBack={closeStudyView}
+          onNavigate={onNavigate}
+          panel={false}
+        >
+          <BookmarksPanel userId={userId} onOpen={openMaterial} />
+        </FaithWorkspaceLayout>
       </div>
     );
   }
@@ -1060,16 +1068,18 @@ export default function FaithDashboard({
           space-y-4
         "
       >
-        {renderStudyHeader(
-          "Recommended Study",
-          "Discover study materials selected from your saved study preferences.",
-          closeStudyView
-        )}
-
-        <RecommendationsPanel
-          userId={userId}
-          onOpen={openMaterial}
-        />
+        <FaithWorkspaceLayout
+          page="library"
+          title="Recommended Study"
+          description="Discover study materials selected from your saved study preferences."
+          contextData={{ collection: "Recommended Study" }}
+          onOpenAI={onOpenAI}
+          onBack={closeStudyView}
+          onNavigate={onNavigate}
+          panel={false}
+        >
+          <RecommendationsPanel userId={userId} onOpen={openMaterial} />
+        </FaithWorkspaceLayout>
       </div>
     );
   }
@@ -1112,6 +1122,7 @@ export default function FaithDashboard({
           onLogin={onLogin}
           onOpenAI={onOpenAI}
           onBack={closeStudyView}
+          onNavigate={onNavigate}
         />
       </div>
     );
@@ -1119,22 +1130,16 @@ export default function FaithDashboard({
 
   if (faithSection === "reader") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
-        className="
-          mx-auto
-          w-full
-          max-w-[1500px]
-          space-y-4
-        "
+      <FaithWorkspaceLayout
+        page="library"
+        title={selectedMaterial?.title || "Study Reader"}
+        description="Read the complete lesson and continue your Faith study from one place."
+        contextData={{ material: selectedMaterial?.title || "Study material", id: selectedMaterial?.id || selectedMaterial?._id || "" }}
+        onOpenAI={onOpenAI}
+        onBack={goBackFromReader}
+        onNavigate={onNavigate}
       >
-        {renderStudyHeader(
-          selectedMaterial?.title || "Study Reader",
-          selectedMaterial
-            ? "Read the complete lesson and continue your Faith study from one place."
-            : "Open a study material from the library.",
-          goBackFromReader
-        )}
-
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="min-w-0">
         {selectedMaterial ? (
           <StudyReader
             onOpenReference={openBibleReference}
@@ -1220,7 +1225,8 @@ export default function FaithDashboard({
             </button>
           </section>
         )}
-      </div>
+        </div>
+      </FaithWorkspaceLayout>
     );
   }
 
@@ -1282,12 +1288,16 @@ export default function FaithDashboard({
 
   if (faithSection === "history") {
     return (
-      <div className="mx-auto w-full max-w-[1500px] space-y-4 pb-24 sm:pb-0">
-        {renderStudyHeader(
-          "Study History",
-          "Return to recent Scripture, prophecy and Faith study activity.",
-          () => setFaithSection("home")
-        )}
+      <FaithWorkspaceLayout
+        page="library"
+        title="Study History"
+        description="Return to recent Scripture, prophecy and Faith study activity."
+        contextData={{ collection: "Study History", records: faithHistory.length }}
+        onOpenAI={onOpenAI}
+        onBack={() => setFaithSection("home")}
+        onNavigate={onNavigate}
+        panel={false}
+      >
         <section className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1334,7 +1344,7 @@ export default function FaithDashboard({
             </div>
           )}
         </section>
-      </div>
+      </FaithWorkspaceLayout>
     );
   }
 
