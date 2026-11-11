@@ -96,76 +96,112 @@ function ListingCard({ listing, isOwner, deleting, onDelete }) {
     listing?.description || "Contact the seller for more information.",
   );
   const location = String(listing?.location || "").trim();
+  const imageUrl =
+    listing?.image_url ||
+    listing?.photo_url ||
+    listing?.cover_image_url ||
+    listing?.thumbnail_url ||
+    listing?.image?.url ||
+    listing?.media?.[0]?.url ||
+    "";
+  const sellerName =
+    listing?.seller?.name ||
+    listing?.seller_name ||
+    listing?.owner_name ||
+    listing?.business_name ||
+    "";
+  const contactId =
+    listing?.seller_user_id ??
+    listing?.sellerId ??
+    listing?.owner_user_id;
 
   return (
-    <article className="group flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md dark:border-white/[0.08] dark:bg-[#0d1729] dark:hover:border-cyan-700/50 sm:p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-          <ShoppingBag size={19} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold capitalize text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              <Tag size={11} />
-              {category}
-            </span>
-            {isOwner ? (
-              <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-bold text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
-                Your listing
+    <article className="group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0d1729] shadow-[0_8px_24px_rgba(0,0,0,.14)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_16px_32px_rgba(0,0,0,.22)]">
+      <div className="relative aspect-[16/8] overflow-hidden bg-gradient-to-br from-[#102d5c] via-[#123d75] to-[#087b8d]">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
+            onError={(event) => { event.currentTarget.style.display = "none"; }}
+          />
+        ) : (
+          <>
+            <div className="absolute -right-8 -top-12 h-44 w-44 rounded-full border border-white/10" />
+            <div className="absolute -bottom-20 left-8 h-48 w-48 rounded-full border border-cyan-100/10" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-cyan-100 shadow-xl backdrop-blur-sm">
+                <ShoppingBag size={28} />
               </span>
-            ) : null}
+            </div>
+          </>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#061226]/90 via-[#061226]/15 to-transparent" />
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-[#07172e]/85 px-2.5 py-1 text-[9px] font-black capitalize tracking-wide text-white backdrop-blur">
+            <Tag size={10} /> {category}
+          </span>
+          {isOwner ? (
+            <span className="rounded-full border border-cyan-200/20 bg-cyan-300/15 px-2.5 py-1 text-[9px] font-black text-cyan-100 backdrop-blur">
+              Your listing
+            </span>
+          ) : null}
+        </div>
+        <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            {sellerName ? <p className="mb-1 truncate text-[9px] font-semibold text-white/70">{sellerName}</p> : null}
+            <h3 className="line-clamp-2 break-words text-sm font-black leading-5 text-white sm:text-[15px]">
+              {title}
+            </h3>
           </div>
-          <h3 className="mt-3 break-words text-sm font-black text-slate-900 dark:text-white">
-            {title}
-          </h3>
+          <span className="shrink-0 rounded-xl border border-cyan-200/20 bg-cyan-300 px-2.5 py-1.5 text-[10px] font-black text-[#08213c] shadow-lg">
+            {formatPrice(listing)}
+          </span>
         </div>
       </div>
 
-      <p className="mt-3 min-h-[2.5rem] whitespace-pre-wrap break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
-        {description}
-      </p>
+      <div className="flex flex-1 flex-col p-4 sm:p-4">
+        <p className="line-clamp-3 min-h-[3.75rem] whitespace-pre-wrap break-words text-xs leading-[1.6] text-slate-300">
+          {description}
+        </p>
 
-      <div className="mt-4 flex items-center gap-2 text-base font-black tracking-tight text-slate-950 dark:text-white">
-        <CircleDollarSign size={17} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-        <span className="break-words">{formatPrice(listing)}</span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] text-slate-400">
-        {Number.isFinite(quantity) ? (
-          <span className="inline-flex items-center gap-1">
-            <Package size={12} />
-            {quantity} available
-          </span>
-        ) : null}
-        {location ? (
-          <span className="inline-flex items-center gap-1 break-words">
-            <MapPin size={12} />
-            {location}
-          </span>
-        ) : null}
-        <span>{formatListingDate(listing?.created_at || listing?.createdAt)}</span>
-      </div>
-
-      {!isOwner && (listing?.seller_user_id || listing?.sellerId || listing?.owner_user_id) ? (
-        <WhatsAppButton
-          memberId={listing?.seller_user_id ?? listing?.sellerId ?? listing?.owner_user_id}
-          compact
-        />
-      ) : null}
-
-      {isOwner ? (
-        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-          <button
-            type="button"
-            onClick={() => { if (typeof onDelete === "function") onDelete(listing); }}
-            disabled={deleting}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/30"
-          >
-            <Trash2 size={14} />
-            {deleting ? "Removing…" : "Remove listing"}
-          </button>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-medium text-slate-400">
+          {Number.isFinite(quantity) ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Package size={12} className="text-cyan-300" />
+              {quantity} available
+            </span>
+          ) : null}
+          {location ? (
+            <span className="inline-flex items-center gap-1.5 break-words">
+              <MapPin size={12} className="text-cyan-300" />
+              {location}
+            </span>
+          ) : null}
+          <span>{formatListingDate(listing?.created_at || listing?.createdAt)}</span>
         </div>
-      ) : null}
+
+        {!isOwner && contactId ? (
+          <div className="mt-4 border-t border-white/[0.07] pt-3">
+            <WhatsAppButton memberId={contactId} compact />
+          </div>
+        ) : null}
+
+        {isOwner ? (
+          <div className="mt-4 border-t border-white/[0.07] pt-3">
+            <button
+              type="button"
+              onClick={() => { if (typeof onDelete === "function") onDelete(listing); }}
+              disabled={deleting}
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-400/20 bg-rose-500/[0.06] px-3 py-2 text-xs font-bold text-rose-200 transition hover:border-rose-400/40 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 size={14} />
+              {deleting ? "Removing…" : "Manage listing · Remove"}
+            </button>
+          </div>
+        ) : null}
+      </div>
     </article>
   );
 }
