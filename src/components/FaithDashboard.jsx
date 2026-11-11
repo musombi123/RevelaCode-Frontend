@@ -48,7 +48,7 @@ import { useRevenueApi } from "@/services/revenueApi.jsx";
 import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 function isNativeAndroid() {
-  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  return (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
 }
 
 function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
