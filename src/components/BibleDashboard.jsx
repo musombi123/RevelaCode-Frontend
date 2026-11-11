@@ -867,7 +867,7 @@ export default function BibleDashboard({
 
   if (sourceView) {
     return (
-      <FaithWorkspaceLayout page="bible" title="Study reference" description="Read the selected source beside the biblical passage that led you here." contextData={{ reference: sourceView?.title || "Study reference", version: bibleVersion.toUpperCase() }} onOpenAI={onOpenAI} onBack={() => setSourceView(null)} onPrimaryAction={() => setSourceView(null)}>
+      <FaithWorkspaceLayout page="bible" title="Study reference" description="Read the selected source beside the biblical passage that led you here." contextData={{ reference: sourceView?.title || "Study reference", version: bibleVersion.toUpperCase() }} onOpenAI={onOpenAI} onBack={() => setSourceView(null)} onNavigate={onNavigate} onPrimaryAction={() => setSourceView(null)}>
       <div className="mx-auto w-full max-w-[1500px] space-y-4 p-3 sm:p-4">
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
           <BackButton label="Back to Bible" onClick={() => setSourceView(null)} />
@@ -890,6 +890,7 @@ export default function BibleDashboard({
         version: String(bibleVersion || "kjv").toUpperCase(),
       }}
       onOpenAI={onOpenAI}
+      onNavigate={onNavigate}
       onBack={onBack || (() => onNavigate?.("faith"))}
       onPrimaryAction={() => setViewLevel(selectedChapterIndex === null ? "books" : "chapter")}
       panelTabs={["Cross-references", "Word roots", "EGW", "My notes"]}
