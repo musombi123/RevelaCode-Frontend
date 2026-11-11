@@ -506,7 +506,6 @@ export function WorkspaceHeader({
         <div className="min-w-0 flex-1">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[10px] font-semibold text-slate-400"><span>Faith</span><span aria-hidden="true">/</span><span className="truncate text-indigo-700 dark:text-indigo-300">{heading}</span></nav>
           <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-slate-950 dark:text-white sm:text-2xl">{heading}</h1>
-          <p className="hidden line-clamp-1 text-xs leading-5 text-slate-500 dark:text-slate-400 sm:block">{intro}</p>
         </div>
         <button type="button" onClick={onOpenFilters} aria-label="Open filters and page actions" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:active:bg-slate-800"><SlidersHorizontal size={18} /></button>
       </div>
