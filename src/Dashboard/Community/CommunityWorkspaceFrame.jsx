@@ -67,7 +67,7 @@ export default function CommunityWorkspaceFrame({
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#f1f3ff] text-[#111c3b]">
+    <div className="dark min-h-screen w-full bg-[#050b1d] text-slate-100">
       <div className="min-h-screen lg:grid lg:grid-cols-[208px_minmax(0,1fr)]">
         <aside className="relative z-20 hidden min-w-0 overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:block">
           <div className="pointer-events-none absolute -bottom-20 -left-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
@@ -127,7 +127,7 @@ export default function CommunityWorkspaceFrame({
         </aside>
 
         <div className="min-w-0">
-          <div className="sticky top-0 z-30 border-b border-[#e6e9f6] bg-white/90 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-7">
+          <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#071226]/95 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-7">
             <div className="mx-auto w-full max-w-[1500px]">{header}</div>
           </div>
 
@@ -135,7 +135,7 @@ export default function CommunityWorkspaceFrame({
             <main className="min-w-0">{children}</main>
 
             <aside className="hidden min-w-0 space-y-3 xl:block">
-              <section className="rounded-[20px] border border-[#e4e8f6] bg-white p-4 shadow-[0_4px_18px_rgba(25,48,104,.045)]">
+              <section className="rounded-[20px] border border-white/[0.08] bg-[#0d1729] p-4 shadow-[0_8px_24px_rgba(0,0,0,.12)]">
                 <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Your space</p>
                 <div className="mt-3 flex min-w-0 items-center gap-2.5">
                   {avatar ? (
@@ -144,29 +144,29 @@ export default function CommunityWorkspaceFrame({
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-xs font-black text-slate-950">{String(displayName).trim().slice(0, 2).toUpperCase()}</span>
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate text-[11px] font-black text-[#172344]">{displayName}</span>
+                    <span className="block truncate text-[11px] font-black text-white">{displayName}</span>
                     <span className="block text-[10px] text-slate-400">Jumuiya member</span>
                   </span>
                 </div>
-                <button type="button" onClick={() => onNavigate("community-me")} className="mt-4 w-full rounded-xl border border-white/10 px-3 py-2.5 text-left text-[10px] font-bold text-slate-600 transition hover:border-cyan-400 hover:bg-[#f4f7ff]">
+                <button type="button" onClick={() => onNavigate("community-me")} className="mt-4 w-full rounded-xl border border-white/10 px-3 py-2.5 text-left text-[10px] font-bold text-slate-300 transition hover:border-cyan-400/50 hover:bg-white/[0.04]">
                   Open my space <span className="float-right text-cyan-300">→</span>
                 </button>
               </section>
 
-              <section className="rounded-[20px] border border-[#e4e8f6] bg-white p-3 shadow-[0_4px_18px_rgba(25,48,104,.045)]">
+              <section className="rounded-[20px] border border-white/[0.08] bg-[#0d1729] p-3 shadow-[0_8px_24px_rgba(0,0,0,.12)]">
                 <p className="px-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Shortcuts</p>
                 <div className="mt-2 space-y-1">
                   {quickLinks.map(({ label, icon: Icon, action }) => (
-                    <button key={label} type="button" onClick={action} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[10px] font-semibold text-[#243253] transition hover:bg-[#f4f7ff] hover:text-[#142348]">
+                    <button key={label} type="button" onClick={action} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-[10px] font-semibold text-slate-300 transition hover:bg-white/[0.05] hover:text-white">
                       <Icon size={14} className="text-blue-200" /> {label}
                     </button>
                   ))}
                 </div>
               </section>
 
-              <section className="rounded-[20px] border border-[#dce7fb] bg-gradient-to-br from-[#eef5ff] to-[#e7f3ff] p-4">
-                <div className="flex items-center gap-2 text-blue-700"><BookOpen size={15} /><p className="text-[10px] font-black">Grow with Jumuiya</p></div>
-                <p className="mt-2 text-[10px] leading-4 text-slate-600">Share what you know, discover useful services and build trusted connections.</p>
+              <section className="rounded-[20px] border border-cyan-500/15 bg-gradient-to-br from-[#0b2346] to-[#0b354b] p-4">
+                <div className="flex items-center gap-2 text-cyan-200"><BookOpen size={15} /><p className="text-[10px] font-black">Grow with Jumuiya</p></div>
+                <p className="mt-2 text-[10px] leading-4 text-blue-100/75">Share what you know, discover useful services and build trusted connections.</p>
                 <button type="button" onClick={onCreatePost} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-cyan-400 px-3 py-2 text-[10px] font-black text-slate-950 transition hover:bg-cyan-300"><Plus size={12} /> Share an update</button>
               </section>
             </aside>
@@ -174,15 +174,15 @@ export default function CommunityWorkspaceFrame({
         </div>
       </div>
 
-      <nav aria-label="Jumuiya mobile navigation" className="fixed inset-x-3 bottom-[max(9px,env(safe-area-inset-bottom))] z-40 mx-auto grid max-w-[460px] grid-cols-5 items-end gap-1 rounded-[23px] border border-[#e2e7f7] bg-white/95 p-2 shadow-[0_12px_35px_rgba(0,0,0,.4)] backdrop-blur-xl lg:hidden">
-        <button type="button" onClick={() => onNavigate("community-home")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><Home size={18} />Home</button>
-        <button type="button" onClick={() => onNavigate("community-discover")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><Compass size={18} />Discover</button>
+      <nav aria-label="Jumuiya mobile navigation" className="fixed inset-x-3 bottom-[max(9px,env(safe-area-inset-bottom))] z-40 mx-auto grid max-w-[460px] grid-cols-5 items-end gap-1 rounded-[23px] border border-white/[0.10] bg-[#101c30]/95 p-2 shadow-[0_12px_35px_rgba(0,0,0,.4)] backdrop-blur-xl lg:hidden">
+        <button type="button" onClick={() => onNavigate("community-home")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-400"><Home size={18} />Home</button>
+        <button type="button" onClick={() => onNavigate("community-discover")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-400"><Compass size={18} />Discover</button>
         <button type="button" onClick={onCreatePost} aria-label="Create post" className="flex flex-col items-center gap-1 pb-0.5 text-[9px] font-extrabold text-cyan-200">
-          <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25"><Plus size={23} /></span>
+          <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-950/40"><Plus size={23} /></span>
           Create
         </button>
-        <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><Users size={18} />Networks</button>
-        <button type="button" onClick={() => onNavigate("community-me")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-500"><User size={18} />Me</button>
+        <button type="button" onClick={() => onNavigate("community-circles")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-400"><Users size={18} />Networks</button>
+        <button type="button" onClick={() => onNavigate("community-me")} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[9px] font-extrabold text-slate-400"><User size={18} />Me</button>
       </nav>
     </div>
   );
