@@ -9,6 +9,8 @@ import {
   ShoppingCart, Sprout, Sun, Tractor, User, Users, Wheat, Wind, X,
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { analyzeRevelaAIVision } from "@/ai/revelaAIClient.js";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import ShambaDiagnosticsPanel from "@/Dashboard/ShambaDiagnosticsPanel.jsx";
 
@@ -206,6 +208,7 @@ function WeatherGlyph({ condition, size = 24 }) {
 
 export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate, onExit }) {
   const api = useJumuiyaApi();
+  const { authFetch } = useAuth();
   const {
     getShambaDashboard, getFarmer, getFarms, getFarm, getFarmWeather,
     getFarmMarket, getFarmActivities, getFarmCommandCenter, getFarmInsights,
@@ -471,65 +474,52 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     setDiagnosticResult(null);
     setDiagnosticSaved(false);
     try {
-      const token = typeof window !== "undefined"
-        ? (localStorage.getItem("revelacode_access_token") || localStorage.getItem("access_token") || localStorage.getItem("token"))
-        : "";
-      if (!token) throw new Error("Sign in to RevelaCode before using Live Vision.");
-      const tokenType = localStorage.getItem("revelacode_token_type") || "Bearer";
+      if (typeof authFetch !== "function") throw new Error("Your authenticated session is not ready. Sign in again and retry.");
       const farmName = selectedFarm?.name || "the selected farm";
       const cropName = cropForScan.trim() || first(selectedFarm?.primary_crop, selectedFarm?.crop_name, "crop not specified");
       const prompt = diagnosticMode === "leaf"
-        ? [
-            "You are an agricultural plant-health diagnostician. Examine only the attached visible-spectrum leaf/plant photograph for possible insect pests, mites, eggs, larvae, feeding damage, fungal or bacterial lesions, viral-like patterns, and non-infectious stress.",
-            "Farm: " + farmName + ". Crop: " + cropName + ".",
-            "Report: (1) visible observations only, (2) likely pest/disease candidates ranked with reasons, (3) visible evidence such as holes, mines, stippling, webbing, frass, colonies, spots, blight or distortion, (4) severity only if justified, (5) confidence as low/medium/high with limitations, (6) safe integrated-pest-management next steps and what close-up/underside photo or field check is needed.",
-            "Do not claim a confirmed species or pathogen from an unclear image. Distinguish pests from nutrient deficiency, water stress, sun scorch and spray injury. Do not prescribe a pesticide or dosage. If the photo is not a plant leaf, say so and request a better image. This is preliminary visual screening, not laboratory confirmation."
-          ].join(" ")
-        : [
-            "You are an agricultural soil-test reader. Inspect the attached photo ONLY for a pH indicator strip/test solution beside its matching manufacturer's colour chart.",
-            "Farm: " + farmName + ".",
-            "Estimate a pH band only if the reacted strip/sample and readable comparator chart are both visible together under reasonably neutral lighting. State the closest chart colour, estimated pH value or range, and confidence. If the strip, chart, labels or lighting are unclear, say 'Not reliably readable' and do not invent a number.",
-            "If this is a photograph of bare soil without a chemical test strip, meter display or laboratory report, explain that soil pH cannot be determined from soil colour/appearance. This is a visual interpretation of a test kit, not a direct pH measurement. Recommend a calibrated pH meter or recognised soil-testing kit/laboratory for confirmation."
-          ].join(" ");
+        ? "Assess visible crop-leaf health. Identify direct observations, rank plausible pest/disease and abiotic-stress causes, explain supporting evidence and differentials, assess justified severity and confidence, and give safe integrated pest-management steps plus field checks. Do not claim confirmation from one photograph."
+        : "Assess visible soil surface and any soil-test evidence. Only interpret pH if a reacted test strip/sample and matching chart are both readable, or a meter/laboratory display is clear. Bare-soil colour cannot measure pH or nutrients. Give physical visual cues, confidence, recommended sampling/laboratory tests and cautious next actions.";
       const imageData = await imageFileToDataUrl(diagnosticFile);
-      const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-      const response = await fetch(apiBase + "/api/vision/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": tokenType + " " + token,
+      const data = await analyzeRevelaAIVision({
+        authFetch,
+        image: imageData,
+        mimeType: diagnosticFile.type || "image/jpeg",
+        hub: "shamba",
+        analysisType: diagnosticMode === "leaf" ? "leaf" : "soil",
+        prompt,
+        analysisContext: {
+          farm_name: farmName,
+          county: selectedFarm?.county || selectedFarm?.region || "",
+          crop_name: diagnosticMode === "leaf" ? cropName : "",
+          crop_variety: selectedFarm?.crop_variety || selectedFarm?.variety || "",
+          growth_stage: selectedFarm?.growth_stage || "",
+          soil_test_method: soilMethod,
+          measured_ph: soilMeasuredPh.trim() ? num(soilMeasuredPh) : null,
+          calibration_status: soilCalibration,
+          sample_depth_cm: soilSampleDepth.trim() ? num(soilSampleDepth) : null,
+          sample_location: soilSampleLocation,
+          kit_name: soilKitName,
+          notes: soilNotes,
         },
-        body: JSON.stringify({
-          image: imageData,
-          mimeType: diagnosticFile.type || "image/jpeg",
-          hub: "shamba",
-          prompt,
-        }),
       });
-      const payload = await response.json().catch(() => null);
-      const data = payload?.data || payload || {};
-      const reply = data?.reply || data?.response || data?.content || data?.answer || payload?.message;
-      if (!response.ok || typeof reply !== "string" || !reply.trim()) {
-        const detail = payload?.message || payload?.error?.message;
-        if (response.status === 403) throw new Error(detail || "Live Vision access is not included in the current AI entitlement. Check your RevelaAI plan.");
-        if (response.status === 503) throw new Error(detail || "The Live Vision model is temporarily unavailable or not configured.");
-        throw new Error(detail || "RevelaAI could not return a usable diagnostic. Try a sharper photo.");
-      }
       setDiagnosticResult({
         mode: diagnosticMode,
-        reply: reply.trim(),
-        provider: data?.provider || "RevelaAI Live Vision",
-        model: data?.model || "",
+        reply: data.reply.trim(),
+        analysis: data.analysis && typeof data.analysis === "object" ? data.analysis : null,
+        analysisType: data.analysisType || diagnosticMode,
+        provider: data.provider || "RevelaAI Live Vision",
+        model: data.model || "",
         capturedAt: new Date().toISOString(),
         fileName: diagnosticFile.name,
+        mediaRetained: data.mediaRetained === false,
       });
     } catch (scanError) {
       setDiagnosticError(scanError?.message || "The diagnostic request failed. Please try again.");
     } finally {
       setDiagnosticBusy(false);
     }
-  }, [diagnosticFile, diagnosticMode, farmVerified, currentFarmId, user, selectedFarm, cropForScan]);
+  }, [diagnosticFile, diagnosticMode, authFetch, selectedFarm, cropForScan, soilMethod, soilMeasuredPh, soilCalibration, soilSampleDepth, soilSampleLocation, soilKitName, soilNotes]);
 
   const saveLeafDiagnostic = useCallback(async () => {
     if (!diagnosticResult || diagnosticResult.mode !== "leaf") return;
