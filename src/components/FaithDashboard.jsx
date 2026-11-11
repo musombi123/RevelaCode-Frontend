@@ -1013,7 +1013,7 @@ export default function FaithDashboard({
           space-y-4
         "
       >
-        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} onBack={closeStudyView} />
+        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
       </div>
     );
   }
@@ -1069,7 +1069,7 @@ export default function FaithDashboard({
   if (faithSection === "atlas") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <FaithAtlas userId={userId} onOpenReference={openBibleReference} onOpenAI={onOpenAI} onBack={closeStudyView} />
+        <FaithAtlas userId={userId} onOpenReference={openBibleReference} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
       </div>
     );
   }
@@ -1083,6 +1083,7 @@ export default function FaithDashboard({
           onNavigate={navigateTo}
           onOpenAI={onOpenAI}
           onBack={closeStudyView}
+          onNavigate={onNavigate}
         />
       </div>
     );
@@ -1090,7 +1091,7 @@ export default function FaithDashboard({
   if (faithSection === "quarterly") {
     return (
       <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} onBack={closeStudyView} />
+        <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
       </div>
     );
   }
