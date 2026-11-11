@@ -43,6 +43,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
+import CommunityHubDashboard from "@/Dashboard/Community/CommunityHubDashboard.jsx";
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
@@ -1312,6 +1313,58 @@ export default function CommunityDashboard({
 
   if (workspacePage === "invite") {
     return <div className="min-w-0">{renderBackMenu()}<CommunityInviteMembers onBack={() => navigate("community")} /></div>;
+  }
+
+  // ==========================================================
+  // REFERENCE-INSPIRED COMMUNITY HUB HOME
+  // Keep all existing workspace screens and API flows intact.
+  // ==========================================================
+  if (workspacePage === "home") {
+    return (
+      <CommunityHubDashboard
+        user={user}
+        profile={communityProfile}
+        displayName={displayName}
+        searchQuery={discoveryQuery}
+        onSearchChange={setDiscoveryQuery}
+        onSearchSubmit={submitDiscovery}
+        onNavigate={navigate}
+        onCreatePost={openComposer}
+        onCreateEvent={() => {
+          setEditingPost(null);
+          setShareDraft(null);
+          setComposerCategory("event");
+          setWorkspacePage("composer");
+        }}
+        onCreateAd={() => navigate("community-advertisement")}
+        onNotifications={() => navigate("community-notifications")}
+        onProfile={() => navigate("community-me")}
+        onSelectIntent={selectIntent}
+        onSelectSurface={selectCommunitySurface}
+        onOpenPillar={(key) => {
+          if (key === "biashara" || key === "shamba" || key === "elimu") {
+            redirectToHub(key);
+            return;
+          }
+          selectIntent(key === "health" ? "help" : "connect");
+        }}
+        onBackToApp={() => {
+          if (typeof onNavigate === "function") onNavigate("home");
+        }}
+        posts={posts}
+        aroundYouItems={aroundYouItems}
+        loading={loading}
+        error={error}
+        refreshing={refreshing}
+        onRefresh={refresh}
+        onLike={handleLike}
+        onOpenFeed={() => navigate("community-feed")}
+        onOpenPost={setSelectedBoardPost}
+        selectedPost={selectedBoardPost}
+        onClosePost={() => setSelectedBoardPost(null)}
+        promotionPosts={promotionPosts}
+      />
+    );
   }
 
   // ==========================================================
