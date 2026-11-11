@@ -99,7 +99,18 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
     try {
       const response = await jumuiyaRequest("/community/world-events/feed?limit=40");
       const result = normalizeResponse(response);
+      const liveIds = new Set(result.events.map((event) => String(event?.id || "")).filter(Boolean));
       setEvents(result.events);
+      setSavedIds((current) => {
+        const retained = current.filter((id) => liveIds.has(String(id)));
+        if (retained.length !== current.length) writeJson(keys.saved, retained);
+        return retained;
+      });
+      setHiddenIds((current) => {
+        const retained = current.filter((id) => liveIds.has(String(id)));
+        if (retained.length !== current.length) writeJson(keys.hidden, retained);
+        return retained;
+      });
       setSources(result.sources);
       setPublisher(result.publisher);
       setUpdatedAt(result.updatedAt || new Date().toISOString());
@@ -109,7 +120,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [keys]);
 
   useEffect(() => {
     let active = true;
