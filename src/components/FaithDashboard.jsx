@@ -728,11 +728,16 @@ export default function FaithDashboard({
     return false;
   }, [comingSoonFeature, selectedSource, sourceReturnSection, selectedMaterial, faithSection, studyReturnSection]);
 
+  const showFaithBackPrompt = useCallback((message) => {
+    setBackPrompt(message);
+    window.setTimeout(() => setBackPrompt(""), 1900);
+  }, []);
+
   useFaithAndroidBack({
     enabled: faithSection === "home",
     isHome: true,
     onBackAction: handleFaithNativeBack,
-    onPrompt: setBackPrompt,
+    onPrompt: showFaithBackPrompt,
   });
 
   /* =======================================================
