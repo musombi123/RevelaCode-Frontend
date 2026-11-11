@@ -5,6 +5,7 @@ import {
   Sparkles, Lightbulb, UserCircle, WifiOff, X,
 } from "lucide-react";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/context/AuthContext.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/+$/, "");
@@ -98,6 +99,7 @@ export function FaithMobileBottomNav({
   hidden = false,
 }) {
   if (hidden) return null;
+  const keepDockInAndroidLandscape = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
   const items = [
     { key: "home", label: "Home", icon: Home, action: onHome },
     { key: "study", label: "Study", icon: BookOpen, action: onStudy },
@@ -106,7 +108,7 @@ export function FaithMobileBottomNav({
     { key: "me", label: "Me", icon: UserCircle, action: onMe },
   ];
   return (
-    <nav aria-label="Faith mobile navigation" className="fixed inset-x-0 bottom-0 z-50 grid h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/95 sm:hidden">
+    <nav aria-label="Faith mobile navigation" className={"fixed inset-x-0 bottom-0 z-50 grid h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/95 " + (keepDockInAndroidLandscape ? "" : "sm:hidden")}>
       {items.map((item) => {
         const Icon = item.icon;
         const selected = active === item.key;
