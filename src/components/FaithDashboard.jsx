@@ -6,11 +6,11 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
-  CheckCircle2,
   Compass,
   Flame,
   Languages,
   Map,
+  NotebookPen,
   Play,
   RefreshCw,
   ScrollText,
@@ -380,7 +380,7 @@ export default function FaithDashboard({
       });
       const completedThisWeek = thisWeek.filter((lesson) => String(faithLessonMeta(lesson).lesson_date || "") <= todayKey);
       const upcomingThisWeek = thisWeek.filter((lesson) => String(faithLessonMeta(lesson).lesson_date || "") >= todayKey);
-      const lesson = completedThisWeek[completedThisWeek.length - 1] || upcomingThisWeek[0] || lessons.find((item) => String(faithLessonMeta(item).lesson_date || "") === todayKey) || lessons[0] || null;
+      const lesson = lessons.find((item) => String(faithLessonMeta(item).lesson_date || "") === todayKey) || upcomingThisWeek[0] || completedThisWeek[completedThisWeek.length - 1] || lessons[0] || null;
 
       const countCandidates = [
         localStorage.getItem("revelacode_saved_study_count_" + String(userId || "guest")),
@@ -410,15 +410,23 @@ export default function FaithDashboard({
 
   const recordStudyDay = () => {
     const todayKey = faithLocalDateKey(new Date());
-    setHomeSnapshot((current) => {
-      const nextDays = Array.from(new Set([...(current.studyDays || []), todayKey])).sort().slice(-180);
-      try {
-        localStorage.setItem(studyDaysKey, JSON.stringify(nextDays));
-      } catch {
-        // The in-memory streak remains available when storage is blocked.
-      }
-      return { ...current, studyDays: nextDays };
-    });
+    let storedDays = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(studyDaysKey) || "[]");
+      storedDays = Array.isArray(parsed) ? parsed.filter((day) => typeof day === "string") : [];
+    } catch {
+      // The in-memory streak remains available when storage is blocked.
+    }
+    const persistedDays = Array.from(new Set([...storedDays, todayKey])).sort().slice(-180);
+    try {
+      localStorage.setItem(studyDaysKey, JSON.stringify(persistedDays));
+    } catch {
+      // The in-memory streak remains available when storage is blocked.
+    }
+    setHomeSnapshot((current) => ({
+      ...current,
+      studyDays: Array.from(new Set([...(current.studyDays || []), todayKey])).sort().slice(-180),
+    }));
   };
 
   useEffect(() => {
@@ -1484,7 +1492,7 @@ export default function FaithDashboard({
 
           <div className="mt-4 inline-flex w-fit max-w-full items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Choose study workspace">
             {continueTabs.map((tab) => (
-              <button key={tab.id} type="button" onClick={() => setContinueTab(tab.id)} aria-pressed={continueTab === tab.id} className={continueTab === tab.id ? "min-h-10 rounded-lg bg-white px-3 text-xs font-bold text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300" : "min-h-10 rounded-lg px-3 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}>
+              <button key={tab.id} type="button" onClick={() => setContinueTab(tab.id)} aria-pressed={continueTab === tab.id} className={continueTab === tab.id ? "min-h-11 rounded-lg bg-white px-3 text-xs font-bold text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300" : "min-h-11 rounded-lg px-3 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}>
                 {tab.label}
               </button>
             ))}
@@ -1634,7 +1642,7 @@ export default function FaithDashboard({
             { id: "interfaith", label: "Islam & Christianity" },
             { id: "daily-life", label: "Daily life & reflection" },
           ].map((track) => (
-            <button key={track.id} type="button" onClick={() => openStudy(track.id)} className="min-h-10 shrink-0 snap-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/40 motion-reduce:transition-none">
+            <button key={track.id} type="button" onClick={() => openStudy(track.id)} className="min-h-11 shrink-0 snap-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/40 motion-reduce:transition-none">
               {track.label}
             </button>
           ))}
