@@ -505,7 +505,7 @@ function Pill({
         rounded-full
         px-2.5
         py-1.5
-        text-[11px]
+        text-[0.6875rem]
         font-bold
         ${className}
       `}
@@ -546,7 +546,7 @@ function InfoCard({
 
         <p
           className="
-            text-[10px]
+            text-[0.625rem]
             font-bold
             uppercase
             tracking-wider
@@ -1588,7 +1588,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
 
                   {copiedKey ===
                     `${symbolKey}-reference` && (
-                    <span className="ml-1 text-[10px] text-green-600 dark:text-green-400">
+                    <span className="ml-1 text-[0.625rem] text-green-600 dark:text-green-400">
                       Copied
                     </span>
                   )}
@@ -1707,7 +1707,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                         dark:bg-gray-800
                       "
                     >
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      <p className="text-[0.625rem] font-bold uppercase tracking-wider text-gray-400">
                         {titleCase(key)}
                       </p>
 
@@ -2128,7 +2128,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                         <div className="mt-4">
                           <p
                             className="
-                              text-[10px]
+                              text-[0.625rem]
                               font-black
                               uppercase
                               tracking-wider
@@ -2183,7 +2183,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                         <div className="mt-4">
                           <p
                             className="
-                              text-[10px]
+                              text-[0.625rem]
                               font-black
                               uppercase
                               tracking-wider
@@ -2840,7 +2840,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                                         bg-white
                                         px-2
                                         py-1
-                                        text-[10px]
+                                        text-[0.625rem]
                                         font-semibold
                                         text-gray-500
                                         dark:bg-gray-950
@@ -3034,7 +3034,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                     bg-indigo-50
                     px-3
                     py-1.5
-                    text-[10px]
+                    text-[0.625rem]
                     font-black
                     uppercase
                     tracking-[0.14em]
@@ -3233,7 +3233,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
               >
                 <span
                   className="
-                    text-[10px]
+                    text-[0.625rem]
                     font-black
                     uppercase
                     tracking-wider
@@ -3299,7 +3299,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
                         className="
                           mt-0.5
                           block
-                          text-[10px]
+                          text-[0.625rem]
                           text-gray-400
                         "
                       >
@@ -3353,7 +3353,7 @@ export default function ProphecyDashboard({ onOpenAI, onNavigate }) {
               <div className="min-w-0">
                 <p
                   className="
-                    text-[10px]
+                    text-[0.625rem]
                     font-black
                     uppercase
                     tracking-[0.14em]
