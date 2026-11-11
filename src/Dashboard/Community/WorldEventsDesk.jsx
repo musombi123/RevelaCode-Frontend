@@ -180,6 +180,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
   const title = compact ? "World Events for the Community" : "World Events & Life Lessons";
 
   return (
+    <>
     <section aria-label="RevelaCode World Events" className="mb-5 overflow-hidden rounded-[24px] border border-indigo-200/80 bg-white shadow-sm dark:border-indigo-900/50 dark:bg-slate-900">
       <div className="relative overflow-hidden bg-gradient-to-br from-[#101b45] via-[#263b79] to-[#315f93] px-4 py-5 text-white sm:px-5">
         <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full border-[22px] border-white/5" />
@@ -370,6 +371,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
           </section>
         </div>
       ) : null}
+    </>
   );
 }
 
