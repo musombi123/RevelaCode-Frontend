@@ -45,6 +45,7 @@ import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWor
 
 import CommunityHubDashboard from "@/Dashboard/Community/CommunityHubDashboard.jsx";
 import CommunityWorkspaceFrame from "@/Dashboard/Community/CommunityWorkspaceFrame.jsx";
+import CommunityDiscoverWorkspace from "@/Dashboard/Community/CommunityDiscoverWorkspace.jsx";
 import CommunityFeed from "@/Dashboard/Community/CommunityFeed.jsx";
 import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
@@ -1175,7 +1176,9 @@ export default function CommunityDashboard({
   // ----------------------------------------------------------
 
   const renderBackMenu = () => {
-    const workspaceTitle = ({
+    const workspaceTitle = workspacePage === "home" && activeSurface === "discovery"
+      ? "Discover"
+      : ({
       feed: "Community feed",
       composer: "Create a post",
       notifications: "Notifications",
@@ -1258,6 +1261,60 @@ export default function CommunityDashboard({
     );
   };
 
+
+  if (workspacePage === "home" && activeSurface === "discovery") {
+    const handleDiscoverIntent = (value) => {
+      const tile = INTENT_TILES.find((item) => item.value === value);
+      if (tile) {
+        handleIntentTileClick(tile);
+      } else {
+        selectIntent(value || "");
+      }
+    };
+
+    return (
+      <CommunityWorkspaceFrame
+        header={renderBackMenu()}
+        user={user}
+        profile={communityProfile}
+        displayName={displayName}
+        activePage="discover"
+        onNavigate={navigate}
+        onCreatePost={openComposer}
+        onOpenPillar={(key) => {
+          if (key === "biashara" || key === "shamba" || key === "elimu") {
+            redirectToHub(key);
+            return;
+          }
+          selectIntent(key === "health" ? "help" : "connect");
+        }}
+        onBackToApp={() => {
+          if (typeof onNavigate === "function") onNavigate("home");
+        }}
+      >
+        <CommunityDiscoverWorkspace
+          posts={posts}
+          loading={loading}
+          error={error}
+          refreshing={refreshing}
+          query={discoveryQuery}
+          intent={discoveryIntent}
+          submittedQuery={submittedQuery}
+          submittedIntent={submittedIntent}
+          intents={INTENTS}
+          intentTiles={INTENT_TILES}
+          onQueryChange={setDiscoveryQuery}
+          onIntentChange={setDiscoveryIntent}
+          onSubmit={submitDiscovery}
+          onSelectIntent={handleDiscoverIntent}
+          onRefresh={refresh}
+          onOpenPost={setSelectedBoardPost}
+          onNavigate={navigate}
+          displayName={displayName}
+        />
+      </CommunityWorkspaceFrame>
+    );
+  }
 
   if (workspacePage === "feed") {
     return (
