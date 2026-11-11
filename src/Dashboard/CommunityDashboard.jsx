@@ -1330,12 +1330,7 @@ export default function CommunityDashboard({
         onSearchSubmit={submitDiscovery}
         onNavigate={navigate}
         onCreatePost={openComposer}
-        onCreateEvent={() => {
-          setEditingPost(null);
-          setShareDraft(null);
-          setComposerCategory("event");
-          setWorkspacePage("composer");
-        }}
+        onCreateEvent={() => selectIntent("attend")}
         onCreateAd={() => navigate("community-advertisement")}
         onNotifications={() => navigate("community-notifications")}
         onProfile={() => navigate("community-me")}
