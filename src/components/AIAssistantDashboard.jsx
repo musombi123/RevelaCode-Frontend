@@ -9,6 +9,7 @@ import React, {
 } from "react";
 
 import { App as CapacitorApp } from "@capacitor/app";
+import { useLocation } from "react-router-dom";
 
 import {
   Menu,
@@ -277,6 +278,7 @@ export default function AIAssistantDashboard({
   activeHub = "home",
   compactMode = false,
   lessonContext = null,
+  initialHandoff = null,
 }) {
   const {
     user,
@@ -284,6 +286,38 @@ export default function AIAssistantDashboard({
     isReady,
     authFetch,
   } = useAuth();
+  const location = useLocation();
+  const [faithDraftText, setFaithDraftText] = useState("");
+  const appliedFaithHandoffRef = useRef("");
+
+  useEffect(() => {
+    let handoff = initialHandoff || location.state?.faithAIHandoff || null;
+    if (!handoff) {
+      try {
+        handoff = JSON.parse(sessionStorage.getItem("revelacode_faith_ai_handoff") || "null");
+      } catch {
+        handoff = null;
+      }
+    }
+    const question = String(handoff?.question || "").trim();
+    if (!question) return;
+    const signature = question + "|" + JSON.stringify(handoff?.contextData || {});
+    if (appliedFaithHandoffRef.current === signature) return;
+    appliedFaithHandoffRef.current = signature;
+    const contextData = handoff?.contextData && typeof handoff.contextData === "object" ? handoff.contextData : {};
+    const details = Object.entries(contextData)
+      .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")
+      .map(([key, value]) => key + "=" + (typeof value === "string" ? value : JSON.stringify(value)))
+      .join("; ");
+    const draft = question + "\n\nFaith context: page=" + String(handoff?.contextType || "faith") + (details ? "; " + details : "");
+    setFaithDraftText(draft);
+    try {
+      sessionStorage.setItem("revelacode_faith_ai_draft", draft);
+      sessionStorage.removeItem("revelacode_faith_ai_handoff");
+    } catch {
+      // The full draft remains in the React composer state.
+    }
+  }, [initialHandoff, location.key]);
 
   /*
    * Prefer the authoritative Mongo/RevelaCode user ID.
@@ -2266,7 +2300,8 @@ export default function AIAssistantDashboard({
               <div data-demo="ai-chat-input" className="w-full max-w-[700px]">
                 <InputBar
                   placeholder={hubInputPlaceholder}
-                  onSend={sendMessage}
+                  initialDraft={faithDraftText}
+                  onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
@@ -2297,7 +2332,8 @@ export default function AIAssistantDashboard({
                 <div data-demo="ai-vision-tools">
                   <InputBar
                     placeholder={hubInputPlaceholder}
-                    onSend={sendMessage}
+                    initialDraft={faithDraftText}
+                    onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                     freeMode={freeMode}
