@@ -207,6 +207,18 @@ const BackButton = ({
   </button>
 );
 
+const BIBLE_OFFLINE_CACHE_KEY = "revelacode_faith_bible_current_v1";
+
+function readCachedBibleChapter() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BIBLE_OFFLINE_CACHE_KEY) || "null");
+    if (!parsed || !Array.isArray(parsed.verses) || !parsed.verses.length) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 /* =========================================================
    GLOBAL BIBLE DASHBOARD
 ========================================================= */
@@ -220,6 +232,7 @@ export default function BibleDashboard({
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [cachedBibleChapter] = useState(readCachedBibleChapter);
   const [bibleData, setBibleData] = useState({});
   const [webData, setWebData] = useState({});
   const [sourceView, setSourceView] = useState(null);
@@ -236,11 +249,11 @@ export default function BibleDashboard({
   const [loadingVersionBook, setLoadingVersionBook] = useState(false);
   const [bookKeys, setBookKeys] = useState([]);
   const [selectedBookKey, setSelectedBookKey] =
-    useState("");
+    useState(() => cachedBibleChapter?.book || "");
   const [selectedChapterIndex, setSelectedChapterIndex] =
-    useState(null);
-  const [verses, setVerses] = useState([]);
-  const [viewLevel, setViewLevel] = useState("books");
+    useState(() => Number.isInteger(cachedBibleChapter?.chapterIndex) ? cachedBibleChapter.chapterIndex : null);
+  const [verses, setVerses] = useState(() => Array.isArray(cachedBibleChapter?.verses) ? cachedBibleChapter.verses : []);
+  const [viewLevel, setViewLevel] = useState(() => cachedBibleChapter ? "chapter" : "books");
   const [searchInput, setSearchInput] = useState("");
   const [highlightedVerseRange, setHighlightedVerseRange] =
     useState(null);
@@ -453,6 +466,21 @@ export default function BibleDashboard({
   ======================================================= */
 
   useEffect(() => {
+    if (!selectedBookKey || selectedChapterIndex === null || !Array.isArray(verses) || !verses.length) return;
+    try {
+      localStorage.setItem(BIBLE_OFFLINE_CACHE_KEY, JSON.stringify({
+        book: selectedBookKey,
+        chapterIndex: selectedChapterIndex,
+        verses,
+        version: "KJV",
+        savedAt: new Date().toISOString(),
+      }));
+    } catch {
+      // The current chapter remains in the active session if device storage is full.
+    }
+  }, [selectedBookKey, selectedChapterIndex, verses]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const fetchBibleData = async () => {
@@ -493,9 +521,16 @@ export default function BibleDashboard({
         );
 
         if (!cancelled) {
-          setSearchError(
-            "Unable to load the Bible dataset. Please refresh the page."
-          );
+          const cached = readCachedBibleChapter();
+          if (cached) {
+            setSelectedBookKey(cached.book || "");
+            setSelectedChapterIndex(Number.isInteger(cached.chapterIndex) ? cached.chapterIndex : null);
+            setVerses(Array.isArray(cached.verses) ? cached.verses : []);
+            setViewLevel("chapter");
+            setSearchError("Offline ready · Showing your last cached Bible chapter.");
+          } else {
+            setSearchError("The Bible text is not available offline yet. Open a chapter while connected to save it on this device.");
+          }
         }
       }
     };
