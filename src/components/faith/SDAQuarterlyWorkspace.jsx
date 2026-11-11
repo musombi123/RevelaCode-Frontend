@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ExternalLink, RefreshCw, Sparkles, WifiOff } from "lucide-react";
 import SdaLessonAIChat from "./SdaLessonAIChat.jsx";
+import FaithWorkspaceLayout from "./workspace/FaithWorkspaceLayout.jsx";
 import { readCachedApiResponse, writeCachedApiResponse } from "@/services/offlineHubSync.js";
 
 const API = (
@@ -45,7 +46,7 @@ function formatLessonDate(value) {
   });
 }
 
-export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
+export default function SDAQuarterlyWorkspace({ onOpen, onAskAI, onOpenAI }) {
   const [initial] = useState(kenyaQuarterNow);
   const [year, setYear] = useState(initial.year);
   const [quarter, setQuarter] = useState(initial.quarter);
@@ -58,6 +59,23 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
   const sourceUrl = `https://www.sabbath.school/LessonBook?quarter=${quarter}&year=${year}`;
   const cacheKey = `revelacode_sda_quarter:${year}:${quarter}`;
   const [offlineMode, setOfflineMode] = useState(typeof navigator !== "undefined" && !navigator.onLine);
+  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const [selectedWeekday, setSelectedWeekday] = useState(() => weekdayNames[new Date().getDay()]);
+  const noteKey = "revelacode_sda_class_notes_v1:" + year + ":" + quarter;
+  const [classNotes, setClassNotes] = useState("");
+  const [classQuestions, setClassQuestions] = useState("");
+  const [noteSaved, setNoteSaved] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(noteKey) || "{}");
+      setClassNotes(String(saved.notes || ""));
+      setClassQuestions(String(saved.questions || ""));
+    } catch {
+      setClassNotes("");
+      setClassQuestions("");
+    }
+    setNoteSaved(false);
+  }, [noteKey]);
 
   const loadQuarter = async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true);
@@ -152,7 +170,24 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
     onAskAI?.(context);
   };
 
+  const todayLesson = sortedMaterials.find((material) => String(lessonMetadata(material).day || "").toLowerCase() === selectedWeekday.toLowerCase()) || sortedMaterials[0] || null;
+  const todayMeta = lessonMetadata(todayLesson);
+  const saveClassNotes = (field, value) => {
+    const next = { notes: field === "notes" ? value : classNotes, questions: field === "questions" ? value : classQuestions };
+    if (field === "notes") setClassNotes(value); else setClassQuestions(value);
+    setNoteSaved(false);
+    try { localStorage.setItem(noteKey, JSON.stringify(next)); setNoteSaved(true); } catch { setNoteSaved(false); }
+  };
+  const listenToLesson = () => {
+    if (!todayLesson || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const text = String(todayLesson.content || todayLesson.description || todayMeta.memory_text || todayLesson.title || "");
+    if (!text.trim()) return;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  };
+
   return (
+    <FaithWorkspaceLayout page="quarterly" contextData={{ year, quarter, day: selectedWeekday, lesson: todayLesson?.title || todayMeta.lesson_title || "" }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => todayLesson ? openLesson(todayLesson) : loadQuarter()}>
     <div className="space-y-4">
       <section className="overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm dark:border-amber-900/50 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20">
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -191,6 +226,15 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
           </button>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300">Weekly reading plan</p><h3 className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">Your seven-day study</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Choose a day to focus the reading and class preparation.</p></div><span className="rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-bold text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200">{selectedWeekday} selected</span></div>
+        <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
+          {weekdayNames.map((day) => <button key={day} type="button" onClick={() => setSelectedWeekday(day)} aria-pressed={selectedWeekday === day} className={"min-h-11 rounded-xl border px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 " + (selectedWeekday === day ? "border-indigo-500 bg-indigo-600 text-white" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300")}>{day.slice(0, 3)}</button>)}
+        </div>
+        <div className="mt-4 rounded-xl bg-slate-50 p-3 dark:bg-slate-950"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{selectedWeekday} reading</p><h4 className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{todayLesson?.title || todayMeta.lesson_title || "Reading will appear when lessons are available"}</h4></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => openLesson(todayLesson)} disabled={!todayLesson} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-indigo-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><BookOpen size={14}/> Start</button><button type="button" onClick={listenToLesson} disabled={!todayLesson || !(typeof window !== "undefined" && "speechSynthesis" in window)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><Sparkles size={14}/> Listen</button></div></div>{todayMeta.memory_text && <blockquote className="mt-3 border-l-2 border-amber-400 pl-3 text-xs leading-5 text-slate-700 dark:text-slate-200"><span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">Memory verse</span>{todayMeta.memory_text}</blockquote>}</div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="block min-w-0"><span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Class notes</span><textarea value={classNotes} onChange={(event) => saveClassNotes("notes", event.target.value)} rows={4} placeholder="Capture observations and lesson points…" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/></label><label className="block min-w-0"><span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Questions for class</span><textarea value={classQuestions} onChange={(event) => saveClassNotes("questions", event.target.value)} rows={4} placeholder="Write questions to discuss with your class…" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"/></label></div><p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">{noteSaved ? "Notes saved on this device." : "Notes and class questions save automatically on this device."}</p>
       </section>
 
       {error && (
@@ -266,5 +310,6 @@ export default function SDAQuarterlyWorkspace({ onOpen, onAskAI }) {
         </div>
       )}
     </div>
+    </FaithWorkspaceLayout>
   );
 }
