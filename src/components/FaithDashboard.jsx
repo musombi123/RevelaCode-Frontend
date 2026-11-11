@@ -72,7 +72,9 @@ function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
 }
 
 function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpenAI, onHome, onStudy, active = "study" }) {
-  if (!isNativeAndroid()) return children;
+  const nativeAndroid = isNativeAndroid();
+  useFaithAndroidBack({ isHome: false, enabled: nativeAndroid, onBack });
+  if (!nativeAndroid) return children;
   return (
     <div className="faith-android-shell dark min-h-[100svh] bg-[#031321] text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#041726]/95 px-3 py-3 text-white backdrop-blur-xl">
