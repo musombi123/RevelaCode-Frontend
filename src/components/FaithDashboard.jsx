@@ -8,7 +8,6 @@ import {
   BadgeCheck,
   Compass,
   Flame,
-  Languages,
   Map,
   Play,
   RefreshCw,
@@ -1580,7 +1579,7 @@ export default function FaithDashboard({
           <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Open Academy <ArrowRight size={14} className="inline" /></span>
         </button>
         <button type="button" onClick={openAncientWordRoots} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><Languages size={20} /></span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={20} /></span>
           <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Ancient Word Roots</span>
           <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore Hebrew and Greek words in their biblical context.</span>
           <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Explore roots <ArrowRight size={14} className="inline" /></span>
