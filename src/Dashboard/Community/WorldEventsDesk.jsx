@@ -55,7 +55,7 @@ function relativeDate(value) {
 
 function normalizeResponse(response) {
   const envelope = response?.data ?? response;
-  const payload = envelope?.data ?? envelope;
+  const payload = Array.isArray(envelope?.data) ? envelope : (envelope?.data ?? envelope);
   return {
     events: Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.events) ? payload.events : [],
     sources: Array.isArray(payload?.sources) ? payload.sources : [],
@@ -71,6 +71,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
   const [preferences, setPreferences] = useState(() => readJson(keys.preferences, { topics: [], regions: ["kenya", "africa", "world"] }));
   const [savedIds, setSavedIds] = useState(() => readJson(keys.saved, []));
   const [hiddenIds, setHiddenIds] = useState(() => readJson(keys.hidden, []));
+  const [affinity, setAffinity] = useState(() => readJson(keys.affinity, {}));
   const [events, setEvents] = useState([]);
   const [sources, setSources] = useState([]);
   const [publisher, setPublisher] = useState({ name: "RevelaCode", label: "Official World Desk" });
@@ -87,6 +88,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
     setPreferences(readJson(keys.preferences, { topics: [], regions: ["kenya", "africa", "world"] }));
     setSavedIds(readJson(keys.saved, []));
     setHiddenIds(readJson(keys.hidden, []));
+    setAffinity(readJson(keys.affinity, {}));
   }, [keys]);
 
   const load = useCallback(async ({ silent = false } = {}) => {
@@ -123,14 +125,14 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
       .filter((event) => regionSet.has(String(event.region || "world").toLowerCase()))
       .map((event) => {
         const categories = Array.isArray(event.categories) ? event.categories : [];
-        const matchCount = categories.filter((topic) => topicSet.has(topic)).length;
+        const matchCount = categories.reduce((score, topic) => score + (topicSet.has(topic) ? 20 : 0) + Math.min(12, Number(affinity[topic] || 0) * 2), 0);
         return { ...event, __interestScore: matchCount };
       })
       .sort((a, b) => {
         if (a.__interestScore !== b.__interestScore) return b.__interestScore - a.__interestScore;
         return new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0);
       });
-  }, [events, preferences, hiddenIds]);
+  }, [events, preferences, hiddenIds, affinity]);
 
   const updatePreferences = (next) => {
     setPreferences(next);
@@ -151,10 +153,19 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
     updatePreferences({ ...preferences, regions: Array.from(regions).length ? Array.from(regions) : ["kenya", "africa", "world"] });
   };
 
-  const toggleSave = (eventId) => {
+  const learnFromEvent = (event) => {
+    const next = { ...affinity };
+    for (const topic of event?.categories || []) next[topic] = Math.min(6, Number(next[topic] || 0) + 1);
+    setAffinity(next);
+    writeJson(keys.affinity, next);
+  };
+
+  const toggleSave = (event) => {
+    const eventId = event.id;
     const next = savedIds.includes(eventId) ? savedIds.filter((id) => id !== eventId) : [...savedIds, eventId].slice(-200);
     setSavedIds(next);
     writeJson(keys.saved, next);
+    if (!savedIds.includes(eventId)) learnFromEvent(event);
   };
 
   const hideEvent = (eventId) => {
@@ -280,10 +291,10 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
                       </div>
                     ) : null}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
-                      <button type="button" onClick={() => toggleSave(event.id)} aria-pressed={isSaved} className={"inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-bold " + (isSaved ? "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200" : "border-slate-200 text-slate-500 dark:border-white/10 dark:text-slate-300")}><Bookmark size={13} fill={isSaved ? "currentColor" : "none"} /> {isSaved ? "Saved on this device" : "Save"}</button>
+                      <button type="button" onClick={() => toggleSave(event)} aria-pressed={isSaved} className={"inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-bold " + (isSaved ? "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200" : "border-slate-200 text-slate-500 dark:border-white/10 dark:text-slate-300")}><Bookmark size={13} fill={isSaved ? "currentColor" : "none"} /> {isSaved ? "Saved on this device" : "Save"}</button>
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={() => hideEvent(event.id)} className="text-[10px] font-semibold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">Not for me</button>
-                        <a href={event.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-[10px] font-black text-white transition hover:bg-indigo-700">Original source <ExternalLink size={12} /></a>
+                        <a href={event.url} target="_blank" rel="noopener noreferrer" onClick={() => learnFromEvent(event)} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-[10px] font-black text-white transition hover:bg-indigo-700">Original source <ExternalLink size={12} /></a>
                       </div>
                     </div>
                   </div>
