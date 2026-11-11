@@ -1242,6 +1242,7 @@ export default function AIAssistantDashboard({
             message.id === loadingId ? { ...message, stage } : message
           ));
         };
+        let workspaceRequested = false;
 
         try {
           updateLoadingStage(attachedFile ? (freeMode ? "local-analysis-only" : "local-analysis") : freeMode ? "local-reasoning" : "connecting");
@@ -1250,6 +1251,7 @@ export default function AIAssistantDashboard({
           const workspaceCommand = selectedToolCommand || inferWorkspaceCommand(cleaned, attachedFile);
           const runWorkspace = workspaceCommands.has(workspaceCommand) && !(workspaceCommand === "/image" && inputMeta?.toolMode === "merge");
           if (runWorkspace) {
+            workspaceRequested = true;
             if (freeMode) throw new Error("Switch to Adaptive mode to generate hosted documents, workbooks, code files, designs or campaign assets. Free mode remains local-only.");
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
@@ -1828,15 +1830,17 @@ export default function AIAssistantDashboard({
             .slice(-6)
             .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
             .join("\n");
-          const localFallback = (freeMode || isNetworkFailure)
+          const localFallback = !workspaceRequested && (freeMode || isNetworkFailure)
             ? answerLocally(cleaned || userDisplayText, recentContext)
             : "";
           const localFallbackNotice = freeMode
             ? "Free mode is active. This answer was generated locally without a hosted model."
             : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
-          const visibleText = localFallback
-            ? localFallback + "\n\n" + localFallbackNotice
-            : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
+          const visibleText = workspaceRequested
+            ? "Workspace execution failed: " + String(error?.message || "RevelaAI could not create this artifact.") + " No artifact was created."
+            : localFallback
+              ? localFallback + "\n\n" + localFallbackNotice
+              : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
 
           if (localFallback) {
             void recordConversationTurn({
