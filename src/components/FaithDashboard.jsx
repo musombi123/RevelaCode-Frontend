@@ -1,6 +1,7 @@
 // src/components/FaithDashboard.jsx
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 
 import {
   ArrowLeft,
@@ -45,6 +46,62 @@ import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
 import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
+
+function isNativeAndroid() {
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+}
+
+function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
+  return (
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#041726]/95 px-4 py-3 text-white shadow-sm backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[760px] items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300">
+          <BookOpen size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-extrabold tracking-tight">RevelaCode</p>
+          <p className="truncate text-[11px] text-slate-400">Faith Hub · {title}</p>
+        </div>
+        <PremiumPlansStar className="border-white/10 bg-[#0A2237] text-amber-300" />
+        <button type="button" onClick={() => onOpenAI?.()} aria-label="Open RevelaAI" className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95">
+          <Sparkles size={18} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpenAI, active = "study" }) {
+  if (!isNativeAndroid()) return children;
+  return (
+    <div className="faith-android-shell dark min-h-[100svh] bg-[#031321] text-white">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#041726]/95 px-3 py-3 text-white backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[760px] items-center gap-2.5">
+          <button type="button" onClick={onBack} aria-label="Back to Faith" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1D4057] bg-[#0A2237] text-white active:scale-95">
+            <ArrowLeft size={18} />
+          </button>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300"><BookOpen size={18} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold">RevelaCode</p>
+            <p className="truncate text-[11px] text-slate-400">Faith Hub · {title}</p>
+          </div>
+          <button type="button" onClick={() => onOpenAI?.()} aria-label="Ask RevelaAI" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95"><Sparkles size={18} /></button>
+        </div>
+      </header>
+      <main className="mx-auto w-full min-w-0 max-w-[760px] px-3 pb-4 pt-3">
+        {children}
+      </main>
+      <FaithMobileBottomNav
+        active={active}
+        onHome={() => onNavigate?.("faith")}
+        onStudy={() => onNavigate?.("bible")}
+        onAskAI={() => onOpenAI?.()}
+        onMission={() => { window.location.assign("/faith/missionpulse"); }}
+        onMe={() => onNavigate?.("profile")}
+      />
+    </div>
+  );
+}
 
 const FAITH_VERSES = [
   { reference: "Psalm 119:105", text: "Thy word is a lamp unto my feet, and a light unto my path." },
@@ -243,6 +300,8 @@ export default function FaithDashboard({
   /* =======================================================
      USER
   ======================================================= */
+
+  const androidNative = isNativeAndroid();
 
   const displayName =
     user?.fullName?.trim() ||
@@ -1019,16 +1078,11 @@ export default function FaithDashboard({
 
   if (faithSection === "study") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture}
-        className="
-          mx-auto
-          w-full
-          max-w-[1500px]
-          space-y-4
-        "
-      >
-        <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
-      </div>
+      <FaithAndroidWorkspaceFrame title="Study Library" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI}>
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+          <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
+        </div>
+      </FaithAndroidWorkspaceFrame>
     );
   }
 
@@ -1086,44 +1140,52 @@ export default function FaithDashboard({
 
   if (faithSection === "atlas") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <FaithAtlas userId={userId} onOpenReference={openBibleReference} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
-      </div>
+      <FaithAndroidWorkspaceFrame title="Faith Atlas" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI}>
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+          <FaithAtlas userId={userId} onOpenReference={openBibleReference} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
+        </div>
+      </FaithAndroidWorkspaceFrame>
     );
   }
   if (faithSection === "premium") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <FaithPremiumWorkspace
-          user={user}
-          isGuest={isGuest}
-          onLogin={onLogin}
-          onNavigate={navigateTo}
-          onOpenAI={onOpenAI}
-          onBack={closeStudyView}
-        />
-      </div>
+      <FaithAndroidWorkspaceFrame title="Faith Academy" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI}>
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+          <FaithPremiumWorkspace
+            user={user}
+            isGuest={isGuest}
+            onLogin={onLogin}
+            onNavigate={navigateTo}
+            onOpenAI={onOpenAI}
+            onBack={closeStudyView}
+          />
+        </div>
+      </FaithAndroidWorkspaceFrame>
     );
   }
   if (faithSection === "quarterly") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
-      </div>
+      <FaithAndroidWorkspaceFrame title="SDA Quarterly" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI}>
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+          <SDAQuarterlyWorkspace onOpen={openMaterial} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
+        </div>
+      </FaithAndroidWorkspaceFrame>
     );
   }
 
   if (faithSection === "word-roots") {
     return (
-      <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] space-y-4">
-        <AncientWordRootsWorkspace
-          onOpenAcademy={openFaithAcademy}
-          onLogin={onLogin}
-          onOpenAI={onOpenAI}
-          onBack={closeStudyView}
-          onNavigate={onNavigate}
-        />
-      </div>
+      <FaithAndroidWorkspaceFrame title="Ancient Word Roots" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI}>
+        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+          <AncientWordRootsWorkspace
+            onOpenAcademy={openFaithAcademy}
+            onLogin={onLogin}
+            onOpenAI={onOpenAI}
+            onBack={closeStudyView}
+            onNavigate={onNavigate}
+          />
+        </div>
+      </FaithAndroidWorkspaceFrame>
     );
   }
 
@@ -1350,8 +1412,9 @@ export default function FaithDashboard({
   return (
     <div
       data-demo="faith-overview"
-      className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-6 sm:p-1 sm:pb-0"
+      className={"mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-6 sm:p-1 sm:pb-0 " + (androidNative ? "faith-android-shell dark min-h-[100svh] bg-[#031321] px-3 text-white" : "")}
     >
+      {androidNative && <FaithAndroidHubHeader title="Overview" onOpenAI={onOpenAI} />}
       <FaithOfflineBanner />
       <PullToRefreshSurface onRefresh={loadHomeSnapshot}>
       <header aria-label="Faith and Scripture workspace" className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/30 sm:p-6">
