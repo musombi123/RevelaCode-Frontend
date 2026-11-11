@@ -1319,7 +1319,7 @@ export default function CommunityDashboard({
   // REFERENCE-INSPIRED COMMUNITY HUB HOME
   // Keep all existing workspace screens and API flows intact.
   // ==========================================================
-  if (workspacePage === "home") {
+  if (workspacePage === "home" && activeSurface === "pulse") {
     return (
       <CommunityHubDashboard
         user={user}
