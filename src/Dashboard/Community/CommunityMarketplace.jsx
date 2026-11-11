@@ -2,14 +2,18 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   CircleDollarSign,
+  Filter,
   MapPin,
   Package,
   Plus,
   RefreshCw,
   Search,
   ShoppingBag,
+  SlidersHorizontal,
   Sparkles,
+  Store,
   Tag,
   Trash2,
   X,
@@ -223,7 +227,7 @@ function ListingForm({ form, saving, error, onChange, onClose, onSubmit }) {
             <h2 id="community-marketplace-form-title" className="mt-1 text-xl font-black text-slate-950 dark:text-white">
               Create a listing
             </h2>
-            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs leading-5 text-blue-100/75">
               Share a useful product or service with the Jumuiya community.
             </p>
           </div>
@@ -390,6 +394,8 @@ export default function CommunityMarketplace({ onNavigate }) {
 
   const [listings, setListings] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -469,15 +475,38 @@ export default function CommunityMarketplace({ onNavigate }) {
 
   const filteredListings = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return listings;
-    return listings.filter((listing) => [
-      listing?.title,
-      listing?.description,
-      listing?.category,
-      listing?.location,
-      listing?.unit,
-    ].some((value) => String(value || "").toLowerCase().includes(query)));
-  }, [listings, searchTerm]);
+    let rows = listings;
+
+    if (activeTab === "mine") {
+      rows = rows.filter(isOwner);
+    } else if (activeTab === "free") {
+      rows = rows.filter((listing) => Number(listing?.price) === 0);
+    }
+
+    if (query) {
+      rows = rows.filter((listing) => [
+        listing?.title,
+        listing?.description,
+        listing?.category,
+        listing?.location,
+        listing?.unit,
+        listing?.seller?.name,
+        listing?.seller_name,
+        listing?.business_name,
+      ].some((value) => String(value || "").toLowerCase().includes(query)));
+    }
+
+    return [...rows].sort((a, b) => {
+      if (sortBy === "price-low") {
+        return Number(a?.price || 0) - Number(b?.price || 0);
+      }
+      if (sortBy === "price-high") {
+        return Number(b?.price || 0) - Number(a?.price || 0);
+      }
+      return new Date(b?.created_at || b?.createdAt || 0).getTime()
+        - new Date(a?.created_at || a?.createdAt || 0).getTime();
+    });
+  }, [listings, searchTerm, activeTab, sortBy, isOwner]);
 
   const updateField = useCallback((field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -555,60 +584,64 @@ export default function CommunityMarketplace({ onNavigate }) {
 
   return (
     <div className="min-w-0 space-y-5 pb-24 lg:pb-8">
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-5 text-white shadow-xl sm:p-7">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-60 w-60 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => { if (typeof onNavigate === "function") onNavigate("community"); }}
-            className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-white/75 transition hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft size={14} />
-            Community home
-          </button>
-
-          <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200">
-                <Sparkles size={13} />
-                Community marketplace
-              </div>
-              <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
-                Useful things. Real people. Local value.
-              </h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
-                Discover goods, skills and services offered by the community, or publish something that can help someone nearby.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={openCreateForm}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-xs font-black text-cyan-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-300 active:scale-[0.98]"
-            >
-              <Plus size={16} />
-              Sell or offer
-            </button>
+      <section className="relative isolate min-h-[250px] overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#071a3c] text-white shadow-[0_14px_35px_rgba(3,12,31,.28)] sm:min-h-[270px]">
+        <img
+          src="/images/marketplace-hero.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#06142d]/95 via-[#071c3e]/78 to-[#08234a]/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#06142d]/60 via-transparent to-[#06142d]/10" />
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full border-[26px] border-cyan-200/10" />
+        <div className="relative flex min-h-[250px] flex-col justify-between gap-6 p-5 sm:min-h-[270px] sm:p-7">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#07172e]/65 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.17em] text-cyan-100 backdrop-blur">
+              <Store size={13} /> Jumuiya · Community marketplace
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/20 bg-emerald-300/10 px-2.5 py-1.5 text-[9px] font-bold text-emerald-100 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Local exchange
+            </span>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 sm:max-w-lg sm:gap-3">
+          <div className="max-w-[590px]">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-100/85">Discover · Connect · Trade</p>
+            <h1 className="mt-2 text-[27px] font-black leading-[1.08] tracking-tight text-white sm:text-[36px]">
+              Local business. Shared opportunity.
+            </h1>
+            <p className="mt-2 max-w-[470px] text-xs leading-5 text-blue-50/90 sm:text-[13px]">
+              Discover useful products, local services and skills from people building businesses across Jumuiya.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={openCreateForm}
+                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-cyan-300 px-4 py-2.5 text-xs font-black text-[#08213c] shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-200 active:scale-[0.98]"
+              >
+                <Plus size={15} /> Sell or offer
+              </button>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-[10px] font-semibold text-white/90 backdrop-blur">
+                Made useful by the community
+              </span>
+            </div>
+          </div>
+
+          <div className="grid max-w-[500px] grid-cols-3 gap-3 border-t border-white/20 pt-3">
             <div>
-              <p className="text-lg font-black">{listings.length}</p>
-              <p className="mt-0.5 text-[10px] text-white/50">Active listings</p>
+              <p className="text-xl font-black leading-none text-white">{shortNumber(listings.length)}</p>
+              <p className="mt-1 text-[9px] font-semibold text-blue-100/75">Active listings</p>
             </div>
             <div>
-              <p className="text-lg font-black">{new Set(listings.map((item) => item?.category).filter(Boolean)).size}</p>
-              <p className="mt-0.5 text-[10px] text-white/50">Categories</p>
+              <p className="text-xl font-black leading-none text-white">{new Set(listings.map((item) => item?.category).filter(Boolean)).size}</p>
+              <p className="mt-1 text-[9px] font-semibold text-blue-100/75">Categories</p>
             </div>
             <div>
-              <p className="text-lg font-black">{listings.filter(isOwner).length}</p>
-              <p className="mt-0.5 text-[10px] text-white/50">Your listings</p>
+              <p className="text-xl font-black leading-none text-white">{listings.filter(isOwner).length}</p>
+              <p className="mt-1 text-[9px] font-semibold text-blue-100/75">Your listings</p>
             </div>
           </div>
         </div>
       </section>
-
       {notice ? (
         <div role="status" className="flex items-start gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs leading-5 text-cyan-800 dark:border-cyan-900/50 dark:bg-cyan-950/30 dark:text-cyan-200">
           <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
@@ -628,8 +661,8 @@ export default function CommunityMarketplace({ onNavigate }) {
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/[0.08] dark:bg-[#0d1729] sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <section className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#0d1729] p-3.5 shadow-[0_8px_24px_rgba(0,0,0,.12)] sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search marketplace</span>
             <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -637,41 +670,94 @@ export default function CommunityMarketplace({ onNavigate }) {
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search products, skills, services or places…"
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-500/10 dark:border-white/[0.08] dark:bg-[#07111e] dark:text-white dark:focus:bg-slate-950"
+              placeholder="Search products, skills, services or places..."
+              className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-[#07111e] pl-10 pr-10 text-xs text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15"
             />
+            {searchTerm ? (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                aria-label="Clear marketplace search"
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+              ><X size={13} /></button>
+            ) : null}
+          </label>
+          <label className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-[#07111e] px-3 text-[10px] font-bold text-slate-400">
+            <SlidersHorizontal size={13} className="text-cyan-300" />
+            <span className="hidden sm:inline">Sort</span>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              aria-label="Sort marketplace listings"
+              className="min-w-0 bg-transparent text-[10px] font-bold text-slate-200 outline-none"
+            >
+              <option value="newest" className="bg-[#0d1729]">Newest first</option>
+              <option value="price-low" className="bg-[#0d1729]">Price: low to high</option>
+              <option value="price-high" className="bg-[#0d1729]">Price: high to low</option>
+            </select>
+            <ChevronDown size={12} />
           </label>
           <button
             type="button"
             onClick={() => loadListings({ quiet: true })}
             disabled={refreshing || loading}
             aria-label="Refresh marketplace"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/5"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] px-3.5 text-xs font-bold text-slate-300 transition hover:border-cyan-400/40 hover:bg-white/[0.04] disabled:opacity-60"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-            Refresh
+            <span className="sm:hidden">Refresh</span>
           </button>
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-          {CATEGORIES.map((category) => (
+        <div className="mt-4 flex gap-2 overflow-x-auto border-b border-white/[0.07] pb-3 [scrollbar-width:none]">
+          {[
+            { value: "all", label: "Explore all", count: listings.length },
+            { value: "mine", label: "Your listings", count: listings.filter(isOwner).length },
+            { value: "free", label: "Free & exchange", count: listings.filter((item) => Number(item?.price) === 0).length },
+          ].map((tab) => (
             <button
-              key={category.value || "all"}
+              key={tab.value}
               type="button"
-              aria-pressed={selectedCategory === category.value}
-              onClick={() => setSelectedCategory(category.value)}
-              className={`shrink-0 rounded-full px-3.5 py-2.5 text-[10px] font-bold transition ${selectedCategory === category.value ? "bg-cyan-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}
+              aria-pressed={activeTab === tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={"inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-[10px] font-extrabold transition " + (activeTab === tab.value ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-white")}
             >
-              {category.label}
+              {tab.label}
+              <span className={"rounded-full px-1.5 py-0.5 text-[9px] " + (activeTab === tab.value ? "bg-white/15 text-white" : "bg-white/[0.07] text-slate-400")}>{tab.count}</span>
             </button>
           ))}
         </div>
-      </section>
 
+        <div className="mt-3 flex items-center gap-2">
+          <Filter size={13} className="shrink-0 text-cyan-300" />
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">Categories</span>
+          <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category.value || "all"}
+                type="button"
+                aria-pressed={selectedCategory === category.value}
+                onClick={() => setSelectedCategory(category.value)}
+                className={"shrink-0 rounded-full border px-3 py-2 text-[10px] font-bold transition " + (selectedCategory === category.value ? "border-cyan-300/40 bg-cyan-300 text-[#08213c] shadow-sm" : "border-white/[0.08] bg-white/[0.04] text-slate-400 hover:border-cyan-300/30 hover:text-white")}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+          {(selectedCategory || searchTerm || activeTab !== "all" || sortBy !== "newest") ? (
+            <button
+              type="button"
+              onClick={() => { setSelectedCategory(""); setSearchTerm(""); setActiveTab("all"); setSortBy("newest"); }}
+              className="shrink-0 text-[9px] font-bold text-cyan-300 hover:text-cyan-100"
+            >Reset</button>
+          ) : null}
+        </div>
+      </section>
       <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-base font-black text-slate-950 dark:text-white">Made useful by the community</h2>
+            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-300">Find your next good thing</p>
+            <h2 className="mt-1 text-lg font-black tracking-tight text-white">Browse community listings</h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {loading
                 ? "Looking for active listings…"
@@ -684,20 +770,20 @@ export default function CommunityMarketplace({ onNavigate }) {
               ) : null}
             </p>
           </div>
-          <button type="button" onClick={openCreateForm} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-[11px] font-black text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
+          <button type="button" onClick={openCreateForm} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-cyan-300 px-3 py-2 text-[11px] font-black text-[#08213c] transition hover:bg-cyan-200">
             <Plus size={14} />
             List something
           </button>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 2xl:grid-cols-3">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/[0.08] dark:bg-[#0d1729]">
-                <div className="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
-                <div className="mt-4 h-4 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
-                <div className="mt-3 h-3 w-full rounded bg-slate-100 dark:bg-slate-800" />
-                <div className="mt-2 h-3 w-4/5 rounded bg-slate-100 dark:bg-slate-800" />
+              <div key={item} className="animate-pulse overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0d1729] p-4">
+                <div className="h-32 rounded-xl bg-[#162943]" />
+                <div className="mt-4 h-4 w-2/3 rounded bg-[#162943]" />
+                <div className="mt-3 h-3 w-full rounded bg-[#162943]" />
+                <div className="mt-2 h-3 w-4/5 rounded bg-[#162943]" />
               </div>
             ))}
           </div>
@@ -717,14 +803,14 @@ export default function CommunityMarketplace({ onNavigate }) {
             })}
           </div>
         ) : (
-          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center dark:border-white/[0.08] dark:bg-[#0d1729]">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[22px] border border-dashed border-white/[0.12] bg-[#0d1729] px-5 py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/10 text-cyan-200">
               <ShoppingBag size={23} />
             </div>
-            <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">
+            <h3 className="mt-4 text-base font-black text-white">
               {searchTerm || selectedCategory ? "No matching listings" : "Be the first to list something"}
             </h3>
-            <p className="mt-2 max-w-md text-xs leading-5 text-slate-500 dark:text-slate-400">
+            <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
               {searchTerm || selectedCategory
                 ? "Try a different search or category. You can also clear the search and browse everything."
                 : "Share a useful product, skill or service. Your listing will be stored on the marketplace and available to the Community hub."}
@@ -736,7 +822,7 @@ export default function CommunityMarketplace({ onNavigate }) {
               } else {
                 openCreateForm();
               }
-            }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-cyan-700">
+            }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2.5 text-xs font-black text-[#08213c] transition hover:bg-cyan-200">
               {searchTerm || selectedCategory ? "Clear filters" : "Create first listing"}
               <Plus size={14} />
             </button>
@@ -744,19 +830,28 @@ export default function CommunityMarketplace({ onNavigate }) {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/[0.08] dark:bg-[#0d1729]/60">
+      <section className="rounded-[20px] border border-cyan-500/15 bg-gradient-to-br from-[#0b2346] to-[#0b354b] p-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-cyan-100">
             <Sparkles size={16} />
           </div>
           <div>
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-200">A community-first exchange</h3>
+            <h3 className="text-xs font-black text-white">A community-first exchange</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               Check details carefully before paying or sharing personal information. Seller contact details are not exposed by the current marketplace API, so no fake contact or checkout action is shown.
             </p>
           </div>
         </div>
       </section>
+
+      <button
+        type="button"
+        onClick={openCreateForm}
+        aria-label="Create a Marketplace listing"
+        className="fixed bottom-[88px] right-4 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-cyan-300 px-4 text-xs font-black text-[#08213c] shadow-[0_12px_28px_rgba(0,0,0,.32)] transition hover:-translate-y-0.5 hover:bg-cyan-200 lg:bottom-7 lg:right-7"
+      >
+        <Plus size={17} /> <span className="hidden sm:inline">Sell or offer</span><span className="sm:hidden">Sell</span>
+      </button>
 
       {createOpen ? (
         <ListingForm
