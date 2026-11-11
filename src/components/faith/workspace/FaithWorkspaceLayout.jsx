@@ -122,7 +122,7 @@ export function FaithMobileBottomNav({
             aria-current={selected ? "page" : undefined}
             className={"flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.625rem] font-bold transition-colors duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (selected ? (nativeAndroid ? "text-[#37D98B]" : "text-indigo-700 dark:text-indigo-300") : "text-slate-500 dark:text-slate-400")}
           >
-            <span className={"flex h-7 w-9 items-center justify-center rounded-xl " + (selected ? "bg-indigo-50 dark:bg-indigo-950/60" : "")}><Icon size={19} strokeWidth={selected ? 2.4 : 1.9} /></span>
+            <span className={"flex h-7 w-9 items-center justify-center rounded-xl " + (selected ? (nativeAndroid ? "bg-emerald-400/10" : "bg-indigo-50 dark:bg-indigo-950/60") : "")}><Icon size={19} strokeWidth={selected ? 2.4 : 1.9} /></span>
             <span className="truncate">{item.label}</span>
           </button>
         );
@@ -513,7 +513,7 @@ export function WorkspaceHeader({
         </button>
         <div className="min-w-0 flex-1">
           <nav aria-label="Breadcrumb" className={"flex items-center gap-1 text-[0.625rem] font-semibold " + (nativeAndroid ? "text-slate-400" : "text-slate-400")}><span>Faith</span><span aria-hidden="true">/</span><span className={"truncate " + (nativeAndroid ? "text-emerald-300" : "text-indigo-700 dark:text-indigo-300")}>{heading}</span></nav>
-          <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-white sm:text-2xl">{heading}</h1>
+          <h1 className={"mt-0.5 truncate text-lg font-semibold tracking-tight sm:text-2xl " + (nativeAndroid ? "text-white" : "text-slate-950 dark:text-white")}>{heading}</h1>
         </div>
         <button type="button" onClick={onOpenFilters} aria-label="Open filters and page actions" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:active:bg-slate-800"><SlidersHorizontal size={18} /></button>
       </div>
