@@ -448,7 +448,7 @@ export default function CommunityHubDashboard({
                     <QuickAction icon={Store} title="Find Services" color="teal" onClick={() => onSelectIntent("help")} />
                     <QuickAction icon={BookOpen} title="Explore Courses" color="sky" onClick={() => onSelectIntent("learn")} />
                     <QuickAction icon={Briefcase} title="Check Jobs" color="violet" onClick={() => onSelectIntent("work")} />
-                    <QuickAction icon={CalendarDays} title="Plan an Event" color="pink" onClick={onCreateEvent} />
+                    <QuickAction icon={CalendarDays} title="Find Events" color="pink" onClick={onCreateEvent} />
                   </div>
                 </div>
                 <div className="rounded-[20px] border border-[#e4e8f6] bg-white p-3.5 shadow-[0_4px_18px_rgba(25,48,104,.045)] sm:p-4">
