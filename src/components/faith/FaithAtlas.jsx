@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import FaithWorkspaceLayout from "./workspace/FaithWorkspaceLayout.jsx";
 import {
   BookOpen,
   Bookmark,
@@ -284,7 +285,7 @@ function readSaved(key) {
   }
 }
 
-export default function FaithAtlas({ userId = "guest", onOpenReference }) {
+export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI }) {
   const storageKey = "revelacode_faith_atlas_saved_v1_" + String(userId || "guest");
   const [savedIds, setSavedIds] = useState(() => readSaved(storageKey));
   const [selectedId, setSelectedId] = useState("daniel-7");
@@ -353,6 +354,7 @@ export default function FaithAtlas({ userId = "guest", onOpenReference }) {
   };
 
   return (
+    <FaithWorkspaceLayout page="atlas" contextData={{ reference: selectedNode.reference, topic: selectedNode.title }} onOpenAI={onOpenAI} onBack={() => window.history.back()} onPrimaryAction={() => setPromptOpen(true)}>
     <div className="mx-auto w-full max-w-[1500px] space-y-5">
       <section className="overflow-hidden rounded-3xl border border-indigo-200 bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-5 text-white shadow-xl sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -420,5 +422,6 @@ export default function FaithAtlas({ userId = "guest", onOpenReference }) {
 
       <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950 sm:p-5"><p className="flex items-start gap-2 text-xs leading-6 text-gray-600 dark:text-gray-300"><ShieldCheck size={16} className="mt-0.5 shrink-0 text-emerald-600" /><span><strong>Study integrity:</strong> This is a curated prototype, not a doctrinal verdict or an exhaustive Bible concordance. The references point to passages to read; the study lens is explicitly marked as interpretation. Future versions will link claims to reviewed source material and show citations from the selected Bible edition.</span></p></section>
     </div>
+    </FaithWorkspaceLayout>
   );
 }
