@@ -1585,8 +1585,15 @@ export default function FaithDashboard({
               <button
                 key={tool.key}
                 type="button"
-                onClick={() => tool.key === "missionpulse" ? window.location.assign("/faith/missionpulse") : navigateTo(tool.key)}
-                className={(tool.key === "missionpulse" ? "col-span-2 sm:col-span-1 " : "") + "group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none"}>
+                onClick={() => {
+                  if (tool.key === "missionpulse") {
+                    window.location.assign("/faith/missionpulse");
+                    return;
+                  }
+                  navigateTo(tool.key);
+                }}
+                className={`group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none ${tool.key === "missionpulse" ? "col-span-2 sm:col-span-1" : ""}`}
+              >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Icon size={20} /></span>
                 <span className="mt-3 block min-w-0 text-sm font-semibold text-slate-900 dark:text-white">{tool.title}</span>
                 <span className="mt-1 line-clamp-2 min-w-0 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolDescriptions[tool.key] || tool.description}</span>
