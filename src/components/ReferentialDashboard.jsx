@@ -111,7 +111,7 @@ export default function StudyDashboard({
               </div>
 
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-slate-400">
                   Study
                 </p>
 
@@ -153,7 +153,7 @@ export default function StudyDashboard({
           </div>
 
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-slate-400">
               RevelaCode
             </p>
 
