@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedBibleBook, saveCachedBibleBook } from "./study/studyMaterialCache.js";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
+import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
 import {
   useLocation,
   useNavigate,
@@ -213,6 +214,7 @@ const BackButton = ({
 export default function BibleDashboard({
   onNavigate,
   onBack,
+  onOpenAI,
 }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -865,6 +867,7 @@ export default function BibleDashboard({
 
   if (sourceView) {
     return (
+      <FaithWorkspaceLayout page="bible" title="Study reference" description="Read the selected source beside the biblical passage that led you here." contextData={{ reference: sourceView?.title || "Study reference", version: bibleVersion.toUpperCase() }} onOpenAI={onOpenAI} onBack={() => setSourceView(null)} onPrimaryAction={() => setSourceView(null)}>
       <div className="mx-auto w-full max-w-[1500px] space-y-4 p-3 sm:p-4">
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
           <BackButton label="Back to Bible" onClick={() => setSourceView(null)} />
@@ -875,10 +878,22 @@ export default function BibleDashboard({
         </div>
         <StudyResourceViewer source={sourceView} />
       </div>
+      </FaithWorkspaceLayout>
     );
   }
 
   return (
+    <FaithWorkspaceLayout
+      page="bible"
+      contextData={{
+        reference: String(selectedBookKey || "Bible") + (selectedChapterIndex !== null ? " " + String(selectedChapterIndex + 1) : ""),
+        version: String(bibleVersion || "kjv").toUpperCase(),
+      }}
+      onOpenAI={onOpenAI}
+      onBack={onBack || (() => onNavigate?.("faith"))}
+      onPrimaryAction={() => setViewLevel(selectedChapterIndex === null ? "books" : "chapter")}
+      panelTabs={["Cross-references", "Word roots", "EGW", "My notes"]}
+    >
     <div
       className="
         w-full
@@ -1736,5 +1751,6 @@ export default function BibleDashboard({
           </Card>
         )}
     </div>
+    </FaithWorkspaceLayout>
   );
 }
