@@ -163,6 +163,7 @@ export function PullToRefreshSurface({ onRefresh, children, className = "" }) {
     const endY = event.changedTouches?.[0]?.clientY ?? touchStart.current;
     const distance = endY - touchStart.current;
     touchStart.current = null;
+    setPulling(false);
     if (distance < 76 || refreshing || typeof onRefresh !== "function") return;
     setPulling(false);
     setRefreshing(true);
@@ -302,6 +303,11 @@ export function InlineAskBar({
 
   useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => {
+    const dismiss = () => { setSheetOpen(false); };
+    window.addEventListener("revelacode:faith-dismiss-overlay", dismiss);
+    return () => window.removeEventListener("revelacode:faith-dismiss-overlay", dismiss);
+  }, []);
+  useEffect(() => {
     onOverlayChange?.(sheetOpen);
     return () => { if (sheetOpen) onOverlayChange?.(false); };
   }, [sheetOpen, onOverlayChange]);
@@ -433,7 +439,7 @@ export function InlineAskBar({
   const answerContent = (
     <div className="min-w-0">
       {busy && <div className="animate-pulse rounded-xl bg-slate-50 p-4 dark:bg-slate-950" role="status" aria-live="polite"><div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300"><Sparkles size={14} /> Thinking through the passage…</div><div className="h-3 w-11/12 rounded bg-slate-200 dark:bg-slate-800" /><div className="mt-2 h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-800" /><div className="mt-2 h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" /></div>}
-      {deepStudy && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20"><p className="text-sm font-semibold text-amber-950 dark:text-amber-100">This needs a deeper study</p><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">This question is broader than the short-answer bar. Continue it in RevelaAI with the page context attached.</p><AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div>}
+      {deepStudy && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20"><p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Need a deeper study?</p><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">This question is broader than the short-answer bar. Continue it in RevelaAI with the page context attached.</p><AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div>}
       {error && !busy && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-900/50 dark:bg-rose-950/20" role="alert"><div className="flex items-start gap-2"><HelpCircle size={16} className="mt-0.5 shrink-0 text-rose-700 dark:text-rose-300" /><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-rose-900 dark:text-rose-100">{rateLimited ? "AI plan limit reached" : "We couldn't load that answer"}</p><p className="mt-1 text-xs leading-5 text-rose-800 dark:text-rose-200">{error}</p><div className="mt-3 flex flex-wrap gap-2">{!rateLimited && online && <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-rose-700 px-3 py-2 text-xs font-semibold text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>}{rateLimited && <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } }))} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">View plans <ArrowRight size={14} /></button>}</div><AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div></div></div>}
       {answer && !busy && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-950"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">RevelaAI · Short answer</p><span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-1 text-[10px] font-bold text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200"><ShieldCheck size={12} /> SDA-first framing</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800 dark:text-slate-100">{visibleAnswer}</p>{sourceChips}{/\binterpretation|historicist|view\b/i.test(answer) && <p className="mt-3 text-[10px] font-semibold text-amber-700 dark:text-amber-300">Interpretive claims are study perspectives, not established facts.</p>}<AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div>}
     </div>
@@ -569,7 +575,11 @@ export default function FaithWorkspaceLayout({
   }, []);
 
   const handleNativeBack = useCallback(() => {
-    if (overlayRef.current) { setOverlay(""); return true; }
+    if (overlayRef.current) {
+      if (overlayRef.current === "answer") window.dispatchEvent(new CustomEvent("revelacode:faith-dismiss-overlay"));
+      setOverlay("");
+      return true;
+    }
     if (keyboardOpen) { document.activeElement?.blur?.(); setKeyboardOpen(false); return true; }
     return false;
   }, [keyboardOpen]);
@@ -577,20 +587,21 @@ export default function FaithWorkspaceLayout({
 
   const goHome = onHome || onBack || (() => onNavigate?.("faith"));
   const goStudy = onStudy || (() => onNavigate?.("bible"));
-  const goMission = onMission || (() => onNavigate?.("missionpulse"));
+  const goMission = onMission || (() => window.location.assign("/faith/missionpulse"));
   const goMe = onMe || (() => onNavigate?.("profile"));
   const navActive = page === "missionpulse" ? "mission" : page === "profile" ? "me" : ["quarterly", "bible", "prophecy", "events", "referential", "library", "word-roots", "academy", "atlas"].includes(page) ? "study" : "home";
   const chips = Array.isArray(filterChips) ? filterChips : (meta.chips || []);
   const touchStart = useRef(null);
+  const handleAskOverlay = useCallback((open) => setOverlay((current) => open ? "answer" : current === "answer" ? "" : current), []);
   const closeOverlay = () => setOverlay("");
 
   return (
     <div className="mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6">
       <FaithOfflineBanner offline={offline} />
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
-      <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={(open) => setOverlay((current) => open ? "answer" : current === "answer" ? "" : current)} />
+      <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
       <div className={panel ? "grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]" : "min-w-0"}>
-        <main data-faith-workspace-content className="min-w-0 space-y-4">{children}</main>
+        <main data-faith-workspace-content className="min-w-0 space-y-4 max-sm:[&_[class*=grid-cols-2]]:!grid-cols-1 max-sm:[&_[class*=grid-cols-3]]:!grid-cols-1 max-sm:[&_[class*=grid-cols-4]]:!grid-cols-1">{children}</main>
         {panel && <StudyPanel page={page} contextData={contextData} tabs={panelTabs} />}
       </div>
 
