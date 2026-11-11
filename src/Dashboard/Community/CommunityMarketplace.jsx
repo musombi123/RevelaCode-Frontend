@@ -601,9 +601,8 @@ export default function CommunityMarketplace({ onNavigate }) {
     <div className="min-w-0 space-y-5 pb-24 lg:pb-8">
       <section className="relative isolate min-h-[250px] overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#071a3c] text-white shadow-[0_14px_35px_rgba(3,12,31,.28)] sm:min-h-[270px]">
         <img
-          src="/images/marketplace-hero.webp"
-          alt=""
-          aria-hidden="true"
+          src="https://images.pexels.com/photos/35856106/pexels-photo-35856106.jpeg?auto=compress&cs=tinysrgb&w=1600"
+          alt="Colorful Nairobi market stalls displaying African textiles and handcrafted goods"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#06142d]/95 via-[#071c3e]/78 to-[#08234a]/20" />
@@ -641,6 +640,7 @@ export default function CommunityMarketplace({ onNavigate }) {
             </div>
           </div>
 
+          <a href="https://www.pexels.com/photo/vibrant-nairobi-market-stalls-displaying-african-textiles-35856106/" target="_blank" rel="noreferrer" className="absolute bottom-2 right-3 text-[8px] font-medium text-white/55 transition hover:text-white/90">Photo by Enoch Wafula · Pexels</a>
           <div className="grid max-w-[500px] grid-cols-3 gap-3 border-t border-white/20 pt-3">
             <div>
               <p className="text-xl font-black leading-none text-white">{shortNumber(listings.length)}</p>
