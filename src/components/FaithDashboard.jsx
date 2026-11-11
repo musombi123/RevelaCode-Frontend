@@ -357,7 +357,16 @@ export default function FaithDashboard({
       const cacheKey = "revelacode_sda_quarter:" + quarter.year + ":" + quarter.quarter;
       const cachedRaw = localStorage.getItem(cacheKey);
       const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
-      const lessons = Array.isArray(cached?.materials) ? [...cached.materials] : [];
+      const backgroundCacheRaw = localStorage.getItem("sda-quarterly:" + quarter.year + ":" + quarter.quarter);
+      const backgroundCache = backgroundCacheRaw ? JSON.parse(backgroundCacheRaw) : null;
+      const cachedMaterials = Array.isArray(cached?.materials)
+        ? cached.materials
+        : Array.isArray(backgroundCache?.payload?.materials)
+          ? backgroundCache.payload.materials
+          : Array.isArray(backgroundCache?.materials)
+            ? backgroundCache.materials
+            : [];
+      const lessons = [...cachedMaterials];
       lessons.sort((left, right) => {
         const leftDate = String(faithLessonMeta(left).lesson_date || "");
         const rightDate = String(faithLessonMeta(right).lesson_date || "");
@@ -403,7 +412,12 @@ export default function FaithDashboard({
 
   useEffect(() => {
     const timer = window.setTimeout(loadHomeSnapshot, 120);
-    return () => window.clearTimeout(timer);
+    const handleQuarterlyUpdated = () => loadHomeSnapshot();
+    window.addEventListener("revelacode:sda-quarterly-updated", handleQuarterlyUpdated);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("revelacode:sda-quarterly-updated", handleQuarterlyUpdated);
+    };
   }, [loadHomeSnapshot]);
 
   const recordStudyDay = () => {
