@@ -1171,7 +1171,7 @@ export default function CommunityDashboard({
 
   // ----------------------------------------------------------
   // Existing Community workspaces
-  // Feed and Marketplace use the shared Jumuiya workspace frame and visual system.
+  // Feed and Marketplace use the shared Jumuiya workspace frame and visual system; Marketplace also owns its listing controls.
   // ----------------------------------------------------------
 
   const renderBackMenu = () => {
