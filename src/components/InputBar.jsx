@@ -77,7 +77,8 @@ const TOOL_COMMANDS = [
   ["/deck", "PowerPoint", Presentation], ["/doc", "Word document", FileText],
   ["/ledger", "Accounting", Calculator], ["/quantum", "Quantum science", Microscope],
   ["/robot", "Robotics", Bot], ["/paper", "Publications", BookOpen],
-  ["/humanize", "Humanizer", Sparkles],
+  ["/code", "Code generation", Code2], ["/ui", "UI prototype", LayoutDashboard],
+  ["/promo", "Campaign studio", Megaphone], ["/humanize", "Humanizer", Sparkles],
 ];
 
 const formatSize = (bytes) =>
