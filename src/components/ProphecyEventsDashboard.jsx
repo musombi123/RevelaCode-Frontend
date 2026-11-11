@@ -1010,6 +1010,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
       page="events"
       contextData={{ region: location || "Global", category: category || "All events", page }}
       onOpenAI={onOpenAI}
+      onNavigate={onNavigate}
       onBack={() => onNavigate?.("faith")}
       onPrimaryAction={loadEvents}
     >
