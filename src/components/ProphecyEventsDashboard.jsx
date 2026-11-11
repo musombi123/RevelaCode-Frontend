@@ -6,6 +6,7 @@ import React, {
 } from "react";
 
 import { useNavigate } from "react-router-dom";
+import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 import {
   Card,
@@ -523,7 +524,7 @@ function buildExplanatorySummary(
    Main component
 ========================================================= */
 
-export default function ProphecyEventsDashboard() {
+export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
   const navigate =
     useNavigate();
 
@@ -1005,6 +1006,13 @@ export default function ProphecyEventsDashboard() {
   ======================================================= */
 
   return (
+    <FaithWorkspaceLayout
+      page="events"
+      contextData={{ region: location || "Global", category: category || "All events", page }}
+      onOpenAI={onOpenAI}
+      onBack={() => onNavigate?.("faith")}
+      onPrimaryAction={loadEvents}
+    >
     <div
       className="
         w-full
@@ -2015,5 +2023,6 @@ export default function ProphecyEventsDashboard() {
           </div>
         )}
     </div>
+    </FaithWorkspaceLayout>
   );
 }
