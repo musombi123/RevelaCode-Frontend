@@ -516,6 +516,13 @@ export default function CommunityMarketplace({ onNavigate }) {
     });
   }, [listings, searchTerm, activeTab, sortBy, isOwner]);
 
+  const hasMarketplaceFilters = Boolean(
+    searchTerm.trim() ||
+    selectedCategory ||
+    activeTab !== "all" ||
+    sortBy !== "newest"
+  );
+
   const updateField = useCallback((field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
   }, []);
@@ -816,22 +823,24 @@ export default function CommunityMarketplace({ onNavigate }) {
               <ShoppingBag size={23} />
             </div>
             <h3 className="mt-4 text-base font-black text-white">
-              {searchTerm || selectedCategory ? "No matching listings" : "Be the first to list something"}
+              {hasMarketplaceFilters ? "No matching listings" : activeTab === "mine" ? "You have no active listings yet" : "Be the first to list something"}
             </h3>
             <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
-              {searchTerm || selectedCategory
-                ? "Try a different search or category. You can also clear the search and browse everything."
+              {hasMarketplaceFilters
+                ? "No listing matches these filters. Clear your filters or try another search to see more from the community."
                 : "Share a useful product, skill or service. Your listing will be stored on the marketplace and available to the Community hub."}
             </p>
             <button type="button" onClick={() => {
-              if (searchTerm || selectedCategory) {
+              if (hasMarketplaceFilters) {
                 setSearchTerm("");
                 setSelectedCategory("");
+                setActiveTab("all");
+                setSortBy("newest");
               } else {
                 openCreateForm();
               }
             }} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2.5 text-xs font-black text-[#08213c] transition hover:bg-cyan-200">
-              {searchTerm || selectedCategory ? "Clear filters" : "Create first listing"}
+              {hasMarketplaceFilters ? "Clear filters" : "Create first listing"}
               <Plus size={14} />
             </button>
           </div>
@@ -846,7 +855,7 @@ export default function CommunityMarketplace({ onNavigate }) {
           <div>
             <h3 className="text-xs font-black text-white">A community-first exchange</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Check details carefully before paying or sharing personal information. Seller contact details are not exposed by the current marketplace API, so no fake contact or checkout action is shown.
+              Check product details and agree on payment and delivery directly with the seller. When contact details are available, use the listing's built-in seller contact option; Marketplace does not pretend to provide instant checkout.
             </p>
           </div>
         </div>
