@@ -6,7 +6,7 @@ import React, {
 } from "react";
 
 import { useNavigate } from "react-router-dom";
-import FaithWorkspaceLayout from "./faith/workspace/FaithWorkspaceLayout.jsx";
+import FaithWorkspaceLayout, { PullToRefreshSurface } from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 import {
   Card,
@@ -1014,6 +1014,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
       onBack={() => onNavigate?.("faith")}
       onPrimaryAction={loadEvents}
     >
+    <PullToRefreshSurface onRefresh={loadEvents}>
     <div
       className="
         w-full
@@ -2024,6 +2025,7 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
           </div>
         )}
     </div>
+    </PullToRefreshSurface>
     </FaithWorkspaceLayout>
   );
 }
