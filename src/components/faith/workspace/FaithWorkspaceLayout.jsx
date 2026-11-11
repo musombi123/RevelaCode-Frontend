@@ -99,7 +99,8 @@ export function FaithMobileBottomNav({
   hidden = false,
 }) {
   if (hidden) return null;
-  const keepDockInAndroidLandscape = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  const keepDockInAndroidLandscape = nativeAndroid;
   const items = [
     { key: "home", label: "Home", icon: Home, action: onHome },
     { key: "study", label: "Study", icon: BookOpen, action: onStudy },
@@ -108,7 +109,7 @@ export function FaithMobileBottomNav({
     { key: "me", label: "Me", icon: UserCircle, action: onMe },
   ];
   return (
-    <nav aria-label="Faith mobile navigation" className={"fixed inset-x-0 bottom-0 z-50 grid h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/95 " + (keepDockInAndroidLandscape ? "" : "sm:hidden")}>
+    <nav aria-label="Faith mobile navigation" className={"fixed inset-x-0 bottom-0 z-50 grid min-h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_28px_rgba(3,20,43,0.28)] backdrop-blur-lg " + (nativeAndroid ? "border-white/10 bg-[#061D36]/96 " : "border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-950/95 ") + (keepDockInAndroidLandscape ? "" : "sm:hidden")}>
       {items.map((item) => {
         const Icon = item.icon;
         const selected = active === item.key;
@@ -119,7 +120,7 @@ export function FaithMobileBottomNav({
             onClick={item.action}
             aria-label={item.label}
             aria-current={selected ? "page" : undefined}
-            className={"flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-[0.625rem] font-semibold transition-colors duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 " + (selected ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400")}
+            className={"flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.625rem] font-bold transition-colors duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (selected ? (nativeAndroid ? "text-[#37D98B]" : "text-indigo-700 dark:text-indigo-300") : "text-slate-500 dark:text-slate-400")}
           >
             <span className={"flex h-7 w-9 items-center justify-center rounded-xl " + (selected ? "bg-indigo-50 dark:bg-indigo-950/60" : "")}><Icon size={19} strokeWidth={selected ? 2.4 : 1.9} /></span>
             <span className="truncate">{item.label}</span>
@@ -503,15 +504,16 @@ export function WorkspaceHeader({
   const chips = Array.isArray(filterChips) ? filterChips : (meta.chips || []);
   const heading = title || meta.title || "Faith workspace";
   const intro = description || meta.description || "Study, reflect and explore Scripture.";
+  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
   return (
-    <header className="sticky top-0 z-30 -mx-1 rounded-2xl border border-slate-200/70 bg-white/95 p-3 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 sm:p-4">
+    <header className={"sticky top-0 z-30 -mx-1 rounded-2xl border p-3 shadow-sm backdrop-blur-md sm:p-4 " + (nativeAndroid ? "border-white/10 bg-[#041726]/95 text-white" : "border-slate-200/70 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95")}>
       <div className="flex min-w-0 items-center gap-2">
         <button type="button" onClick={onBack} aria-label={backLabel} disabled={!onBack} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-colors active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:active:bg-slate-800">
           <ArrowLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[0.625rem] font-semibold text-slate-400"><span>Faith</span><span aria-hidden="true">/</span><span className="truncate text-indigo-700 dark:text-indigo-300">{heading}</span></nav>
-          <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-slate-950 dark:text-white sm:text-2xl">{heading}</h1>
+          <nav aria-label="Breadcrumb" className={"flex items-center gap-1 text-[0.625rem] font-semibold " + (nativeAndroid ? "text-slate-400" : "text-slate-400")}><span>Faith</span><span aria-hidden="true">/</span><span className={"truncate " + (nativeAndroid ? "text-emerald-300" : "text-indigo-700 dark:text-indigo-300")}>{heading}</span></nav>
+          <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-white sm:text-2xl">{heading}</h1>
         </div>
         <button type="button" onClick={onOpenFilters} aria-label="Open filters and page actions" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:active:bg-slate-800"><SlidersHorizontal size={18} /></button>
       </div>
@@ -639,7 +641,7 @@ export default function FaithWorkspaceLayout({
   const closeOverlay = () => setOverlay("");
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6">
+    <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell dark min-h-[100svh] bg-[#031321] px-3 text-white" : "")}>
       <FaithOfflineBanner offline={offline} />
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
       <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
