@@ -1,10 +1,21 @@
 // src/components/FaithDashboard.jsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ArrowLeft,
   ArrowRight,
+  BadgeCheck,
+  CheckCircle2,
+  Compass,
+  Flame,
+  Languages,
+  Map,
+  Play,
+  RefreshCw,
+  ScrollText,
+  Sun,
+  X,
   Book,
   BookOpen,
   Bookmark,
@@ -33,6 +44,176 @@ import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
+import { useHistory } from "@/context/HistoryContext.jsx";
+import { useRevenueApi } from "@/services/revenueApi.jsx";
+
+const FAITH_VERSES = [
+  { reference: "Psalm 119:105", text: "Thy word is a lamp unto my feet, and a light unto my path." },
+  { reference: "John 17:17", text: "Sanctify them through thy truth: thy word is truth." },
+  { reference: "Revelation 14:12", text: "Here are they that keep the commandments of God, and the faith of Jesus." },
+  { reference: "Genesis 2:3", text: "And God blessed the seventh day, and sanctified it." },
+  { reference: "Exodus 20:8", text: "Remember the sabbath day, to keep it holy." },
+  { reference: "Mark 2:27", text: "The sabbath was made for man, and not man for the sabbath." },
+  { reference: "Isaiah 58:13", text: "Call the sabbath a delight, the holy of the LORD, honourable." },
+  { reference: "Luke 4:16", text: "As his custom was, he went into the synagogue on the sabbath day." },
+  { reference: "Daniel 2:22", text: "He revealeth the deep and secret things." },
+  { reference: "Daniel 7:27", text: "The kingdom and dominion, and the greatness of the kingdom under the whole heaven, shall be given to the people of the saints of the most High." },
+  { reference: "Revelation 1:3", text: "Blessed is he that readeth, and they that hear the words of this prophecy." },
+  { reference: "John 14:1", text: "Let not your heart be troubled: ye believe in God, believe also in me." },
+  { reference: "John 14:3", text: "I will come again, and receive you unto myself." },
+  { reference: "Matthew 24:14", text: "And this gospel of the kingdom shall be preached in all the world." },
+  { reference: "Hebrews 4:9", text: "There remaineth therefore a rest to the people of God." },
+  { reference: "Psalm 46:10", text: "Be still, and know that I am God." },
+  { reference: "Micah 6:8", text: "What doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" },
+  { reference: "Matthew 5:16", text: "Let your light so shine before men, that they may see your good works." },
+  { reference: "James 1:5", text: "If any of you lack wisdom, let him ask of God." },
+  { reference: "1 Thessalonians 5:21", text: "Prove all things; hold fast that which is good." },
+  { reference: "1 Corinthians 10:31", text: "Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God." },
+  { reference: "Acts 1:8", text: "Ye shall receive power, after that the Holy Ghost is come upon you." },
+  { reference: "Revelation 21:4", text: "And God shall wipe away all tears from their eyes." },
+  { reference: "Isaiah 40:31", text: "They that wait upon the LORD shall renew their strength." },
+  { reference: "Romans 8:28", text: "All things work together for good to them that love God." },
+  { reference: "Ephesians 2:8", text: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God." },
+  { reference: "2 Timothy 3:16", text: "All scripture is given by inspiration of God." },
+  { reference: "Psalm 34:8", text: "O taste and see that the LORD is good." },
+  { reference: "1 Peter 3:15", text: "Be ready always to give an answer to every man that asketh you a reason of the hope that is in you." },
+  { reference: "Hebrews 11:1", text: "Now faith is the substance of things hoped for, the evidence of things not seen." },
+  { reference: "Revelation 22:20", text: "Surely I come quickly. Amen. Even so, come, Lord Jesus." },
+];
+
+function faithLocalDateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function faithKenyaQuarter(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-KE", {
+    timeZone: "Africa/Nairobi",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(date);
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  return { year, quarter: Math.ceil(month / 3) };
+}
+
+function faithLessonMeta(material) {
+  return material?.metadata && typeof material.metadata === "object"
+    ? material.metadata
+    : {};
+}
+
+function faithRelativeTime(value) {
+  if (!value) return "";
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + "m ago";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + "h ago";
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days + "d ago";
+  return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+function faithSabbathStatus(now, sunsetHour = 18) {
+  const day = now.getDay();
+  const hour = now.getHours() + now.getMinutes() / 60;
+  const active = (day === 5 && hour >= sunsetHour) || (day === 6 && hour < sunsetHour);
+  if (active) {
+    return { active: true, label: "Sabbath today", countdown: "" };
+  }
+
+  let daysUntilFriday = (5 - day + 7) % 7;
+  if (daysUntilFriday === 0 && hour >= sunsetHour) daysUntilFriday = 7;
+  const target = new Date(now);
+  target.setDate(target.getDate() + daysUntilFriday);
+  target.setHours(sunsetHour, 0, 0, 0);
+  const totalMinutes = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 60000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  const parts = [];
+  if (days) parts.push(days + "d");
+  parts.push(hours + "h");
+  parts.push(minutes + "m");
+  return { active: false, label: "Sabbath in " + parts.join(" "), countdown: parts.join(" ") };
+}
+
+function FaithSponsoredBanner({ enabled }) {
+  const hostRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setLoaded(false);
+      return undefined;
+    }
+    const host = hostRef.current;
+    if (!host) return undefined;
+
+    let settled = false;
+    const inspect = () => {
+      const slot = host.querySelector("ins.adsbygoogle");
+      const status = slot?.getAttribute("data-ad-status");
+      const frame = slot?.querySelector("iframe") || host.querySelector("iframe");
+      const nativeAd = host.querySelector("capacitor-admob-native");
+      const nativeLoaded = Boolean(
+        nativeAd && ((nativeAd.shadowRoot && nativeAd.shadowRoot.childElementCount > 0) || nativeAd.childElementCount > 0)
+      );
+
+      if (status === "filled" || frame || nativeLoaded) {
+        settled = true;
+        setLoaded(true);
+      } else if (status === "unfilled") {
+        settled = true;
+        setLoaded(false);
+      }
+    };
+
+    let observer;
+    if (typeof MutationObserver !== "undefined") {
+      observer = new MutationObserver(inspect);
+      observer.observe(host, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-ad-status"],
+      });
+    }
+    const timeoutId = window.setTimeout(() => {
+      if (!settled) setLoaded(false);
+    }, 16000);
+    inspect();
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.clearTimeout(timeoutId);
+    };
+  }, [enabled]);
+
+  if (!enabled) return null;
+
+  return (
+    <div
+      ref={hostRef}
+      aria-label="Sponsored placement"
+      className={loaded ? "max-h-[90px] overflow-hidden transition-all duration-200" : "pointer-events-none max-h-0 overflow-hidden opacity-0"}
+    >
+      <div className="[&>aside]:!my-0 [&>aside]:!max-h-[90px] [&>aside]:!overflow-hidden [&>aside]:!border-0 [&>aside]:!bg-transparent [&>aside]:!p-0 [&>aside]:!shadow-none [&_ins]:!max-h-[90px] [&_ins]:!min-h-0">
+        <CommunityAdSenseUnit placement="faith-overview" />
+      </div>
+    </div>
+  );
+}
+
 
 /* =========================================================
    FAITH DASHBOARD
@@ -94,36 +275,219 @@ export default function FaithDashboard({
 
   const activity = useMemo(() => {
     if (typeof window === "undefined") {
-      return {
-        lastDashboard: "",
-        lastActivity: "",
-        lastActivityTime: "",
-        historyCount: 0,
-      };
+      return { lastDashboard: "", lastActivity: "", lastActivityTime: "", historyCount: 0 };
     }
-
-    const lastDashboard =
-      localStorage.getItem("revelacode_last_dashboard") || "";
-
-    const lastActivity =
-      localStorage.getItem("revelacode_last_activity") || "";
-
-    const lastActivityTime =
-      localStorage.getItem("revelacode_last_activity_time") || "";
-
-    const rawHistoryCount = Number(
-      localStorage.getItem("revelacode_history_count") || 0
-    );
-
-    return {
-      lastDashboard,
-      lastActivity,
-      lastActivityTime,
-      historyCount: Number.isFinite(rawHistoryCount)
-        ? rawHistoryCount
-        : 0,
-    };
+    try {
+      const lastDashboard = localStorage.getItem("revelacode_last_dashboard") || "";
+      const lastActivity = localStorage.getItem("revelacode_last_activity") || "";
+      const lastActivityTime = localStorage.getItem("revelacode_last_activity_time") || "";
+      const rawHistoryCount = Number(localStorage.getItem("revelacode_history_count") || 0);
+      return {
+        lastDashboard,
+        lastActivity,
+        lastActivityTime,
+        historyCount: Number.isFinite(rawHistoryCount) ? rawHistoryCount : 0,
+      };
+    } catch {
+      return { lastDashboard: "", lastActivity: "", lastActivityTime: "", historyCount: 0 };
+    }
   }, []);
+
+  const { history: userHistory = [], loadingHistory, historyError, refetchHistory } = useHistory();
+  const revenueApi = useRevenueApi();
+  const studyDaysKey = "revelacode_faith_study_days_v1_" + String(userId || "guest");
+
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [continueTab, setContinueTab] = useState(
+    ["bible", "prophecy", "referential"].includes(activity.lastDashboard) ? activity.lastDashboard : "bible"
+  );
+  const [comingSoonFeature, setComingSoonFeature] = useState("");
+  const [now, setNow] = useState(() => new Date());
+  const [sabbathSettings] = useState(() => ({
+    sunsetHour: 18,
+    location: null,
+    timezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "device",
+  }));
+  const [homeSnapshot, setHomeSnapshot] = useState({
+    status: "loading",
+    error: false,
+    lesson: null,
+    studyDays: [],
+    savedCount: null,
+  });
+  const [adSubscriptionStatus, setAdSubscriptionStatus] = useState("checking");
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isGuest || userId === "guest") {
+      setAdSubscriptionStatus("free");
+      return undefined;
+    }
+    let active = true;
+    setAdSubscriptionStatus("checking");
+    revenueApi.getMySubscription({ requestScope: "" })
+      .then((response) => {
+        if (active) setAdSubscriptionStatus(response?.isPremium === true ? "premium" : "free");
+      })
+      .catch(() => {
+        if (active) setAdSubscriptionStatus("unknown");
+      });
+    return () => { active = false; };
+  }, [isGuest, userId, revenueApi]);
+
+  const loadHomeSnapshot = useCallback(() => {
+    setHomeSnapshot((current) => ({ ...current, status: "loading", error: false }));
+    try {
+      if (typeof window === "undefined") {
+        setHomeSnapshot({ status: "ready", error: false, lesson: null, studyDays: [], savedCount: null });
+        return;
+      }
+
+      const storedDays = JSON.parse(localStorage.getItem(studyDaysKey) || "[]");
+      const daySet = new Set(Array.isArray(storedDays) ? storedDays.filter((day) => typeof day === "string") : []);
+      if (activity.lastActivityTime) {
+        const lastActivityDate = new Date(activity.lastActivityTime);
+        const lastActivityKey = faithLocalDateKey(lastActivityDate);
+        if (lastActivityKey) daySet.add(lastActivityKey);
+      }
+
+      const quarter = faithKenyaQuarter(new Date());
+      const cacheKey = "revelacode_sda_quarter:" + quarter.year + ":" + quarter.quarter;
+      const cachedRaw = localStorage.getItem(cacheKey);
+      const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
+      const lessons = Array.isArray(cached?.materials) ? [...cached.materials] : [];
+      lessons.sort((left, right) => {
+        const leftDate = String(faithLessonMeta(left).lesson_date || "");
+        const rightDate = String(faithLessonMeta(right).lesson_date || "");
+        return leftDate.localeCompare(rightDate);
+      });
+
+      const todayKey = faithLocalDateKey(new Date());
+      const weekStart = new Date();
+      weekStart.setHours(0, 0, 0, 0);
+      weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const weekStartKey = faithLocalDateKey(weekStart);
+      const weekEndKey = faithLocalDateKey(weekEnd);
+      const thisWeek = lessons.filter((lesson) => {
+        const date = String(faithLessonMeta(lesson).lesson_date || "");
+        return date >= weekStartKey && date <= weekEndKey;
+      });
+      const completedThisWeek = thisWeek.filter((lesson) => String(faithLessonMeta(lesson).lesson_date || "") <= todayKey);
+      const upcomingThisWeek = thisWeek.filter((lesson) => String(faithLessonMeta(lesson).lesson_date || "") >= todayKey);
+      const lesson = completedThisWeek[completedThisWeek.length - 1] || upcomingThisWeek[0] || lessons.find((item) => String(faithLessonMeta(item).lesson_date || "") === todayKey) || lessons[0] || null;
+
+      const countCandidates = [
+        localStorage.getItem("revelacode_saved_study_count_" + String(userId || "guest")),
+        localStorage.getItem("revelacode_bookmark_count_" + String(userId || "guest")),
+        localStorage.getItem("revelacode_saved_study_count"),
+      ];
+      const countValue = countCandidates.find((value) => value !== null && value !== "");
+      const parsedCount = countValue === undefined ? null : Number(countValue);
+      const savedCount = Number.isFinite(parsedCount) && parsedCount >= 0 ? parsedCount : null;
+
+      setHomeSnapshot({
+        status: "ready",
+        error: false,
+        lesson,
+        studyDays: Array.from(daySet).sort().slice(-180),
+        savedCount,
+      });
+    } catch {
+      setHomeSnapshot({ status: "error", error: true, lesson: null, studyDays: [], savedCount: null });
+    }
+  }, [activity.lastActivityTime, studyDaysKey, userId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadHomeSnapshot, 120);
+    return () => window.clearTimeout(timer);
+  }, [loadHomeSnapshot]);
+
+  const recordStudyDay = () => {
+    const todayKey = faithLocalDateKey(new Date());
+    setHomeSnapshot((current) => {
+      const nextDays = Array.from(new Set([...(current.studyDays || []), todayKey])).sort().slice(-180);
+      try {
+        localStorage.setItem(studyDaysKey, JSON.stringify(nextDays));
+      } catch {
+        // The in-memory streak remains available when storage is blocked.
+      }
+      return { ...current, studyDays: nextDays };
+    });
+  };
+
+  useEffect(() => {
+    if (["bible", "prophecy", "referential"].includes(activity.lastDashboard)) {
+      setContinueTab(activity.lastDashboard);
+    }
+  }, [activity.lastDashboard]);
+
+  const sabbathInfo = useMemo(
+    () => faithSabbathStatus(now, sabbathSettings.sunsetHour),
+    [now, sabbathSettings.sunsetHour]
+  );
+  const quarterInfo = useMemo(() => faithKenyaQuarter(now), [now]);
+  const verseOfDay = FAITH_VERSES[now.getDate() - 1] || FAITH_VERSES[0];
+
+  const studyWeekDays = useMemo(() => {
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    const activeDays = new Set(homeSnapshot.studyDays || []);
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + index);
+      return {
+        key: faithLocalDateKey(day),
+        label: ["M", "T", "W", "T", "F", "S", "S"][index],
+        active: activeDays.has(faithLocalDateKey(day)),
+      };
+    });
+  }, [homeSnapshot.studyDays, now]);
+
+  const weeklyStudyCount = studyWeekDays.filter((day) => day.active).length;
+  const studyStreak = useMemo(() => {
+    const activeDays = new Set(homeSnapshot.studyDays || []);
+    const cursor = new Date(now);
+    cursor.setHours(0, 0, 0, 0);
+    if (!activeDays.has(faithLocalDateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+    let count = 0;
+    while (activeDays.has(faithLocalDateKey(cursor)) && count < 365) {
+      count += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return count;
+  }, [homeSnapshot.studyDays, now]);
+
+  const featuredLesson = homeSnapshot.lesson;
+  const featuredLessonMeta = faithLessonMeta(featuredLesson);
+  const featuredLessonTitle = featuredLesson
+    ? featuredLesson.title || featuredLessonMeta.lesson_title || "Sabbath School lesson"
+    : "";
+  const featuredMemoryVerse = featuredLessonMeta.memory_text || featuredLessonMeta.memory_verse || "";
+  const hasContinueActivity = Boolean(activity.lastActivity || activity.lastActivityTime);
+  const continueDescription = activity.lastActivity || "Pick up your Faith journey from where you last stopped.";
+  const continueRelativeTime = faithRelativeTime(activity.lastActivityTime);
+  const faithHistory = useMemo(() => {
+    return (Array.isArray(userHistory) ? userHistory : []).filter((entry) => {
+      const searchable = [
+        entry?.type,
+        entry?.input,
+        entry?.output,
+        entry?.extra?.hub,
+        entry?.extra?.workspace,
+        entry?.extra?.route,
+        entry?.fileName,
+      ].join(" ").toLowerCase();
+      return /(faith|bible|scripture|study|sda|quarter|prophecy|referential|missionpulse)/.test(searchable);
+    });
+  }, [userHistory]);
+
 
   /* =======================================================
      TIME FORMAT
@@ -204,43 +568,6 @@ export default function FaithDashboard({
     },
   ];
 
-  /* =======================================================
-     STUDY SHORTCUTS
-  ======================================================= */
-
-  const shortcuts = [
-    {
-      key: "bible",
-      title: "Continue Bible Study",
-      description:
-        "Return to Scripture reading and verse exploration.",
-      icon: Book,
-    },
-
-    {
-      key: "prophecy",
-      title: "Continue Prophecy Study",
-      description:
-        "Return to prophecy decoding and investigation.",
-      icon: BookOpen,
-    },
-
-    {
-      key: "referential",
-      title: "Continue Referencing",
-      description:
-        "Continue connecting passages and biblical concepts.",
-      icon: Layers,
-    },
-
-    {
-      key: "events",
-      title: "Check Prophecy Events",
-      description:
-        "See the latest event and prophecy-related developments.",
-      icon: Globe,
-    },
-  ];
 
   /* =======================================================
      GLOBAL NAVIGATION
@@ -250,7 +577,7 @@ export default function FaithDashboard({
     if (!key || !onNavigate) {
       return;
     }
-
+    if (["bible", "prophecy", "events", "referential", "missionpulse"].includes(key)) recordStudyDay();
     onNavigate(key);
   };
 
@@ -302,6 +629,7 @@ export default function FaithDashboard({
   ======================================================= */
 
   const openStudy = (topic = "all") => {
+    recordStudyDay();
     setSelectedMaterial(null);
     setStudyTopic(topic || "all");
     setFaithSection("study");
@@ -317,21 +645,25 @@ export default function FaithDashboard({
     setFaithSection("recommendations");
   };
   const openFaithAtlas = () => {
+    recordStudyDay();
     setSelectedMaterial(null);
     setFaithSection("atlas");
   };
 
   const openFaithAcademy = () => {
+    recordStudyDay();
     setSelectedMaterial(null);
     setFaithSection("premium");
   };
 
   const openSDAQuarterly = () => {
+    recordStudyDay();
     setSelectedMaterial(null);
     setFaithSection("quarterly");
   };
 
   const openAncientWordRoots = () => {
+    recordStudyDay();
     setSelectedMaterial(null);
     setFaithSection("word-roots");
   };
@@ -341,6 +673,7 @@ export default function FaithDashboard({
       return;
     }
 
+    recordStudyDay();
     setSelectedMaterial(material);
     setStudyReturnSection(faithSection === "home" ? "study" : faithSection);
     setFaithSection("reader");
@@ -892,386 +1225,406 @@ export default function FaithDashboard({
      MAIN FAITH DASHBOARD
   ======================================================= */
 
+  const submitGlobalSearch = (event) => {
+    event.preventDefault();
+    const query = globalSearch.trim();
+    if (!query) return;
+    try {
+      localStorage.setItem("revelacode_pending_bible_reference", query);
+      localStorage.setItem("revelacode_pending_faith_search", query);
+    } catch {
+      // Continue to Scripture search when local storage is unavailable.
+    }
+    navigateTo("bible");
+  };
+
+  const askAIAboutSearch = () => {
+    const query = globalSearch.trim();
+    if (query) {
+      try {
+        localStorage.setItem("revelacode_pending_ai_prompt", query);
+      } catch {
+        // AI can still be opened without a prefilled prompt.
+      }
+      window.dispatchEvent(new CustomEvent("revelacode:faith-ai-prompt", { detail: { prompt: query } }));
+    }
+    onOpenAI?.();
+  };
+
+  const continueTabs = [
+    { id: "bible", label: "Bible" },
+    { id: "prophecy", label: "Prophecy" },
+    { id: "referential", label: "Referencing" },
+  ];
+
+  const toolDescriptions = {
+    bible: "Read and search Scripture.",
+    prophecy: "Study Daniel, Revelation and prophecy.",
+    events: "Follow current events and context.",
+    referential: "Connect verses and biblical themes.",
+    missionpulse: "Coordinate outreach and community care.",
+  };
+
+  const openHistoryEntry = (entry) => {
+    const target = String(
+      entry?.extra?.route || entry?.extra?.hub || entry?.extra?.workspace || entry?.type || ""
+    ).toLowerCase();
+    if (target.includes("prophecy")) navigateTo("prophecy");
+    else if (target.includes("referential")) navigateTo("referential");
+    else if (target.includes("event")) navigateTo("events");
+    else if (target.includes("mission")) window.location.assign("/faith/missionpulse");
+    else if (target.includes("bible") || target.includes("scripture")) navigateTo("bible");
+    else openStudy("all");
+  };
+
+  if (faithSection === "history") {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-4 pb-24 sm:pb-0">
+        {renderStudyHeader(
+          "Study History",
+          "Return to recent Scripture, prophecy and Faith study activity.",
+          () => setFaithSection("home")
+        )}
+        <section className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Recent Faith activity</h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{faithHistory.length} matching study record{faithHistory.length === 1 ? "" : "s"}</p>
+            </div>
+            <button type="button" onClick={() => refetchHistory?.()} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+              <RefreshCw size={16} /> Refresh
+            </button>
+          </div>
+          {loadingHistory ? (
+            <div className="mt-4 space-y-3 animate-pulse" aria-label="Loading study history">
+              <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800" />
+              <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800" />
+              <div className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800" />
+            </div>
+          ) : historyError ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Study history is temporarily unavailable.</p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Your saved study activity has not been deleted. Try loading it again.</p>
+              <button type="button" onClick={() => refetchHistory?.()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                <RefreshCw size={15} /> Retry
+              </button>
+            </div>
+          ) : faithHistory.length ? (
+            <div className="mt-4 space-y-2">
+              {faithHistory.slice(0, 40).map((entry, index) => (
+                <button key={entry.id || entry._id || index} type="button" onClick={() => openHistoryEntry(entry)} className="flex min-h-16 w-full min-w-0 items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:hover:bg-slate-800/60 motion-reduce:transform-none motion-reduce:transition-none">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><History size={19} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{entry.input || entry.fileName || entry.type || "Faith study activity"}</span>
+                    <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{faithRelativeTime(entry.timestamp) || "Saved activity"}</span>
+                  </span>
+                  <ChevronRight size={17} className="shrink-0 text-slate-400" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-slate-300 px-5 py-10 text-center dark:border-slate-700">
+              <History size={26} className="mx-auto text-slate-400" />
+              <h3 className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Your study history starts here</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Open the Bible, a prophecy study, or a Sabbath School lesson to begin building your history.</p>
+              <button type="button" onClick={() => navigateTo("bible")} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><BookOpen size={16} /> Start Bible study</button>
+            </div>
+          )}
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div
       data-demo="faith-overview"
-      className="
-        mx-auto
-        w-full
-        max-w-[1500px]
-        space-y-3 sm:space-y-5
-      "
+      className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden pb-24 sm:space-y-6 sm:p-1 sm:pb-0"
     >
-      <section
-        aria-label="Faith and Scripture workspace"
-        className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-      >
-        <div className="min-w-0 flex-1">
-          <div className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
-            <Sparkles size={13} />
-            Faith & Scripture
+      <header aria-label="Faith and Scripture workspace" className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/30 sm:p-6">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
+              <BookOpen size={14} /> Faith &amp; Scripture
+            </div>
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
+                {sabbathInfo.active ? "Happy Sabbath" : "Welcome"}, {displayName}
+              </h1>
+              {!isGuest && (
+                <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                  <BadgeCheck size={13} /> Verified
+                </span>
+              )}
+              {isGuest && <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">Guest session</span>}
+            </div>
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-slate-600 dark:text-slate-300">A focused place to study Scripture, prepare for Sabbath School and follow Christ in daily life.</p>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">
-              Welcome to Faith, {displayName}
-            </h1>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-              {isGuest ? "Guest Session" : "Verified Account"}
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
+            <span className={sabbathInfo.active ? "inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200" : "inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"}>
+              <Sun size={16} /> {sabbathInfo.label} <span className="text-[10px] font-medium opacity-70">approx.</span>
             </span>
+            <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
+              <Flame size={16} className="text-orange-500" /> {studyStreak} day{studyStreak === 1 ? "" : "s"} streak
+            </span>
+            <PremiumPlansStar className="!h-11 !min-h-11 !rounded-xl !px-3 focus-visible:ring-2 focus-visible:ring-indigo-500" />
           </div>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600 dark:text-slate-300">
-            Bible study, prophecy, events, cross-references and structured study materials.
-          </p>
         </div>
+      </header>
 
-        <div className="flex min-w-0 flex-wrap gap-2 sm:justify-end">
-          <PremiumPlansStar />
-          <button type="button" onClick={openFaithAcademy} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-indigo-700">
-            <GraduationCap size={14} /> Faith Academy
+      <form onSubmit={submitGlobalSearch} role="search" className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-200/70 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-4">
+        <label className="relative min-w-0 flex-1">
+          <span className="sr-only">Search a Bible verse, topic or EGW quote</span>
+          <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={globalSearch}
+            onChange={(event) => setGlobalSearch(event.target.value)}
+            placeholder="Search a verse, topic or EGW quote…"
+            aria-label="Search a verse, topic or EGW quote"
+            className="min-h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
+          />
+        </label>
+        <div className="flex min-w-0 gap-2">
+          <button type="submit" className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transition-none">
+            <Search size={17} /> Search
           </button>
-          <button type="button" onClick={() => navigateTo("bible")} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            Open Bible <ArrowRight size={13} />
-          </button>
-          <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            Prophecy <BookOpen size={13} />
-          </button>
-          <button type="button" onClick={openStudy} data-demo="faith-study-library" className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            Study Library <Library size={13} />
-          </button>
-          <button type="button" onClick={onOpenAI} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            Ask RevelaAI <Sparkles size={13} />
+          <button type="button" onClick={askAIAboutSearch} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70 motion-reduce:transform-none motion-reduce:transition-none">
+            <Sparkles size={17} /> Ask RevelaAI
           </button>
         </div>
-      </section>
+      </form>
 
-      {/* Clearly labelled sponsored placement; study access never depends on ad clicks. */}
-      <CommunityAdSenseUnit placement="faith-overview" />
+      <FaithSponsoredBanner enabled={adSubscriptionStatus === "free"} />
 
-      {/* =====================================================
-          STUDY QUICK ACCESS
-      ===================================================== */}
-
-      <section
-        className="
-          grid
-          grid-cols-2
-          gap-2
-          sm:grid-cols-2
-          xl:grid-cols-6
-        "
-      >
-        <button
-          type="button"
-          onClick={openStudy}
-          className="
-            group
-            rounded-2xl
-            border
-            border-indigo-200
-            bg-indigo-50
-            p-2.5
-            text-left
-            sm:p-4
-            transition
-            hover:-translate-y-0.5
-            hover:shadow-md
-            dark:border-indigo-900/50
-            dark:bg-indigo-950/20
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                sm:h-11
-                sm:w-11
-                items-center
-                justify-center
-                rounded-xl
-                bg-indigo-600
-                text-white
-              "
-            >
-              <Library size={20} />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h3
-                className="
-                  text-sm
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Study Library
-              </h3>
-
-              <p className="mt-1 hidden text-xs text-gray-500 dark:text-gray-400 sm:block">
-                Browse uploaded study materials.
-              </p>
-            </div>
-
-            <ChevronRight
-              size={18}
-              className="
-                text-indigo-500
-                transition-transform
-                group-hover:translate-x-1
-              "
-            />
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={openBookmarks}
-          className="
-            group
-            rounded-2xl
-            border
-            border-amber-200
-            bg-amber-50
-            p-4
-            text-left
-            transition
-            hover:-translate-y-0.5
-            hover:shadow-md
-            dark:border-amber-900/50
-            dark:bg-amber-950/20
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-amber-500
-                text-white
-              "
-            >
-              <Bookmark size={20} />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h3
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Saved Study
-              </h3>
-
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Open your bookmarked materials.
-              </p>
-            </div>
-
-            <ChevronRight
-              size={18}
-              className="
-                text-amber-500
-                transition-transform
-                group-hover:translate-x-1
-              "
-            />
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={openRecommendations}
-          className="
-            group
-            rounded-2xl
-            border
-            border-purple-200
-            bg-purple-50
-            p-4
-            text-left
-            transition
-            hover:-translate-y-0.5
-            hover:shadow-md
-            dark:border-purple-900/50
-            dark:bg-purple-950/20
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-purple-600
-                text-white
-              "
-            >
-              <Star size={20} />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h3
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Recommended
-              </h3>
-
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Continue with relevant study materials.
-              </p>
-            </div>
-
-            <ChevronRight
-              size={18}
-              className="
-                text-purple-500
-                transition-transform
-                group-hover:translate-x-1
-              "
-            />
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={openFaithAcademy}
-          className="
-            group
-            rounded-2xl
-            border
-            border-indigo-200
-            bg-indigo-50
-            p-4
-            text-left
-            transition
-            hover:-translate-y-0.5
-            hover:shadow-md
-            dark:border-indigo-900/50
-            dark:bg-indigo-950/20
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-700 text-white sm:h-11 sm:w-11">
-              <GraduationCap size={20} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-black text-gray-900 dark:text-white">Faith Academy</h3>
-              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
-                Structured courses, assessments, notes, AI study, and church groups.
-              </p>
-            </div>
-            <ChevronRight size={18} className="text-indigo-500 transition-transform group-hover:translate-x-1" />
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={openSDAQuarterly}
-          className="group rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-md dark:border-amber-900/50 dark:from-amber-950/30 dark:to-gray-900 sm:p-4"
-        >
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white sm:h-11 sm:w-11">
-              <CalendarDays size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black text-gray-900 dark:text-white">SDA Quarterly</h3>
-              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
-                Daily Sabbath School lessons and quarter archive.
-              </p>
-            </div>
-            <ChevronRight size={18} className="text-amber-600 transition-transform group-hover:translate-x-1" />
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={openAncientWordRoots}
-          className="group rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900/50 dark:from-violet-950/30 dark:to-gray-900 sm:p-4"
-        >
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white sm:h-11 sm:w-11">
-              <BookOpen size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-black text-gray-900 dark:text-white">Ancient Word Roots</h3>
-              <p className="mt-1 hidden text-xs leading-5 text-gray-500 dark:text-gray-400 sm:block">
-                Original languages, meanings, and respectful theology.
-              </p>
-            </div>
-            <ChevronRight size={18} className="text-violet-600 transition-transform group-hover:translate-x-1" />
-          </div>
-        </button>
-      </section>
-
-      <section className="overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 p-3.5 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-gray-900 dark:to-violet-950/20 sm:rounded-2xl sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
-              <Layers size={22} />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-black text-gray-900 dark:text-white">RevelaCode Faith Atlas</h2>
-                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">New preview</span>
+      <section aria-label="Your study for this week" className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+        <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+                <CalendarDays size={14} /> This week's Sabbath School
               </div>
-              <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Follow connections across Daniel, Revelation, sanctuary themes, worship, and Christian hope—with interpretations clearly labeled for investigation.
-              </p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Make space for the Word</h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Quarter {quarterInfo.quarter} · {quarterInfo.year}</p>
+            </div>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={21} /></span>
+          </div>
+
+          {homeSnapshot.status === "loading" ? (
+            <div className="mt-5 animate-pulse space-y-3" aria-label="Loading Sabbath School lesson">
+              <div className="h-5 w-24 rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-6 w-4/5 rounded-lg bg-slate-100 dark:bg-slate-800" />
+              <div className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800" />
+            </div>
+          ) : homeSnapshot.error ? (
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Lesson preview is unavailable.</p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Your Sabbath School workspace is still available.</p>
+              <button type="button" onClick={loadHomeSnapshot} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>
+            </div>
+          ) : featuredLesson ? (
+            <div className="mt-4 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                  {featuredLessonMeta.lesson_number ? "Lesson " + featuredLessonMeta.lesson_number : "Daily lesson"}
+                </span>
+                {featuredLessonMeta.day && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{featuredLessonMeta.day}</span>}
+              </div>
+              <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-6 text-slate-900 dark:text-white">{featuredLessonTitle}</h3>
+              {featuredMemoryVerse ? (
+                <blockquote className="mt-3 rounded-xl border-l-2 border-amber-400 bg-amber-50/70 px-3 py-2.5 text-xs leading-5 text-slate-700 dark:bg-amber-950/20 dark:text-slate-200">
+                  <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Memory verse</span>
+                  {featuredMemoryVerse}
+                </blockquote>
+              ) : (
+                <p className="mt-3 rounded-xl bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">Open the lesson to read this week's memory verse and daily study notes.</p>
+              )}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">Your weekly lesson is ready to explore.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Open Sabbath School to load the current quarter. Its saved lesson preview will appear here on your next visit.</p>
+            </div>
+          )}
+
+          <div className="mt-auto pt-5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">7-day study progress</span>
+              <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">{weeklyStudyCount}/7 days</span>
+            </div>
+            <div className="mt-3 grid grid-cols-7 gap-1.5" aria-label={weeklyStudyCount + " of 7 study days completed"}>
+              {studyWeekDays.map((day) => (
+                <div key={day.key} className="min-w-0 text-center">
+                  <span className="text-[10px] font-semibold text-slate-400">{day.label}</span>
+                  <span className={day.active ? "mt-1 block h-1.5 rounded-full bg-indigo-600" : "mt-1 block h-1.5 rounded-full bg-slate-100 dark:bg-slate-800"} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button type="button" onClick={() => featuredLesson ? openMaterial(featuredLesson) : openSDAQuarterly()} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transform-none motion-reduce:transition-none">
+                <Play size={16} /> Open today's lesson
+              </button>
+              <button type="button" onClick={() => openStudy("sda")} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 motion-reduce:transition-none">
+                <NotebookPen size={16} /> Class notes
+              </button>
             </div>
           </div>
-          <button type="button" onClick={openFaithAtlas} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700">
-            Explore Scripture map <ArrowRight size={16} />
+        </article>
+
+        <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300">
+                <History size={14} /> Continue where you left off
+              </div>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Your next study session</h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Pick up a recent study or choose a workspace.</p>
+            </div>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Clock3 size={21} /></span>
+          </div>
+
+          <div className="mt-4 inline-flex w-fit max-w-full items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Choose study workspace">
+            {continueTabs.map((tab) => (
+              <button key={tab.id} type="button" onClick={() => setContinueTab(tab.id)} aria-pressed={continueTab === tab.id} className={continueTab === tab.id ? "min-h-10 rounded-lg bg-white px-3 text-xs font-bold text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300" : "min-h-10 rounded-lg px-3 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {homeSnapshot.status === "loading" ? (
+            <div className="mt-4 animate-pulse space-y-3" aria-label="Loading recent study">
+              <div className="h-5 w-2/5 rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800" />
+            </div>
+          ) : homeSnapshot.error ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+              <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Your recent study could not be read.</p>
+              <button type="button" onClick={loadHomeSnapshot} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>
+            </div>
+          ) : hasContinueActivity ? (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Last study item</p>
+              <h3 className="mt-1 break-words text-sm font-semibold leading-5 text-slate-900 dark:text-white">{continueDescription}</h3>
+              {continueRelativeTime && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Last active {continueRelativeTime}</p>}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">Start your first study.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Choose Bible, Prophecy or Referencing to build your study history.</p>
+            </div>
+          )}
+
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Saved study</span>
+              <span className="ml-1 tabular-nums">{homeSnapshot.savedCount === null ? "—" : homeSnapshot.savedCount}</span>
+            </div>
+            <button type="button" onClick={() => navigateTo(continueTab)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transform-none motion-reduce:transition-none">
+              Resume <ArrowRight size={16} />
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section aria-labelledby="faith-essentials-heading" className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 id="faith-essentials-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">SDA essentials</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">A few foundations to keep your study anchored.</p>
+          </div>
+        </div>
+        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+          <button type="button" onClick={openSDAQuarterly} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-900 motion-reduce:transform-none motion-reduce:transition-none">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><CalendarDays size={20} /></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Quarterly</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Sabbath School</span></span>
+          </button>
+          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ScrollText size={20} /></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">EGW Writings</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Devotional library</span></span>
+            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
+          </button>
+          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><BookOpen size={20} /></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">28 Beliefs</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">SDA foundations</span></span>
+            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
+          </button>
+          <button type="button" onClick={() => navigateTo("prophecy")} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Compass size={20} /></span>
+            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Sanctuary</span><span className="mt-1 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">Daniel &amp; Revelation</span></span>
           </button>
         </div>
       </section>
-      {/* =====================================================
-          CURATED STUDY TRACKS
-      ===================================================== */}
 
-      <section className="rounded-2xl border border-gray-200/70 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-base font-black text-gray-900 dark:text-white">Explore study tracks</h2>
-            <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
-              Open a topic-specific catalogue of guided, source-linked lessons.
-            </p>
+      <section aria-labelledby="faith-tools-heading" className="space-y-3">
+        <div>
+          <h2 id="faith-tools-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Study tools</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Five focused workspaces for Bible study and mission.</p>
+        </div>
+        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {faithTools.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <button
+                key={tool.key}
+                type="button"
+                onClick={() => tool.key === "missionpulse" ? window.location.assign("/faith/missionpulse") : navigateTo(tool.key)}
+                className="group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Icon size={20} /></span>
+                <span className="mt-3 block min-w-0 text-sm font-semibold text-slate-900 dark:text-white">{tool.title}</span>
+                <span className="mt-1 line-clamp-2 min-w-0 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolDescriptions[tool.key] || tool.description}</span>
+                <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Open <ArrowRight size={14} /></span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section aria-label="More Faith learning" className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+        <button type="button" onClick={openFaithAtlas} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+          <div className="flex items-center justify-between gap-2"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Map size={20} /></span><span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200">New preview</span></div>
+          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Faith Atlas</span>
+          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore connections across Daniel, Revelation and sanctuary themes.</span>
+          <span className="mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Interpretations are clearly labeled for investigation.</span>
+        </button>
+        <button type="button" onClick={openFaithAcademy} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><GraduationCap size={20} /></span>
+          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Faith Academy</span>
+          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Structured lessons, assessments, notes and guided learning.</span>
+          <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Open Academy <ArrowRight size={14} className="inline" /></span>
+        </button>
+        <button type="button" onClick={openAncientWordRoots} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><Languages size={20} /></span>
+          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Ancient Word Roots</span>
+          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore Hebrew and Greek words in their biblical context.</span>
+          <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Explore roots <ArrowRight size={14} className="inline" /></span>
+        </button>
+      </section>
+
+      <section aria-label="Verse of the day" className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={20} /></span>
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">Verse of the day</div>
+          <blockquote className="mt-1 text-sm font-medium leading-6 text-slate-800 dark:text-slate-100">“{verseOfDay.text}”</blockquote>
+          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{verseOfDay.reference} · KJV</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="faith-tracks-heading" className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h2 id="faith-tracks-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Study tracks</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Choose a guided topic and keep exploring.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigateTo("events")}
-              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-300"
-            >
-              <Globe size={14} />
-              Current world events
-              <ArrowRight size={13} />
+            <button type="button" onClick={() => navigateTo("events")} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-900 transition-all duration-200 hover:bg-orange-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-200">
+              <Globe size={14} /> Current world events <ArrowRight size={13} />
             </button>
-            <button
-              type="button"
-              onClick={() => openStudy("all")}
-              className="inline-flex w-fit items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-            >
+            <button type="button" onClick={() => openStudy("all")} className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-indigo-700 transition-colors hover:text-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">
               All Faith studies <ArrowRight size={14} />
             </button>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: "biblical-literacy", label: "Bible study" },
             { id: "christian-foundations", label: "Christian foundations" },
@@ -1281,1029 +1634,51 @@ export default function FaithDashboard({
             { id: "interfaith", label: "Islam & Christianity" },
             { id: "daily-life", label: "Daily life & reflection" },
           ].map((track) => (
-            <button
-              key={track.id}
-              type="button"
-              onClick={() => openStudy(track.id)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-300"
-            >
+            <button key={track.id} type="button" onClick={() => openStudy(track.id)} className="min-h-10 shrink-0 snap-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/40 motion-reduce:transition-none">
               {track.label}
-              <ChevronRight size={13} />
             </button>
           ))}
         </div>
       </section>
 
-      {/* =====================================================
-          CONTINUE WHERE YOU LEFT OFF
-      ===================================================== */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-3
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-5
-        "
-      >
-        <div
-          className="
-            flex
-            flex-col
-            gap-4
-            lg:flex-row
-            lg:items-center
-            lg:justify-between
-          "
-        >
-          <div className="flex min-w-0 items-start gap-3">
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                bg-indigo-100
-                text-indigo-700
-                dark:bg-indigo-900/40
-                dark:text-indigo-300
-              "
-            >
-              <History size={20} />
-            </div>
-
-            <div className="min-w-0">
-              <div
-                className="
-                  flex
-                  flex-wrap
-                  items-center
-                  gap-2
-                "
-              >
-                <h2
-                  className="
-                    text-lg
-                    font-black
-                    text-gray-900
-                    dark:text-white
-                  "
-                >
-                  Continue where you left off
-                </h2>
-
-                {activity.historyCount > 0 && (
-                  <span
-                    className="
-                      rounded-full
-                      bg-gray-100
-                      px-2.5
-                      py-1
-                      text-[10px]
-                      font-bold
-                      text-gray-500
-                      dark:bg-gray-800
-                      dark:text-gray-400
-                    "
-                  >
-                    {activity.historyCount} activities
-                  </span>
-                )}
-              </div>
-
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  leading-6
-                  text-gray-500
-                  dark:text-gray-400
-                "
-              >
-                {continueDescription}
-              </p>
-
-              {formattedActivityTime && (
-                <div
-                  className="
-                    mt-2
-                    flex
-                    items-center
-                    gap-1.5
-                    text-xs
-                    text-gray-400
-                  "
-                >
-                  <Clock3 size={13} />
-                  {formattedActivityTime}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigateTo(continueTarget)}
-            className="
-              inline-flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-indigo-600
-              px-4
-              py-2.5
-              text-sm
-              font-bold
-              text-white
-              transition
-              hover:bg-indigo-700
-              active:scale-[0.99]
-              lg:shrink-0
-            "
-          >
-            {continueTitle}
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      </section>
-
-      {/* =====================================================
-          FAITH WORKSPACES
-      ===================================================== */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-3
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-5
-        "
-      >
-        <div
-          className="
-            flex
-            flex-col
-            gap-2
-            sm:flex-row
-            sm:items-end
-            sm:justify-between
-          "
-        >
-          <div>
-            <h2
-              className="
-                text-xl
-                font-black
-                text-gray-900
-                dark:text-white
-              "
-            >
-              Faith Workspaces
-            </h2>
-
-            <p
-              className="
-                mt-1
-                text-sm
-                text-gray-500
-                dark:text-gray-400
-              "
-            >
-              Your core Scripture and prophecy tools in one place.
-            </p>
-          </div>
-
-          <span
-            className="
-              w-fit
-              rounded-full
-              border
-              border-gray-200
-              bg-gray-50
-              px-3
-              py-1
-              text-[11px]
-              font-bold
-              text-gray-500
-              dark:border-gray-700
-              dark:bg-gray-800
-              dark:text-gray-400
-            "
-          >
-            {faithTools.length} workspaces
-          </span>
-        </div>
-
-        <div
-          className="
-            mt-3
-            grid
-            grid-cols-2
-            gap-2
-            sm:mt-5
-            sm:gap-4
-            sm:grid-cols-2
-            xl:grid-cols-4
-          "
-        >
-          {faithTools.map((tool) => {
-            const Icon = tool.icon;
-
-            return (
-              <button
-                key={tool.key}
-                type="button"
-                onClick={() => tool.key === "missionpulse" ? window.location.assign("/faith/missionpulse") : navigateTo(tool.key)}
-                className="
-                  group
-                  relative
-                  flex
-                  min-h-[132px]
-                  sm:min-h-[180px]
-                  flex-col
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-gray-200
-                  bg-gray-50
-                  p-2.5
-                  text-left
-                  sm:p-4
-                  transition-all
-                  duration-200
-                  hover:-translate-y-1
-                  hover:border-gray-300
-                  hover:bg-white
-                  hover:shadow-lg
-                  active:scale-[0.99]
-                  dark:border-gray-800
-                  dark:bg-gray-800/50
-                  dark:hover:border-gray-700
-                  dark:hover:bg-gray-800
-                "
-              >
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    -right-8
-                    -top-8
-                    h-28
-                    w-28
-                    rounded-full
-                    bg-indigo-500/5
-                    blur-2xl
-                    transition
-                    group-hover:bg-indigo-500/10
-                  "
-                />
-
-                <div
-                  className={`
-                    relative
-                    z-10
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    sm:h-12
-                    sm:w-12
-                    justify-center
-                    rounded-xl
-                    bg-gradient-to-br
-                    ${tool.gradient}
-                    text-white
-                    shadow-md
-                  `}
-                >
-                  <Icon size={18} />
-                </div>
-
-                <span
-                  className="
-                    relative
-                    z-10
-                    mt-2
-                    w-fit
-                    max-w-full
-                    sm:mt-3
-                    rounded-full
-                    border
-                    border-gray-200
-                    bg-white
-                    px-1.5
-                    py-0.5
-                    text-[8px]
-                    sm:px-2.5
-                    sm:py-1
-                    sm:text-[10px]
-                    font-bold
-                    uppercase
-                    tracking-wide
-                    text-gray-500
-                    dark:border-gray-700
-                    dark:bg-gray-900
-                    dark:text-gray-400
-                  "
-                >
-                  {tool.badge}
-                </span>
-
-                <div className="relative z-10 mt-2">
-                  <h3
-                    className="
-                      text-sm
-                      font-black
-                      sm:text-lg
-                      text-gray-900
-                      dark:text-white
-                    "
-                  >
-                    {tool.title}
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-
-                      line-clamp-2
-
-                      text-[11px]
-
-                      leading-4
-
-                      sm:mt-2
-
-                      sm:text-sm
-
-                      sm:leading-6
-                    "
-                  >
-                    {tool.description}
-                  </p>
-                </div>
-
-                <div
-                  className="
-                    relative
-                    z-10
-                    mt-auto
-                    flex
-                    items-center
-                    gap-1.5
-                    pt-2
-                    text-[11px]
-                    sm:pt-3
-                    sm:text-sm
-                    font-bold
-                    text-indigo-600
-                    dark:text-indigo-400
-                  "
-                >
-                  Open workspace
-                  <ArrowRight
-                    size={15}
-                    className="
-                      transition-transform
-                      group-hover:translate-x-1
-                    "
-                  />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* =====================================================
-          QUICK STUDY
-      ===================================================== */}
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-gray-200/70
-          bg-white
-          p-3
-          shadow-sm
-          dark:border-gray-800
-          dark:bg-gray-900
-          sm:p-5
-        "
-      >
-        <div
-          className="
-            flex
-            flex-col
-            gap-2
-            sm:flex-row
-            sm:items-end
-            sm:justify-between
-          "
-        >
-          <div>
-            <h2
-              className="
-                text-lg
-                font-black
-                text-gray-900
-                dark:text-white
-              "
-            >
-              Quick Study
-            </h2>
-
-            <p
-              className="
-                mt-1
-                text-sm
-                text-gray-500
-                dark:text-gray-400
-              "
-            >
-              Get back into your most important Faith workflows quickly.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={openStudy}
-            className="
-              inline-flex
-              w-fit
-              items-center
-              gap-1.5
-              text-sm
-              font-bold
-              text-indigo-600
-              dark:text-indigo-400
-            "
-          >
-            Open Study Library
-            <ArrowRight size={15} />
-          </button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-          {shortcuts.map((shortcut) => {
-            const Icon = shortcut.icon;
-
-            return (
-              <button
-                key={shortcut.key}
-                type="button"
-                onClick={() => navigateTo(shortcut.key)}
-                className="
-                  group
-                  flex
-                  min-w-0
-                  items-center
-                  gap-3
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-gray-50
-                  p-3.5
-                  text-left
-                  transition
-                  hover:border-gray-300
-                  hover:bg-white
-                  hover:shadow-sm
-                  dark:border-gray-800
-                  dark:bg-gray-800/50
-                  dark:hover:border-gray-700
-                  dark:hover:bg-gray-800
-                "
-              >
-                <div
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-indigo-100
-                    text-indigo-600
-                    dark:bg-indigo-900/40
-                    dark:text-indigo-300
-                  "
-                >
-                  <Icon size={18} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <h3
-                    className="
-                      truncate
-                      text-sm
-                      font-bold
-                      text-gray-900
-                      dark:text-white
-                    "
-                  >
-                    {shortcut.title}
-                  </h3>
-
-                  <p
-                    className="
-                      mt-1
-                      line-clamp-2
-                      text-xs
-                      leading-5
-                      text-gray-500
-                      dark:text-gray-400
-                    "
-                  >
-                    {shortcut.description}
-                  </p>
-                </div>
-
-                <ChevronRight
-                  size={17}
-                  className="
-                    shrink-0
-                    text-gray-400
-                    transition-transform
-                    group-hover:translate-x-0.5
-                  "
-                />
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* =====================================================
-          PERSONALIZED STUDY AREA
-      ===================================================== */}
-
-      <section
-        className="
-          grid
-          grid-cols-1
-          gap-4
-          lg:grid-cols-3
-        "
-      >
-        {/* History */}
-
-        <div
-          className="
-            rounded-2xl
-            border
-            border-gray-200/70
-            bg-white
-            p-3.5
-            shadow-sm
-            dark:border-gray-800
-            dark:bg-gray-900
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-gray-100
-                text-gray-600
-                dark:bg-gray-800
-                dark:text-gray-300
-              "
-            >
-              <History size={18} />
-            </div>
-
-            <div>
-              <h3
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Study History
-              </h3>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {activity.historyCount > 0
-                  ? `${activity.historyCount} recorded activities`
-                  : "No recorded activities yet"}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigateTo(continueTarget)}
-            className="
-              mt-5
-              inline-flex
-              items-center
-              gap-2
-              text-sm
-              font-bold
-              text-indigo-600
-              dark:text-indigo-400
-            "
-          >
-            Continue studying
-            <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {/* Search */}
-
-        <div
-          className="
-            rounded-2xl
-            border
-            border-gray-200/70
-            bg-white
-            p-3.5
-            shadow-sm
-            dark:border-gray-800
-            dark:bg-gray-900
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-blue-100
-                text-blue-600
-                dark:bg-blue-900/40
-                dark:text-blue-300
-              "
-            >
-              <Search size={18} />
-            </div>
-
-            <div>
-              <h3
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Search Scripture
-              </h3>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Find verses and passages quickly.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => navigateTo("bible")}
-            className="
-              mt-5
-              inline-flex
-              items-center
-              gap-2
-              text-sm
-              font-bold
-              text-indigo-600
-              dark:text-indigo-400
-            "
-          >
-            Open Bible search
-            <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {/* Saved Study */}
-
-        <div
-          className="
-            rounded-2xl
-            border
-            border-gray-200/70
-            bg-white
-            p-3.5
-            shadow-sm
-            dark:border-gray-800
-            dark:bg-gray-900
-          "
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                bg-amber-100
-                text-amber-700
-                dark:bg-amber-900/40
-                dark:text-amber-300
-              "
-            >
-              <Bookmark size={18} />
-            </div>
-
-            <div>
-              <h3
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Saved Study
-              </h3>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Return to your saved study materials.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={openBookmarks}
-            className="
-              mt-5
-              inline-flex
-              items-center
-              gap-2
-              text-sm
-              font-bold
-              text-indigo-600
-              dark:text-indigo-400
-            "
-          >
-            Open bookmarks
-            <ArrowRight size={15} />
-          </button>
-        </div>
-      </section>
-
-      {/* =====================================================
-          STUDY LIBRARY PROMO
-      ===================================================== */}
-
-      <section
-        className="
-          overflow-hidden
-          rounded-2xl
-          border
-          border-indigo-200
-          bg-gradient-to-r
-          from-indigo-50
-          via-white
-          to-purple-50
-          p-3.5
-          shadow-sm
-          dark:border-indigo-900/40
-          dark:from-indigo-950/20
-          dark:via-gray-900
-          dark:to-purple-950/20
-          sm:p-6
-        "
-      >
-        <div
-          className="
-            flex
-            flex-col
-            gap-5
-            lg:flex-row
-            lg:items-center
-            lg:justify-between
-          "
-        >
-          <div className="flex items-start gap-4">
-            <div
-              className="
-                flex
-                h-12
-                w-12
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                bg-indigo-600
-                text-white
-                shadow-md
-              "
-            >
-              <Library size={22} />
-            </div>
-
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2
-                  className="
-                    text-lg
-                    font-black
-                    text-gray-900
-                    dark:text-white
-                  "
-                >
-                  RevelaCode Study Library
-                </h2>
-
-                <span
-                  className="
-                    rounded-full
-                    bg-indigo-100
-                    px-2.5
-                    py-1
-                    text-[10px]
-                    font-black
-                    uppercase
-                    tracking-wide
-                    text-indigo-700
-                    dark:bg-indigo-900/40
-                    dark:text-indigo-300
-                  "
-                >
-                  Faith
-                </span>
-              </div>
-
-              <p
-                className="
-                  mt-1.5
-                  max-w-3xl
-                  text-sm
-                  leading-6
-                  text-gray-600
-                  dark:text-gray-300
-                "
-              >
-                Read published study materials, save important lessons,
-                and continue your study directly from the Faith hub.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={openStudy}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-indigo-600
-                px-4
-                py-2.5
-                text-sm
-                font-bold
-                text-white
-                transition
-                hover:bg-indigo-700
-              "
-            >
-              Browse Materials
-              <ArrowRight size={16} />
-            </button>
-
-            <button
-              type="button"
-              onClick={openBookmarks}
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                border
-                border-gray-200
-                bg-white
-                px-4
-                py-2.5
-                text-sm
-                font-bold
-                text-gray-700
-                transition
-                hover:bg-gray-50
-                dark:border-gray-700
-                dark:bg-gray-800
-                dark:text-gray-200
-                dark:hover:bg-gray-700
-              "
-            >
-              <Bookmark size={16} />
-              Saved
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-          ACCOUNT CTA
-      ===================================================== */}
+      <footer aria-label="Faith study shortcuts" className="grid min-w-0 grid-cols-3 gap-2 rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:gap-3 sm:p-3">
+        <button type="button" onClick={() => setFaithSection("history")} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+          <History size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study History</span>
+        </button>
+        <button type="button" onClick={openBookmarks} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+          <Bookmark size={16} className="shrink-0 text-amber-600 dark:text-amber-300" /><span className="min-w-0">Saved Study</span>
+        </button>
+        <button type="button" onClick={openStudy} data-demo="faith-study-library" className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
+          <Library size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study Library</span>
+        </button>
+      </footer>
 
       {isGuest && (
-        <section
-          className="
-            rounded-2xl
-            border
-            border-yellow-200
-            bg-yellow-50
-            p-3.5
-            dark:border-yellow-900/40
-            dark:bg-yellow-950/20
-          "
-        >
-          <div
-            className="
-              flex
-              flex-col
-              gap-4
-              sm:flex-row
-              sm:items-center
-              sm:justify-between
-            "
-          >
-            <div>
-              <h2
-                className="
-                  font-black
-                  text-gray-900
-                  dark:text-white
-                "
-              >
-                Save your Faith journey
-              </h2>
-
-              <p
-                className="
-                  mt-1
-                  max-w-2xl
-                  text-sm
-                  leading-6
-                  text-gray-600
-                  dark:text-gray-300
-                "
-              >
-                Create an account to preserve your study history,
-                bookmarks, preferences, and future personalized Faith
-                features.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onLogin}
-              className="
-                inline-flex
-                shrink-0
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-indigo-600
-                px-4
-                py-2.5
-                text-sm
-                font-bold
-                text-white
-                transition
-                hover:bg-indigo-700
-                active:scale-[0.99]
-              "
-            >
-              Login / Register
-              <ArrowRight size={16} />
-            </button>
+        <section className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Save your Faith journey</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-emerald-800 dark:text-emerald-200">Create an account to preserve your study history, bookmarks and preferences.</p>
           </div>
+          <button type="button" onClick={onLogin} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            Login / Register <ArrowRight size={16} />
+          </button>
         </section>
+      )}
+
+      {comingSoonFeature && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setComingSoonFeature(""); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="faith-coming-soon-title" className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><BookOpen size={20} /></div>
+              <button type="button" onClick={() => setComingSoonFeature("")} aria-label="Close coming soon message" className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800"><X size={18} /></button>
+            </div>
+            <h2 id="faith-coming-soon-title" className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">{comingSoonFeature} is coming to Faith</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">This study collection is being prepared. The tile will become an active workspace when its reviewed materials and study tools are ready.</p>
+            <button type="button" onClick={() => setComingSoonFeature("")} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Got it</button>
+          </section>
+        </div>
       )}
     </div>
   );
+}
 }
