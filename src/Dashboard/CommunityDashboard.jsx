@@ -48,6 +48,7 @@ import CommunityComposer from "@/Dashboard/Community/CommunityComposer.jsx";
 import CommunityNotifications from "@/Dashboard/Community/CommunityNotifications.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
 import CommunityMediaCards, { getCommunityMediaItems } from "@/Dashboard/Community/CommunityMediaCards.jsx";
+import WorldEventsDesk from "@/Dashboard/Community/WorldEventsDesk.jsx";
 import CommunityGroups from "@/Dashboard/Community/CommunityGroups.jsx";
 import CommunityMarketplace from "@/Dashboard/Community/CommunityMarketplace.jsx";
 import CommunityContactSettings from "@/Dashboard/Community/CommunityContactSettings.jsx";
@@ -1444,6 +1445,8 @@ export default function CommunityDashboard({
                   <button type="button" onClick={refresh} className="shrink-0 underline">Retry</button>
                 </div>
               ) : null}
+
+              <WorldEventsDesk user={user} compact initialLimit={4} />
 
               <CommunityMediaCards
                 posts={posts}
