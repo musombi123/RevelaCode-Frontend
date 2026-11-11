@@ -285,7 +285,7 @@ function readSaved(key) {
   }
 }
 
-export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI, onBack }) {
+export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI, onBack, onNavigate }) {
   const storageKey = "revelacode_faith_atlas_saved_v1_" + String(userId || "guest");
   const [savedIds, setSavedIds] = useState(() => readSaved(storageKey));
   const [selectedId, setSelectedId] = useState("daniel-7");
@@ -354,7 +354,7 @@ export default function FaithAtlas({ userId = "guest", onOpenReference, onOpenAI
   };
 
   return (
-    <FaithWorkspaceLayout page="atlas" contextData={{ reference: selectedNode.reference, topic: selectedNode.title }} onOpenAI={onOpenAI} onBack={onBack || (() => window.history.back())} onPrimaryAction={() => setPromptOpen(true)}>
+    <FaithWorkspaceLayout page="atlas" contextData={{ reference: selectedNode.reference, topic: selectedNode.title }} onOpenAI={onOpenAI} onBack={onBack || (() => window.history.back())} onNavigate={onNavigate} onPrimaryAction={() => setPromptOpen(true)}>
     <div className="mx-auto w-full max-w-[1500px] space-y-5">
       <section className="overflow-hidden rounded-3xl border border-indigo-200 bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-5 text-white shadow-xl sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
