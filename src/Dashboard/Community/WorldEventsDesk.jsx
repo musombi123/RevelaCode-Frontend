@@ -83,6 +83,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
   const [showSources, setShowSources] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [activeVideo, setActiveVideo] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     setPreferences(readJson(keys.preferences, { topics: [], regions: ["kenya", "africa", "world"] }));
@@ -175,7 +176,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
   };
 
   const healthySources = sources.filter((source) => source.status === "healthy").length;
-  const shown = visibleEvents.slice(0, initialLimit);
+  const shown = visibleEvents.slice(0, showAll ? Math.min(visibleEvents.length, 24) : initialLimit);
   const title = compact ? "World Events for the Community" : "World Events & Life Lessons";
 
   return (
@@ -189,7 +190,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
             </span>
             <h2 className="mt-3 text-xl font-black tracking-tight sm:text-2xl">{title}</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-blue-100/85">
-              Verified-source reporting, context that matters, practical life lessons and thoughtful reflection — from Kenya to every region of the world.
+              Fresh publisher feeds, useful context, practical life lessons and thoughtful reflection — from Kenya to every region of the world.
             </p>
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-blue-100/70">
               <span className="inline-flex items-center gap-1"><ShieldCheck size={12} /> Publisher links preserved</span>
@@ -259,7 +260,7 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
                     <div className="relative overflow-hidden bg-slate-100 dark:bg-slate-900">
                       <img src={event.urlToImage} alt="" loading="lazy" className="aspect-[16/8] w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                       <span className="absolute left-3 top-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white">{event.region || "world"}</span>
-                      {videoId ? <button type="button" onClick={() => setActiveVideo(playing ? "" : event.id)} className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-[10px] font-black text-white shadow-lg"><Play size={13} fill="currentColor" /> {playing ? "Close video" : "Watch video"}</button> : null}
+                      {videoId ? <button type="button" onClick={() => { learnFromEvent(event); setActiveVideo(playing ? "" : event.id); }} className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-[10px] font-black text-white shadow-lg"><Play size={13} fill="currentColor" /> {playing ? "Close video" : "Watch video"}</button> : null}
                     </div>
                   ) : null}
                   <div className="space-y-3 p-3.5 sm:p-4">
@@ -309,6 +310,14 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Change your region or interests to widen the feed.</p>
           </div>
         )}
+        {visibleEvents.length > initialLimit ? (
+          <div className="mt-3 flex justify-center">
+            <button type="button" onClick={() => setShowAll((value) => !value)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-indigo-200 px-4 py-2 text-xs font-black text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/30">
+              {showAll ? "Show fewer stories" : `Show more stories (${visibleEvents.length - shown.length} more)`}
+              <ChevronDown size={14} className={showAll ? "rotate-180" : ""} />
+            </button>
+          </div>
+        ) : null}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
           <div className="text-[10px] text-slate-400">
             <span>{updatedAt ? "Updated " + relativeDate(updatedAt) : "Waiting for first source check"}</span>
@@ -320,8 +329,11 @@ export default function WorldEventsDesk({ user = null, compact = false, initialL
           <button type="button" onClick={() => setShowSources((value) => !value)} className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 hover:underline dark:text-indigo-300">Source status <ChevronDown size={12} /></button>
         </div>
         {showSources ? (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3">
+            <p className="mb-2 text-[10px] leading-4 text-slate-500 dark:text-slate-400">A healthy status means the publisher feed responded and parsed successfully. It is not a claim that RevelaCode has independently verified every reported fact; always consult the original source.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
             {sources.map((source) => <div key={source.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-[10px] dark:border-white/10"><span className="min-w-0 truncate font-semibold text-slate-700 dark:text-slate-200">{source.name}</span><span className={"shrink-0 rounded-full px-2 py-1 font-black " + (source.status === "healthy" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : source.status === "degraded" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800")}>{source.status || "pending"}</span></div>)}
+            </div>
           </div>
         ) : null}
       </div>
