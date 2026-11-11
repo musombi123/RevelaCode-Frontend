@@ -600,7 +600,7 @@ export default function FaithWorkspaceLayout({
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
       <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
       <div className={panel ? "grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]" : "min-w-0"}>
-        <main data-faith-workspace-content className="min-w-0 space-y-4 max-sm:[&_[class*=grid-cols-2]]:!grid-cols-1 max-sm:[&_[class*=grid-cols-3]]:!grid-cols-1 max-sm:[&_[class*=grid-cols-4]]:!grid-cols-1">{children}</main>
+        <main data-faith-workspace-content className="min-w-0 space-y-4 max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1">{children}</main>
         {panel && <StudyPanel page={page} contextData={contextData} tabs={panelTabs} />}
       </div>
 
