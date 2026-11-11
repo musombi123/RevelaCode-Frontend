@@ -49,14 +49,15 @@ function normalizeSources(payload) {
   });
 }
 
-export function useFaithAndroidBack({ isHome = false, onBack, onBackAction, onPrompt } = {}) {
-  const handlersRef = useRef({ isHome, onBack, onBackAction, onPrompt });
+export function useFaithAndroidBack({ isHome = false, enabled = true, onBack, onBackAction, onPrompt } = {}) {
+  const handlersRef = useRef({ isHome, enabled, onBack, onBackAction, onPrompt });
   const lastBackAtRef = useRef(0);
   useEffect(() => {
-    handlersRef.current = { isHome, onBack, onBackAction, onPrompt };
-  }, [isHome, onBack, onBackAction, onPrompt]);
+    handlersRef.current = { isHome, enabled, onBack, onBackAction, onPrompt };
+  }, [isHome, enabled, onBack, onBackAction, onPrompt]);
 
   useEffect(() => {
+    if (!enabled) return undefined;
     let active = true;
     let nativeListener = null;
     const handleBack = async () => {
@@ -84,7 +85,7 @@ export function useFaithAndroidBack({ isHome = false, onBack, onBackAction, onPr
       active = false;
       nativeListener?.remove?.();
     };
-  }, []);
+  }, [enabled]);
 }
 
 export function FaithMobileBottomNav({
