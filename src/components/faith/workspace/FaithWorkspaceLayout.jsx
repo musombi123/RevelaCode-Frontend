@@ -269,7 +269,7 @@ export function InlineAskBar({
   const [rateLimited, setRateLimited] = useState(false);
   const [deepStudy, setDeepStudy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches);
+  const [isMobile, setIsMobile] = useState(() => Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android" ? true : typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches);
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const touchStart = useRef(null);
   const abortRef = useRef(null);
@@ -278,7 +278,7 @@ export function InlineAskBar({
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 639px)");
-    const update = () => setIsMobile(query.matches);
+    const update = () => setIsMobile((Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || query.matches);
     update();
     query.addEventListener?.("change", update);
     return () => query.removeEventListener?.("change", update);
@@ -634,6 +634,7 @@ export default function FaithWorkspaceLayout({
   const navActive = page === "missionpulse" ? "mission" : page === "profile" ? "me" : ["quarterly", "bible", "prophecy", "events", "referential", "library", "word-roots", "academy", "atlas"].includes(page) ? "study" : "home";
   const chips = Array.isArray(filterChips) ? filterChips : (meta.chips || []);
   const touchStart = useRef(null);
+  const nativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
   const handleAskOverlay = useCallback((open) => setOverlay((current) => open ? "answer" : current === "answer" ? "" : current), []);
   const closeOverlay = () => setOverlay("");
 
@@ -642,8 +643,8 @@ export default function FaithWorkspaceLayout({
       <FaithOfflineBanner offline={offline} />
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
       <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
-      <div className={panel ? "grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]" : "min-w-0"}>
-        <main data-faith-workspace-content className="min-w-0 space-y-4 max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1">{children}</main>
+      <div className={panel ? ("grid min-w-0 grid-cols-1 items-start gap-4 " + (nativeAndroid ? "" : "lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]")) : "min-w-0"}>
+        <main data-faith-workspace-content className={"min-w-0 space-y-4 " + (nativeAndroid ? "[&_.grid-cols-2]:!grid-cols-1 [&_.grid-cols-3]:!grid-cols-1 [&_.grid-cols-4]:!grid-cols-1" : "max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1")}>{children}</main>
         {panel && <StudyPanel page={page} contextData={contextData} tabs={panelTabs} />}
       </div>
 
