@@ -7,6 +7,7 @@ import React, {
 
 import { useNavigate } from "react-router-dom";
 import FaithWorkspaceLayout, { PullToRefreshSurface } from "./faith/workspace/FaithWorkspaceLayout.jsx";
+import WorldEventsDesk from "@/Dashboard/Community/WorldEventsDesk.jsx";
 
 import {
   Card,
@@ -1029,6 +1030,8 @@ export default function ProphecyEventsDashboard({ onOpenAI, onNavigate }) {
         space-y-6
       "
     >
+      <WorldEventsDesk initialLimit={6} />
+
       {/* ===================================================
           HEADER
       =================================================== */}
