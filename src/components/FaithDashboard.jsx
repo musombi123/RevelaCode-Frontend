@@ -10,7 +10,6 @@ import {
   Flame,
   Languages,
   Map,
-  NotebookPen,
   Play,
   RefreshCw,
   ScrollText,
@@ -497,23 +496,6 @@ export default function FaithDashboard({
   }, [userHistory]);
 
 
-  /* =======================================================
-     TIME FORMAT
-  ======================================================= */
-
-  const formattedActivityTime = useMemo(() => {
-    if (!activity.lastActivityTime) {
-      return "";
-    }
-
-    const date = new Date(activity.lastActivityTime);
-
-    if (Number.isNaN(date.getTime())) {
-      return "";
-    }
-
-    return date.toLocaleString();
-  }, [activity.lastActivityTime]);
 
   /* =======================================================
      FAITH TOOLS
@@ -697,35 +679,6 @@ export default function FaithDashboard({
     setFaithSection(studyReturnSection || "study");
   };
 
-  /* =======================================================
-     CONTINUE TARGET
-  ======================================================= */
-
-  const validContinueTargets = [
-    "bible",
-    "prophecy",
-    "events",
-    "referential",
-  ];
-
-  const continueTarget = validContinueTargets.includes(
-    activity.lastDashboard
-  )
-    ? activity.lastDashboard
-    : "bible";
-
-  const continueTitle =
-    continueTarget === "bible"
-      ? "Continue Bible Study"
-      : continueTarget === "prophecy"
-      ? "Continue Prophecy Study"
-      : continueTarget === "events"
-      ? "Continue Prophecy Events"
-      : "Continue Referential Study";
-
-  const continueDescription =
-    activity.lastActivity ||
-    "Pick up your Faith journey from where you last stopped.";
 
   /* =======================================================
      INTERNAL STUDY HEADER
@@ -1472,7 +1425,7 @@ export default function FaithDashboard({
                 <Play size={16} /> Open today's lesson
               </button>
               <button type="button" onClick={() => openStudy("sda")} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 motion-reduce:transition-none">
-                <NotebookPen size={16} /> Class notes
+                <BookOpen size={16} /> Class notes
               </button>
             </div>
           </div>
