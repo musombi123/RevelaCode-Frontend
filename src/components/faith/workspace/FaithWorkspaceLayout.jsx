@@ -579,6 +579,43 @@ export default function FaithWorkspaceLayout({
     return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
   }, []);
 
+  useEffect(() => {
+    const isTextEntry = (element) => {
+      if (!element) return false;
+      if (element.tagName === "TEXTAREA" || element.isContentEditable) return true;
+      if (element.tagName !== "INPUT") return false;
+      return !["button", "submit", "reset", "checkbox", "radio", "file", "hidden"].includes(String(element.type || "").toLowerCase());
+    };
+    const onFocusIn = () => {
+      const element = document.activeElement;
+      if (!isTextEntry(element)) return;
+      setKeyboardOpen(true);
+      window.setTimeout(() => element?.scrollIntoView?.({ behavior: "smooth", block: "center" }), 120);
+    };
+    const onFocusOut = () => {
+      window.setTimeout(() => {
+        const viewport = window.visualViewport;
+        const element = document.activeElement;
+        const viewportShowsKeyboard = viewport ? window.innerHeight - viewport.height > 100 : false;
+        setKeyboardOpen(isTextEntry(element) && viewportShowsKeyboard);
+      }, 160);
+    };
+    const onViewportResize = () => {
+      const viewport = window.visualViewport;
+      const element = document.activeElement;
+      const viewportShowsKeyboard = viewport ? window.innerHeight - viewport.height > 100 : false;
+      setKeyboardOpen(isTextEntry(element) && viewportShowsKeyboard);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    window.visualViewport?.addEventListener("resize", onViewportResize);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      window.visualViewport?.removeEventListener("resize", onViewportResize);
+    };
+  }, []);
+
   const handleNativeBack = useCallback(() => {
     if (overlayRef.current) {
       if (overlayRef.current === "answer") window.dispatchEvent(new CustomEvent("revelacode:faith-dismiss-overlay"));
