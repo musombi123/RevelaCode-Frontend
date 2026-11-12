@@ -5,6 +5,15 @@ import { Capacitor } from "@capacitor/core";
 
 import {
   ArrowLeft,
+  Bell,
+  CalendarCheck,
+  House,
+  Leaf,
+  Menu,
+  Moon,
+  Settings,
+  Users,
+  UserCircle,
   ArrowRight,
   BadgeCheck,
   Compass,
@@ -31,6 +40,9 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+
+import "./faith/faith-dashboard.css";
+import { useTheme } from "./hooks/useTheme.jsx";
 
 import StudyLibrary from "./study/StudyLibrary.jsx";
 import BookmarksPanel from "./study/BookmarksPanel.jsx";
@@ -291,6 +303,408 @@ function FaithSponsoredBanner({ enabled }) {
    Study-related views remain INTERNAL to Faith and are not
    added to the global dashboard registry.
 ========================================================= */
+
+
+function FaithHomeDashboard({
+  user,
+  isGuest,
+  displayName,
+  globalSearch,
+  setGlobalSearch,
+  submitGlobalSearch,
+  askAIAboutSearch,
+  navigateTo,
+  openStudy,
+  openSDAQuarterly,
+  openFaithAcademy,
+  openPrayer,
+  openMaterial,
+  featuredLesson,
+  featuredLessonTitle,
+  continueDescription,
+  hasContinueActivity,
+  continueTab,
+  setContinueTab,
+  verseOfDay,
+  studyStreak,
+  studyDaysKey,
+  onNavigate,
+  onOpenAI,
+  setComingSoonFeature,
+  comingSoonFeature,
+  backPrompt,
+  homeKeyboardOpen,
+  setHomeKeyboardOpen,
+  loadHomeSnapshot,
+  adSubscriptionStatus,
+}) {
+  const { theme, setTheme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const initials = String(displayName || "Guest")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "G";
+
+  const prayerAction = () => {
+    const question = "Help me prepare a personal prayer from Scripture. Include gratitude, confession, guidance, intercession for others, and a closing prayer.";
+    try {
+      window.localStorage.setItem("revelacode_pending_ai_prompt", question);
+    } catch {
+      // RevelaAI still receives the prayer request through the handoff.
+    }
+    onOpenAI?.({
+      question,
+      contextType: "prayer",
+      contextData: { workspace: "Prayer", source: "Faith dashboard" },
+    });
+  };
+
+  const continueAction = () => {
+    if (featuredLesson) {
+      openMaterial(featuredLesson);
+      return;
+    }
+    if (hasContinueActivity) {
+      navigateTo(continueTab);
+      return;
+    }
+    navigateTo("bible");
+  };
+
+  const navigationItems = [
+    { label: "Home", icon: House, action: () => onNavigateHome(), active: true },
+    { label: "Study Library", icon: Library, action: () => openStudy("all") },
+    { label: "Sabbath School", icon: CalendarCheck, action: openSDAQuarterly },
+    { label: "Faith Academy", icon: GraduationCap, action: openFaithAcademy },
+    { label: "Prayer", icon: HeartHandshake, action: prayerAction },
+    { label: "Community", icon: Users, action: () => onNavigate?.("community") },
+    { label: "Settings", icon: Settings, action: () => onNavigate?.("settings") },
+  ];
+
+  function onNavigateHome() {
+    window.dispatchEvent(new CustomEvent("revelacode:faith-home"));
+  }
+
+  const runNavigation = (item) => {
+    setMobileMenuOpen(false);
+    item.action?.();
+  };
+
+  const renderSidebarItems = () => (
+    <nav className="faith-home-sidebar-nav" aria-label="Faith workspace navigation">
+      {navigationItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => runNavigation(item)}
+            aria-current={item.active ? "page" : undefined}
+            className={"faith-home-nav-item" + (item.active ? " is-active" : "")}
+          >
+            <Icon size={19} strokeWidth={2.25} />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  const submitPrayerSearch = (event) => {
+    event.preventDefault();
+    askAIAboutSearch();
+  };
+
+  const toggleTheme = () => {
+    const darkNow = document.documentElement.classList.contains("dark");
+    setTheme(darkNow ? "light" : "dark");
+  };
+
+  return (
+    <div className="faith-home-shell">
+      <aside className="faith-home-sidebar" aria-label="Faith dashboard sidebar">
+        <button type="button" className="faith-home-brand" onClick={() => setFaithHome()}>
+          <img src="/Logo.png" alt="RevelaCode" />
+          <strong>RevelaCode</strong>
+          <small>Code. Innovate. Transform.</small>
+        </button>
+        {renderSidebarItems()}
+        <div className="faith-home-premium">
+          <Star size={23} fill="currentColor" />
+          <strong>Premium</strong>
+          <span>Unlock more Bible study tools</span>
+          <PremiumPlansStar className="faith-premium-action !h-9 !min-h-9 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
+        </div>
+        <button type="button" className="faith-home-user" onClick={() => onNavigate?.("profile")}>
+          <span className="faith-home-avatar">{initials}</span>
+          <span className="faith-home-user-copy">
+            <strong>{displayName}</strong>
+            <small>{user?.email || (isGuest ? "Guest session" : "Faith account")}</small>
+          </span>
+          <ChevronDown size={15} />
+        </button>
+      </aside>
+
+      <main className="faith-home-main">
+        <div className="faith-home-main-inner">
+          <header className="faith-home-mobile-header">
+            <button
+              type="button"
+              className="faith-home-mobile-menu"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open Faith navigation"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="faith-home-mobile-brand">
+              <img src="/Logo.png" alt="" />
+              <span>
+                <strong>Revela<span>Code</span></strong>
+                <small>Code. Innovate. Transform.</small>
+              </span>
+            </div>
+            <button
+              type="button"
+              className="faith-home-icon-button"
+              onClick={() => setNotificationsOpen((open) => !open)}
+              aria-label="Open notification information"
+              aria-expanded={notificationsOpen}
+            >
+              <Bell size={22} />
+            </button>
+          </header>
+
+          <div className="faith-home-topbar">
+            <form className="faith-home-search" role="search" onSubmit={submitGlobalSearch}>
+              <Search size={21} />
+              <input
+                type="search"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onFocus={() => setHomeKeyboardOpen(true)}
+                onBlur={() => setHomeKeyboardOpen(false)}
+                placeholder="Search Bible, topics or ask RevelaAI..."
+                aria-label="Search Bible, topics or ask RevelaAI"
+              />
+            </form>
+            <div className="faith-home-top-actions">
+              <button
+                type="button"
+                className="faith-home-icon-button"
+                onClick={() => setNotificationsOpen((open) => !open)}
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+              >
+                <Bell size={21} />
+              </button>
+              <button
+                type="button"
+                className="faith-home-theme-toggle"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                title="Toggle theme"
+              >
+                <Sun size={16} />
+                <Moon size={16} fill="currentColor" />
+              </button>
+            </div>
+          </div>
+
+          <section className="faith-home-hero" aria-labelledby="faith-home-title">
+            <span className="faith-home-cross" aria-hidden="true"><i /><b /></span>
+            <h1 id="faith-home-title">
+              Grow in Faith<br />
+              with <span>RevelaCode</span>
+            </h1>
+            <p>Study. Reflect. Apply. Transform.</p>
+            <form className="faith-home-hero-ask" onSubmit={submitPrayerSearch}>
+              <Sparkles size={22} />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onFocus={() => setHomeKeyboardOpen(true)}
+                onBlur={() => setHomeKeyboardOpen(false)}
+                placeholder="Ask RevelaAI anything about the Bible..."
+                aria-label="Ask RevelaAI anything about the Bible"
+              />
+              <button type="submit" className="faith-home-ask-submit" aria-label="Ask RevelaAI">
+                <ArrowRight size={23} />
+              </button>
+            </form>
+          </section>
+
+          <form className="faith-home-mobile-search" role="search" onSubmit={submitGlobalSearch}>
+            <Search size={19} />
+            <input
+              type="search"
+              value={globalSearch}
+              onChange={(event) => setGlobalSearch(event.target.value)}
+              onFocus={() => setHomeKeyboardOpen(true)}
+              onBlur={() => setHomeKeyboardOpen(false)}
+              placeholder="Search or ask RevelaAI..."
+              aria-label="Search or ask RevelaAI"
+            />
+            <button type="submit" aria-label="Search"><ArrowRight size={21} /></button>
+          </form>
+
+          <section className="faith-home-feature-grid" aria-label="Featured Faith workspaces">
+            <button type="button" className="faith-home-feature-card faith-home-feature-blue" onClick={() => openStudy("all")}>
+              <BookOpen size={34} fill="currentColor" />
+              <strong>Study Library</strong>
+              <small>Explore Scripture</small>
+              <span className="faith-home-feature-arrow"><ArrowRight size={20} /></span>
+            </button>
+            <button type="button" className="faith-home-feature-card faith-home-feature-green" onClick={openSDAQuarterly}>
+              <GraduationCap size={37} fill="currentColor" />
+              <strong>Sabbath School</strong>
+              <small>Learn &amp; Grow</small>
+              <span className="faith-home-feature-arrow"><ArrowRight size={20} /></span>
+            </button>
+            <button type="button" className="faith-home-feature-card faith-home-feature-purple" onClick={prayerAction}>
+              <HeartHandshake size={35} fill="currentColor" />
+              <strong>Prayer</strong>
+              <small>Connect with God</small>
+              <span className="faith-home-feature-arrow"><ArrowRight size={20} /></span>
+            </button>
+            <button type="button" className="faith-home-feature-card faith-home-feature-gold" onClick={() => onNavigate?.("community")}>
+              <Users size={36} fill="currentColor" />
+              <strong>Community</strong>
+              <small>Be Part of the Family</small>
+              <span className="faith-home-feature-arrow"><ArrowRight size={20} /></span>
+            </button>
+          </section>
+
+          <section className="faith-home-content-grid">
+            <div className="faith-home-continue-wrap">
+              <div className="faith-home-section-heading">
+                <h2><Clock3 size={22} /> Continue Where You Left Off</h2>
+                <button type="button" onClick={() => setContinueTab("bible")}>View All <ArrowRight size={15} /></button>
+              </div>
+              <article className="faith-home-continue-card">
+                <img
+                  src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=500&q=85"
+                  alt="A book open for study"
+                  loading="lazy"
+                />
+                <div className="faith-home-continue-copy">
+                  <h3>Your next study session</h3>
+                  <p>{featuredLessonTitle || (hasContinueActivity ? continueDescription : "Bible · The Four Gospels")}</p>
+                  <button type="button" onClick={continueAction}>
+                    <Play size={14} fill="currentColor" /> Continue Study
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            <aside className="faith-home-verse-card" aria-label="Verse of the day">
+              <span className="faith-home-quote-mark">“</span>
+              <blockquote>“{verseOfDay.text}”</blockquote>
+              <cite>{verseOfDay.reference}</cite>
+              <BookOpen size={27} />
+            </aside>
+          </section>
+
+          <section className="faith-home-quick-access" aria-labelledby="faith-home-quick-title">
+            <h2 id="faith-home-quick-title" className="faith-home-quick-heading">
+              <Star size={22} /> Quick Access
+            </h2>
+            <div className="faith-home-quick-grid">
+              <button type="button" className="faith-home-quick-card" onClick={() => navigateTo("bible")}>
+                <BookOpen size={25} fill="currentColor" /><strong>Bible</strong>
+              </button>
+              <button type="button" className="faith-home-quick-card" onClick={() => navigateTo("prophecy")}>
+                <Leaf size={25} /><strong>Prophecy</strong>
+              </button>
+              <button type="button" className="faith-home-quick-card" onClick={() => navigateTo("events")}>
+                <CalendarDays size={25} /><strong>Events</strong>
+              </button>
+              <button type="button" className="faith-home-quick-card" onClick={() => navigateTo("referential")}>
+                <Users size={25} /><strong>Referrals</strong>
+              </button>
+              <button type="button" className="faith-home-quick-card" onClick={() => window.location.assign("/faith/missionpulse")}>
+                <Globe size={25} /><strong>MissionPulse</strong>
+              </button>
+            </div>
+          </section>
+
+          <div className="faith-home-bottom-space" />
+          <FaithOfflineBanner />
+          <div className="faith-home-ad-slot"><FaithSponsoredBanner enabled={adSubscriptionStatus === "free"} /></div>
+        </div>
+      </main>
+
+      {mobileMenuOpen && (
+        <div className="faith-home-mobile-drawer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMobileMenuOpen(false); }}>
+          <section className="faith-home-mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Faith navigation">
+            <div className="faith-home-mobile-drawer-head">
+              <img src="/Logo.png" alt="RevelaCode" />
+              <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close navigation"><X size={20} /></button>
+            </div>
+            {renderSidebarItems()}
+            <div className="faith-home-premium">
+              <Star size={22} fill="currentColor" />
+              <strong>Premium</strong>
+              <span>Unlock more Bible study tools</span>
+              <PremiumPlansStar className="faith-premium-action !h-9 !min-h-9 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
+            </div>
+          </section>
+        </div>
+      )}
+
+      {notificationsOpen && (
+        <section className="faith-home-notification-popover" role="dialog" aria-label="Notifications">
+          <div className="flex items-center justify-between gap-3">
+            <h3>RevelaCode updates</h3>
+            <button type="button" onClick={() => setNotificationsOpen(false)} aria-label="Close notifications" className="!min-h-8 !rounded-lg !bg-slate-100 !px-2 !text-slate-700"><X size={15} /></button>
+          </div>
+          <p>Review account alerts, activity updates and notification preferences in your workspace settings.</p>
+          <button type="button" onClick={() => { setNotificationsOpen(false); onNavigate?.("settings"); }}>Open Settings</button>
+        </section>
+      )}
+
+      <nav className="faith-home-bottom-nav" aria-label="Mobile navigation">
+        <button type="button" className="is-active" onClick={() => onNavigateHome()}>
+          <House size={21} /><span>Home</span>
+        </button>
+        <button type="button" onClick={() => openStudy("all")}>
+          <BookOpen size={21} /><span>Study</span>
+        </button>
+        <button type="button" onClick={openFaithAcademy}>
+          <HeartHandshake size={21} /><span>Faith</span>
+        </button>
+        <button type="button" onClick={() => onNavigate?.("community")}>
+          <Users size={21} /><span>Community</span>
+        </button>
+        <button type="button" onClick={() => onNavigate?.("profile")}>
+          <UserCircle size={21} /><span>Me</span>
+        </button>
+      </nav>
+
+      {backPrompt && <div role="status" className="faith-home-back-prompt">{backPrompt}</div>}
+
+      {comingSoonFeature && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setComingSoonFeature(""); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="faith-coming-soon-title" className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><BookOpen size={20} /></div>
+              <button type="button" onClick={() => setComingSoonFeature("")} aria-label="Close coming soon message" className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={18} /></button>
+            </div>
+            <h2 id="faith-coming-soon-title" className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">{comingSoonFeature} is coming to Faith</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">This study collection is being prepared. Its reviewed materials and study tools will appear here when they are ready.</p>
+            <button type="button" onClick={() => setComingSoonFeature("")} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">Got it</button>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function FaithDashboard({
   user,
@@ -1412,383 +1826,38 @@ export default function FaithDashboard({
   }
 
   return (
-    <div
-      data-demo="faith-overview"
-      className={"mx-auto w-full max-w-[1500px] min-w-0 space-y-4 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-6 sm:p-1 sm:pb-0 " + (androidNative ? "faith-android-shell dark min-h-[100svh] bg-[#031321] px-3 text-white" : "")}
-    >
-      {androidNative && <FaithAndroidHubHeader title="Overview" onOpenAI={onOpenAI} />}
-      <FaithOfflineBanner />
-      <PullToRefreshSurface onRefresh={loadHomeSnapshot}>
-      <header aria-label="Faith and Scripture workspace" className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4 shadow-sm dark:border-indigo-900/50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-violet-950/30 sm:p-6">
-        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
-              <BookOpen size={14} /> Faith &amp; Scripture
-            </div>
-            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
-                {sabbathInfo.active ? "Happy Sabbath" : "Welcome"}, {displayName}
-              </h1>
-              {!isGuest && (
-                <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.625rem] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                  <BadgeCheck size={13} /> Verified
-                </span>
-              )}
-              {isGuest && <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[0.625rem] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">Guest session</span>}
-            </div>
-            <p className="mt-1 max-w-2xl text-sm leading-5 text-slate-600 dark:text-slate-300">A focused place to study Scripture, prepare for Sabbath School and follow Christ in daily life.</p>
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-            <span className={sabbathInfo.active ? "inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200" : "inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"}>
-              <Sun size={16} /> {sabbathInfo.label} <span className="text-[0.625rem] font-medium opacity-70">approx.</span>
-            </span>
-            <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
-              <Flame size={16} className="text-orange-500" /> {studyStreak} day{studyStreak === 1 ? "" : "s"} streak
-            </span>
-            <PremiumPlansStar className="!h-11 !min-h-11 !rounded-xl !px-3 focus-visible:ring-2 focus-visible:ring-indigo-500" />
-          </div>
-        </div>
-      </header>
-
-      <form onSubmit={submitGlobalSearch} role="search" className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-200/70 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-4">
-        <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search a Bible verse, topic or EGW quote</span>
-          <Sparkles size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-500" />
-          <input
-            type="search"
-            value={globalSearch}
-            onChange={(event) => setGlobalSearch(event.target.value)}
-            placeholder="Search a verse, topic or EGW quote…"
-            aria-label="Search a verse, topic or EGW quote"
-            className="min-h-12 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
-          />
-        </label>
-        <div className="flex min-w-0 gap-2">
-          <button type="submit" className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transition-none">
-            <Search size={17} /> Search
-          </button>
-          <button type="button" onClick={askAIAboutSearch} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70 motion-reduce:transform-none motion-reduce:transition-none">
-            <Sparkles size={17} /> Ask RevelaAI
-          </button>
-        </div>
-      </form>
-
-      <FaithSponsoredBanner enabled={adSubscriptionStatus === "free"} />
-
-      <section aria-label="Your study for this week" className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-        <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
-                <CalendarDays size={14} /> This week's Sabbath School
-              </div>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Make space for the Word</h2>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Quarter {quarterInfo.quarter} · {quarterInfo.year}</p>
-            </div>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={21} /></span>
-          </div>
-
-          {homeSnapshot.status === "loading" ? (
-            <div className="mt-5 animate-pulse space-y-3" aria-label="Loading Sabbath School lesson">
-              <div className="h-5 w-24 rounded-full bg-slate-100 dark:bg-slate-800" />
-              <div className="h-6 w-4/5 rounded-lg bg-slate-100 dark:bg-slate-800" />
-              <div className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800" />
-            </div>
-          ) : homeSnapshot.error ? (
-            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
-              <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Lesson preview is unavailable.</p>
-              <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Your Sabbath School workspace is still available.</p>
-              <button type="button" onClick={loadHomeSnapshot} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>
-            </div>
-          ) : featuredLesson ? (
-            <div className="mt-4 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[0.625rem] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
-                  {featuredLessonMeta.lesson_number ? "Lesson " + featuredLessonMeta.lesson_number : "Daily lesson"}
-                </span>
-                {featuredLessonMeta.day && <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{featuredLessonMeta.day}</span>}
-              </div>
-              <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-6 text-slate-900 dark:text-white">{featuredLessonTitle}</h3>
-              {featuredMemoryVerse ? (
-                <blockquote className="mt-3 rounded-xl border-l-2 border-amber-400 bg-amber-50/70 px-3 py-2.5 text-xs leading-5 text-slate-700 dark:bg-amber-950/20 dark:text-slate-200">
-                  <span className="mb-1 block text-[0.625rem] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">Memory verse</span>
-                  {featuredMemoryVerse}
-                </blockquote>
-              ) : (
-                <p className="mt-3 rounded-xl bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">Open the lesson to read this week's memory verse and daily study notes.</p>
-              )}
-            </div>
-          ) : (
-            <div className="mt-5 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Your weekly lesson is ready to explore.</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Open Sabbath School to load the current quarter. Its saved lesson preview will appear here on your next visit.</p>
-            </div>
-          )}
-
-          <div className="mt-auto pt-5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">7-day study progress</span>
-              <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">{weeklyStudyCount}/7 days</span>
-            </div>
-            <div className="mt-3 grid grid-cols-7 gap-1.5" aria-label={weeklyStudyCount + " of 7 study days completed"}>
-              {studyWeekDays.map((day) => (
-                <div key={day.key} className="min-w-0 text-center">
-                  <span className="text-[0.625rem] font-semibold text-slate-400">{day.label}</span>
-                  <span className={day.active ? "mt-1 block h-1.5 rounded-full bg-indigo-600" : "mt-1 block h-1.5 rounded-full bg-slate-100 dark:bg-slate-800"} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button type="button" onClick={() => featuredLesson ? openMaterial(featuredLesson) : openSDAQuarterly()} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transform-none motion-reduce:transition-none">
-                <Play size={16} /> Open today's lesson
-              </button>
-              <button type="button" onClick={() => openStudy("sda")} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 motion-reduce:transition-none">
-                <BookOpen size={16} /> Class notes
-              </button>
-            </div>
-          </div>
-        </article>
-
-        <article className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-[0.14em] text-indigo-700 dark:text-indigo-300">
-                <History size={14} /> Continue where you left off
-              </div>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Your next study session</h2>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Pick up a recent study or choose a workspace.</p>
-            </div>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Clock3 size={21} /></span>
-          </div>
-
-          <div className="mt-4 inline-flex w-fit max-w-full items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800" role="group" aria-label="Choose study workspace">
-            {continueTabs.map((tab) => (
-              <button key={tab.id} type="button" onClick={() => setContinueTab(tab.id)} aria-pressed={continueTab === tab.id} className={continueTab === tab.id ? "min-h-11 rounded-lg bg-white px-3 text-xs font-bold text-indigo-700 shadow-sm dark:bg-slate-900 dark:text-indigo-300" : "min-h-11 rounded-lg px-3 text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {homeSnapshot.status === "loading" ? (
-            <div className="mt-4 animate-pulse space-y-3" aria-label="Loading recent study">
-              <div className="h-5 w-2/5 rounded-full bg-slate-100 dark:bg-slate-800" />
-              <div className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800" />
-            </div>
-          ) : homeSnapshot.error ? (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
-              <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Your recent study could not be read.</p>
-              <button type="button" onClick={loadHomeSnapshot} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>
-            </div>
-          ) : hasContinueActivity ? (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-              <p className="text-[0.625rem] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Last study item</p>
-              <h3 className="mt-1 break-words text-sm font-semibold leading-5 text-slate-900 dark:text-white">{continueDescription}</h3>
-              {continueRelativeTime && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Last active {continueRelativeTime}</p>}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Start your first study.</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Choose Bible, Prophecy or Referencing to build your study history.</p>
-            </div>
-          )}
-
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-semibold text-slate-800 dark:text-slate-200">Saved study</span>
-              <span className="ml-1 tabular-nums">{homeSnapshot.savedCount === null ? "—" : homeSnapshot.savedCount}</span>
-            </div>
-            <button type="button" onClick={() => navigateTo(continueTab)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 motion-reduce:transform-none motion-reduce:transition-none">
-              Resume <ArrowRight size={16} />
-            </button>
-          </div>
-        </article>
-      </section>
-
-      <section aria-label="SDA essentials" className="space-y-3 sm:hidden">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">SDA essentials</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Swipe to open a core study collection.</p>
-        </div>
-        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button type="button" onClick={openSDAQuarterly} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 active:scale-[0.98] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"><CalendarDays size={16}/>Quarterly</button>
-          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><ScrollText size={16}/>EGW Writings <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
-          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><BookOpen size={16}/>28 Beliefs <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
-          <button type="button" onClick={() => navigateTo("prophecy")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-800 active:scale-[0.98] dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200"><Compass size={16}/>Sanctuary</button>
-          <button type="button" onClick={() => setComingSoonFeature("SDA Hymnal")} className="inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><Book size={16}/>Hymnal <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] dark:bg-slate-800">Soon</span></button>
-        </div>
-      </section>
-
-      <section aria-labelledby="faith-essentials-heading" className="hidden space-y-3 sm:block">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 id="faith-essentials-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">SDA essentials</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">A few foundations to keep your study anchored.</p>
-          </div>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
-          <button type="button" onClick={openSDAQuarterly} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-900 motion-reduce:transform-none motion-reduce:transition-none">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><CalendarDays size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Quarterly</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Sabbath School</span></span>
-          </button>
-          <button type="button" onClick={() => setComingSoonFeature("EGW Writings")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><ScrollText size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">EGW Writings</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Devotional library</span></span>
-            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
-          </button>
-          <button type="button" onClick={() => setComingSoonFeature("28 Fundamental Beliefs")} className="group relative flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><BookOpen size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">28 Beliefs</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">SDA foundations</span></span>
-            <span className="absolute right-2 top-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.5625rem] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Soon</span>
-          </button>
-          <button type="button" onClick={() => navigateTo("prophecy")} className="group flex min-h-[112px] min-w-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Compass size={20} /></span>
-            <span className="min-w-0"><span className="block text-sm font-semibold text-slate-900 dark:text-white">Sanctuary</span><span className="mt-1 block text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Daniel &amp; Revelation</span></span>
-          </button>
-        </div>
-      </section>
-
-      <section aria-labelledby="faith-tools-heading" className="space-y-3">
-        <div>
-          <h2 id="faith-tools-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Study tools</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Five focused workspaces for Bible study and mission.</p>
-        </div>
-        <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {faithTools.map((tool) => {
-            const Icon = tool.icon;
-            return (
-              <button
-                key={tool.key}
-                type="button"
-                onClick={() => {
-                  if (tool.key === "missionpulse") {
-                    window.location.assign("/faith/missionpulse");
-                    return;
-                  }
-                  navigateTo(tool.key);
-                }}
-                className={`group flex min-h-[154px] min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900 sm:min-h-[160px] sm:p-4 motion-reduce:transform-none motion-reduce:transition-none ${tool.key === "missionpulse" ? "col-span-2 sm:col-span-1" : ""}`}
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Icon size={20} /></span>
-                <span className="mt-3 block min-w-0 text-sm font-semibold text-slate-900 dark:text-white">{tool.title}</span>
-                <span className="mt-1 line-clamp-2 min-w-0 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolDescriptions[tool.key] || tool.description}</span>
-                <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Open <ArrowRight size={14} /></span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section aria-label="More Faith learning" className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
-        <button type="button" onClick={openFaithAtlas} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-          <div className="flex items-center justify-between gap-2"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><Map size={20} /></span><span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[0.625rem] font-bold text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200">New preview</span></div>
-          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Faith Atlas</span>
-          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore connections across Daniel, Revelation and sanctuary themes.</span>
-          <span className="mt-2 text-[0.6875rem] leading-4 text-slate-500 dark:text-slate-400">Interpretations are clearly labeled for investigation.</span>
-        </button>
-        <button type="button" onClick={openFaithAcademy} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300"><GraduationCap size={20} /></span>
-          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Faith Academy</span>
-          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Structured lessons, assessments, notes and guided learning.</span>
-          <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Open Academy <ArrowRight size={14} className="inline" /></span>
-        </button>
-        <button type="button" onClick={openAncientWordRoots} className="flex min-w-0 flex-col rounded-2xl border border-slate-200/70 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 motion-reduce:transform-none motion-reduce:transition-none">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={20} /></span>
-          <span className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Ancient Word Roots</span>
-          <span className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">Explore Hebrew and Greek words in their biblical context.</span>
-          <span className="mt-auto pt-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300">Explore roots <ArrowRight size={14} className="inline" /></span>
-        </button>
-      </section>
-
-      <section aria-label="Verse of the day" className="flex min-w-0 items-start gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><BookOpen size={20} /></span>
-        <div className="min-w-0">
-          <div className="text-[0.625rem] font-bold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">Verse of the day</div>
-          <blockquote className="mt-1 text-sm font-medium leading-6 text-slate-800 dark:text-slate-100">“{verseOfDay.text}”</blockquote>
-          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{verseOfDay.reference} · KJV</p>
-        </div>
-      </section>
-
-      <section aria-labelledby="faith-tracks-heading" className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <h2 id="faith-tracks-heading" className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Study tracks</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Choose a guided topic and keep exploring.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={() => navigateTo("events")} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-900 transition-all duration-200 hover:bg-orange-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-200">
-              <Globe size={14} /> Current world events <ArrowRight size={13} />
-            </button>
-            <button type="button" onClick={() => openStudy("all")} className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-indigo-700 transition-colors hover:text-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300">
-              All Faith studies <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-        <div className="mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "biblical-literacy", label: "Bible study" },
-            { id: "christian-foundations", label: "Christian foundations" },
-            { id: "prophecy", label: "Prophecy research" },
-            { id: "sda", label: "SDA perspective" },
-            { id: "catholic", label: "Catholic perspective" },
-            { id: "interfaith", label: "Islam & Christianity" },
-            { id: "daily-life", label: "Daily life & reflection" },
-          ].map((track) => (
-            <button key={track.id} type="button" onClick={() => openStudy(track.id)} className="min-h-11 shrink-0 snap-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-indigo-800 dark:hover:bg-indigo-950/40 motion-reduce:transition-none">
-              {track.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <footer aria-label="Faith study shortcuts" className="grid min-w-0 grid-cols-3 gap-2 rounded-2xl border border-slate-200/70 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:gap-3 sm:p-3">
-        <button type="button" onClick={() => setFaithSection("history")} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
-          <History size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study History</span>
-        </button>
-        <button type="button" onClick={openBookmarks} className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
-          <Bookmark size={16} className="shrink-0 text-amber-600 dark:text-amber-300" /><span className="min-w-0">Saved Study</span>
-        </button>
-        <button type="button" onClick={openStudy} data-demo="faith-study-library" className="flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[0.6875rem] font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-200 dark:hover:bg-slate-800 sm:gap-2 sm:text-xs">
-          <Library size={16} className="shrink-0 text-indigo-600 dark:text-indigo-300" /><span className="min-w-0">Study Library</span>
-        </button>
-      </footer>
-
-      {isGuest && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Save your Faith journey</h2>
-            <p className="mt-1 max-w-2xl text-xs leading-5 text-emerald-800 dark:text-emerald-200">Create an account to preserve your study history, bookmarks and preferences.</p>
-          </div>
-          <button type="button" onClick={onLogin} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-            Login / Register <ArrowRight size={16} />
-          </button>
-        </section>
-      )}
-
-      <FaithMobileBottomNav
-        active="home"
-        onHome={() => setFaithSection("home")}
-        onStudy={() => openStudy("all")}
-        onAskAI={() => onOpenAI?.()}
-        onMission={() => window.location.assign("/faith/missionpulse")}
-        onMe={() => onNavigate?.("profile")}
-        hidden={homeKeyboardOpen}
-      />
-      {backPrompt && <div role="status" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[65] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-lg sm:bottom-5">{backPrompt}</div>}
-
-      {comingSoonFeature && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setComingSoonFeature(""); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="faith-coming-soon-title" className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"><BookOpen size={20} /></div>
-              <button type="button" onClick={() => setComingSoonFeature("")} aria-label="Close coming soon message" className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-slate-800"><X size={18} /></button>
-            </div>
-            <h2 id="faith-coming-soon-title" className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">{comingSoonFeature} is coming to Faith</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">This study collection is being prepared. The tile will become an active workspace when its reviewed materials and study tools are ready.</p>
-            <button type="button" onClick={() => setComingSoonFeature("")} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">Got it</button>
-          </section>
-        </div>
-      )}
-      </PullToRefreshSurface>
-    </div>
+    <FaithHomeDashboard
+      user={user}
+      isGuest={isGuest}
+      displayName={displayName}
+      globalSearch={globalSearch}
+      setGlobalSearch={setGlobalSearch}
+      submitGlobalSearch={submitGlobalSearch}
+      askAIAboutSearch={askAIAboutSearch}
+      navigateTo={navigateTo}
+      openStudy={openStudy}
+      openSDAQuarterly={openSDAQuarterly}
+      openFaithAcademy={openFaithAcademy}
+      openPrayer={openPrayer}
+      openMaterial={openMaterial}
+      featuredLesson={featuredLesson}
+      featuredLessonTitle={featuredLessonTitle}
+      continueDescription={continueDescription}
+      hasContinueActivity={hasContinueActivity}
+      continueTab={continueTab}
+      setContinueTab={setContinueTab}
+      verseOfDay={verseOfDay}
+      studyStreak={studyStreak}
+      studyDaysKey={studyDaysKey}
+      onNavigate={onNavigate}
+      onOpenAI={onOpenAI}
+      setComingSoonFeature={setComingSoonFeature}
+      comingSoonFeature={comingSoonFeature}
+      backPrompt={backPrompt}
+      homeKeyboardOpen={homeKeyboardOpen}
+      setHomeKeyboardOpen={setHomeKeyboardOpen}
+      loadHomeSnapshot={loadHomeSnapshot}
+      adSubscriptionStatus={adSubscriptionStatus}
+    />
   );
 }
