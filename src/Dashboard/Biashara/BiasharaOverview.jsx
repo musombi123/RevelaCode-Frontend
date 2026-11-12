@@ -218,10 +218,25 @@ export default function BiasharaOverview({
   });
   const featuredRoutes = filteredRoutes.slice(0, 10);
 
+  const submitToolSearch = (event) => {
+    event.preventDefault();
+    const query = search.trim().toLowerCase();
+    if (!query) return;
+    const match = quickRoutes.find((route) => {
+      const meta = ROUTE_META[route];
+      return (meta.label + " " + meta.detail + " " + route).toLowerCase().includes(query);
+    });
+    if (match) onNavigate?.(match);
+    else if (/sale|pos|order/.test(query)) onNavigate?.("sales");
+    else if (/stock|product|inventor/.test(query)) onNavigate?.("products");
+    else if (/customer|client/.test(query)) onNavigate?.("customers");
+    else onNavigate?.("biashara-analytics");
+  };
+
   return (
     <div className="biashara-overview">
       <div className="biashara-overview-inner">
-        <form className="biashara-overview-search" role="search" onSubmit={(event) => { event.preventDefault(); onNavigate?.("products"); }}>
+        <form className="biashara-overview-search" role="search" onSubmit={submitToolSearch}>
           <Search size={19} aria-hidden="true" />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search sales, products, customers..." aria-label="Search business companions" />
           <button type="button" onClick={() => onNavigate?.("notifications")} aria-label="Business alerts"><Bell size={20} /><span className="biashara-alert-dot" /></button>
