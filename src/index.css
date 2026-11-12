@@ -2714,3 +2714,56 @@ html, body, #root {
     padding-bottom: 0.5rem;
   }
 }
+
+
+/* Complete the Shamba light palette for its remaining custom hexadecimal
+   surfaces (overview, farm detail, sheets, filter chips and bottom dock). */
+.shamba-mobile[data-theme="light"] [class*="bg-[#0A2237"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#041625"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0B3B34"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#24483E"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#031321"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#062237"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#173E58"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#104438"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#123A58"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#143F36"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#24452F"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#124237"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#082036"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#1A684C"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#143F39"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0B2338"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#123D36"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#143E36"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#071C2C"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#102D43"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#063C37"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#103E38"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0C3048"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0B7458"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#143E37"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#18354A"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#5A342E"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#153D48"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0D634C"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#133B43"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#153F35"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+.shamba-mobile[data-theme="light"] [class*="text-[#B"],
+.shamba-mobile[data-theme="light"] [class*="text-[#C"],
+.shamba-mobile[data-theme="light"] [class*="text-[#D"],
+.shamba-mobile[data-theme="light"] [class*="text-[#E"],
+.shamba-mobile[data-theme="light"] [class*="text-[#F"],
+.shamba-mobile[data-theme="light"] [class*="text-[#8"],
+.shamba-mobile[data-theme="light"] [class*="text-[#9"] {
+  color: #52665d !important;
+}
+.shamba-mobile[data-theme="light"] [class*="border-[#1"],
+.shamba-mobile[data-theme="light"] [class*="border-[#2"],
+.shamba-mobile[data-theme="light"] [class*="border-[#4"],
+.shamba-mobile[data-theme="light"] [class*="border-[#5"] {
+  border-color: #d9e4df !important;
+}
