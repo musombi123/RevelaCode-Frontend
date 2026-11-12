@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import { getBiasharaTemplate } from "./businessTemplateRegistry.js";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 import "./biashara-overview.css";
 
 const ROUTE_META = {
@@ -124,6 +125,7 @@ export default function BiasharaOverview({
   onNavigate,
 }) {
   const api = useJumuiyaApi();
+  const { theme, setTheme } = useTheme();
   const businessId = String(business?.id || business?._id || "");
   const template = getBiasharaTemplate(business?.industry_template);
   const [search, setSearch] = useState("");
@@ -223,7 +225,7 @@ export default function BiasharaOverview({
           <Search size={19} aria-hidden="true" />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search sales, products, customers..." aria-label="Search business companions" />
           <button type="button" onClick={() => onNavigate?.("notifications")} aria-label="Business alerts"><Bell size={20} /><span className="biashara-alert-dot" /></button>
-          <button type="button" className="biashara-theme-display" aria-label="Appearance is managed in account settings" onClick={() => onNavigate?.("business-profile")}><span>☼</span><span>☀</span></button>
+          <button type="button" className="biashara-theme-display" aria-label={theme === "dark" ? "Switch to light appearance" : "Switch to dark appearance"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><span>☼</span><span>☀</span></button>
         </form>
 
         <section className="biashara-overview-hero">
