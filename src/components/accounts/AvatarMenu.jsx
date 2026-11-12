@@ -1,125 +1,117 @@
 import React, { useEffect, useState } from "react";
 import { Popover } from "@/components/ui/Popover";
-import { Badge } from "@/components/ui/Badge";
 import { LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+
+function readCommunityAvatar(response) {
+  const profile = response?.profile || response?.data?.profile || {};
+  return String(profile?.avatar_url || "").trim();
+}
 
 export default function AvatarMenu() {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, applyVerifiedUser, isGuest } = useAuth();
+  const { getIdentity } = useJumuiyaApi();
+  const [avatar, setAvatar] = useState(() =>
+    String(user?.community_avatar_url || "").trim()
+  );
 
-  // Sync local avatar with AuthContext (this was MISSING before)
-  const [avatar, setAvatar] = useState(user?.avatar || user?.avatar_url || user?.avatarUrl || user?.profile_picture || user?.profilePicture || user?.profile_image || user?.profileImage || null);
+  const displayName = String(
+    user?.fullName || user?.full_name || user?.name || "User"
+  ).trim();
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   useEffect(() => {
-    setAvatar(user?.avatar || user?.avatar_url || user?.avatarUrl || user?.profile_picture || user?.profilePicture || user?.profile_image || user?.profileImage || null);
-  }, [user?.avatar, user?.avatar_url, user?.avatarUrl, user?.profile_picture, user?.profilePicture, user?.profile_image, user?.profileImage]);
+    let active = true;
+    const cachedAvatar = String(user?.community_avatar_url || "").trim();
+    setAvatar(cachedAvatar);
 
-  const isGuest = user?.role === "guest";
-
-  const displayName = isGuest
-    ? "Guest"
-    : user?.fullName?.trim() || "User";
-
-  const initials =
-    displayName !== "Guest"
-      ? displayName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-      : null;
-
-  const handleUpload = async (file) => {
-    if (!file || isGuest) return; // Guests can't upload — clean guard
-
-    // Instant preview (UX win)
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setAvatar(e.target.result);
-    };
-    reader.readAsDataURL(file);
-
-    try {
-      const formData = new FormData();
-      formData.append("avatar", file);
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user/avatar`,
-        {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        }
-      );
-
-      if (!res.ok) throw new Error("Upload failed");
-
-      const data = await res.json();
-
-      // Critical: update global auth state properly
-      updateUser?.({
-        ...user,
-        avatar: data.avatar || data.avatar_url || data.avatarUrl || data.profile_picture || data.profilePicture || data.profile_image || data.profileImage || avatar,
-      });
-    } catch (err) {
-      console.error("❌ Failed to upload avatar:", err);
+    if (!user || isGuest || String(user?.role || "").toLowerCase() === "guest") {
+      return () => {
+        active = false;
+      };
     }
-  };
+
+    const loadCommunityProfile = async () => {
+      try {
+        const response = await getIdentity();
+        const communityAvatar = readCommunityAvatar(response);
+        if (!active) return;
+
+        setAvatar(communityAvatar);
+        const hasUserId = Boolean(user?.id || user?._id || user?.user_id);
+        if (
+          hasUserId &&
+          typeof applyVerifiedUser === "function" &&
+          cachedAvatar !== communityAvatar
+        ) {
+          applyVerifiedUser({
+            ...user,
+            community_avatar_url: communityAvatar,
+          });
+        }
+      } catch (error) {
+        if (!active) return;
+        setAvatar(cachedAvatar);
+        console.warn("[community-profile] avatar could not be refreshed", {
+          status: error?.status || null,
+          code: error?.code || error?.name || "community_identity_unavailable",
+        });
+      }
+    };
+
+    loadCommunityProfile();
+    return () => {
+      active = false;
+    };
+  }, [applyVerifiedUser, getIdentity, isGuest, user]);
 
   const trigger = (
-    <div className="flex items-center space-x-2 cursor-pointer">
-      <label className="relative">
-        {avatar ? (
-          <img
-            src={avatar}
-            alt="User Avatar"
-            className="w-8 h-8 rounded-full border-2 border-indigo-500 object-cover"
-          />
-        ) : (
-          <div className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold border-2 border-indigo-500">
-            {initials || "G"}
-          </div>
-        )}
-
-        {/* Only allow upload if NOT guest */}
-        {!isGuest && (
-          <input
-            type="file"
-            accept="image/*"
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer rounded-full"
-            onChange={(e) => handleUpload(e.target.files[0])}
-          />
-        )}
-      </label>
-
-      {user?.role && (
-        <Badge className="ml-1">
-          {isGuest ? "guest" : user.role}
-        </Badge>
+    <button
+      type="button"
+      aria-label="Open account menu"
+      title="Account"
+      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-indigo-500 bg-slate-100 text-xs font-black text-slate-700 dark:bg-slate-800 dark:text-white"
+    >
+      {avatar ? (
+        <img
+          src={avatar}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initials || "U"
       )}
-    </div>
+    </button>
   );
 
   return (
     <Popover trigger={trigger}>
       <div className="space-y-2">
-        <div className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-          <User className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <User className="h-4 w-4 text-gray-500" />
           <span>Profile</span>
         </div>
 
-        <div className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-          <Settings className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center gap-2 rounded p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <Settings className="h-4 w-4 text-gray-500" />
           <span>Settings</span>
         </div>
 
-        <div
+        <button
+          type="button"
           onClick={logout}
-          className="flex items-center gap-2 p-2 rounded hover:bg-red-100 dark:hover:bg-red-700 text-red-600 dark:text-red-400 cursor-pointer"
+          className="flex w-full items-center gap-2 rounded p-2 text-left text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-700"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="h-4 w-4" />
           <span>Logout</span>
-        </div>
+        </button>
       </div>
     </Popover>
   );
