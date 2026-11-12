@@ -54,7 +54,7 @@ function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
     <button
       type="button"
       onClick={() => onNavigate(item.route)}
-      data-demo={"biashara-nav-" + item.key}
+      data-demo={item.key === "products" ? "biashara-nav-products" : "biashara-nav-" + item.key}
       aria-current={active ? "page" : undefined}
       title={item.label}
       className={"biashara-sidebar-link" + (active ? " is-active" : "") + (compact ? " is-compact" : "")}
