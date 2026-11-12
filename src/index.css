@@ -2648,3 +2648,69 @@ html, body, #root {
   [data-community-pulse-dashboard],
   [data-community-workspace] { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+
+/* Faith desktop and phone surfaces follow the same root Light/Dark/System mode. */
+.dark .faith-home-shell {
+  background: #071326 !important;
+  color: #eaf1ff !important;
+}
+.dark .faith-home-sidebar {
+  background: linear-gradient(180deg,#06152b 0%,#081a34 58%,#0a2040 100%);
+}
+.dark .faith-home-main {
+  background: linear-gradient(135deg,#0b1930,#0a1427 55%,#08172d) !important;
+}
+.dark .faith-home-mobile-header { color: #edf4ff; }
+.dark .faith-home-mobile-brand,
+.dark .faith-home-mobile-brand strong { color: #edf4ff; }
+.dark .faith-home-mobile-brand small { color: #a8b8d1; }
+.dark .faith-home-mobile-menu,
+.dark .faith-home-mobile-header .faith-home-icon-button { color: #d7e4f7; }
+.dark .faith-home-search,
+.dark .faith-home-hero-ask {
+  border-color: #263c5c;
+  background: #10213b;
+}
+.dark .faith-home-search input,
+.dark .faith-home-hero-ask input { color: #eaf1ff; }
+.dark .faith-home-search input::placeholder,
+.dark .faith-home-hero-ask input::placeholder { color: #9eb2ce; }
+.dark .faith-home-quick-card {
+  border-color: #263b59;
+  color: #eaf1ff;
+  background: #101f37;
+}
+.dark .faith-home-continue-card {
+  border-color: #263b59;
+  background: #101f37;
+}
+.dark .faith-home-continue-copy h3,
+.dark .faith-home-continue-copy p { color: #eaf1ff; }
+.dark .faith-home-section-heading h2,
+.dark .faith-home-quick-heading { color: #eaf1ff; }
+.dark .faith-home-notification-popover {
+  border-color: #273a58;
+  color: #eaf1ff;
+  background: #101d33;
+}
+
+/* Light mode is a full platform theme, including legacy fixed-colour
+   workspaces whose original palettes were authored for dark presentation. */
+.light .faith-home-shell {
+  background: #f4f7fc !important;
+  color: #13233d !important;
+}
+.light .faith-home-main {
+  background: linear-gradient(135deg,#eaf3ff 0%,#f5f8ff 48%,#edf4ff 100%) !important;
+}
+
+/* Prevent fixed docks from covering the final rows of content on Android. */
+@media (max-width: 700px) {
+  [data-app-scroll-root="true"] {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+  }
+  .faith-android-shell [data-faith-workspace-content] {
+    padding-bottom: 0.5rem;
+  }
+}
