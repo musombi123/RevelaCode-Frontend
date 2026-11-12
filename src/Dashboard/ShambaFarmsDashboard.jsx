@@ -522,7 +522,7 @@ function AddFarmModal({
 
 export default function ShambaFarmsDashboard({ onNavigate }) {
   const { user } = useAuth();
-  const { getFarmer, saveFarmer, getFarms, createFarm } = useJumuiyaApi();
+  const { getFarmer, saveFarmer, uploadFarmerEvidence, getFarms, createFarm } = useJumuiyaApi();
 
   const [farms, setFarms] = useState([]);
   const [farmerProfile, setFarmerProfile] = useState(null);
@@ -533,6 +533,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
   const [profileMessage, setProfileMessage] = useState("");
   const [profileStep, setProfileStep] = useState(0);
   const [profileFieldErrors, setProfileFieldErrors] = useState({});
+  const [profileEvidenceFile, setProfileEvidenceFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -664,6 +665,10 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       if (!profileForm.phone.trim()) errors.phone = "Enter a contact phone.";
       if (!profileForm.county.trim()) errors.county = "Choose or enter your county.";
       if (!profileForm.town.trim()) errors.town = "Enter your town or nearest centre.";
+      if (!profileForm.farming_type.trim()) errors.farming_type = "Choose your farming type.";
+      if (!profileForm.primary_crops.split(",").map((item) => item.trim()).filter(Boolean).length) errors.primary_crops = "List at least one crop you grow.";
+      if (!profileForm.soil_type.trim()) errors.soil_type = "Select or enter your soil type.";
+      if (!profileEvidenceFile && !farmerProfile?.crop_evidence_file_id) errors.crop_evidence = "Upload a crop or farm photo/document.";
       if (!profileForm.declaration) errors.declaration = "Confirm the details are accurate and you are authorised to submit them.";
       if (!profileForm.privacy_consent) errors.privacy_consent = "Consent is required to submit this profile to Shamba.";
     }
@@ -684,8 +689,15 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       setProfileSaving(true);
       setProfileError("");
       setProfileMessage("");
+      let cropEvidenceFileId = farmerProfile?.crop_evidence_file_id || "";
+      if (intent === "submit" && profileEvidenceFile) {
+        const uploadedEvidence = await uploadFarmerEvidence(profileEvidenceFile);
+        cropEvidenceFileId = uploadedEvidence?.file_id || uploadedEvidence?.id || "";
+        if (!cropEvidenceFileId) throw new Error("Evidence upload did not return a file reference. Please try again.");
+      }
       const result = await saveFarmer({
         intent,
+        crop_evidence_file_id: cropEvidenceFileId,
         farmer_name: profileForm.farmer_name.trim(),
         phone: profileForm.phone.trim(),
         preferred_contact_method: profileForm.preferred_contact_method,
@@ -726,7 +738,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
     } finally {
       setProfileSaving(false);
     }
-  }, [loadFarmer, profileForm, saveFarmer]);
+  }, [farmerProfile, loadFarmer, profileEvidenceFile, profileForm, saveFarmer, uploadFarmerEvidence]);
 
   // =======================================================
   // CREATE FARM
