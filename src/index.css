@@ -2383,3 +2383,33 @@ button.rc-home-stat:not(:disabled):hover { border-color:rgba(147,197,253,.35); b
     grid-template-columns: minmax(0,1fr);
   }
 }
+
+
+/* Home hero metadata: retain a visible, compact last-activity indicator. */
+.rc-home-last-activity {
+  display: inline-flex;
+  min-width: 0;
+  max-width: min(100%, 390px);
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, .3);
+  padding: 7px 10px;
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.rc-home-last-activity > svg { flex: 0 0 auto; color: #93c5fd; }
+.rc-home-last-activity > b { flex: 0 0 auto; color: #dbeafe; font-weight: 800; }
+.rc-home-last-activity > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 1001px) {
+  .rc-home-hero-copy > p {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

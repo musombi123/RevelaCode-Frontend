@@ -1028,7 +1028,6 @@ function HomeDashboard({
 }) {
   const { language, t } = usePreferences();
   const { history: userHistory = [] } = useHistory();
-  const isAndroidAppBuild = import.meta.env.VITE_ANDROID_APP === "true";
 
   const {
     notifications,
@@ -1228,18 +1227,9 @@ function HomeDashboard({
     (hub) => (Number(hubUsage[hub.key]?.count) || 0) > 0,
   );
 
-  const frequentHubs = sortedHubs.slice(0, 3);
-
   /* ====================================================
      LOCAL ACTIVITY
   ==================================================== */
-
-  const historyCount = Number(
-    safeLocalStorage(
-      "revelacode_history_count",
-      "0",
-    ) || 0,
-  );
 
   const lastActivityText =
     safeLocalStorage(
@@ -1614,7 +1604,6 @@ function HomeDashboard({
   const greetingKey = hour < 12 ? "Good morning," : hour < 18 ? "Good afternoon," : "Good evening,";
   const primaryStatKeys = ["wallet", "biashara-orders", "shamba-farms", "community-activity"];
   const primaryOverview = overview.filter((item) => primaryStatKeys.includes(item.key));
-  const moreOverview = overview.filter((item) => !primaryStatKeys.includes(item.key));
   const resumeTarget = activities.find((activity) => activity.route)?.route || sortedHubs[0]?.key || "faith";
 
   const hubToneByKey = {
@@ -1623,27 +1612,6 @@ function HomeDashboard({
     shamba: { surface: "border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-amber-100/80 dark:border-amber-900/60 dark:from-amber-950/50 dark:via-slate-900 dark:to-amber-950/25", icon: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200", dot: "bg-amber-500" },
     biashara: { surface: "border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-blue-100/80 dark:border-blue-900/60 dark:from-blue-950/50 dark:via-slate-900 dark:to-blue-950/25", icon: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200", dot: "bg-blue-500" },
     community: { surface: "border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-cyan-100/80 dark:border-cyan-900/60 dark:from-cyan-950/50 dark:via-slate-900 dark:to-cyan-950/25", icon: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-200", dot: "bg-cyan-500" },
-  };
-
-  const renderOverviewStat = (item, compact = false) => {
-    const Icon = item.icon;
-    const itemLoading = !isGuest && (ecosystemLoading || (item.key === "notifications" && notificationsLoading));
-    const content = (
-      <>
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <span className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " + item.className}><Icon size={19} strokeWidth={2} /></span>
-          {item.clickable && item.route ? <ArrowRight size={15} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-1" /> : null}
-        </div>
-        <p className="mt-4 text-[11px] font-bold leading-4 text-slate-600 dark:text-slate-300">{t(item.title)}</p>
-        {itemLoading ? <span aria-label={t("Loading")} className="mt-2 block h-8 w-24 max-w-full animate-pulse rounded-lg bg-slate-200 motion-reduce:animate-none dark:bg-slate-800" /> : <p className="mt-1 break-words text-2xl font-black tracking-tight text-slate-950 dark:text-white">{item.value}</p>}
-        <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{t(item.helper)}</p>
-      </>
-    );
-    const cardClass = "group min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3.5 text-left shadow-sm shadow-slate-950/[0.03] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/10 dark:bg-slate-900 dark:shadow-none dark:hover:border-white/20 dark:focus-visible:ring-offset-slate-950 " + (compact ? "min-h-[132px]" : "min-h-[166px]");
-    if (item.clickable && item.route) {
-      return <button key={item.key} type="button" onClick={() => onNavigate?.(item.route)} aria-label={t(item.title) + ": " + item.value} className={cardClass}>{content}</button>;
-    }
-    return <div key={item.key} className={cardClass}>{content}</div>;
   };
 
   const displayHubs = ["education", "community", "faith", "biashara", "shamba"]
@@ -1660,7 +1628,7 @@ function HomeDashboard({
   };
 
   return (
-    <main className="rc-home-one-screen" aria-label={t("RevelaCode home")}>
+    <div className="rc-home-one-screen" role="region" aria-label={t("RevelaCode home")}>
       <section className="rc-home-hero rc-home-glass" data-demo="home-welcome">
         <div className="rc-home-hero-copy">
           <span className="rc-home-eyebrow"><span className="rc-home-live-dot" />{t("Your connected ecosystem")}</span>
@@ -1668,6 +1636,11 @@ function HomeDashboard({
           <p>{t("Learn, build, grow and connect across one intelligent ecosystem.")}</p>
           <div className="rc-home-hero-actions">
             <DemoLauncher startAt="home" />
+            <span className="rc-home-last-activity" title={prettyTime || lastActivityText || t("No activity yet")}>
+              <History size={14} aria-hidden="true" />
+              <b>{t("Last activity")}</b>
+              <span>{prettyTime || lastActivityText || t("No activity yet")}</span>
+            </span>
             {isGuest ? (
               <button type="button" className="rc-home-meta-chip" onClick={() => onRequestSignIn?.()}>
                 <UserCircle size={14} /><span>{t("Sign in")}</span>
@@ -1731,7 +1704,7 @@ function HomeDashboard({
               <span className="rc-home-hub-group">{t(group?.title || "Your hubs")}</span>
               <span className="rc-home-hub-title">{t(hub.title)}</span>
               <span className="rc-home-hub-description">{t(hub.description)}</span>
-              <span className="rc-home-hub-footer"><span className="rc-home-hub-status" />{uses > 0 ? formatNumber(uses) + " " + t("opens") : t("Ready when you are")}</span>
+              <span className="rc-home-hub-footer"><span className="rc-home-hub-status" />{formatNumber(uses)} {t(uses === 1 ? "open" : "opens")}</span>
             </button>
           );
         })}
@@ -1781,7 +1754,7 @@ function HomeDashboard({
           <Bell size={17} /><span><strong>{notificationToast.title || t("RevelaCode notification")}</strong><small>{notificationToast.text || notificationToast.message}</small></span><ArrowRight size={15} />
         </button>
       ) : null}
-    </main>
+    </div>
   );
 
 }
