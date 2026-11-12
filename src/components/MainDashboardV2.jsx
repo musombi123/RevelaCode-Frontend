@@ -1753,7 +1753,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             )}
           </AnimatePresence>
 
-          {!showStartModal && user && (
+          {!showStartModal && user && activeView !== "community" && (
           <button
             type="button"
             onClick={openAIWidget}
