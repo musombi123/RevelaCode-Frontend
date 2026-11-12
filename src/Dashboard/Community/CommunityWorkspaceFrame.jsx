@@ -128,7 +128,7 @@ export default function CommunityWorkspaceFrame({
           </div>
         </aside>
 
-        <div className="min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-y-contain">
+        <div data-community-workspace-main="true" className="min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-y-contain">
           <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#071226]/95 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-7">
             <div className="mx-auto w-full max-w-[1500px]">{header}</div>
           </div>
