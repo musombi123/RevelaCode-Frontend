@@ -1667,7 +1667,12 @@ function HomeDashboard({
           <h1>{t(greetingKey)} <span>{displayName}</span></h1>
           <p>{t("Learn, build, grow and connect across one intelligent ecosystem.")}</p>
           <div className="rc-home-hero-actions">
-            <DemoLauncher startAt="home" compact />
+            <DemoLauncher startAt="home" />
+            {isGuest ? (
+              <button type="button" className="rc-home-meta-chip" onClick={() => onRequestSignIn?.()}>
+                <UserCircle size={14} /><span>{t("Sign in")}</span>
+              </button>
+            ) : null}
             {resumeActivity ? (
               <button type="button" className="rc-home-meta-chip" onClick={() => onNavigate?.(resumeActivity.route)} aria-label={t("Continue") + ": " + resumeActivity.title}>
                 <History size={14} /><span>{t("Continue")}</span>
