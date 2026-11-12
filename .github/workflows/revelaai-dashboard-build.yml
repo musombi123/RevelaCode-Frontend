@@ -22,6 +22,8 @@ jobs:
         run: npm ci
       - name: Run unified workspace and Shamba camera contract tests
         run: npm run test:revelaai-workspace
+      - name: Run desktop hub sidebar scroll regressions
+        run: node --test tests/desktop-hub-sidebar-scroll.test.mjs
       - name: Build production frontend
         run: npm run build
 
