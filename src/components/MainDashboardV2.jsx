@@ -53,6 +53,8 @@ import {
   saveOfflineSession,
 } from "@/services/offlineHubSync.js";
 
+const HUBS_WITH_OWN_MOBILE_NAV = new Set(["community", "shamba", "biashara", "faith"]);
+
 function RevelaAIIcon({ size = 32, className = "" }) {
   return (
     <>
@@ -686,6 +688,15 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") ||
     import.meta.env.VITE_ANDROID_APP === "true";
   const isAndroidHome = isAndroidApp && activeView === "home";
+
+  // Native Android owns scrolling inside the app shell, not the WebView body.
+  // This prevents the page itself from stealing touch gestures from hub panes.
+  useEffect(() => {
+    if (!isAndroidApp) return undefined;
+    const root = document.documentElement;
+    root.dataset.revelacodeNativeApp = "true";
+    return () => { delete root.dataset.revelacodeNativeApp; };
+  }, [isAndroidApp]);
   const dashboardContentRef = useRef(null);
   const lastHomeBackAtRef = useRef(0);
   const [androidBackPrompt, setAndroidBackPrompt] = useState("");
@@ -1624,7 +1635,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                   : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
-            style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
+            style={isAndroidApp ? { height: 0, minHeight: 0, WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
           >
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
@@ -1703,7 +1714,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
-          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && activeView !== "faith" && (
+          {!sidebarOpen && !HUBS_WITH_OWN_MOBILE_NAV.has(activeView) && (
             <>
               {mobileCategoryOpen ? (
                 <section
@@ -1762,7 +1773,7 @@ const BIASHARA_SECTION_KEYS = new Set(
               )}
               <nav
                 aria-label="Main workspace navigation"
-                className={"fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden " + (["community", "shamba", "biashara", "faith"].includes(activeView) ? "hidden" : "")}
+                className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
               >
                 <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
                   <button type="button" onClick={() => handleNavigate("home")} aria-current={activeView === "home" ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
