@@ -9,6 +9,8 @@ const composer = read("../src/components/InputBar.jsx");
 const shamba = read("../src/Dashboard/ShambaMobileExperience.jsx");
 const diagnostics = read("../src/Dashboard/ShambaDiagnosticsPanel.jsx");
 const panel = read("../src/components/RevelaAIWorkspacePanel.jsx");
+const chatWindow = read("../src/components/ChatWindow.jsx");
+const message = read("../src/components/Message.jsx");
 
 test("workspace and Live Vision use the existing single RevelaAI API base", () => {
   assert.match(client, /const API_BASE = String\(/);
@@ -82,4 +84,27 @@ test("mislabeled SVG logos are detected from their content and rasterized before
   assert.match(client, /const isSvg = declaredSvg \|\| contentLooksSvg/);
   assert.match(client, /new File\(\[png\], baseName \+ "\.png", \{ type: "image\/png"/);
   assert.match(client, /baseName = String\(file\.name.*webp/);
+});
+
+
+test("inline user prompt editing resubmits from the edited turn and discards later turns", () => {
+  assert.match(message, /function EditBox\(\{ initial, onSave, onCancel \}\)/);
+  assert.match(message, /onEdit\?\.\(message\.id, nextText\)/);
+  assert.match(chatWindow, /<Message message=\{message\} onEdit=\{onEditMessage\} \/>/);
+  assert.match(dashboard, /sendOptions = null/);
+  assert.match(dashboard, /sendOptions\?\.editMessageId/);
+  assert.match(dashboard, /messages\.slice\(0, editIndex\)/);
+  assert.match(dashboard, /\.\.\.editTarget,[\s\S]*?text: userDisplayText/);
+  assert.match(dashboard, /sendMessage\(nextText, null, null, \{ editMessageId: messageId \}\)/);
+  assert.match(dashboard, /messages\.some\(\(message\) => message\.status === "loading"\)/);
+});
+
+test("assistant Markdown tables are supported and prompted only when useful", () => {
+  assert.match(message, /remarkPlugins=\{\[remarkGfm\]\}/);
+  assert.match(message, /aria-label="Scrollable response table"/);
+  assert.match(message, /overflow-x-auto/);
+  assert.match(message, /<thead className="bg-surface-2/);
+  assert.match(message, /<tbody className=/);
+  assert.match(dashboard, /Use compact Markdown tables when they materially improve comparisons/);
+  assert.match(dashboard, /Never invent values to fill a table/);
 });
