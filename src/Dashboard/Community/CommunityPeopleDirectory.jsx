@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  MapPin,
   Search,
   ShieldCheck,
   Users,
@@ -210,16 +209,9 @@ export default function CommunityPeopleDirectory({ onBack, onInvite }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-base font-black text-slate-900 dark:text-white">{safeText(member.name, "RevelaCode member")}</h2>
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                      {safeText(member.bio, "RevelaCode member")}
-                    </p>
+
                   </div>
                 </div>
-                {(member.town || member.county) ? (
-                  <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    <MapPin size={13} /> {[member.town, member.county].filter(Boolean).join(", ")}
-                  </p>
-                ) : null}
                 <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/5">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     <CalendarDays size={13} /> {formatJoinedDate(member.joined_at)}
@@ -300,12 +292,6 @@ export default function CommunityPeopleDirectory({ onBack, onInvite }) {
                 <X size={17} />
               </button>
             </div>
-            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-slate-300">{safeText(selected.bio, "This member has not added a public bio.")}</p>
-            {selected.town || selected.county ? (
-              <p className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <MapPin size={14} /> {[selected.town, selected.county].filter(Boolean).join(", ")}
-              </p>
-            ) : null}
             <div className="mt-5 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-500 dark:bg-[#07111e] dark:text-slate-400">
               <ShieldCheck size={14} className="mr-1 inline text-cyan-600" /> Only public profile details are shown. Private contact information is not exposed by the directory.
             </div>
