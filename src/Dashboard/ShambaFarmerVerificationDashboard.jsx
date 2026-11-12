@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Clock, RefreshCw, ShieldCheck, User, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Download, RefreshCw, ShieldCheck, User, XCircle } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 
 function formatDate(value) {
@@ -10,10 +10,11 @@ function formatDate(value) {
     : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-function FarmerReviewCard({ item, busy, note, onNoteChange, onReview }) {
+function FarmerReviewCard({ item, busy, note, onNoteChange, onReview, onDownloadEvidence, evidenceBusy }) {
   const id = item.id || item._id;
   const crops = Array.isArray(item.primary_crops) ? item.primary_crops : [];
   const livestock = Array.isArray(item.livestock) ? item.livestock : [];
+  const evidenceReady = Boolean(item.crop_evidence_file_id);
 
   return (
     <article className="rounded-2xl border border-[#DCE5E1] bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:p-5">
@@ -37,7 +38,9 @@ function FarmerReviewCard({ item, busy, note, onNoteChange, onReview }) {
         <div><p className="font-bold text-slate-500">Farming type</p><p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{item.farming_type || "Not supplied"}</p></div>
         <div><p className="font-bold text-slate-500">Experience</p><p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{Number(item.experience_years || 0)} years</p></div>
         <div><p className="font-bold text-slate-500">Main crops</p><p className="mt-1 text-slate-700 dark:text-slate-300">{crops.length ? crops.join(", ") : "Not supplied"}</p></div>
+        <div><p className="font-bold text-slate-500">Soil type</p><p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{item.soil_type || "Not supplied"}</p></div>
         <div><p className="font-bold text-slate-500">Livestock</p><p className="mt-1 text-slate-700 dark:text-slate-300">{livestock.length ? livestock.join(", ") : "Not supplied"}</p></div>
+        <div><p className="font-bold text-slate-500">Evidence</p><div className="mt-1 flex flex-wrap items-center gap-2"><span className={evidenceReady ? "text-emerald-700 dark:text-emerald-300" : "text-red-600"}>{evidenceReady ? (item.crop_evidence_filename || "Attached") : "Missing evidence"}</span>{evidenceReady && <button type="button" onClick={() => onDownloadEvidence(item)} disabled={evidenceBusy} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-emerald-200 px-2 py-1 text-[11px] font-black text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900/60 dark:text-emerald-300"><Download size={12}/>{evidenceBusy ? "Opening…" : "View file"}</button>}</div></div>
       </div>
 
       {item.description && <p className="mt-3 whitespace-pre-wrap text-[13px] leading-5 text-slate-600 dark:text-slate-300">{item.description}</p>}
@@ -57,11 +60,12 @@ function FarmerReviewCard({ item, busy, note, onNoteChange, onReview }) {
 }
 
 export default function ShambaFarmerVerificationDashboard() {
-  const { getFarmerVerificationQueue, reviewFarmerProfile } = useJumuiyaApi();
+  const { getFarmerVerificationQueue, reviewFarmerProfile, downloadFarmerEvidence } = useJumuiyaApi();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [evidenceBusyId, setEvidenceBusyId] = useState("");
   const [notes, setNotes] = useState({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -87,6 +91,27 @@ export default function ShambaFarmerVerificationDashboard() {
   const updateNote = useCallback((id, value) => {
     setNotes((current) => ({ ...current, [id]: value }));
   }, []);
+
+  const handleDownloadEvidence = useCallback(async (item) => {
+    const id = item.id || item._id;
+    if (!item.crop_evidence_file_id) return;
+    try {
+      setEvidenceBusyId(String(id));
+      const { blob, filename } = await downloadFarmerEvidence(item.crop_evidence_file_id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || "farmer-evidence";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err?.message || "Unable to open the farmer evidence file.");
+    } finally {
+      setEvidenceBusyId("");
+    }
+  }, [downloadFarmerEvidence]);
 
   const handleReview = useCallback(async (item, decision) => {
     const id = item.id || item._id;
@@ -136,7 +161,7 @@ export default function ShambaFarmerVerificationDashboard() {
       ) : items.length ? (
         <div className="grid gap-3 lg:grid-cols-2">{items.map((item) => {
           const id = item.id || item._id;
-          return <FarmerReviewCard key={id} item={item} busy={busyId === String(id)} note={notes[id] || ""} onNoteChange={updateNote} onReview={handleReview} />;
+          return <FarmerReviewCard key={id} item={item} busy={busyId === String(id)} evidenceBusy={evidenceBusyId === String(id)} note={notes[id] || ""} onNoteChange={updateNote} onReview={handleReview} onDownloadEvidence={handleDownloadEvidence} />;
         })}</div>
       ) : (
         <div className="rounded-2xl border border-dashed border-emerald-200 bg-white px-5 py-14 text-center dark:border-emerald-900/50 dark:bg-slate-950">
