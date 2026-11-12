@@ -402,3 +402,105 @@
 @media (prefers-reduced-motion: reduce) {
   .faith-home-shell *, .faith-home-shell *::before, .faith-home-shell *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+.faith-home-mobile-search {
+  display: none;
+}
+.faith-home-cross {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: 100px;
+  height: 82%;
+  pointer-events: none;
+  filter: drop-shadow(9px 12px 9px rgba(0,0,0,.28));
+}
+.faith-home-cross::before {
+  position: absolute;
+  top: 0;
+  left: 44px;
+  width: 15px;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg,#271b16,#543a2c 45%,#211812);
+  content: "";
+}
+.faith-home-cross::after {
+  position: absolute;
+  top: 24%;
+  left: 2px;
+  width: 100px;
+  height: 13px;
+  border-radius: 2px;
+  background: linear-gradient(180deg,#654936,#291d16);
+  content: "";
+}
+.faith-home-cross i {
+  position: absolute;
+  z-index: 1;
+  top: 22%;
+  left: 32px;
+  width: 43px;
+  height: 66px;
+  border: 0;
+  border-radius: 0 0 22px 22px;
+  background: linear-gradient(100deg,rgba(255,255,255,.96),rgba(226,234,244,.88));
+  clip-path: polygon(0 0,100% 0,100% 100%,78% 88%,58% 100%,37% 85%,18% 96%,0 83%);
+  transform: rotate(-7deg);
+  box-shadow: 0 3px 5px rgba(0,0,0,.12);
+}
+.faith-home-cross b {
+  position: absolute;
+  z-index: 1;
+  top: 23%;
+  left: 49px;
+  width: 44px;
+  height: 54px;
+  border-radius: 0 0 20px 20px;
+  background: linear-gradient(100deg,rgba(245,248,252,.94),rgba(211,224,238,.88));
+  clip-path: polygon(0 0,100% 0,100% 88%,75% 100%,56% 86%,31% 100%,0 83%);
+  transform: rotate(8deg);
+}
+.faith-home-ad-slot { margin-top: 22px; }
+@media (max-width: 640px) {
+  .faith-home-mobile-search {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    gap: 9px;
+    margin-top: 10px;
+    border: 1px solid #e0e9f7;
+    border-radius: 999px;
+    padding: 4px 5px 4px 13px;
+    color: #0e4c92;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 5px 14px rgba(20,55,105,.08);
+  }
+  .faith-home-mobile-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    color: #163b6d;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .faith-home-mobile-search input::placeholder { color: #3b5f8c; opacity: 1; }
+  .faith-home-mobile-search > button {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(135deg,#238bff,#0867ed);
+  }
+  .faith-home-cross { top: 8%; right: 8%; width: 67px; height: 82%; opacity: .95; }
+  .faith-home-cross::before { left: 30px; width: 10px; }
+  .faith-home-cross::after { left: 1px; width: 69px; height: 9px; }
+  .faith-home-cross i { left: 22px; width: 30px; height: 44px; }
+  .faith-home-cross b { left: 34px; width: 28px; height: 38px; }
+}
