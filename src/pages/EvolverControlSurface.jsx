@@ -157,6 +157,9 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
 
   const selectedProposal = proposals.find((item) => item.proposal_id === selectedProposalId) || null;
   const capabilities = capabilityData?.capabilities || [];
+  const entitlementError = Object.entries(errors).find(([, message]) =>
+    /provider|license|entitlement/i.test(String(message || "")),
+  )?.[1] || "";
   const capabilityCounts = useMemo(() => ({
     available: capabilities.filter((item) => item.runtime_state === "available").length,
     blocked: capabilities.filter((item) => item.runtime_state === "blocked" || item.runtime_state === "missing").length,
@@ -304,18 +307,24 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
           <div className="rounded-2xl border border-white/80 bg-white/80 p-3 dark:border-slate-700 dark:bg-slate-950/60">
             <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Capability states</span>
             <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-800 dark:text-slate-100">
-              <span>{capabilityCounts.available} available</span>
-              <span className="text-rose-600 dark:text-rose-300">{capabilityCounts.blocked} blocked</span>
-              <span className="text-amber-600 dark:text-amber-300">{capabilityCounts.unprobed} unprobed</span>
+              {capabilityData ? (
+                <>
+                  <span>{capabilityCounts.available} available</span>
+                  <span className="text-rose-600 dark:text-rose-300">{capabilityCounts.blocked} blocked</span>
+                  <span className="text-amber-600 dark:text-amber-300">{capabilityCounts.unprobed} unprobed</span>
+                </>
+              ) : <span className="text-slate-500">{loading ? "Checking access…" : "Unavailable"}</span>}
             </div>
           </div>
           <div className="rounded-2xl border border-white/80 bg-white/80 p-3 dark:border-slate-700 dark:bg-slate-950/60">
             <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Mongo proposals</span>
-            <strong className="mt-2 block text-xl font-black text-slate-900 dark:text-white">{proposals.length}</strong>
+            <strong className="mt-2 block text-xl font-black text-slate-900 dark:text-white">{errors.proposals ? "—" : loading && !proposals.length ? "…" : proposals.length}</strong>
+            {errors.proposals && <span className="mt-1 block text-[10px] text-amber-700 dark:text-amber-300">History unavailable</span>}
           </div>
           <div className="rounded-2xl border border-white/80 bg-white/80 p-3 dark:border-slate-700 dark:bg-slate-950/60">
             <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Active signed tools</span>
-            <strong className="mt-2 block text-xl font-black text-slate-900 dark:text-white">{activeTools.length}</strong>
+            <strong className="mt-2 block text-xl font-black text-slate-900 dark:text-white">{errors.tools ? "—" : loading && !activeTools.length ? "…" : activeTools.length}</strong>
+            {errors.tools && <span className="mt-1 block text-[10px] text-amber-700 dark:text-amber-300">Registry unavailable</span>}
           </div>
         </div>
       </header>
@@ -323,7 +332,14 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
       {(loading || Object.keys(errors).length > 0) && (
         <div className="border-b border-slate-200 px-5 py-3 dark:border-slate-800">
           {loading && <p className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin"/> Loading factory evidence…</p>}
-          {Object.entries(errors).filter(([key, value]) => key !== "action" && value).map(([key, value]) => (
+          {entitlementError && (
+            <div role="status" className="mt-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+              <strong className="block">Evolver provider / license gate</strong>
+              The backend reports that this factory operation requires a configured RevelaCode Provider and a valid Evolver entitlement. The existing authenticated request path forwards the saved license when present; this page does not collect or expose privileged service credentials.
+              <span className="mt-1 block opacity-90">Backend response: {entitlementError}</span>
+            </div>
+          )}
+          {Object.entries(errors).filter(([key, value]) => key !== "action" && value && !/provider|license|entitlement/i.test(String(value))).map(([key, value]) => (
             <p key={key} className="mt-1 flex items-start gap-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0"/> <span><strong>{key}:</strong> {value}</span>
             </p>
@@ -408,7 +424,7 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
           </div>
           <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
             <span className="rounded-lg bg-slate-100 px-2 py-1 dark:bg-slate-800">Scope {systemId}</span>
-            <span className="rounded-lg bg-slate-100 px-2 py-1 dark:bg-slate-800">{learning?.evaluation_count ?? 0} evaluations</span>
+            <span className="rounded-lg bg-slate-100 px-2 py-1 dark:bg-slate-800">{errors.learning ? "Learning history unavailable" : (learning?.evaluation_count ?? 0) + " evaluations"}</span>
           </div>
         </div>
 
@@ -484,6 +500,12 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
                 )}
               </article>
             ))}
+          </div>
+        ) : errors.proposals ? (
+          <div className="mt-4 rounded-2xl border border-amber-300/60 bg-amber-50/50 px-4 py-6 text-center dark:border-amber-900/50 dark:bg-amber-950/10">
+            <Layers className="mx-auto h-6 w-6 text-slate-400"/>
+            <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-200">Proposal history unavailable</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The history request did not complete. This is not evidence that the MongoDB ledger contains zero proposals.</p>
           </div>
         ) : (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center dark:border-slate-700">
