@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Bell,
   CalendarDays,
+  CalendarCheck,
   Home,
   Leaf,
   Menu,
