@@ -47,14 +47,14 @@ function cleanPosition(value) {
 }
 
 export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated }) {
-  const { user } = useAuth();
+  const { user, applyVerifiedUser } = useAuth();
   const { getIdentity, updateIdentityProfile, uploadCommunityMedia } = useJumuiyaApi();
   const avatarInput = useRef(null);
   const coverInput = useRef(null);
   const [profile, setProfile] = useState(() => ({
     ...EMPTY_PROFILE,
     full_name: displayName(user),
-    avatar_url: user?.avatar_url || user?.avatar || user?.profile_image || "",
+    avatar_url: "",
   }));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,13 +75,21 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
           ...EMPTY_PROFILE,
           full_name: String(source.full_name || account.full_name || account.name || current.full_name || displayName(user)),
           bio: String(source.bio || ""),
-          avatar_url: String(source.avatar_url || account.avatar_url || current.avatar_url || ""),
+          avatar_url: String(source.avatar_url || ""),
           cover_url: String(source.cover_url || ""),
           avatar_position: cleanPosition(source.avatar_position),
           cover_position: cleanPosition(source.cover_position),
           county: String(source.county || ""),
           town: String(source.town || ""),
         }));
+        const communityAvatar = String(source.avatar_url || "").trim();
+        if (
+          (user?.id || user?._id || user?.user_id) &&
+          typeof applyVerifiedUser === "function" &&
+          String(user?.community_avatar_url || "").trim() !== communityAvatar
+        ) {
+          applyVerifiedUser({ ...user, community_avatar_url: communityAvatar });
+        }
       })
       .catch((caught) => {
         if (mounted) setError(caught?.message || "Your Community profile could not be loaded.");
@@ -90,7 +98,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
         if (mounted) setLoading(false);
       });
     return () => { mounted = false; };
-  }, [getIdentity, user]);
+  }, [applyVerifiedUser, getIdentity, user]);
 
   const initials = useMemo(() => {
     const names = String(profile.full_name || "Member").trim().split(/\s+/).filter(Boolean);
@@ -155,6 +163,9 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
       if (!payload.full_name) throw new Error("Enter the name you want members to see.");
       await updateIdentityProfile(payload);
       setProfile((current) => ({ ...current, ...payload }));
+      if ((user?.id || user?._id || user?.user_id) && typeof applyVerifiedUser === "function") {
+        applyVerifiedUser({ ...user, community_avatar_url: payload.avatar_url });
+      }
       onProfileUpdated?.(payload);
       setSaved(true);
       setNotice("Your Community profile has been saved.");
@@ -163,7 +174,7 @@ export default function CommunityProfileWorkspace({ onNavigate, onProfileUpdated
     } finally {
       setSaving(false);
     }
-  }, [profile, updateIdentityProfile]);
+  }, [applyVerifiedUser, profile, updateIdentityProfile, user]);
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-4 pb-6">
