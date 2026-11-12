@@ -680,7 +680,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       const key = Object.keys(errors)[0];
       if (["farmer_name", "phone"].includes(key)) setProfileStep(0);
       else if (["county", "town"].includes(key)) setProfileStep(1);
-      else if (["farming_type", "experience_years"].includes(key)) setProfileStep(2);
+      else if (["farming_type", "experience_years", "primary_crops", "soil_type", "crop_evidence"].includes(key)) setProfileStep(2);
       else setProfileStep(4);
       return;
     }
