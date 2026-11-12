@@ -253,7 +253,7 @@ async function normalizeWorkspaceImageAttachment(file) {
   const raster = await detectWorkspaceRasterMime(file);
   if (raster) {
     const declaredMime = String(file.type || "").toLowerCase();
-    const expectedName = new RegExp("\\\\." + raster.extension + "$", "i").test(file.name || "");
+    const expectedName = String(file.name || "").toLowerCase().endsWith("." + raster.extension);
     if (declaredMime === raster.mime && expectedName) return file;
     return makeWorkspaceImageFile(file, file, raster.mime, raster.extension);
   }
