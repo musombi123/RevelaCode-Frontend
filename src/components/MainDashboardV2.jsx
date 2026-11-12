@@ -10,6 +10,7 @@ import React, {
 
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -343,8 +344,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const pendingPremiumPlanCode = useRef("");
   const [resumePremiumAfterLogin, setResumePremiumAfterLogin] = useState(false);
 
-  const { theme, setTheme } =
-    useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const { user, isGuest, logout, isAuthenticated } =
     useAuth();
@@ -686,6 +686,126 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") ||
     import.meta.env.VITE_ANDROID_APP === "true";
   const isAndroidHome = isAndroidApp && activeView === "home";
+  const dashboardContentRef = useRef(null);
+  const lastHomeBackAtRef = useRef(0);
+  const [androidBackPrompt, setAndroidBackPrompt] = useState("");
+
+  // Use the visual viewport height in Android WebView so the content pane
+  // recalculates when the keyboard opens, closes, or the browser chrome moves.
+  useEffect(() => {
+    const updateAppViewportHeight = () => {
+      const height = window.visualViewport?.height || window.innerHeight;
+      if (Number.isFinite(height) && height > 0) {
+        document.documentElement.style.setProperty(
+          "--revelacode-app-viewport-height",
+          Math.round(height) + "px"
+        );
+      }
+    };
+
+    updateAppViewportHeight();
+    window.addEventListener("resize", updateAppViewportHeight);
+    window.visualViewport?.addEventListener("resize", updateAppViewportHeight);
+    window.visualViewport?.addEventListener("scroll", updateAppViewportHeight);
+    return () => {
+      window.removeEventListener("resize", updateAppViewportHeight);
+      window.visualViewport?.removeEventListener("resize", updateAppViewportHeight);
+      window.visualViewport?.removeEventListener("scroll", updateAppViewportHeight);
+    };
+  }, []);
+
+  // Native Back is owned by the application shell. Hub-level Back listeners
+  // are intentionally not registered, so the same behavior applies from every
+  // nested Faith, Shamba, Community, Biashara and Elimu workspace.
+  useEffect(() => {
+    if (!isAndroidApp) return undefined;
+
+    let active = true;
+    let nativeListener = null;
+
+    const handleAndroidBack = () => {
+      if (document.querySelector("[data-demo-overlay-root]")) return;
+
+      const focused = document.activeElement;
+      if (focused && (["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName) || focused.isContentEditable)) {
+        focused.blur?.();
+        return;
+      }
+
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+        return;
+      }
+      if (mobileCategoryOpen) {
+        setMobileCategoryOpen(null);
+        return;
+      }
+      if (showPremiumPlans) {
+        setShowPremiumPlans(false);
+        return;
+      }
+      if (aiWidgetOpen) {
+        setAIWidgetOpen(false);
+        setAIWidgetMinimized(false);
+        return;
+      }
+
+      if (aiFullscreenOpen) {
+        setAIFullscreenOpen(false);
+        setActiveView("home");
+      } else if (activeView !== "home") {
+        setActiveView("home");
+      } else {
+        const now = Date.now();
+        if (now - lastHomeBackAtRef.current < 2200) {
+          CapacitorApp.exitApp().catch(() => {});
+        } else {
+          lastHomeBackAtRef.current = now;
+          setAndroidBackPrompt("Press back again to exit");
+          window.setTimeout(() => setAndroidBackPrompt(""), 1900);
+        }
+        return;
+      }
+
+      setAndroidBackPrompt("");
+      setSidebarOpen(false);
+      setMobileCategoryOpen(null);
+      dashboardContentRef.current?.scrollTo({ top: 0, behavior: "auto" });
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("hub");
+      nextParams.delete("verse");
+      if (nextParams.toString() !== searchParams.toString()) {
+        setSearchParams(nextParams, { replace: true });
+      }
+    };
+
+    CapacitorApp.addListener("backButton", handleAndroidBack)
+      .then((listener) => {
+        if (!active) listener.remove();
+        else nativeListener = listener;
+      })
+      .catch((error) => console.warn("[RevelaCode] Android Back listener could not start.", error));
+
+    return () => {
+      active = false;
+      nativeListener?.remove?.();
+    };
+  }, [
+    isAndroidApp,
+    sidebarOpen,
+    mobileCategoryOpen,
+    showPremiumPlans,
+    aiWidgetOpen,
+    aiFullscreenOpen,
+    activeView,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    dashboardContentRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [activeView]);
 
   // Hub dashboards own their workspace headers. Keep the shell header
   // for Home and utility/section screens to avoid stacked header bars.
@@ -859,17 +979,7 @@ const BIASHARA_SECTION_KEYS = new Set(
       ===================================================== */}
 
       <div
-        className="
-          relative
-          flex
-          h-[100dvh]
-          min-h-0
-          min-w-0
-          overflow-hidden
-          bg-slate-50
-          transition-colors
-          dark:bg-slate-950
-        "
+        className="relative flex min-h-0 min-w-0 h-[var(--revelacode-app-viewport-height,100dvh)] overflow-hidden bg-slate-50 transition-colors dark:bg-slate-950"
       >
         {/* ===================================================
             SIDEBAR
@@ -1207,13 +1317,10 @@ const BIASHARA_SECTION_KEYS = new Set(
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setTheme(
-                          theme === "dark"
-                            ? "light"
-                            : "dark"
-                        )
-                      }
+                      onClick={() => {
+                        const nextTheme = theme === "system" ? "light" : theme === "light" ? "dark" : "system";
+                        setTheme(nextTheme);
+                      }}
                       className="
                         flex
                         items-center
@@ -1235,15 +1342,20 @@ const BIASHARA_SECTION_KEYS = new Set(
                       "
                       aria-label="Toggle theme"
                     >
-                      {theme === "dark" ? (
+                      {theme === "system" ? (
                         <>
-                          <Sun size={15} />
-                          Light
+                          {resolvedTheme === "dark" ? <Moon size={15} /> : <Sun size={15} />}
+                          System
                         </>
-                      ) : (
+                      ) : theme === "dark" ? (
                         <>
                           <Moon size={15} />
                           Dark
+                        </>
+                      ) : (
+                        <>
+                          <Sun size={15} />
+                          Light
                         </>
                       )}
                     </button>
@@ -1502,6 +1614,8 @@ const BIASHARA_SECTION_KEYS = new Set(
           ================================================= */}
 
           <section
+            ref={dashboardContentRef}
+            data-app-scroll-root="true"
             id="revelacode-dashboard-content"
             className={activeView === "faith"
               ? "faith-dashboard-host min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-transparent p-0 dark:bg-transparent"
@@ -1510,7 +1624,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                   : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
-            style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "auto" } : undefined}
+            style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
           >
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
@@ -1589,7 +1703,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
-          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && (
+          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && activeView !== "faith" && (
             <>
               {mobileCategoryOpen ? (
                 <section
@@ -1641,9 +1755,14 @@ const BIASHARA_SECTION_KEYS = new Set(
                 </section>
               ) : null}
 
+              {androidBackPrompt && (
+                <div role="status" className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[120] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xl">
+                  {androidBackPrompt}
+                </div>
+              )}
               <nav
                 aria-label="Main workspace navigation"
-                className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+                className={"fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden " + (["community", "shamba", "biashara", "faith"].includes(activeView) ? "hidden" : "")}
               >
                 <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
                   <button type="button" onClick={() => handleNavigate("home")} aria-current={activeView === "home" ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${

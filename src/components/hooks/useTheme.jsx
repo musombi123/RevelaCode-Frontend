@@ -62,6 +62,21 @@ export function ThemeProvider({ children }) {
   const setTheme = useCallback((nextTheme) => {
     if (!VALID_THEMES.includes(nextTheme)) return;
     setThemeState(nextTheme);
+    // Keep the shared theme source and RevelaAI appearance cache in sync.
+    // readTheme checks the appearance cache first during the next app boot.
+    try {
+      const cached = JSON.parse(window.localStorage.getItem("revelaai.preferences.ui.v1") || "{}");
+      const appearance = cached?.appearance && typeof cached.appearance === "object"
+        ? cached.appearance
+        : {};
+      window.localStorage.setItem("revelaai.preferences.ui.v1", JSON.stringify({
+        ...cached,
+        appearance: { ...appearance, theme: nextTheme },
+      }));
+      window.localStorage.setItem("theme", nextTheme);
+    } catch {
+      // The in-memory setting still applies for this session.
+    }
   }, []);
 
   useEffect(() => {

@@ -2413,3 +2413,304 @@ button.rc-home-stat:not(:disabled):hover { border-color:rgba(147,197,253,.35); b
     white-space: nowrap;
   }
 }
+
+
+/* =========================================================
+   ANDROID WEBVIEW VIEWPORT + SINGLE APP SCROLL ROOT
+   ========================================================= */
+html, body, #root {
+  max-width: 100%;
+  min-width: 0;
+}
+[data-app-scroll-root="true"] {
+  min-height: 0;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: none;
+}
+[data-app-scroll-root="true"]::-webkit-scrollbar { display: none; }
+
+/* =========================================================
+   SHAMBA PHONE SKIN — LIGHT MODE
+   The mobile dashboard has an intentional dark farm palette. These
+   scoped overrides make the global Light/System choice authoritative.
+   ========================================================= */
+.shamba-mobile[data-theme="light"] {
+  background: #f3f6f5 !important;
+  color: #172b25 !important;
+}
+.shamba-mobile[data-theme="light"] [class*="bg-[#031321"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#041726"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#071C2C"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0A2237"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#0B2338"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#102b3d"],
+.shamba-mobile[data-theme="light"] [class*="bg-[#112c3f"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+.shamba-mobile[data-theme="light"] [class*="border-[#1"],
+.shamba-mobile[data-theme="light"] [class*="border-[#2"] {
+  border-color: #d9e4df !important;
+}
+.shamba-mobile[data-theme="light"] [class*="text-white"],
+.shamba-mobile[data-theme="light"] [class*="text-[#D7E5EB"],
+.shamba-mobile[data-theme="light"] [class*="text-[#DCE8EE"],
+.shamba-mobile[data-theme="light"] [class*="text-[#B9CBD6"] {
+  color: #172b25 !important;
+}
+.shamba-mobile[data-theme="light"] [class*="text-[#8BA6B8"],
+.shamba-mobile[data-theme="light"] [class*="text-[#9AB5C3"],
+.shamba-mobile[data-theme="light"] [class*="text-[#86A1B2"],
+.shamba-mobile[data-theme="light"] [class*="text-[#6F8A9C"] {
+  color: #64786f !important;
+}
+.shamba-mobile[data-theme="light"] header {
+  border-color: #d9e4df !important;
+  background: rgba(255,255,255,.96) !important;
+}
+.shamba-mobile[data-theme="light"] input,
+.shamba-mobile[data-theme="light"] textarea,
+.shamba-mobile[data-theme="light"] select {
+  color: #172b25 !important;
+}
+
+/* =========================================================
+   BIASHARA — GLOBAL DARK THEME
+   Preserve its navy branded sidebar and switch its work surfaces,
+   business cards, typography and mobile navigation with the platform.
+   ========================================================= */
+.dark .biashara-shell,
+.dark .biashara-shell-main,
+.dark .biashara-shell-workspace {
+  color: #e5edf8;
+  background: #081326;
+}
+.dark .biashara-overview {
+  color: #e5edf8;
+  background: #081326;
+}
+.dark .biashara-profile-card,
+.dark .biashara-sync-card,
+.dark .biashara-companions-card,
+.dark .biashara-activity-card {
+  border-color: #26364e;
+  background: #111d31;
+  box-shadow: 0 8px 22px rgba(0,0,0,.18);
+}
+.dark .biashara-profile-title h2,
+.dark .biashara-card-title h2,
+.dark .biashara-profile-details strong,
+.dark .biashara-profile-details span,
+.dark .biashara-profile-meta strong,
+.dark .biashara-activity-row strong {
+  color: #e5edf8;
+}
+.dark .biashara-profile-title > div > span,
+.dark .biashara-card-title > div > span,
+.dark .biashara-profile-details small,
+.dark .biashara-profile-meta span,
+.dark .biashara-activity-row small,
+.dark .biashara-activity-row time {
+  color: #a9bad1;
+}
+.dark .biashara-overview-search,
+.dark .biashara-overview-mobile-search {
+  border-color: #26364e;
+  color: #bfcee3;
+  background: #111d31;
+}
+.dark .biashara-overview-search input,
+.dark .biashara-overview-mobile-search input {
+  color: #e5edf8;
+}
+.dark .biashara-overview-search input::placeholder,
+.dark .biashara-overview-mobile-search input::placeholder {
+  color: #8ea2bd;
+}
+.dark .biashara-mobile-header {
+  border-color: #26364e;
+  background: rgba(8,19,38,.96);
+}
+.dark .biashara-mobile-brand strong { color: #f1f5fb; }
+.dark .biashara-mobile-brand small { color: #9fb1c9; }
+.dark .biashara-mobile-menu-button,
+.dark .biashara-mobile-action { color: #c6d4e7; }
+.dark .biashara-mobile-bottom-nav {
+  border-color: #26364e;
+  background: rgba(8,19,38,.97);
+  box-shadow: 0 -8px 24px rgba(0,0,0,.3);
+}
+.dark .biashara-mobile-bottom-nav button { color: #91a4bf; }
+.dark .biashara-mobile-bottom-nav button.is-active { color: #67aaff; }
+
+/* =========================================================
+   COMMUNITY COMPANION WORKSPACE — LIGHT PALETTE
+   Its left rail remains the branded navigation anchor; the workspace,
+   cards, text, header and mobile dock use the global theme.
+   ========================================================= */
+[data-community-workspace][data-theme="light"] {
+  background: #f3f6fb !important;
+  color: #17243a !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] {
+  color: #17243a !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="bg-[#071226"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="bg-[#0d1729"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="bg-[#101c30"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="bg-[#0b2346"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="bg-[#0b354b"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="border-white"] {
+  border-color: #dce4ef !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-white"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-slate-100"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-slate-200"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-slate-300"] {
+  color: #17243a !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-slate-400"],
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+[data-community-workspace][data-theme="light"] [data-community-workspace-main] > div:first-child {
+  border-color: #dce4ef !important;
+  background: rgba(255,255,255,.96) !important;
+}
+[data-community-workspace][data-theme="light"] nav[aria-label="Jumuiya mobile navigation"] {
+  border-color: #dce4ef !important;
+  background: rgba(255,255,255,.96) !important;
+  box-shadow: 0 10px 30px rgba(15,23,42,.14) !important;
+}
+[data-community-workspace][data-theme="light"] nav[aria-label="Jumuiya mobile navigation"] button {
+  color: #64748b !important;
+}
+
+/* =========================================================
+   COMMUNITY PULSE HOME — DARK THEME
+   ========================================================= */
+[data-community-pulse-dashboard][data-theme="dark"] {
+  background: #081326 !important;
+  color: #e2e8f0 !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] header {
+  border-color: #24364e !important;
+  background: rgba(13,27,48,.96) !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] header form {
+  border-color: #263b57 !important;
+  background: #101f35 !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] header input,
+[data-community-pulse-dashboard][data-theme="dark"] header h1,
+[data-community-pulse-dashboard][data-theme="dark"] header button {
+  color: #e2e8f0;
+}
+[data-community-pulse-dashboard][data-theme="dark"] main article,
+[data-community-pulse-dashboard][data-theme="dark"] main section:not([aria-label="Community destinations"]) {
+  border-color: #26364e !important;
+  background-color: #111d31 !important;
+  color: #e2e8f0 !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="bg-white"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="bg-[#f7f9ff"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="bg-slate-100"] {
+  background-color: #0c192c !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-[#111c3b"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-[#172344"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-[#192747"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-[#243253"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-slate-600"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="text-slate-500"] {
+  color: #c5d1e1 !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="border-[#e4"],
+[data-community-pulse-dashboard][data-theme="dark"] main [class*="border-slate-100"] {
+  border-color: #26364e !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] nav[aria-label="Jumuiya desktop navigation"] {
+  border-color: #26364e !important;
+  background: rgba(8,19,38,.96) !important;
+}
+[data-community-pulse-dashboard][data-theme="dark"] nav[aria-label="Jumuiya desktop navigation"] button {
+  color: #a9bad1 !important;
+}
+
+/* Keep fixed mobile bars clear of the WebView's safe-area inset. */
+@media (max-width: 700px) {
+  .shamba-mobile { padding-bottom: calc(74px + env(safe-area-inset-bottom) + 8px) !important; }
+  [data-community-pulse-dashboard],
+  [data-community-workspace] { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+
+/* Faith desktop and phone surfaces follow the same root Light/Dark/System mode. */
+.dark .faith-home-shell {
+  background: #071326 !important;
+  color: #eaf1ff !important;
+}
+.dark .faith-home-sidebar {
+  background: linear-gradient(180deg,#06152b 0%,#081a34 58%,#0a2040 100%);
+}
+.dark .faith-home-main {
+  background: linear-gradient(135deg,#0b1930,#0a1427 55%,#08172d) !important;
+}
+.dark .faith-home-mobile-header { color: #edf4ff; }
+.dark .faith-home-mobile-brand,
+.dark .faith-home-mobile-brand strong { color: #edf4ff; }
+.dark .faith-home-mobile-brand small { color: #a8b8d1; }
+.dark .faith-home-mobile-menu,
+.dark .faith-home-mobile-header .faith-home-icon-button { color: #d7e4f7; }
+.dark .faith-home-search,
+.dark .faith-home-hero-ask {
+  border-color: #263c5c;
+  background: #10213b;
+}
+.dark .faith-home-search input,
+.dark .faith-home-hero-ask input { color: #eaf1ff; }
+.dark .faith-home-search input::placeholder,
+.dark .faith-home-hero-ask input::placeholder { color: #9eb2ce; }
+.dark .faith-home-quick-card {
+  border-color: #263b59;
+  color: #eaf1ff;
+  background: #101f37;
+}
+.dark .faith-home-continue-card {
+  border-color: #263b59;
+  background: #101f37;
+}
+.dark .faith-home-continue-copy h3,
+.dark .faith-home-continue-copy p { color: #eaf1ff; }
+.dark .faith-home-section-heading h2,
+.dark .faith-home-quick-heading { color: #eaf1ff; }
+.dark .faith-home-notification-popover {
+  border-color: #273a58;
+  color: #eaf1ff;
+  background: #101d33;
+}
+
+/* Light mode is a full platform theme, including legacy fixed-colour
+   workspaces whose original palettes were authored for dark presentation. */
+.light .faith-home-shell {
+  background: #f4f7fc !important;
+  color: #13233d !important;
+}
+.light .faith-home-main {
+  background: linear-gradient(135deg,#eaf3ff 0%,#f5f8ff 48%,#edf4ff 100%) !important;
+}
+
+/* Prevent fixed docks from covering the final rows of content on Android. */
+@media (max-width: 700px) {
+  [data-app-scroll-root="true"] {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+  }
+  .faith-android-shell [data-faith-workspace-content] {
+    padding-bottom: 0.5rem;
+  }
+}

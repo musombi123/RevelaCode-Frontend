@@ -1,6 +1,4 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { App } from "@capacitor/app";
-import { Capacitor } from "@capacitor/core";
 import {
   Activity, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Bug, Camera,
   Bell, CheckCircle2, ChevronRight, Clock, Cloud, CloudRain, CloudSun,
@@ -10,6 +8,7 @@ import {
 } from "lucide-react";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { analyzeRevelaAIVision } from "@/ai/revelaAIClient.js";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import ShambaDiagnosticsPanel from "@/Dashboard/ShambaDiagnosticsPanel.jsx";
@@ -206,7 +205,8 @@ function WeatherGlyph({ condition, size = 24 }) {
   return <Icon size={size} className={text.includes("rain") ? "text-sky-300" : "text-amber-300"} />;
 }
 
-export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate, onExit }) {
+export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate }) {
+  const { resolvedTheme } = useTheme();
   const api = useJumuiyaApi();
   const { authFetch } = useAuth();
   const {
@@ -218,8 +218,6 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
 
   const [screen, setScreen] = useState("home");
   const [moreOpen, setMoreOpen] = useState(false);
-  const screenRef = useRef(screen);
-  const moreOpenRef = useRef(moreOpen);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -603,56 +601,9 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     setMoreOpen(false);
     setScreen(next);
     setDetailTab("Overview");
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    document.querySelector("[data-app-scroll-root=\"true\"]")?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  useEffect(() => {
-    screenRef.current = screen;
-  }, [screen]);
-
-  useEffect(() => {
-    moreOpenRef.current = moreOpen;
-  }, [moreOpen]);
-
-  // Handle Android system Back within Shamba before allowing the activity to close.
-  useEffect(() => {
-    if (Capacitor.getPlatform() !== "android") return undefined;
-
-    let disposed = false;
-    let backListener = null;
-
-    App.addListener("backButton", () => {
-      // The guided tour owns hardware Back while its dialog is open.
-      if (document.querySelector("[data-demo-overlay-root]")) return;
-      if (moreOpenRef.current) {
-        setMoreOpen(false);
-        return;
-      }
-
-      const currentScreen = screenRef.current;
-      if (currentScreen === "detail") {
-        go("farms");
-        return;
-      }
-
-      if (currentScreen !== "home") {
-        go("home");
-        return;
-      }
-
-      onExit?.("home");
-    }).then((listener) => {
-      if (disposed) listener.remove();
-      else backListener = listener;
-    }).catch((error) => {
-      console.warn("[Shamba] Android Back listener could not be registered.", error);
-    });
-
-    return () => {
-      disposed = true;
-      backListener?.remove();
-    };
-  }, [go, onExit]);
 
   const filteredFarms = useMemo(() => activeFarms.filter((farm) => {
     const searchText = (String(farm?.name || "") + " " + farmLocation(farm)).toLowerCase();
@@ -707,7 +658,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   );
 
   return (
-    <div data-demo="shamba-overview" data-shamba-mobile-ui="reference-v1" className="shamba-mobile min-h-[100svh] bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
+    <div data-demo="shamba-overview" data-shamba-mobile-ui="reference-v1" data-theme={resolvedTheme} className="shamba-mobile min-h-[100svh] overflow-x-hidden bg-[#031321] pb-[calc(74px+env(safe-area-inset-bottom))] font-sans text-white">
       {header}
       <main className="mx-auto w-full max-w-[560px] px-4 pb-5">
         {error && <div className="mt-3 rounded-xl border border-amber-700/50 bg-amber-950/40 px-3 py-2 text-[12px] text-amber-200">{error}</div>}
