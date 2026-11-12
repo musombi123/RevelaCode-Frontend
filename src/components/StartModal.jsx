@@ -1336,8 +1336,6 @@ const completeLogin = (data = {}) => {
             "Verification failed."
         );
 
-        autoSubmittedRef.current =
-          false;
       } finally {
         setLoading(
           false
@@ -2299,19 +2297,15 @@ const completeLogin = (data = {}) => {
                           value={
                             verificationCode
                           }
-                          onChange={(e) =>
-                            setVerificationCode(
-                              e.target.value
-                                .replace(
-                                  /\D/g,
-                                  ""
-                                )
-                                .slice(
-                                  0,
-                                  6
-                                )
-                            )
-                          }
+                          onChange={(e) => {
+                            const nextCode = e.target.value.replace(/\D/g, "").slice(0, 6);
+                            if (nextCode !== verificationCode) {
+                              // A failed six-digit auto-submit must not loop.
+                              // A genuinely edited code is eligible for one new attempt.
+                              autoSubmittedRef.current = false;
+                            }
+                            setVerificationCode(nextCode);
+                          }}
                           placeholder="000000"
                           inputMode="numeric"
                           autoComplete="one-time-code"
@@ -2348,6 +2342,8 @@ const completeLogin = (data = {}) => {
                             setError("");
                             try {
                               const data = await requestVerificationCode();
+                              setVerificationCode("");
+                              autoSubmittedRef.current = false;
                               setMessage(data.message || "A new verification code has been sent. Check your inbox and spam folder.");
                             } catch (requestError) {
                               setError(requestError?.message || "We could not send a new verification code. Please try again.");
