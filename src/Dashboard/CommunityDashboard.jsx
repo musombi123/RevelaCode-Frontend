@@ -515,10 +515,8 @@ export default function CommunityDashboard({
   onNavigate,
 }) {
   const { user } = useAuth();
-  const { theme } = useTheme();
-  // The Community experience defaults to its navy system skin; an explicit
-  // platform Light selection remains authoritative.
-  const communityDark = theme !== "light";
+  const { resolvedTheme } = useTheme();
+  const communityDark = resolvedTheme === "dark";
 
   const communityApi = useJumuiyaApi();
   const {
