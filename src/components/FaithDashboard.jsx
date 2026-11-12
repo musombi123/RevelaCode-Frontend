@@ -29,6 +29,7 @@ import {
   Bookmark,
   CalendarDays,
   ChevronRight,
+  ChevronDown,
   Clock3,
   Globe,
   GraduationCap,
