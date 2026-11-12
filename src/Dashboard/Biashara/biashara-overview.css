@@ -271,3 +271,14 @@
  .biashara-drawer-business-switch select { min-height:41px;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:0 10px;color:white;background:rgba(255,255,255,.08);font-size:11px; }
  .biashara-drawer-business-switch option { color:#152d4c;background:#fff; }
 }
+
+.biashara-overview-mobile-search { display:none; }
+@media (max-width:700px) {
+ .biashara-overview-search { display:none; }
+ .biashara-overview-mobile-search {
+  display:flex;min-height:45px;align-items:center;gap:8px;margin-top:-1px;border:1px solid #dce6f4;border-radius:999px;padding:4px 5px 4px 13px;color:#12508f;background:rgba(255,255,255,.97);box-shadow:0 5px 14px rgba(17,49,95,.07);
+ }
+ .biashara-overview-mobile-search input { width:100%;min-width:0;border:0;outline:0;color:#1a3b68;background:transparent;font-size:11px;font-weight:650; }
+ .biashara-overview-mobile-search input::placeholder { color:#526d93;opacity:1; }
+ .biashara-overview-mobile-search button { display:grid;width:36px;height:36px;flex:0 0 auto;place-items:center;border:0;border-radius:50%;color:white;background:linear-gradient(135deg,#218cff,#0565e6); }
+}
