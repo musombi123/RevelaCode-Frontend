@@ -213,7 +213,17 @@ async function readWorkspaceResponse(response) {
 }
 
 async function normalizeWorkspaceImageAttachment(file) {
-  const isSvg = file && (String(file.type || "").toLowerCase() === "image/svg+xml" || /\.svg$/i.test(file.name || ""));
+  if (!file) return file;
+
+  // Do not trust the extension or browser MIME alone: exported logos are
+  // sometimes SVG XML renamed to .png (and therefore reported as image/png).
+  // Read only a small prefix for content sniffing before deciding whether to
+  // pass a normal raster upload through unchanged.
+  const declaredSvg = String(file.type || "").toLowerCase() === "image/svg+xml" ||
+    /\.svg$/i.test(file.name || "");
+  const header = await file.slice(0, Math.min(file.size, 8192)).text();
+  const contentLooksSvg = /<svg(?:\s|>)/i.test(header);
+  const isSvg = declaredSvg || contentLooksSvg;
   if (!isSvg) return file;
   if (file.size > 4 * 1024 * 1024) {
     throw new Error("SVG logos must be no larger than 4 MB before conversion.");
@@ -274,7 +284,7 @@ async function normalizeWorkspaceImageAttachment(file) {
     const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!png || !png.size) throw new Error("The SVG logo could not be converted to PNG.");
     if (png.size > 4 * 1024 * 1024) throw new Error("The converted PNG logo exceeds the 4 MB upload limit.");
-    const baseName = String(file.name || "revelacode-logo.svg").replace(/\.svg$/i, "");
+    const baseName = String(file.name || "revelacode-logo").replace(/\.(?:svg|png|jpe?g|webp)$/i, "") || "revelacode-logo";
     return new File([png], baseName + ".png", { type: "image/png", lastModified: file.lastModified || Date.now() });
   } finally {
     URL.revokeObjectURL(svgUrl);

@@ -74,3 +74,12 @@ test("Shamba results render structured expert fields and explicitly guard unmeas
   ]) assert.ok(diagnostics.includes(fragment), `Missing diagnostic UI field: ${fragment}`);
   assert.match(diagnostics, /soil pH and nutrients are never measured from bare-soil colour/i);
 });
+
+test("mislabeled SVG logos are detected from their content and rasterized before upload", () => {
+  assert.match(client, /const declaredSvg = String\(file\.type \|\| ""\)\.toLowerCase\(\)/);
+  assert.match(client, /file\.slice\(0, Math\.min\(file\.size, 8192\)\)\.text\(\)/);
+  assert.match(client, /const contentLooksSvg = \/<svg/);
+  assert.match(client, /const isSvg = declaredSvg \|\| contentLooksSvg/);
+  assert.match(client, /new File\(\[png\], baseName \+ "\.png", \{ type: "image\/png"/);
+  assert.match(client, /baseName = String\(file\.name.*webp/);
+});
