@@ -47,6 +47,18 @@ function applyResolvedTheme(root, mode, isSystemDark) {
   root.dataset.theme = resolved;
   root.dataset.themeMode = mode;
   root.style.colorScheme = resolved;
+
+  // Portals and native overlays may mount directly under <body>; mirror the
+  // resolved mode there so every platform surface follows the same setting.
+  const body = document.body;
+  if (body) {
+    body.classList.toggle("dark", dark);
+    body.classList.toggle("light", !dark);
+    body.dataset.theme = resolved;
+    body.dataset.themeMode = mode;
+    body.style.colorScheme = resolved;
+  }
+
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   if (themeMeta) themeMeta.setAttribute("content", dark ? "#091015" : "#F7F9FB");
   return resolved;
