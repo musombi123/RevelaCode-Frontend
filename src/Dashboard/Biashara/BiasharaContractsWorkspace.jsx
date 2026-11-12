@@ -197,6 +197,15 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
       {error ? <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div> : null}
       {notice ? <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</div> : null}
 
+      {route === "automations" ? <div role="note" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <strong className="block">Automation authoring is available; execution is not.</strong>
+        <span className="mt-1 block text-xs leading-5 text-amber-800">The backend can save supported rule definitions for low stock, new orders, overdue invoices and daily summaries. Rules are stored disabled until an execution worker is deployed. Saving a rule does not run it.</span>
+      </div> : null}
+      {route === "sync" ? <div role="note" className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+        <strong className="block">Sync requests are tracked in the business queue.</strong>
+        <span className="mt-1 block text-xs leading-5 text-blue-800">A request remains queued until a synchronization worker processes it. Creating a request does not mean data was transferred, and a successful sync is shown only when the backend records that state.</span>
+      </div> : null}
+
       {route === "finance" ? <form onSubmit={submit} className={panel}>
         <h2 className="flex items-center gap-2 font-bold text-slate-900"><CircleDollarSign size={18} /> Create invoice</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -211,12 +220,12 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
       </form> : null}
 
       {route === "automations" ? <form onSubmit={submit} className={panel}>
-        <h2 className="flex items-center gap-2 font-bold text-slate-900"><Zap size={18} /> Create automation rule</h2>
+        <h2 className="flex items-center gap-2 font-bold text-slate-900"><Zap size={18} /> Save an automation rule configuration</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input className={field} required maxLength={120} placeholder="Rule name" value={form.name} onChange={e => update("name", e.target.value)} />
           <select className={field} value={form.trigger} onChange={e => update("trigger", e.target.value)}><option value="low_stock">Low stock</option><option value="order_created">Order created</option><option value="invoice_overdue">Invoice overdue</option><option value="daily_summary">Daily summary</option></select>
           <select className={field} value={form.action} onChange={e => update("action", e.target.value)}><option value="create_alert">Create alert</option><option value="create_task">Create task</option><option value="daily_summary">Daily summary</option></select>
-          <button className={button} disabled={saving} type="submit"><Plus size={16} />Save rule</button>
+          <button className={button} disabled={saving} type="submit"><Plus size={16} />{saving ? "Saving…" : "Save configuration"}</button>
         </div>
       </form> : null}
 
@@ -262,13 +271,15 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="break-words text-sm font-semibold text-slate-900">{row.invoice_number || row.name || row.email || row.source || row.business_name || row.id || "Record"}</p>
-                <p className="mt-1 break-words text-xs text-slate-500">{row.customer_name || row.trigger || row.direction || row.role || row.status || row.message || (row.record_type === "invitation" ? "Invitation pending" : "")}</p>
+                <p className="mt-1 break-words text-xs text-slate-500">{route === "sync" ? [row.direction, row.message].filter(Boolean).join(" · ") || row.source : route === "automations" ? [row.trigger, row.action].filter(Boolean).join(" → ") || row.message : row.customer_name || row.trigger || row.direction || row.role || row.status || row.message || (row.record_type === "invitation" ? "Invitation pending" : "")}</p>
+                {route === "sync" && row.progress !== undefined ? <p className="mt-1 text-xs text-slate-500">Recorded progress: {Number(row.progress) || 0}%</p> : null}
+                {route === "sync" && (row.created_at || row.updated_at) ? <p className="mt-1 text-[11px] text-slate-400">Updated {row.updated_at || row.created_at}</p> : null}
                 {route === "finance" ? <p className="mt-1 text-xs text-slate-500">Outstanding: <strong className="text-slate-800">{row.currency || "KES"} {outstanding.toFixed(2)}</strong> · Allocated: {row.allocated_amount || "0.00"}</p> : null}
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
                 {row.total ? <span className="font-bold">{row.currency || "KES"} {row.total}</span> : null}
-                {row.status ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.status}</span> : null}
-                {route === "automations" ? <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-800">Worker unavailable</span> : null}
+                {row.status ? <span className={"rounded-full px-2.5 py-1 font-semibold " + (String(row.status).toLowerCase() === "succeeded" ? "bg-emerald-100 text-emerald-800" : String(row.status).toLowerCase() === "failed" ? "bg-red-100 text-red-800" : ["queued", "running"].includes(String(row.status).toLowerCase()) ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700")}>{String(row.status).replace(/_/g, " ")}</span> : null}
+                {route === "automations" ? <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-800">Configuration only · not running</span> : null}
                 {row.delivery_status ? <span>{row.delivery_status}</span> : null}
                 {row.record_type === "invitation" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800">Pending invitation</span> : null}
               </div>
