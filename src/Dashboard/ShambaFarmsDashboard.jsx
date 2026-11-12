@@ -522,7 +522,7 @@ function AddFarmModal({
 
 export default function ShambaFarmsDashboard({ onNavigate }) {
   const { user } = useAuth();
-  const { getFarmer, saveFarmer, getFarms, createFarm } = useJumuiyaApi();
+  const { getFarmer, saveFarmer, uploadFarmerEvidence, getFarms, createFarm } = useJumuiyaApi();
 
   const [farms, setFarms] = useState([]);
   const [farmerProfile, setFarmerProfile] = useState(null);
@@ -533,6 +533,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
   const [profileMessage, setProfileMessage] = useState("");
   const [profileStep, setProfileStep] = useState(0);
   const [profileFieldErrors, setProfileFieldErrors] = useState({});
+  const [profileEvidenceFile, setProfileEvidenceFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -664,6 +665,9 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       if (!profileForm.phone.trim()) errors.phone = "Enter a contact phone.";
       if (!profileForm.county.trim()) errors.county = "Choose or enter your county.";
       if (!profileForm.town.trim()) errors.town = "Enter your town or nearest centre.";
+      if (!profileForm.primary_crops.split(",").map((item) => item.trim()).filter(Boolean).length) errors.primary_crops = "List at least one crop you grow.";
+      if (!profileForm.soil_type.trim()) errors.soil_type = "Select or enter your soil type.";
+      if (!profileEvidenceFile && !farmerProfile?.crop_evidence_file_id) errors.crop_evidence = "Upload a crop or farm photo/document.";
       if (!profileForm.declaration) errors.declaration = "Confirm the details are accurate and you are authorised to submit them.";
       if (!profileForm.privacy_consent) errors.privacy_consent = "Consent is required to submit this profile to Shamba.";
     }
@@ -684,8 +688,15 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
       setProfileSaving(true);
       setProfileError("");
       setProfileMessage("");
+      let cropEvidenceFileId = farmerProfile?.crop_evidence_file_id || "";
+      if (intent === "submit" && profileEvidenceFile) {
+        const uploadedEvidence = await uploadFarmerEvidence(profileEvidenceFile);
+        cropEvidenceFileId = uploadedEvidence?.file_id || uploadedEvidence?.id || "";
+        if (!cropEvidenceFileId) throw new Error("Evidence upload did not return a file reference. Please try again.");
+      }
       const result = await saveFarmer({
         intent,
+        crop_evidence_file_id: cropEvidenceFileId,
         farmer_name: profileForm.farmer_name.trim(),
         phone: profileForm.phone.trim(),
         preferred_contact_method: profileForm.preferred_contact_method,
@@ -726,7 +737,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
     } finally {
       setProfileSaving(false);
     }
-  }, [loadFarmer, profileForm, saveFarmer]);
+  }, [farmerProfile, loadFarmer, profileEvidenceFile, profileForm, saveFarmer, uploadFarmerEvidence]);
 
   // =======================================================
   // CREATE FARM
@@ -973,16 +984,17 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
               </section>}
 
               {profileStep === 2 && <section className="space-y-4" aria-labelledby="profile-step-farming">
-                <div><h3 id="profile-step-farming" className="text-base font-black text-slate-900 dark:text-white">What you grow</h3><p className="mt-1 text-xs leading-5 text-slate-500">Crop, soil and water details improve guidance but do not exclude smallholder farmers when unknown.</p></div>
+                <div><h3 id="profile-step-farming" className="text-base font-black text-slate-900 dark:text-white">Crops, soil and evidence</h3><p className="mt-1 text-xs leading-5 text-slate-500">These three details are required for farmer verification. List the crops you actually grow and attach a clear farm or crop photo/document.</p></div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Farming type (optional)"><select value={profileForm.farming_type} onChange={(e) => updateProfileField("farming_type", e.target.value)} className={INPUT_CLASS}><option value="">Not specified</option><option value="mixed">Mixed farming</option><option value="crop">Crop farming</option><option value="livestock">Livestock</option><option value="horticulture">Horticulture</option><option value="aquaculture">Aquaculture</option><option value="agribusiness">Agribusiness</option><option value="other">Other</option></select>{profileFieldErrors.farming_type && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.farming_type}</span>}</Field>
+                  <Field label="Farming type (optional)"><select value={profileForm.farming_type} onChange={(e) => updateProfileField("farming_type", e.target.value)} className={INPUT_CLASS}><option value="">Choose farming type</option><option value="mixed">Mixed farming</option><option value="crop">Crop farming</option><option value="livestock">Livestock</option><option value="horticulture">Horticulture</option><option value="aquaculture">Aquaculture</option><option value="agribusiness">Agribusiness</option><option value="other">Other</option></select>{profileFieldErrors.farming_type && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.farming_type}</span>}</Field>
                   <Field label="Years of experience"><input type="number" min="0" max="80" step="1" value={profileForm.experience_years} onChange={(e) => updateProfileField("experience_years", e.target.value)} className={INPUT_CLASS} aria-invalid={Boolean(profileFieldErrors.experience_years)} />{profileFieldErrors.experience_years && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.experience_years}</span>}</Field>
-                  <Field label="Main crops (optional)"><input value={profileForm.primary_crops} onChange={(e) => updateProfileField("primary_crops", e.target.value)} className={INPUT_CLASS} placeholder="Maize, beans, tomatoes" /></Field>
+                  <Field label="Crops you grow (comma-separated)" required><input value={profileForm.primary_crops} onChange={(e) => updateProfileField("primary_crops", e.target.value)} className={INPUT_CLASS} placeholder="Maize, beans, tomatoes" required aria-invalid={Boolean(profileFieldErrors.primary_crops)} /><span className="mt-1 block text-[11px] text-slate-500">Enter at least one crop, e.g. maize, beans or tomatoes.</span>{profileFieldErrors.primary_crops && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.primary_crops}</span>}</Field>
+                  <Field label="Soil type" required><input list="shamba-soil-types" value={profileForm.soil_type} onChange={(e) => updateProfileField("soil_type", e.target.value)} className={INPUT_CLASS} placeholder="Choose or enter soil type" required aria-invalid={Boolean(profileFieldErrors.soil_type)} /><datalist id="shamba-soil-types"><option value="Loamy" /><option value="Clay" /><option value="Sandy" /><option value="Silty" /><option value="Black cotton" /><option value="Volcanic" /><option value="Peaty" /><option value="Chalky" /><option value="Other / unsure" /></datalist>{profileFieldErrors.soil_type && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.soil_type}</span>}</Field>
                   <Field label="Livestock (optional)"><input value={profileForm.livestock} onChange={(e) => updateProfileField("livestock", e.target.value)} className={INPUT_CLASS} placeholder="Dairy cattle, poultry" /></Field>
-                  <Field label="Soil type (optional)"><input value={profileForm.soil_type} onChange={(e) => updateProfileField("soil_type", e.target.value)} className={INPUT_CLASS} /></Field>
                   <Field label="Main water source (optional)"><select value={profileForm.water_source} onChange={(e) => updateProfileField("water_source", e.target.value)} className={INPUT_CLASS}><option value="">Not sure / not recorded</option><option value="rainfall">Rainfall</option><option value="borehole">Borehole</option><option value="river">River</option><option value="dam">Dam / reservoir</option><option value="piped">Piped water</option><option value="other">Other</option></select></Field>
-                  <label className="flex min-h-11 items-center rounded-xl border border-[#DCE7DE] px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.irrigation_available} onChange={(e) => updateProfileField("irrigation_available", e.target.checked)} className="h-4 w-4 accent-emerald-700" /><span className="ml-2">I have irrigation access</span></label>
                 </div>
+                <label className="flex min-h-11 items-center rounded-xl border border-[#DCE7DE] px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.irrigation_available} onChange={(e) => updateProfileField("irrigation_available", e.target.checked)} className="h-4 w-4 accent-emerald-700" /><span className="ml-2">I have irrigation access</span></label>
+                <Field label="Crop / farm evidence (JPG, PNG or PDF · max 8 MB)" required><input type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" onChange={(e) => { setProfileEvidenceFile(e.target.files?.[0] || null); setProfileFieldErrors((current) => ({ ...current, crop_evidence: "" })); }} className={INPUT_CLASS} />{profileEvidenceFile ? <span className="mt-1 block text-xs font-semibold text-emerald-700 dark:text-emerald-300">Selected: {profileEvidenceFile.name}</span> : farmerProfile?.crop_evidence_filename ? <span className="mt-1 block text-xs font-semibold text-emerald-700 dark:text-emerald-300">Evidence already attached: {farmerProfile.crop_evidence_filename}</span> : <span className="mt-1 block text-[11px] text-slate-500">Attach a clear photo of crops/farm or a supporting PDF. This is visible to authorized Shamba reviewers.</span>}{profileFieldErrors.crop_evidence && <span role="alert" className="mt-1 block text-xs text-red-600">{profileFieldErrors.crop_evidence}</span>}</Field>
               </section>}
 
               {profileStep === 3 && <section className="space-y-4" aria-labelledby="profile-step-goals">
@@ -998,7 +1010,7 @@ export default function ShambaFarmsDashboard({ onNavigate }) {
 
               {profileStep === 4 && <section className="space-y-4" aria-labelledby="profile-step-review">
                 <div><h3 id="profile-step-review" className="text-base font-black text-slate-900 dark:text-white">Review and submit</h3><p className="mt-1 text-xs leading-5 text-slate-500">Check the details below before sending them to Shamba’s authorized reviewers.</p></div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{[["Farmer",profileForm.farmer_name],["Contact",profileForm.phone],["Preferred contact",profileForm.preferred_contact_method],["County",profileForm.county],["Sub-county",profileForm.sub_county],["Town",profileForm.town],["Village / area",profileForm.village || profileForm.location],["Farming type",profileForm.farming_type],["Experience",profileForm.experience_years ? profileForm.experience_years + " years" : "Not supplied"],["Crops",profileForm.primary_crops],["Livestock",profileForm.livestock],["Goal",profileForm.primary_goal],["Target market",profileForm.target_market],["Farm size",profileForm.farm_size ? profileForm.farm_size + " " + profileForm.farm_size_unit : "Not supplied"]].map(([label, value]) => <div key={label} className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-900"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words text-xs font-semibold text-slate-800 dark:text-slate-200">{value || "Not supplied"}</p></div>)}</div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{[["Farmer",profileForm.farmer_name],["Contact",profileForm.phone],["Preferred contact",profileForm.preferred_contact_method],["County",profileForm.county],["Sub-county",profileForm.sub_county],["Town",profileForm.town],["Village / area",profileForm.village || profileForm.location],["Farming type",profileForm.farming_type],["Experience",profileForm.experience_years ? profileForm.experience_years + " years" : "Not supplied"],["Crops",profileForm.primary_crops],["Soil type",profileForm.soil_type],["Evidence",profileEvidenceFile?.name || farmerProfile?.crop_evidence_filename || "Not attached"],["Livestock",profileForm.livestock],["Goal",profileForm.primary_goal],["Target market",profileForm.target_market],["Farm size",profileForm.farm_size ? profileForm.farm_size + " " + profileForm.farm_size_unit : "Not supplied"]].map(([label, value]) => <div key={label} className="min-w-0 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-900"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words text-xs font-semibold text-slate-800 dark:text-slate-200">{value || "Not supplied"}</p></div>)}</div>
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">Shamba uses these details to provide agricultural features and review your farmer profile. This platform review is not a title search or government certificate. Do not include national ID or passport numbers.</div>
                 <label className="flex items-start gap-3 rounded-xl border border-[#DCE7DE] p-3 text-xs leading-5 text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.declaration} onChange={(e) => updateProfileField("declaration", e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-emerald-700" /><span>I confirm this information is accurate to the best of my knowledge and I am authorized to provide it for this profile.<span className="text-red-600"> *</span>{profileFieldErrors.declaration && <span className="mt-1 block text-red-600">{profileFieldErrors.declaration}</span>}</span></label>
                 <label className="flex items-start gap-3 rounded-xl border border-[#DCE7DE] p-3 text-xs leading-5 text-slate-700 dark:border-slate-700 dark:text-slate-200"><input type="checkbox" checked={profileForm.privacy_consent} onChange={(e) => updateProfileField("privacy_consent", e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-emerald-700" /><span>I consent to Shamba using these details to operate the hub and allow authorized reviewers to assess this submission.<span className="text-red-600"> *</span>{profileFieldErrors.privacy_consent && <span className="mt-1 block text-red-600">{profileFieldErrors.privacy_consent}</span>}</span></label>

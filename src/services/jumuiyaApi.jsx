@@ -959,6 +959,31 @@ export function useJumuiyaApi() {
       saveFarmer: (data) =>
         postData("/shamba/farmer", data),
 
+      uploadFarmerEvidence: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return postData("/shamba/farmer/evidence", formData);
+      },
+
+      downloadFarmerEvidence: async (fileId) => {
+        const response = await authFetch(
+          `${API_ROOT}/shamba/farmer/evidence/${encodeId(fileId, "Evidence ID")}`,
+          { method: "GET", headers: { Accept: "*/*" } },
+        );
+        if (!response.ok) {
+          let message = "Unable to open farmer evidence.";
+          try {
+            const payload = await response.json();
+            message = payload?.error?.message || payload?.message || message;
+          } catch { /* keep the safe fallback */ }
+          throw new JumuiyaAPIError(message, response.status, "evidence_download_failed");
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get("content-disposition") || "";
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        return { blob, filename: match?.[1] || "farmer-evidence" };
+      },
+
       getFarmerVerificationQueue: () =>
         getData("/shamba/farmer/verification-queue"),
 
@@ -1528,6 +1553,7 @@ export function useJumuiyaApi() {
       isAuthenticated,
       isGuest,
       getAccessToken,
+      authFetch,
     ],
   );
 }
