@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
+import "./biashara-overview.css";
 import {
   ArrowLeftRight, BarChart3, Bell, Building2, ChevronDown, ClipboardList,
   Globe, Headphones, Home, LayoutDashboard, Menu, MoreHorizontal, Package,
