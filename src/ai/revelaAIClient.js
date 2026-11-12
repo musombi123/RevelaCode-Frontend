@@ -284,7 +284,7 @@ async function normalizeWorkspaceImageAttachment(file) {
     const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!png || !png.size) throw new Error("The SVG logo could not be converted to PNG.");
     if (png.size > 4 * 1024 * 1024) throw new Error("The converted PNG logo exceeds the 4 MB upload limit.");
-    const baseName = String(file.name || "revelacode-logo.svg").replace(/\.svg$/i, "");
+    const baseName = String(file.name || "revelacode-logo").replace(/\.(?:svg|png|jpe?g|webp)$/i, "") || "revelacode-logo";
     return new File([png], baseName + ".png", { type: "image/png", lastModified: file.lastModified || Date.now() });
   } finally {
     URL.revokeObjectURL(svgUrl);
