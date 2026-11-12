@@ -1040,14 +1040,14 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
           onExit={onNavigate}
         />
       </div>
-      <div className="hidden min-[1200px]:block">
-    <div data-demo="shamba-overview" className="shamba-workspace isolate min-h-[calc(100vh-120px)] min-w-0 w-full bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
-      <div className="mx-auto flex w-full min-w-0 max-w-none">
+      <div className="hidden h-full min-h-0 min-[1200px]:block">
+    <div data-demo="shamba-overview" className="shamba-workspace isolate h-full min-h-0 min-w-0 w-full overflow-hidden bg-[#F3F6F5] text-[#172B25] font-sans text-sm leading-6">
+      <div className="mx-auto flex h-full min-h-0 w-full min-w-0 max-w-none">
         {/* ==================================================
             DESKTOP SIDEBAR
         ================================================== */}
 
-        <aside className="sticky top-0 hidden h-[calc(100vh-80px)] w-[244px] shrink-0 border-r border-[#244638] bg-[#123D2F] text-white min-[1200px]:block">
+        <aside className="sticky top-0 hidden h-full min-h-0 w-[244px] shrink-0 overflow-y-auto border-r border-[#244638] bg-[#123D2F] text-white min-[1200px]:block">
           <div className="flex h-full flex-col p-4">
             {/* Brand */}
             <div className="mb-4 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4">
@@ -1131,7 +1131,7 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
             MAIN CONTENT
         ================================================== */}
 
-        <main className="min-w-0 flex-1 bg-[#F5F8F4] pb-[calc(5.5rem+env(safe-area-inset-bottom))] min-[1200px]:pb-8">
+        <main className="h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-[#F5F8F4] pb-[calc(5.5rem+env(safe-area-inset-bottom))] min-[1200px]:pb-8">
           {/* ==================================================
               COMMAND HEADER
           ================================================== */}
