@@ -174,10 +174,10 @@ export function FaithMobileBottomNav({
   onMe,
   hidden = false,
 }) {
+  const { resolvedTheme } = useTheme();
   if (hidden) return null;
   const nativeAndroid = (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
   const keepDockInAndroidLandscape = nativeAndroid;
-  const { resolvedTheme } = useTheme();
   const nativeDark = resolvedTheme === "dark";
   const items = [
     { key: "home", label: "Home", icon: Home, action: onHome },
@@ -232,7 +232,7 @@ export function PullToRefreshSurface({ onRefresh, children, className = "" }) {
   const [pulling, setPulling] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const start = (event) => {
-    const scroller = document.scrollingElement;
+    const scroller = document.querySelector("[data-app-scroll-root=\"true\"]") || document.scrollingElement;
     if ((scroller?.scrollTop || window.scrollY || 0) <= 2) {
       touchStart.current = event.touches?.[0]?.clientY ?? null;
     } else {
@@ -653,10 +653,7 @@ export default function FaithWorkspaceLayout({
   const [overlay, setOverlay] = useState("");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
-  const [backPrompt, setBackPrompt] = useState("");
-  const overlayRef = useRef("");
-  useEffect(() => { overlayRef.current = overlay; }, [overlay]);
-
+  
   useEffect(() => {
     const update = () => setOffline(!navigator.onLine);
     window.addEventListener("online", update);
@@ -738,7 +735,6 @@ export default function FaithWorkspaceLayout({
         </SheetBackdrop>
       )}
 
-      {backPrompt && <div role="status" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-[65] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-lg sm:bottom-5">{backPrompt}</div>}
       <FaithMobileBottomNav
         active={navActive}
         hidden={keyboardOpen || Boolean(overlay)}
