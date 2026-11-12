@@ -12,6 +12,7 @@ export default function ChatWindow({
   onRegenerate,
   onFeedback,
   onDeleteMessage,
+  onEditMessage,
 }) {
   const endRef = useRef(null);
 
@@ -96,7 +97,7 @@ export default function ChatWindow({
 
           return (
             <div key={message.id}>
-              <Message message={message} />
+              <Message message={message} onEdit={onEditMessage} />
 
               {showActions && (
                 <div className="px-1">
