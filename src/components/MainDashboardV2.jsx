@@ -1507,11 +1507,13 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           <section
             id="revelacode-dashboard-content"
-            className={(activeView === "home" ? "rc-home-dashboard-content " : "") + (isAndroidApp
-              ? isAndroidHome
-                ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
-                : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
-              : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
+            className={activeView === "faith"
+              ? "faith-dashboard-host min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-transparent p-0 dark:bg-transparent"
+              : (activeView === "home" ? "rc-home-dashboard-content " : "") + (isAndroidApp
+                ? isAndroidHome
+                  ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
+                  : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
+                : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
             style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "auto" } : undefined}
           >
             <ConnectionStatusBanner />
