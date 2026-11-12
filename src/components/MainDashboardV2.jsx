@@ -1528,7 +1528,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                 <PremiumPlansStar className="h-10 w-auto min-w-10 px-3 rounded-lg" />
               </div>
             ) : null}
-            {isGuest && !isAndroidHome && activeView !== "home" && (
+            {isGuest && !isAndroidHome && activeView !== "home" && activeView !== "faith" && (
               <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-bold">You’re exploring RevelaCode as a guest</p>
