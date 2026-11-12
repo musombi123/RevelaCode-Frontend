@@ -687,6 +687,8 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     import.meta.env.VITE_ANDROID_APP === "true";
   const isAndroidHome = isAndroidApp && activeView === "home";
   const dashboardContentRef = useRef(null);
+  const lastHomeBackAtRef = useRef(0);
+  const [androidBackPrompt, setAndroidBackPrompt] = useState("");
 
   // Use the visual viewport height in Android WebView so the content pane
   // recalculates when the keyboard opens, closes, or the browser chrome moves.
@@ -724,6 +726,12 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     const handleAndroidBack = () => {
       if (document.querySelector("[data-demo-overlay-root]")) return;
 
+      const focused = document.activeElement;
+      if (focused && (["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName) || focused.isContentEditable)) {
+        focused.blur?.();
+        return;
+      }
+
       if (sidebarOpen) {
         setSidebarOpen(false);
         return;
@@ -748,10 +756,18 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
       } else if (activeView !== "home") {
         setActiveView("home");
       } else {
-        CapacitorApp.exitApp().catch(() => {});
+        const now = Date.now();
+        if (now - lastHomeBackAtRef.current < 2200) {
+          CapacitorApp.exitApp().catch(() => {});
+        } else {
+          lastHomeBackAtRef.current = now;
+          setAndroidBackPrompt("Press back again to exit");
+          window.setTimeout(() => setAndroidBackPrompt(""), 1900);
+        }
         return;
       }
 
+      setAndroidBackPrompt("");
       setSidebarOpen(false);
       setMobileCategoryOpen(null);
       dashboardContentRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -1739,6 +1755,11 @@ const BIASHARA_SECTION_KEYS = new Set(
                 </section>
               ) : null}
 
+              {androidBackPrompt && (
+                <div role="status" className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[120] -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xl">
+                  {androidBackPrompt}
+                </div>
+              )}
               <nav
                 aria-label="Main workspace navigation"
                 className={"fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden " + (["community", "shamba", "biashara", "faith"].includes(activeView) ? "hidden" : "")}
