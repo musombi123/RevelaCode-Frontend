@@ -36,6 +36,7 @@ import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
 import BiasharaBusinessOnboarding from "@/Dashboard/Biashara/BiasharaBusinessOnboarding.jsx";
 import BiasharaInternalWorkspace from "@/Dashboard/Biashara/BiasharaInternalWorkspace.jsx";
 import BiasharaShell from "@/Dashboard/Biashara/BiasharaShell.jsx";
+import BiasharaOverview from "@/Dashboard/Biashara/BiasharaOverview.jsx";
 
 /* =========================================================
    HELPERS
@@ -332,6 +333,23 @@ function extractDashboard(payload) {
 
 function normalizeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function extractBusinesses(payload) {
+  const candidate =
+    payload?.businesses ??
+    payload?.data?.businesses ??
+    payload?.data?.data?.businesses ??
+    payload?.result?.businesses ??
+    payload?.data ??
+    payload?.result ??
+    payload;
+  if (Array.isArray(candidate)) return candidate;
+  if (candidate && typeof candidate === "object") {
+    const nested = candidate.items || candidate.rows || candidate.business_list;
+    if (Array.isArray(nested)) return nested;
+  }
+  return [];
 }
 
 function getDashboardMetrics(dashboard) {
@@ -1207,9 +1225,13 @@ export default function BiasharaDashboard({
   const {
     getBiasharaBusiness,
     getBiasharaDashboard,
+    getBiasharaBusinesses,
+    setActiveBiasharaBusiness,
   } = useJumuiyaApi();
 
   const [business, setBusiness] = useState(null);
+  const [businesses, setBusinesses] = useState([]);
+  const [switchingBusiness, setSwitchingBusiness] = useState(false);
   const [dashboard, setDashboard] = useState(null);
 
   const [checkingBusiness, setCheckingBusiness] =
@@ -1231,6 +1253,19 @@ export default function BiasharaDashboard({
 
   const businessRequestRef = useRef(0);
   const dashboardRequestRef = useRef(0);
+
+  const loadBusinesses = useCallback(async () => {
+    try {
+      const response = await getBiasharaBusinesses();
+      const rows = extractBusinesses(response);
+      setBusinesses(rows);
+      return rows;
+    } catch {
+      // Keep the selected business usable if discovery is temporarily unavailable.
+      setBusinesses((current) => current.length ? current : (business ? [business] : []));
+      return [];
+    }
+  }, [getBiasharaBusinesses, business]);
 
   /* =======================================================
      NAVIGATION
@@ -1419,6 +1454,54 @@ export default function BiasharaDashboard({
   useEffect(() => {
     checkBusiness();
   }, [checkBusiness]);
+
+  useEffect(() => {
+    if (hasCheckedBusiness && business) loadBusinesses();
+    else if (hasCheckedBusiness && !business) setBusinesses([]);
+  }, [hasCheckedBusiness, business?.id, business?._id, loadBusinesses]);
+
+
+  const switchBusiness = useCallback(async (nextBusinessId) => {
+    const selectedId = String(nextBusinessId || "").trim();
+    const currentId = String(business?.id || business?._id || "");
+    if (!selectedId || selectedId === currentId || switchingBusiness) return;
+
+    setSwitchingBusiness(true);
+    setError("");
+    setDashboard(null);
+    setLastUpdated(null);
+    setActiveSection("overview");
+    businessRequestRef.current += 1;
+    dashboardRequestRef.current += 1;
+
+    try {
+      await setActiveBiasharaBusiness(selectedId);
+      const businessResponse = await getBiasharaBusiness();
+      const nextBusiness = extractBusiness(businessResponse);
+      if (!nextBusiness) throw new Error("The selected business preference was saved, but its profile could not be reloaded.");
+      setBusiness(nextBusiness);
+      setBusinesses((current) => current.some((item) => String(item.id || item._id || "") === selectedId)
+        ? current
+        : [...current, nextBusiness]);
+
+      setLoadingDashboard(true);
+      const nextDashboardResponse = await getBiasharaDashboard();
+      setDashboard(extractDashboard(nextDashboardResponse) || null);
+      setLastUpdated(new Date());
+    } catch (switchError) {
+      setError(switchError?.message || "The selected business could not be loaded.");
+      try {
+        const currentResponse = await getBiasharaBusiness();
+        const currentBusiness = extractBusiness(currentResponse);
+        if (currentBusiness) setBusiness(currentBusiness);
+      } catch {
+        // Keep the last confirmed profile visible if the current profile cannot be reloaded.
+      }
+    } finally {
+      setLoadingDashboard(false);
+      setSwitchingBusiness(false);
+    }
+  }, [business, switchingBusiness, setActiveBiasharaBusiness, getBiasharaBusiness, getBiasharaDashboard]);
 
   /* =======================================================
      LOAD DASHBOARD AFTER BUSINESS EXISTS
@@ -1727,6 +1810,9 @@ export default function BiasharaDashboard({
     return (
       <BiasharaShell
         business={business}
+        businesses={businesses}
+        switchingBusiness={switchingBusiness}
+        onSwitchBusiness={switchBusiness}
         activeSection={activeSection}
         onNavigate={navigate}
         onRefresh={loadDashboard}
@@ -1757,910 +1843,25 @@ export default function BiasharaDashboard({
   ======================================================= */
 
   return (
-    <BiasharaShell business={business} activeSection={activeSection} onNavigate={navigate} onRefresh={loadDashboard}>
-    {import.meta.env.VITE_ANDROID_APP === "true" ? (
-      <BiasharaAndroidOverview
+    <BiasharaShell
+      business={business}
+      businesses={businesses}
+      switchingBusiness={switchingBusiness}
+      onSwitchBusiness={switchBusiness}
+      activeSection={activeSection}
+      onNavigate={navigate}
+      onRefresh={loadDashboard}
+    >
+      <BiasharaOverview
         business={business}
+        dashboard={dashboard}
         currency={currency}
-        totalRevenue={totalRevenue}
-        totalOrders={totalOrders}
-        customers={customers}
-        netEstimate={netEstimate}
-        lowStockCount={lowStockCount}
-        lowStockProducts={lowStockProducts}
-        error={error}
         loadingDashboard={loadingDashboard}
+        dashboardError={error}
         lastUpdated={lastUpdated}
         onRefresh={loadDashboard}
         onNavigate={navigate}
       />
-    ) : (
-    <div className="min-h-full bg-[#f4f7fb]">
-      <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-3 sm:space-y-6 sm:p-6 lg:p-8">
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
-        <section data-demo="biashara-overview" className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white shadow-lg shadow-slate-900/10 sm:rounded-[2rem] sm:shadow-xl">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="relative z-10 flex flex-col gap-4 p-4 sm:gap-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-blue-100 ring-1 ring-white/15 backdrop-blur-sm">
-                {business?.logo_url ? (
-                  <img
-                    src={business.logo_url}
-                    alt={
-                      business?.name ||
-                      business?.business_name ||
-                      "Business logo"
-                    }
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    onError={(event) => {
-                      event.currentTarget.style.display =
-                        "none";
-                    }}
-                  />
-                ) : (
-                  <Briefcase size={24} />
-                )}
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
-                    Biashara Hub
-                  </span>
-
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-slate-200 ring-1 ring-white/10">
-                    <Store size={12} />
-                    Business workspace
-                  </span>
-                </div>
-
-                <h1 className="mt-2 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
-                  {business?.name ||
-                    business?.business_name ||
-                    "Your Business"}
-                </h1>
-
-                <p className="mt-2 truncate text-sm text-slate-300">
-                  {business?.category ||
-                    "Business workspace"}
-
-                  {business?.location ||
-                  business?.address
-                    ? ` · ${
-                        business?.location ||
-                        business?.address
-                      }`
-                    : ""}
-
-                  {business?.county
-                    ? `, ${business.county}`
-                    : ""}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="mr-auto flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 text-xs text-slate-300 ring-1 ring-white/10 lg:mr-0">
-                <Clock3 size={14} />
-
-                <span>
-                  Updated{" "}
-                  {lastUpdated
-                    ? formatDateTime(
-                        lastUpdated,
-                      )
-                    : "just now"}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  openBusinessProfile
-                }
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                <Briefcase size={16} />
-                Profile
-              </button>
-
-              <button
-                type="button"
-                onClick={loadDashboard}
-                disabled={loadingDashboard}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCw
-                  size={16}
-                  className={
-                    loadingDashboard
-                      ? "animate-spin"
-                      : ""
-                  }
-                />
-
-                Refresh
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  navigate("notifications")
-                }
-                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 p-2.5 text-white transition hover:bg-white/10"
-                aria-label="Notifications"
-              >
-                <Bell size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            BUSINESS PROFILE / LEGAL IDENTITY
-        ================================================= */}
-
-        <BusinessProfileNotice
-          business={business}
-          completeness={completeness}
-          onCompleteProfile={
-            openBusinessProfile
-          }
-        />
-
-        {/* =================================================
-            ERROR BANNER
-        ================================================= */}
-
-        {error ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <AlertCircle
-              size={18}
-              className="mt-0.5 shrink-0 text-amber-600"
-            />
-
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-amber-900">
-                Dashboard update issue
-              </p>
-
-              <p className="mt-0.5 text-xs leading-5 text-amber-700">
-                {error}
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {/* =================================================
-            QUICK ACCESS
-        ================================================= */}
-
-        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-          <SectionHeader
-            eyebrow="Quick access"
-            title="Run your business"
-          />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-            <QuickAction
-              icon={Package}
-              label="Products"
-              description="Manage stock"
-              dataDemo="biashara-nav-products"
-              onClick={() =>
-                navigate("products")
-              }
-            />
-
-            <QuickAction
-              icon={ShoppingCart}
-              label="Orders"
-              description="Manage orders"
-              onClick={() =>
-                navigate("orders")
-              }
-            />
-
-            <QuickAction
-              icon={Users}
-              label="Customers"
-              description="Customer records"
-              onClick={() =>
-                navigate("customers")
-              }
-            />
-
-            <QuickAction
-              icon={Globe}
-              label="Website Studio"
-              description="Publish storefront"
-              onClick={() => navigate("website")}
-            />
-
-            <QuickAction
-              icon={WalletCards}
-              label="Record sale"
-              description="Capture a sale"
-              onClick={() =>
-                navigate("sales")
-              }
-            />
-
-            <QuickAction
-              icon={BarChart3}
-              label="Analytics"
-              description="Business performance"
-              onClick={() =>
-                navigate(
-                  "biashara-analytics",
-                )
-              }
-            />
-
-            <QuickAction
-              icon={Sparkles}
-              label="Intelligence"
-              description="Business insights"
-              onClick={() =>
-                navigate(
-                  "biashara-intelligence",
-                )
-              }
-            />
-          </div>
-        </section>
-
-        {/* =================================================
-            PRIMARY METRICS
-        ================================================= */}
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">
-                Business overview
-              </p>
-
-              <h2 className="mt-1 text-lg font-bold text-slate-900">
-                Your numbers
-              </h2>
-            </div>
-
-            <span className="text-xs font-medium text-slate-400">
-              {String(currency).toUpperCase()}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <MetricCard
-              icon={DollarSign}
-              label="Total sales"
-              value={formatCompactMoney(
-                totalRevenue,
-                currency,
-              )}
-              supporting={`${formatNumber(
-                productsTracked,
-              )} products tracked`}
-              iconClassName="bg-blue-50 text-blue-600"
-            />
-
-            <MetricCard
-              icon={ShoppingCart}
-              label="Orders"
-              value={formatNumber(
-                totalOrders,
-              )}
-              supporting={`${formatNumber(
-                pendingOrders,
-              )} currently active`}
-              iconClassName="bg-violet-50 text-violet-600"
-            />
-
-            <MetricCard
-              icon={Users}
-              label="Customers"
-              value={formatNumber(
-                customers,
-              )}
-              supporting={`${formatNumber(
-                completedOrders,
-              )} completed orders`}
-              iconClassName="bg-emerald-50 text-emerald-600"
-            />
-
-            <MetricCard
-              icon={TrendingUp}
-              label="Net estimate"
-              value={formatCompactMoney(
-                netEstimate,
-                currency,
-              )}
-              supporting={`${Math.round(
-                revenueRatio,
-              )}% of total sales`}
-              iconClassName="bg-amber-50 text-amber-600"
-            />
-          </div>
-        </section>
-
-        {/* =================================================
-            TODAY + STOCK
-        ================================================= */}
-
-        <section className="grid gap-3 sm:gap-5 lg:grid-cols-3">
-          <div className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 text-white shadow-md shadow-slate-900/10 sm:rounded-[1.75rem] sm:p-6 lg:col-span-2">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">
-                  Today
-                </p>
-
-                <h2 className="mt-2 text-2xl font-bold tracking-tight">
-                  {formatMoney(
-                    todaySales,
-                    currency,
-                  )}
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-300">
-                  Sales recorded today
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3">
-                <ShoppingCart
-                  size={17}
-                  className="text-blue-300"
-                />
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Orders today
-                  </p>
-
-                  <p className="text-lg font-bold">
-                    {formatNumber(
-                      todayOrders,
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <DarkStat
-                label="Average order"
-                value={formatMoney(
-                  averageOrderValue,
-                  currency,
-                )}
-              />
-
-              <DarkStat
-                label="Completed orders"
-                value={formatNumber(
-                  completedOrders,
-                )}
-              />
-
-              <DarkStat
-                label="Expenses"
-                value={formatCompactMoney(
-                  totalExpenses,
-                  currency,
-                )}
-              />
-
-              <DarkStat
-                label="Low stock"
-                value={formatNumber(
-                  lowStockCount,
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-            <SectionHeader
-              eyebrow="Operations"
-              title="Stock health"
-              actionLabel={
-                lowStockProducts.length
-                  ? "Manage"
-                  : undefined
-              }
-              onAction={() =>
-                navigate("products")
-              }
-            />
-
-            {lowStockProducts.length ? (
-              <div className="space-y-3">
-                {lowStockProducts
-                  .slice(0, 5)
-                  .map(
-                    (
-                      product,
-                      index,
-                    ) => (
-                      <div
-                        key={
-                          product.product_id ||
-                          product.id ||
-                          product._id ||
-                          product.name ||
-                          index
-                        }
-                        className="flex items-center justify-between gap-3 rounded-2xl bg-red-50 px-3 py-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-800">
-                            {product.name ||
-                              product.product_name ||
-                              "Product"}
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-red-600">
-                            {formatNumber(
-                              getProductStock(
-                                product,
-                              ),
-                            )}{" "}
-                            left
-                          </p>
-                        </div>
-
-                        <ArrowDownRight
-                          size={18}
-                          className="shrink-0 text-red-500"
-                        />
-                      </div>
-                    ),
-                  )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={CheckCircle2}
-                title="Stock looks healthy"
-                text="No products are currently below their low-stock threshold."
-              />
-            )}
-
-            <div className="mt-4 rounded-2xl bg-slate-50 p-3.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">
-                  Active products
-                </span>
-
-                <span className="text-sm font-bold text-slate-900">
-                  {formatNumber(
-                    activeProducts,
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            INTELLIGENCE CTA
-        ================================================= */}
-
-        <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-4 text-white shadow-sm sm:rounded-3xl sm:p-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
-                <Sparkles size={22} />
-              </div>
-
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-300">
-                  RevelaAI Business Intelligence
-                </p>
-
-                <h2 className="mt-1 text-xl font-bold">
-                  Understand what your business should do next.
-                </h2>
-
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-300">
-                  Explore market conditions, demand signals,
-                  product opportunities, pricing insights and
-                  business alerts from your Biashara intelligence
-                  system.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate(
-                  "biashara-intelligence",
-                )
-              }
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-blue-50"
-            >
-              Open intelligence
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </section>
-
-        {/* =================================================
-            TOP PRODUCTS
-        ================================================= */}
-
-        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-          <SectionHeader
-            eyebrow="Performance"
-            title="Top products"
-            actionLabel={
-              topProducts.length
-                ? "View all"
-                : undefined
-            }
-            onAction={() =>
-              navigate("products")
-            }
-          />
-
-          {topProducts.length ? (
-            <div className="space-y-3">
-              {topProducts.map(
-                (product, index) => (
-                  <div
-                    key={
-                      product.product_id ||
-                      product.id ||
-                      product._id ||
-                      product.name ||
-                      index
-                    }
-                    className="flex items-center gap-3 rounded-2xl border border-slate-100 px-3 py-3.5"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-sm font-bold text-blue-600">
-                      {index + 1}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {product.name ||
-                          product.product_name ||
-                          "Product"}
-                      </p>
-
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
-                        <span>
-                          {formatNumber(
-                            product.units ??
-                              product.quantity_sold ??
-                              product.units_sold ??
-                              0,
-                          )}{" "}
-                          units
-                        </span>
-
-                        <span>
-                          {formatMoney(
-                            product.revenue ??
-                              product.sales_total ??
-                              product.total_revenue ??
-                              0,
-                            currency,
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    <TrendingUp
-                      size={18}
-                      className="shrink-0 text-emerald-500"
-                    />
-                  </div>
-                ),
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={BarChart3}
-              title="No product sales yet"
-              text="Once you record sales, your best-performing products will appear here."
-              actionLabel="Record first sale"
-              onAction={() =>
-                navigate("sales")
-              }
-            />
-          )}
-        </section>
-
-        {/* =================================================
-            RECENT ORDERS + SALES
-        ================================================= */}
-
-        <section className="grid gap-3 sm:gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-            <SectionHeader
-              eyebrow="Orders"
-              title="Recent orders"
-              actionLabel={
-                recentOrders.length
-                  ? "View all"
-                  : undefined
-              }
-              onAction={() =>
-                navigate("orders")
-              }
-            />
-
-            {recentOrders.length ? (
-              <div className="space-y-3">
-                {recentOrders.map(
-                  (order, index) => (
-                    <div
-                      key={
-                        order.id ||
-                        order._id ||
-                        order.order_number ||
-                        order.reference ||
-                        index
-                      }
-                      className="rounded-2xl border border-slate-100 p-3.5"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {getOrderReference(
-                              order,
-                            )}
-                          </p>
-
-                          <p className="mt-1 truncate text-xs text-slate-500">
-                            {getOrderCustomer(
-                              order,
-                            )}
-                          </p>
-                        </div>
-
-                        <OrderStatusPill
-                          status={
-                            order.status ||
-                            order.order_status
-                          }
-                        />
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-400">
-                          {formatDate(
-                            order.created_at ||
-                              order.createdAt ||
-                              order.updated_at ||
-                              order.ordered_at,
-                          )}
-                        </span>
-
-                        <span className="text-sm font-bold text-slate-900">
-                          {formatMoney(
-                            getOrderAmount(
-                              order,
-                            ),
-                            currency,
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={ShoppingCart}
-                title="No orders yet"
-                text="New customer orders will appear here."
-                actionLabel="Manage orders"
-                onAction={() =>
-                  navigate("orders")
-                }
-              />
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-            <SectionHeader
-              eyebrow="Sales"
-              title="Recent sales"
-              actionLabel={
-                recentSales.length
-                  ? "View all"
-                  : undefined
-              }
-              onAction={() =>
-                navigate("sales")
-              }
-            />
-
-            {recentSales.length ? (
-              <div className="space-y-3">
-                {recentSales.map(
-                  (sale, index) => (
-                    <div
-                      key={
-                        sale.id ||
-                        sale._id ||
-                        sale.reference ||
-                        sale.sale_number ||
-                        sale.sale_id ||
-                        index
-                      }
-                      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-3.5"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                          <DollarSign size={18} />
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {sale.reference ||
-                              sale.sale_number ||
-                              sale.sale_id ||
-                              "Sale"}
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-500">
-                            {formatDateTime(
-                              sale.created_at ||
-                                sale.createdAt ||
-                                sale.sold_at ||
-                                sale.sale_date,
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <p className="text-sm font-bold text-slate-900">
-                          {formatMoney(
-                            getSaleAmount(
-                              sale,
-                            ),
-                            currency,
-                          )}
-                        </p>
-
-                        <p className="mt-0.5 text-[11px] font-medium text-emerald-600">
-                          Recorded
-                        </p>
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={DollarSign}
-                title="No sales yet"
-                text="Completed sales will appear here as you record them."
-                actionLabel="Record sale"
-                onAction={() =>
-                  navigate("sales")
-                }
-              />
-            )}
-          </div>
-        </section>
-
-        {/* =================================================
-            PROFILE SNAPSHOT
-        ================================================= */}
-
-        <section className="rounded-2xl border border-white bg-white p-3.5 shadow-sm ring-1 ring-slate-100/80 sm:rounded-[1.5rem] sm:p-5">
-          <SectionHeader
-            eyebrow="Business identity"
-            title="Workspace snapshot"
-            actionLabel="Manage profile"
-            onAction={
-              openBusinessProfile
-            }
-          />
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <ProfileStat
-              label="Business type"
-              value={
-                business?.business_type ||
-                "Not specified"
-              }
-            />
-
-            <ProfileStat
-              label="Category"
-              value={
-                business?.category ||
-                "Not specified"
-              }
-            />
-
-            <ProfileStat
-              label="Location"
-              value={
-                business?.location ||
-                business?.address ||
-                "Not specified"
-              }
-            />
-
-            <ProfileStat
-              label="Currency"
-              value={String(
-                currency || "KES",
-              ).toUpperCase()}
-            />
-          </div>
-
-          {completeness.missing.length ? (
-            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <AlertCircle
-                  size={18}
-                  className="mt-0.5 shrink-0 text-amber-600"
-                />
-
-                <div>
-                  <p className="text-sm font-semibold text-amber-900">
-                    Complete your business profile
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-amber-700">
-                    Missing:{" "}
-                    {completeness.missing.join(
-                      ", ",
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  openBusinessProfile
-                }
-                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-amber-700"
-              >
-                Complete profile
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          ) : (
-            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                <CheckCircle2 size={18} />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-emerald-900">
-                  Core business profile complete
-                </p>
-
-                <p className="mt-0.5 text-xs text-emerald-700">
-                  Your profile is ready for the
-                  future business verification
-                  process.
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-    )}
     </BiasharaShell>
   );
 }
