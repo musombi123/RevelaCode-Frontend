@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
+import { BIASHARA_TEMPLATE_OPTIONS } from "./businessTemplateRegistry.js";
 
 
 const BUSINESS_CATEGORIES = [
@@ -38,15 +39,10 @@ const BUSINESS_TYPES = [
   "Other",
 ];
 
-const INDUSTRY_TEMPLATES = [
-  { value: "general", label: "General business" },
-  { value: "retail_shop", label: "Retail shop / kiosk" },
-  { value: "hardware", label: "Hardware and building supplies" },
-  { value: "factory", label: "Factory / manufacturing" },
-  { value: "salon", label: "Salon / beauty business" },
-  { value: "professional_services", label: "Professional services" },
-  { value: "school", label: "School / education provider" },
-];
+const INDUSTRY_TEMPLATES = BIASHARA_TEMPLATE_OPTIONS.map((option) => ({
+  ...option,
+  label: option.value === "school" ? "School business (Biashara workspace)" : option.label,
+}));
 
 const BUSINESS_SCALES = [
   { value: "micro", label: "Micro / Jua Kali — solo or family-run" },
