@@ -89,6 +89,7 @@ function safeLazy(importFn, name) {
 function formatNumber(
   value,
 ) {
+  if (value === null || value === undefined || value === "") return "—";
   const numeric =
     Number(value);
 
@@ -112,6 +113,7 @@ function formatMoney(
   value,
   currency = "KES",
 ) {
+  if (value === null || value === undefined || value === "") return "—";
   const numeric =
     Number(value);
 
