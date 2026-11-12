@@ -264,13 +264,34 @@ const mdComponents = {
   pre: ({ children }) => <>{children}</>,
 
   table: ({ children }) => (
-    <div className="mb-3 overflow-x-auto rounded-xl border border-line last:mb-0">
-      <table className="w-full border-collapse text-left text-xs sm:text-sm">{children}</table>
+    <div
+      role="region"
+      aria-label="Scrollable response table"
+      tabIndex={0}
+      className="my-4 w-full max-w-full overflow-x-auto rounded-xl border border-line bg-surface shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    >
+      <table className="w-full min-w-[28rem] border-collapse text-left text-xs sm:text-sm">
+        {children}
+      </table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-surface-2">{children}</thead>,
-  th: ({ children }) => <th className="border-b border-line px-3 py-2 font-semibold">{children}</th>,
-  td: ({ children }) => <td className="border-b border-line px-3 py-2 align-top">{children}</td>,
+  thead: ({ children }) => <thead className="bg-surface-2 text-fg">{children}</thead>,
+  tbody: ({ children }) => (
+    <tbody className="[&>tr:nth-child(even)]:bg-surface-2/50">
+      {children}
+    </tbody>
+  ),
+  tr: ({ children }) => <tr className="transition-colors hover:bg-accent/5">{children}</tr>,
+  th: ({ children }) => (
+    <th scope="col" className="whitespace-nowrap border-b border-line px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-fg-secondary sm:px-4">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border-b border-line/70 px-3 py-2.5 align-top leading-5 text-fg-secondary sm:px-4">
+      {children}
+    </td>
+  ),
 };
 
 // Memoized so copy/edit state changes don't re-parse the markdown
