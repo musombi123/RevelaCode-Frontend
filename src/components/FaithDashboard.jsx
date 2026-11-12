@@ -6,8 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import {
   ArrowLeft,
   Bell,
-  CalendarCheck,
-  House,
+  CalendarDays,
+  Home,
   Leaf,
   Menu,
   Moon,
@@ -378,7 +378,7 @@ function FaithHomeDashboard({
   };
 
   const navigationItems = [
-    { label: "Home", icon: House, action: () => onNavigateHome(), active: true },
+    { label: "Home", icon: Home, action: () => onNavigateHome(), active: true },
     { label: "Study Library", icon: Library, action: () => openStudy("all") },
     { label: "Sabbath School", icon: CalendarCheck, action: openSDAQuarterly },
     { label: "Faith Academy", icon: GraduationCap, action: openFaithAcademy },
@@ -671,7 +671,7 @@ function FaithHomeDashboard({
 
       <nav className="faith-home-bottom-nav" aria-label="Mobile navigation">
         <button type="button" className="is-active" onClick={() => onNavigateHome()}>
-          <House size={21} /><span>Home</span>
+          <Home size={21} /><span>Home</span>
         </button>
         <button type="button" onClick={() => openStudy("all")}>
           <BookOpen size={21} /><span>Study</span>
