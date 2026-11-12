@@ -1456,7 +1456,7 @@ export default function FaithDashboard({
   if (faithSection === "study") {
     return (
       <FaithAndroidWorkspaceFrame title="Study Library" active="study" onBack={closeStudyView} onNavigate={onNavigate} onOpenAI={onOpenAI} onHome={() => setFaithSection("home")} onStudy={() => openStudy("all")}>
-        <div data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
+        <div data-demo="faith-study-library" data-faith-study-root="true" onClickCapture={handleStudyLinkCapture} className="mx-auto w-full max-w-[1500px] min-w-0 space-y-4">
           <StudyLibrary onOpen={openMaterial} userId={userId} initialTopicFilter={studyTopic} onOpenReference={openBibleReference} onOpenAtlas={openFaithAtlas} onOpenWordRoots={openAncientWordRoots} onOpenAI={onOpenAI} onBack={closeStudyView} onNavigate={onNavigate} />
         </div>
       </FaithAndroidWorkspaceFrame>
