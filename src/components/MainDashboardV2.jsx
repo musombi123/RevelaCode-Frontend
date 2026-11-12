@@ -1741,7 +1741,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
               <nav
                 aria-label="Main workspace navigation"
-                className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+                className={"fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/90 bg-white/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden " + (["community", "shamba", "biashara", "faith"].includes(activeView) ? "hidden" : "")}
               >
                 <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
                   <button type="button" onClick={() => handleNavigate("home")} aria-current={activeView === "home" ? "page" : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition active:scale-95 ${
