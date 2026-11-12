@@ -81,4 +81,5 @@ test("mislabeled SVG logos are detected from their content and rasterized before
   assert.match(client, /const contentLooksSvg = \/<svg/);
   assert.match(client, /const isSvg = declaredSvg \|\| contentLooksSvg/);
   assert.match(client, /new File\(\[png\], baseName \+ "\.png", \{ type: "image\/png"/);
+  assert.match(client, /baseName = String\(file\.name.*webp/);
 });
