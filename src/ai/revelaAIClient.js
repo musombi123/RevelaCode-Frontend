@@ -222,7 +222,7 @@ async function normalizeWorkspaceImageAttachment(file) {
   const declaredSvg = String(file.type || "").toLowerCase() === "image/svg+xml" ||
     /\.svg$/i.test(file.name || "");
   const header = await file.slice(0, Math.min(file.size, 8192)).text();
-  const contentLooksSvg = /<svg(?:\\s|>)/i.test(header);
+  const contentLooksSvg = /<svg(?:\s|>)/i.test(header);
   const isSvg = declaredSvg || contentLooksSvg;
   if (!isSvg) return file;
   if (file.size > 4 * 1024 * 1024) {
