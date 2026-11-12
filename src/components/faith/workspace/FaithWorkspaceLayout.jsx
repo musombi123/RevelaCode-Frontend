@@ -23,11 +23,126 @@ const PAGE_META = {
   "word-roots": { title: "Ancient Word Roots", description: "Study biblical words in their language, grammar and context.", chips: ["Hebrew", "Greek", "Language"], action: "Explore word roots", placeholder: "Ask about a Hebrew or Greek word…" },
 };
 
+const OMIT_CONTEXT_KEYS = new Set([
+  "_owner",
+  "_store",
+  "_self",
+  "_source",
+  "stateNode",
+  "return",
+  "child",
+  "sibling",
+  "alternate",
+  "memoizedProps",
+  "memoizedState",
+  "pendingProps",
+  "currentTarget",
+  "nativeEvent",
+  "ownerDocument",
+  "parentNode",
+  "previousSibling",
+  "nextSibling",
+]);
+
+function toSerializableContext(value, seen = new WeakSet(), depth = 0) {
+  if (value === null || value === undefined) return value;
+  if (typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value : String(value);
+  if (typeof value === "bigint") return String(value);
+  if (typeof value === "function" || typeof value === "symbol") return undefined;
+
+  // DOM elements (including HTMLSpanElement) are UI, not page data.
+  // Keep only their accessible/visible text so they cannot pull React's
+  // circular fiber tree into a context payload.
+  const isDomNode =
+    (typeof Node !== "undefined" && value instanceof Node) ||
+    (typeof value.nodeType === "number" && typeof value.nodeName === "string" && "textContent" in value);
+  if (isDomNode) {
+    const label =
+      value.textContent ||
+      value.getAttribute?.("aria-label") ||
+      value.getAttribute?.("title") ||
+      value.nodeName ||
+      "UI element";
+    const cleanLabel = String(label).replace(/\\s+/g, " ").trim();
+    return cleanLabel ? "[UI element: " + cleanLabel.slice(0, 240) + "]" : "[UI element]";
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? undefined : value.toISOString();
+  }
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message };
+  }
+  if (depth >= 5) return "[nested context omitted]";
+  if (seen.has(value)) return "[circular reference omitted]";
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value
+      .slice(0, 30)
+      .map((item) => toSerializableContext(item, seen, depth + 1))
+      .filter((item) => item !== undefined);
+  }
+
+  if (value instanceof URL) return value.href;
+  if (value instanceof Map) {
+    return Array.from(value.entries())
+      .slice(0, 30)
+      .map(([key, item]) => [String(key), toSerializableContext(item, seen, depth + 1)]);
+  }
+  if (value instanceof Set) {
+    return Array.from(value.values())
+      .slice(0, 30)
+      .map((item) => toSerializableContext(item, seen, depth + 1))
+      .filter((item) => item !== undefined);
+  }
+
+  const clean = {};
+  let entries = [];
+  try {
+    entries = Object.entries(value);
+  } catch {
+    return "[unreadable context object]";
+  }
+
+  for (const [key, item] of entries.slice(0, 50)) {
+    if (
+      OMIT_CONTEXT_KEYS.has(key) ||
+      key.startsWith("__react") ||
+      key.startsWith("_react") ||
+      key === "ref" ||
+      key === "target" ||
+      key === "view"
+    ) continue;
+
+    const safeValue = toSerializableContext(item, seen, depth + 1);
+    if (safeValue !== undefined) clean[key] = safeValue;
+  }
+  return clean;
+}
+
+function sanitizeContextData(contextData) {
+  const safeValue = toSerializableContext(contextData);
+  if (safeValue === null || safeValue === undefined) return {};
+  if (Array.isArray(safeValue)) return { items: safeValue };
+  if (typeof safeValue === "object") return safeValue;
+  return { value: safeValue };
+}
+
+function safeContextJson(value) {
+  try {
+    return JSON.stringify(toSerializableContext(value));
+  } catch {
+    return JSON.stringify("[context unavailable]");
+  }
+}
+
 function stringifyContext(contextType, contextData) {
-  const data = contextData && typeof contextData === "object" ? contextData : {};
+  const data = sanitizeContextData(contextData);
   const details = Object.entries(data)
-    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")
-    .map(([key, value]) => key + ": " + (typeof value === "string" ? value : JSON.stringify(value)))
+    .filter(([, value]) => value !== undefined && value !== null && (typeof value !== "string" || value.trim() !== ""))
+    .map(([key, value]) => key + ": " + (typeof value === "string" ? value : safeContextJson(value)))
     .join(" · ");
   return "Faith workspace: " + (contextType || "faith") + (details ? " · " + details : "");
 }
@@ -205,7 +320,8 @@ function SheetBackdrop({ onClose, children, labelledBy, onTouchStart, onTouchEnd
 
 export function AIHandoffBar({ question, contextType, contextData, onOpenAI, compact = false }) {
   const [copied, setCopied] = useState(false);
-  const contextLine = stringifyContext(contextType, contextData);
+  const safeContextData = sanitizeContextData(contextData);
+  const contextLine = stringifyContext(contextType, safeContextData);
   const copyText = String(question || "").trim() + "\n" + contextLine;
 
   const copyQuestion = async () => {
@@ -236,8 +352,9 @@ export function AIHandoffBar({ question, contextType, contextData, onOpenAI, com
   };
 
   const openAI = () => {
-    try { sessionStorage.setItem("revelacode_faith_ai_handoff", JSON.stringify({ question: String(question || "").trim(), contextType, contextData })); } catch { /* Router state is the primary handoff. */ }
-    onOpenAI?.({ question: String(question || "").trim(), contextType, contextData });
+    const handoff = { question: String(question || "").trim(), contextType, contextData: safeContextData };
+    try { sessionStorage.setItem("revelacode_faith_ai_handoff", JSON.stringify(handoff)); } catch { /* Router state is the primary handoff. */ }
+    onOpenAI?.(handoff);
   };
 
   return (
@@ -275,7 +392,8 @@ export function InlineAskBar({
   const touchStart = useRef(null);
   const abortRef = useRef(null);
   const textareaRef = useRef(null);
-  const contextLine = useMemo(() => stringifyContext(contextType, contextData), [contextType, contextData]);
+  const safeContextData = useMemo(() => sanitizeContextData(contextData), [contextData]);
+  const contextLine = useMemo(() => stringifyContext(contextType, safeContextData), [contextType, safeContextData]);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 639px)");
@@ -367,7 +485,7 @@ export function InlineAskBar({
       "Do not present contested interpretations, current-event matches, or speculation as established fact.",
       "If evidence is uncertain, say so briefly.",
       contextLine,
-      "PAGE CONTEXT DATA: " + JSON.stringify(contextData || {}),
+      "PAGE CONTEXT DATA: " + safeContextJson(safeContextData),
     ].join("\n");
 
     try {
@@ -446,7 +564,7 @@ export function InlineAskBar({
   const answerContent = (
     <div className="min-w-0">
       {busy && <div className="animate-pulse motion-reduce:animate-none rounded-xl bg-slate-50 p-4 dark:bg-slate-950" role="status" aria-live="polite"><div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300"><Sparkles size={14} /> Thinking through the passage…</div><div className="h-3 w-11/12 rounded bg-slate-200 dark:bg-slate-800" /><div className="mt-2 h-3 w-4/5 rounded bg-slate-200 dark:bg-slate-800" /><div className="mt-2 h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" /></div>}
-      {deepStudy && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20"><p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Need a deeper study?</p><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">This question is broader than the short-answer bar. Continue it in RevelaAI with the page context attached.</p><AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div>}
+      {deepStudy && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20"><p className="text-sm font-semibold text-amber-950 dark:text-amber-100">Need a deeper study?</p><p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">This question is broader than the short-answer bar. Continue it in RevelaAI with the page context attached.</p><AIHandoffBar compact question={question} contextType={contextType} contextData={safeContextData} onOpenAI={onOpenAI} /></div>}
       {error && !busy && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-900/50 dark:bg-rose-950/20" role="alert"><div className="flex items-start gap-2"><HelpCircle size={16} className="mt-0.5 shrink-0 text-rose-700 dark:text-rose-300" /><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-rose-900 dark:text-rose-100">{rateLimited ? "AI plan limit reached" : "We couldn't load that answer"}</p><p className="mt-1 text-xs leading-5 text-rose-800 dark:text-rose-200">{error}</p><div className="mt-3 flex flex-wrap gap-2">{!rateLimited && online && <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-rose-700 px-3 py-2 text-xs font-semibold text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"><RefreshCw size={14} /> Retry</button>}{rateLimited && <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("revelacode:premium-open", { detail: { planCode: "" } }))} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">View plans <ArrowRight size={14} /></button>}</div><AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div></div></div>}
       {answer && !busy && <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-950"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold text-slate-700 dark:text-slate-200">RevelaAI · Short answer</p><span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-1 text-[0.625rem] font-bold text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200"><ShieldCheck size={12} /> SDA-first framing</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800 dark:text-slate-100">{visibleAnswer}</p>{sourceChips}{/\binterpretation|historicist|view\b/i.test(answer) && <p className="mt-3 text-[0.625rem] font-semibold text-amber-700 dark:text-amber-300">Interpretive claims are study perspectives, not established facts.</p>}<AIHandoffBar compact question={question} contextType={contextType} contextData={contextData} onOpenAI={onOpenAI} /></div>}
     </div>
@@ -567,6 +685,7 @@ export default function FaithWorkspaceLayout({
   placeholder, children, panelTabs, panel = true,
 }) {
   const meta = PAGE_META[page] || {};
+  const safeContextData = useMemo(() => sanitizeContextData(contextData), [contextData]);
   const [overlay, setOverlay] = useState("");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
@@ -644,10 +763,10 @@ export default function FaithWorkspaceLayout({
     <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell dark min-h-[100svh] bg-[#031321] px-3 text-white" : "")}>
       <FaithOfflineBanner offline={offline} />
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
-      <InlineAskBar contextType={page} contextData={contextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
+      <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
       <div className={panel ? ("grid min-w-0 grid-cols-1 items-start gap-4 " + (nativeAndroid ? "" : "lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]")) : "min-w-0"}>
         <main data-faith-workspace-content className={"min-w-0 space-y-4 " + (nativeAndroid ? "[&_.grid-cols-2]:!grid-cols-1 [&_.grid-cols-3]:!grid-cols-1 [&_.grid-cols-4]:!grid-cols-1" : "max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1")}>{children}</main>
-        {panel && <StudyPanel page={page} contextData={contextData} tabs={panelTabs} />}
+        {panel && <StudyPanel page={page} contextData={safeContextData} tabs={panelTabs} />}
       </div>
 
       {overlay === "filters" && (
