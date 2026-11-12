@@ -53,7 +53,7 @@ export default function BiasharaContractsWorkspace({ route, business, onRefresh 
       let response;
       if (route === "finance") { response = await api.getBiasharaInvoices(businessId); setRows(rowsOf(response, "invoices")); }
       else if (route === "automations") { response = await api.getBiasharaAutomationRules(businessId); setRows(rowsOf(response, "rules")); }
-      else if (route === "sync") { response = await api.getBiasharaSyncJobs(businessId); }
+      else if (route === "sync") { response = await api.getBiasharaSyncJobs(businessId); setRows(rowsOf(response, "jobs")); }
       else if (route === "team") { response = await api.getBiasharaTeam(businessId); const members = rowsOf(response, "members").map((row) => ({ ...row, record_type: "member" })); const invitations = rowsOf(response, "invitations").map((row) => ({ ...row, record_type: "invitation" })); setRows([...members, ...invitations]); }
       else if (route === "business-switch") { response = await api.getBiasharaBusinesses(); setBusinesses(rowsOf(response, "businesses")); setRows(rowsOf(response, "businesses")); }
     } catch (e) { setRows([]); setError(errorText(e)); }
