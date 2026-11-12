@@ -40,7 +40,6 @@ import {
 import { useAuth } from "@/context/AuthContext.jsx";
 import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { useJumuiyaApi } from "@/services/jumuiyaApi.jsx";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import CommunityMattersWorkspace from "@/Dashboard/Community/CommunityMattersWorkspace.jsx";
 
 import CommunityHubDashboard from "@/Dashboard/Community/CommunityHubDashboard.jsx";
@@ -1223,14 +1222,12 @@ export default function CommunityDashboard({
             </button>
           </form>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <PremiumPlansStar />
-            <button type="button" onClick={() => navigate("community-notifications")} aria-label="Open notifications" title="Notifications" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2"><button type="button" onClick={() => navigate("community-notifications")} aria-label="Open notifications" title="Notifications" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-cyan-400 dark:border-white/10 dark:text-slate-300">
               <Bell size={16} />
             </button>
             <button type="button" onClick={() => navigate("community-me")} aria-label="Open my profile" title="My space" className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-500/50 bg-slate-100 dark:bg-slate-800">
-              {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? (
-                <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-full w-full object-cover" />
+              {communityProfile?.avatar_url ? (
+                <img src={communityProfile?.avatar_url} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-[10px] font-black text-slate-700 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>
               )}
@@ -1535,9 +1532,7 @@ export default function CommunityDashboard({
                     {discoveryQuery ? <button type="button" onClick={() => setDiscoveryQuery("")} aria-label="Clear search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"><X size={13} /></button> : null}
                     <button type="submit" className="hidden h-8 shrink-0 items-center gap-1 rounded-lg bg-slate-950 px-2.5 text-[10px] font-black text-white transition hover:bg-slate-800 dark:bg-cyan-400 dark:text-slate-950 sm:inline-flex"><Search size={12} /> Search</button>
                   </form>
-                  <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-                    <PremiumPlansStar />
-                    <div role="status" aria-live="polite" title={backendHealth === "online" ? "Community service is online" : backendHealth === "checking" ? "Checking Community service" : "Community service is unavailable"} className={"hidden 2xl:inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
+                  <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2"><div role="status" aria-live="polite" title={backendHealth === "online" ? "Community service is online" : backendHealth === "checking" ? "Checking Community service" : "Community service is unavailable"} className={"hidden 2xl:inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[10px] font-bold " + (backendHealth === "online" ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-700 dark:text-emerald-200" : "border-amber-300/30 bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-100")}>
                       <span className={"h-1.5 w-1.5 rounded-full " + (backendHealth === "online" ? "bg-emerald-500" : "bg-amber-500")} />
                       {backendHealth === "checking" ? "Checking" : backendHealth === "online" ? "Online" : "Offline"}
                     </div>
@@ -1561,7 +1556,7 @@ export default function CommunityDashboard({
                       ) : null}
                     </div>
                     <button type="button" onClick={() => navigate("community-me")} aria-label="Open my profile" title="My profile" className="hidden h-9 w-9 overflow-hidden rounded-full border-2 border-cyan-500/50 bg-slate-100 dark:bg-slate-800 sm:block">
-                      {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>}
+                      {communityProfile?.avatar_url ? <img src={communityProfile?.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>}
                     </button>
                   </div>
                 </div>
@@ -1569,8 +1564,8 @@ export default function CommunityDashboard({
 
               <section aria-label="Create a Community post" className="mb-4 overflow-hidden rounded-[22px] border border-slate-200/90 bg-white shadow-sm shadow-slate-950/[0.03] dark:border-white/[0.08] dark:bg-[#0d1729]">
                 <div className="flex items-center gap-3 p-3.5 sm:p-4">
-                  {communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image ? (
-                    <img src={communityProfile?.avatar_url || user?.avatar_url || user?.avatar || user?.profile_image} alt="" className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-white/10" />
+                  {communityProfile?.avatar_url ? (
+                    <img src={communityProfile?.avatar_url} alt="" className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover dark:border-white/10" />
                   ) : (
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-700 text-xs font-black text-white">{displayName.slice(0, 2).toUpperCase()}</span>
                   )}
