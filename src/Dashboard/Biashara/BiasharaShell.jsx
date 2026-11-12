@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import "./biashara-overview.css";
 import {
   ArrowLeftRight, BarChart3, Bell, Building2, ChevronDown, ClipboardList,
@@ -144,14 +143,6 @@ export default function BiasharaShell({
           <div className="biashara-sidebar-divider" />
           {secondaryNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
         </nav>
-
-        <div className="biashara-sidebar-premium">
-          <span className="biashara-premium-crown">♛</span>
-          <strong>Premium</strong>
-          <small>Unlock more business power</small>
-          <PremiumPlansStar className="!mt-2 !min-h-8 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
-        </div>
-
         <div className="biashara-sidebar-user">
           <span className="biashara-user-avatar">{String(businessName).slice(0, 1).toUpperCase()}</span>
           <div><strong>{businessName}</strong><small>{business?.access_role || (business?.is_owner ? "Owner" : "Business member")}</small></div>

@@ -55,7 +55,6 @@ import SDAQuarterlyWorkspace from "./faith/SDAQuarterlyWorkspace.jsx";
 import AncientWordRootsWorkspace from "./faith/AncientWordRootsWorkspace.jsx";
 import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
 import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
@@ -75,7 +74,7 @@ function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
           <p className="truncate text-sm font-extrabold tracking-tight">RevelaCode</p>
           <p className="truncate text-[11px] text-slate-400">Faith Hub · {title}</p>
         </div>
-        <PremiumPlansStar className="border-white/10 bg-[#0A2237] text-amber-300" />
+        
         <button type="button" onClick={() => onOpenAI?.()} aria-label="Open RevelaAI" className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95">
           <Sparkles size={18} />
         </button>
@@ -434,14 +433,7 @@ function FaithHomeDashboard({
           <strong>RevelaCode</strong>
           <small>Code. Innovate. Transform.</small>
         </button>
-        {renderSidebarItems()}
-        <div className="faith-home-premium">
-          <Star size={23} fill="currentColor" />
-          <strong>Premium</strong>
-          <span>Unlock more Bible study tools</span>
-          <PremiumPlansStar className="faith-premium-action !h-9 !min-h-9 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
-        </div>
-        <button type="button" className="faith-home-user" onClick={() => onNavigate?.("profile")}>
+        {renderSidebarItems()}        <button type="button" className="faith-home-user" onClick={() => onNavigate?.("profile")}>
           <span className="faith-home-avatar">{initials}</span>
           <span className="faith-home-user-copy">
             <strong>{displayName}</strong>
@@ -647,14 +639,7 @@ function FaithHomeDashboard({
               <img src="/Logo.png" alt="RevelaCode" />
               <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close navigation"><X size={20} /></button>
             </div>
-            {renderSidebarItems()}
-            <div className="faith-home-premium">
-              <Star size={22} fill="currentColor" />
-              <strong>Premium</strong>
-              <span>Unlock more Bible study tools</span>
-              <PremiumPlansStar className="faith-premium-action !h-9 !min-h-9 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
-            </div>
-          </section>
+            {renderSidebarItems()}          </section>
         </div>
       )}
 
@@ -1356,7 +1341,7 @@ export default function FaithDashboard({
             lg:justify-end
           "
         >
-          <PremiumPlansStar />
+          
           <button
             type="button"
             onClick={openStudy}
