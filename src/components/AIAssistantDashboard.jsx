@@ -1279,7 +1279,7 @@ export default function AIAssistantDashboard({
                 document_style: /\b(official|officially|formal|formally|institutional|letterhead)\b/i.test(workspacePrompt) ? "official" : "auto",
                 document_count: requestedWorkspaceDocumentCount(workspacePrompt),
               };
-              if (attachedFile?.type?.startsWith("image/")) {
+              if (attachedFile?.type?.startsWith("image/") || /\.svg$/i.test(attachedFile?.name || "")) {
                 files = [{ file: attachedFile, fieldName: "logo" }];
                 workspacePayload = { ...workspacePayload, image_placement: "header", image_width_inches: 1.2 };
               } else if (attachedFile) {
