@@ -317,7 +317,6 @@ function FaithHomeDashboard({
   openStudy,
   openSDAQuarterly,
   openFaithAcademy,
-  openPrayer,
   openMaterial,
   featuredLesson,
   featuredLessonTitle,
@@ -325,6 +324,7 @@ function FaithHomeDashboard({
   hasContinueActivity,
   continueTab,
   setContinueTab,
+  setFaithSection,
   verseOfDay,
   studyStreak,
   studyDaysKey,
@@ -387,7 +387,7 @@ function FaithHomeDashboard({
   ];
 
   function onNavigateHome() {
-    window.dispatchEvent(new CustomEvent("revelacode:faith-home"));
+    setFaithSection("home");
   }
 
   const runNavigation = (item) => {
@@ -428,7 +428,7 @@ function FaithHomeDashboard({
   return (
     <div className="faith-home-shell">
       <aside className="faith-home-sidebar" aria-label="Faith dashboard sidebar">
-        <button type="button" className="faith-home-brand" onClick={() => setFaithHome()}>
+        <button type="button" className="faith-home-brand" onClick={onNavigateHome}>
           <img src="/Logo.png" alt="RevelaCode" />
           <strong>RevelaCode</strong>
           <small>Code. Innovate. Transform.</small>
@@ -1838,7 +1838,6 @@ export default function FaithDashboard({
       openStudy={openStudy}
       openSDAQuarterly={openSDAQuarterly}
       openFaithAcademy={openFaithAcademy}
-      openPrayer={openPrayer}
       openMaterial={openMaterial}
       featuredLesson={featuredLesson}
       featuredLessonTitle={featuredLessonTitle}
@@ -1846,6 +1845,7 @@ export default function FaithDashboard({
       hasContinueActivity={hasContinueActivity}
       continueTab={continueTab}
       setContinueTab={setContinueTab}
+      setFaithSection={setFaithSection}
       verseOfDay={verseOfDay}
       studyStreak={studyStreak}
       studyDaysKey={studyDaysKey}
