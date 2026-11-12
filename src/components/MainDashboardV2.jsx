@@ -554,11 +554,11 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
 
   // Keep the floating AI utility out of the sign-in/onboarding layer.
   useEffect(() => {
-    if (showStartModal || !user) {
+    if (showStartModal || !user || activeView === "community") {
       setAIWidgetOpen(false);
       setAIWidgetMinimized(false);
     }
-  }, [showStartModal, user]);
+  }, [showStartModal, user, activeView]);
 
   /* =========================================================
      Direct Hub Links
@@ -1698,7 +1698,7 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           {/* Context-aware floating RevelaAI widget */}
           <AnimatePresence>
-            {aiWidgetOpen && !showStartModal && Boolean(user) && (
+            {aiWidgetOpen && !showStartModal && Boolean(user) && activeView !== "community" && (
               <motion.section
                 key="revela-ai-floating-widget"
                 initial={{ opacity: 0, y: 18, scale: 0.97 }}
