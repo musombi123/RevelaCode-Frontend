@@ -67,7 +67,7 @@ function readBrowserFileAsDataUrl(file) {
 
 function inferWorkspaceCommand(prompt, attachedFile) {
   const text = String(prompt || "").toLowerCase();
-  const imageAttached = Boolean(attachedFile?.type?.startsWith("image/"));
+  const imageAttached = Boolean(attachedFile?.type?.startsWith("image/") || /\.svg$/i.test(attachedFile?.name || ""));
   if (/\b(official|formal|business|institutional)\b.{0,45}\b(letter|memo|proposal|submission|report|notice)\b|\b(create|draft|write|prepare|generate)\b.{0,50}\b(official letter|formal letter|memorandum|business letter|institutional proposal|word document|pdf report)\b/.test(text)) return "/doc";
   if (/\b(create|make|prepare|generate|build)\b.{0,45}\b(powerpoint|presentation|slide deck|slides)\b|\b(presentation|powerpoint|slide deck)\b/.test(text)) return "/deck";
   if (/\b(create|make|prepare|generate|build)\b.{0,45}\b(excel|spreadsheet|workbook|financial model|ledger template)\b/.test(text)) return "/sheet";
@@ -76,7 +76,18 @@ function inferWorkspaceCommand(prompt, attachedFile) {
   if (/\b(create|design|build|prototype|generate)\b.{0,45}\b(responsive (web|admin|dashboard|mobile)|website prototype|web app interface|ui prototype|dashboard interface|html interface)\b/.test(text)) return "/ui";
   if (/\b(create|generate|design|prepare)\b.{0,50}\b(marketing campaign|campaign kit|promotional poster|advertising flyer|brand promotion|social media campaign)\b/.test(text)) return "/promo";
   if (/\b(generate|create|draw|design)\b.{0,40}\b(image|illustration|logo|graphic)\b/.test(text) && !imageAttached) return "/image";
+  const documentIntent = /\b(document|documents|pdf|pdfs|proposal|introduction|letter|memo|report|submission|letterhead)\b/.test(text);
+  const creationIntent = /\b(help me|make|create|prepare|generate|produce|format|convert|turn|wire|draft|write)\b/.test(text);
+  if (documentIntent && creationIntent) return "/doc";
   return null;
+}
+
+function requestedWorkspaceDocumentCount(prompt) {
+  const text = String(prompt || "").toLowerCase();
+  const match = text.match(/\b(one|two|three|four|[1-4])\s+(?:(?:separate|individual)\s+)?(?:pdfs?|documents?|files?)\b/);
+  if (!match) return 1;
+  const values = { one: 1, two: 2, three: 3, four: 4 };
+  return Math.min(4, Math.max(1, values[match[1]] || Number(match[1]) || 1));
 }
 
 function workspaceDownloadUrl(value) {
@@ -1261,7 +1272,13 @@ export default function AIAssistantDashboard({
             let files = [];
 
             if (workspaceCommand === "/doc" || workspaceCommand === "/paper") {
-              workspacePayload = { ...workspacePayload, task: "document", format: /\bpdf\b/i.test(workspacePrompt) ? "pdf" : "word", document_style: "auto" };
+              workspacePayload = {
+                ...workspacePayload,
+                task: "document",
+                format: /\bpdfs?\b/i.test(workspacePrompt) ? "pdf" : "word",
+                document_style: /\b(official|officially|formal|formally|institutional|letterhead)\b/i.test(workspacePrompt) ? "official" : "auto",
+                document_count: requestedWorkspaceDocumentCount(workspacePrompt),
+              };
               if (attachedFile?.type?.startsWith("image/")) {
                 files = [{ file: attachedFile, fieldName: "logo" }];
                 workspacePayload = { ...workspacePayload, image_placement: "header", image_width_inches: 1.2 };
