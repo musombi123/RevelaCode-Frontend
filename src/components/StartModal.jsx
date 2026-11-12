@@ -33,7 +33,7 @@ const NativeBrowser = registerPlugin("Browser");
 const LegalDocs = React.lazy(() => import("./LegalDocs.jsx"));
 
 
-export default function StartModal() {
+export default function StartModal({ onComplete }) {
   const {
     login,
     guestMode,
@@ -233,6 +233,14 @@ export default function StartModal() {
         window.location.replace("/app");
     }
   };
+
+  const completeWorkspaceAccess = (role) => {
+    // Notify the shell that authentication is complete before applying the
+    // role-aware destination. The parent owns StartModal visibility.
+    if (typeof onComplete === "function") onComplete();
+    goHomeByRole(role);
+  };
+
 
   // =======================================================
   // API
@@ -824,7 +832,7 @@ const completeLogin = (data = {}) => {
     }
 
     const authResult = completeLogin(data);
-    goHomeByRole(authResult.role);
+    completeWorkspaceAccess(authResult.role);
     return authResult;
   };
 
@@ -849,7 +857,7 @@ const completeLogin = (data = {}) => {
       setMfaChallengeToken("");
       setMfaCode("");
       const authResult = completeLogin(data);
-      goHomeByRole(authResult.role);
+      completeWorkspaceAccess(authResult.role);
     } catch (err) {
       setError(err?.message || "Authenticator verification failed.");
     } finally {
@@ -984,9 +992,7 @@ const completeLogin = (data = {}) => {
     () => {
       guestMode();
 
-      goHomeByRole(
-        "guest"
-      );
+      completeWorkspaceAccess("guest");
     };
 
 
