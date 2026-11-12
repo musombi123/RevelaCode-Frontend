@@ -77,13 +77,17 @@ test("Shamba results render structured expert fields and explicitly guard unmeas
   assert.match(diagnostics, /soil pH and nutrients are never measured from bare-soil colour/i);
 });
 
-test("mislabeled SVG logos are detected from their content and rasterized before upload", () => {
+test("logo uploads trust raster signatures and safely normalize SVG exports", () => {
+  assert.match(client, /async function detectWorkspaceRasterMime\(file\)/);
+  assert.match(client, /bytes\[0\] === 0x89[\s\S]*?0x50[\s\S]*?0x4e[\s\S]*?0x47/);
+  assert.match(client, /String\.fromCharCode\(\.\.\.bytes\.slice\(8, 12\)\) === "WEBP"/);
+  assert.match(client, /return makeWorkspaceImageFile\(file, file, raster\.mime, raster\.extension\)/);
   assert.match(client, /const declaredSvg = String\(file\.type \|\| ""\)\.toLowerCase\(\)/);
-  assert.match(client, /file\.slice\(0, Math\.min\(file\.size, 8192\)\)\.text\(\)/);
   assert.match(client, /const contentLooksSvg = \/<svg/);
-  assert.match(client, /const isSvg = declaredSvg \|\| contentLooksSvg/);
-  assert.match(client, /new File\(\[png\], baseName \+ "\.png", \{ type: "image\/png"/);
-  assert.match(client, /baseName = String\(file\.name.*webp/);
+  assert.match(client, /const svgStart = source\.search\(\/<svg/);
+  assert.match(client, /source\.replace\([\s\S]*?&amp;/);
+  assert.match(client, /malformed XML that could not be safely repaired/);
+  assert.match(client, /return makeWorkspaceImageFile\(file, png, "image\/png", "png"\)/);
 });
 
 

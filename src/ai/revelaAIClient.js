@@ -212,35 +212,101 @@ async function readWorkspaceResponse(response) {
     : payload;
 }
 
+async function detectWorkspaceRasterMime(file) {
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const isPng = bytes.length >= 8 &&
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+    bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+  if (isPng) return { mime: "image/png", extension: "png" };
+
+  const isJpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (isJpeg) return { mime: "image/jpeg", extension: "jpg" };
+
+  const isWebp = bytes.length >= 12 &&
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  if (isWebp) return { mime: "image/webp", extension: "webp" };
+
+  return null;
+}
+
+function makeWorkspaceImageFile(file, blob, mime, extension) {
+  const baseName = String(file.name || "revelacode-logo")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-") || "revelacode-logo";
+  return new File([blob], baseName + "." + extension, {
+    type: mime,
+    lastModified: file.lastModified || Date.now(),
+  });
+}
+
 async function normalizeWorkspaceImageAttachment(file) {
   if (!file) return file;
 
+  if (file.size > 4 * 1024 * 1024) {
+    throw new Error("Logo and image attachments must be no larger than 4 MB.");
+  }
+
+  // Trust the actual file signature over the browser-supplied MIME and name.
+  // This prevents a real PNG/JPEG/WEBP from being misread as an SVG just
+  // because its file input metadata says image/svg+xml.
+  const raster = await detectWorkspaceRasterMime(file);
+  if (raster) {
+    const declaredMime = String(file.type || "").toLowerCase();
+    const expectedName = String(file.name || "").toLowerCase().endsWith("." + raster.extension);
+    if (declaredMime === raster.mime && expectedName) return file;
+    return makeWorkspaceImageFile(file, file, raster.mime, raster.extension);
+  }
+
   // Do not trust the extension or browser MIME alone: exported logos are
   // sometimes SVG XML renamed to .png (and therefore reported as image/png).
-  // Read only a small prefix for content sniffing before deciding whether to
-  // pass a normal raster upload through unchanged.
   const declaredSvg = String(file.type || "").toLowerCase() === "image/svg+xml" ||
     /\.svg$/i.test(file.name || "");
   const header = await file.slice(0, Math.min(file.size, 8192)).text();
   const contentLooksSvg = /<svg(?:\s|>)/i.test(header);
   const isSvg = declaredSvg || contentLooksSvg;
   if (!isSvg) return file;
-  if (file.size > 4 * 1024 * 1024) {
-    throw new Error("SVG logos must be no larger than 4 MB before conversion.");
-  }
+
   if (typeof DOMParser === "undefined" || typeof Image === "undefined" || typeof document === "undefined") {
     throw new Error("This browser cannot safely convert the supplied SVG logo. Export it as PNG and attach it again.");
   }
 
-  const source = await file.text();
-  if (!source.trim() || source.length > 4 * 1024 * 1024) {
+  let source = (await file.text()).replace(/^\uFEFF/, "").trim();
+  if (!source || source.length > 4 * 1024 * 1024) {
     throw new Error("The supplied SVG logo is empty or exceeds the 4 MB limit.");
   }
-  const parsed = new DOMParser().parseFromString(source, "image/svg+xml");
+
+  // SVG downloads often include an XML declaration, DTD, comments or trailing
+  // exporter metadata. Keep the actual SVG root and its children; the DTD is
+  // not needed for browser rendering and may reference external entities.
+  const svgStart = source.search(/<svg(?:\s|>)/i);
+  const svgEnd = source.toLowerCase().lastIndexOf("</svg>");
+  if (svgStart < 0 || svgEnd < svgStart) {
+    throw new Error("The file is marked as SVG but contains no complete <svg> element. Re-export the logo as SVG or PNG.");
+  }
+  source = source.slice(svgStart, svgEnd + "</svg>".length)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+
+  // Repair the common Illustrator/Inkscape export defect where a text node or
+  // attribute contains a bare ampersand (for example, "Research & Innovation").
+  // Existing XML entities and numeric character references remain unchanged.
+  let parsed = new DOMParser().parseFromString(source, "image/svg+xml");
+  if (parsed.querySelector("parsererror")) {
+    const repaired = source.replace(
+      /&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[\da-f]+);)/gi,
+      "&amp;"
+    );
+    if (repaired !== source) {
+      source = repaired;
+      parsed = new DOMParser().parseFromString(source, "image/svg+xml");
+    }
+  }
+
   const root = parsed.documentElement;
   if (!root || root.localName?.toLowerCase() !== "svg" || parsed.querySelector("parsererror")) {
-    throw new Error("The attached SVG logo is not valid XML/SVG.");
+    throw new Error("The SVG logo contains malformed XML that could not be safely repaired. Export it again as SVG 1.1 or PNG.");
   }
+
   if (parsed.querySelector("script,foreignObject,iframe,object,embed,audio,video")) {
     throw new Error("The SVG logo contains active or embedded content and cannot be used in an official document.");
   }
@@ -268,7 +334,7 @@ async function normalizeWorkspaceImageAttachment(file) {
     const image = new Image();
     await new Promise((resolve, reject) => {
       image.onload = resolve;
-      image.onerror = () => reject(new Error("The SVG logo could not be rasterized by this browser."));
+      image.onerror = () => reject(new Error("The SVG logo could not be rasterized by this browser. Export it as PNG and attach it again."));
       image.src = svgUrl;
     });
     const sourceWidth = Math.max(1, image.naturalWidth || 1024);
@@ -284,8 +350,7 @@ async function normalizeWorkspaceImageAttachment(file) {
     const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
     if (!png || !png.size) throw new Error("The SVG logo could not be converted to PNG.");
     if (png.size > 4 * 1024 * 1024) throw new Error("The converted PNG logo exceeds the 4 MB upload limit.");
-    const baseName = String(file.name || "revelacode-logo").replace(/\.(?:svg|png|jpe?g|webp)$/i, "") || "revelacode-logo";
-    return new File([png], baseName + ".png", { type: "image/png", lastModified: file.lastModified || Date.now() });
+    return makeWorkspaceImageFile(file, png, "image/png", "png");
   } finally {
     URL.revokeObjectURL(svgUrl);
   }
