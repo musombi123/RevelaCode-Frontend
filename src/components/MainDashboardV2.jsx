@@ -1519,7 +1519,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
 
-            {!showShellHeader ? (
+            {!showShellHeader && activeView !== "faith" ? (
               <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-2.5 shadow-sm dark:border-amber-900/50 dark:bg-slate-900">
                 <div className="min-w-0">
                   <p className="text-xs font-black text-slate-900 dark:text-white">RevelaCode Premium</p>
@@ -1543,7 +1543,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                 </button>
               </div>
             )}
-            {!["home", "community"].includes(activeView) ? (
+            {!["home", "community", "faith"].includes(activeView) ? (
               <div className="mx-auto mb-2 flex w-full max-w-5xl justify-end">
                 <HubShareAction
                   activeHub={activeView}
