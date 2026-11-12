@@ -10,6 +10,7 @@ import React, {
 
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { motion, AnimatePresence } from "framer-motion";
 
 import {
@@ -343,8 +344,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const pendingPremiumPlanCode = useRef("");
   const [resumePremiumAfterLogin, setResumePremiumAfterLogin] = useState(false);
 
-  const { theme, setTheme } =
-    useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const { user, isGuest, logout, isAuthenticated } =
     useAuth();
@@ -686,6 +686,86 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") ||
     import.meta.env.VITE_ANDROID_APP === "true";
   const isAndroidHome = isAndroidApp && activeView === "home";
+  const dashboardContentRef = useRef(null);
+
+  // Native Back is owned by the application shell. Hub-level Back listeners
+  // are intentionally not registered, so the same behavior applies from every
+  // nested Faith, Shamba, Community, Biashara and Elimu workspace.
+  useEffect(() => {
+    if (!isAndroidApp) return undefined;
+
+    let active = true;
+    let nativeListener = null;
+
+    const handleAndroidBack = () => {
+      if (document.querySelector("[data-demo-overlay-root]")) return;
+
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+        return;
+      }
+      if (mobileCategoryOpen) {
+        setMobileCategoryOpen(null);
+        return;
+      }
+      if (showPremiumPlans) {
+        setShowPremiumPlans(false);
+        return;
+      }
+      if (aiWidgetOpen) {
+        setAIWidgetOpen(false);
+        setAIWidgetMinimized(false);
+        return;
+      }
+
+      if (aiFullscreenOpen) {
+        setAIFullscreenOpen(false);
+        setActiveView("home");
+      } else if (activeView !== "home") {
+        setActiveView("home");
+      } else {
+        CapacitorApp.exitApp().catch(() => {});
+        return;
+      }
+
+      setSidebarOpen(false);
+      setMobileCategoryOpen(null);
+      dashboardContentRef.current?.scrollTo({ top: 0, behavior: "auto" });
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("hub");
+      nextParams.delete("verse");
+      if (nextParams.toString() !== searchParams.toString()) {
+        setSearchParams(nextParams, { replace: true });
+      }
+    };
+
+    CapacitorApp.addListener("backButton", handleAndroidBack)
+      .then((listener) => {
+        if (!active) listener.remove();
+        else nativeListener = listener;
+      })
+      .catch((error) => console.warn("[RevelaCode] Android Back listener could not start.", error));
+
+    return () => {
+      active = false;
+      nativeListener?.remove?.();
+    };
+  }, [
+    isAndroidApp,
+    sidebarOpen,
+    mobileCategoryOpen,
+    showPremiumPlans,
+    aiWidgetOpen,
+    aiFullscreenOpen,
+    activeView,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    dashboardContentRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [activeView]);
 
   // Hub dashboards own their workspace headers. Keep the shell header
   // for Home and utility/section screens to avoid stacked header bars.
@@ -859,17 +939,7 @@ const BIASHARA_SECTION_KEYS = new Set(
       ===================================================== */}
 
       <div
-        className="
-          relative
-          flex
-          h-[100dvh]
-          min-h-0
-          min-w-0
-          overflow-hidden
-          bg-slate-50
-          transition-colors
-          dark:bg-slate-950
-        "
+        className="relative flex min-h-0 min-w-0 h-[var(--revelacode-app-viewport-height,100dvh)] overflow-hidden bg-slate-50 transition-colors dark:bg-slate-950"
       >
         {/* ===================================================
             SIDEBAR
@@ -1207,13 +1277,10 @@ const BIASHARA_SECTION_KEYS = new Set(
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setTheme(
-                          theme === "dark"
-                            ? "light"
-                            : "dark"
-                        )
-                      }
+                      onClick={() => {
+                        const nextTheme = theme === "system" ? "light" : theme === "light" ? "dark" : "system";
+                        setTheme(nextTheme);
+                      }}
                       className="
                         flex
                         items-center
@@ -1235,15 +1302,20 @@ const BIASHARA_SECTION_KEYS = new Set(
                       "
                       aria-label="Toggle theme"
                     >
-                      {theme === "dark" ? (
+                      {theme === "system" ? (
                         <>
-                          <Sun size={15} />
-                          Light
+                          {resolvedTheme === "dark" ? <Moon size={15} /> : <Sun size={15} />}
+                          System
                         </>
-                      ) : (
+                      ) : theme === "dark" ? (
                         <>
                           <Moon size={15} />
                           Dark
+                        </>
+                      ) : (
+                        <>
+                          <Sun size={15} />
+                          Light
                         </>
                       )}
                     </button>
@@ -1502,6 +1574,8 @@ const BIASHARA_SECTION_KEYS = new Set(
           ================================================= */}
 
           <section
+            ref={dashboardContentRef}
+            data-app-scroll-root="true"
             id="revelacode-dashboard-content"
             className={activeView === "faith"
               ? "faith-dashboard-host min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-transparent p-0 dark:bg-transparent"
@@ -1510,7 +1584,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                   : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
-            style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "auto" } : undefined}
+            style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
           >
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
@@ -1589,7 +1663,7 @@ const BIASHARA_SECTION_KEYS = new Set(
           </section>
 
           {/* Compact Android navigation: related hubs are grouped behind Learn and Grow. */}
-          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && (
+          {!sidebarOpen && activeView !== "community" && activeView !== "shamba" && activeView !== "biashara" && activeView !== "faith" && (
             <>
               {mobileCategoryOpen ? (
                 <section
