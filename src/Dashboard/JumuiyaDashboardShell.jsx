@@ -1,5 +1,4 @@
 ﻿import React from "react";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import {
   ArrowLeft,
   BarChart3,
@@ -79,17 +78,6 @@ function getInitials(user) {
   }
 
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
-
-function getDisplayName(user) {
-  return (
-    user?.name ||
-    user?.full_name ||
-    user?.fullName ||
-    user?.username ||
-    user?.email ||
-    "Jumuiya User"
-  );
 }
 
 function normalizeHubKey(activeHub) {
@@ -191,8 +179,8 @@ export default function JumuiyaDashboardShell({
     }
   };
 
-  const displayName = getDisplayName(user);
   const initials = getInitials(user);
+  const communityAvatar = String(user?.community_avatar_url || user?.communityAvatarUrl || "").trim();
 
   return (
     <div
@@ -337,65 +325,38 @@ export default function JumuiyaDashboardShell({
 
           {/* RIGHT */}
           <div className="flex shrink-0 items-center gap-2">
-            <PremiumPlansStar />
-
             <div
               className="
-                hidden
+                flex
+                h-10
+                w-10
+                shrink-0
                 items-center
-                gap-2
-                rounded-2xl
+                justify-center
+                overflow-hidden
+                rounded-full
                 border
                 border-slate-200
-                bg-slate-50
-                px-3
-                py-2
-                sm:flex
+                bg-slate-100
+                text-[11px]
+                font-black
+                text-slate-700
                 dark:border-white/10
-                dark:bg-white/5
+                dark:bg-white/10
+                dark:text-white
               "
+              role="img"
+              aria-label="Community profile photo"
             >
-              <div
-                className="
-                  flex
-                  h-8
-                  w-8
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-slate-900
-                  text-[11px]
-                  font-black
-                  text-white
-                  dark:bg-white
-                  dark:text-slate-900
-                "
-              >
-                {initials}
-              </div>
-
-              <div className="max-w-[140px]">
-                <p
-                  className="
-                    truncate
-                    text-xs
-                    font-bold
-                    text-slate-800
-                    dark:text-slate-200
-                  "
-                >
-                  {displayName}
-                </p>
-
-                <p
-                  className="
-                    text-[10px]
-                    text-slate-400
-                  "
-                >
-                  Jumuiya
-                </p>
-              </div>
+              {communityAvatar ? (
+                <img
+                  src={communityAvatar}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
 
             <button
@@ -499,75 +460,6 @@ export default function JumuiyaDashboardShell({
                 </button>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================
-          MOBILE USER STRIP
-      =================================================== */}
-
-      {user && (
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-2xl
-            border
-            border-slate-200
-            bg-white
-            px-4
-            py-3
-            shadow-sm
-            dark:border-white/10
-            dark:bg-slate-900
-            sm:hidden
-          "
-        >
-          <div
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-slate-900
-              text-[11px]
-              font-black
-              text-white
-              dark:bg-white
-              dark:text-slate-900
-            "
-          >
-            {initials}
-          </div>
-
-          <div className="min-w-0">
-            <p
-              className="
-                truncate
-                text-xs
-                font-bold
-                text-slate-800
-                dark:text-slate-200
-              "
-            >
-              {displayName}
-            </p>
-
-            <p className="text-[10px] text-slate-400">
-              Jumuiya account
-            </p>
-          </div>
-
-          <div className="ml-auto">
-            <Menu
-              size={18}
-              className="text-slate-400"
-            />
           </div>
         </div>
       )}
