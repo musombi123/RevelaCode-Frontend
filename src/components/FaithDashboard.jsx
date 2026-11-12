@@ -57,7 +57,7 @@ import StudyResourceViewer from "./study/StudyResourceViewer.jsx";
 import CommunityAdSenseUnit from "@/components/CommunityAdSenseUnit.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import { useRevenueApi } from "@/services/revenueApi.jsx";
-import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface, useFaithAndroidBack } from "./faith/workspace/FaithWorkspaceLayout.jsx";
+import FaithWorkspaceLayout, { FaithMobileBottomNav, FaithOfflineBanner, PullToRefreshSurface } from "./faith/workspace/FaithWorkspaceLayout.jsx";
 
 function isNativeAndroid() {
   return (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
@@ -72,7 +72,7 @@ function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold tracking-tight">RevelaCode</p>
-          <p className="truncate text-[11px] text-slate-400">Faith Hub · {title}</p>
+          <p className={"truncate text-[11px] " + (resolvedTheme === "dark" ? "text-slate-400" : "text-slate-500")}>Faith Hub · {title}</p>
         </div>
         
         <button type="button" onClick={() => onOpenAI?.()} aria-label="Open RevelaAI" className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95">
@@ -85,11 +85,11 @@ function FaithAndroidHubHeader({ title = "Faith Hub", onOpenAI }) {
 
 function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpenAI, onHome, onStudy, active = "study" }) {
   const nativeAndroid = isNativeAndroid();
-  useFaithAndroidBack({ isHome: false, enabled: nativeAndroid, onBack });
+  const { resolvedTheme } = useTheme();
   if (!nativeAndroid) return children;
   return (
-    <div className="faith-android-shell dark min-h-[100svh] bg-[#031321] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#041726]/95 px-3 py-3 text-white backdrop-blur-xl">
+    <div className={"faith-android-shell min-h-[100svh] " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900")}>
+      <header className={"sticky top-0 z-40 border-b px-3 py-3 backdrop-blur-xl " + (resolvedTheme === "dark" ? "border-white/10 bg-[#041726]/95 text-white" : "border-slate-200 bg-white/95 text-slate-900")}>
         <div className="mx-auto flex max-w-[760px] items-center gap-2.5">
           <button type="button" onClick={onBack} aria-label="Back to Faith" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1D4057] bg-[#0A2237] text-white active:scale-95">
             <ArrowLeft size={18} />
@@ -338,7 +338,7 @@ function FaithHomeDashboard({
   loadHomeSnapshot,
   adSubscriptionStatus,
 }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -421,8 +421,7 @@ function FaithHomeDashboard({
   };
 
   const toggleTheme = () => {
-    const darkNow = document.documentElement.classList.contains("dark");
-    setTheme(darkNow ? "light" : "dark");
+    setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system");
   };
 
   return (
@@ -499,11 +498,11 @@ function FaithHomeDashboard({
                 type="button"
                 className="faith-home-theme-toggle"
                 onClick={toggleTheme}
-                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-                title="Toggle theme"
+                aria-label={theme === "system" ? "Switch to light theme" : theme === "dark" ? "Switch to system theme" : "Switch to dark theme"}
+                title={theme === "system" ? "System theme" : theme === "dark" ? "Dark theme" : "Light theme"}
               >
-                <Sun size={16} />
-                <Moon size={16} fill="currentColor" />
+                {theme === "system" ? (resolvedTheme === "dark" ? <Moon size={16} /> : <Sun size={16} />) : theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
+                <span className="sr-only">{theme === "system" ? "System" : theme === "dark" ? "Dark" : "Light"}</span>
               </button>
             </div>
           </div>
@@ -1182,27 +1181,6 @@ export default function FaithDashboard({
     setSelectedMaterial(null);
     setFaithSection(studyReturnSection || "study");
   };
-
-  const handleFaithNativeBack = useCallback(() => {
-    if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) { document.activeElement.blur(); setHomeKeyboardOpen(false); return true; }
-    if (comingSoonFeature) { setComingSoonFeature(""); return true; }
-    if (selectedSource) { setSelectedSource(null); setFaithSection(sourceReturnSection || "home"); return true; }
-    if (selectedMaterial) { goBackFromReader(); return true; }
-    if (faithSection !== "home") { closeStudyView(); return true; }
-    return false;
-  }, [comingSoonFeature, selectedSource, sourceReturnSection, selectedMaterial, faithSection, studyReturnSection]);
-
-  const showFaithBackPrompt = useCallback((message) => {
-    setBackPrompt(message);
-    window.setTimeout(() => setBackPrompt(""), 1900);
-  }, []);
-
-  useFaithAndroidBack({
-    enabled: faithSection === "home",
-    isHome: true,
-    onBackAction: handleFaithNativeBack,
-    onPrompt: showFaithBackPrompt,
-  });
 
   /* =======================================================
      INTERNAL STUDY HEADER
