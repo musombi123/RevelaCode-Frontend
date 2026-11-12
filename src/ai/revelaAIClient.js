@@ -212,6 +212,75 @@ async function readWorkspaceResponse(response) {
     : payload;
 }
 
+async function normalizeWorkspaceImageAttachment(file) {
+  const isSvg = file && (String(file.type || "").toLowerCase() === "image/svg+xml" || /\.svg$/i.test(file.name || ""));
+  if (!isSvg) return file;
+  if (file.size > 4 * 1024 * 1024) {
+    throw new Error("SVG logos must be no larger than 4 MB before conversion.");
+  }
+  if (typeof DOMParser === "undefined" || typeof Image === "undefined" || typeof document === "undefined") {
+    throw new Error("This browser cannot safely convert the supplied SVG logo. Export it as PNG and attach it again.");
+  }
+
+  const source = await file.text();
+  if (!source.trim() || source.length > 4 * 1024 * 1024) {
+    throw new Error("The supplied SVG logo is empty or exceeds the 4 MB limit.");
+  }
+  const parsed = new DOMParser().parseFromString(source, "image/svg+xml");
+  const root = parsed.documentElement;
+  if (!root || root.localName?.toLowerCase() !== "svg" || parsed.querySelector("parsererror")) {
+    throw new Error("The attached SVG logo is not valid XML/SVG.");
+  }
+  if (parsed.querySelector("script,foreignObject,iframe,object,embed,audio,video")) {
+    throw new Error("The SVG logo contains active or embedded content and cannot be used in an official document.");
+  }
+  for (const element of [root, ...Array.from(root.querySelectorAll("*"))]) {
+    for (const attribute of Array.from(element.attributes || [])) {
+      const name = String(attribute.name || "").toLowerCase();
+      const value = String(attribute.value || "").trim();
+      if (name.startsWith("on")) {
+        throw new Error("The SVG logo contains an event handler and cannot be embedded.");
+      }
+      if ((name === "href" || name.endsWith(":href") || name === "src") &&
+          value && !value.startsWith("#") &&
+          !/^data:image\/(?:png|jpeg|webp);base64,/i.test(value)) {
+        throw new Error("The SVG logo references an external resource. Use a self-contained logo file.");
+      }
+    }
+  }
+  if (/@import\b/i.test(source) || /url\(\s*(['"]?)(?:https?:|\/\/|file:|javascript:)/i.test(source)) {
+    throw new Error("The SVG logo contains an external resource reference. Use a self-contained logo file.");
+  }
+
+  const serialized = new XMLSerializer().serializeToString(root);
+  const svgUrl = URL.createObjectURL(new Blob([serialized], { type: "image/svg+xml" }));
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("The SVG logo could not be rasterized by this browser."));
+      image.src = svgUrl;
+    });
+    const sourceWidth = Math.max(1, image.naturalWidth || 1024);
+    const sourceHeight = Math.max(1, image.naturalHeight || 1024);
+    const scale = Math.min(1, 2048 / Math.max(sourceWidth, sourceHeight),
+      Math.sqrt(20000000 / (sourceWidth * sourceHeight)));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("The browser could not prepare the SVG logo for embedding.");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!png || !png.size) throw new Error("The SVG logo could not be converted to PNG.");
+    if (png.size > 4 * 1024 * 1024) throw new Error("The converted PNG logo exceeds the 4 MB upload limit.");
+    const baseName = String(file.name || "revelacode-logo.svg").replace(/\.svg$/i, "");
+    return new File([png], baseName + ".png", { type: "image/png", lastModified: file.lastModified || Date.now() });
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
 /**
  * Execute the shared RevelaAI workspace endpoint. Internal processors are
  * selected by the backend; the frontend never configures individual tool URLs.
@@ -238,7 +307,13 @@ export async function executeRevelaAIWorkspace({
       if (value === undefined || value === null) continue;
       body.append(key, complex.has(key) ? JSON.stringify(value) : String(value));
     }
-    attachments.slice(0, 8).forEach(({ file, fieldName = "logo" }) => {
+    const preparedAttachments = await Promise.all(
+      attachments.slice(0, 8).map(async (item) => ({
+        ...item,
+        file: await normalizeWorkspaceImageAttachment(item.file),
+      }))
+    );
+    preparedAttachments.forEach(({ file, fieldName = "logo" }) => {
       body.append(fieldName, file, file.name || "revelaai-attachment");
     });
     endpoint = `${API_BASE}/api/workspace/execute/multipart`;
