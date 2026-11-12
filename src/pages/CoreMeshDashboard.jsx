@@ -6,10 +6,8 @@ import {
   Activity,
   AlertTriangle,
   Brain,
-  CheckCircle2,
   Cpu,
   Layers,
-  Loader2,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -135,16 +133,21 @@ function DataPoint({ label, value }) {
   );
 }
 
-function StatusPill({ reachable, unknown = false }) {
+function StatusPill({ reachable, unknown = false, configured }) {
+  const notConfigured = configured === false;
   const classes = reachable
     ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
     : unknown
       ? "border-slate-300 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
-      : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+      : notConfigured
+        ? "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+        : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  const dot = reachable ? "bg-emerald-500" : unknown || notConfigured ? "bg-slate-400" : "bg-amber-500";
+  const label = reachable ? "Reachable" : unknown ? "Checking" : notConfigured ? "Not configured" : "Unavailable";
   return (
     <span className={"inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] " + classes}>
-      <span className={"h-1.5 w-1.5 rounded-full " + (reachable ? "bg-emerald-500" : unknown ? "bg-slate-400" : "bg-amber-500")} />
-      {reachable ? "Reachable" : unknown ? "Unknown" : "Unavailable"}
+      <span className={"h-1.5 w-1.5 rounded-full " + dot} />
+      {label}
     </span>
   );
 }
@@ -156,21 +159,9 @@ export default function CoreMeshDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [actionBusy, setActionBusy] = useState("");
-  const [demand, setDemand] = useState("");
-  const [objective, setObjective] = useState("Improve offline_vault graph traversal efficiency");
-  const [toolName, setToolName] = useState("offline_vault_fixture");
-  const [actionResult, setActionResult] = useState(null);
   const [signedTools, setSignedTools] = useState([]);
-  const [canExecuteTools, setCanExecuteTools] = useState(false);
   const [toolsLoading, setToolsLoading] = useState(false);
   const [toolsError, setToolsError] = useState("");
-  const [toolArguments, setToolArguments] = useState(
-    '{"action":"Describe the result and its evidence","inputs":{},"consent":false}',
-  );
-  const [executingTool, setExecutingTool] = useState("");
-  const [toolExecutionResult, setToolExecutionResult] = useState(null);
   const [configurationHealth, setConfigurationHealth] = useState(null);
   const [configurationHealthError, setConfigurationHealthError] = useState("");
 
@@ -194,11 +185,9 @@ export default function CoreMeshDashboard() {
     try {
       const data = await requestCoreMesh("/api/core-mesh/tools", {}, authenticatedFetch);
       setSignedTools(Array.isArray(data?.active_tools) ? data.active_tools : []);
-      setCanExecuteTools(data?.can_execute === true);
     } catch (requestError) {
       setSignedTools([]);
-      setCanExecuteTools(false);
-      setToolsError(requestError?.message || "Signed Genesis tools could not be loaded.");
+      setToolsError(requestError?.message || "Signed Genesis registry could not be loaded.");
     } finally {
       setToolsLoading(false);
     }
@@ -268,116 +257,6 @@ export default function CoreMeshDashboard() {
   ];
   const missingRuntimeConfiguration = runtimeConfigurationChecks.filter((item) => !item.ready);
 
-  const submitProposal = useCallback(async (kind) => {
-    const genesis = kind === "genesis";
-    const endpoint = genesis
-      ? "/api/core-mesh/genesis/invent"
-      : "/api/core-mesh/mind/evolve";
-    const label = genesis ? "Genesis invention proposal" : "Infinite Mind evolution proposal";
-    const body = genesis
-      ? { demand: demand.trim() }
-      : { objective: objective.trim(), tool_name: toolName.trim() };
-
-    if (genesis && body.demand.length < 3) {
-      setNotice("Describe the tool or capability Genesis should propose.");
-      return;
-    }
-    if (!genesis && body.objective.length < 3) {
-      setNotice("Describe the improvement objective.");
-      return;
-    }
-    if (!genesis && !body.tool_name) {
-      setNotice("Enter a tool/evolution identifier.");
-      return;
-    }
-
-    setActionBusy(kind);
-    setNotice("");
-    setActionResult(null);
-    try {
-      const result = await requestCoreMesh(endpoint, {
-        method: "POST",
-        body: JSON.stringify(body),
-      }, authenticatedFetch);
-      setActionResult({ label, data: result });
-      setNotice(label + " submitted. The result is a proposal; a human must review it.");
-      if (genesis) setDemand("");
-      await refresh(true);
-    } catch (requestError) {
-      setNotice(requestError?.message || (label + " could not be submitted."));
-    } finally {
-      setActionBusy("");
-    }
-  }, [demand, objective, toolName, refresh, authenticatedFetch]);
-
-  const executeSignedTool = useCallback(async (tool) => {
-    const name = String(tool?.name || "");
-    const version = String(tool?.version || "");
-    const artifactHash = String(tool?.artifact_hash || "");
-    const riskTier = Number(tool?.risk_tier ?? tool?.manifest?.risk_tier ?? 0);
-    if (!name || !version || !/^[0-9a-f]{64}$/.test(artifactHash)) {
-      setToolsError("The active tool record is missing a valid signed artifact identity.");
-      return;
-    }
-
-    let argumentsObject;
-    try {
-      argumentsObject = JSON.parse(toolArguments);
-    } catch {
-      setToolsError("Tool arguments must be valid JSON before execution.");
-      return;
-    }
-    if (!argumentsObject || typeof argumentsObject !== "object" || Array.isArray(argumentsObject)) {
-      setToolsError("Tool arguments must be a JSON object.");
-      return;
-    }
-    if (typeof argumentsObject.action !== "string" || !argumentsObject.action.trim()) {
-      setToolsError('Tool arguments require a non-empty "action" string.');
-      return;
-    }
-    if (!window.confirm(
-      "Run the active signed tool '" + name + "' (risk tier " + riskTier + ")? Genesis will verify the request again.",
-    )) return;
-
-    setExecutingTool(name);
-    setToolsError("");
-    setToolExecutionResult(null);
-    try {
-      let confirmationToken;
-      if (riskTier === 2) {
-        const confirmPath = "/api/core-mesh/tools/"
-          + encodeURIComponent(name) + "/" + encodeURIComponent(version) + "/"
-          + encodeURIComponent(artifactHash) + "/confirm";
-        const confirmation = await requestCoreMesh(confirmPath, {
-          method: "POST",
-          body: JSON.stringify({ arguments: argumentsObject }),
-        }, authenticatedFetch);
-        confirmationToken = confirmation?.confirmation_token;
-        if (!confirmationToken) {
-          throw new Error("Genesis did not issue an action-bound confirmation token.");
-        }
-      }
-
-      const result = await requestCoreMesh("/api/core-mesh/tools/execute", {
-        method: "POST",
-        body: JSON.stringify({
-          name,
-          version,
-          artifact_hash: artifactHash,
-          arguments: argumentsObject,
-          ...(confirmationToken ? { confirmation_token: confirmationToken } : {}),
-        }),
-      }, authenticatedFetch);
-      setToolExecutionResult({ name, riskTier, result });
-      await refresh(true);
-      await refreshSignedTools();
-    } catch (requestError) {
-      setToolsError(requestError?.message || "Genesis refused or could not complete the signed tool invocation.");
-    } finally {
-      setExecutingTool("");
-    }
-  }, [toolArguments, refresh, refreshSignedTools, authenticatedFetch]);
-
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -421,7 +300,7 @@ export default function CoreMeshDashboard() {
           <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-6">
             <div className="mb-3">
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Integration readiness</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Configuration checks are not proof of successful live execution.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Core routing is deployment-managed. Configuration presence is not proof of a live connection; this page never asks for per-tool URLs or core secrets.</p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <DataPoint label="ZERO dispatcher" value={configuration.zero_brain_dispatcher_enabled ? "Enabled" : "Needs brain token"} />
@@ -435,6 +314,9 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
               <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
+              <DataPoint label="ZERO service connection" value={configurationHealth?.core_probes?.zero ? (configurationHealth.core_probes.zero.reachable ? "Reachable" : configurationHealth.core_probes.zero.configured ? "Unavailable" : "Not configured") : "Checking"} />
+              <DataPoint label="Genesis service connection" value={configurationHealth?.core_probes?.genesis ? (configurationHealth.core_probes.genesis.reachable ? "Reachable" : configurationHealth.core_probes.genesis.configured ? "Unavailable" : "Not configured") : "Checking"} />
+              <DataPoint label="Mind service connection" value={configurationHealth?.core_probes?.mind ? (configurationHealth.core_probes.mind.reachable ? "Reachable" : configurationHealth.core_probes.mind.configured ? "Unavailable" : "Not configured") : "Checking"} />
             </div>
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -447,15 +329,28 @@ export default function CoreMeshDashboard() {
               {configurationHealthError && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{configurationHealthError}</p>}
               {configurationHealth?.items?.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {configurationHealth.items.map((item) => (
-                    <div key={item.name} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                      <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + (item.valid === false ? "bg-amber-500" : item.unknown ? "bg-slate-400" : item.configured ? "bg-emerald-500" : "bg-amber-500")} />
-                      <div className="min-w-0">
-                        <p className="break-words text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name} <span className="font-normal text-slate-400">· {item.service}</span></p>
-                        <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{item.message}</p>
+                  {configurationHealth.items.map((item) => {
+                    const state = item.valid === false ? "Rejected"
+                      : item.probe_status === "reachable" ? "Reachable"
+                      : item.probe_status === "unavailable" ? (item.configured ? "Configured · probe failed" : "Not configured")
+                      : item.unknown ? "Unverified" : item.configured ? "Configured" : "Missing";
+                    const dot = item.valid === false ? "bg-rose-500"
+                      : item.probe_status === "reachable" ? "bg-emerald-500"
+                      : item.probe_status === "unavailable" ? "bg-amber-500"
+                      : item.unknown || item.configured ? "bg-slate-400" : "bg-amber-500";
+                    return (
+                      <div key={item.name} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                        <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + dot} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="break-words text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name} <span className="font-normal text-slate-400">· {item.service}</span></p>
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{state}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{item.message}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               {configurationHealth?.core_probes && (
@@ -463,7 +358,7 @@ export default function CoreMeshDashboard() {
                   {Object.entries(configurationHealth.core_probes).map(([coreName, probe]) => (
                     <div key={coreName} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
                       <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{coreName === "zero" ? "USECT-ZERO" : coreName === "genesis" ? "Genesis · Core-One" : "Infinite Mind · Core-Two"}</p>
-                      <p className={"mt-1 text-xs font-bold " + (probe.reachable ? "text-emerald-600 dark:text-emerald-300" : "text-amber-600 dark:text-amber-300")}>{probe.reachable ? "Health check passed" : "Not reachable"}</p>
+                      <p className={"mt-1 text-xs font-bold " + (probe.reachable ? "text-emerald-600 dark:text-emerald-300" : "text-amber-600 dark:text-amber-300")}>{probe.reachable ? "Health check passed" : probe.configured === false ? "Not configured" : "Configured · unavailable"}</p>
                       <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{probe.message}</p>
                       {probe.reason && <p className="mt-1 break-all font-mono text-[10px] text-slate-400">Diagnostic: {probe.reason}</p>}
                     </div>
@@ -494,20 +389,22 @@ export default function CoreMeshDashboard() {
               ? core.model_assisted === true
                 ? "Model-assisted"
                 : core.model_assisted === false
-                  ? "Standalone"
+                  ? "Model-free"
                   : "Unknown"
               : core.model_free === false
                 ? "Model-assisted"
                 : core.model_free === true
                   ? "Model-free"
                   : "Unknown";
+            const probeKey = key === "one" ? "genesis" : key;
+            const connectionProbe = configurationHealth?.core_probes?.[probeKey];
             return (
               <article key={key} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/40">
                 <div className={"h-1 w-full bg-gradient-to-r " + colors.line} />
                 <div className="p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <span className={"flex h-10 w-10 items-center justify-center rounded-xl " + colors.icon}><Icon className="h-5 w-5" /></span>
-                    <StatusPill reachable={Boolean(core.reachable)} unknown={!hasSnapshot} />
+                    <StatusPill reachable={Boolean(core.reachable)} unknown={!hasSnapshot || (!configurationHealth && !configurationHealthError)} configured={connectionProbe?.configured} />
                   </div>
                   <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">{item.title}</h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{item.subtitle}</p>
@@ -539,172 +436,40 @@ export default function CoreMeshDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-          <div className="flex items-start gap-3">
-            <div className={"flex h-10 w-10 items-center justify-center rounded-xl " + colorClasses.amber.icon}><Layers className="h-5 w-5" /></div>
-            <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Ask Genesis to propose a tool</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Sends an explicit invention demand to Core-One. Guardian rules remain authoritative.</p>
-            </div>
-          </div>
-          <label className="mt-5 block text-xs font-bold text-slate-700 dark:text-slate-300" htmlFor="core-mesh-demand">Invention demand</label>
-          <textarea id="core-mesh-demand" value={demand} onChange={(event) => setDemand(event.target.value)} maxLength={500} rows={3}
-            placeholder="Describe the capability and real problem it should solve…"
-            className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-[10px] text-slate-400">{demand.length}/500 characters</span>
-            <button type="button" onClick={() => submitProposal("genesis")} disabled={Boolean(actionBusy) || demand.trim().length < 3}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50">
-              {actionBusy === "genesis" && <Loader2 className="h-4 w-4 animate-spin" />} Submit proposal
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-          <div className="flex items-start gap-3">
-            <div className={"flex h-10 w-10 items-center justify-center rounded-xl " + colorClasses.violet.icon}><Brain className="h-5 w-5" /></div>
-            <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Ask Infinite Mind to evaluate an improvement</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Runs the guarded Core-Two evaluation path. Its output is staged for review, not deployed automatically.</p>
-            </div>
-          </div>
-          <label className="mt-5 block text-xs font-bold text-slate-700 dark:text-slate-300" htmlFor="core-mesh-objective">Improvement objective</label>
-          <textarea id="core-mesh-objective" value={objective} onChange={(event) => setObjective(event.target.value)} maxLength={500} rows={2}
-            className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-          <label className="mt-3 block text-xs font-bold text-slate-700 dark:text-slate-300" htmlFor="core-mesh-tool-name">Tool/evolution identifier</label>
-          <input id="core-mesh-tool-name" value={toolName} onChange={(event) => setToolName(event.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))} maxLength={64}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-          <div className="mt-4 flex justify-end">
-            <button type="button" onClick={() => submitProposal("mind")} disabled={Boolean(actionBusy) || objective.trim().length < 3 || !toolName.trim()}
-              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50">
-              {actionBusy === "mind" && <Loader2 className="h-4 w-4 animate-spin" />} Evaluate proposal
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {(notice || actionResult) && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-start gap-2">
-            {actionResult ? <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" /> : <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />}
-            <div className="min-w-0 flex-1">
-              <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{notice}</p>
-              {actionResult && <pre className="mt-3 max-h-56 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] leading-5 text-slate-200">{JSON.stringify(actionResult.data, null, 2)}</pre>}
-            </div>
-          </div>
-        </section>
-      )}
-
       <section className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Active signed Genesis tools</h3>
-              <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">
-                Invocation is delegated to Genesis. The gateway does not execute generated source; Genesis revalidates the signed artifact, sandbox evidence, risk policy and any required approval.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={refreshSignedTools}
-              disabled={toolsLoading}
-              className="inline-flex w-fit flex-shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <RefreshCw className={"h-3.5 w-3.5 " + (toolsLoading ? "animate-spin" : "")} />
-              Refresh tools
-            </button>
-          </div>
-        </div>
-
-        <div className="px-5 py-4 sm:px-6">
-          <label htmlFor="core-mesh-tool-arguments" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-            Tool arguments (JSON)
-          </label>
-          <textarea
-            id="core-mesh-tool-arguments"
-            value={toolArguments}
-            onChange={(event) => setToolArguments(event.target.value)}
-            rows={4}
-            spellCheck={false}
-            maxLength={12000}
-            className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-xs leading-5 text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-          />
-          <p className="mt-1 text-[10px] leading-4 text-slate-500 dark:text-slate-400">
-            Arguments are sent only after you select a tool and confirm the invocation. Tool-specific schema validation remains on the Genesis service.
-          </p>
-
-          {toolsError && (
-            <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-50 p-3 text-xs leading-5 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-              <span>{toolsError}</span>
-            </div>
-          )}
-
-          {!canExecuteTools && (
-            <p className="mt-3 rounded-xl border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
-              Invocation is restricted to approved Core Mesh operators. You can inspect the active tool list, but the server will reject invocation unless your account is allowlisted.
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">Genesis signed registry</h3>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Read-only view of active signed capabilities. RevelaAI routes permitted capability use through the shared Genesis connection; there are no per-tool URLs or manual invocation controls here.
             </p>
-          )}
-
+          </div>
+          <button type="button" onClick={refreshSignedTools} disabled={toolsLoading}
+            className="inline-flex w-fit flex-shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800">
+            <RefreshCw className={"h-3.5 w-3.5 " + (toolsLoading ? "animate-spin" : "")} /> Refresh registry
+          </button>
+        </div>
+        <div className="px-5 py-4 sm:px-6">
+          {toolsError && <div role="status" className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">{toolsError}</div>}
           {toolsLoading && signedTools.length === 0 ? (
-            <div className="flex items-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading signed tool registry…
-            </div>
+            <div className="flex items-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Reading Genesis registry…</div>
           ) : signedTools.length ? (
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {signedTools.map((tool, index) => {
-                const name = String(tool?.name || "Unnamed tool");
-                const version = String(tool?.version || tool?.manifest?.version || "unknown");
-                const hash = String(tool?.artifact_hash || "");
-                const tier = Number(tool?.risk_tier ?? tool?.manifest?.risk_tier ?? 0);
-                return (
-                  <article key={name + "-" + version + "-" + hash + "-" + index} className="min-w-0 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h4 className="break-words text-sm font-black text-slate-900 dark:text-white">{name}</h4>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Version {version} · Risk tier {tier}</p>
-                      </div>
-                      <span className="flex-shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Signed · active</span>
-                    </div>
-                    <p className="mt-3 break-all font-mono text-[10px] leading-4 text-slate-500 dark:text-slate-400">
-                      Artifact SHA-256: {hash || "missing"}
-                    </p>
-                    <div className="mt-4 flex justify-end">
-                      {canExecuteTools && (
-                        <button
-                          type="button"
-                          onClick={() => executeSignedTool(tool)}
-                          disabled={Boolean(executingTool) || !hash}
-                          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-xs font-extrabold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {executingTool === name && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                          Invoke signed tool
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
+            <div className="grid gap-3 lg:grid-cols-2">
+              {signedTools.map((tool, index) => (
+                <article key={String(tool?.name || "tool") + "-" + String(tool?.version || index) + "-" + index} className="min-w-0 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="break-all text-sm font-black text-slate-900 dark:text-white">{tool?.name || "Unnamed capability"}</h4>
+                    <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Signed · active</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Version {tool?.version || tool?.manifest?.version || "unknown"} · Risk tier {tool?.risk_tier ?? tool?.manifest?.risk_tier ?? "—"}</p>
+                  <p className="mt-2 break-all font-mono text-[10px] leading-4 text-slate-500 dark:text-slate-400">Artifact SHA-256: {tool?.artifact_hash || "not supplied"}</p>
+                </article>
+              ))}
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {toolsError ? "Tool list unavailable" : "No active signed tools"}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {toolsError ? "The registry request failed. Refresh after the Genesis service and credentials are healthy." : "Only published, activated tools with valid signed-artifact and sandbox-evidence records are listed here."}
-              </p>
-            </div>
-          )}
-
-          {toolExecutionResult && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                Last invocation result · {toolExecutionResult.name} · tier {toolExecutionResult.riskTier}
-              </div>
-              <pre className="mt-3 max-h-72 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] leading-5 text-slate-200">{JSON.stringify(toolExecutionResult.result, null, 2)}</pre>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{toolsError ? "Genesis registry unavailable" : "No active signed capabilities"}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolsError ? "The registry could not be read. This does not establish that the registry is empty." : "Genesis has not reported any active signed capabilities."}</p>
             </div>
           )}
         </div>
