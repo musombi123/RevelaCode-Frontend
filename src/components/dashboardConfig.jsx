@@ -1644,274 +1644,137 @@ function HomeDashboard({
     return <div key={item.key} className={cardClass}>{content}</div>;
   };
 
-  if (isAndroidAppBuild) {
-    return (
-      <div className="rc-android-home mx-auto flex h-full min-h-0 w-full max-w-[900px] flex-col gap-3 overflow-hidden px-3 py-2 sm:px-4">
-        <section
-          data-demo="home-welcome"
-          aria-label={t("RevelaCode home")}
-          className="relative isolate flex min-h-[108px] items-center justify-between gap-3 overflow-hidden rounded-[22px] border border-slate-200/90 bg-white px-3 py-3 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900"
-        >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-12 h-36 w-36 rounded-full bg-blue-500/10 blur-2xl dark:bg-blue-400/10" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 left-[22%] h-28 w-28 rounded-full bg-violet-500/10 blur-2xl dark:bg-violet-400/10" />
-          <div className="relative min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.13em] text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              {t("Your connected ecosystem")}
-            </span>
-            <h1 className="mt-2 truncate text-lg font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-xl">
-              {t(greetingKey)}{" "}
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                {displayName}
-              </span>
-            </h1>
-            <p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-              {t("Learn, build, grow and connect.")}
-            </p>
-            <div className="mt-2"><DemoLauncher startAt="home" compact /></div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onOpenAI?.()}
-            data-demo="home-revelaai"
-            aria-label={t("Open RevelaAI assistant")}
-            className="relative flex h-[68px] w-[68px] shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-950 text-blue-100 shadow-md transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/10"
-            style={{ backgroundImage: "radial-gradient(circle at 85% 15%, rgba(37,99,235,.38), transparent 55%), linear-gradient(145deg, #0b1220, #111c31)" }}
-          >
-            <Sparkles size={21} />
-            <span className="mt-1 text-[10px] font-extrabold">RevelaAI</span>
-          </button>
-        </section>
-
-        <section data-demo="home-hubs" aria-label={t("Your hubs")} className="min-h-0 overflow-y-auto overscroll-contain pb-2">
-          <div className="mb-2 flex min-w-0 items-center justify-between gap-2 px-1">
-            <div className="min-w-0">
-              <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
-                {t("Choose your workspace")}
-              </h2>
-              <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                {t("One tap to continue")}
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
-              {HOME_HUBS.length} {t("hubs")}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {sortedHubs.map((hub, index) => {
-              const Icon = hub.icon;
-              const uses = Number(hubUsage[hub.key]?.count) || 0;
-              return (
-                <button
-                  key={hub.key}
-                  type="button"
-                  onClick={() => handleHubOpen(hub.key)}
-                  data-demo={`home-hub-${hub.key}`}
-                  aria-label={t("Open") + " " + t(hub.title)}
-                  className={"group flex min-h-[72px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 " + (index === 4 ? "col-span-2 " : "") + hub.borderTone + " " + hub.surface}
-                >
-                  <span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " + hub.iconBg + " " + hub.iconTone}>
-                    <Icon size={18} strokeWidth={2} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
-                      {t(hub.shortTitle)}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">
-                      {t(hub.description)}
-                    </span>
-                  </span>
-                  <ArrowRight size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 dark:text-slate-300" />
-                  {uses > 0 ? (
-                    <span className="sr-only">{formatNumber(uses)} {t("opens")}</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-
-          <div data-demo="home-quick-tools" className="mt-3">
-            <div className="mb-2 flex items-center justify-between gap-2 px-1">
-              <div>
-                <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
-                  {t("AI & Security tools")}
-                </h2>
-                <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {t("Writing support and practical security learning")}
-                </p>
-              </div>
-              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
-                {t("Tools")}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => onNavigate?.("humanizer")} data-demo="home-tool-humanizer" aria-label={t("Open Humanizer Studio")} className="group flex min-h-[68px] min-w-0 items-center gap-2.5 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-900/60 dark:from-violet-950/50 dark:to-slate-900">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-200"><Sparkles size={18} strokeWidth={2} /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{t("Humanizer")}</span>
-                  <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">{t("Refine your writing")}</span>
-                </span>
-                <ArrowRight size={15} className="shrink-0 text-violet-600 dark:text-violet-300" />
-              </button>
-              <button type="button" onClick={() => onNavigate?.("security-academy")} data-demo="home-tool-security-academy" aria-label={t("Open Security Academy")} className="group flex min-h-[68px] min-w-0 items-center gap-2.5 rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:border-cyan-900/60 dark:from-cyan-950/50 dark:to-slate-900">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/60 dark:text-cyan-200"><ShieldCheck size={18} strokeWidth={2} /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{t("Security Academy")}</span>
-                  <span className="mt-0.5 block truncate text-[10px] leading-4 text-slate-600 dark:text-slate-300">{t("Learn defensive security")}</span>
-                </span>
-                <ArrowRight size={15} className="shrink-0 text-cyan-600 dark:text-cyan-300" />
-              </button>
-            </div>
-          </div>
-        </section>
-        {renderHomeNotifications()}
-        {notificationToast && (
-          <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 left-3 right-3 z-[120] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
-            <Bell size={18} className="shrink-0 text-blue-600"/>
-            <span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">{notificationToast.title || "RevelaCode notification"}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{notificationToast.text || notificationToast.message}</span></span>
-            <span className="text-[10px] font-bold text-blue-600">{t("Open")}</span>
-          </button>
-        )}
-      </div>
-    );
-  }
+  const displayHubs = ["education", "community", "faith", "biashara", "shamba"]
+    .map((key) => HOME_HUBS.find((hub) => hub.key === key))
+    .filter(Boolean);
+  const mostUsedKey = hasHubHistory ? sortedHubs[0]?.key : null;
+  const resumeActivity = activities.find((activity) => activity.route);
+  const unreadTotal = (Number(unreadCount) || 0) + systemUpdateRows.filter((item) => !item.read).length;
+  const statTone = {
+    wallet: "rc-home-stat-wallet",
+    "biashara-orders": "rc-home-stat-biashara",
+    "shamba-farms": "rc-home-stat-shamba",
+    "community-activity": "rc-home-stat-community",
+  };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-[1500px] space-y-4 overflow-x-clip px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:space-y-5 sm:px-6">
-      <style>{`
-        @keyframes rcHomeHubEnter {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .rc-home-hub-enter { animation: rcHomeHubEnter 360ms ease-out both; }
-        @media (prefers-reduced-motion: reduce) {
-          .rc-home-hub-enter { animation: none !important; }
-        }
-      `}</style>
-
-      <section data-demo="home-welcome" aria-label={t("Home welcome")} className="relative isolate overflow-hidden rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-6 lg:p-7">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 left-[22%] h-52 w-52 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-400/10" />
-        <div className="relative grid min-w-0 grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.82fr)] md:items-stretch md:gap-5">
-          <div className="min-w-0 py-1">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-600 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />{t("Your connected ecosystem")}</div>
-            <h1 className="mt-4 break-words text-[clamp(1.65rem,5vw,2.6rem)] font-black leading-[1.12] tracking-[-0.04em] text-slate-950 dark:text-white">{t(greetingKey)}{" "}<span className="break-words bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">{displayName}</span></h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{t("One connected place to learn, build, grow and connect. Pick up where you left off or jump straight into your world.")}</p>
-            <div className="mt-4"><DemoLauncher startAt="home" /></div>
-            <div className="mt-5 flex min-w-0 flex-wrap items-center gap-2">
-              <span className="inline-flex max-w-full min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300"><History size={15} className="shrink-0 text-blue-600 dark:text-blue-300" /><span className="shrink-0 font-bold">{t("Last activity")}</span><span className="max-w-[12rem] truncate">{prettyTime || lastActivityText || t("No activity yet")}</span></span>
-              <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300"><Bell size={15} className="shrink-0 text-violet-600 dark:text-violet-300" /><span className="font-bold">{t("Unread")}</span>{notificationsLoading && !isGuest ? <span className="h-4 w-9 animate-pulse rounded bg-slate-200 motion-reduce:animate-none dark:bg-slate-800" aria-label={t("Loading")} /> : <span className="tabular-nums">{isGuest ? "0" : formatNumber(unreadCount || 0)}</span>}</span>
-            </div>
+    <main className="rc-home-one-screen" aria-label={t("RevelaCode home")}>
+      <section className="rc-home-hero rc-home-glass" data-demo="home-welcome">
+        <div className="rc-home-hero-copy">
+          <span className="rc-home-eyebrow"><span className="rc-home-live-dot" />{t("Your connected ecosystem")}</span>
+          <h1>{t(greetingKey)} <span>{displayName}</span></h1>
+          <p>{t("Learn, build, grow and connect across one intelligent ecosystem.")}</p>
+          <div className="rc-home-hero-actions">
+            <DemoLauncher startAt="home" compact />
+            {resumeActivity ? (
+              <button type="button" className="rc-home-meta-chip" onClick={() => onNavigate?.(resumeActivity.route)} aria-label={t("Continue") + ": " + resumeActivity.title}>
+                <History size={14} /><span>{t("Continue")}</span>
+              </button>
+            ) : null}
+            <details className="rc-home-notification-menu">
+              <summary className="rc-home-meta-chip" aria-label={t("Notifications") + ": " + formatNumber(unreadTotal) + " " + t("unread")}>
+                <Bell size={14} /><span>{notificationsLoading ? "…" : formatNumber(unreadTotal)} {t("unread")}</span>
+                {unreadTotal > 0 ? <i /> : null}
+              </summary>
+              <div className="rc-home-notification-popover">{renderHomeNotifications()}</div>
+            </details>
           </div>
-          <button type="button" onClick={() => onOpenAI?.()} aria-label={t("Open RevelaAI assistant")} className="group relative flex min-h-[220px] min-w-0 flex-col justify-between overflow-hidden rounded-[24px] border border-slate-700/80 bg-slate-950 p-4 text-left text-white shadow-lg shadow-slate-950/10 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.995] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/10 dark:shadow-black/30 md:min-h-0 md:p-5" style={{ backgroundImage: "radial-gradient(circle at 85% 15%, rgba(37,99,235,.35), transparent 38%), radial-gradient(circle at 10% 100%, rgba(124,58,237,.28), transparent 42%), linear-gradient(145deg, #0b1220, #111c31 60%, #111827)" }}>
-            <div className="flex items-start justify-between gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-blue-100"><Sparkles size={23} /></span><span className="inline-flex min-h-8 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-200"><span className="h-2 w-2 rounded-full bg-emerald-400" />{t("RevelaAI assistant")}</span></div>
-            <div className="mt-6"><h2 className="text-xl font-black tracking-tight sm:text-2xl">{t("Think with RevelaAI")}</h2><p className="mt-2 max-w-sm text-sm leading-5 text-slate-300">{t(language === "sw" ? "Pata msaada katika vituo vyako vya RevelaCode." : language === "fr" ? "Obtenez de l’aide dans vos espaces RevelaCode connectés." : "Get help across your connected RevelaCode workspaces.")}</p></div>
-            <span className="mt-5 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-xs font-extrabold text-white transition group-hover:bg-white/15 group-active:scale-[0.99] sm:text-sm"><span>{t("Start a conversation")}</span><ArrowRight size={18} className="shrink-0 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" /></span>
-          </button>
+        </div>
+        <div className="rc-home-hero-mark" aria-hidden="true">
+          <span className="rc-home-orbit rc-home-orbit-one" />
+          <span className="rc-home-orbit rc-home-orbit-two" />
+          <span className="rc-home-hero-core"><Layers size={34} /></span>
         </div>
       </section>
 
-      <section aria-label={t("Writing Studio")} className="relative min-w-0 overflow-hidden rounded-[26px] border border-indigo-200/70 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white shadow-lg shadow-indigo-950/10 dark:border-indigo-400/20 sm:p-5">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-violet-400/15 blur-2xl" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-violet-200"><Sparkles size={23}/></span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-violet-200">RevelaAI · Writing Studio</p>
-              <h2 className="mt-1 text-lg font-black tracking-tight sm:text-xl">Humanizer Studio</h2>
-              <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-300 sm:text-sm">Refine selected words, paste text or open a PDF. Review every change and export your revised document.</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onNavigate?.("humanizer")} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-violet-100 active:scale-[.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">
-            Open Humanizer <ArrowRight size={16}/>
-          </button>
+      <section className="rc-home-ai-card" aria-label={t("RevelaAI assistant")} data-demo="home-revelaai">
+        <div className="rc-home-ai-top">
+          <span className="rc-home-ai-icon"><Sparkles size={20} /></span>
+          <span className="rc-home-ai-pill"><span />{t("RevelaAI assistant")}</span>
         </div>
-      </section>
-
-      <section aria-label={t("Quick access to recent hubs")} className="min-w-0 space-y-2" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}>
-        <div className="flex min-w-0 items-center justify-between gap-3 px-1"><div className="min-w-0"><h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">{t(hasHubHistory ? "Your quick access" : "Quick access")}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t(hasHubHistory ? "Your most-used spaces" : "Start with a connected hub")}</p></div><span className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{t("Personalized")}</span></div>
-        <div className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-contain pb-2">
-          {frequentHubs.map((hub) => {
-            const Icon = hub.icon;
-            const uses = Number(hubUsage[hub.key]?.count) || 0;
-            const tone = hubToneByKey[hub.key] || hubToneByKey.community;
-            return <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} data-demo={`home-hub-${hub.key}`} aria-label={t("Open") + " " + t(hub.title)} className={"group flex min-h-12 shrink-0 snap-start items-center gap-2.5 rounded-2xl border " + tone.surface + " px-3 py-2 text-left transition duration-200 hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"}><span className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-full " + tone.icon}><Icon size={17} strokeWidth={2} /></span><span className="max-w-[9rem] truncate text-xs font-extrabold text-slate-900 dark:text-white">{t(hub.shortTitle)}</span>{uses > 0 ? <span className="rounded-full border border-white/70 bg-white/70 px-2 py-1 text-[11px] font-bold text-slate-600 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300">{formatNumber(uses)}</span> : null}</button>;
-          })}
+        <div className="rc-home-ai-copy">
+          <p>{t("Your thinking partner")}</p>
+          <h2>{t("Think with RevelaAI")}</h2>
+          <span>{t("Explore ideas, solve problems and create with intelligence.")}</span>
         </div>
-      </section>
-
-      <section data-demo="home-hubs" aria-label={t("Your hubs")} className="space-y-3" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 640px" }}>
-        <div className="flex min-w-0 flex-wrap items-end justify-between gap-2 px-1"><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">{t("Your Hubs")}</h2><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{t("Your connected workspaces, organized by what you want to do.")}</p></div><span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-500 dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">{formatNumber(HOME_HUBS.length)} {t("hubs")}</span></div>
-        <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-6 md:gap-4">
-          {sortedHubs.map((hub, index) => {
-            const Icon = hub.icon;
-            const uses = Number(hubUsage[hub.key]?.count) || 0;
-            const tone = hubToneByKey[hub.key] || hubToneByKey.community;
-            const group = HOME_HUB_GROUPS.find((item) => item.hubKeys.includes(hub.key));
-            const eyebrow = group?.key === "community" ? t("People") : t(group?.title || "Your hubs");
-            const isLead = index < 2;
-            const isMostUsed = hasHubHistory && hub.key === sortedHubs[0]?.key && uses > 0;
-            return <button key={hub.key} type="button" onClick={() => handleHubOpen(hub.key)} data-demo={`home-hub-${hub.key}`} aria-label={t("Open") + " " + t(hub.title)} style={{ animationDelay: String(index * 60) + "ms" }} className={"rc-home-hub-enter group relative flex min-h-[174px] min-w-0 flex-col overflow-hidden rounded-[24px] border p-3.5 text-left shadow-sm shadow-slate-950/[0.035] transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none dark:shadow-none md:p-4 " + (isLead ? "col-span-2 md:col-span-3 md:min-h-[204px]" : "col-span-1 md:col-span-2") + " " + tone.surface}>
-              <div className="flex w-full min-w-0 items-start justify-between gap-3"><span className={"flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 shadow-sm dark:border-white/10 " + tone.icon}><Icon size={21} strokeWidth={2} /></span><span className="flex min-w-0 flex-wrap items-center justify-end gap-2">{isMostUsed ? <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-700 dark:border-white/10 dark:bg-slate-950/70 dark:text-slate-200">{t("Top")}</span> : null}<ArrowRight size={17} className="shrink-0 text-slate-500 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-950 motion-reduce:transition-none dark:text-slate-300 dark:group-hover:text-white" /></span></div>
-              <div className="mt-4 min-w-0 flex-1"><p className="text-[11px] font-extrabold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">{eyebrow}</p><h3 className="mt-1 break-words text-base font-black tracking-tight text-slate-950 dark:text-white sm:text-lg">{t(hub.title)}</h3><p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-600 dark:text-slate-300">{t(hub.description)}</p></div>
-              <div className="mt-4 flex min-w-0 items-center gap-2 border-t border-slate-200/70 pt-3 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:text-slate-300"><span className={"h-2 w-2 shrink-0 rounded-full " + tone.dot} /><span className="min-w-0 truncate">{uses > 0 ? formatNumber(uses) + " " + t("opens") : t("Ready when you are")}</span></div>
-            </button>;
-          })}
-        </div>
-      </section>
-
-      {renderHomeNotifications()}
-
-      {notificationToast && (
-        <button type="button" onClick={() => openHomeNotification(notificationToast)} className="fixed bottom-4 right-4 z-[120] flex w-[min(92vw,420px)] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl dark:border-white/10 dark:bg-slate-900" aria-live="polite">
-          <Bell size={18} className="shrink-0 text-blue-600"/>
-          <span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900 dark:text-white">{notificationToast.title || "RevelaCode notification"}</span><span className="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{notificationToast.text || notificationToast.message}</span></span>
-          <span className="text-[10px] font-bold text-blue-600">{t("Open")}</span>
+        <button type="button" className="rc-home-ask-bar" onClick={() => onOpenAI?.()} aria-label={t("Ask RevelaAI anything")}>
+          <span>{t("Ask anything…")}</span><span className="rc-home-ask-submit"><ArrowRight size={17} /></span>
         </button>
-      )}
-
-      <section aria-label={t("Ecosystem overview")} className="min-w-0 rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-5" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 580px" }}>
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white sm:text-xl">{t("Ecosystem Overview")}</h2><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">{t("A live snapshot of your connected RevelaCode services.")}</p></div><span className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200"><span className={"h-2 w-2 rounded-full " + (isGuest ? "bg-slate-400" : ecosystemLoading || notificationsLoading ? "animate-pulse bg-amber-500 motion-reduce:animate-none" : "bg-emerald-500")} />{isGuest ? t("Explore mode") : ecosystemLoading || notificationsLoading ? t("Syncing data") : t("Connected services")}</span></div>
-        {isGuest ? (
-          <div className="mt-5 flex min-w-0 flex-col items-start gap-4 rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-violet-50 p-4 dark:border-blue-900/60 dark:from-blue-950/40 dark:via-slate-950 dark:to-violet-950/30 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="flex min-w-0 items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200"><UserCircle size={23} /></span><div className="min-w-0"><h3 className="text-base font-black text-slate-950 dark:text-white">{t("Sign in to see your data")}</h3><p className="mt-1 text-sm leading-5 text-slate-600 dark:text-slate-300">{t("Your activity, balances and workspace insights will appear here after you sign in.")}</p></div></div>
-            <button type="button" onClick={() => onRequestSignIn?.()} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none sm:w-auto">{t("Sign in")} <ArrowRight size={15} /></button>
-          </div>
-        ) : (
-          <>
-            <div className="mt-5 grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{primaryOverview.map((item) => renderOverviewStat(item))}</div>
-            {moreOverview.length ? <details className="group mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 open:bg-white dark:border-white/10 dark:bg-slate-950/50 dark:open:bg-slate-900"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-2 text-sm font-extrabold text-slate-800 outline-none transition hover:bg-white focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-100 dark:hover:bg-white/5 motion-reduce:transition-none"><span>{t("More ecosystem metrics")}</span><ChevronDown size={17} className="shrink-0 text-slate-500 transition-transform group-open:rotate-180 motion-reduce:transition-none" /></summary><div className="mt-3 grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">{moreOverview.map((item) => renderOverviewStat(item, true))}</div></details> : null}
-          </>
-        )}
       </section>
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 650px" }}>
-        <section aria-label={t("Recent Activity")} className="min-w-0 rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-5">
-          <div className="flex items-center justify-between gap-3"><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">{t("Recent Activity")}</h2><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{t("Your actions across RevelaCode — not notifications.")}</p></div><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"><History size={19} /></span></div>
-          <div className="mt-4">
-            {isGuest ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center dark:border-white/10"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"><History size={20} /></span><p className="mt-3 text-sm font-bold text-slate-900 dark:text-white">{t("Your activity will appear here")}</p><p className="mt-1 max-w-sm text-xs leading-5 text-slate-500 dark:text-slate-400">{t("Sign in to see your saved actions and recent work.")}</p><button type="button" onClick={() => onRequestSignIn?.()} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-blue-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">{t("Sign in")}</button></div>
-            ) : activities.length ? (
-              <div className="divide-y divide-slate-100 dark:divide-white/10">
-                {activities.slice(0, 5).map((activity, index) => {
-                  const Icon = activity.icon;
-                  const tone = activity.route === "community" ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200" : activity.route === "shamba" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200" : activity.route === "biashara" ? "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200" : activity.route === "education" ? "bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
-                  const row = <><span className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " + tone}><Icon size={18} /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-900 dark:text-white">{activity.title}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{activity.time}</span></span>{activity.value ? <span className="shrink-0 pl-2 text-right text-xs font-extrabold tabular-nums text-emerald-700 dark:text-emerald-300">{activity.value}</span> : null}</>;
-                  return activity.route ? <button key={activity.id || (activity.title + "-" + index)} type="button" onClick={() => onNavigate?.(activity.route)} className="flex min-h-[60px] w-full min-w-0 items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-slate-50 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-white/5 motion-reduce:transition-none">{row}</button> : <div key={activity.id || (activity.title + "-" + index)} className="flex min-h-[60px] min-w-0 items-center gap-3 px-2 py-2.5">{row}</div>;
-                })}
-              </div>
-            ) : (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-center dark:border-white/10"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200"><History size={20} /></span><p className="mt-3 text-sm font-bold text-slate-900 dark:text-white">{t("No recent activity yet")}</p><p className="mt-1 max-w-sm text-xs leading-5 text-slate-500 dark:text-slate-400">{t("Open a hub to start building your activity history.")}</p><button type="button" onClick={() => handleHubOpen(frequentHubs[0]?.key || "faith")} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-extrabold text-slate-700 transition hover:border-blue-400 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200">{t("Open a hub")} <ArrowRight size={14} /></button></div>
-            )}
-          </div>
-        </section>
+      <section className="rc-home-hubs" aria-label={t("Your connected hubs")} data-demo="home-hubs">
+        {displayHubs.map((hub) => {
+          const Icon = hub.icon;
+          const uses = Number(hubUsage[hub.key]?.count) || 0;
+          const group = HOME_HUB_GROUPS.find((item) => item.hubKeys.includes(hub.key));
+          const isMostUsed = mostUsedKey === hub.key && uses > 0;
+          return (
+            <button
+              key={hub.key}
+              type="button"
+              onClick={() => handleHubOpen(hub.key)}
+              data-demo={"home-hub-" + hub.key}
+              aria-label={t("Open") + " " + t(hub.title)}
+              className={"rc-home-hub rc-home-hub-" + hub.key}
+            >
+              <span className="rc-home-hub-head">
+                <span className="rc-home-hub-icon"><Icon size={21} strokeWidth={2} /></span>
+                {isMostUsed ? <span className="rc-home-top-badge">{t("Top")}</span> : <ArrowRight size={16} className="rc-home-hub-arrow" />}
+              </span>
+              <span className="rc-home-hub-group">{t(group?.title || "Your hubs")}</span>
+              <span className="rc-home-hub-title">{t(hub.title)}</span>
+              <span className="rc-home-hub-description">{t(hub.description)}</span>
+              <span className="rc-home-hub-footer"><span className="rc-home-hub-status" />{uses > 0 ? formatNumber(uses) + " " + t("opens") : t("Ready when you are")}</span>
+            </button>
+          );
+        })}
+      </section>
 
-        <section aria-label={t("Continue where you left off")} className="relative min-w-0 overflow-hidden rounded-[26px] border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-950/[0.04] dark:border-white/10 dark:bg-slate-900 sm:p-5">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-indigo-500/10" />
-          <div className="relative flex min-w-0 flex-col gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200"><History size={20} /></span><div className="min-w-0"><h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">{t("Continue where you left off")}</h2><p className="mt-2 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">{lastActivityText || t("No saved activity yet. Start exploring the ecosystem.")}</p>{prettyTime ? <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{prettyTime}</p> : null}{historyCount > 0 ? <p className="mt-2 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">{formatNumber(historyCount)} {t(historyCount === 1 ? "saved activity" : "saved activities")}</p> : null}</div></div><div className="mt-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-slate-950/60"><p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{t("Suggested next step")}</p><p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{activities.find((activity) => activity.route)?.title || t("Open your most-used hub")}</p><button type="button" onClick={() => isGuest ? onRequestSignIn?.() : onNavigate?.(resumeTarget)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-slate-800 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-blue-600 dark:hover:bg-blue-500">{isGuest ? t("Sign in to resume") : t("Resume")} <ArrowRight size={15} /></button></div></div>
-        </section>
-      </div>
-    </div>
+      <section className="rc-home-overview rc-home-glass" aria-label={t("Ecosystem overview")}>
+        <div className="rc-home-section-heading">
+          <div><span>{t("Your ecosystem")}</span><h2>{t("Overview")}</h2></div>
+          <span className={"rc-home-connected " + (ecosystemLoading || notificationsLoading ? "is-syncing" : "")}><i />{isGuest ? t("Explore mode") : ecosystemLoading || notificationsLoading ? t("Syncing") : t("Connected")}</span>
+        </div>
+        <div className="rc-home-stats">
+          {primaryOverview.map((item) => {
+            const Icon = item.icon;
+            const loading = !isGuest && ecosystemLoading && item.key !== "wallet";
+            return (
+              <button
+                key={item.key}
+                type="button"
+                disabled={!item.route}
+                onClick={() => item.route && onNavigate?.(item.route)}
+                className={"rc-home-stat " + (statTone[item.key] || "")}
+                aria-label={t(item.title) + ": " + item.value}
+              >
+                <span className="rc-home-stat-icon"><Icon size={17} /></span>
+                <span className="rc-home-stat-label">{t(item.title)}</span>
+                <strong>{loading ? "…" : item.value || "—"}</strong>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="rc-home-humanizer" aria-label={t("Humanizer Studio")}>
+        <span className="rc-home-humanizer-icon"><Sparkles size={21} /></span>
+        <div className="rc-home-humanizer-copy">
+          <span>{t("RevelaAI · Writing Studio")}</span>
+          <h2>{t("Humanizer Studio")}</h2>
+          <p>{t("Refine writing, improve clarity and prepare polished documents.")}</p>
+        </div>
+        <button type="button" onClick={() => onNavigate?.("humanizer")} aria-label={t("Open Humanizer Studio")}>
+          {t("Open")} <ArrowRight size={15} />
+        </button>
+      </section>
+
+      {notificationToast ? (
+        <button type="button" onClick={() => openHomeNotification(notificationToast)} className="rc-home-toast" aria-live="polite">
+          <Bell size={17} /><span><strong>{notificationToast.title || t("RevelaCode notification")}</strong><small>{notificationToast.text || notificationToast.message}</small></span><ArrowRight size={15} />
+        </button>
+      ) : null}
+    </main>
   );
 
 }
