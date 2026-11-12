@@ -332,7 +332,6 @@ function FaithHomeDashboard({
   onOpenAI,
   setComingSoonFeature,
   comingSoonFeature,
-  backPrompt,
   homeKeyboardOpen,
   setHomeKeyboardOpen,
   loadHomeSnapshot,
@@ -671,7 +670,6 @@ function FaithHomeDashboard({
         </button>
       </nav>
 
-      {backPrompt && <div role="status" className="faith-home-back-prompt">{backPrompt}</div>}
 
       {comingSoonFeature && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setComingSoonFeature(""); }}>
@@ -722,7 +720,6 @@ export default function FaithDashboard({
   ======================================================= */
 
   const [faithSection, setFaithSection] = useState("home");
-  const [backPrompt, setBackPrompt] = useState("");
   const [homeKeyboardOpen, setHomeKeyboardOpen] = useState(false);
   const homeSearchRef = useRef(null);
   const [studyTopic, setStudyTopic] = useState("all");
@@ -1817,7 +1814,6 @@ export default function FaithDashboard({
       onOpenAI={onOpenAI}
       setComingSoonFeature={setComingSoonFeature}
       comingSoonFeature={comingSoonFeature}
-      backPrompt={backPrompt}
       homeKeyboardOpen={homeKeyboardOpen}
       setHomeKeyboardOpen={setHomeKeyboardOpen}
       loadHomeSnapshot={loadHomeSnapshot}
