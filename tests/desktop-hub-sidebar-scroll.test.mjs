@@ -47,7 +47,7 @@ test("Community home and companion workspaces keep desktop navigation rails outs
 
   assert.match(frame, /lg:h-full lg:min-h-0 lg:overflow-hidden/);
   assert.match(frame, /flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain/);
-  assert.match(frame, /lg:h-full lg:min-h-0 lg:flex lg:flex-col lg:overflow-y-auto/);
+  assert.match(frame, /lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto/);
 });
 
 test("Faith desktop sidebar remains in its own rail while the main panel scrolls", () => {
