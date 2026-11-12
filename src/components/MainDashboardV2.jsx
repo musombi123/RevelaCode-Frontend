@@ -688,6 +688,30 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
   const isAndroidHome = isAndroidApp && activeView === "home";
   const dashboardContentRef = useRef(null);
 
+  // Use the visual viewport height in Android WebView so the content pane
+  // recalculates when the keyboard opens, closes, or the browser chrome moves.
+  useEffect(() => {
+    const updateAppViewportHeight = () => {
+      const height = window.visualViewport?.height || window.innerHeight;
+      if (Number.isFinite(height) && height > 0) {
+        document.documentElement.style.setProperty(
+          "--revelacode-app-viewport-height",
+          Math.round(height) + "px"
+        );
+      }
+    };
+
+    updateAppViewportHeight();
+    window.addEventListener("resize", updateAppViewportHeight);
+    window.visualViewport?.addEventListener("resize", updateAppViewportHeight);
+    window.visualViewport?.addEventListener("scroll", updateAppViewportHeight);
+    return () => {
+      window.removeEventListener("resize", updateAppViewportHeight);
+      window.visualViewport?.removeEventListener("resize", updateAppViewportHeight);
+      window.visualViewport?.removeEventListener("scroll", updateAppViewportHeight);
+    };
+  }, []);
+
   // Native Back is owned by the application shell. Hub-level Back listeners
   // are intentionally not registered, so the same behavior applies from every
   // nested Faith, Shamba, Community, Biashara and Elimu workspace.
