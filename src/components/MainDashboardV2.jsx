@@ -1507,11 +1507,11 @@ const BIASHARA_SECTION_KEYS = new Set(
 
           <section
             id="revelacode-dashboard-content"
-            className={isAndroidApp
+            className={(activeView === "home" ? "rc-home-dashboard-content " : "") + (isAndroidApp
               ? isAndroidHome
                 ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
-              : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6"}
+              : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
             style={isAndroidApp ? { WebkitOverflowScrolling: "touch", touchAction: "auto" } : undefined}
           >
             <ConnectionStatusBanner />
@@ -1526,7 +1526,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                 <PremiumPlansStar className="h-10 w-auto min-w-10 px-3 rounded-lg" />
               </div>
             ) : null}
-            {isGuest && !isAndroidHome && (
+            {isGuest && !isAndroidHome && activeView !== "home" && (
               <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-bold">You’re exploring RevelaCode as a guest</p>
