@@ -1,245 +1,193 @@
 import React, { useState } from "react";
 import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import {
-  DollarSign, Bell, Briefcase, ChevronDown, ClipboardList, Globe, ArrowLeftRight,
-  Home, LayoutDashboard, Lightbulb, Lock, Menu, MoreHorizontal, Package,
-  RefreshCw, Settings, Sparkles, Store, Users, Wrench, Zap, X,
+  ArrowLeftRight, BarChart3, Bell, Building2, ChevronDown, ClipboardList,
+  Globe, Headphones, Home, LayoutDashboard, Menu, MoreHorizontal, Package,
+  RefreshCw, Settings, ShieldCheck, ShoppingCart, Store, Users, WalletCards,
+  X, Zap,
 } from "lucide-react";
 
+import { getBiasharaTemplate } from "./businessTemplateRegistry.js";
+
 const PRIMARY_NAV = [
-  { key: "overview", label: "Overview", route: "overview", icon: LayoutDashboard, available: true },
-  { key: "website", label: "Website", route: "website", icon: Globe, available: true },
-  { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
-  { key: "products", label: "Products and stock", route: "products", icon: Package, available: true },
-  { key: "factory", label: "Production & Factory", route: "factory", icon: Package, available: true },
-  { key: "hr", label: "HR & Attendance", route: "hr", icon: Users, available: true },
-  { key: "integrations", label: "Integrations", route: "integrations", icon: Zap, available: true },
-  { key: "services", label: "Manage services", route: "services", icon: Wrench, available: true },
-  { key: "customers", label: "Customers", route: "customers", icon: Users, available: true },
-  { key: "finance", label: "Finance", route: "finance", icon: DollarSign, available: true },
-  { key: "automations", label: "Automations", route: "automations", icon: Zap, available: true },
-  { key: "sync", label: "Sync Centre", route: "sync", icon: RefreshCw, available: true },
-  { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
-  { key: "team", label: "Team", route: "team", icon: Users, available: true },
-  { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },
-  { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight, available: true },
+  { key: "overview", label: "Overview", route: "overview", icon: LayoutDashboard },
+  { key: "sales", label: "Sales & Orders", route: "sales", icon: ShoppingCart },
+  { key: "products", label: "Stock & Inventory", route: "products", icon: Package },
+  { key: "finance", label: "Finance", route: "finance", icon: WalletCards },
+  { key: "team", label: "Team & HR", route: "team", icon: Users },
+  { key: "website", label: "Website", route: "website", icon: Globe },
+  { key: "automations", label: "Automations", route: "automations", icon: Zap },
+  { key: "sync", label: "Sync Centre", route: "sync", icon: RefreshCw },
+  { key: "insights", label: "Insights", route: "biashara-analytics", icon: BarChart3 },
+  { key: "settings", label: "Settings", route: "business-profile", icon: Settings },
+  { key: "support", label: "Help & Support", route: "notifications", icon: Headphones },
 ];
 
-const MORE_TOOLS = [
-  { key: "sales", label: "Sales entry", route: "sales", icon: DollarSign, available: true },
-  { key: "biashara-intelligence", label: "Operational signals", route: "biashara-intelligence", icon: Sparkles, available: true },
-  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell, available: true },
+const SECONDARY_NAV = [
+  { key: "orders", label: "Order management", route: "orders", icon: ClipboardList },
+  { key: "customers", label: "Customers", route: "customers", icon: Users },
+  { key: "services", label: "Services & quotations", route: "services", icon: Building2 },
+  { key: "factory", label: "Production & Factory", route: "factory", icon: Package },
+  { key: "hr", label: "Attendance & HR", route: "hr", icon: Users },
+  { key: "integrations", label: "Integrations", route: "integrations", icon: Zap },
+  { key: "intelligence", label: "Operational signals", route: "biashara-intelligence", icon: BarChart3 },
+  { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight },
+  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell },
 ];
 
-const MOBILE_NAV_KEYS = ["overview", "orders", "products", "factory", "website"];
-
-const ANDROID_NAV = [
-  { key: "overview", label: "Home", route: "overview", icon: Home, available: true },
-  { key: "orders", label: "Orders", route: "orders", icon: ClipboardList, available: true },
-  { key: "insights", label: "Insights", route: "biashara-analytics", icon: Lightbulb, available: true },
-  { key: "settings", label: "Settings", route: "business-profile", icon: Settings, available: true },
+const MOBILE_NAV = [
+  { key: "overview", label: "Home", route: "overview", icon: Home },
+  { key: "sync", label: "Sync", route: "sync", icon: RefreshCw },
+  { key: "insights", label: "Insights", route: "biashara-analytics", icon: BarChart3 },
+  { key: "more", label: "More", route: null, icon: MoreHorizontal },
+  { key: "settings", label: "Me", route: "business-profile", icon: Users },
 ];
-
-const SIMPLE_PRIMARY_KEYS = new Set([
-  "overview", "website", "orders", "products", "factory", "hr", "integrations", "services",
-  "customers", "finance", "sync", "settings",
-]);
-const SIMPLE_TOOL_KEYS = new Set(["sales", "notifications"]);
 
 function isActive(item, activeSection) {
-  if (item.route === activeSection) return true;
-  return item.key === "insights" && activeSection === "biashara-intelligence";
+  return item.route === activeSection ||
+    (item.key === "insights" && activeSection === "biashara-intelligence");
 }
 
 function NavigationItem({ item, activeSection, onNavigate, compact = false }) {
   const Icon = item.icon;
   const active = isActive(item, activeSection);
-  const buttonClass = "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 " +
-    (active
-      ? "bg-emerald-400/10 text-emerald-200 ring-1 ring-inset ring-emerald-300/20"
-      : item.available
-        ? "text-slate-300 hover:bg-white/5 hover:text-white"
-        : "cursor-not-allowed text-slate-500");
-
   return (
-    <div className="min-w-0">
-      <button
-        type="button"
-        disabled={!item.available}
-        onClick={() => item.available && item.route ? onNavigate(item.route) : undefined}
-        data-demo={"biashara-nav-" + item.key}
-        aria-current={active ? "page" : undefined}
-        aria-label={item.available ? item.label : item.label + ". Unavailable: " + item.reason}
-        title={item.available ? item.label : item.reason}
-        className={buttonClass}
-      >
-        <Icon aria-hidden="true" size={18} className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate">{item.label}</span>
-        {!item.available ? <Lock aria-hidden="true" size={15} className="shrink-0" /> : null}
-      </button>
-      {!item.available ? (
-        <p className={"px-3 pb-2 pt-1 text-[11px] leading-4 text-slate-500 " + (compact ? "pl-10" : "")}>{item.reason}</p>
-      ) : null}
-    </div>
+    <button
+      type="button"
+      onClick={() => onNavigate(item.route)}
+      data-demo={"biashara-nav-" + item.key}
+      aria-current={active ? "page" : undefined}
+      title={item.label}
+      className={"biashara-sidebar-link" + (active ? " is-active" : "") + (compact ? " is-compact" : "")}
+    >
+      <Icon size={18} aria-hidden="true" />
+      <span>{item.label}</span>
+    </button>
   );
 }
 
-export default function BiasharaShell({ business, activeSection = "overview", onNavigate, onRefresh, children }) {
+export default function BiasharaShell({
+  business,
+  businesses = [],
+  switchingBusiness = false,
+  onSwitchBusiness,
+  activeSection = "overview",
+  onNavigate,
+  onRefresh,
+  children,
+}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAndroidApp = import.meta.env.VITE_ANDROID_APP === "true";
+  const businessId = String(business?.id || business?._id || "");
   const businessName = business?.name || business?.business_name || "Current business";
-  const simpleMode = business?.workspace_mode === "simple" ||
-    (!business?.workspace_mode && ["micro", "small"].includes(business?.business_scale));
-  const factoryEnabled = String(business?.industry_template || "").toLowerCase() === "factory";
-  const industryTemplate = String(business?.industry_template || "").toLowerCase();
-  const hrEnabled = Boolean(industryTemplate) && industryTemplate !== "school";
+  const template = getBiasharaTemplate(business?.industry_template);
+  const isFactory = template.key === "factory";
+  const isSchool = template.key === "school";
   const role = String(business?.access_role || business?.role || (business?.is_owner ? "owner" : "viewer")).toLowerCase().replace(/-/g, "_").replace(/ /g, "_");
-  const integrationEnabled = ["owner", "ceo", "director", "admin", "accountant", "operations_manager", "manager"].includes(role);
-  const configuredNav = PRIMARY_NAV.filter((item) =>
-    (item.key !== "factory" || factoryEnabled) &&
-    (item.key !== "hr" || hrEnabled) &&
-    (item.key !== "integrations" || integrationEnabled)
-  );
-  const primaryNav = simpleMode
-    ? configuredNav.filter((item) => SIMPLE_PRIMARY_KEYS.has(item.key))
-    : configuredNav;
-  const moreNav = simpleMode
-    ? MORE_TOOLS.filter((item) => SIMPLE_TOOL_KEYS.has(item.key))
-    : MORE_TOOLS;
-  const activeLabel = primaryNav.find((item) => isActive(item, activeSection))?.label ||
-    moreNav.find((item) => item.route === activeSection)?.label || "Biashara";
+  const adminRoles = ["owner", "ceo", "director", "admin", "operations_manager", "manager"];
+  const canSeePeopleAdmin = adminRoles.includes(role) || role === "hr_manager";
+  const mainNav = PRIMARY_NAV.filter((item) => item.key !== "team" || canSeePeopleAdmin);
+  const secondaryNav = SECONDARY_NAV.filter((item) => {
+    if (item.key === "factory") return isFactory;
+    if (item.key === "hr") return isSchool || canSeePeopleAdmin;
+    if (item.key === "integrations") return adminRoles.includes(role) || role === "accountant";
+    if (item.key === "business-switch") return businesses.length > 1;
+    return true;
+  });
+  const activeLabel = [...mainNav, ...secondaryNav].find((item) => isActive(item, activeSection))?.label || "Biashara";
 
   const navigateTo = (route) => {
     setMobileMenuOpen(false);
     if (route && typeof onNavigate === "function") onNavigate(route);
   };
 
-  const visibleMobileItems = isAndroidApp
-    ? ANDROID_NAV
-    : primaryNav.filter((item) => MOBILE_NAV_KEYS.includes(item.key));
-  const androidFooterRoutes = new Set(ANDROID_NAV.map((item) => item.route));
-  const moreItems = isAndroidApp
-    ? primaryNav.filter((item) => !androidFooterRoutes.has(item.route))
-    : primaryNav.filter((item) => !MOBILE_NAV_KEYS.includes(item.key));
-  const visibleMoreTools = isAndroidApp
-    ? moreNav.filter((item) => item.route !== "biashara-analytics")
-    : moreNav;
-
   return (
-    <div className="min-h-screen bg-revela-dark text-slate-100 lg:flex">
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-white/10 bg-revela-card lg:flex">
-        <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-300/15">
-              <Store aria-hidden="true" size={21} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold tracking-tight text-white">Biashara OS</p>
-              <p className="mt-0.5 text-xs text-slate-400">Business workspace</p>
-            </div>
-            <PremiumPlansStar className="border-white/10 bg-revela-dark text-amber-300 dark:bg-revela-dark" />
+    <div className="biashara-shell">
+      <aside className="biashara-sidebar" aria-label="Biashara navigation">
+        <div className="biashara-sidebar-brand">
+          <img src="/Logo.png" alt="RevelaCode" />
+          <div><strong>RevelaCode</strong><small>Code. Innovate. Transform.</small></div>
+        </div>
+
+        <div className="biashara-sidebar-hub">
+          <Store size={22} />
+          <span>Biashara Hub</span>
+        </div>
+
+        <div className="biashara-sidebar-business">
+          <label htmlFor="biashara-business-select">CURRENT BUSINESS</label>
+          <div className="biashara-business-select-wrap">
+            <Building2 size={16} />
+            <select
+              id="biashara-business-select"
+              value={businessId}
+              disabled={switchingBusiness || businesses.length <= 1}
+              onChange={(event) => onSwitchBusiness?.(event.target.value)}
+              aria-label="Switch active business"
+            >
+              {(businesses.length ? businesses : [business]).filter(Boolean).map((item) => {
+                const id = String(item.id || item._id || "");
+                return <option key={id} value={id}>{item.name || item.business_name || "Business"}</option>;
+              })}
+            </select>
+            {switchingBusiness ? <RefreshCw className="biashara-switch-spinner" size={15} /> : <ChevronDown size={15} />}
           </div>
+          <small>{businesses.length > 1 ? "Switching reloads this business workspace." : "Your current business workspace."}</small>
         </div>
 
-        <div className="border-b border-white/10 px-4 py-4">
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-semibold text-slate-400">Current business</span>
-            <span className="relative block">
-              <Briefcase aria-hidden="true" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
-              <select
-                aria-label="Current business"
-                value="current"
-                disabled
-                className="min-h-11 w-full appearance-none rounded-xl border border-white/10 bg-revela-dark py-2.5 pl-9 pr-9 text-sm text-white opacity-100 disabled:cursor-not-allowed"
-              >
-                <option value="current">{businessName}</option>
-              </select>
-              <ChevronDown aria-hidden="true" size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            </span>
-          </label>
-          <p className="mt-2 text-[11px] leading-4 text-slate-500">Business switching needs the membership API.</p>
-        </div>
-
-        <nav aria-label="Biashara primary navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">Workspace</p>
-          {primaryNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
-          <div className="my-4 border-t border-white/10" />
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
-          {moreNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
+        <nav className="biashara-sidebar-nav" aria-label="Primary workspace">
+          {mainNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
+          <div className="biashara-sidebar-divider" />
+          {secondaryNav.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} />)}
         </nav>
 
-        <div className="border-t border-white/10 p-4">
-          <div className="rounded-xl border border-white/10 bg-revela-dark/70 p-3">
-            <p className="text-xs font-semibold text-slate-200">{simpleMode ? "Small Biashara workspace" : "Business OS workspace"}</p>
-            <p className="mt-1 text-[11px] leading-4 text-slate-500">{simpleMode ? "A focused workspace for day-to-day sales, stock, customers and cash flow. Advanced automation and team administration are hidden to keep the workflow simple." : "Industry-ready workspace with advanced operational tools. Features remain subject to the connected backend capabilities and permissions."}</p>
-          </div>
+        <div className="biashara-sidebar-premium">
+          <span className="biashara-premium-crown">♛</span>
+          <strong>Premium</strong>
+          <small>Unlock more business power</small>
+          <PremiumPlansStar className="!mt-2 !min-h-8 !rounded-lg !border-white/15 !bg-white/10 !px-3 !text-[10px] !text-white" />
+        </div>
+
+        <div className="biashara-sidebar-user">
+          <span className="biashara-user-avatar">{String(businessName).slice(0, 1).toUpperCase()}</span>
+          <div><strong>{businessName}</strong><small>{business?.access_role || (business?.is_owner ? "Owner" : "Business member")}</small></div>
+          <ShieldCheck size={15} />
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-white/10 bg-revela-dark/95 px-4 backdrop-blur lg:hidden">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300">
-              <Store aria-hidden="true" size={19} />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold tracking-tight text-white">{isAndroidApp ? "RevelaCode" : activeLabel}</p>
-              <p className="max-w-[58vw] truncate text-xs text-slate-400">{isAndroidApp ? "Biashara Hub · " + activeLabel : businessName}</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <PremiumPlansStar className="border-white/10 bg-revela-card text-amber-300 dark:bg-revela-card" />
-            {isAndroidApp ? (
-              <button type="button" onClick={() => navigateTo("notifications")} aria-label="Open business alerts" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
-                <Bell aria-hidden="true" size={18} />
-              </button>
-            ) : null}
-            <button type="button" onClick={() => onRefresh?.()} aria-label="Refresh business data" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
-              <RefreshCw aria-hidden="true" size={17} />
-            </button>
-            <button type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-expanded={mobileMenuOpen} aria-controls="biashara-mobile-more" aria-label={mobileMenuOpen ? "Close more navigation" : "Open more navigation"} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
-              {mobileMenuOpen ? <X aria-hidden="true" size={18} /> : <Menu aria-hidden="true" size={18} />}
-            </button>
-          </div>
+      <div className="biashara-shell-main">
+        <header className="biashara-mobile-header">
+          <button type="button" className="biashara-mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)}><Menu size={22} /></button>
+          <div className="biashara-mobile-brand"><img src="/Logo.png" alt="" /><span><strong>RevelaCode</strong><small>{businessName}</small></span></div>
+          <button type="button" className="biashara-mobile-action" onClick={() => navigateTo("notifications")} aria-label="Business alerts"><Bell size={20} /></button>
+          <button type="button" className="biashara-mobile-action" onClick={() => onRefresh?.()} aria-label="Refresh business data"><RefreshCw size={18} /></button>
         </header>
 
-        <main className="min-w-0 pb-24 lg:pb-0">
+        <div className="biashara-shell-workspace">
           {children}
-        </main>
+        </div>
+
+        <nav className="biashara-mobile-bottom-nav" aria-label="Business mobile navigation">
+          {MOBILE_NAV.map((item) => {
+            const Icon = item.icon;
+            const active = item.route ? isActive(item, activeSection) : mobileMenuOpen;
+            return <button type="button" key={item.key} className={active ? "is-active" : ""} onClick={() => item.route ? navigateTo(item.route) : setMobileMenuOpen((value) => !value)} aria-current={active && item.route ? "page" : undefined}><Icon size={21} /><span>{item.label}</span></button>;
+          })}
+        </nav>
       </div>
 
-      <nav aria-label="Biashara mobile navigation" className={"fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-1 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur lg:hidden " + (isAndroidApp ? "border-white/10 bg-[#061D36]/96 shadow-[0_-8px_28px_rgba(3,20,43,.28)]" : "border-white/10 bg-revela-card/95")}>
-        {visibleMobileItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item, activeSection);
-          return (
-            <button key={item.key} type="button" onClick={() => navigateTo(item.route)} data-demo={"biashara-nav-" + item.key} aria-current={active ? "page" : undefined} className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (active ? (isAndroidApp ? "text-[#37D98B]" : "text-emerald-300") : "text-slate-400 hover:bg-white/5 hover:text-white")}>
-              <Icon aria-hidden="true" size={19} />
-              <span className="max-w-full truncate">{item.label === "Products and stock" ? "Products" : item.label}</span>
-            </button>
-          );
-        })}
-        <button type="button" onClick={() => { setMobileMenuOpen((open) => !open); }} data-demo="biashara-more-menu-btn" aria-expanded={mobileMenuOpen} aria-label="More Biashara sections" className={"flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (mobileMenuOpen ? "text-emerald-300" : "text-slate-400 hover:bg-white/5 hover:text-white")}>
-          <MoreHorizontal aria-hidden="true" size={19} />
-          <span>More</span>
-        </button>
-      </nav>
-
       {mobileMenuOpen ? (
-        <div id="biashara-mobile-more" role="region" aria-label="More Biashara sections" className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 max-h-[72vh] overflow-y-auto rounded-2xl border border-white/10 bg-revela-card p-3 shadow-2xl lg:hidden">
-          <div className="mb-2 flex items-center justify-between px-2">
-            <h2 className="text-sm font-semibold text-white">More sections</h2>
-            <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close more sections" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><X aria-hidden="true" size={17} /></button>
-          </div>
-          <div className="space-y-1">
-            {moreItems.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
-          </div>
-          <div className="my-3 border-t border-white/10" />
-          <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">More tools</p>
-          <div className="space-y-1">
-            {visibleMoreTools.map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
-          </div>
-          <p className="px-3 pt-3 text-[11px] leading-4 text-slate-500">Unavailable sections are marked with a lock until their backend API is ready. No plan or role restriction is inferred here.</p>
+        <div className="biashara-mobile-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMobileMenuOpen(false); }}>
+          <section className="biashara-mobile-drawer" role="dialog" aria-modal="true" aria-label="More business tools">
+            <div className="biashara-mobile-drawer-title"><div><strong>Business tools</strong><small>{businessName}</small></div><button type="button" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)}><X size={19} /></button></div>
+            {[...mainNav, ...secondaryNav].filter((item) => !MOBILE_NAV.some((mobile) => mobile.route && mobile.route === item.route)).map((item) => <NavigationItem key={item.key} item={item} activeSection={activeSection} onNavigate={navigateTo} compact />)}
+            <div className="biashara-drawer-business-switch">
+              <label htmlFor="biashara-mobile-business-select">Current business</label>
+              <select id="biashara-mobile-business-select" value={businessId} disabled={switchingBusiness || businesses.length <= 1} onChange={(event) => { setMobileMenuOpen(false); onSwitchBusiness?.(event.target.value); }}>
+                {(businesses.length ? businesses : [business]).filter(Boolean).map((item) => <option key={String(item.id || item._id)} value={String(item.id || item._id)}>{item.name || item.business_name || "Business"}</option>)}
+              </select>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>
