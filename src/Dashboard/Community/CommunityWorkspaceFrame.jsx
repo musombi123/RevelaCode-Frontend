@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 import {
   Bell,
   BookOpen,
@@ -34,6 +35,7 @@ export default function CommunityWorkspaceFrame({
   onOpenPillar,
   onBackToApp,
 }) {
+  const { resolvedTheme } = useTheme();
   const avatar =
     profile?.avatar_url ||
     user?.avatar_url ||
@@ -67,7 +69,7 @@ export default function CommunityWorkspaceFrame({
   ];
 
   return (
-    <div className="dark min-h-screen w-full bg-[#050b1d] text-slate-100 lg:h-full lg:min-h-0 lg:overflow-hidden">
+    <div data-community-workspace="true" data-theme={resolvedTheme} className={"min-h-screen w-full lg:h-full lg:min-h-0 lg:overflow-hidden " + (resolvedTheme === "dark" ? "dark bg-[#050b1d] text-slate-100" : "light bg-slate-50 text-slate-900")}>
       <div className="min-h-screen lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[208px_minmax(0,1fr)]">
         <aside className="relative z-20 hidden min-w-0 overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:block lg:h-full lg:min-h-0">
           <div className="pointer-events-none absolute -bottom-20 -left-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
