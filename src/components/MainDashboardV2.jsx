@@ -41,8 +41,6 @@ import ConnectionStatusBanner from "./ConnectionStatusBanner.jsx";
 import SDAQuarterlyBackgroundSync from "./faith/SDAQuarterlyBackgroundSync.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
 import StartModal from "./StartModal.jsx";
-import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
-import HubShareAction from "@/components/HubShareAction.jsx";
 import PlansModal from "@/premium/PlansModal.jsx";
 
 import { useTheme } from "@/components/hooks/useTheme.jsx";
@@ -1430,8 +1428,6 @@ const BIASHARA_SECTION_KEYS = new Set(
                   sm:gap-2
                 "
               >
-                <PremiumPlansStar />
-
                 {/* Notifications */}
 
                 <Notifications onNavigate={handleNavigate} />
@@ -1519,15 +1515,6 @@ const BIASHARA_SECTION_KEYS = new Set(
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
 
-            {!showShellHeader && activeView !== "faith" ? (
-              <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-white px-3 py-2.5 shadow-sm dark:border-amber-900/50 dark:bg-slate-900">
-                <div className="min-w-0">
-                  <p className="text-xs font-black text-slate-900 dark:text-white">RevelaCode Premium</p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Compare plans and available hub trials</p>
-                </div>
-                <PremiumPlansStar className="h-10 w-auto min-w-10 px-3 rounded-lg" />
-              </div>
-            ) : null}
             {isGuest && !isAndroidHome && activeView !== "home" && activeView !== "faith" && (
               <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -1543,15 +1530,6 @@ const BIASHARA_SECTION_KEYS = new Set(
                 </button>
               </div>
             )}
-            {!["home", "community", "faith"].includes(activeView) ? (
-              <div className="mx-auto mb-2 flex w-full max-w-5xl justify-end">
-                <HubShareAction
-                  activeHub={activeView}
-                  activeHubLabel={activeDashboard?.title || activeView}
-                  onNavigate={handleNavigate}
-                />
-              </div>
-            ) : null}
             <Suspense fallback={<Loading />}>
               <ErrorBoundary>
                 {activeComponent ? (
