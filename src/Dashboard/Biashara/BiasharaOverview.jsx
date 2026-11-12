@@ -242,6 +242,12 @@ export default function BiasharaOverview({
           </div>
         </section>
 
+        <form className="biashara-overview-mobile-search" role="search" onSubmit={(event) => { event.preventDefault(); onNavigate?.("products"); }}>
+          <Search size={18} aria-hidden="true" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search or ask RevelaCode..." aria-label="Search business tools" />
+          <button type="submit" aria-label="Search business tools"><ArrowRight size={20} /></button>
+        </form>
+
         {dashboardError ? <div role="alert" className="biashara-overview-error">{dashboardError}</div> : null}
 
         <section className="biashara-overview-metrics" aria-label="Business metrics">
