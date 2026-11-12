@@ -82,18 +82,22 @@ export default function BiasharaShell({
   const businessId = String(business?.id || business?._id || "");
   const businessName = business?.name || business?.business_name || "Current business";
   const template = getBiasharaTemplate(business?.industry_template);
+  const templateRoutes = new Set(template.routes);
   const isFactory = template.key === "factory";
   const isSchool = template.key === "school";
   const role = String(business?.access_role || business?.role || (business?.is_owner ? "owner" : "viewer")).toLowerCase().replace(/-/g, "_").replace(/ /g, "_");
   const adminRoles = ["owner", "ceo", "director", "admin", "operations_manager", "manager"];
   const canSeePeopleAdmin = adminRoles.includes(role) || role === "hr_manager";
-  const mainNav = PRIMARY_NAV.filter((item) => item.key !== "team" || canSeePeopleAdmin);
+  const mainNav = PRIMARY_NAV.filter((item) =>
+    ["overview", "settings", "support"].includes(item.key) ||
+    (templateRoutes.has(item.route) && (item.key !== "team" || canSeePeopleAdmin))
+  );
   const secondaryNav = SECONDARY_NAV.filter((item) => {
-    if (item.key === "factory") return isFactory;
-    if (item.key === "hr") return isSchool || canSeePeopleAdmin;
-    if (item.key === "integrations") return adminRoles.includes(role) || role === "accountant";
     if (item.key === "business-switch") return businesses.length > 1;
-    return true;
+    if (item.key === "factory") return isFactory && templateRoutes.has(item.route);
+    if (item.key === "hr") return (isSchool || canSeePeopleAdmin) && templateRoutes.has(item.route);
+    if (item.key === "integrations") return (adminRoles.includes(role) || role === "accountant") && templateRoutes.has(item.route);
+    return templateRoutes.has(item.route);
   });
   const activeLabel = [...mainNav, ...secondaryNav].find((item) => isActive(item, activeSection))?.label || "Biashara";
 
