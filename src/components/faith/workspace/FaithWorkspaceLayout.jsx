@@ -4,9 +4,9 @@ import {
   HeartHandshake, Home, Library, RefreshCw, ShieldCheck, SlidersHorizontal,
   Sparkles, Lightbulb, UserCircle, WifiOff, X,
 } from "lucide-react";
-import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/context/AuthContext.jsx";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/+$/, "");
 
@@ -165,45 +165,6 @@ function normalizeSources(payload) {
   });
 }
 
-export function useFaithAndroidBack({ isHome = false, enabled = true, onBack, onBackAction, onPrompt } = {}) {
-  const handlersRef = useRef({ isHome, enabled, onBack, onBackAction, onPrompt });
-  const lastBackAtRef = useRef(0);
-  useEffect(() => {
-    handlersRef.current = { isHome, enabled, onBack, onBackAction, onPrompt };
-  }, [isHome, enabled, onBack, onBackAction, onPrompt]);
-
-  useEffect(() => {
-    if (!enabled) return undefined;
-    let active = true;
-    let nativeListener = null;
-    const handleBack = async () => {
-      const current = handlersRef.current;
-      if (current.onBackAction?.()) return;
-      if (!current.isHome) {
-        current.onBack?.();
-        return;
-      }
-      const now = Date.now();
-      if (now - lastBackAtRef.current < 2200) {
-        try { await CapacitorApp.exitApp(); } catch { current.onPrompt?.("Press back again to exit"); }
-      } else {
-        lastBackAtRef.current = now;
-        current.onPrompt?.("Press back again to exit");
-      }
-    };
-    CapacitorApp.addListener("backButton", handleBack).then((listener) => {
-      if (!active) listener.remove();
-      else nativeListener = listener;
-    }).catch(() => {
-      // The hook is also used in browsers where the native back event is absent.
-    });
-    return () => {
-      active = false;
-      nativeListener?.remove?.();
-    };
-  }, [enabled]);
-}
-
 export function FaithMobileBottomNav({
   active = "home",
   onHome,
@@ -216,6 +177,8 @@ export function FaithMobileBottomNav({
   if (hidden) return null;
   const nativeAndroid = (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || import.meta.env.VITE_ANDROID_APP === "true";
   const keepDockInAndroidLandscape = nativeAndroid;
+  const { resolvedTheme } = useTheme();
+  const nativeDark = resolvedTheme === "dark";
   const items = [
     { key: "home", label: "Home", icon: Home, action: onHome },
     { key: "study", label: "Study", icon: BookOpen, action: onStudy },
@@ -224,7 +187,7 @@ export function FaithMobileBottomNav({
     { key: "me", label: "Me", icon: UserCircle, action: onMe },
   ];
   return (
-    <nav aria-label="Faith mobile navigation" className={"fixed inset-x-0 bottom-0 z-50 grid min-h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_28px_rgba(3,20,43,0.28)] backdrop-blur-lg " + (nativeAndroid ? "border-white/10 bg-[#061D36]/96 " : "border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-950/95 ") + (keepDockInAndroidLandscape ? "" : "sm:hidden")}>
+    <nav aria-label="Faith mobile navigation" className={"fixed inset-x-0 bottom-0 z-50 grid min-h-[calc(3.5rem+env(safe-area-inset-bottom))] grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_28px_rgba(3,20,43,0.28)] backdrop-blur-lg " + (nativeAndroid ? (nativeDark ? "border-white/10 bg-[#061D36]/96 " : "border-slate-200 bg-white/95 ") : "border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-950/95 ") + (keepDockInAndroidLandscape ? "" : "sm:hidden")}>
       {items.map((item) => {
         const Icon = item.icon;
         const selected = active === item.key;
@@ -235,7 +198,7 @@ export function FaithMobileBottomNav({
             onClick={item.action}
             aria-label={item.label}
             aria-current={selected ? "page" : undefined}
-            className={"flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.625rem] font-bold transition-colors duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (selected ? (nativeAndroid ? "text-[#37D98B]" : "text-indigo-700 dark:text-indigo-300") : "text-slate-500 dark:text-slate-400")}
+            className={"flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.625rem] font-bold transition-colors duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-300 " + (selected ? (nativeAndroid ? (nativeDark ? "text-[#37D98B]" : "text-emerald-700") : "text-indigo-700 dark:text-indigo-300") : "text-slate-500 dark:text-slate-400")}
           >
             <span className={"flex h-7 w-9 items-center justify-center rounded-xl " + (selected ? (nativeAndroid ? "bg-emerald-400/10" : "bg-indigo-50 dark:bg-indigo-950/60") : "")}><Icon size={19} strokeWidth={selected ? 2.4 : 1.9} /></span>
             <span className="truncate">{item.label}</span>
@@ -686,6 +649,7 @@ export default function FaithWorkspaceLayout({
 }) {
   const meta = PAGE_META[page] || {};
   const safeContextData = useMemo(() => sanitizeContextData(contextData), [contextData]);
+  const { resolvedTheme } = useTheme();
   const [overlay, setOverlay] = useState("");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
@@ -737,17 +701,6 @@ export default function FaithWorkspaceLayout({
     };
   }, []);
 
-  const handleNativeBack = useCallback(() => {
-    if (overlayRef.current) {
-      if (overlayRef.current === "answer") window.dispatchEvent(new CustomEvent("revelacode:faith-dismiss-overlay"));
-      setOverlay("");
-      return true;
-    }
-    if (keyboardOpen) { document.activeElement?.blur?.(); setKeyboardOpen(false); return true; }
-    return false;
-  }, [keyboardOpen]);
-  useFaithAndroidBack({ isHome: false, onBack, onBackAction: handleNativeBack });
-
   const goHome = onHome || onBack || (() => onNavigate?.("faith"));
   const goStudy = onStudy || (() => onNavigate?.("bible"));
   const goMission = onMission || (() => window.location.assign("/faith/missionpulse"));
@@ -760,7 +713,7 @@ export default function FaithWorkspaceLayout({
   const closeOverlay = () => setOverlay("");
 
   return (
-    <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell dark min-h-[100svh] bg-[#031321] px-3 text-white" : "")}>
+    <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell min-h-[100svh] px-3 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900") : "")}>
       <FaithOfflineBanner offline={offline} />
       <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
       <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
