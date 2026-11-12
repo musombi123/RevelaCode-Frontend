@@ -3,7 +3,7 @@ import PremiumPlansStar from "@/premium/PremiumPlansStar.jsx";
 import "./biashara-overview.css";
 import {
   ArrowLeftRight, BarChart3, Bell, Building2, ChevronDown, ClipboardList,
-  Globe, Headphones, Home, LayoutDashboard, Menu, MoreHorizontal, Package,
+  Globe, Home, LayoutDashboard, Menu, MoreHorizontal, Package,
   RefreshCw, Settings, ShieldCheck, ShoppingCart, Store, Users, WalletCards,
   X, Zap,
 } from "lucide-react";
@@ -21,7 +21,7 @@ const PRIMARY_NAV = [
   { key: "sync", label: "Sync Centre", route: "sync", icon: RefreshCw },
   { key: "insights", label: "Insights", route: "biashara-analytics", icon: BarChart3 },
   { key: "settings", label: "Settings", route: "business-profile", icon: Settings },
-  { key: "support", label: "Help & Support", route: "notifications", icon: Headphones },
+  { key: "alerts", label: "Alerts", route: "notifications", icon: Bell },
 ];
 
 const SECONDARY_NAV = [
@@ -33,7 +33,6 @@ const SECONDARY_NAV = [
   { key: "integrations", label: "Integrations", route: "integrations", icon: Zap },
   { key: "intelligence", label: "Operational signals", route: "biashara-intelligence", icon: BarChart3 },
   { key: "business-switch", label: "Switch business", route: "business-switch", icon: ArrowLeftRight },
-  { key: "notifications", label: "Alerts", route: "notifications", icon: Bell },
 ];
 
 const MOBILE_NAV = [
@@ -89,7 +88,7 @@ export default function BiasharaShell({
   const adminRoles = ["owner", "ceo", "director", "admin", "operations_manager", "manager"];
   const canSeePeopleAdmin = adminRoles.includes(role) || role === "hr_manager";
   const mainNav = PRIMARY_NAV.filter((item) =>
-    ["overview", "settings", "support"].includes(item.key) ||
+    ["overview", "settings", "alerts"].includes(item.key) ||
     (templateRoutes.has(item.route) && (item.key !== "team" || canSeePeopleAdmin))
   );
   const secondaryNav = SECONDARY_NAV.filter((item) => {
