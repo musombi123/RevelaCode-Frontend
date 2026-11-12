@@ -176,6 +176,9 @@ const ANSWER_STYLE_INSTRUCTION = [
   "Do not prefix answers with routing labels such as 'Auto → General', hub names, or internal status tags.",
   "Do not use a generic greeting unless the user greeted you or the conversation calls for one.",
   "Use clear structure when useful; avoid filler and answer the actual question first.",
+  "Use compact Markdown tables when they materially improve comparisons, schedules, feature matrices, option breakdowns, or structured data summaries.",
+  "Give tables clear column headers and concise cells; do not force a table for simple explanations, short lists, step-by-step instructions, or data that is too wide to scan.",
+  "Never invent values to fill a table. Clearly mark unknown, unavailable, or not-provided information.",
 ].join(" ");
 
 const createMessage = (
@@ -1091,13 +1094,25 @@ export default function AIAssistantDashboard({
       async (
         text,
         attachedFile = null,
-        inputMeta = null
+        inputMeta = null,
+        sendOptions = null
       ) => {
         const cleaned =
           String(text || "")
             .trim();
 
         const selectedToolCommand = String(inputMeta?.toolCommand || "").trim().toLowerCase();
+        const editMessageId = String(sendOptions?.editMessageId || "").trim();
+        const editIndex = editMessageId
+          ? messages.findIndex((message) => message.id === editMessageId)
+          : -1;
+        const editTarget = editIndex >= 0 ? messages[editIndex] : null;
+        if (editMessageId && (
+          !editTarget ||
+          editTarget.role !== "user" ||
+          editTarget.attachmentName ||
+          editTarget.inputType === "voice"
+        )) return;
         const humanizerIntent = selectedToolCommand === "/humanize" || /\bhumaniz(?:e|ing)\b/i.test(cleaned);
         const directHumanizerText = cleaned.match(/(?:humaniz(?:e|ing)(?:\s+it)?|make\s+it\s+sound\s+natural)\s*[:—-]\s*([\s\S]+)$/i)?.[1]?.trim() || "";
 
@@ -1131,8 +1146,11 @@ export default function AIAssistantDashboard({
         sendLockRef.current = true;
         window.dispatchEvent(new CustomEvent("revelacode:ai-interaction"));
 
-        const currentMessages =
-          messages;
+        // Editing a prior prompt creates a new branch of the conversation:
+        // retain context before that prompt and discard all later turns.
+        const currentMessages = editTarget
+          ? messages.slice(0, editIndex)
+          : messages;
 
         const fallbackTitle =
           attachedFile?.name ||
@@ -1149,25 +1167,24 @@ export default function AIAssistantDashboard({
           cleaned ||
           `Analyze ${attachedFile?.name || "this file"}`;
 
-        const userMessage =
-          createMessage(
-            "user",
-            userDisplayText,
-            "done",
-            {
-              attachmentName:
-                attachedFile?.name ||
-                null,
-
-              attachmentType:
-                attachedFile?.type ||
-                null,
-
-              attachmentSize:
-                attachedFile?.size ||
-                null,
+        const userMessage = editTarget
+          ? {
+              ...editTarget,
+              text: userDisplayText,
+              status: "done",
+              createdAt: Date.now(),
+              feedback: null,
             }
-          );
+          : createMessage(
+              "user",
+              userDisplayText,
+              "done",
+              {
+                attachmentName: attachedFile?.name || null,
+                attachmentType: attachedFile?.type || null,
+                attachmentSize: attachedFile?.size || null,
+              }
+            );
 
         const loadingId =
           typeof crypto !== "undefined" &&
@@ -1925,6 +1942,20 @@ export default function AIAssistantDashboard({
     );
 
   /* =======================================================
+     EDIT PREVIOUS USER PROMPT
+  ======================================================= */
+
+  const editUserMessage = useCallback(
+    (messageId, nextText) => {
+      if (!messageId || sendLockRef.current) return;
+      const target = messages.find((message) => message.id === messageId);
+      if (!target || target.role !== "user" || target.attachmentName || target.inputType === "voice") return;
+      void sendMessage(nextText, null, null, { editMessageId: messageId });
+    },
+    [messages, sendMessage]
+  );
+
+  /* =======================================================
      TEXT COMPATIBILITY HANDLER
   ======================================================= */
 
@@ -2588,6 +2619,11 @@ export default function AIAssistantDashboard({
                 onRegenerate={regenerateResponse}
                 onFeedback={handleFeedback}
                 onDeleteMessage={handleDeleteMessage}
+                onEditMessage={
+                  messages.some((message) => message.status === "loading")
+                    ? undefined
+                    : editUserMessage
+                }
               />
             </div>
             <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-2 backdrop-blur-sm sm:px-5 sm:pb-2">
