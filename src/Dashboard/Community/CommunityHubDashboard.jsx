@@ -216,13 +216,13 @@ export default function CommunityHubDashboard({
   ];
 
   return (
-    <div data-demo="community-overview" className="min-h-screen w-full bg-[#f1f3ff] text-[#111c3b]">
-      <div className="min-h-screen lg:grid lg:grid-cols-[208px_minmax(0,1fr)]">
+    <div data-demo="community-overview" className="min-h-screen w-full bg-[#f1f3ff] text-[#111c3b] lg:h-full lg:min-h-0 lg:overflow-hidden">
+      <div className="min-h-screen lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[208px_minmax(0,1fr)]">
         {/* Desktop navigation rail */}
-        <aside className="relative z-20 hidden min-h-screen overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:flex lg:flex-col">
+        <aside className="relative z-20 hidden min-h-screen overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:h-full lg:min-h-0 lg:flex lg:flex-col">
           <div className="pointer-events-none absolute -bottom-20 -left-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
           <div className="pointer-events-none absolute right-[-90px] top-[55%] h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="relative flex min-h-screen flex-col px-4 pb-5 pt-5">
+          <div className="relative flex min-h-screen flex-col overflow-y-auto overscroll-y-contain px-4 pb-5 pt-5 lg:h-full lg:min-h-0">
             <button type="button" onClick={onBackToApp} className="mb-7 flex items-center gap-2.5 px-1 text-left">
               <img src="/Logo.png" alt="RevelaCode" className="h-10 w-10 rounded-xl object-contain" />
               <span>
@@ -286,7 +286,7 @@ export default function CommunityHubDashboard({
           </div>
         </aside>
 
-        <div className="min-w-0">
+        <div className="min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-y-contain">
           {/* Top navigation */}
           <header className="sticky top-0 z-30 border-b border-[#e6e9f6] bg-white/90 px-3 py-3 backdrop-blur-xl sm:px-5 lg:px-7">
             <div className="mx-auto flex max-w-[1500px] items-center gap-3">

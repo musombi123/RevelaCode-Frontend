@@ -67,12 +67,12 @@ export default function CommunityWorkspaceFrame({
   ];
 
   return (
-    <div className="dark min-h-screen w-full bg-[#050b1d] text-slate-100">
-      <div className="min-h-screen lg:grid lg:grid-cols-[208px_minmax(0,1fr)]">
-        <aside className="relative z-20 hidden min-w-0 overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:block">
+    <div className="dark min-h-screen w-full bg-[#050b1d] text-slate-100 lg:h-full lg:min-h-0 lg:overflow-hidden">
+      <div className="min-h-screen lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[208px_minmax(0,1fr)]">
+        <aside className="relative z-20 hidden min-w-0 overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:block lg:h-full lg:min-h-0">
           <div className="pointer-events-none absolute -bottom-20 -left-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-[55%] h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="sticky top-0 flex max-h-screen min-h-screen flex-col overflow-y-auto px-4 pb-5 pt-5">
+          <div className="sticky top-0 flex h-full min-h-0 flex-col overflow-y-auto overscroll-y-contain px-4 pb-5 pt-5">
             <button type="button" onClick={onBackToApp} className="mb-7 flex items-center gap-2.5 px-1 text-left">
               <img src="/Logo.png" alt="RevelaCode" className="h-10 w-10 rounded-xl object-contain" />
               <span>
@@ -126,7 +126,7 @@ export default function CommunityWorkspaceFrame({
           </div>
         </aside>
 
-        <div className="min-w-0">
+        <div className="min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-y-contain">
           <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#071226]/95 px-3 py-2.5 backdrop-blur-xl sm:px-5 lg:px-7">
             <div className="mx-auto w-full max-w-[1500px]">{header}</div>
           </div>
