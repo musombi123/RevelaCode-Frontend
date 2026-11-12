@@ -27,7 +27,6 @@ import {
   Book,
   BookOpen,
   Bookmark,
-  CalendarDays,
   ChevronRight,
   ChevronDown,
   Clock3,
