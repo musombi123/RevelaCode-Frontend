@@ -30,6 +30,7 @@ import {
 
 import CommunityMediaCards from "@/Dashboard/Community/CommunityMediaCards.jsx";
 import CommunityPostCard from "@/Dashboard/Community/components/CommunityPostCard.jsx";
+import { useTheme } from "@/components/hooks/useTheme.jsx";
 import WorldEventsDesk from "@/Dashboard/Community/WorldEventsDesk.jsx";
 
 // Pexels free-to-use community lifestyle photo by Boko Shots.
@@ -175,6 +176,7 @@ export default function CommunityHubDashboard({
   onClosePost,
   promotionPosts = [],
 }) {
+  const { resolvedTheme } = useTheme();
   const searchRef = useRef(null);
   const avatar =
     profile?.avatar_url ||
@@ -216,7 +218,7 @@ export default function CommunityHubDashboard({
   ];
 
   return (
-    <div data-demo="community-overview" className="min-h-screen w-full bg-[#f1f3ff] text-[#111c3b] lg:h-full lg:min-h-0 lg:overflow-hidden">
+    <div data-demo="community-overview" data-community-pulse-dashboard="true" data-theme={resolvedTheme} className={"min-h-screen w-full lg:h-full lg:min-h-0 lg:overflow-hidden " + (resolvedTheme === "dark" ? "dark bg-[#081326] text-slate-100" : "light bg-[#f1f3ff] text-[#111c3b]")}>
       <div className="min-h-screen lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[208px_minmax(0,1fr)]">
         {/* Desktop navigation rail */}
         <aside className="relative z-20 hidden min-h-screen overflow-hidden bg-gradient-to-b from-[#071a3d] via-[#08265b] to-[#061b40] text-white lg:h-full lg:min-h-0 lg:flex lg:flex-col">
