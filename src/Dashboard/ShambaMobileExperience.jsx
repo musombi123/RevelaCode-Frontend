@@ -12,6 +12,7 @@ import { useTheme } from "@/components/hooks/useTheme.jsx";
 import { analyzeRevelaAIVision } from "@/ai/revelaAIClient.js";
 import HubRevenueOffers from "@/Dashboard/HubRevenueOffers.jsx";
 import ShambaDiagnosticsPanel from "@/Dashboard/ShambaDiagnosticsPanel.jsx";
+import ShambaAgroDoctorPanel from "@/Dashboard/ShambaAgroDoctorPanel.jsx";
 
 const FARM_PHOTO = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85";
 const ShambaFarmSetup = lazy(() => import("@/Dashboard/ShambaFarmsDashboard.jsx"));
@@ -643,7 +644,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
     farms: "My Farms", detail: "Farm Details", crops: "Crop Specifications", weather: "Weather & Forecast",
     market: "Market Prices", advisor: "AI Farm Advisor", diagnostics: "Crop & Soil Diagnostics", records: "Farm Records",
     alerts: "Alerts & Notifications", profile: "Profile & Settings", plans: "Shamba Plans & Tools",
-    manage: "Farm Management",
+    manage: "Farm Management", agrodoctor: "AgroDoctor",
   };
 
   const records = recordTab === "Expenses" ? activities.filter((item) => num(item?.cost) !== null) :
@@ -849,6 +850,8 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             </Suspense>
           </section>
         )}
+
+        {screen === "agrodoctor" && <ShambaAgroDoctorPanel />}
 
         {screen === "diagnostics" && (
           <ShambaDiagnosticsPanel
@@ -1093,6 +1096,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
             {[
               { title: "Weather & Forecast", icon: CloudSun, key: "weather" },
               { title: "Crop & Soil Scan", icon: Camera, key: "diagnostics" },
+              { title: "AgroDoctor", icon: Sprout, key: "agrodoctor" },
               { title: "AI Farm Advisor", icon: MessageCircle, key: "advisor" },
               { title: "Farm Records", icon: ClipboardListIcon, key: "records" },
               { title: "Profile & Settings", icon: User, key: "profile" },
