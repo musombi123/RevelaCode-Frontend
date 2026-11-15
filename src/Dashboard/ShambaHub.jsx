@@ -148,6 +148,11 @@ const ShambaTrustDashboard = safeLazy(
   "Trust & Safety",
 );
 
+const ShambaAgroDoctorDashboard = safeLazy(
+  () => import("@/Dashboard/ShambaAgroDoctorPanel.jsx"),
+  "AgroDoctor",
+);
+
 function hasFarmerReviewAccess(user) {
   const rawRoles = [
     user?.role,
@@ -253,6 +258,14 @@ const SHAMBA_SECTIONS = {
     primary: false,
   },
 
+  agrodoctor: {
+    label: "AgroDoctor",
+    shortLabel: "AgroDoctor",
+    icon: Sprout,
+    component: ShambaAgroDoctorDashboard,
+    primary: false,
+  },
+
   trust: {
     label: "Trust & Safety",
     shortLabel: "Trust",
@@ -341,6 +354,11 @@ function normalizeSection(target) {
     activity: "activities",
     activities: "activities",
     "shamba/activities": "activities",
+
+    agrodoctor: "agrodoctor",
+    "agro-doctor": "agrodoctor",
+    "shamba/agrodoctor": "agrodoctor",
+    "shamba/agro-doctor": "agrodoctor",
 
     trust: "trust",
     "trust-safety": "trust",
