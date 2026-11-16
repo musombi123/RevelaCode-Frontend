@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, ExternalLink, FileText, Image as ImageIcon, Link2, PencilLine, Share2, Sparkles, Loader2 } from "lucide-react";
+import { Download, ExternalLink, FileText, Image as ImageIcon, Link2, Share2, Sparkles, Loader2 } from "lucide-react";
 import { downloadRemoteArtifact, resolveRevelaAIArtifactUrl } from "@/components/utils/saveGeneratedFile";
 
 const SAFE_FORMATS = new Set(["PDF", "PNG", "JPG", "JPEG", "SVG", "PPTX", "DOCX", "XLSX", "CSV", "GIF", "MP4"]);
@@ -114,18 +114,11 @@ export default function ArtifactResultCard({ artifact, onAction }) {
           Download
         </button>
 
-        {canvaUrl ? (
-          <a href={canvaUrl} target="_blank" rel="noopener noreferrer" onClick={() => { void runAction("open_canva"); }}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2">
-            <ExternalLink size={14}/> Open in Canva
-          </a>
-        ) : (
-          <button type="button" onClick={() => void runAction(canvaStatus === "in_progress" ? "poll_canva" : "connect_canva")}
-            disabled={Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
-            {busy === "connect_canva" || busy === "poll_canva" ? <Loader2 size={14} className="animate-spin"/> : <Link2 size={14}/>}
-            {canvaStatus === "in_progress" ? "Check Canva import" : "Connect Canva"}
-          </button>
-        )}
+        <button type="button" onClick={() => void runAction(canvaUrl ? "open_canva" : canvaStatus === "in_progress" ? "poll_canva" : "connect_canva")}
+          disabled={Boolean(busy)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
+          {busy === "open_canva" || busy === "connect_canva" || busy === "poll_canva" ? <Loader2 size={14} className="animate-spin"/> : canvaUrl ? <ExternalLink size={14}/> : <Link2 size={14}/>}
+          {canvaUrl ? "Open in Canva" : canvaStatus === "in_progress" ? "Check Canva import" : "Connect Canva"}
+        </button>
 
         <button type="button" onClick={() => void runAction("edit_with_ai")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/30 px-3 text-xs font-semibold text-accent hover:bg-accent/10">
           <Sparkles size={14}/> Edit with AI
