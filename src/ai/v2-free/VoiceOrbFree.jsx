@@ -174,7 +174,7 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
     }
 
     setTranscript("");
-    await SpeechRecognition.start({
+    const recognitionOptions = {
       language,
       maxResults: 1,
       partialResults: true,
@@ -183,7 +183,18 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
       ...(isAndroidNative()
         ? { allowForSilence: 1500, muteRecognizerBeep: true }
         : {}),
-    });
+    };
+    try {
+      await SpeechRecognition.start(recognitionOptions);
+    } catch (recognitionError) {
+      // Some Android speech services report on-device support before the
+      // language model has been downloaded. Retry with the default provider.
+      if (!useOnDeviceRecognition) throw recognitionError;
+      await SpeechRecognition.start({
+        ...recognitionOptions,
+        useOnDeviceRecognition: false,
+      });
+    }
 
     if (activeRef.current && !processingRef.current) setListening(true);
   };
@@ -312,9 +323,11 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
       ? "RevelaAI is thinking"
       : listening
         ? "Listening — speak normally"
-        : activeRef.current
-          ? "Preparing microphone"
-          : "Microphone paused";
+        : error
+          ? "Voice paused"
+          : activeRef.current
+            ? "Preparing microphone"
+            : "Microphone paused";
 
   return (
     <section className="rounded-2xl border border-accent/20 bg-surface-2 p-4 text-fg">
