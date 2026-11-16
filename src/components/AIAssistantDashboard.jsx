@@ -2155,6 +2155,108 @@ export default function AIAssistantDashboard({
     },
     [activeChatId, messages, updateChat]
   );
+  const updateArtifactRecord = useCallback((artifactId, nextRecord) => {
+    if (!artifactId || !nextRecord) return;
+    setMessages((current) => {
+      const updated = current.map((message) => {
+        const currentArtifact = message.artifact;
+        const currentArtifacts = Array.isArray(message.artifacts) ? message.artifacts : [];
+        const matches = currentArtifact?.id === artifactId || currentArtifacts.some((item) => item?.id === artifactId);
+        if (!matches) return message;
+        const nextArtifact = currentArtifact?.id === artifactId ? { ...currentArtifact, ...nextRecord } : currentArtifact;
+        const nextArtifacts = currentArtifacts.map((item) => item?.id === artifactId ? { ...item, ...nextRecord } : item);
+        return { ...message, artifact: nextArtifact, artifacts: nextArtifacts };
+      });
+      if (activeChatId) updateChat(activeChatId, updated);
+      return updated;
+    });
+    setWorkspaceArtifact((current) => {
+      if (!current) return current;
+      const nextArtifact = current.artifact?.id === artifactId ? { ...current.artifact, ...nextRecord } : current.artifact;
+      const nextArtifacts = Array.isArray(current.artifacts) ? current.artifacts.map((item) => item?.id === artifactId ? { ...item, ...nextRecord } : item) : current.artifacts;
+      return { ...current, artifact: nextArtifact, artifacts: nextArtifacts, ...(nextArtifact?.id === artifactId ? nextArtifact : {}) };
+    });
+  }, [activeChatId, updateChat]);
+
+  const handleArtifactAction = useCallback(async (action, artifact, extra = {}) => {
+    const artifactId = String(artifact?.id || "");
+    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+    if (!artifactId && !["connect_canva"].includes(action)) throw new Error("The artifact identifier is missing.");
+
+    let popup = null;
+    if (action === "open_canva" || action === "connect_canva") {
+      popup = window.open("about:blank", "_blank");
+      if (!popup) throw new Error("Allow pop-ups to open Canva in a new tab.");
+    }
+
+    const requestJson = async (url, options = {}) => {
+      const response = await authFetch(url, {
+        ...options,
+        headers: { Accept: "application/json", ...(options.headers || {}) },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const error = new Error(String(payload?.detail?.message || payload?.error?.message || payload?.message || payload?.detail || "The artifact action failed."));
+        error.status = response.status;
+        throw error;
+      }
+      return payload || {};
+    };
+
+    try {
+      if (action === "connect_canva") {
+        const payload = await requestJson(`${apiBase}/api/artifacts/canva/connect`);
+        const url = String(payload?.authorization_url || "");
+        if (!/^https:\/\/www\.canva\.com\//i.test(url)) throw new Error("Canva did not return a valid authorization link.");
+        popup.location.href = url;
+        return { message: "Complete Canva authorization in the new tab. Your file remains available to download." };
+      }
+
+      if (action === "poll_canva") {
+        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/canva`);
+        if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+        return { message: payload?.canva?.status === "success" ? "Canva design is ready. Open it from this card." : "Canva is still importing this file.", artifact: payload?.artifact };
+      }
+
+      if (action === "open_canva") {
+        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/canva`, { method: "POST" });
+        if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+        if (payload?.canva?.connected === false) {
+          const connect = await requestJson(`${apiBase}/api/artifacts/canva/connect`);
+          const authorizationUrl = String(connect?.authorization_url || "");
+          if (!/^https:\/\/www\.canva\.com\//i.test(authorizationUrl)) throw new Error("Canva did not return a valid authorization link.");
+          popup.location.href = authorizationUrl;
+          return { message: "Connect your Canva account in the new tab. Your original download is still ready." };
+        }
+        const canvaUrl = String(payload?.artifact?.canva_edit_url || artifact?.canva_edit_url || "");
+        if (canvaUrl && /^https:\/\/www\.canva\.com\//i.test(canvaUrl)) {
+          popup.location.href = canvaUrl;
+          return { message: "Opened the editable Canva design." };
+        }
+        popup.close();
+        return { message: "Canva import is processing. Use Check Canva import on this card shortly." };
+      }
+
+      if (action === "refresh_export") {
+        const format = String(extra?.format || "").toUpperCase();
+        const query = format ? `?format=${encodeURIComponent(format)}` : "";
+        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/export${query}`);
+        if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+        return { message: "A fresh 24-hour download link is ready.", download_url: payload?.export?.download_url, artifact: payload?.artifact };
+      }
+
+      if (action === "edit_with_ai") {
+        const prompt = `Edit artifact ${JSON.stringify(artifact?.title || "RevelaAI artifact")} (artifact ID ${artifactId}). Keep the existing content and make one change at a time. First propose the change and show before/after; do not apply it until I confirm. My requested change: `;
+        window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId } }));
+        return { message: "Describe the change in chat. RevelaAI will propose it before applying anything." };
+      }
+
+      return null;
+    } catch (error) {
+      if (popup && !popup.closed) popup.close();
+      throw error;
+    }
+  }, [authFetch, updateArtifactRecord]);
 
   /* =======================================================
      REFRESH ANSWER
