@@ -1415,6 +1415,8 @@ export default function AIAssistantDashboard({
               status: "done",
               contentType: "workspace-artifact",
               sourcePrompt: userDisplayText,
+              artifact: artifactView.artifact || null,
+              artifacts: Array.isArray(artifactView.artifacts) ? artifactView.artifacts : [],
               createdAt: Date.now(),
               metadata: {
                 engine: "revelaai-unified-workspace",
@@ -2799,6 +2801,7 @@ export default function AIAssistantDashboard({
                     ? undefined
                     : editUserMessage
                 }
+                onArtifactAction={handleArtifactAction}
               />
             </div>
             <div className="composer-safe-bottom z-20 shrink-0 border-t border-line bg-header/95 px-3 pb-2 pt-2 backdrop-blur-sm sm:px-5 sm:pb-2">
