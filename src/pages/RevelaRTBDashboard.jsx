@@ -151,7 +151,7 @@ export default function RevelaRTBDashboard() {
       </section>}
       <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
         <div className="flex items-center gap-2"><Server className="h-5 w-5 text-cyan-600"/><h3 className="font-black text-slate-900 dark:text-white">RevelaCode ecosystem health</h3></div>
-        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Evidence-backed checks for the RevelaAI gateway, its configured text runtime and the shared RevelaCode backend. Hub health is not inferred from a shared backend check.</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Independent health-route checks for the RevelaAI gateway, configured text runtime, shared backend and each registered RevelaCode hub.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(dashboard?.ecosystem_services?.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
             <div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (service.status === "ok" || service.status === "configured" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : service.status === "not_configured" ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{String(service.status || "unknown").replaceAll("_"," ")}</span></div>
@@ -159,8 +159,9 @@ export default function RevelaRTBDashboard() {
           </div>)}
         </div>
         <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
-          <p className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Hub coverage · independent checks pending</p>
-          <div className="mt-2 flex flex-wrap gap-2">{(dashboard?.ecosystem_services?.hub_coverage || []).map(hub => <span key={hub.id} title={hub.evidence} className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{hub.name}: not independently probed</span>)}</div>
+          <p className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Independent hub health checks</p>
+          <div className="mt-2 flex flex-wrap gap-2">{(dashboard?.ecosystem_services?.hub_coverage || []).map(hub => <span key={hub.id} title={hub.evidence} className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{hub.name}: {String(hub.status || "unknown").replaceAll("_"," ")}</span>)}</div>
+          {dashboard?.ecosystem_services?.summary && <p className="mt-2 text-[10px] font-semibold text-slate-500">{dashboard.ecosystem_services.summary.hubs_online}/{dashboard.ecosystem_services.summary.hubs_total} hubs responding · checked {dashboard.ecosystem_services.checked_at}</p>}
           <p className="mt-2 text-[10px] leading-4 text-slate-500">{dashboard?.ecosystem_services?.coverage_note || "Waiting for ecosystem health data."}</p>
         </div>
       </section>
