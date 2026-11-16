@@ -23,6 +23,9 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
 
   const activeRef = useRef(false);
   const processingRef = useRef(false);
+  const speakingRef = useRef(Boolean(speaking));
+  const previousSpeakingRef = useRef(Boolean(speaking));
+  speakingRef.current = Boolean(speaking);
   const recognitionRef = useRef(null);
   const listenersRef = useRef([]);
   const listenersReadyRef = useRef(false);
@@ -42,7 +45,7 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
   };
 
   const scheduleRestart = () => {
-    if (!activeRef.current || processingRef.current) return;
+    if (!activeRef.current || processingRef.current || speakingRef.current) return;
     if (restartTimerRef.current) window.clearTimeout(restartTimerRef.current);
     restartTimerRef.current = window.setTimeout(() => {
       restartTimerRef.current = null;
@@ -257,7 +260,7 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
   };
 
   startListeningRef.current = async () => {
-    if (!activeRef.current || processingRef.current) return;
+    if (!activeRef.current || processingRef.current || speakingRef.current) return;
     try {
       if (Capacitor.isNativePlatform()) {
         await startNativeListening();
@@ -291,6 +294,32 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
       }
     }
   };
+
+  useEffect(() => {
+    const wasSpeaking = previousSpeakingRef.current;
+    previousSpeakingRef.current = Boolean(speaking);
+
+    if (speaking) {
+      clearTimers();
+      setListening(false);
+      if (Capacitor.isNativePlatform()) {
+        void SpeechRecognition.stop().catch(() => {});
+      } else {
+        try {
+          recognitionRef.current?.stop?.();
+        } catch {
+          // Ignore an already-ended browser recognition session.
+        }
+      }
+      return;
+    }
+
+    // Replay can begin while an idle voice session is listening. Resume only
+    // after the assistant has fully finished speaking, never from onend.
+    if (wasSpeaking && activeRef.current && !processingRef.current) {
+      scheduleRestart();
+    }
+  }, [speaking]);
 
   useEffect(() => {
     activeRef.current = true;
