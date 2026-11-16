@@ -133,10 +133,40 @@ export default function InputBar({
   const [imageAspect, setImageAspect] = useState("1:1");
   const [imageStyle, setImageStyle] = useState("photorealistic");
   const [imageCount, setImageCount] = useState(1);
+  const [designPresets, setDesignPresets] = useState([]);
+  const [designPresetsStatus, setDesignPresetsStatus] = useState("idle");
+  const [imageFormatPreset, setImageFormatPreset] = useState("INSTAGRAM_SQUARE");
+  const [imageLanguage, setImageLanguage] = useState("en");
+  const [imageTextDirection, setImageTextDirection] = useState("ltr");
+  const [imageBleedMm, setImageBleedMm] = useState("3");
+  const [imageCropMarks, setImageCropMarks] = useState(false);
   const [searchSources, setSearchSources] = useState({ web: true, news: false, academic: false });
   const [searchTimeRange, setSearchTimeRange] = useState("Any time");
   const [toolsQuery, setToolsQuery] = useState("");
   const [textareaFocused, setTextareaFocused] = useState(false);
+
+  useEffect(() => {
+    if (selectedToolCommand?.[0] !== "/image" || designPresetsStatus !== "idle") return undefined;
+    let active = true;
+    setDesignPresetsStatus("loading");
+    const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+    authFetch(apiBase + "/api/workspace/formats")
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(payload?.detail?.message || payload?.message || "Format presets are unavailable.");
+        return payload?.presets;
+      })
+      .then((presets) => {
+        if (!active) return;
+        setDesignPresets(Array.isArray(presets) ? presets.filter((item) => item?.preset && item?.size_label) : []);
+        setDesignPresetsStatus("ready");
+      })
+      .catch(() => {
+        if (!active) return;
+        setDesignPresetsStatus("error");
+      });
+    return () => { active = false; };
+  }, [authFetch, selectedToolCommand, designPresetsStatus]);
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -588,7 +618,17 @@ export default function InputBar({
       toolCommand: command ? `/${command}` : null,
       toolLabel,
       toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
-      toolOptions: command === "image" ? { aspectRatio: imageAspect, style: imageStyle, imageCount } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+      toolOptions: command === "image" ? {
+        aspectRatio: imageAspect,
+        style: imageStyle,
+        imageCount,
+        formatPreset: imageFormatPreset,
+        language: imageLanguage,
+        textDirection: imageTextDirection,
+        bleedMm: Number(imageBleedMm || 0),
+        cropMarks: imageCropMarks,
+        dpi: 150,
+      } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
     });
 
     setText("");
@@ -853,6 +893,48 @@ export default function InputBar({
                 {attachedFile?.type?.startsWith("image/") && previewUrl && <img src={previewUrl} alt="Selected image" className="h-16 w-16 shrink-0 rounded-xl border border-line object-cover"/>}
                 {activeMode === "merge" && <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-16 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line-strong bg-surface-2 text-[10px] font-semibold text-muted"><Plus size={16}/>Add another</button>}
               </div>}
+              <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <label className="min-w-0 text-[10px] font-semibold text-muted">
+                  Format and output size
+                  <select value={imageFormatPreset} onChange={(event) => setImageFormatPreset(event.target.value)}
+                    className="mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-2 text-[11px] font-semibold text-fg">
+                    {designPresets.length
+                      ? designPresets.map((preset) => <option key={preset.preset} value={preset.preset}>{preset.size_label}</option>)
+                      : <option value="INSTAGRAM_SQUARE">{designPresetsStatus === "loading" ? "Loading international sizes…" : "Instagram square · 1080 × 1080 px"}</option>}
+                  </select>
+                </label>
+                <label className="min-w-0 text-[10px] font-semibold text-muted">
+                  Language
+                  <select value={imageLanguage} onChange={(event) => {
+                    const language = event.target.value;
+                    setImageLanguage(language);
+                    setImageTextDirection(language === "ar" ? "rtl" : "ltr");
+                  }} className="mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-2 text-[11px] font-semibold text-fg">
+                    <option value="en">English</option><option value="sw">Kiswahili</option><option value="ar">العربية (Arabic)</option><option value="fr">Français</option>
+                  </select>
+                </label>
+              </div>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <label className="flex min-h-8 items-center gap-1.5 text-[10px] font-semibold text-muted">
+                  Text direction
+                  <select value={imageTextDirection} onChange={(event) => setImageTextDirection(event.target.value)}
+                    className="h-8 rounded-lg border border-line bg-surface-2 px-2 text-[11px] text-fg">
+                    <option value="ltr">Left to right</option><option value="rtl">Right to left</option>
+                  </select>
+                </label>
+                <label className="flex min-h-8 items-center gap-1.5 text-[10px] font-semibold text-muted">
+                  Bleed
+                  <select value={imageBleedMm} onChange={(event) => setImageBleedMm(event.target.value)}
+                    className="h-8 rounded-lg border border-line bg-surface-2 px-2 text-[11px] text-fg">
+                    <option value="0">None</option><option value="3">3 mm</option><option value="5">5 mm</option><option value="10">10 mm</option>
+                  </select>
+                </label>
+                <label className="flex min-h-8 items-center gap-1.5 text-[10px] font-semibold text-muted">
+                  <input type="checkbox" checked={imageCropMarks} onChange={(event) => setImageCropMarks(event.target.checked)} className="accent-emerald-500"/>
+                  Crop marks
+                </label>
+                <span className="text-[10px] text-muted">{designPresetsStatus === "error" ? "Online size registry unavailable; standard preset shown." : "Print presets show trim size and export pixels."}</span>
+              </div>
               <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 [scrollbar-width:thin]">
                 <div className="flex shrink-0 rounded-xl bg-surface-2 p-1" role="group" aria-label="Image mode">
                   {activeModeConfig.modes.map((mode) => <button key={mode.value} type="button" onClick={() => setToolMode((current) => ({ ...current, "/image": mode.value }))} aria-pressed={activeMode === mode.value} className={"min-h-8 rounded-lg px-2.5 text-[11px] font-semibold " + (activeMode === mode.value ? "bg-surface-3 text-fg shadow-sm" : "text-muted hover:text-fg")}>{mode.label}</button>)}
