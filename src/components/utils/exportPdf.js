@@ -1,3 +1,5 @@
+import { saveGeneratedFile } from "@/components/utils/saveGeneratedFile";
+
 // Turns a markdown answer into a clean, multi-page A4 PDF.
 
 const clean = (value = "") =>
@@ -205,5 +207,10 @@ export async function downloadAsPdf(markdown, { filename } = {}) {
     doc.text(`Page ${page} of ${pages}`, pageW - margin, pageH - 26, { align: "right" });
   }
 
-  doc.save(`${filename || `revelaai-${slug(firstHeading)}`}.pdf`);
+  const fileName = `${filename || `revelaai-${slug(firstHeading)}`}.pdf`;
+  const blob = doc.output("blob");
+  return saveGeneratedFile(blob, {
+    fileName,
+    mimeType: "application/pdf",
+  });
 }

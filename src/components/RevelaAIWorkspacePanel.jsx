@@ -1,5 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
+import {
+  downloadRemoteArtifact,
+  resolveRevelaAIArtifactUrl,
+} from "@/components/utils/saveGeneratedFile";
+
+const MIME_BY_EXTENSION = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  csv: "text/csv",
+  json: "application/json",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+};
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
 
@@ -9,6 +25,9 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const [scrollTop, setScrollTop] = useState(0);
   const [visible, setVisible] = useState(true);
   const [panelWidth, setPanelWidth] = useState(440);
+  const [downloadError, setDownloadError] = useState("");
+  const [downloadStatus, setDownloadStatus] = useState("");
+  const [downloading, setDownloading] = useState("");
   const resizeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -55,8 +74,45 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const endIndex = Math.min(filteredData.length, startIndex + 24);
   const visibleRows = filteredData.slice(startIndex, endIndex);
 
+  const downloadArtifact = async (url, fileName, mimeType) => {
+    if (!url || downloading) return;
+    setDownloading(fileName);
+    setDownloadError("");
+    setDownloadStatus("");
+    try {
+      const result = await downloadRemoteArtifact(url, { fileName, mimeType });
+      setDownloadStatus(
+        result.method === "native"
+          ? `Download queued in Android Downloads/RevelaCode · ${result.fileName}`
+          : `Download opened in browser · ${result.fileName}`
+      );
+    } catch (error) {
+      setDownloadError(String(error?.message || "The generated file could not be downloaded."));
+    } finally {
+      setDownloading("");
+    }
+  };
+
   if (!visible || !artifact) return null;
   const download = artifact.download_url || artifact.url;
+  const safeTitle = String(artifact.title || "revelaai-output").replace(/[^a-z0-9_-]+/gi, "-");
+  const mainFileName = artifact.filename || `${safeTitle}.${({
+    "application/pdf": "pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+    "text/csv": "csv",
+  })[artifact.mime_type] || "pdf"}`;
+  let resolvedPreviewUrl = "";
+  if (artifact.preview_url) {
+    try {
+      const previewUrl = new URL(resolveRevelaAIArtifactUrl(artifact.preview_url));
+      previewUrl.searchParams.set("inline", "true");
+      resolvedPreviewUrl = previewUrl.toString();
+    } catch {
+      resolvedPreviewUrl = "";
+    }
+  }
 
   return (
     <aside
@@ -127,15 +183,26 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
           </div>}
           {artifact.chart_url && <figure className="overflow-hidden rounded-xl border border-line bg-surface-2 p-2"><img src={artifact.chart_url} alt="Dataset analysis chart" className="w-full object-contain"/><figcaption className="p-2 text-xs text-muted">Deterministic chart from the supplied dataset</figcaption></figure>}
           {artifact.downloads && Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").length>0 && <div className="flex flex-wrap gap-2">
-            {Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").map(([format,url])=><a key={format} href={url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2">Download {format.toUpperCase()}</a>)}
+            {Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").map(([format,url]) => {
+              const extension = String(format).toLowerCase().replace(/^\./, "");
+              const fileName = `${safeTitle}.${extension}`;
+              return <button key={format} type="button" disabled={Boolean(downloading)}
+                onClick={() => downloadArtifact(url, fileName, MIME_BY_EXTENSION[extension] || "application/octet-stream")}
+                className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
+                {downloading === fileName ? "Preparing…" : `Download ${format.toUpperCase()}`}
+              </button>;
+            })}
           </div>}
           {artifact.analysis?.columns && <div className="grid grid-cols-2 gap-2">
             {[["Rows",artifact.analysis.row_count],["Columns",artifact.analysis.column_count],["Missing cells",artifact.analysis.missing_cells],["Duplicate rows",artifact.analysis.duplicate_rows],["Completeness",artifact.analysis.completeness_pct == null ? "—" : artifact.analysis.completeness_pct + "%"]].map(([label,value])=><div key={label} className="rounded-xl border border-line bg-surface-2 p-3"><span className="block text-[10px] text-muted">{label}</span><b className="mt-1 block text-base tabular-nums text-fg">{value ?? "—"}</b></div>)}
           </div>}
-          {download && <a href={download} target="_blank" rel="noreferrer"
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover">
-            <Download size={15}/> Download original
-          </a>}
+          {download && <button type="button" disabled={Boolean(downloading)}
+            onClick={() => downloadArtifact(download, mainFileName, artifact.mime_type || "application/octet-stream")}
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50">
+            <Download size={15}/> {downloading === mainFileName ? "Preparing download…" : "Download original"}
+          </button>}
+          {downloadStatus && <p role="status" className="text-xs text-muted">{downloadStatus}</p>}
+          {downloadError && <p role="alert" className="text-xs text-danger">{downloadError}</p>}
           {artifact.preview?.type === "document" && <article className="space-y-3 rounded-xl border border-line bg-white p-4 text-slate-900 sm:p-6">
             <h2 className="text-xl font-bold">{artifact.preview.title || artifact.title}</h2>
             {(artifact.preview.sections || []).map((section, index) => (
@@ -160,9 +227,13 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
               {slide.notes && <details className="mt-3 text-xs text-muted"><summary>Speaker notes</summary><p className="mt-1">{slide.notes}</p></details>}
             </article>)}
           </div>}
-          {artifact.preview_url && <>
-            <a href={artifact.preview_url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-4 text-sm text-fg-secondary">Open PDF preview</a>
-            <iframe title="Generated document preview" src={artifact.preview_url} className="mt-3 h-[45dvh] w-full rounded-xl border border-line bg-white" loading="lazy"/>
+          {artifact.preview_url && resolvedPreviewUrl && <>
+            <button type="button" disabled={Boolean(downloading)}
+              onClick={() => downloadArtifact(artifact.preview_url, artifact.preview_filename || `${safeTitle}-preview.pdf`, artifact.preview_mime_type || "application/pdf")}
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-4 text-sm text-fg-secondary disabled:opacity-50">
+              Download PDF preview
+            </button>
+            <iframe title="Generated document preview" src={resolvedPreviewUrl} className="mt-3 h-[45dvh] w-full rounded-xl border border-line bg-white" loading="lazy"/>
           </>}
           {artifact.preview_text && <pre className="whitespace-pre-wrap rounded-xl bg-code p-3 text-xs text-fg-secondary">{artifact.preview_text}</pre>}
         </div>}
