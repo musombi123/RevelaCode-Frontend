@@ -167,6 +167,7 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
     }
 
     await attachNativeListeners();
+    if (!activeRef.current || processingRef.current || speakingRef.current) return;
 
     let useOnDeviceRecognition = false;
     try {
@@ -175,6 +176,8 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
     } catch {
       // Older system recognizers continue through their standard provider.
     }
+
+    if (!activeRef.current || processingRef.current || speakingRef.current) return;
 
     setTranscript("");
     const recognitionOptions = {
@@ -187,6 +190,8 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
         ? { allowForSilence: 1500, muteRecognizerBeep: true }
         : {}),
     };
+    if (!activeRef.current || processingRef.current || speakingRef.current) return;
+
     try {
       await SpeechRecognition.start(recognitionOptions);
     } catch (recognitionError) {
@@ -199,7 +204,11 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
       });
     }
 
-    if (activeRef.current && !processingRef.current) setListening(true);
+    if (activeRef.current && !processingRef.current && !speakingRef.current) {
+      setListening(true);
+    } else {
+      await SpeechRecognition.stop().catch(() => {});
+    }
   };
 
   const startBrowserListening = () => {
@@ -217,7 +226,11 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
-      if (activeRef.current && !processingRef.current) setListening(true);
+      if (activeRef.current && !processingRef.current && !speakingRef.current) {
+        setListening(true);
+      } else {
+        try { recognition.stop(); } catch { /* Ignore an already-ended recognizer. */ }
+      }
     };
 
     recognition.onresult = (event) => {
