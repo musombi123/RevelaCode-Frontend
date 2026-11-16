@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feat/revelaai-dashboard-free-mode-voice-vision, feat/revelaai-studio-workspace]
+    branches: [main, "feat/**"]
 
 jobs:
   workspace-integration:
