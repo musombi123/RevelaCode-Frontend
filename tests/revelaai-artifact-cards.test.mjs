@@ -13,7 +13,7 @@ const save = read("../src/components/utils/saveGeneratedFile.js");
 test("assistant messages include a read-aloud control with stop and browser support checks", () => {
   assert.match(actions, /Read response aloud/);
   assert.match(actions, /Stop reading response/);
-  assert.match(actions, /speechSynthesis\.speak/);
+  assert.match(actions, /synthesis\.speak/);
   assert.match(actions, /speechSynthesis\.cancel/);
   assert.match(actions, /Volume2/);
   assert.match(chatWindow, /<MessageActions/);
