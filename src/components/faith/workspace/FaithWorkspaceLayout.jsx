@@ -698,7 +698,7 @@ export default function FaithWorkspaceLayout({
     };
   }, []);
 
-  const goHome = onHome || onBack || (() => onNavigate?.("faith"));
+  const goHome = onHome || (() => onNavigate?.("home"));
   const goStudy = onStudy || (() => onNavigate?.("bible"));
   const goMission = onMission || (() => window.location.assign("/faith/missionpulse"));
   const goMe = onMe || (() => onNavigate?.("profile"));
