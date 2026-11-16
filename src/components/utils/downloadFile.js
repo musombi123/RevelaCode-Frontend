@@ -19,19 +19,19 @@ const MIME_TYPES = {
 
 const safeFileName = (value) =>
   String(value || "download")
-    .replace(/[\\\\/:*?"<>|\\u0000-\\u001F]/g, "-")
+    .replace(/[\\/:*?"<>|\u0000-\u001F]/g, "-")
     .trim() || "download";
 
 const extensionFromUrl = (url) => {
   try {
-    return new URL(url).pathname.match(/\\.([a-z0-9]{2,6})$/i)?.[1]?.toLowerCase() || "";
+    return new URL(url).pathname.match(/\.([a-z0-9]{2,6})$/i)?.[1]?.toLowerCase() || "";
   } catch {
     return "";
   }
 };
 
 const withExtension = (name, extension) =>
-  /\\.[a-z0-9]{2,6}$/i.test(name) || !extension ? name : name + "." + extension;
+  /\.[a-z0-9]{2,6}$/i.test(name) || !extension ? name : name + "." + extension;
 
 /**
  * Save a user-requested file. Android uses the native DownloadManager so files
@@ -39,7 +39,7 @@ const withExtension = (name, extension) =>
  */
 export async function downloadFile(url, filename = "download") {
   const source = String(url || "").trim();
-  if (!/^https?:\\/\\//i.test(source)) {
+  if (!/^https?:\/\//i.test(source)) {
     throw new Error("This download link is not valid.");
   }
 
@@ -49,7 +49,7 @@ export async function downloadFile(url, filename = "download") {
   const mimeType = MIME_TYPES[extension] || "application/octet-stream";
 
   if (Capacitor.isNativePlatform()) {
-    if (!/^https:\\/\\//i.test(source)) {
+    if (!/^https:\/\//i.test(source)) {
       throw new Error("Android downloads require a secure HTTPS link.");
     }
     await NativeDownloads.downloadUrl({
