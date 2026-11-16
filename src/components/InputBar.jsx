@@ -66,11 +66,6 @@ const ACCEPTED_TYPES = [
   ".css",
 ].join(",");
 
-const VOICE_LANGUAGES = [
-  { code: "en-KE", label: "EN", name: "English" },
-  { code: "sw-KE", label: "SW", name: "Kiswahili" },
-];
-
 const TOOL_COMMANDS = [
   ["/search", "Deep Search", Search], ["/image", "Image Studio", ImageIcon],
   ["/data", "Data analysis", BarChart3], ["/sheet", "Spreadsheet", FileSpreadsheet],
@@ -147,7 +142,6 @@ export default function InputBar({
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraBusy, setCameraBusy] = useState(false);
   const [cameraError, setCameraError] = useState("");
-  const [voiceError, setVoiceError] = useState("");
   const [torchOn, setTorchOn] = useState(false);
   const [liveVisionActive, setLiveVisionActive] = useState(false);
   const [liveVisionPrompt, setLiveVisionPrompt] = useState(
@@ -158,13 +152,8 @@ export default function InputBar({
   const liveVisionInFlightRef = useRef(false);
   const visionRequestRef = useRef(null);
 
-  const [listening, setListening] = useState(false);
-  const [voiceSupported, setVoiceSupported] = useState(true);
-  const [voiceLanguage, setVoiceLanguage] = useState("en-KE");
-
   const cameraVideoRef = useRef(null);
   const cameraDialogRef = useRef(null);
-  const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const attachmentMenuRef = useRef(null);
@@ -214,13 +203,6 @@ export default function InputBar({
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [attachmentMenuOpen]);
-
-  useEffect(
-    () => () => {
-      recognitionRef.current?.stop?.();
-    },
-    []
-  );
 
   useEffect(
     () => () => {
@@ -506,58 +488,6 @@ export default function InputBar({
       }
     };
   }, [cameraOpen, cameraStream, liveVisionActive, liveVisionPrompt, cameraBusy, analyzeCurrentFrame, freeMode, authFetch]);
-
-  /* =======================================================
-     VOICE
-  ======================================================= */
-
-  const startSpeechRecognition = () => {
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) {
-      setVoiceSupported(false);
-      return;
-    }
-    if (listening) {
-      recognitionRef.current?.stop?.();
-      setListening(false);
-      return;
-    }
-
-    const recognition = new Recognition();
-    recognitionRef.current = recognition;
-    recognition.lang = voiceLanguage;
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    setVoiceError("");
-    recognition.onstart = () => setListening(true);
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((result) => result[0]?.transcript || "")
-        .join("");
-      if (transcript.trim()) setVoiceError("");
-      setText(transcript);
-    };
-    recognition.onerror = (event) => {
-      setListening(false);
-      const code = String(event?.error || "unknown");
-      setVoiceError(
-        code === "not-allowed" || code === "service-not-allowed"
-          ? "Microphone permission was denied. Allow it in browser settings and try again."
-          : code === "no-speech"
-            ? "No speech was detected. Try speaking a little closer to the microphone."
-            : "Voice dictation failed (" + code + "). You can still type or use the Voice action."
-      );
-    };
-    recognition.onend = () => {
-      setListening(false);
-      textareaRef.current?.focus();
-    };
-    try {
-      recognition.start();
-    } catch {
-      setListening(false);
-    }
-  };
 
   /* =======================================================
      AUTO-GROW
@@ -906,7 +836,6 @@ export default function InputBar({
                 {items.map(([command,label,Icon])=>{const selected=selectedToolCommand?.[0]===command;return <button key={command} type="button" onClick={()=>chooseCommand(command)} aria-pressed={selected} className={"flex min-h-14 items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-surface-2 "+(selected?"bg-emerald-500/10 text-accent":"text-fg-secondary")}><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2"><Icon size={18}/></span><span className="min-w-0 flex-1"><b className="block text-xs text-fg">{label}</b><span className="mt-0.5 block text-[10px] text-muted">{descriptions[command]}</span></span>{selected&&<Check size={17} className="text-accent"/>}</button>;})}
               </div></div>;
             })}
-            <div className="mt-4 flex items-center justify-between border-t border-line pt-3"><span className="text-xs font-medium text-muted">Voice recognition language</span><div role="radiogroup" aria-label="Voice recognition language" className="flex rounded-xl bg-surface-2 p-1">{VOICE_LANGUAGES.map(language=>{const selected=voiceLanguage===language.code;return <button key={language.code} type="button" role="radio" aria-checked={selected} aria-label={language.name} onClick={()=>setVoiceLanguage(language.code)} className={"min-h-9 rounded-lg px-3 text-xs font-bold "+(selected?"bg-surface-3 text-fg shadow-sm":"text-muted")}>{language.label}</button>;})}</div></div>
           </section>
         </>}
 
@@ -914,7 +843,6 @@ export default function InputBar({
           <div className="px-4 pt-3.5">
             {selectedToolCommand&&(()=>{const Icon=selectedToolCommand[2];return <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 py-1.5 pl-2.5 pr-1.5 text-xs font-semibold text-accent"><Icon size={15}/><span className="truncate">{selectedToolCommand[1]}</span><button type="button" onClick={()=>setSelectedToolCommand(null)} aria-label={"Remove "+selectedToolCommand[1]} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-emerald-500/15"><X size={14}/></button></div>;})()}
             {attachedFile&&<div className="mb-3 flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 sm:max-w-sm">{previewUrl?<img src={previewUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover"/>:<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-accent"><FileText size={20}/></span>}<div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-fg">{attachedFile.name}</p><p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p></div><button type="button" onClick={()=>setAttachedFile(null)} aria-label="Remove attachment" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-surface-3"><X size={16}/></button></div>}
-            {listening&&<div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-500" role="status" aria-live="polite"><span className="flex h-4 items-center gap-[3px]">{[6,12,8,14,7,11,5].map((height,i)=><span key={i} className="w-[3px] animate-pulse rounded-full bg-rose-500" style={{height:height+"px",animationDelay:(i*90)+"ms"}}/>)}</span>Listening in {VOICE_LANGUAGES.find(l=>l.code===voiceLanguage)?.name} · tap mic to stop</div>}
             {slashMatches.length>0&&<div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">{slashMatches.map(([command,label,Icon])=><button key={command} type="button" role="option" aria-selected="false" onClick={()=>chooseCommand(command)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={16}/><b>{command}</b><span className="text-muted">{label}</span></button>)}</div>}
             <textarea ref={textareaRef} rows={1} value={text} disabled={disabled} placeholder={effectivePlaceholder} onChange={e=>setText(e.target.value)} onKeyDown={handleKeyDown} onPaste={handlePaste} onFocus={()=>setTextareaFocused(true)} onBlur={()=>setTextareaFocused(false)} aria-label={effectivePlaceholder} className="block max-h-[40dvh] min-h-[28px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-6 text-fg outline-none placeholder:text-muted focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-50"/>
           </div>
@@ -950,7 +878,7 @@ export default function InputBar({
               <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Open AI tools" aria-expanded={attachmentMenuOpen} className={"flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"border-emerald-500/30 bg-emerald-500/10 text-accent":"border-line text-fg-secondary hover:bg-surface-2")}><Sparkles size={16}/> Tools</button>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <button type="button" onClick={startSpeechRecognition} disabled={disabled||!voiceSupported} aria-label={listening?"Stop voice dictation":"Dictate with your voice"} title={listening?"Stop listening":"Voice input"} className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 "+(listening?"bg-rose-500/10 text-rose-500 ring-2 ring-rose-500/40 animate-pulse":"text-muted hover:bg-surface-2 hover:text-fg")}><Mic size={19}/></button>
+              <button type="button" onClick={() => onMic?.()} disabled={disabled || !onMic} aria-label="Start voice conversation" title="Voice conversation" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition-all hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:cursor-not-allowed disabled:opacity-35"><Mic size={19}/></button>
               <button type="button" data-demo="ai-send-message" onClick={isGenerating?onStop:submit} disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} title={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} className={"flex h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full p-0 transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<ArrowUp size={20} strokeWidth={2.6}/>}</button>
             </div>
           </div>
@@ -958,17 +886,6 @@ export default function InputBar({
         {textareaFocused&&<p className="hidden px-3 pt-1.5 text-[10px] text-muted sm:block"><kbd className="font-sans">Enter</kbd> to send <span className="px-1">·</span><kbd className="font-sans">Shift + Enter</kbd> for new line</p>}
       </div>
 
-      {voiceError && (
-        <p className="px-3 pt-2 text-[11px] text-warning" role="status">
-          {voiceError}
-        </p>
-      )}
-
-      {!voiceSupported && (
-        <p className="px-3 pt-2 text-[11px] text-warning" role="status">
-          Speech recognition isn't supported in this browser. Try Chrome on Android.
-        </p>
-      )}
     </div>
   );
 }
