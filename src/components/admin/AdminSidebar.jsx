@@ -32,7 +32,7 @@ const tabs = [
   {
     key: "coreMesh",
     label: "Core Mesh · ZERO / ONE / TWO",
-    description: "Genesis and Infinite Mind integration",
+    description: "Gateway-native cores, signed tools and Evolver governance",
     icon: Cpu,
     live: true,
   },
