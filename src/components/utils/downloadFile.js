@@ -3,7 +3,7 @@ export async function downloadFile(url, filename = "download") {
   const source = String(url || "").trim();
   if (!/^https?:\/\//i.test(source)) throw new Error("This download link is not valid.");
   const safeName = String(filename || "download").replace(/[\\/:*?"<>|\u0000-\u001F]/g, "-").trim() || "download";
-  let objectUrl = "";
+  const pathExtension = (() => {\n    try { return new URL(source).pathname.match(/\\.([a-z0-9]{2,6})$/i)?.[1] || ""; }\n    catch { return ""; }\n  })();\n  let objectUrl = "";
   try {
     const response = await fetch(source, { credentials: "omit" });
     if (!response.ok) throw new Error(`Download failed (HTTP ${response.status}).`);
@@ -11,7 +11,7 @@ export async function downloadFile(url, filename = "download") {
     if (!blob.size) throw new Error("The downloaded file is empty.");
     objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
-    anchor.href = objectUrl; anchor.download = safeName; anchor.rel = "noopener";
+    anchor.href = objectUrl; anchor.download = finalName; anchor.rel = "noopener";
     anchor.style.display = "none"; document.body.appendChild(anchor); anchor.click(); anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     return true;
