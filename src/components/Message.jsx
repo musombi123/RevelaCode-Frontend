@@ -477,6 +477,15 @@ function Message({ message, onEdit, onReveal }) {
   const sources = normalizeSources(message.sources);
   const visibleWithCitations = visible.replace(/\[(\d+)\]/g, (_match, number) => `[${number}](#revelaai-source-${message.id}-${number})`);
   const documentMeta = message.metadata?.multimodal || null;
+  const contextProcessing =
+    message.metadata?.contextProcessing ||
+    message.metadata?.context_processing ||
+    null;
+  const contextSections = Number(
+    contextProcessing?.completed_sections ??
+    contextProcessing?.total_sections ??
+    0
+  );
   const imageDownloads = Object.entries(message.metadata?.downloads || {}).filter(([format, url]) => ["png", "jpg", "pdf"].includes(format) && isSafeHttpUrl(url));
 
   const isLongUser = isUser && fullText.length > LONG_USER_TEXT;
@@ -701,6 +710,19 @@ function Message({ message, onEdit, onReveal }) {
                 )}
               </div>
             )}
+
+            {!revealing &&
+              contextProcessing?.strategy === "context_guard_map_reduce" &&
+              contextProcessing?.status === "completed" &&
+              Number.isFinite(contextSections) &&
+              contextSections > 1 && (
+                <p className="mt-3 text-[11px] text-muted" role="status">
+                  Long input processed in {contextSections} sections
+                  {Number(contextProcessing?.source_characters) > 0
+                    ? ` · ${Number(contextProcessing.source_characters).toLocaleString()} characters reviewed`
+                    : ""}
+                </p>
+              )}
 
             {!revealing && sources.length > 0 && (
               <div id={`revelaai-sources-${message.id}`} className="mt-4 border-t border-line pt-3">
