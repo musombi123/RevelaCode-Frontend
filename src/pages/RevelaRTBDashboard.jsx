@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 import { useAuth } from "@/context/AuthContext.jsx";
-import { Activity, BrainCircuit, RefreshCw, ShieldCheck, Wrench, FlaskConical, Send, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Activity, BrainCircuit, RefreshCw, ShieldCheck, Wrench, FlaskConical, Send, AlertTriangle, CheckCircle2, Server } from "lucide-react";
 
 const API_BASE = String(import.meta.env.VITE_REVELAAI_API_URL || import.meta.env.VITE_REVELAAI_API_BASE || "https://revelaai.onrender.com").trim().replace(/\/+$/, "");
 
@@ -134,7 +134,23 @@ export default function RevelaRTBDashboard() {
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(capabilities).map(([key, item]) => <div key={key} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold capitalize text-slate-900 dark:text-white">{key.replaceAll("_"," ")}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (item.source_available ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{item.source_available ? "Source found" : "Missing"}</span></div><p className="mt-1 text-[10px] text-slate-500">{item.runtime_health}</p></div>)}</div>
       </section>
 
-      {cycle && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900 dark:text-white">Latest diagnostic cycle</h3><span className="text-[10px] font-bold uppercase text-slate-500">{cycle.status}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{cycleChecks.map(check => <div key={check.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950"><div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-800 dark:text-slate-200">{check.id.replaceAll("_"," ")}</span><span className="text-[10px] font-black uppercase text-slate-500">{check.status}</span></div><p className="mt-1 text-[10px] text-slate-500">{check.detail}</p></div>)}</div><p className="mt-3 text-[10px] text-slate-500">Cycle {cycle.cycle_id} · read-only · no source mutations or outbound network calls.</p></section>}
+      <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex items-center gap-2"><Server className="h-5 w-5 text-cyan-600"/><h3 className="font-black text-slate-900 dark:text-white">Ecosystem service observability</h3></div>
+        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Evidence-backed checks for services with an approved health contract. A shared backend check does not prove every hub is independently healthy.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {(dashboard?.services?.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
+            <div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (service.status === "ok" || service.status === "configured" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : service.status === "not_configured" ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{service.status.replaceAll("_"," ")}</span></div>
+            <p className="mt-2 text-[10px] leading-4 text-slate-500">{service.evidence?.replaceAll("_"," ")}{service.latency_ms != null ? " · " + service.latency_ms + " ms" : ""}</p>
+          </div>)}
+        </div>
+        <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
+          <p className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Hub coverage — independent checks pending</p>
+          <div className="mt-2 flex flex-wrap gap-2">{(dashboard?.services?.hub_coverage || []).map(hub => <span key={hub.id} title={hub.evidence} className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{hub.name}: not independently probed</span>)}</div>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500">{dashboard?.services?.coverage_note || "Waiting for health coverage data."}</p>
+        </div>
+      </section>
+
+      {cycle && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900 dark:text-white">Latest diagnostic cycle</h3><span className="text-[10px] font-bold uppercase text-slate-500">{cycle.status}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{cycleChecks.map(check => <div key={check.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950"><div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-800 dark:text-slate-200">{check.id.replaceAll("_"," ")}</span><span className="text-[10px] font-black uppercase text-slate-500">{check.status}</span></div><p className="mt-1 text-[10px] text-slate-500">{check.detail}</p></div>)}</div><p className="mt-3 text-[10px] text-slate-500">Cycle {cycle.cycle_id} · read-only · no source mutations · configured first-party health checks only.</p></section>}
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <form onSubmit={submitProposal} className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
