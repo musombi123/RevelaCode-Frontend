@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";\nimport { downloadFile } from "@/components/utils/downloadFile.js";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { downloadFile } from "@/components/utils/downloadFile.js";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
@@ -8,7 +9,8 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const [filter, setFilter] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
   const [visible, setVisible] = useState(true);
-  const [panelWidth, setPanelWidth] = useState(440);\n  const [downloadError, setDownloadError] = useState("");
+  const [panelWidth, setPanelWidth] = useState(440);
+  const [downloadError, setDownloadError] = useState("");
   const resizeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -56,7 +58,11 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const visibleRows = filteredData.slice(startIndex, endIndex);
 
   if (!visible || !artifact) return null;
-  const download = artifact.download_url || artifact.url;\n  const handleDownload = async (url, filename) => {\n    setDownloadError("");\n    try { await downloadFile(url, filename); }\n    catch (error) { setDownloadError(error?.message || "The file could not be downloaded."); }\n  };
+  const download = artifact.download_url || artifact.url;
+  const handleDownload = async (url, filename) => {
+    setDownloadError("");\n    try { await downloadFile(url, filename); }
+    catch (error) { setDownloadError(error?.message || "The file could not be downloaded."); }
+  };
 
   return (
     <aside
