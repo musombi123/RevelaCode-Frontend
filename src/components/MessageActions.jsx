@@ -1,6 +1,6 @@
 // src/components/MessageActions.jsx
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Check,
   Copy,
@@ -11,6 +11,8 @@ import {
   Trash2,
   ThumbsDown,
   ThumbsUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 import { downloadSmartOutput, inferOutputFormat } from "@/components/utils/smartExport";
@@ -53,6 +55,7 @@ export default function MessageActions({
   const [downloadFailed, setDownloadFailed] = useState(false);
   const [downloadLabel, setDownloadLabel] = useState("");
   const [downloadError, setDownloadError] = useState("");
+  const [speaking, setSpeaking] = useState(false);
 
   const text = message.text || "";
   const isError = message.status === "error";
@@ -140,6 +143,36 @@ export default function MessageActions({
     }
   }, [text]);
 
+  const handleReadAloud = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") {
+      setDownloadError("Read aloud is not supported by this browser or device.");
+      return;
+    }
+    const synthesis = window.speechSynthesis;
+    if (speaking) {
+      synthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const spokenText = String(text || "").trim();
+    if (!spokenText) return;
+    synthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(spokenText);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    synthesis.speak(utterance);
+  }, [speaking, text]);
+
+  useEffect(() => () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
+
   const downloadTitle = downloadFailed
     ? "Download failed, try again"
     : `Download as ${outputFormat.label}`;
@@ -150,6 +183,14 @@ export default function MessageActions({
         <>
           <ActionButton label={copied ? "Copied" : "Copy"} onClick={handleCopy}>
             {copied ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
+          </ActionButton>
+
+          <ActionButton
+            label={speaking ? "Stop reading response" : "Read response aloud"}
+            onClick={handleReadAloud}
+            active={speaking}
+          >
+            {speaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </ActionButton>
 
           <ActionButton
