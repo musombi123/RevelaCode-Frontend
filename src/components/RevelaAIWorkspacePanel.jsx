@@ -139,10 +139,10 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
           {artifact.analysis?.columns && <div className="grid grid-cols-2 gap-2">
             {[["Rows",artifact.analysis.row_count],["Columns",artifact.analysis.column_count],["Missing cells",artifact.analysis.missing_cells],["Duplicate rows",artifact.analysis.duplicate_rows],["Completeness",artifact.analysis.completeness_pct == null ? "—" : artifact.analysis.completeness_pct + "%"]].map(([label,value])=><div key={label} className="rounded-xl border border-line bg-surface-2 p-3"><span className="block text-[10px] text-muted">{label}</span><b className="mt-1 block text-base tabular-nums text-fg">{value ?? "—"}</b></div>)}
           </div>}
-          {download && <a href={download} target="_blank" rel="noreferrer"
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover">
-            <Download size={15}/> Download original
-          </a>}
+          {download && <button type="button" onClick={() => handleDownload(download, artifact.filename || artifact.file_name || artifact.title || "revelaai-download")} className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover">
+             <Download size={15}/> Download original
+           </button>}
+           {downloadError && <p role="status" className="text-xs text-rose-500">{downloadError}</p>}
           {artifact.preview?.type === "document" && <article className="space-y-3 rounded-xl border border-line bg-white p-4 text-slate-900 sm:p-6">
             <h2 className="text-xl font-bold">{artifact.preview.title || artifact.title}</h2>
             {(artifact.preview.sections || []).map((section, index) => (
