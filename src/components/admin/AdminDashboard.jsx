@@ -46,7 +46,8 @@ import RevelaRTBDashboard from "@/pages/RevelaRTBDashboard.jsx";
 // ADMIN PAGES
 // =========================================================
 
-const adminPages = {\n  rtb: {\n    title: "Revela Real-Time Brain",\n    description: "Monitor the autonomous operations brain, inspect guarded diagnostics, and stage human-reviewed upgrades.",\n    icon: Brain,\n    component: RevelaRTBDashboard,\n  },
+const adminPages = {
+  rtb: {\n    title: "Revela Real-Time Brain",\n    description: "Monitor the autonomous operations brain, inspect guarded diagnostics, and stage human-reviewed upgrades.",\n    icon: Brain,\n    component: RevelaRTBDashboard,\n  },
   coreMesh: {
     title: "USECT Core Mesh",
     description: "Operate gateway-native ZERO, Genesis and Infinite Mind capabilities, signed tools and the governed Evolver factory. No per-core or per-tool URLs are configured in the browser.",
