@@ -162,8 +162,6 @@ export default function CoreMeshDashboard() {
   const [signedTools, setSignedTools] = useState([]);
   const [toolsLoading, setToolsLoading] = useState(false);
   const [toolsError, setToolsError] = useState("");
-  const [configurationHealth, setConfigurationHealth] = useState(null);
-  const [configurationHealthError, setConfigurationHealthError] = useState("");
 
   const refresh = useCallback(async (force = false) => {
     setRefreshing(true);
@@ -193,28 +191,15 @@ export default function CoreMeshDashboard() {
     }
   }, [authenticatedFetch]);
 
-  const refreshConfigurationHealth = useCallback(async () => {
-    setConfigurationHealthError("");
-    try {
-      const data = await requestCoreMesh("/api/core-mesh/configuration", {}, authenticatedFetch);
-      setConfigurationHealth(data);
-    } catch (requestError) {
-      setConfigurationHealth(null);
-      setConfigurationHealthError(requestError?.message || "Configuration diagnostics are unavailable.");
-    }
-  }, [authenticatedFetch]);
-
   useEffect(() => {
     refresh(true);
     refreshSignedTools();
-    refreshConfigurationHealth();
     const timer = window.setInterval(() => {
       refresh(false);
       refreshSignedTools();
-      refreshConfigurationHealth();
     }, 30000);
     return () => window.clearInterval(timer);
-  }, [refresh, refreshSignedTools, refreshConfigurationHealth]);
+  }, [refresh, refreshSignedTools]);
 
   const cores = snapshot?.cores || {};
   const hasSnapshot = Boolean(snapshot);
@@ -303,68 +288,25 @@ export default function CoreMeshDashboard() {
               <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Core routing is deployment-managed. Configuration presence is not proof of a live connection; this page never asks for per-tool URLs or core secrets.</p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <DataPoint label="ZERO dispatcher" value={configuration.zero_brain_dispatcher_enabled ? "Enabled" : "Needs brain token"} />
-              <DataPoint label="ZERO brain token" value={configuration.zero_brain_token_configured ? "Configured" : "Missing"} />
-              <DataPoint label="ZERO admin token" value={configuration.zero_admin_token_configured ? "Configured" : "Missing"} />
+              <DataPoint label="Invocation path" value="Main RevelaAI gateway" />
+              <DataPoint label="Tool addressing" value="Capability name" />
+              <DataPoint label="Per-tool URLs" value="Not required" />
+              <DataPoint label="Core routing" value="Internal dispatcher" />
+              <DataPoint label="ZERO dispatcher" value={configuration.zero_brain_dispatcher_enabled ? "Enabled" : "Awaiting gateway runtime"} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
-              <DataPoint label="Genesis proxy token" value={configuration.genesis_proxy_credential_configured ? "Configured" : "Missing"} />
-              <DataPoint label="Genesis registry" value={configuration.genesis_registry_ready ? "Reachable" : "Unavailable"} />
+              <DataPoint label="Genesis signed registry" value={configuration.genesis_registry_ready ? "Available" : "Unavailable"} />
               <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
-              <DataPoint label="Genesis tool catalog" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
-              <DataPoint label="Mind mutation credential" value={configuration.write_credentials_configured ? "Configured" : "Missing"} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
-              <DataPoint label="ZERO service connection" value={configurationHealth?.core_probes?.zero ? (configurationHealth.core_probes.zero.reachable ? "Reachable" : configurationHealth.core_probes.zero.configured ? "Unavailable" : "Not configured") : "Checking"} />
-              <DataPoint label="Genesis service connection" value={configurationHealth?.core_probes?.genesis ? (configurationHealth.core_probes.genesis.reachable ? "Reachable" : configurationHealth.core_probes.genesis.configured ? "Unavailable" : "Not configured") : "Checking"} />
-              <DataPoint label="Mind service connection" value={configurationHealth?.core_probes?.mind ? (configurationHealth.core_probes.mind.reachable ? "Reachable" : configurationHealth.core_probes.mind.configured ? "Unavailable" : "Not configured") : "Checking"} />
             </div>
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+              <div className="flex items-start gap-3">
+                <Layers className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-300" />
                 <div>
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white">Server configuration diagnostics</h4>
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Admin-only checks. Secret values are never returned to this page.</p>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white">Gateway-native execution model</h4>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">The frontend does not configure or call individual core and tool URLs. It sends authenticated requests to RevelaAI; the gateway owns capability lookup, core dispatch, signed-tool execution and audit handling. Runtime health below is reported by the gateway and is not inferred from configuration presence.</p>
                 </div>
-                <button type="button" onClick={refreshConfigurationHealth} className="rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Check configuration</button>
               </div>
-              {configurationHealthError && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{configurationHealthError}</p>}
-              {configurationHealth?.items?.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {configurationHealth.items.map((item) => {
-                    const state = item.valid === false ? "Rejected"
-                      : item.probe_status === "reachable" ? "Reachable"
-                      : item.probe_status === "unavailable" ? (item.configured ? "Configured · probe failed" : "Not configured")
-                      : item.unknown ? "Unverified" : item.configured ? "Configured" : "Missing";
-                    const dot = item.valid === false ? "bg-rose-500"
-                      : item.probe_status === "reachable" ? "bg-emerald-500"
-                      : item.probe_status === "unavailable" ? "bg-amber-500"
-                      : item.unknown || item.configured ? "bg-slate-400" : "bg-amber-500";
-                    return (
-                      <div key={item.name} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                        <span className={"mt-0.5 h-2 w-2 flex-shrink-0 rounded-full " + dot} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="break-words text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name} <span className="font-normal text-slate-400">· {item.service}</span></p>
-                            <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{state}</span>
-                          </div>
-                          <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{item.message}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {configurationHealth?.core_probes && (
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  {Object.entries(configurationHealth.core_probes).map(([coreName, probe]) => (
-                    <div key={coreName} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{coreName === "zero" ? "USECT-ZERO" : coreName === "genesis" ? "Genesis · Core-One" : "Infinite Mind · Core-Two"}</p>
-                      <p className={"mt-1 text-xs font-bold " + (probe.reachable ? "text-emerald-600 dark:text-emerald-300" : "text-amber-600 dark:text-amber-300")}>{probe.reachable ? "Health check passed" : probe.configured === false ? "Not configured" : "Configured · unavailable"}</p>
-                      <p className="mt-1 text-[11px] leading-5 text-slate-600 dark:text-slate-400">{probe.message}</p>
-                      {probe.reason && <p className="mt-1 break-all font-mono text-[10px] text-slate-400">Diagnostic: {probe.reason}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -396,15 +338,13 @@ export default function CoreMeshDashboard() {
                 : core.model_free === true
                   ? "Model-free"
                   : "Unknown";
-            const probeKey = key === "one" ? "genesis" : key;
-            const connectionProbe = configurationHealth?.core_probes?.[probeKey];
             return (
               <article key={key} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950/40">
                 <div className={"h-1 w-full bg-gradient-to-r " + colors.line} />
                 <div className="p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <span className={"flex h-10 w-10 items-center justify-center rounded-xl " + colors.icon}><Icon className="h-5 w-5" /></span>
-                    <StatusPill reachable={Boolean(core.reachable)} unknown={!hasSnapshot || (!configurationHealth && !configurationHealthError)} configured={connectionProbe?.configured} />
+                    <StatusPill reachable={Boolean(core.reachable)} unknown={!hasSnapshot} />
                   </div>
                   <h3 className="mt-4 text-base font-black text-slate-900 dark:text-white">{item.title}</h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{item.subtitle}</p>
