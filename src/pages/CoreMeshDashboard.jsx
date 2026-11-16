@@ -208,39 +208,7 @@ export default function CoreMeshDashboard() {
     [cores],
   );
   const configuration = snapshot?.configuration || {};
-  const runtimeConfigurationChecks = [
-    {
-      label: "ZERO brain token",
-      env: "USECT_ZERO_BRAIN_TOKEN",
-      ready: configuration.zero_brain_token_configured === true,
-    },
-    {
-      label: "ZERO admin token",
-      env: "USECT_ZERO_ADMIN_TOKEN",
-      ready: configuration.zero_admin_token_configured === true,
-    },
-    {
-      label: "Genesis proxy token",
-      env: "GENESIS_ADMIN_TOKEN (or GENESIS_TOKEN)",
-      ready: configuration.genesis_proxy_credential_configured === true,
-    },
-    {
-      label: "Genesis tool catalog",
-      env: "GENESIS_ORCHESTRATOR_TOOLS_ENABLED=true",
-      ready: configuration.genesis_orchestrator_tools_enabled === true,
-    },
-    {
-      label: "Mind mutation token",
-      env: "MIND_ADMIN_TOKEN",
-      ready: configuration.write_credentials_configured === true,
-    },
-    {
-      label: "Core Mesh operator allowlist",
-      env: "CORE_MESH_ADMIN_USER_IDS (or META_ENGINEER_ADMIN_USER_IDS)",
-      ready: configuration.core_mesh_operator_allowlist_configured === true,
-    },
-  ];
-  const missingRuntimeConfiguration = runtimeConfigurationChecks.filter((item) => !item.ready);
+  const gatewayRuntime = snapshot?.runtime || snapshot?.gateway || {};
 
   return (
     <div className="space-y-6">
@@ -381,7 +349,7 @@ export default function CoreMeshDashboard() {
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">Genesis signed registry</h3>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">
-              Read-only view of active signed capabilities. RevelaAI routes permitted capability use through the shared Genesis connection; there are no per-tool URLs or manual invocation controls here.
+              Read-only view of active signed capabilities. The gateway resolves permitted capabilities through its internal signed-tool registry; tools have no individual URLs or manual invocation controls here.
             </p>
           </div>
           <button type="button" onClick={refreshSignedTools} disabled={toolsLoading}
@@ -392,7 +360,7 @@ export default function CoreMeshDashboard() {
         <div className="px-5 py-4 sm:px-6">
           {toolsError && <div role="status" className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">{toolsError}</div>}
           {toolsLoading && signedTools.length === 0 ? (
-            <div className="flex items-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Reading Genesis registry…</div>
+            <div className="flex items-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Reading gateway tool registry…</div>
           ) : signedTools.length ? (
             <div className="grid gap-3 lg:grid-cols-2">
               {signedTools.map((tool, index) => (
@@ -408,8 +376,8 @@ export default function CoreMeshDashboard() {
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{toolsError ? "Genesis registry unavailable" : "No active signed capabilities"}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolsError ? "The registry could not be read. This does not establish that the registry is empty." : "Genesis has not reported any active signed capabilities."}</p>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{toolsError ? "Gateway tool registry unavailable" : "No active signed capabilities"}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{toolsError ? "The registry could not be read. This does not establish that the registry is empty." : "The gateway has not reported any active signed capabilities."}</p>
             </div>
           )}
         </div>
@@ -435,33 +403,31 @@ export default function CoreMeshDashboard() {
           )) : (
             <div className="px-5 py-8 text-center sm:px-6">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No evolution proposals observed yet</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">When Core-Two is reachable, its staged proposals will appear here. This is not a deployment queue.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">When the gateway reports Core-Two runtime data, its staged proposals appear here. This is not a deployment queue.</p>
             </div>
           )}
         </div>
       </section>
 
-      {snapshot && missingRuntimeConfiguration.length > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <div className="min-w-0 text-xs leading-5">
-            <p className="font-bold">Core Mesh deployment wiring is incomplete</p>
-            <p className="mt-1">
-              Administrator authentication succeeded, but one or more server-side credentials or operator permissions are missing. Update only the listed secret or allowlist values on the appropriate service. Private core routing is handled automatically by the deployment; this dashboard does not require service URLs.
+      <section className="rounded-3xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-300" />
+          <div className="min-w-0">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">Gateway-owned runtime and security</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+              ZERO, Genesis and Infinite Mind are presented as internal capabilities of the RevelaAI gateway. The browser never receives core service URLs or privileged credentials, and individual tools are addressed by capability name—not by endpoint.
             </p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              {missingRuntimeConfiguration.map((item) => (
-                <li key={item.label}>
-                  <span className="font-semibold">{item.label}:</span> {item.env}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-[10px] opacity-80">
-              Keep core credentials server-side. Never put core tokens in Vite variables or browser storage.
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <DataPoint label="Gateway runtime" value={gatewayRuntime.status || gatewayRuntime.state || "Reported by gateway"} />
+              <DataPoint label="Invocation" value="Authenticated gateway dispatch" />
+              <DataPoint label="Approval policy" value="Human-gated · no auto-merge" />
+            </div>
+            <p className="mt-3 text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+              A core marked unavailable indicates that its internal runtime or health probe did not respond. It does not mean that an administrator must configure a separate URL. Credentials remain server-side.
             </p>
           </div>
         </div>
-      )}
+      </section>
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-2 px-1">
           <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-300">
