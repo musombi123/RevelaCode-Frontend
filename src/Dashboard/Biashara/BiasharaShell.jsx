@@ -111,7 +111,7 @@ export default function BiasharaShell({
         <div className="biashara-sidebar-brand">
           <img src="/Logo.png" alt="RevelaCode" />
           <div><strong>RevelaCode</strong><small>Code. Innovate. Transform.</small></div>
-          <button type="button" onClick={() => onAppHome?.()} className="biashara-mobile-action" aria-label="Return to RevelaCode Home" title="RevelaCode Home"><Home size={18}/></button>
+          <button type="button" onClick={() => onAppHome?.()} className="biashara-app-home-button" aria-label="Return to RevelaCode Home" title="RevelaCode Home"><Home size={18}/></button>
         </div>
 
         <div className="biashara-sidebar-hub">
