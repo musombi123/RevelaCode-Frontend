@@ -1,0 +1,35 @@
+name: RevelaAI artifact chat UI
+
+on:
+  pull_request:
+    paths:
+      - "src/components/ArtifactResultCard.jsx"
+      - "src/components/MessageActions.jsx"
+      - "src/components/Message.jsx"
+      - "src/components/ChatWindow.jsx"
+      - "src/components/AIAssistantDashboard.jsx"
+      - "src/components/utils/saveGeneratedFile.js"
+      - "tests/revelaai-artifact-cards.test.mjs"
+      - ".github/workflows/revelaai-artifact-ui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  artifact-chat-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Test artifact cards and read aloud
+        run: node --test tests/revelaai-artifact-cards.test.mjs
+      - name: Run existing workspace regression contract
+        run: npm run test:revelaai-workspace
+      - name: Build production frontend
+        run: npm run build
