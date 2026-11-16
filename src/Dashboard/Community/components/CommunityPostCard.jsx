@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
-import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";\nimport { downloadFile } from "@/components/utils/downloadFile.js";
+import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
+import { downloadFile } from "@/components/utils/downloadFile.js";
 
 import {
   Bookmark,
@@ -13,7 +14,8 @@ import {
   MessageCircle,
   MoreHorizontal,
   Repeat2,
-  Share2,\n  Download,
+  Share2,
+  Download,
   Sparkles,
   UserPlus,
   Users,
@@ -498,6 +500,7 @@ export default function CommunityPostCard({
 
   const [shareFeedback, setShareFeedback] =
     useState("");
+  const [downloadFeedback, setDownloadFeedback] = useState("");
 
   const [localLikes, setLocalLikes] =
     useState(() => {
@@ -1328,6 +1331,7 @@ export default function CommunityPostCard({
               </div>
             );
           })}
+          {downloadFeedback && <p role="status" className="text-xs text-rose-600">{downloadFeedback}</p>}
         </div>
       )}
 
