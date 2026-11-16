@@ -99,6 +99,7 @@ function FaithAndroidWorkspaceFrame({ title, children, onBack, onNavigate, onOpe
             <p className="truncate text-sm font-extrabold">RevelaCode</p>
             <p className="truncate text-[11px] text-slate-400">Faith Hub · {title}</p>
           </div>
+          <button type="button" onClick={() => onHome?.()} aria-label="Return to RevelaCode Home" title="RevelaCode Home" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95"><Home size={18} /></button>
           <button type="button" onClick={() => onOpenAI?.()} aria-label="Ask RevelaAI" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300 active:scale-95"><Sparkles size={18} /></button>
         </div>
       </header>
