@@ -97,7 +97,7 @@ const REVELAAI_API_BASE = String(
   import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com"
 ).trim().replace(/\/+$/, "");
 
-function resolveArtifactUrl(value) {
+export function resolveRevelaAIArtifactUrl(value) {
   const raw = String(value || "").trim();
   if (!raw) throw new Error("The generated artifact does not have a download URL.");
   let base;
@@ -123,7 +123,7 @@ export async function downloadRemoteArtifact(
   value,
   { fileName = "revelacode-download", mimeType = "application/octet-stream" } = {}
 ) {
-  const url = resolveArtifactUrl(value);
+  const url = resolveRevelaAIArtifactUrl(value);
   const safeName = String(fileName || "revelacode-download")
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
     .slice(0, 120);
