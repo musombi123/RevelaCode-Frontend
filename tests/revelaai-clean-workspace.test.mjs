@@ -52,10 +52,10 @@ test("the unified composer exposes inline attachments, searchable grouped tools 
   assert.ok(input.includes('aria-label="Attachments and AI tools"'));
   assert.ok(input.includes("Upload file"));
   assert.ok(input.includes("Camera / Vision"));
-  assert.ok(input.includes('title:"Create"'));
+  assert.ok(input.includes('title:"Create & design"'));
   assert.ok(input.includes('title:"Analyze"'));
-  assert.ok(input.includes('title:"Science"'));
-  assert.ok(input.includes('title:"Writing"'));
+  assert.ok(input.includes('title:"Development"'));
+  assert.ok(input.includes('title:"Marketing & writing"'));
   assert.ok(input.includes("Search AI tools"));
   assert.ok(input.includes("selectedToolCommand"));
   assert.ok(input.includes("setSelectedToolCommand(selected)"));
