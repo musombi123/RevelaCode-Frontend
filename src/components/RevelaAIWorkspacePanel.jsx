@@ -60,7 +60,8 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   if (!visible || !artifact) return null;
   const download = artifact.download_url || artifact.url;
   const handleDownload = async (url, filename) => {
-    setDownloadError("");\n    try { await downloadFile(url, filename); }
+    setDownloadError("");
+    try { await downloadFile(url, filename); }
     catch (error) { setDownloadError(error?.message || "The file could not be downloaded."); }
   };
 
