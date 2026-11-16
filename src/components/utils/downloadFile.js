@@ -1,3 +1,5 @@
+import { Capacitor } from "@capacitor/core";
+
 /** Download a remote file without leaving the current workspace. */
 export async function downloadFile(url, filename = "download") {
   const source = String(url || "").trim();
@@ -13,6 +15,20 @@ export async function downloadFile(url, filename = "download") {
     pathExtension = new URL(source).pathname.match(/\.([a-z0-9]{2,6})$/i)?.[1] || "";
   } catch {
     // The URL has already passed the HTTP(S) scheme check.
+  }
+
+  if (Capacitor.isNativePlatform()) {
+    // The Android WebView DownloadListener routes this HTTPS request through
+    // DownloadManager into the public Downloads folder.
+    const nativeAnchor = document.createElement("a");
+    nativeAnchor.href = source;
+    nativeAnchor.download = safeName + (pathExtension && !/\.[a-z0-9]{2,6}$/i.test(safeName) ? "." + pathExtension : "");
+    nativeAnchor.rel = "noopener noreferrer";
+    nativeAnchor.style.display = "none";
+    document.body.appendChild(nativeAnchor);
+    nativeAnchor.click();
+    nativeAnchor.remove();
+    return true;
   }
 
   let objectUrl = "";
