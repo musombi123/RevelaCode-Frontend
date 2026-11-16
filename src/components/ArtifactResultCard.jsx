@@ -68,6 +68,16 @@ export default function ArtifactResultCard({ artifact, onAction }) {
       }
       if (result?.proposal) setLocalProposal(result.proposal);
       if (result?.message) setNotice(result.message);
+      if (name === "share") {
+        const shareUrl = artifactUrl(artifact.download_url);
+        if (!shareUrl) throw new Error("The artifact link is not valid.");
+        const shareText = [title, shareUrl].filter(Boolean).join("\n");
+        if (navigator.share) await navigator.share({ title, text: shareText, url: shareUrl });
+        else if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          setNotice("Artifact link copied.");
+        }
+      }
       return result || null;
     } catch (actionError) {
       setError(String(actionError?.message || "That artifact action could not be completed."));
