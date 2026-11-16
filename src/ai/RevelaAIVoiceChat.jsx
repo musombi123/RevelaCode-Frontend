@@ -283,6 +283,11 @@ export default function RevelaAIVoiceChat({
         </div>
 
         <VoiceOrbFree onTranscript={handleTranscript} speaking={speaking} />
+        {freeMode && (
+          <p className="mt-3 rounded-xl border border-accent/20 bg-accent/5 p-3 text-[11px] leading-5 text-accent">
+            Free voice mode uses this device's speech recognition, local rules and speech synthesis. On-device/browser support varies; no hosted AI request is made from this voice session.
+          </p>
+        )}
 
         {reply && (
           <div className="mt-3 rounded-2xl border border-accent/20 bg-accent/5 p-3">
