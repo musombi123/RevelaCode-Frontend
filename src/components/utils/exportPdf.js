@@ -1,3 +1,5 @@
+import { saveGeneratedFile } from "@/components/utils/saveGeneratedFile";
+
 // Turns a markdown answer into a clean, multi-page A4 PDF.
 
 import { Capacitor, registerPlugin } from "@capacitor/core";
@@ -209,13 +211,10 @@ export async function downloadAsPdf(markdown, { filename } = {}) {
     doc.text(`Page ${page} of ${pages}`, pageW - margin, pageH - 26, { align: "right" });
   }
 
-  const pdfName = String(filename || `revelaai-${slug(firstHeading)}`).replace(/\.pdf$/i, "") + ".pdf";
-  if (Capacitor.isNativePlatform()) {
-    const dataUri = doc.output("datauristring");
-    const base64 = dataUri.split(",")[1] || "";
-    if (!base64) throw new Error("The PDF could not be prepared for Android download.");
-    await NativeDownloads.saveFile({ fileName: pdfName, mimeType: "application/pdf", data: base64 });
-  } else {
-    await doc.save(pdfName, { returnPromise: true });
-  }
+  const fileName = `${filename || `revelaai-${slug(firstHeading)}`}.pdf`;
+  const blob = doc.output("blob");
+  return saveGeneratedFile(blob, {
+    fileName,
+    mimeType: "application/pdf",
+  });
 }

@@ -52,6 +52,7 @@ export default function MessageActions({
   const [downloading, setDownloading] = useState(false);
   const [downloadFailed, setDownloadFailed] = useState(false);
   const [downloadLabel, setDownloadLabel] = useState("");
+  const [downloadError, setDownloadError] = useState("");
 
   const text = message.text || "";
   const isError = message.status === "error";
@@ -110,17 +111,22 @@ export default function MessageActions({
     if (downloading) return;
     setDownloading(true);
     setDownloadFailed(false);
+    setDownloadError("");
 
     try {
       const result = await downloadSmartOutput({
         prompt: message.sourcePrompt || "",
         answer: text,
       });
-      setDownloadLabel(result.label);
+      setDownloadLabel(
+        result.delivery?.method === "native"
+          ? `Saved in Downloads/RevelaCode · ${result.delivery.fileName}`
+          : `Download started · ${result.delivery?.fileName || result.label}`
+      );
     } catch (error) {
       console.error("RevelaAI smart export failed:", error);
       setDownloadFailed(true);
-      setTimeout(() => setDownloadFailed(false), 2500);
+      setDownloadError(String(error?.message || "The file could not be saved. Please retry."));
     } finally {
       setDownloading(false);
     }
@@ -161,8 +167,18 @@ export default function MessageActions({
           </ActionButton>
 
           <span className="sr-only" aria-live="polite">
-            {downloadLabel ? `Last export format: ${downloadLabel}` : `Suggested export format: ${outputFormat.label}`}
+            {downloadError || downloadLabel || `Suggested export format: ${outputFormat.label}`}
           </span>
+          {downloadLabel && !downloadError && (
+            <span role="status" className="text-[10px] leading-4 text-muted">
+              {downloadLabel}
+            </span>
+          )}
+          {downloadError && (
+            <span role="alert" className="max-w-[min(80vw,28rem)] text-[10px] leading-4 text-danger">
+              {downloadError}
+            </span>
+          )}
 
           {canShare && (
             <ActionButton label="Share" onClick={handleShare}>

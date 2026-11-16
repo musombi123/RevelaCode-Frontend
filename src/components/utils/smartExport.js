@@ -1,3 +1,4 @@
+import { saveGeneratedFile } from "@/components/utils/saveGeneratedFile";
 // Automatically select a practical download format from the user's request and the answer.
 // Supported outputs: PDF, Markdown, TXT, CSV, JSON, and source code.
 import { downloadAsPdf } from "@/components/utils/exportPdf";
@@ -94,8 +95,8 @@ export async function downloadSmartOutput({ prompt = "", answer = "" } = {}) {
   );
 
   if (format.extension === "pdf") {
-    await downloadAsPdf(text, { filename });
-    return format;
+    const delivery = await downloadAsPdf(text, { filename });
+    return { ...format, delivery };
   }
 
   let output = text;
@@ -119,14 +120,9 @@ export async function downloadSmartOutput({ prompt = "", answer = "" } = {}) {
   }
 
   const blob = new Blob(["\uFEFF", output], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `${filename}.${format.extension}`;
-  anchor.style.display = "none";
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return format;
+  const delivery = await saveGeneratedFile(blob, {
+    fileName: `${filename}.${format.extension}`,
+    mimeType: mime,
+  });
+  return { ...format, delivery };
 }

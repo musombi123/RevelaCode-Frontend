@@ -48,7 +48,7 @@ import CoreMeshDashboard from "@/pages/CoreMeshDashboard.jsx";
 const adminPages = {
   coreMesh: {
     title: "USECT Core Mesh",
-    description: "Operate ZERO, Genesis, Infinite Mind and the governed Evolver invention and improvement factory.",
+    description: "Operate gateway-native ZERO, Genesis and Infinite Mind capabilities, signed tools and the governed Evolver factory. No per-core or per-tool URLs are configured in the browser.",
     icon: Cpu,
     component: CoreMeshDashboard,
   },
