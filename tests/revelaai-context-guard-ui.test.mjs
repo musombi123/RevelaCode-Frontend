@@ -41,8 +41,26 @@ test("chat exports route generated PDF and text files through the shared native-
   assert.match(pdfExport, /saveGeneratedFile\(blob/);
   assert.match(saver, /registerPlugin\("RevelaDownload"\)/);
   assert.match(saver, /nativePlugin\.saveFile/);
-  assert.match(saver, /Downloads\/RevelaCode/);
+  assert.match(saver, /downloadUrl/);
   assert.match(saver, /20 MB native-save limit/);
   assert.match(actions, /Saved in Downloads\/RevelaCode/);
   assert.match(actions, /role="alert"/);
+});
+
+
+test("workspace artifact links resolve on the RevelaAI origin and use the native downloader on Android", () => {
+  const saver = read("../src/components/utils/saveGeneratedFile.js");
+  const panel = read("../src/components/RevelaAIWorkspacePanel.jsx");
+  const dashboard = read("../src/components/AIAssistantDashboard.jsx");
+
+  assert.match(saver, /resolveRevelaAIArtifactUrl/);
+  assert.match(saver, /new URL\(raw, base\)/);
+  assert.match(saver, /resolved\.origin !== base\.origin/);
+  assert.match(saver, /nativePlugin\.downloadUrl/);
+  assert.match(panel, /downloadRemoteArtifact/);
+  assert.match(panel, /resolveRevelaAIArtifactUrl/);
+  assert.match(panel, /Download original/);
+  assert.match(dashboard, /primarySource/);
+  assert.match(dashboard, /mime_type:/);
+  assert.match(dashboard, /preview_filename:/);
 });
