@@ -165,6 +165,7 @@ function MobileHeader({ title, subtitle, onBack, onHome, onAlerts, onProfile, pr
           {subtitle && <div className={"truncate text-[11px] " + MUTED}>{subtitle}</div>}
         </div>
         {right}
+        {onHome && <button type="button" onClick={onHome} aria-label="Return to RevelaCode Home" title="RevelaCode Home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1D4057] bg-[#0A2237] text-[#50E09F]"><Home size={18}/></button>}
         {onAlerts && (
           <button type="button" onClick={onAlerts} aria-label="Open alerts" className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#B9D0DC]">
             <Bell size={19} />
