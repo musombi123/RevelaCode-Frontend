@@ -1374,7 +1374,17 @@ export default function AIAssistantDashboard({
                 const ratio = ({ "1:1": "1:1", "4:5": "4:5", "16:9": "16:9", "9:16": "9:16" })[options.aspectRatio] || "1:1";
                 workspacePayload = {
                   ...workspacePayload, task: "image",
-                  image_options: { aspect_ratio: ratio, output_format: "png", use_ai_background: true },
+                  image_options: {
+                    aspect_ratio: ratio,
+                    format_preset: options.formatPreset || "INSTAGRAM_SQUARE",
+                    output_format: "png",
+                    language: options.language || "en",
+                    text_direction: options.textDirection || (options.language === "ar" ? "rtl" : "ltr"),
+                    dpi: Number(options.dpi || 150),
+                    bleed_mm: Number(options.bleedMm || 0),
+                    crop_marks: options.cropMarks === true,
+                    use_ai_background: true,
+                  },
                   prompt: workspacePrompt + (options.style ? "\nVisual style: " + options.style : ""),
                 };
                 if (attachedFile) throw new Error("Image generation does not use source-image attachments. Choose Image Studio → Edit or Enhance to process an uploaded image.");
