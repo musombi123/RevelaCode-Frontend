@@ -1815,6 +1815,7 @@ export default function BiasharaDashboard({
         onSwitchBusiness={switchBusiness}
         activeSection={activeSection}
         onNavigate={navigate}
+        onAppHome={() => onNavigate?.("home")}
         onRefresh={loadDashboard}
       >
         <BiasharaInternalWorkspace
@@ -1850,6 +1851,7 @@ export default function BiasharaDashboard({
       onSwitchBusiness={switchBusiness}
       activeSection={activeSection}
       onNavigate={navigate}
+      onAppHome={() => onNavigate?.("home")}
       onRefresh={loadDashboard}
     >
       <BiasharaOverview

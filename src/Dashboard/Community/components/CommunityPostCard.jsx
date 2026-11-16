@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import WhatsAppButton from "@/Dashboard/Community/WhatsAppButton.jsx";
 import CommunityPostComments from "@/Dashboard/Community/CommunityPostComments.jsx";
+import { downloadFile } from "@/components/utils/downloadFile.js";
 
 import {
   Bookmark,
@@ -14,6 +15,7 @@ import {
   MoreHorizontal,
   Repeat2,
   Share2,
+  Download,
   Sparkles,
   UserPlus,
   Users,
@@ -498,6 +500,7 @@ export default function CommunityPostCard({
 
   const [shareFeedback, setShareFeedback] =
     useState("");
+  const [downloadFeedback, setDownloadFeedback] = useState("");
 
   const [localLikes, setLocalLikes] =
     useState(() => {
@@ -1309,33 +1312,26 @@ export default function CommunityPostCard({
             const key = attachment.id || attachment.media_id || `${postId || "post"}-media-${index}`;
             const isVideo = String(attachment.kind || attachment.resource_type || "").toLowerCase() === "video";
 
-            return isVideo ? (
-              <video
-                key={key}
-                src={url}
-                controls
-                preload="metadata"
-                className="max-h-[440px] w-full rounded-2xl border border-slate-200 bg-black object-contain dark:border-white/10"
-                aria-label={attachment.file_name || "Community video attachment"}
-              />
-            ) : (
-              <a
-                key={key}
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="block overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10"
-                aria-label={`Open ${attachment.file_name || "community image"}`}
-              >
-                <img
-                  src={url}
-                  alt={attachment.file_name || "Community post attachment"}
-                  loading="lazy"
-                  className="max-h-[440px] w-full bg-slate-50 object-contain dark:bg-slate-950"
-                />
-              </a>
+            const fileName = String(attachment.file_name || attachment.filename || `community-${key}`).replace(/[\\/:*?"<>|]/g, "-");
+            const downloadAttachment = async () => {
+              setDownloadFeedback("");
+              try { await downloadFile(url, fileName); }
+              catch (error) { setDownloadFeedback(error?.message || "This attachment could not be downloaded."); }
+            };
+            return (
+              <div key={key} className="min-w-0 space-y-2">
+                {isVideo ? (
+                  <video src={url} controls preload="metadata" className="max-h-[440px] w-full rounded-2xl border border-slate-200 bg-black object-contain dark:border-white/10" aria-label={attachment.file_name || "Community video attachment"} />
+                ) : (
+                  <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10" aria-label={`Open ${attachment.file_name || "community image"}`}>
+                    <img src={url} alt={attachment.file_name || "Community post attachment"} loading="lazy" className="max-h-[440px] w-full bg-slate-50 object-contain dark:bg-slate-950" />
+                  </a>
+                )}
+                <button type="button" onClick={downloadAttachment} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><Download size={14}/> Download attachment</button>
+              </div>
             );
           })}
+          {downloadFeedback && <p role="status" className="text-xs text-rose-600">{downloadFeedback}</p>}
         </div>
       )}
 

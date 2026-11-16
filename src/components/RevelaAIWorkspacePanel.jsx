@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { downloadFile } from "@/components/utils/downloadFile.js";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
 import {
   downloadRemoteArtifact,

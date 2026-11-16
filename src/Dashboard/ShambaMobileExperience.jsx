@@ -147,7 +147,7 @@ function imageFileToDataUrl(file) {
   });
 }
 
-function MobileHeader({ title, subtitle, onBack, onAlerts, onProfile, profileInitial, alertCount = 0, right }) {
+function MobileHeader({ title, subtitle, onBack, onHome, onAlerts, onProfile, profileInitial, alertCount = 0, right }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#14344A] bg-[#041726]/95 px-4 py-3 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[560px] items-center gap-3">
@@ -165,6 +165,7 @@ function MobileHeader({ title, subtitle, onBack, onAlerts, onProfile, profileIni
           {subtitle && <div className={"truncate text-[11px] " + MUTED}>{subtitle}</div>}
         </div>
         {right}
+        {onHome && <button type="button" onClick={onHome} aria-label="Return to RevelaCode Home" title="RevelaCode Home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1D4057] bg-[#0A2237] text-[#50E09F]"><Home size={18}/></button>}
         {onAlerts && (
           <button type="button" onClick={onAlerts} aria-label="Open alerts" className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#B9D0DC]">
             <Bell size={19} />
@@ -206,7 +207,7 @@ function WeatherGlyph({ condition, size = 24 }) {
   return <Icon size={size} className={text.includes("rain") ? "text-sky-300" : "text-amber-300"} />;
 }
 
-export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate }) {
+export default function ShambaMobileExperience({ user, location, onOpenAI, onNavigate, onExit }) {
   const { resolvedTheme } = useTheme();
   const api = useJumuiyaApi();
   const { authFetch } = useAuth();
@@ -636,7 +637,7 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const back = () => {
     if (screen === "detail") go("farms");
     else if (screen === "crops") go("detail");
-    else if (screen === "home") onNavigate?.("home");
+    else if (screen === "home") (onExit || onNavigate)?.("home");
     else go("home");
   };
 
@@ -653,9 +654,9 @@ export default function ShambaMobileExperience({ user, location, onOpenAI, onNav
   const salesTotal = harvests.reduce((sum, item) => sum + (num(first(item?.revenue, item?.sale_amount, item?.total_value, item?.amount)) || 0), 0);
 
   const header = screen === "home" ? (
-    <MobileHeader title="RevelaCode" subtitle="Shamba Hub" onAlerts={() => go("alerts")} alertCount={alertCount} onProfile={() => go("profile")} profileInitial={firstName} />
+    <MobileHeader title="RevelaCode" subtitle="Shamba Hub" onHome={() => (onExit || onNavigate)?.("home")} onAlerts={() => go("alerts")} alertCount={alertCount} onProfile={() => go("profile")} profileInitial={firstName} />
   ) : (
-    <MobileHeader title={titleMap[screen] || "Shamba"} subtitle={farmLocation(selectedFarm)} onBack={() => screen === "detail" ? go("farms") : screen === "crops" ? go("detail") : go("home")} onAlerts={() => go("alerts")} />
+    <MobileHeader title={titleMap[screen] || "Shamba"} subtitle={farmLocation(selectedFarm)} onHome={() => (onExit || onNavigate)?.("home")} onBack={() => screen === "detail" ? go("farms") : screen === "crops" ? go("detail") : go("home")} onAlerts={() => go("alerts")} />
   );
 
   return (

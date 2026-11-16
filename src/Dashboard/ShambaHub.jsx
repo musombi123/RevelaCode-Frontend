@@ -1074,8 +1074,8 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                   <Leaf size={19} />
                 </div>
 
-                <div>
-                  <div className="text-sm font-black text-slate-900">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-black text-white">
                     Shamba
                   </div>
 
@@ -1083,6 +1083,9 @@ export default function ShambaHub({ onNavigate, onOpenAI }) {
                     Farm intelligence
                   </div>
                 </div>
+                <button type="button" onClick={() => onNavigate?.("home")} aria-label="Return to RevelaCode Home" title="RevelaCode Home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#C8EF79] transition hover:bg-white/20">
+                  <Home size={18}/>
+                </button>
               </div>
             </div>
 

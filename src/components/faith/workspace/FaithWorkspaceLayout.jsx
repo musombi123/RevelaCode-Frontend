@@ -577,6 +577,7 @@ export function WorkspaceHeader({
   primaryActionLabel,
   onPrimaryAction,
   onBack,
+  onHome,
   backLabel = "Back to Faith",
   primaryDisabled = false,
   onOpenFilters,
@@ -592,6 +593,7 @@ export function WorkspaceHeader({
         <button type="button" onClick={onBack} aria-label={backLabel} disabled={!onBack} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-colors active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:active:bg-slate-800">
           <ArrowLeft size={18} />
         </button>
+        <button type="button" onClick={onHome} aria-label="Return to RevelaCode Home" title="RevelaCode Home" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors active:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"><Home size={18}/></button>
         <div className="min-w-0 flex-1">
           <nav aria-label="Breadcrumb" className={"flex items-center gap-1 text-[0.625rem] font-semibold " + (nativeAndroid ? "text-slate-400" : "text-slate-400")}><span>Faith</span><span aria-hidden="true">/</span><span className={"truncate " + (nativeAndroid ? "text-emerald-300" : "text-indigo-700 dark:text-indigo-300")}>{heading}</span></nav>
           <h1 className={"mt-0.5 truncate text-lg font-semibold tracking-tight sm:text-2xl " + (nativeAndroid ? "text-white" : "text-slate-950 dark:text-white")}>{heading}</h1>
@@ -698,7 +700,7 @@ export default function FaithWorkspaceLayout({
     };
   }, []);
 
-  const goHome = onHome || onBack || (() => onNavigate?.("faith"));
+  const goHome = onHome || (() => onNavigate?.("home"));
   const goStudy = onStudy || (() => onNavigate?.("bible"));
   const goMission = onMission || (() => window.location.assign("/faith/missionpulse"));
   const goMe = onMe || (() => onNavigate?.("profile"));
@@ -712,7 +714,7 @@ export default function FaithWorkspaceLayout({
   return (
     <div className={"mx-auto w-full max-w-[1600px] min-w-0 space-y-3 overflow-x-hidden overscroll-y-contain pb-24 sm:space-y-5 sm:px-1 sm:pb-6 " + (nativeAndroid ? "faith-android-shell min-h-[100svh] px-3 " + (resolvedTheme === "dark" ? "dark bg-[#031321] text-white" : "light bg-slate-50 text-slate-900") : "")}>
       <FaithOfflineBanner offline={offline} />
-      <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} />
+      <WorkspaceHeader page={page} title={title} description={description} filterChips={chips} onOpenFilters={() => setOverlay("filters")} onBack={onBack} onHome={goHome} />
       <InlineAskBar contextType={page} contextData={safeContextData} placeholder={placeholder || meta.placeholder} onOpenAI={onOpenAI} onKeyboardVisibilityChange={setKeyboardOpen} onOverlayChange={handleAskOverlay} />
       <div className={panel ? ("grid min-w-0 grid-cols-1 items-start gap-4 " + (nativeAndroid ? "" : "lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]")) : "min-w-0"}>
         <main data-faith-workspace-content className={"min-w-0 space-y-4 " + (nativeAndroid ? "[&_.grid-cols-2]:!grid-cols-1 [&_.grid-cols-3]:!grid-cols-1 [&_.grid-cols-4]:!grid-cols-1" : "max-sm:[&_.grid-cols-2]:!grid-cols-1 max-sm:[&_.grid-cols-3]:!grid-cols-1 max-sm:[&_.grid-cols-4]:!grid-cols-1")}>{children}</main>
