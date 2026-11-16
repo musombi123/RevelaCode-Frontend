@@ -1,15 +1,12 @@
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+const RevelaDownload = registerPlugin("RevelaDownload");
+
 const NATIVE_FILE_LIMIT_BYTES = 20 * 1024 * 1024;
 
 function getNativeDownloadPlugin() {
-  const capacitor = typeof window !== "undefined" ? window.Capacitor : null;
-  if (!capacitor?.isNativePlatform?.()) return null;
-  const plugin = capacitor?.Plugins?.RevelaDownload;
-  if (!plugin?.saveFile) {
-    throw new Error(
-      "This installed RevelaCode app does not include native file saving. Update to the Android build with the RevelaDownload bridge, then retry."
-    );
-  }
-  return plugin;
+  if (!Capacitor.isNativePlatform()) return null;
+  return RevelaDownload;
 }
 
 async function blobToBase64(blob) {
@@ -50,11 +47,22 @@ export async function saveGeneratedFile(
       throw new Error("This file exceeds the 20 MB native-save limit. Export a smaller file.");
     }
     const data = await blobToBase64(blob);
-    const result = await nativePlugin.saveFile({
-      fileName: safeName,
-      mimeType: String(mimeType || blob.type || "application/octet-stream"),
-      data,
-    });
+    let result;
+    try {
+      result = await nativePlugin.saveFile({
+        fileName: safeName,
+        mimeType: String(mimeType || blob.type || "application/octet-stream"),
+        data,
+      });
+    } catch (error) {
+      const detail = String(error?.message || error || "");
+      if (/not implemented|plugin.*not found|not registered|does not exist/i.test(detail)) {
+        throw new Error(
+          "This installed RevelaCode app does not include native file saving. Update to the Android build with the RevelaDownload bridge, then retry."
+        );
+      }
+      throw new Error(detail || "Android could not save this file.");
+    }
     return {
       method: "native",
       fileName: result?.fileName || safeName,
