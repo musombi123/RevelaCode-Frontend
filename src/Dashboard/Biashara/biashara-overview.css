@@ -207,6 +207,8 @@
 .biashara-sidebar-brand div { display:flex;align-items:center;flex-direction:column; }
 .biashara-sidebar-brand strong { color:white;font-size:19px;font-weight:900;letter-spacing:-.045em;line-height:1.05; }
 .biashara-sidebar-brand small { margin-top:4px;color:#c2d2ea;font-size:8px;font-weight:600; }
+.biashara-app-home-button { display:inline-flex;min-width:36px;min-height:36px;align-items:center;justify-content:center;margin-top:8px;border:1px solid rgba(255,255,255,.16);border-radius:10px;color:#b8f3d2;background:rgba(255,255,255,.07);cursor:pointer; }
+.biashara-app-home-button:hover { background:rgba(255,255,255,.14); }
 .biashara-sidebar-hub { display:flex;min-height:43px;align-items:center;gap:9px;margin:14px 0 8px;border-radius:11px;padding:0 11px;color:white;background:linear-gradient(100deg,#168cff,#0566e6);font-size:12px;font-weight:850;box-shadow:0 7px 16px rgba(0,100,220,.22); }
 .biashara-sidebar-business { display:flex;min-width:0;flex-direction:column;gap:6px;padding:9px 5px 10px;border-bottom:1px solid rgba(255,255,255,.08); }
 .biashara-sidebar-business label,.biashara-drawer-business-switch label { color:#8da4c3;font-size:8px;font-weight:900;letter-spacing:.13em; }
