@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { SpeechRecognition } from "@capgo/capacitor-speech-recognition";
-import { Mic, MicOff, LoaderCircle, Radio } from "lucide-react";
+import { Mic, MicOff, Loader2, Radio } from "lucide-react";
 import { assessEmotion } from "./localIntelligence";
 
 const LANGUAGES = [
@@ -367,7 +367,7 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
               : "border-line bg-surface")}
         >
           {processing || speaking
-            ? <LoaderCircle size={34} className="animate-spin text-accent" />
+            ? <Loader2 size={34} className="animate-spin text-accent" />
             : listening
               ? <Mic size={34} className="text-accent" />
               : <MicOff size={34} className="text-muted" />}
