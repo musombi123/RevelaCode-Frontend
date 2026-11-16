@@ -371,8 +371,10 @@ const normalizeAIResponse = (
 
     sources,
 
-    metadata:
-      data?.meta || {},
+    metadata: {
+      ...(data?.meta || {}),
+      ...(payload?.context_processing ? { contextProcessing: payload.context_processing } : {}),
+    },
 
     type:
       payload?.type ||
@@ -1602,11 +1604,21 @@ export default function AIAssistantDashboard({
             const responseMeta = sanitizeAIResponseMetadata(payload?.meta);
 
             if (!response.ok) {
+              const failure = new Error(
+                String(
+                  payload?.error?.message ||
+                  payload?.message ||
+                  payload?.detail ||
+                  "RevelaAI could not complete the request. Please try again."
+                )
+              );
+              failure.code = String(payload?.error?.code || payload?.code || "MODEL_UNAVAILABLE");
+              failure.status = response.status;
+              failure.contextProcessing = payload?.context_processing || payload?.error?.context_processing || null;
               if (response.status >= 500) {
                 window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "poor" } }));
-                throw new Error("Poor connection — RevelaAI could not reach its service. Please try again shortly.");
               }
-              throw new Error(payload?.message || "RevelaAI could not complete the request. Please try again.");
+              throw failure;
             }
             window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
 
@@ -1653,6 +1665,7 @@ export default function AIAssistantDashboard({
               network: true,
               networkUsed: true,
               memory: "server",
+              contextProcessing: imagePayload?.context_processing || responseMeta?.context_processing || null,
             };
             }
           }
@@ -1851,6 +1864,10 @@ export default function AIAssistantDashboard({
             error
           );
 
+          const failureCode = String(error?.code || "");
+          const isProviderPipelineFailure =
+            /^gemini_/i.test(failureCode) ||
+            /^(chat_input_too_large|MESSAGE_TOO_LARGE)$/i.test(failureCode);
           const isNetworkFailure =
             error instanceof TypeError ||
             /failed to fetch|networkerror|load failed|revelaai is waking up|temporarily unavailable|service unavailable|timed out|timeout/i.test(String(error?.message || ""));
@@ -1864,7 +1881,7 @@ export default function AIAssistantDashboard({
             .slice(-6)
             .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
             .join("\n");
-          const localFallback = !workspaceRequested && (freeMode || isNetworkFailure)
+          const localFallback = !workspaceRequested && !isProviderPipelineFailure && (freeMode || isNetworkFailure)
             ? answerLocally(cleaned || userDisplayText, recentContext)
             : "";
           const localFallbackNotice = freeMode
@@ -1872,9 +1889,11 @@ export default function AIAssistantDashboard({
             : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
           const visibleText = workspaceRequested
             ? "Workspace execution failed: " + String(error?.message || "RevelaAI could not create this artifact.") + " No artifact was created."
-            : localFallback
-              ? localFallback + "\n\n" + localFallbackNotice
-              : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
+            : isProviderPipelineFailure
+              ? String(error?.message || "RevelaAI could not complete the requested model operation. No completed answer was generated.")
+              : localFallback
+                ? localFallback + "\n\n" + localFallbackNotice
+                : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
 
           if (localFallback) {
             void recordConversationTurn({
