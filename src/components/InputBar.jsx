@@ -138,7 +138,7 @@ export default function InputBar({
   const [imageFormatPreset, setImageFormatPreset] = useState("INSTAGRAM_SQUARE");
   const [imageLanguage, setImageLanguage] = useState("en");
   const [imageTextDirection, setImageTextDirection] = useState("ltr");
-  const [imageBleedMm, setImageBleedMm] = useState("3");
+  const [imageBleedMm, setImageBleedMm] = useState("0");
   const [imageCropMarks, setImageCropMarks] = useState(false);
   const [searchSources, setSearchSources] = useState({ web: true, news: false, academic: false });
   const [searchTimeRange, setSearchTimeRange] = useState("Any time");
@@ -896,7 +896,13 @@ export default function InputBar({
               <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="min-w-0 text-[10px] font-semibold text-muted">
                   Format and output size
-                  <select value={imageFormatPreset} onChange={(event) => setImageFormatPreset(event.target.value)}
+                  <select value={imageFormatPreset} onChange={(event) => {
+                    const presetId = event.target.value;
+                    setImageFormatPreset(presetId);
+                    const selected = designPresets.find((item) => item.preset === presetId);
+                    setImageBleedMm(selected?.trim_width_mm ? "3" : "0");
+                    if (!selected?.trim_width_mm) setImageCropMarks(false);
+                  }}
                     className="mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-2 text-[11px] font-semibold text-fg">
                     {designPresets.length
                       ? designPresets.map((preset) => <option key={preset.preset} value={preset.preset}>{preset.size_label}</option>)
