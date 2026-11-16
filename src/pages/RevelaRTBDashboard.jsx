@@ -22,6 +22,8 @@ export default function RevelaRTBDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [events, setEvents] = useState([]);
   const [cycle, setCycle] = useState(null);
+  const [services, setServices] = useState(null);
+  const [scanningServices, setScanningServices] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +69,13 @@ export default function RevelaRTBDashboard() {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
+  const scanServices = async () => {
+    setScanningServices(true); setError("");
+    try { const result = await request("/api/rtb/services"); setServices(result.services || null); }
+    catch (err) { setError(err?.message || "Connected-core scan failed."); }
+    finally { setScanningServices(false); }
+  };
+
   const runCycle = async () => {
     setBusy(true); setError(""); setNotice(""); setCycle(null);
     try {
@@ -105,11 +114,12 @@ export default function RevelaRTBDashboard() {
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[.2em] text-cyan-200"><BrainCircuit className="h-4 w-4"/> Revela Real-Time Brain</div>
             <span className={"rounded-full border px-3 py-1 text-[10px] font-bold uppercase " + (dashboard?.enabled ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-200" : "border-amber-300/30 bg-amber-400/10 text-amber-200")}>{loading ? "Connecting" : dashboard?.enabled ? "Enabled" : "Disabled"}</span>
           </div>
-          <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">Observe. Diagnose. Improve safely.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">The gateway's operational control plane. It inventories local capabilities, runs bounded diagnostics, records audit evidence and stages upgrade proposals for human review.</p>
+          <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">Revela Eye: observe the connected brain.</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">A unified operational view for the gateway and connected ZERO, Genesis/ONE and Infinite Mind/TWO cores. Network health scans are operator-triggered; all changes remain approval-gated.</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button onClick={runCycle} disabled={busy || loading || !dashboard?.enabled} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-extrabold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"><Activity className="h-4 w-4"/>{busy ? "Working…" : "Run diagnostics"}</button>
-            <button onClick={refresh} disabled={busy} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/10 disabled:opacity-50"><RefreshCw className="h-4 w-4"/>Refresh</button>
+            <button onClick={refresh} disabled={busy || scanningServices} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/10 disabled:opacity-50"><RefreshCw className="h-4 w-4"/>Refresh</button>
+            <button onClick={scanServices} disabled={busy || scanningServices || loading || !dashboard?.enabled} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-cyan-200/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 hover:bg-cyan-300/20 disabled:opacity-50"><Activity className="h-4 w-4"/>{scanningServices ? "Scanning cores…" : "Scan connected cores"}</button>
           </div>
         </div>
         <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
@@ -134,6 +144,11 @@ export default function RevelaRTBDashboard() {
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(capabilities).map(([key, item]) => <div key={key} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold capitalize text-slate-900 dark:text-white">{key.replaceAll("_"," ")}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (item.source_available ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{item.source_available ? "Source found" : "Missing"}</span></div><p className="mt-1 text-[10px] text-slate-500">{item.runtime_health}</p></div>)}</div>
       </section>
 
+      {services && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-black text-slate-900 dark:text-white">Revela Eye · Connected core health</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Authenticated checks through Core Mesh · {services.checked_at}</p></div><span className={"rounded-full px-3 py-1 text-[10px] font-black uppercase " + (services.status === "online" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : services.status === "degraded" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200")}>{services.summary?.online ?? 0}/{services.summary?.total ?? 3} online</span></div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">{(services.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (service.reachable ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200")}>{service.status}</span></div><p className="mt-1 text-[10px] font-semibold text-slate-500">{service.role}</p><p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{service.message}</p>{!service.configured && <p className="mt-2 text-[10px] font-bold text-amber-700 dark:text-amber-300">Endpoint not configured</p>}</div>)}</div>
+        <p className="mt-3 text-[10px] text-slate-500">Health scan only. No core commands, source changes, repairs or deployments were executed.</p>
+      </section>}
       {cycle && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900 dark:text-white">Latest diagnostic cycle</h3><span className="text-[10px] font-bold uppercase text-slate-500">{cycle.status}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{cycleChecks.map(check => <div key={check.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950"><div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-800 dark:text-slate-200">{check.id.replaceAll("_"," ")}</span><span className="text-[10px] font-black uppercase text-slate-500">{check.status}</span></div><p className="mt-1 text-[10px] text-slate-500">{check.detail}</p></div>)}</div><p className="mt-3 text-[10px] text-slate-500">Cycle {cycle.cycle_id} · read-only · no source mutations or outbound network calls.</p></section>}
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
