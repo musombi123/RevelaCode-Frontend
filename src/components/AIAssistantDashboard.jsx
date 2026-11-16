@@ -2183,8 +2183,9 @@ export default function AIAssistantDashboard({
   const handleArtifactAction = useCallback(async (action, artifact, extra = {}) => {
     const artifactId = String(artifact?.id || "");
     const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
-    if (!artifactId && !["connect_canva"].includes(action)) throw new Error("The artifact identifier is missing.");
+    if (!artifactId && action !== "connect_canva") throw new Error("The artifact identifier is missing.");
 
+    // Open synchronously within the user click so mobile browsers do not block Canva.
     let popup = null;
     if (action === "open_canva" || action === "connect_canva") {
       popup = window.open("about:blank", "_blank");
@@ -2194,63 +2195,111 @@ export default function AIAssistantDashboard({
     const requestJson = async (url, options = {}) => {
       const response = await authFetch(url, {
         ...options,
-        headers: { Accept: "application/json", ...(options.headers || {}) },
+        headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) },
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        const error = new Error(String(payload?.detail?.message || payload?.error?.message || payload?.message || payload?.detail || "The artifact action failed."));
+        const detail = payload?.detail;
+        const message = typeof detail === "string" ? detail : detail?.message || payload?.error?.message || payload?.message || "The artifact action failed.";
+        const error = new Error(String(message));
         error.status = response.status;
+        error.code = detail?.code || payload?.error?.code;
         throw error;
       }
       return payload || {};
     };
 
+    const editAction = async (editPayload) => {
+      const payload = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit", { method: "POST", body: JSON.stringify(editPayload) });
+      if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+      return payload;
+    };
+
+    const navigateToCanva = async (editUrl) => {
+      const safe = String(editUrl || "");
+      if (!/^https:\/\/www\.canva\.com\//i.test(safe)) throw new Error("Canva did not return a valid editing link.");
+      const editState = await editAction({ action: "user_opened" });
+      popup.location.href = safe;
+      return { message: "Opened the Canva design. RevelaAI will pause artifact edits until you return to chat.", artifact: editState?.artifact };
+    };
+
     try {
       if (action === "connect_canva") {
-        const payload = await requestJson(`${apiBase}/api/artifacts/canva/connect`);
-        const url = String(payload?.authorization_url || "");
-        if (!/^https:\/\/www\.canva\.com\//i.test(url)) throw new Error("Canva did not return a valid authorization link.");
-        popup.location.href = url;
-        return { message: "Complete Canva authorization in the new tab. Your file remains available to download." };
+        const status = await requestJson(apiBase + "/api/artifacts/canva/status");
+        if (status?.canva?.connected) {
+          const imported = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/canva", { method: "POST" });
+          if (imported?.artifact) updateArtifactRecord(artifactId, imported.artifact);
+          const editUrl = imported?.artifact?.canva_edit_url;
+          if (editUrl) return await navigateToCanva(editUrl);
+          popup.close();
+          return { message: imported?.canva?.status === "in_progress" ? "Canva is connected. The artifact import is processing; use Check Canva import shortly." : "Canva is connected. This file is being prepared for Canva; your RevelaAI download remains available.", artifact: imported?.artifact };
+        }
+        const connect = await requestJson(apiBase + "/api/artifacts/canva/connect");
+        const authorizationUrl = String(connect?.authorization_url || "");
+        if (!/^https:\/\/www\.canva\.com\//i.test(authorizationUrl)) throw new Error("Canva did not return a valid authorization link.");
+        popup.location.href = authorizationUrl;
+        return { message: "Complete Canva authorization in the new tab. Your original download remains available." };
       }
 
       if (action === "poll_canva") {
-        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/canva`);
+        const payload = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/canva");
         if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
         return { message: payload?.canva?.status === "success" ? "Canva design is ready. Open it from this card." : "Canva is still importing this file.", artifact: payload?.artifact };
       }
 
       if (action === "open_canva") {
-        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/canva`, { method: "POST" });
+        const payload = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/canva", { method: "POST" });
         if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
-        if (payload?.canva?.connected === false) {
-          const connect = await requestJson(`${apiBase}/api/artifacts/canva/connect`);
-          const authorizationUrl = String(connect?.authorization_url || "");
-          if (!/^https:\/\/www\.canva\.com\//i.test(authorizationUrl)) throw new Error("Canva did not return a valid authorization link.");
-          popup.location.href = authorizationUrl;
-          return { message: "Connect your Canva account in the new tab. Your original download is still ready." };
-        }
-        const canvaUrl = String(payload?.artifact?.canva_edit_url || artifact?.canva_edit_url || "");
-        if (canvaUrl && /^https:\/\/www\.canva\.com\//i.test(canvaUrl)) {
-          popup.location.href = canvaUrl;
-          return { message: "Opened the editable Canva design." };
-        }
+        const editUrl = payload?.artifact?.canva_edit_url || artifact?.canva_edit_url;
+        if (editUrl) return await navigateToCanva(editUrl);
         popup.close();
-        return { message: "Canva import is processing. Use Check Canva import on this card shortly." };
+        return { message: payload?.canva?.connected === false ? "Connect Canva first. Your RevelaAI download is still available." : "Canva import is processing. Use Check Canva import shortly.", artifact: payload?.artifact };
       }
 
       if (action === "refresh_export") {
         const format = String(extra?.format || "").toUpperCase();
-        const query = format ? `?format=${encodeURIComponent(format)}` : "";
-        const payload = await requestJson(`${apiBase}/api/artifacts/${encodeURIComponent(artifactId)}/export${query}`);
+        const query = format ? "?format=" + encodeURIComponent(format) : "";
+        const payload = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/export" + query);
         if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
         return { message: "A fresh 24-hour download link is ready.", download_url: payload?.export?.download_url, artifact: payload?.artifact };
       }
 
-      if (action === "edit_with_ai") {
-        const prompt = `Edit artifact ${JSON.stringify(artifact?.title || "RevelaAI artifact")} (artifact ID ${artifactId}). Keep the existing content and make one change at a time. First propose the change and show before/after; do not apply it until I confirm. My requested change: `;
+      if (action === "propose_edit") {
+        const payload = await editAction({ action: "propose", instruction: String(extra?.instruction || ""), mode: extra?.mode === "guide_me" ? "guide_me" : "do_it_for_me" });
+        return { ...payload, proposal: payload?.proposal, message: payload?.message || "Review the proposed change before applying it." };
+      }
+
+      if (action === "confirm_edit") {
+        const payload = await editAction({ action: "confirm", proposal_id: String(extra?.proposalId || ""), expected_version: Number(extra?.expectedVersion || artifact?.version || 1) });
+        return { ...payload, message: payload?.message || "One confirmed change has been applied. Next?" };
+      }
+
+      if (action === "cancel_edit") {
+        const payload = await editAction({ action: "cancel" });
+        return { ...payload, message: "The proposal was cancelled. Your saved artifact was not changed." };
+      }
+
+      if (action === "undo_version" || action === "redo_version") {
+        const payload = await editAction({ action: action === "undo_version" ? "undo" : "redo" });
+        return { ...payload, message: action === "undo_version" ? "Restored the previous artifact version." : "Restored the next artifact version." };
+      }
+
+      if (action === "editor_help") {
+        await editAction({ action: "help" });
+        const prompt = "Help me with this artifact while I am editing it in Canva. Give one practical step at a time and do not modify the artifact unless I return to chat and explicitly ask for an AI proposal. Artifact: " + JSON.stringify(artifact?.title || "RevelaAI artifact") + ".";
         window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId } }));
-        return { message: "Describe the change in chat. RevelaAI will propose it before applying anything." };
+        return { message: "Ask RevelaAI for one practical step. The artifact stays in user-editing mode." };
+      }
+
+      if (action === "return_from_editor") {
+        const payload = await editAction({ action: "returned" });
+        return { ...payload, message: payload?.message || "Want me to review what you changed?" };
+      }
+
+      if (action === "review_changes") {
+        const prompt = "Review the changes I made to artifact " + JSON.stringify(artifact?.title || "RevelaAI artifact") + " (ID " + artifactId + "), current version " + Number(artifact?.version || 1) + ". Compare the current artifact with its available previous version history where possible. First summarize what changed and ask before proposing any further edits.";
+        window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId } }));
+        return { message: "I’ve prepared a review request in chat." };
       }
 
       return null;
@@ -2259,7 +2308,6 @@ export default function AIAssistantDashboard({
       throw error;
     }
   }, [authFetch, updateArtifactRecord]);
-
   /* =======================================================
      REFRESH ANSWER
   ======================================================= */
