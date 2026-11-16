@@ -1,33 +1,62 @@
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
-/** Download a remote file without leaving the current workspace. */
+const NativeDownloads = registerPlugin("RevelaDownload");
+
+const MIME_TYPES = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  csv: "text/csv",
+  zip: "application/zip",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  txt: "text/plain",
+};
+
+const safeFileName = (value) =>
+  String(value || "download")
+    .replace(/[\\\\/:*?"<>|\\u0000-\\u001F]/g, "-")
+    .trim() || "download";
+
+const extensionFromUrl = (url) => {
+  try {
+    return new URL(url).pathname.match(/\\.([a-z0-9]{2,6})$/i)?.[1]?.toLowerCase() || "";
+  } catch {
+    return "";
+  }
+};
+
+const withExtension = (name, extension) =>
+  /\\.[a-z0-9]{2,6}$/i.test(name) || !extension ? name : name + "." + extension;
+
+/**
+ * Save a user-requested file. Android uses the native DownloadManager so files
+ * land in Downloads/RevelaCode; browsers use an independent Blob URL per click.
+ */
 export async function downloadFile(url, filename = "download") {
   const source = String(url || "").trim();
-  if (!/^https?:\/\//i.test(source)) {
+  if (!/^https?:\\/\\//i.test(source)) {
     throw new Error("This download link is not valid.");
   }
 
-  const safeName = String(filename || "download")
-    .replace(/[\\/:*?"<>|\u0000-\u001F]/g, "-")
-    .trim() || "download";
-  let pathExtension = "";
-  try {
-    pathExtension = new URL(source).pathname.match(/\.([a-z0-9]{2,6})$/i)?.[1] || "";
-  } catch {
-    // The URL has already passed the HTTP(S) scheme check.
-  }
+  const safeName = safeFileName(filename);
+  const extension = extensionFromUrl(source);
+  const finalName = withExtension(safeName, extension);
+  const mimeType = MIME_TYPES[extension] || "application/octet-stream";
 
   if (Capacitor.isNativePlatform()) {
-    // The Android WebView DownloadListener routes this HTTPS request through
-    // DownloadManager into the public Downloads folder.
-    const nativeAnchor = document.createElement("a");
-    nativeAnchor.href = source;
-    nativeAnchor.download = safeName + (pathExtension && !/\.[a-z0-9]{2,6}$/i.test(safeName) ? "." + pathExtension : "");
-    nativeAnchor.rel = "noopener noreferrer";
-    nativeAnchor.style.display = "none";
-    document.body.appendChild(nativeAnchor);
-    nativeAnchor.click();
-    nativeAnchor.remove();
+    if (!/^https:\\/\\//i.test(source)) {
+      throw new Error("Android downloads require a secure HTTPS link.");
+    }
+    await NativeDownloads.downloadUrl({
+      url: source,
+      fileName: finalName,
+      mimeType,
+    });
     return true;
   }
 
@@ -42,30 +71,16 @@ export async function downloadFile(url, filename = "download") {
       throw new Error("The downloaded file is empty.");
     }
 
-    const mimeType = String(response.headers.get("content-type") || blob.type)
+    const responseMime = String(response.headers.get("content-type") || blob.type)
       .split(";")[0]
       .toLowerCase();
-    const mimeExtension = ({
-      "application/pdf": "pdf",
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/webp": "webp",
-      "video/mp4": "mp4",
-      "video/webm": "webm",
-      "text/csv": "csv",
-      "application/zip": "zip",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-    })[mimeType];
-    const extension = pathExtension || mimeExtension || "";
-    const finalName = /\.[a-z0-9]{2,6}$/i.test(safeName) || !extension
-      ? safeName
-      : safeName + "." + extension;
+    const responseExtension = Object.entries(MIME_TYPES).find(([, mime]) => mime === responseMime)?.[0] || "";
+    const browserName = withExtension(safeName, extension || responseExtension);
 
     objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = objectUrl;
-    anchor.download = finalName;
+    anchor.download = browserName;
     anchor.rel = "noopener";
     anchor.style.display = "none";
     document.body.appendChild(anchor);
@@ -75,18 +90,17 @@ export async function downloadFile(url, filename = "download") {
     return true;
   } catch (error) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
-    const fallbackName = /\.[a-z0-9]{2,6}$/i.test(safeName) || !pathExtension
-      ? safeName
-      : safeName + "." + pathExtension;
+    if (error?.message?.startsWith("Download failed")) throw error;
+    // Cross-origin servers without CORS may still permit a direct browser save.
     const anchor = document.createElement("a");
     anchor.href = source;
-    anchor.download = fallbackName;
+    anchor.download = finalName;
     anchor.rel = "noopener noreferrer";
+    anchor.target = "_blank";
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    if (error?.message?.startsWith("Download failed")) throw error;
     return true;
   }
 }
