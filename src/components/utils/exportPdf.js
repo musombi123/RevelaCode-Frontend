@@ -1,5 +1,9 @@
 // Turns a markdown answer into a clean, multi-page A4 PDF.
 
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+const NativeDownloads = registerPlugin("RevelaDownload");
+
 const clean = (value = "") =>
   String(value)
     .replace(/[\u2018\u2019]/g, "'")
@@ -206,5 +210,12 @@ export async function downloadAsPdf(markdown, { filename } = {}) {
   }
 
   const pdfName = String(filename || `revelaai-${slug(firstHeading)}`).replace(/\.pdf$/i, "") + ".pdf";
-  await doc.save(pdfName, { returnPromise: true });
+  if (Capacitor.isNativePlatform()) {
+    const dataUri = doc.output("datauristring");
+    const base64 = dataUri.split(",")[1] || "";
+    if (!base64) throw new Error("The PDF could not be prepared for Android download.");
+    await NativeDownloads.saveFile({ fileName: pdfName, mimeType: "application/pdf", data: base64 });
+  } else {
+    await doc.save(pdfName, { returnPromise: true });
+  }
 }
