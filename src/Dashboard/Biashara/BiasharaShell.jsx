@@ -72,6 +72,7 @@ export default function BiasharaShell({
   onSwitchBusiness,
   activeSection = "overview",
   onNavigate,
+  onAppHome,
   onRefresh,
   children,
 }) {
@@ -110,6 +111,7 @@ export default function BiasharaShell({
         <div className="biashara-sidebar-brand">
           <img src="/Logo.png" alt="RevelaCode" />
           <div><strong>RevelaCode</strong><small>Code. Innovate. Transform.</small></div>
+          <button type="button" onClick={() => onAppHome?.()} className="biashara-mobile-action" aria-label="Return to RevelaCode Home" title="RevelaCode Home"><Home size={18}/></button>
         </div>
 
         <div className="biashara-sidebar-hub">
@@ -154,7 +156,8 @@ export default function BiasharaShell({
         <header className="biashara-mobile-header">
           <button type="button" className="biashara-mobile-menu-button" aria-label="Open navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)}><Menu size={22} /></button>
           <div className="biashara-mobile-brand"><img src="/Logo.png" alt="" /><span><strong>RevelaCode</strong><small>{businessName}</small></span></div>
-          <button type="button" className="biashara-mobile-action" onClick={() => onAppHome?.()} aria-label="Return to RevelaCode Home" title="RevelaCode Home"><Home size={20}/></button>\n          <button type="button" className="biashara-mobile-action" onClick={() => navigateTo("notifications")} aria-label="Business alerts"><Bell size={20} /></button>
+          <button type="button" className="biashara-mobile-action" onClick={() => onAppHome?.()} aria-label="Return to RevelaCode Home" title="RevelaCode Home"><Home size={20}/></button>
+          <button type="button" className="biashara-mobile-action" onClick={() => navigateTo("notifications")} aria-label="Business alerts"><Bell size={20} /></button>
           <button type="button" className="biashara-mobile-action" onClick={() => onRefresh?.()} aria-label="Refresh business data"><RefreshCw size={18} /></button>
         </header>
 
