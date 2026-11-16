@@ -120,8 +120,8 @@ export default function MessageActions({
       });
       setDownloadLabel(
         result.delivery?.method === "native"
-          ? `Saved to Downloads/RevelaCode: ${result.delivery.fileName}`
-          : `Download started: ${result.delivery?.fileName || result.label}`
+          ? `Saved in Downloads/RevelaCode · ${result.delivery.fileName}`
+          : `Download started · ${result.delivery?.fileName || result.label}`
       );
     } catch (error) {
       console.error("RevelaAI smart export failed:", error);
@@ -169,6 +169,11 @@ export default function MessageActions({
           <span className="sr-only" aria-live="polite">
             {downloadError || downloadLabel || `Suggested export format: ${outputFormat.label}`}
           </span>
+          {downloadLabel && !downloadError && (
+            <span role="status" className="text-[10px] leading-4 text-muted">
+              {downloadLabel}
+            </span>
+          )}
           {downloadError && (
             <span role="alert" className="max-w-[min(80vw,28rem)] text-[10px] leading-4 text-danger">
               {downloadError}
