@@ -8,6 +8,8 @@ const dashboard = read("../src/components/AIAssistantDashboard.jsx");
 const sidebar = read("../src/components/Sidebar.jsx");
 const composer = read("../src/components/InputBar.jsx");
 const voice = read("../src/ai/RevelaAIVoiceChat.jsx");
+const voiceOrb = read("../src/ai/v2-free/VoiceOrbFree.jsx");
+const premiumStar = read("../src/premium/PremiumPlansStar.jsx");
 const message = read("../src/components/Message.jsx");
 const appShell = read("../src/components/MainDashboardV2.jsx");
 const offlineStatus = read("../src/components/OfflineSyncStatus.jsx");
@@ -51,8 +53,10 @@ test("assistant chat hides internal USECT/Core Mesh status and strips it from re
   assert.doesNotMatch(dashboard, /usect_zero_tool:\s*payload\?\.meta/);
 });
 
-test("Premium plans are opened from the global star, not a RevelaAI dashboard section", () => {
-  assert.match(appShell, /<PremiumPlansStar\s*\/>/);
+test("Premium plans are opened by the global star event, not a RevelaAI dashboard section", () => {
+  assert.match(premiumStar, /data-premium-plans-star="true"/);
+  assert.match(premiumStar, /revelacode:premium-open/);
+  assert.match(appShell, /addEventListener\("revelacode:premium-open"/);
   assert.match(appShell, /<PlansModal/);
   assert.doesNotMatch(dashboard, /revela-ai-revenue-panel|HubRevenueOffers|aiRevenueOpen/);
   assert.doesNotMatch(sidebar, /Plans|onOpenPlans/);
@@ -94,6 +98,8 @@ test("Live Vision can run on-device in Free mode and reports pixel-analysis limi
 test("voice respects Free mode and microphone errors are visible", () => {
   assert.match(voice, /if \(!freeMode && isAuthenticated/);
   assert.match(voice, /Free voice mode uses this device's speech recognition/);
-  assert.match(composer, /setVoiceError/);
-  assert.match(composer, /role="status"/);
+  assert.match(voiceOrb, /setError/);
+  assert.match(voiceOrb, /role="alert"/);
+  assert.match(voiceOrb, /role="status"/);
+  assert.match(composer, /onClick=\{\(\) => onMic\?\.\(\)\}/);
 });
