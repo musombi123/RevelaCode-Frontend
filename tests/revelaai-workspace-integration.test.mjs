@@ -94,7 +94,7 @@ test("logo uploads trust raster signatures and safely normalize SVG exports", ()
 test("inline user prompt editing resubmits from the edited turn and discards later turns", () => {
   assert.match(message, /function EditBox\(\{ initial, onSave, onCancel \}\)/);
   assert.match(message, /onEdit\?\.\(message\.id, nextText\)/);
-  assert.match(chatWindow, /<Message message=\{message\} onEdit=\{onEditMessage\} \/>/);
+  assert.match(chatWindow, /<Message message=\{message\} onEdit=\{onEditMessage\} onArtifactAction=\{onArtifactAction\} \/>/);
   assert.match(dashboard, /sendOptions = null/);
   assert.match(dashboard, /sendOptions\?\.editMessageId/);
   assert.match(dashboard, /messages\.slice\(0, editIndex\)/);
