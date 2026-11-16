@@ -1665,7 +1665,11 @@ export default function AIAssistantDashboard({
               network: true,
               networkUsed: true,
               memory: "server",
-              contextProcessing: imagePayload?.context_processing || responseMeta?.context_processing || null,
+              contextProcessing:
+                imagePayload?.context_processing ||
+                responseMeta?.context_processing ||
+                payload?.meta?.context_processing ||
+                null,
             };
             }
           }
@@ -1866,6 +1870,7 @@ export default function AIAssistantDashboard({
 
           const failureCode = String(error?.code || "");
           const isProviderPipelineFailure =
+            Number(error?.status) >= 400 ||
             /^gemini_/i.test(failureCode) ||
             /^(chat_input_too_large|MESSAGE_TOO_LARGE)$/i.test(failureCode);
           const isNetworkFailure =
