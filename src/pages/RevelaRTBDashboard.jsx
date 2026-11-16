@@ -61,7 +61,7 @@ export default function RevelaRTBDashboard() {
     }
   }, [request]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {\n    refresh();\n    const timer = window.setInterval(refresh, 30000);\n    return () => window.clearInterval(timer);\n  }, [refresh]);
 
   const runCycle = async () => {
     setBusy(true); setError(""); setNotice(""); setCycle(null);
