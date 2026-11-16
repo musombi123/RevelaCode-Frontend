@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";\nimport { downloadFile } from "@/components/utils/downloadFile.js";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
@@ -8,7 +8,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const [filter, setFilter] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
   const [visible, setVisible] = useState(true);
-  const [panelWidth, setPanelWidth] = useState(440);
+  const [panelWidth, setPanelWidth] = useState(440);\n  const [downloadError, setDownloadError] = useState("");
   const resizeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -56,7 +56,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   const visibleRows = filteredData.slice(startIndex, endIndex);
 
   if (!visible || !artifact) return null;
-  const download = artifact.download_url || artifact.url;
+  const download = artifact.download_url || artifact.url;\n  const handleDownload = async (url, filename) => {\n    setDownloadError("");\n    try { await downloadFile(url, filename); }\n    catch (error) { setDownloadError(error?.message || "The file could not be downloaded."); }\n  };
 
   return (
     <aside
@@ -127,7 +127,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
           </div>}
           {artifact.chart_url && <figure className="overflow-hidden rounded-xl border border-line bg-surface-2 p-2"><img src={artifact.chart_url} alt="Dataset analysis chart" className="w-full object-contain"/><figcaption className="p-2 text-xs text-muted">Deterministic chart from the supplied dataset</figcaption></figure>}
           {artifact.downloads && Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").length>0 && <div className="flex flex-wrap gap-2">
-            {Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").map(([format,url])=><a key={format} href={url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2">Download {format.toUpperCase()}</a>)}
+            {Object.entries(artifact.downloads).filter(([,url])=>typeof url==="string").map(([format,url])=><button key={format} type="button" onClick={() => handleDownload(url, `${artifact.title || "revelaai-output"}.${format.toLowerCase()}`)} className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2">Download {format.toUpperCase()}</button>)}
           </div>}
           {artifact.analysis?.columns && <div className="grid grid-cols-2 gap-2">
             {[["Rows",artifact.analysis.row_count],["Columns",artifact.analysis.column_count],["Missing cells",artifact.analysis.missing_cells],["Duplicate rows",artifact.analysis.duplicate_rows],["Completeness",artifact.analysis.completeness_pct == null ? "—" : artifact.analysis.completeness_pct + "%"]].map(([label,value])=><div key={label} className="rounded-xl border border-line bg-surface-2 p-3"><span className="block text-[10px] text-muted">{label}</span><b className="mt-1 block text-base tabular-nums text-fg">{value ?? "—"}</b></div>)}
