@@ -46,12 +46,14 @@ export default function RevelaRTBDashboard() {
   const refresh = useCallback(async () => {
     setError("");
     try {
-      const [snapshot, audit] = await Promise.all([
-        request("/api/rtb/dashboard"),
-        request("/api/rtb/events?limit=20"),
-      ]);
+      const snapshot = await request("/api/rtb/dashboard");
       setDashboard(snapshot);
-      setEvents(Array.isArray(audit.events) ? audit.events : []);
+      try {
+        const audit = await request("/api/rtb/events?limit=20");
+        setEvents(Array.isArray(audit.events) ? audit.events : []);
+      } catch {
+        setEvents([]);
+      }
     } catch (err) {
       setError(err?.message || "Could not load the Real-Time Brain control plane.");
     } finally {
