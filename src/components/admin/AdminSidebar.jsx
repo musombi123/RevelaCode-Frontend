@@ -30,7 +30,12 @@ import {
 
 const tabs = [
   {
-    key: "rtb",\n    label: "Revela Real-Time Brain",\n    description: "Autonomous operations, diagnostics and guarded evolution",\n    icon: Brain,\n    live: true,\n  },
+    key: "rtb",
+    label: "Revela Real-Time Brain",
+    description: "Autonomous operations, diagnostics and guarded evolution",
+    icon: Brain,
+    live: true,
+  },
   {
     key: "coreMesh",
     label: "Core Mesh · ZERO / ONE / TWO",
