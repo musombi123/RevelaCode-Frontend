@@ -106,7 +106,9 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
   let resolvedPreviewUrl = "";
   if (artifact.preview_url) {
     try {
-      resolvedPreviewUrl = resolveRevelaAIArtifactUrl(artifact.preview_url);
+      const previewUrl = new URL(resolveRevelaAIArtifactUrl(artifact.preview_url));
+      previewUrl.searchParams.set("inline", "true");
+      resolvedPreviewUrl = previewUrl.toString();
     } catch {
       resolvedPreviewUrl = "";
     }
