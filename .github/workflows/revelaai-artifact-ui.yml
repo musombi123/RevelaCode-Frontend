@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "src/components/ArtifactResultCard.jsx"
+      - "src/components/InputBar.jsx"
       - "src/components/MessageActions.jsx"
       - "src/components/Message.jsx"
       - "src/components/ChatWindow.jsx"
