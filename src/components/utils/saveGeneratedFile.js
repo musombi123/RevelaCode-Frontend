@@ -91,3 +91,81 @@ export async function saveGeneratedFile(
   }
   return { method: "browser", fileName: safeName, bytes: blob.size };
 }
+
+
+const REVELAAI_API_BASE = String(
+  import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com"
+).trim().replace(/\/+$/, "");
+
+function resolveArtifactUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) throw new Error("The generated artifact does not have a download URL.");
+  let base;
+  let resolved;
+  try {
+    base = new URL(REVELAAI_API_BASE);
+    resolved = new URL(raw, base);
+  } catch {
+    throw new Error("The generated artifact download URL is invalid.");
+  }
+
+  const isLocalDevelopment =
+    import.meta.env.DEV &&
+    ["localhost", "127.0.0.1"].includes(base.hostname) &&
+    resolved.origin === base.origin;
+  if ((!["https:"].includes(resolved.protocol) && !isLocalDevelopment) || resolved.origin !== base.origin) {
+    throw new Error("The generated file link does not belong to the configured RevelaAI service.");
+  }
+  return resolved.toString();
+}
+
+export async function downloadRemoteArtifact(
+  value,
+  { fileName = "revelacode-download", mimeType = "application/octet-stream" } = {}
+) {
+  const url = resolveArtifactUrl(value);
+  const safeName = String(fileName || "revelacode-download")
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
+    .slice(0, 120);
+
+  const nativePlugin = getNativeDownloadPlugin();
+  if (nativePlugin) {
+    let result;
+    try {
+      result = await nativePlugin.downloadUrl({
+        url,
+        fileName: safeName,
+        mimeType: String(mimeType || "application/octet-stream"),
+      });
+    } catch (error) {
+      const detail = String(error?.message || error || "");
+      if (/not implemented|plugin.*not found|not registered|does not exist/i.test(detail)) {
+        throw new Error(
+          "This installed RevelaCode app does not include native downloads. Update to the Android build with the RevelaDownload bridge, then retry."
+        );
+      }
+      throw new Error(detail || "Android could not start the generated file download.");
+    }
+    return {
+      method: "native",
+      fileName: safeName,
+      downloadId: result?.downloadId ?? null,
+    };
+  }
+
+  if (typeof document === "undefined") {
+    throw new Error("This browser cannot open generated file downloads.");
+  }
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  try {
+    anchor.click();
+  } finally {
+    anchor.remove();
+  }
+  return { method: "browser", fileName: safeName, url };
+}
