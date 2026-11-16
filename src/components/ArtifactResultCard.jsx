@@ -50,8 +50,11 @@ export default function ArtifactResultCard({ artifact, onAction }) {
   const exports = artifact.format_downloads && typeof artifact.format_downloads === "object"
     ? artifact.format_downloads
     : {};
-  const previewUrl = artifactUrl(artifact.preview_url);
+  const preview = artifact.preview && typeof artifact.preview === "object" ? artifact.preview : {};
+  const formatMetadata = preview.format_metadata && typeof preview.format_metadata === "object" ? preview.format_metadata : {};
+  const sizeLabel = String(preview.size_label || formatMetadata.size_label || "");
   const canvaEditUrl = canvaUrl(artifact.canva_edit_url);
+  const previewUrl = artifactUrl(artifact.preview_url);
   const editState = String(artifact.edit_state || "idle");
   const canvaStatus = String(artifact.canva_status || (canvaEditUrl ? "success" : "not_connected"));
   const pending = localProposal || artifact.pending_edit || null;
@@ -145,6 +148,7 @@ export default function ArtifactResultCard({ artifact, onAction }) {
           <p className="mt-0.5 text-[11px] text-muted">
             {type.replaceAll("_", " ")} · Version {Number(artifact.version || 1)} · {formats.join(" · ")}
           </p>
+          {sizeLabel && <p className="mt-1 break-words text-[10px] leading-4 text-muted">Output size: {sizeLabel}</p>}
         </div>
         <span className="shrink-0 rounded-full border border-line px-2 py-1 text-[10px] font-semibold text-muted">
           {editingByUser ? "In editor" : editState === "ai_editing" ? "AI proposal" : "Saved"}
@@ -289,21 +293,20 @@ export default function ArtifactResultCard({ artifact, onAction }) {
           className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-line px-2.5 text-[10px] font-semibold text-fg-secondary disabled:opacity-40">
           <Redo2 size={12}/> Redo
         </button>
-        {formats.length > 1 && (
-          <>
-            <span className="ml-auto mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Export</span>
-            {formats.map((format) => {
-              const url = exports[format] || (format === formats[0] ? artifact.download_url : "");
-              if (!artifactUrl(url)) return null;
-              return (
-                <button key={format} type="button" disabled={Boolean(busy)} onClick={() => download(format, url)}
-                  className="min-h-8 rounded-lg border border-line px-2.5 text-[10px] font-bold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
-                  {format}
-                </button>
-              );
-            })}
-          </>
-        )}
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-1.5">
+          {sizeLabel && <span className="mr-1 max-w-full text-[10px] text-muted">Size: {sizeLabel}</span>}
+          {formats.length > 0 && <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Export</span>}
+          {formats.map((format) => {
+            const url = exports[format] || (format === formats[0] ? artifact.download_url : "");
+            if (!artifactUrl(url)) return null;
+            return (
+              <button key={format} type="button" disabled={Boolean(busy)} onClick={() => download(format, url)}
+                className="min-h-8 rounded-lg border border-line px-2.5 text-[10px] font-bold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
+                {format}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {(notice || error) && (
