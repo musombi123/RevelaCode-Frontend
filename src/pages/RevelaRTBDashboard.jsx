@@ -20,6 +20,7 @@ export default function RevelaRTBDashboard() {
   const auth = useAuth();
   const authenticatedFetch = auth?.authFetch;
   const [dashboard, setDashboard] = useState(null);
+  const [coreServices, setCoreServices] = useState(null);
   const [events, setEvents] = useState([]);
   const [cycle, setCycle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,12 @@ export default function RevelaRTBDashboard() {
     try {
       const snapshot = await request("/api/rtb/dashboard");
       setDashboard(snapshot);
+      try {
+        const coreSnapshot = await request("/api/rtb/services");
+        setCoreServices(coreSnapshot.services || null);
+      } catch {
+        setCoreServices(null);
+      }
       try {
         const audit = await request("/api/rtb/events?limit=20");
         setEvents(Array.isArray(audit.events) ? audit.events : []);
@@ -135,18 +142,32 @@ export default function RevelaRTBDashboard() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex items-center gap-2"><BrainCircuit className="h-5 w-5 text-violet-600"/><h3 className="font-black text-slate-900 dark:text-white">Connected Core Mesh</h3></div>
+        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Authenticated health evidence from the existing Core Mesh adapter. A configured core is not considered online unless its probe confirms reachability.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {(coreServices?.services || []).map(core => <div key={core.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
+            <div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{core.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (core.reachable ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{core.status}</span></div>
+            <p className="mt-2 text-[10px] leading-4 text-slate-500">{core.role}</p>
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">{core.reason || core.message || (core.configured ? "Probe completed." : "Core endpoint not configured.")}</p>
+          </div>)}
+        </div>
+        {coreServices?.summary && <p className="mt-3 text-[10px] font-semibold text-slate-500">{coreServices.summary.online} of {coreServices.summary.total} cores reachable · checked {coreServices.checked_at}</p>}
+        {!coreServices && <p className="mt-3 text-[10px] text-slate-500">Core health scan is unavailable to this session or could not be completed.</p>}
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
         <div className="flex items-center gap-2"><Server className="h-5 w-5 text-cyan-600"/><h3 className="font-black text-slate-900 dark:text-white">Ecosystem service observability</h3></div>
         <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Evidence-backed checks for services with an approved health contract. A shared backend check does not prove every hub is independently healthy.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(dashboard?.services?.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
+          {(dashboard?.ecosystem_services?.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
             <div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (service.status === "ok" || service.status === "configured" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : service.status === "not_configured" ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200")}>{service.status.replaceAll("_"," ")}</span></div>
             <p className="mt-2 text-[10px] leading-4 text-slate-500">{service.evidence?.replaceAll("_"," ")}{service.latency_ms != null ? " · " + service.latency_ms + " ms" : ""}</p>
           </div>)}
         </div>
         <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
           <p className="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Hub coverage — independent checks pending</p>
-          <div className="mt-2 flex flex-wrap gap-2">{(dashboard?.services?.hub_coverage || []).map(hub => <span key={hub.id} title={hub.evidence} className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{hub.name}: not independently probed</span>)}</div>
-          <p className="mt-2 text-[10px] leading-4 text-slate-500">{dashboard?.services?.coverage_note || "Waiting for health coverage data."}</p>
+          <div className="mt-2 flex flex-wrap gap-2">{(dashboard?.ecosystem_services?.hub_coverage || []).map(hub => <span key={hub.id} title={hub.evidence} className="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{hub.name}: not independently probed</span>)}</div>
+          <p className="mt-2 text-[10px] leading-4 text-slate-500">{dashboard?.ecosystem_services?.coverage_note || "Waiting for health coverage data."}</p>
         </div>
       </section>
 
