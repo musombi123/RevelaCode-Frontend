@@ -24,6 +24,8 @@ export default function RevelaRTBDashboard() {
   const [cycle, setCycle] = useState(null);
   const [services, setServices] = useState(null);
   const [scanningServices, setScanningServices] = useState(false);
+  const [services, setServices] = useState(null);
+  const [scanningServices, setScanningServices] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -68,6 +70,13 @@ export default function RevelaRTBDashboard() {
     const timer = window.setInterval(refresh, 30000);
     return () => window.clearInterval(timer);
   }, [refresh]);
+
+  const scanServices = async () => {
+    setScanningServices(true); setError("");
+    try { const result = await request("/api/rtb/services"); setServices(result.services || null); }
+    catch (err) { setError(err?.message || "Connected-core scan failed."); }
+    finally { setScanningServices(false); }
+  };
 
   const scanServices = async () => {
     setScanningServices(true); setError("");
@@ -166,6 +175,11 @@ export default function RevelaRTBDashboard() {
         </div>
       </section>
 
+      {services && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-black text-slate-900 dark:text-white">Revela Eye · Connected core health</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Authenticated checks through Core Mesh · {services.checked_at}</p></div><span className={"rounded-full px-3 py-1 text-[10px] font-black uppercase " + (services.status === "online" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : services.status === "degraded" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200")}>{services.summary?.online ?? 0}/{services.summary?.total ?? 3} online</span></div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">{(services.services || []).map(service => <div key={service.id} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</span><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (service.reachable ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200")}>{service.status}</span></div><p className="mt-1 text-[10px] font-semibold text-slate-500">{service.role}</p><p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{service.message}</p>{!service.configured && <p className="mt-2 text-[10px] font-bold text-amber-700 dark:text-amber-300">Endpoint not configured</p>}</div>)}</div>
+        <p className="mt-3 text-[10px] text-slate-500">Health scan only. No core commands, source changes, repairs or deployments were executed.</p>
+      </section>}
       {cycle && <section className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5"><div className="flex items-center justify-between gap-3"><h3 className="font-black text-slate-900 dark:text-white">Latest diagnostic cycle</h3><span className="text-[10px] font-bold uppercase text-slate-500">{cycle.status}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{cycleChecks.map(check => <div key={check.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-950"><div className="flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-800 dark:text-slate-200">{check.id.replaceAll("_"," ")}</span><span className="text-[10px] font-black uppercase text-slate-500">{check.status}</span></div><p className="mt-1 text-[10px] text-slate-500">{check.detail}</p></div>)}</div><p className="mt-3 text-[10px] text-slate-500">Cycle {cycle.cycle_id} · read-only · no source mutations or outbound network calls.</p></section>}
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
