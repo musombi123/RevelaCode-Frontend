@@ -2200,11 +2200,18 @@ export default function AIAssistantDashboard({
         }
 
         if (!response.ok) {
-          throw new Error(
-            response.status === 502 || response.status === 503 || response.status === 504
-              ? "RevelaAI is waking up, please wait 20 seconds..."
-              : (payload?.message || payload?.error?.message || "RevelaAI could not regenerate the response. Please try again.")
+          const failure = new Error(
+            String(
+              payload?.error?.message ||
+              payload?.message ||
+              payload?.detail ||
+              "RevelaAI could not regenerate the response. Please try again."
+            )
           );
+          failure.code = String(payload?.error?.code || payload?.code || "MODEL_UNAVAILABLE");
+          failure.status = response.status;
+          failure.contextProcessing = payload?.context_processing || payload?.error?.context_processing || null;
+          throw failure;
         }
 
         const resultData = payload?.data || payload || {};
@@ -2226,6 +2233,10 @@ export default function AIAssistantDashboard({
           sources: Array.isArray(payload?.sources) ? payload.sources : [],
           metadata: {
             ...sanitizeAIResponseMetadata(payload?.meta),
+            contextProcessing:
+              resultData?.context_processing ||
+              payload?.meta?.context_processing ||
+              null,
             hub: resultData?.hub_used || resultData?.hub || resultData?.domain || payload?.meta?.hub,
             hub_used: resultData?.hub_used || resultData?.hubUsed || payload?.meta?.hub_used,
             hub_requested: resultData?.hub_requested || resultData?.hubRequested || payload?.meta?.hub_requested,
@@ -2262,9 +2273,11 @@ export default function AIAssistantDashboard({
         const isNetworkFailure =
           error instanceof TypeError ||
           /failed to fetch|networkerror|load failed/i.test(String(error?.message || ""));
-        const visibleError = isNetworkFailure
-          ? "RevelaAI is waking up, please wait 20 seconds..."
-          : (error?.message || "Request failed. Please try again.");
+        const visibleError = error?.status
+          ? String(error.message || "RevelaAI could not regenerate the response. Please try again.")
+          : isNetworkFailure
+            ? "RevelaAI is waking up, please wait 20 seconds..."
+            : (error?.message || "Request failed. Please try again.");
 
         const updated = loadingMessages.map((message) =>
           message.id === assistantId
