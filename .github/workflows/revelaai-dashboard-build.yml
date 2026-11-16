@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feat/revelaai-dashboard-free-mode-voice-vision]
+    branches: [main, feat/revelaai-dashboard-free-mode-voice-vision, feat/revelaai-studio-workspace]
 
 jobs:
   workspace-integration:
@@ -51,7 +51,7 @@ jobs:
       - name: Run offline AI fallback regressions
         run: npm run test:offline-ai
       - name: Run RevelaAI dashboard contracts
-        run: node --test tests/revelaai-dashboard-contract.test.mjs
+        run: node --test tests/revelaai-dashboard-contract.test.mjs tests/revelaai-context-guard-ui.test.mjs
       - name: Run unified workspace and Shamba camera integration contracts
         run: npm run test:revelaai-workspace
       - name: Run clean workspace layout contracts
