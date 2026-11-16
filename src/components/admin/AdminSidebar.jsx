@@ -30,6 +30,13 @@ import {
 
 const tabs = [
   {
+    key: "rtb",
+    label: "Revela Real-Time Brain",
+    description: "Autonomous operations, diagnostics and guarded evolution",
+    icon: Brain,
+    live: true,
+  },
+  {
     key: "coreMesh",
     label: "Core Mesh · ZERO / ONE / TWO",
     description: "Gateway-native cores, signed tools and Evolver governance",
