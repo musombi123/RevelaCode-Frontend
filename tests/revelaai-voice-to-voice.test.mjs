@@ -36,3 +36,13 @@ test("recognition resumes only after the assistant voice response completes", as
   assert.match(voiceOrb, /if \(activeRef\.current\) scheduleRestart\(\)/);
   assert.match(voiceChat, /await speakResponse\(response,/);
 });
+
+test("assistant playback and manual replay pause recognition to prevent audio feedback", async () => {
+  const voiceOrb = await read("../src/ai/v2-free/VoiceOrbFree.jsx");
+  assert.match(voiceOrb, /const speakingRef = useRef\(Boolean\(speaking\)\)/);
+  assert.match(voiceOrb, /if \(speaking\) \{/);
+  assert.match(voiceOrb, /void SpeechRecognition\.stop\(\)\.catch/);
+  assert.match(voiceOrb, /recognitionRef\.current\?\.stop\?\.\(\)/);
+  assert.match(voiceOrb, /if \(wasSpeaking && activeRef\.current && !processingRef\.current\)/);
+  assert.match(voiceOrb, /if \(!activeRef\.current \|\| processingRef\.current \|\| speakingRef\.current\) return/);
+});
