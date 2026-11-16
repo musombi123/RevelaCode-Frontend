@@ -205,5 +205,6 @@ export async function downloadAsPdf(markdown, { filename } = {}) {
     doc.text(`Page ${page} of ${pages}`, pageW - margin, pageH - 26, { align: "right" });
   }
 
-  const pdfName = String(filename || `revelaai-${slug(firstHeading)}`).replace(/\\.pdf$/i, "") + ".pdf";\n  await doc.save(pdfName, { returnPromise: true });
+  const pdfName = String(filename || `revelaai-${slug(firstHeading)}`).replace(/\.pdf$/i, "") + ".pdf";
+  await doc.save(pdfName, { returnPromise: true });
 }
