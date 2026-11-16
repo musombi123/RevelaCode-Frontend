@@ -27,3 +27,22 @@ test("answer regeneration preserves Context Guard errors and successful processi
   assert.match(dashboard, /RevelaAI could not regenerate the response/);
   assert.match(dashboard, /resultData\?\.context_processing/);
 });
+
+
+test("chat exports route generated PDF and text files through the shared native-aware saver", () => {
+  const smartExport = read("../src/components/utils/smartExport.js");
+  const pdfExport = read("../src/components/utils/exportPdf.js");
+  const saver = read("../src/components/utils/saveGeneratedFile.js");
+  const actions = read("../src/components/MessageActions.jsx");
+
+  assert.match(smartExport, /saveGeneratedFile/);
+  assert.match(smartExport, /delivery/);
+  assert.match(pdfExport, /doc\.output\("blob"\)/);
+  assert.match(pdfExport, /saveGeneratedFile\(blob/);
+  assert.match(saver, /registerPlugin\("RevelaDownload"\)/);
+  assert.match(saver, /nativePlugin\.saveFile/);
+  assert.match(saver, /Downloads\/RevelaCode/);
+  assert.match(saver, /20 MB native-save limit/);
+  assert.match(actions, /Saved in Downloads\/RevelaCode/);
+  assert.match(actions, /role="alert"/);
+});
