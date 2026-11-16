@@ -67,3 +67,29 @@ test("artifact history exposes undo and redo without replacing previous files", 
   assert.match(card, /artifact\.can_undo/);
   assert.match(card, /artifact\.can_redo/);
 });
+
+
+test("Image Studio exposes server-loaded international sizes and print locale options", () => {
+  const input = read("../src/components/InputBar.jsx");
+  assert.match(input, /api\/workspace\/formats/);
+  assert.match(input, /formatPreset/);
+  assert.match(input, /English/);
+  assert.match(input, /Kiswahili/);
+  assert.match(input, /Arabic/);
+  assert.match(input, /Right to left/);
+  assert.match(input, /3 mm/);
+  assert.match(input, /Crop marks/);
+});
+
+test("selected design options reach the workspace image generator", () => {
+  assert.match(dashboard, /format_preset: options\.formatPreset/);
+  assert.match(dashboard, /language: options\.language/);
+  assert.match(dashboard, /text_direction: options\.textDirection/);
+  assert.match(dashboard, /bleed_mm: Number\(options\.bleedMm/);
+  assert.match(dashboard, /crop_marks: options\.cropMarks/);
+});
+
+test("artifact export menu always shows the recorded output dimensions", () => {
+  assert.match(card, /Output size: \{sizeLabel\}/);
+  assert.match(card, /Size: \{sizeLabel\}/);
+});
