@@ -238,11 +238,13 @@ export default function VoiceOrbFree({ onTranscript, speaking = false }) {
         setListening(false);
         return;
       }
+      const permissionDenied = code === "not-allowed" || code === "service-not-allowed";
       setError(
-        code === "not-allowed" || code === "service-not-allowed"
+        permissionDenied
           ? "Microphone permission was denied. Allow microphone access for RevelaCode and retry."
           : "Browser speech recognition failed (" + code + "). Tap Resume to try again."
       );
+      if (permissionDenied) activeRef.current = false;
       setListening(false);
     };
 
