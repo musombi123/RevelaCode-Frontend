@@ -14,8 +14,11 @@ test("AI composer awaits acceptance, preserves rejected drafts, and does not era
   assert.match(composer, /finally \{\s*setSubmitting\(false\);\s*\}/);
   assert.match(composer, /setText\(\(current\) => current === submittedDraft \? "" : current\)/);
   assert.match(composer, /setAttachedFile\(\(current\) => current === submittedFile \? null : current\)/);
+  const submitStart = composer.indexOf("const submit = async () => {");
+  const submitEnd = composer.indexOf("const slashMatches", submitStart);
+  const submitHandler = composer.slice(submitStart, submitEnd);
   assert.ok(
-    composer.indexOf("if (accepted === false) return;") < composer.indexOf("setText((current)"),
+    submitHandler.indexOf("if (accepted === false) return;") < submitHandler.indexOf("setText((current)"),
     "The composer must check acceptance before clearing the submitted draft.",
   );
 });
