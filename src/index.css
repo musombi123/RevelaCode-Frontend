@@ -2013,7 +2013,24 @@ html[data-theme="light"] .revelaai-workspace .hero-glow {
 .revelaai-workspace [data-theme-surface="overlay"] { background: rgb(var(--overlay-bg) / .58); }
 
 .revelaai-workspace .composer-safe-bottom {
+  position: relative;
+  z-index: 30;
+  pointer-events: auto;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+}
+
+/* Keep the composer and its primary action above adjacent mobile scroll layers. */
+.revelaai-workspace [data-demo="composer"] {
+  position: relative;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.revelaai-workspace [data-demo="ai-send-message"] {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 
