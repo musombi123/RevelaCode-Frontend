@@ -115,3 +115,10 @@ test("AI composer awaits send acceptance and preserves rejected drafts", () => {
   assert.equal((dashboard.match(/const accepted = await sendMessage\(\.\.\.args\);/g) || []).length, 2);
   assert.equal((dashboard.match(/return accepted;/g) || []).length, 2);
 });
+
+
+test("AI compliance notice loading has a recovery action when the notice API is unavailable", () => {
+  assert.match(dashboard, /complianceRetryKey/);
+  assert.match(dashboard, /complianceStatus === "error" && \([\s\S]*?Retry loading notices/);
+  assert.match(dashboard, /setComplianceRetryKey\(\(current\) => current \+ 1\)/);
+});
