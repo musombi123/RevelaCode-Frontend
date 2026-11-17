@@ -620,7 +620,7 @@ export default function InputBar({
       const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === typedCommandLabel)?.[1] || null;
       const toolModeKey = command ? "/" + command : null;
       const accepted = await onSend?.(value, attachedFile, {
-        toolCommand: toolModeKey,
+        toolCommand: command ? "/" + command : null,
         toolLabel,
         toolMode: toolModeKey ? (toolMode[toolModeKey] || TOOL_MODES[toolModeKey]?.defaultMode || null) : null,
         toolOptions: command === "image" ? {
