@@ -43,7 +43,7 @@ test("Faith mobile content expands naturally inside the shared app scroller", ()
 
 test("RevelaAI keeps welcome content and conversation history independently scrollable", () => {
   const ai = read("../src/components/AIAssistantDashboard.jsx");
-  assert.match(ai, /aria-label="RevelaAI welcome workspace"[^>]*className="flex min-h-0 flex-1 flex-col overflow-y-auto/);
-  assert.match(ai, /aria-label="Conversation workspace"[^>]*className="flex min-h-0 flex-1 flex-col overflow-hidden/);
+  assert.match(ai, /className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" aria-label="RevelaAI welcome workspace"/);
+  assert.match(ai, /className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation workspace"/);
   assert.match(ai, /min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6/);
 });
