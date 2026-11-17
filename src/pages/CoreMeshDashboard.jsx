@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { readAccessToken, readTokenType } from "@/auth/tokenStorage.mjs";
 import { useAuth } from "@/context/AuthContext.jsx";
 import EvolverControlSurface from "@/pages/EvolverControlSurface.jsx";
+import LivingSystemsLab from "@/pages/LivingSystemsLab.jsx";
 import {
   Activity,
   AlertTriangle,
@@ -10,6 +11,7 @@ import {
   Layers,
   RefreshCw,
   ShieldCheck,
+  Sprout,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -436,6 +438,16 @@ export default function CoreMeshDashboard() {
           <span className="text-xs text-slate-500 dark:text-slate-400">Governed invention · measured improvement · durable learning</span>
         </div>
         <EvolverControlSurface authenticatedFetch={authenticatedFetch} />
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <Sprout className="h-3.5 w-3.5" /> Living Systems Lab
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Birth · measured defensive learning · reviewed inheritance · retirement</span>
+        </div>
+        <LivingSystemsLab authenticatedFetch={authenticatedFetch} />
       </section>
     </div>
   );
