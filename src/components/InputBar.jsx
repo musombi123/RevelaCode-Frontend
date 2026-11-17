@@ -616,11 +616,13 @@ export default function InputBar({
       const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
       const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
       const command = selectedCommand || typedCommand || null;
-      const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? \`/\${typedCommand}\` : ""))?.[1] || null;
+      const typedCommandLabel = typedCommand ? "/" + typedCommand : "";
+      const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === typedCommandLabel)?.[1] || null;
+      const toolModeKey = command ? "/" + command : null;
       const accepted = await onSend?.(value, attachedFile, {
-        toolCommand: command ? \`/\${command}\` : null,
+        toolCommand: toolModeKey,
         toolLabel,
-        toolMode: command ? (toolMode[\`/\${command}\`] || TOOL_MODES[\`/\${command}\`]?.defaultMode || null) : null,
+        toolMode: toolModeKey ? (toolMode[toolModeKey] || TOOL_MODES[toolModeKey]?.defaultMode || null) : null,
         toolOptions: command === "image" ? {
           aspectRatio: imageAspect,
           style: imageStyle,
