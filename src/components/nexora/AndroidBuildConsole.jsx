@@ -4,7 +4,7 @@ import { Smartphone, PackageCheck, ShieldCheck, Cable, AlertTriangle } from "luc
 const inputClass = "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 const labelClass = "block text-xs font-bold text-slate-600 dark:text-slate-300";
 
-export default function AndroidBuildConsole({ settings, onChange, onBuild, disabled, deviceStatus = "Device testing requires the NEXORA desktop companion." }) {
+export default function AndroidBuildConsole({ settings, onChange, onBuild, iconAssets = [], disabled, deviceStatus = "Device testing requires the NEXORA desktop companion." }) {
   const update = (key, value) => onChange((current) => ({ ...current, [key]: value }));
   return <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -19,6 +19,7 @@ export default function AndroidBuildConsole({ settings, onChange, onBuild, disab
       <label className={labelClass}>Build type<select className={inputClass} value={settings.build_type} onChange={(e)=>update("build_type",e.target.value)}><option value="debug">Debug · device testing</option><option value="release">Release · signed candidate</option></select></label>
       <label className={labelClass}>Package format<select className={inputClass} value={settings.artifact_format} onChange={(e)=>update("artifact_format",e.target.value)}><option value="apk">APK · direct installation</option><option value="aab">AAB · store distribution</option></select></label>
       <label className={labelClass}>Orientation<select className={inputClass} value={settings.orientation} onChange={(e)=>update("orientation",e.target.value)}><option value="landscape">Landscape</option><option value="portrait">Portrait</option><option value="sensor">Sensor · auto rotate</option></select></label>
+      <label className={labelClass}>Launcher icon<select className={inputClass} value={settings.icon_asset_id || ""} onChange={(e)=>update("icon_asset_id",e.target.value || null)}><option value="">Use Godot default icon</option>{iconAssets.map((asset)=><option key={asset.id} value={asset.id}>{asset.name}</option>)}</select><span className="mt-1 block text-[10px] font-normal text-slate-500">Upload a PNG in Asset Factory first. Godot uses it as the main launcher icon.</span></label>
     </div>
     <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
       {[["internet_permission","Internet access"],["camera_permission","Camera"],["microphone_permission","Microphone"]].map(([key,label])=><label key={key} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300"><input type="checkbox" checked={Boolean(settings[key])} onChange={(e)=>update(key,e.target.checked)}/>{label}</label>)}
