@@ -604,41 +604,52 @@ export default function InputBar({
   const activeMode = activeModeConfig ? (toolMode[activeToolCommand] || activeModeConfig.defaultMode) : null;
   const activeModeDefinition = activeModeConfig?.modes?.find((mode) => mode.value === activeMode);
   const effectivePlaceholder = activeModeDefinition?.placeholder || placeholder;
-  const canSend = !disabled && !submitting && (text.trim().length > 0 || Boolean(attachedFile));
+  const canSend = !disabled && !submitting && typeof onSend === "function" && (text.trim().length > 0 || Boolean(attachedFile));
 
   const submit = async () => {
     const value = text.trim();
-    if (!canSend || submitting) return;
+    if (!canSend || submitting || typeof onSend !== "function") return;
 
     recognitionRef.current?.stop?.();
-    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
-    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
+    const typedCommand = value.match(/^\\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\\b/i)?.[1]?.toLowerCase();
+    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\\//, "");
     const command = selectedCommand || typedCommand || null;
     const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
-    const accepted = onSend?.(value, attachedFile, {
-      toolCommand: command ? `/${command}` : null,
-      toolLabel,
-      toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
-      toolOptions: command === "image" ? {
-        aspectRatio: imageAspect,
-        style: imageStyle,
-        imageCount,
-        formatPreset: imageFormatPreset,
-        language: imageLanguage,
-        textDirection: imageTextDirection,
-        bleedMm: Number(imageBleedMm || 0),
-        cropMarks: imageCropMarks,
-        dpi: 150,
-      } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
-    });
+    const submittedDraft = text;
+    const submittedFile = attachedFile;
+    const submittedTool = selectedToolCommand;
 
-    // Preserve the user's draft when the parent rejects submission.
-    if (accepted === false) return;
+    setSubmitting(true);
+    try {
+      const accepted = await onSend?.(value, attachedFile, {
+        toolCommand: command ? `/${command}` : null,
+        toolLabel,
+        toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
+        toolOptions: command === "image" ? {
+          aspectRatio: imageAspect,
+          style: imageStyle,
+          imageCount,
+          formatPreset: imageFormatPreset,
+          language: imageLanguage,
+          textDirection: imageTextDirection,
+          bleedMm: Number(imageBleedMm || 0),
+          cropMarks: imageCropMarks,
+          dpi: 150,
+        } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+      });
 
-    setText("");
-    setAttachedFile(null);
-    setSelectedToolCommand(null);
-    requestAnimationFrame(() => textareaRef.current?.focus());
+      // A rejected request keeps its draft. If the user starts composing another
+      // message while this request runs, never clear that newer draft.
+      if (accepted === false) return;
+      setText((current) => current === submittedDraft ? "" : current);
+      setAttachedFile((current) => current === submittedFile ? null : current);
+      setSelectedToolCommand((current) => current === submittedTool ? null : current);
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    } catch (error) {
+      console.error("RevelaAI message submission failed.", error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const slashMatches = text.startsWith("/")
