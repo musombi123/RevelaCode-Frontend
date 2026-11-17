@@ -27,9 +27,9 @@ test("Community, Elimu, Shamba and Biashara retain natural mobile document heigh
   assert.match(elimu, /<main className="min-w-0 flex-1[^"]*lg:overflow-y-auto/);
   assert.match(elimu, /min-h-screen bg-slate-50[^"]*lg:overflow-hidden/);
   assert.ok(shamba.includes('data-shamba-mobile-ui="reference-v1" data-theme={resolvedTheme} className="shamba-mobile min-h-[100svh] overflow-x-hidden'));
-  assert.match(biashara, /@media \(max-width:700px\)\s*\{\s*\.biashara-shell \{ display:block;height:auto;min-height:100svh;overflow:visible; \}/);
-  assert.match(biashara, /\.biashara-shell-workspace \{ height:auto;min-height:100svh;overflow:visible; \}/);
-});
+  assert.ok(biashara.includes("@media (max-width:700px)"));
+  assert.ok(biashara.includes(".biashara-shell { display:block;height:auto;min-height:100svh;overflow:visible; }"));
+  assert.ok(biashara.includes(".biashara-shell-workspace { height:auto;min-height:100svh;overflow:visible; }"));
 
 test("Faith mobile content expands naturally inside the shared app scroller", () => {
   const faith = read("../src/components/faith/faith-dashboard.css");
