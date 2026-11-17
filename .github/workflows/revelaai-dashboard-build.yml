@@ -26,6 +26,8 @@ jobs:
         run: node --test tests/revelaai-context-guard-ui.test.mjs
       - name: Run AI composer and production AdMob regressions
         run: node --test tests/revelaai-send-submit.test.mjs
+      - name: Run cross-hub responsive scrolling regressions
+        run: node --test tests/responsive-scroll-regressions.test.mjs
       - name: Run desktop hub sidebar scroll regressions
         run: node --test tests/desktop-hub-sidebar-scroll.test.mjs
       - name: Build production frontend
