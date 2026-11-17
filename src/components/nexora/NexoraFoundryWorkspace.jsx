@@ -11,7 +11,7 @@ const STORAGE_KEY = "nexora.foundry.projects.v1";
 const ACTIVE_KEY = "nexora.foundry.active-project.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
-const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "").replace(/\/$/, "");
+const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 const now = () => new Date().toISOString();
