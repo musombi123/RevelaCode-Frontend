@@ -103,3 +103,13 @@ test("voice respects Free mode and microphone errors are visible", () => {
   assert.match(voiceOrb, /role="status"/);
   assert.match(composer, /onClick=\{\(\) => onMic\?\.\(\)\}/);
 });
+
+
+test("AI composer awaits send acceptance and preserves rejected drafts", () => {
+  assert.match(composer, /const submit = async \(\) =>/);
+  assert.match(composer, /const accepted = await onSend\?\.\(/);
+  assert.match(composer, /if \(accepted === false\) return;/);
+  assert.match(composer, /finally \{\s*setSubmitting\(false\);\s*\}/);
+  assert.match(dashboard, /setComplianceError\("Read and acknowledge the current RevelaAI use notice before sending a chat message\."\);\s*return false;/);
+  assert.equal((dashboard.match(/return sendMessage\(\.\.\.args\);/g) || []).length, 2);
+});
