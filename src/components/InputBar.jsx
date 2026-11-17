@@ -611,10 +611,10 @@ export default function InputBar({
     if (!canSend || submitting || typeof onSend !== "function") return;
 
     recognitionRef.current?.stop?.();
-    const typedCommand = value.match(/^\\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\\b/i)?.[1]?.toLowerCase();
-    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\\//, "");
+    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
+    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
-    const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
+    const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? "/" + typedCommand : ""))?.[1] || null;
     const submittedDraft = text;
     const submittedFile = attachedFile;
     const submittedTool = selectedToolCommand;
@@ -622,9 +622,9 @@ export default function InputBar({
     setSubmitting(true);
     try {
       const accepted = await onSend?.(value, attachedFile, {
-        toolCommand: command ? `/${command}` : null,
+        toolCommand: command ? "/" + command : null,
         toolLabel,
-        toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
+        toolMode: command ? (toolMode["/" + command] || TOOL_MODES["/" + command]?.defaultMode || null) : null,
         toolOptions: command === "image" ? {
           aspectRatio: imageAspect,
           style: imageStyle,
