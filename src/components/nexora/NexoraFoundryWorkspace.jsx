@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../../context/AuthContext.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, CircleHelp, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -83,6 +84,35 @@ async function removeStoredAsset(assetId) {
   });
 }
 
+function workspaceProjectFromCloud(row, assets = []) {
+  const document = row.document && typeof row.document === "object" ? row.document : {};
+  return {
+    ...document,
+    id: String(row.id),
+    name: String(row.name || document.name || "Untitled Game"),
+    description: String(row.description || document.description || ""),
+    createdAt: row.created_at || document.createdAt || now(),
+    updatedAt: row.updated_at || document.updatedAt || now(),
+    _remoteVersion: Number(row.version || 1),
+    assets,
+    revisions: Array.isArray(document.revisions) ? document.revisions : [],
+  };
+}
+
+function workspaceProjectDocument(project) {
+  const { _remoteVersion, assets, revisions, ...document } = project;
+  return { ...document, assets: [], revisions: [] };
+}
+
+function cloudAssetFromApi(asset) {
+  const extension = String(asset.filename || "").split(".").pop()?.toLowerCase() || "file";
+  return {
+    id: asset.id, name: asset.filename, type: extension,
+    mimeType: asset.content_type, size: Number(asset.size || 0),
+    addedAt: asset.created_at || now(), status: asset.status, remote: true,
+  };
+}
+
 function downloadJson(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -120,9 +150,17 @@ function Metric({ label, value, helper }) {
 }
 
 export default function NexoraFoundryWorkspace() {
+  const auth = useAuth() || {};
+  const accessToken = auth.getAccessToken?.() || "";
+  const tokenType = auth.getTokenType?.() || "Bearer";
+  const authenticatedCloudSession = Boolean(accessToken && !auth.isGuest && !auth.loading);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
   const [projects, setProjects] = useState(readProjects);
   const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) || "");
   const [tab, setTab] = useState("overview");
+  const [jobs, setJobs] = useState([]);
+  const cloudBaseline = useRef(new Map());
+  const cloudSaveTimer = useRef(null);
   const [selectedObjectId, setSelectedObjectId] = useState("");
   const [apiStatus, setApiStatus] = useState({ state: API_BASE ? "checking" : "not_configured", label: API_BASE ? "Checking NEXORA service" : "API not connected" });
   const [notice, setNotice] = useState("");
@@ -131,23 +169,80 @@ export default function NexoraFoundryWorkspace() {
   const importInputRef = useRef(null);
   const activeProject = projects.find((item) => item.id === activeId) || projects[0] || null;
   const selectedObject = activeProject?.scene.objects.find((item) => item.id === selectedObjectId) || activeProject?.scene.objects[0] || null;
+  const cloudMode = Boolean(API_BASE && authenticatedCloudSession && cloudLoaded);
+
+  const apiRequest = useCallback(async (path, options = {}) => {
+    if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
+    if (!accessToken || auth.isGuest) throw new Error("Sign in with a verified RevelaCode account to use NEXORA cloud storage.");
+    const headers = new Headers(options.headers || {});
+    headers.set("Authorization", `${tokenType || "Bearer"} ${String(accessToken).replace(/^Bearer\\s+/i, "")}`);
+    if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    headers.set("Accept", "application/json");
+    const response = await fetch(`${API_BASE}${path}`, { ...options, headers, cache: "no-store" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = payload?.detail;
+      throw new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
+    }
+    return payload;
+  }, [accessToken, auth.isGuest, tokenType]);
 
   useEffect(() => {
+    if (!API_BASE || auth.loading) return undefined;
+    if (!authenticatedCloudSession) {
+      setCloudLoaded(false);
+      setApiStatus({ state: "auth_required", label: "Sign in to connect NEXORA cloud" });
+      return undefined;
+    }
+    let cancelled = false;
+    setApiStatus({ state: "checking", label: "Connecting secure NEXORA workspace" });
+    (async () => {
+      const response = await apiRequest("/api/v1/workspace/projects");
+      const rows = Array.isArray(response.projects) ? response.projects : [];
+      const hydrated = await Promise.all(rows.map(async (row) => {
+        let assets = [];
+        try {
+          const assetResponse = await apiRequest(`/api/v1/workspace/projects/${row.id}/assets`);
+          assets = (assetResponse.assets || []).map(cloudAssetFromApi);
+        } catch {
+          // Project metadata remains usable while an asset listing is retried.
+        }
+        const project = workspaceProjectFromCloud(row, assets);
+        cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+        return project;
+      }));
+      if (cancelled) return;
+      setProjects(hydrated);
+      setActiveId((current) => hydrated.some((item) => item.id === current) ? current : hydrated[0]?.id || "");
+      setCloudLoaded(true);
+      setApiStatus({ state: "online", label: "NEXORA API, PostgreSQL and private asset storage connected" });
+    })().catch((error) => {
+      if (!cancelled) {
+        setCloudLoaded(false);
+        setApiStatus({ state: "offline", label: error.message || "NEXORA cloud workspace unavailable" });
+        setNotice(error.message || "Could not load NEXORA cloud projects.");
+      }
+    });
+    return () => { cancelled = true; };
+  }, [auth.loading, authenticatedCloudSession, apiRequest]);
+
+  useEffect(() => {
+    if (cloudMode) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
-  }, [projects]);
+  }, [projects, cloudMode]);
 
   useEffect(() => {
     if (activeProject?.id) {
       setActiveId(activeProject.id);
-      localStorage.setItem(ACTIVE_KEY, activeProject.id);
+      if (!cloudMode) localStorage.setItem(ACTIVE_KEY, activeProject.id);
       if (!selectedObjectId || !activeProject.scene.objects.some((item) => item.id === selectedObjectId)) {
         setSelectedObjectId(activeProject.scene.objects[0]?.id || "");
       }
     } else {
       setActiveId("");
-      localStorage.removeItem(ACTIVE_KEY);
+      if (!cloudMode) localStorage.removeItem(ACTIVE_KEY);
     }
-  }, [activeProject?.id]);
+  }, [activeProject?.id, cloudMode]);
 
   const patchProject = useCallback((updater) => {
     if (!activeProject) return;
