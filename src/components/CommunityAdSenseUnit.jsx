@@ -126,8 +126,8 @@ function NativeAdMobPlacement({ config }) {
         }
 
         const hasProductionIds =
-          /^ca-app-pub-\\d+~\\d+$/.test(ADMOB_APP_ID) &&
-          /^ca-app-pub-\\d+\\/\\d+$/.test(config.admobUnitId);
+          /^ca-app-pub-\d+~\d+$/.test(ADMOB_APP_ID) &&
+          /^ca-app-pub-\d+\/\d+$/.test(config.admobUnitId);
         // Production must never silently request Google's demo ads. Missing or
         // malformed IDs are a configuration failure, not a test fallback.
         if (import.meta.env.PROD && !hasProductionIds) {
