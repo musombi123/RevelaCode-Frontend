@@ -45,8 +45,8 @@ jobs:
               frontend_ref: frontendRef,
               build_type: publishRelease ? "release" : "debug",
               ...(publishRelease ? {
-                version_name: "2.2.0",
-                version_code: "4"
+                version_name: "2.2.3",
+                version_code: "7"
               } : {}),
               triggered_by: context.eventName
             };
