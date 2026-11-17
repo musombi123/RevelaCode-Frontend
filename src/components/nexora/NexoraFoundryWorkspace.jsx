@@ -194,7 +194,7 @@ export default function NexoraFoundryWorkspace() {
 
   const saveRevision = () => {
     if (!activeProject) return;
-    patchProject((project) => ({ ...project, revisions: [...(project.revisions || []), { id: makeId("revision"), createdAt: now(), snapshot: JSON.parse(JSON.stringify(project)) }].slice(-20) }));
+    patchProject((project) => ({ ...project, revisions: [...(project.revisions || []), { id: makeId("revision"), createdAt: now(), snapshot: { ...JSON.parse(JSON.stringify(project)), revisions: [] } }].slice(-20) }));
     setNotice("Revision checkpoint saved in this browser.");
   };
 
@@ -279,6 +279,7 @@ export default function NexoraFoundryWorkspace() {
             <div className="min-w-0"><p className="truncate text-sm font-black">{activeProject?.name || "No project selected"}</p><p className="text-[11px] text-slate-500 dark:text-slate-400">{activeProject ? `Updated ${new Date(activeProject.updatedAt).toLocaleString()}` : "Create or import a project to begin"}</p></div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {projects.length > 1 && <select aria-label="Switch NEXORA project" className="min-h-10 max-w-[180px] rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={activeProject?.id || ""} onChange={(event) => setActiveId(event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select>}
             <StatusPill tone={apiStatus.state === "online" ? "green" : apiStatus.state === "checking" ? "amber" : "slate"}>{apiStatus.label}</StatusPill>
             <button type="button" className={buttonClass} onClick={checkService}><RefreshCw size={14}/> Check service</button>
             {activeProject && <button type="button" className={buttonClass} onClick={exportProject}><ArrowDownToLine size={14}/> Export</button>}
