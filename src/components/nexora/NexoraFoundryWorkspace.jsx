@@ -100,7 +100,14 @@ function workspaceProjectFromCloud(row, assets = []) {
 }
 
 function workspaceProjectDocument(project) {
-  const { _remoteVersion, assets, revisions, ...document } = project;
+  const {
+    _remoteVersion,
+    assets,
+    revisions,
+    createdAt,
+    updatedAt,
+    ...document
+  } = project;
   return { ...document, assets: [], revisions: [] };
 }
 
