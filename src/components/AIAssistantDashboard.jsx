@@ -572,6 +572,7 @@ export default function AIAssistantDashboard({
   const [humanizerOpen, setHumanizerOpen] = useState(false);
   const [humanizerSeedText, setHumanizerSeedText] = useState("");
   const [complianceStatus, setComplianceStatus] = useState("loading");
+  const [complianceRetryKey, setComplianceRetryKey] = useState(0);
   const [complianceNotices, setComplianceNotices] = useState([]);
   const [complianceError, setComplianceError] = useState("");
 
@@ -639,7 +640,7 @@ export default function AIAssistantDashboard({
     };
     loadRequiredNotices();
     return () => { active = false; };
-  }, [requiredNoticeFeatures, complianceApiBase, user?.id, isGuest, authFetch]);
+  }, [requiredNoticeFeatures, complianceApiBase, user?.id, isGuest, authFetch, complianceRetryKey]);
 
   const acceptRequiredNotices = async () => {
     setComplianceError("");
@@ -2783,6 +2784,15 @@ export default function AIAssistantDashboard({
                   </div>
                 ))}
                 {complianceError && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{complianceError}</p>}
+                {complianceStatus === "error" && (
+                  <button
+                    type="button"
+                    onClick={() => setComplianceRetryKey((current) => current + 1)}
+                    className="mt-3 min-h-9 rounded-lg border border-amber-700/40 px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-950/40"
+                  >
+                    Retry loading notices
+                  </button>
+                )}
                 <button type="button" onClick={acceptRequiredNotices} disabled={complianceStatus === "loading" || complianceStatus === "error" || !complianceNotices.length} className="mt-3 min-h-9 rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950">I have read and understand</button>
                 <p className="mt-1 text-[10px] text-amber-800 dark:text-amber-300">Acknowledgements are versioned. A material notice update requires a new acknowledgement.</p>
               </div>
