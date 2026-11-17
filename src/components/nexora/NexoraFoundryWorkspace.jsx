@@ -182,17 +182,24 @@ export default function NexoraFoundryWorkspace() {
     if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
     if (!accessToken || auth.isGuest) throw new Error("Sign in with a verified RevelaCode account to use NEXORA cloud storage.");
     const headers = new Headers(options.headers || {});
-    headers.set("Authorization", `${tokenType || "Bearer"} ${String(accessToken).replace(/^Bearer\\s+/i, "")}`);
-    if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    if (options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     headers.set("Accept", "application/json");
-    const response = await fetch(`${API_BASE}${path}`, { ...options, headers, cache: "no-store" });
+    const authenticatedFetch = typeof auth.authFetch === "function" ? auth.authFetch : fetch;
+    if (authenticatedFetch === auth.authFetch) {
+      // AuthContext performs the platform's single refresh retry and always
+      // reads the current token at request time.
+      headers.delete("Authorization");
+    } else {
+      headers.set("Authorization", `${tokenType || "Bearer"} ${String(accessToken).replace(/^Bearer\\s+/i, "")}`);
+    }
+    const response = await authenticatedFetch(`${API_BASE}${path}`, { ...options, headers, cache: "no-store" });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const detail = payload?.detail;
       throw new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
     }
     return payload;
-  }, [accessToken, auth.isGuest, tokenType]);
+  }, [accessToken, auth.authFetch, auth.isGuest, tokenType]);
 
   useEffect(() => {
     if (!API_BASE || auth.loading) return undefined;
