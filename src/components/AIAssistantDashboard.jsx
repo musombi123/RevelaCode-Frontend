@@ -1150,7 +1150,7 @@ export default function AIAssistantDashboard({
           editTarget.role !== "user" ||
           editTarget.attachmentName ||
           editTarget.inputType === "voice"
-        )) return;
+        )) return false;
         const humanizerIntent = selectedToolCommand === "/humanize" || /\bhumaniz(?:e|ing)\b/i.test(cleaned);
         const directHumanizerText = cleaned.match(/(?:humaniz(?:e|ing)(?:\s+it)?|make\s+it\s+sound\s+natural)\s*[:—-]\s*([\s\S]+)$/i)?.[1]?.trim() || "";
 
@@ -1161,12 +1161,12 @@ export default function AIAssistantDashboard({
           !cleaned &&
           !attachedFile
         ) {
-          return;
+          return false;
         }
 
         if (selectedToolCommand !== "/humanize" && complianceStatus !== "accepted") {
           setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
-          return;
+          return false;
         }
 
         // A selected Humanizer tool opens its embedded workspace directly.
@@ -1175,11 +1175,11 @@ export default function AIAssistantDashboard({
         if (selectedToolCommand === "/humanize" && !attachedFile) {
           setHumanizerSeedText(cleaned);
           setHumanizerOpen(true);
-          return;
+          return true;
         }
 
         if (sendLockRef.current) {
-          return;
+          return false;
         }
         sendLockRef.current = true;
         window.dispatchEvent(new CustomEvent("revelacode:ai-interaction"));
@@ -1996,6 +1996,7 @@ export default function AIAssistantDashboard({
               null;
           }
         }
+        return true;
       },
       [
         messages,
@@ -2830,7 +2831,7 @@ export default function AIAssistantDashboard({
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   initialDraft={faithDraftText}
-                  onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
+                  onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } return sendMessage(...args); }}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
@@ -2868,7 +2869,7 @@ export default function AIAssistantDashboard({
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     initialDraft={faithDraftText}
-                    onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
+                    onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } return sendMessage(...args); }}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                     freeMode={freeMode}
