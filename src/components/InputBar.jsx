@@ -615,39 +615,30 @@ export default function InputBar({
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
     const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
+    const accepted = onSend?.(value, attachedFile, {
+      toolCommand: command ? `/${command}` : null,
+      toolLabel,
+      toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
+      toolOptions: command === "image" ? {
+        aspectRatio: imageAspect,
+        style: imageStyle,
+        imageCount,
+        formatPreset: imageFormatPreset,
+        language: imageLanguage,
+        textDirection: imageTextDirection,
+        bleedMm: Number(imageBleedMm || 0),
+        cropMarks: imageCropMarks,
+        dpi: 150,
+      } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+    });
 
-    setSubmitting(true);
-    try {
-      const accepted = await onSend?.(value, attachedFile, {
-        toolCommand: command ? `/${command}` : null,
-        toolLabel,
-        toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
-        toolOptions: command === "image" ? {
-          aspectRatio: imageAspect,
-          style: imageStyle,
-          imageCount,
-          formatPreset: imageFormatPreset,
-          language: imageLanguage,
-          textDirection: imageTextDirection,
-          bleedMm: Number(imageBleedMm || 0),
-          cropMarks: imageCropMarks,
-          dpi: 150,
-        } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
-      });
+    // Preserve the user's draft when the parent rejects submission.
+    if (accepted === false) return;
 
-      // A rejected send (for example, a required notice acknowledgement) must
-      // leave the user's draft and attachment intact so it can be retried.
-      if (accepted === false) return;
-
-      setText("");
-      setAttachedFile(null);
-      setSelectedToolCommand(null);
-      requestAnimationFrame(() => textareaRef.current?.focus());
-    } catch (error) {
-      console.error("RevelaAI message submission failed.", error);
-    } finally {
-      setSubmitting(false);
-    }
+    setText("");
+    setAttachedFile(null);
+    setSelectedToolCommand(null);
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   const slashMatches = text.startsWith("/")
