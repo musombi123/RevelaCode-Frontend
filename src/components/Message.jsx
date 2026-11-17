@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import ThinkingStages from "./ThinkingStages.jsx";
+import ArtifactResultCard from "./ArtifactResultCard.jsx";
 import CodeBlock from "@/ide/CodeBlock";
 import { getMessageEmotion } from "./utils/messageEmotion.js";
 
@@ -432,7 +433,7 @@ function EditBox({ initial, onSave, onCancel }) {
    MESSAGE
 ========================================================= */
 
-function Message({ message, onEdit, onReveal }) {
+function Message({ message, onEdit, onReveal, onArtifactAction }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -724,6 +725,9 @@ function Message({ message, onEdit, onReveal }) {
                 </p>
               )}
 
+            {!revealing && (Array.isArray(message.artifacts) && message.artifacts.length ? message.artifacts : message.artifact?.id ? [message.artifact] : []).map((artifact) => (
+              <ArtifactResultCard key={artifact.id} artifact={artifact} onAction={onArtifactAction} />
+            ))}
             {!revealing && sources.length > 0 && (
               <div id={`revelaai-sources-${message.id}`} className="mt-4 border-t border-line pt-3">
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">

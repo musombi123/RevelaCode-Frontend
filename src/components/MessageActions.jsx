@@ -148,14 +148,12 @@ export default function MessageActions({
       setDownloadError("Read aloud is not supported by this browser or device.");
       return;
     }
-
     const synthesis = window.speechSynthesis;
     if (speaking) {
       synthesis.cancel();
       setSpeaking(false);
       return;
     }
-
     const spokenText = String(text || "").trim();
     if (!spokenText) return;
     synthesis.cancel();
@@ -169,10 +167,10 @@ export default function MessageActions({
   }, [speaking, text]);
 
   useEffect(() => () => {
-    if (speaking && typeof window !== "undefined" && window.speechSynthesis) {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
-  }, [speaking]);
+  }, []);
 
 
   const downloadTitle = downloadFailed
