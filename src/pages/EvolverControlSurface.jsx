@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import LivingSystemsLab from "./LivingSystemsLab";
 import {
   Activity,
   AlertTriangle,
@@ -328,6 +329,8 @@ export default function EvolverControlSurface({ authenticatedFetch }) {
           </div>
         </div>
       </header>
+
+      <LivingSystemsLab authenticatedFetch={authenticatedFetch} />
 
       {(loading || Object.keys(errors).length > 0) && (
         <div className="border-b border-slate-200 px-5 py-3 dark:border-slate-800">

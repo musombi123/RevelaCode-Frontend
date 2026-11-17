@@ -16,7 +16,7 @@ test("the shared app content pane owns native Android vertical scrolling", () =>
   assert.match(css, /touch-action: pan-y/);
 });
 
-test("Community, Elimu, Shamba and Biashara retain natural mobile document height", () => {
+test("Community, Elimu, Shamba and Biashara retain natural mobile content height", () => {
   const community = read("../src/Dashboard/Community/CommunityWorkspaceFrame.jsx");
   const elimu = read("../src/Dashboard/ElimuDashboardWorkspace.jsx");
   const shamba = read("../src/Dashboard/ShambaMobileExperience.jsx");
@@ -43,8 +43,9 @@ test("Faith mobile content expands naturally inside the shared app scroller", ()
   assert.ok(faith.includes("overflow: visible;"));
 });
 
-test("RevelaAI keeps welcome content and conversation history independently scrollable", () => {
+test("RevelaAI welcome and conversation panes remain independently scrollable", () => {
   const ai = read("../src/components/AIAssistantDashboard.jsx");
+
   assert.match(ai, /className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" aria-label="RevelaAI welcome workspace"/);
   assert.match(ai, /className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Conversation workspace"/);
   assert.match(ai, /min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6/);
