@@ -29,6 +29,7 @@ jobs:
       ANDROID_DISPATCH_TOKEN: ${{ secrets.REVELACODE_ANDROID_DISPATCH_TOKEN }}
     steps:
       - name: Dispatch the exact frontend revision to RevelaCode-Android
+        id: android_dispatch
         if: ${{ env.ANDROID_DISPATCH_TOKEN != '' }}
         uses: actions/github-script@v7
         with:
@@ -49,14 +50,23 @@ jobs:
               } : {}),
               triggered_by: context.eventName
             };
-            await github.rest.repos.createDispatchEvent({
-              owner: "musombi123",
-              repo: "RevelaCode-Android",
-              event_type: "frontend-updated",
-              client_payload: clientPayload
-            });
-            core.info(`Dispatched Android ${clientPayload.build_type} packaging for frontend ref ${frontendRef}`);
+            try {
+              await github.rest.repos.createDispatchEvent({
+                owner: "musombi123",
+                repo: "RevelaCode-Android",
+                event_type: "frontend-updated",
+                client_payload: clientPayload
+              });
+              core.setOutput("dispatched", "true");
+              core.info(`Dispatched Android ${clientPayload.build_type} packaging for frontend ref ${frontendRef}`);
+            } catch (error) {
+              core.setOutput("dispatched", "false");
+              core.warning(`Android build dispatch was rejected: ${error.message}. Give REVELACODE_ANDROID_DISPATCH_TOKEN Contents: write access to musombi123/RevelaCode-Android, or run the Android workflow manually.`);
+            }
 
       - name: Explain manual fallback
-        if: ${{ env.ANDROID_DISPATCH_TOKEN == '' }}
-        run: echo "Set REVELACODE_ANDROID_DISPATCH_TOKEN in this repository to enable automatic Android builds. You can still run the Android workflow manually."
+        if: ${{ always() && (env.ANDROID_DISPATCH_TOKEN == '' || steps.android_dispatch.outputs.dispatched != 'true') }}
+        run: |
+          echo "::warning::Android packaging was not started automatically."
+          echo "For automatic dispatch, set REVELACODE_ANDROID_DISPATCH_TOKEN to a token with Contents: write access on musombi123/RevelaCode-Android."
+          echo "Manual fallback: run the Android build and launch verification workflow and set frontend_ref to the frontend commit SHA shown in this run."
