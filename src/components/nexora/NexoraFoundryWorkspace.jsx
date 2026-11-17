@@ -68,6 +68,18 @@ async function storeAsset(file, projectId, assetId) {
     tx.objectStore(DB_STORE).put({ blob: file, name: file.name, type: file.type, size: file.size, projectId }, assetId);
     tx.oncomplete = () => { db.close(); resolve(true); };
     tx.onerror = () => { db.close(); reject(tx.error || new Error("Asset could not be stored.")); };
+    tx.onabort = () => { db.close(); reject(tx.error || new Error("Asset storage transaction was aborted.")); };
+  });
+}
+
+async function removeStoredAsset(assetId) {
+  const db = await openAssetDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).delete(assetId);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error("Stored asset could not be removed.")); };
+    tx.onabort = () => { db.close(); reject(tx.error || new Error("Asset removal transaction was aborted.")); };
   });
 }
 
@@ -203,9 +215,38 @@ export default function NexoraFoundryWorkspace() {
     event.target.value = "";
     if (!file) return;
     try {
+      if (file.size > 10 * 1024 * 1024) throw new Error("Project files are limited to 10 MB.");
       const parsed = JSON.parse(await file.text());
       if (!parsed || typeof parsed !== "object" || !parsed.scene || !Array.isArray(parsed.scene.objects)) throw new Error("This file is not a supported NEXORA project.");
-      const imported = { ...parsed, id: makeId("project"), schemaVersion: 1, updatedAt: now(), revisions: [] };
+      if (parsed.scene.objects.length > 500) throw new Error("Imported scenes are limited to 500 nodes.");
+      const validObjects = parsed.scene.objects.every((object) =>
+        object && typeof object === "object" &&
+        typeof object.name === "string" &&
+        ["position", "rotation", "scale"].every((key) =>
+          Array.isArray(object[key]) && object[key].length === 3 &&
+          object[key].every((value) => Number.isFinite(Number(value)))
+        )
+      );
+      if (!validObjects) throw new Error("The project contains invalid scene node transforms or names.");
+      const imported = {
+        ...parsed,
+        id: makeId("project"),
+        schemaVersion: 1,
+        updatedAt: now(),
+        scene: {
+          ...parsed.scene,
+          id: makeId("scene"),
+          objects: parsed.scene.objects.map((object) => ({ ...object, id: makeId("object") })),
+        },
+        assets: Array.isArray(parsed.assets) ? parsed.assets.slice(0, 1000).map((asset) => ({ ...asset, id: makeId("asset"), status: "metadata_only" })) : [],
+        gameplay: {
+          enemies: Array.isArray(parsed.gameplay?.enemies) ? parsed.gameplay.enemies : [],
+          mechanics: Array.isArray(parsed.gameplay?.mechanics) ? parsed.gameplay.mechanics : [],
+          objectives: Array.isArray(parsed.gameplay?.objectives) ? parsed.gameplay.objectives : [],
+        },
+        settings: parsed.settings && typeof parsed.settings === "object" ? parsed.settings : { target: "Desktop", orientation: "Landscape", renderPipeline: "Forward+" },
+        revisions: [],
+      };
       setProjects((current) => [imported, ...current]);
       setActiveId(imported.id);
       setSelectedObjectId(imported.scene.objects[0]?.id || "");
@@ -224,6 +265,10 @@ export default function NexoraFoundryWorkspace() {
       for (const file of files) {
         const extension = file.name.split(".").pop()?.toLowerCase();
         if (!["glb", "gltf", "png", "jpg", "jpeg", "webp", "wav", "ogg", "mp3"].includes(extension)) continue;
+        if (file.size > 100 * 1024 * 1024) {
+          setNotice(`Skipped ${file.name}: each asset must be 100 MB or smaller.`);
+          continue;
+        }
         const asset = { id: makeId("asset"), name: file.name, type: extension, mimeType: file.type || "application/octet-stream", size: file.size, addedAt: now(), status: "ingested_local" };
         await storeAsset(file, activeProject.id, asset.id);
         accepted.push(asset);
@@ -231,7 +276,7 @@ export default function NexoraFoundryWorkspace() {
       if (accepted.length) {
         patchProject((project) => ({ ...project, assets: [...project.assets, ...accepted] }));
         setNotice(`${accepted.length} asset(s) ingested into this browser's private local storage.`);
-      } else setNotice("No supported assets found. Accepted: GLB, glTF, images and audio.");
+      } else setNotice("No supported assets found. Accepted: GLB, glTF, images and audio (maximum 100 MB each).");
     } catch (error) { setNotice(error.message || "Asset ingestion failed."); }
     finally { setBusy(false); }
   };
@@ -321,7 +366,7 @@ export default function NexoraFoundryWorkspace() {
 
             {tab === "assets" && <div className="space-y-4">
               <section className={`${panelClass} p-5`}><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-black">Creator asset intake</h2><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Bring your own 3D models, textures and audio into this project. Original files stay in this browser's IndexedDB storage.</p></div><button type="button" disabled={busy} onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-xs font-bold text-white hover:bg-violet-500 disabled:opacity-50">{busy ? <Loader2 className="animate-spin" size={15}/> : <UploadCloud size={15}/>} Add assets</button><input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3" className="hidden" onChange={uploadAssets}/></div><div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/50">Supported: GLB, glTF, PNG, JPG, WebP, WAV, OGG, MP3</div></section>
-              <section className={`${panelClass} p-5`}><h2 className="font-black">Project assets <span className="ml-1 text-xs font-semibold text-slate-400">({activeProject.assets.length})</span></h2>{activeProject.assets.length ? <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">{activeProject.assets.map((asset)=><div key={asset.id} className="flex min-w-0 items-center gap-3 py-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"><ImagePlus size={16}/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{asset.name}</p><p className="text-[10px] text-slate-500">{asset.type.toUpperCase()} • {(asset.size/1024/1024).toFixed(2)} MB</p></div><StatusPill tone="green">Stored locally</StatusPill><button type="button" aria-label={`Remove ${asset.name}`} onClick={()=>patchProject((p)=>({...p,assets:p.assets.filter((item)=>item.id!==asset.id)}))} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={14}/></button></div>)}</div>:<p className="mt-3 text-xs text-slate-500">No assets added yet.</p>}</section>
+              <section className={`${panelClass} p-5`}><h2 className="font-black">Project assets <span className="ml-1 text-xs font-semibold text-slate-400">({activeProject.assets.length})</span></h2>{activeProject.assets.length ? <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">{activeProject.assets.map((asset)=><div key={asset.id} className="flex min-w-0 items-center gap-3 py-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"><ImagePlus size={16}/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{asset.name}</p><p className="text-[10px] text-slate-500">{asset.type.toUpperCase()} • {(asset.size/1024/1024).toFixed(2)} MB</p></div><StatusPill tone="green">Stored locally</StatusPill><button type="button" aria-label={`Remove ${asset.name}`} onClick={async()=>{try{await removeStoredAsset(asset.id);patchProject((p)=>({...p,assets:p.assets.filter((item)=>item.id!==asset.id)}));setNotice(`Removed ${asset.name} from this browser.`);}catch(error){setNotice(error.message||"Could not remove stored asset.");}}} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={14}/></button></div>)}</div>:<p className="mt-3 text-xs text-slate-500">No assets added yet.</p>}</section>
             </div>}
 
             {tab === "gameplay" && <div className="grid gap-4 md:grid-cols-3"><section className={`${panelClass} p-5`}><h2 className="font-black">Enemies</h2><p className="mt-1 text-xs text-slate-500">Define enemy archetypes for later runtime integration.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,enemies:[...p.gameplay.enemies,{id:makeId("enemy"),name:`Enemy ${p.gameplay.enemies.length+1}`,behavior:"patrol"}]}}))}><Plus size={14}/> Add enemy</button>{activeProject.gameplay.enemies.map((enemy)=><div key={enemy.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{enemy.name}</p><p className="mt-1 text-slate-500">Behavior: {enemy.behavior}</p></div>)}</section><section className={`${panelClass} p-5`}><h2 className="font-black">Mechanics</h2><p className="mt-1 text-xs text-slate-500">Capture core player interactions and systems.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,mechanics:[...p.gameplay.mechanics,{id:makeId("mechanic"),name:`Mechanic ${p.gameplay.mechanics.length+1}`,status:"proposed"}]}}))}><Plus size={14}/> Add mechanic</button>{activeProject.gameplay.mechanics.map((item)=><div key={item.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{item.name}</p><p className="mt-1 text-slate-500">Status: {item.status}</p></div>)}</section><section className={`${panelClass} p-5`}><h2 className="font-black">Objectives</h2><p className="mt-1 text-xs text-slate-500">Plan mission and progression goals.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,objectives:[...p.gameplay.objectives,{id:makeId("objective"),name:`Objective ${p.gameplay.objectives.length+1}`,status:"draft"}]}}))}><Plus size={14}/> Add objective</button>{activeProject.gameplay.objectives.map((item)=><div key={item.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{item.name}</p><p className="mt-1 text-slate-500">Status: {item.status}</p></div>)}</section></div>}
