@@ -23,6 +23,16 @@ test("AI composer awaits acceptance, preserves rejected drafts, and does not era
   );
 });
 
+test("AI send control is a semantic touch-safe form submit above mobile scroll layers", () => {
+  assert.match(composer, /<form onSubmit=\{handleComposerSubmit\}/);
+  assert.match(composer, /<button type="submit" data-demo="ai-send-message"/);
+  assert.match(composer, /event\.preventDefault\(\);\s*if \(isGenerating\) \{\s*onStop\?\.\(\);/);
+  assert.match(composer, /touch-manipulation/);
+  const css = read("../src/index.css");
+  assert.match(css, /\.revelaai-workspace \.composer-safe-bottom \{\s*position: relative;\s*z-index: 30;\s*pointer-events: auto;/);
+  assert.match(css, /\.revelaai-workspace \[data-demo="ai-send-message"\] \{[\s\S]*?pointer-events: auto;[\s\S]*?touch-action: manipulation;/);
+});
+
 test("both RevelaAI composer entry points await sendMessage and preserve compliance and duplicate-send guards", () => {
   const sendHandlers = dashboard.match(/onSend=\{async \(\.\.\.args\) => \{/g) || [];
   assert.equal(sendHandlers.length, 2, "Welcome and conversation composers must both be wired.");
