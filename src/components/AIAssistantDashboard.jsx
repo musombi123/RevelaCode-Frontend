@@ -2831,7 +2831,13 @@ export default function AIAssistantDashboard({
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   initialDraft={faithDraftText}
-                  onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } return sendMessage(...args); }}
+                  onSend={async (...args) => {
+                    const accepted = await sendMessage(...args);
+                    if (accepted !== false) {
+                      try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The active chat now owns the submitted message. */ }
+                    }
+                    return accepted;
+                  }}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
@@ -2869,7 +2875,13 @@ export default function AIAssistantDashboard({
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     initialDraft={faithDraftText}
-                    onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } return sendMessage(...args); }}
+                    onSend={async (...args) => {
+                    const accepted = await sendMessage(...args);
+                    if (accepted !== false) {
+                      try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The active chat now owns the submitted message. */ }
+                    }
+                    return accepted;
+                  }}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                     freeMode={freeMode}
