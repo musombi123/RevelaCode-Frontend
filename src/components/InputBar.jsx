@@ -610,35 +610,40 @@ export default function InputBar({
     const value = text.trim();
     if (!canSend || submitting) return;
 
-    recognitionRef.current?.stop?.();
-    const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
-    const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
-    const command = selectedCommand || typedCommand || null;
-    const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
-    const accepted = await onSend?.(value, attachedFile, {
-      toolCommand: command ? `/${command}` : null,
-      toolLabel,
-      toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
-      toolOptions: command === "image" ? {
-        aspectRatio: imageAspect,
-        style: imageStyle,
-        imageCount,
-        formatPreset: imageFormatPreset,
-        language: imageLanguage,
-        textDirection: imageTextDirection,
-        bleedMm: Number(imageBleedMm || 0),
-        cropMarks: imageCropMarks,
-        dpi: 150,
-      } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
-    });
+    setSubmitting(true);
+    try {
+      recognitionRef.current?.stop?.();
+      const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
+      const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
+      const command = selectedCommand || typedCommand || null;
+      const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? \`/\${typedCommand}\` : ""))?.[1] || null;
+      const accepted = await onSend?.(value, attachedFile, {
+        toolCommand: command ? \`/\${command}\` : null,
+        toolLabel,
+        toolMode: command ? (toolMode[\`/\${command}\`] || TOOL_MODES[\`/\${command}\`]?.defaultMode || null) : null,
+        toolOptions: command === "image" ? {
+          aspectRatio: imageAspect,
+          style: imageStyle,
+          imageCount,
+          formatPreset: imageFormatPreset,
+          language: imageLanguage,
+          textDirection: imageTextDirection,
+          bleedMm: Number(imageBleedMm || 0),
+          cropMarks: imageCropMarks,
+          dpi: 150,
+        } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+      });
 
-    // Preserve the user's draft when the parent rejects submission.
-    if (accepted === false) return;
+      // A rejected or failed send must leave the draft and attachment intact.
+      if (accepted === false) return;
 
-    setText("");
-    setAttachedFile(null);
-    setSelectedToolCommand(null);
-    requestAnimationFrame(() => textareaRef.current?.focus());
+      setText("");
+      setAttachedFile(null);
+      setSelectedToolCommand(null);
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const slashMatches = text.startsWith("/")
