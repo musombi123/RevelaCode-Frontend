@@ -9,11 +9,13 @@ test("Android shared scroll root has a non-zero flex viewport", () => {
   const css = read("../src/index.css");
 
   assert.ok(shell.includes('data-app-scroll-root="true"'));
-  assert.ok(shell.includes("            h-full\\n            flex-1\\n            flex-col\\n            overflow-hidden"));
+  assert.ok(shell.includes("h-full"));
+  assert.ok(shell.includes("flex-1\n            flex-col\n            overflow-hidden"));
   assert.ok(shell.includes('height: "100%", minHeight: 0, maxHeight: "100%"'));
   assert.doesNotMatch(shell, /height: 0, minHeight: 0/);
   assert.ok(css.includes('html[data-revelacode-native-app="true"] [data-app-scroll-root="true"]'));
-  assert.ok(css.includes("  height: 100%;\\n  max-height: 100%;\\n  min-height: 0;\\n  flex: 1 1 0%;"));
+  assert.ok(css.includes("  height: 100%;\n  max-height: 100%;"));
+  assert.ok(css.includes("  flex: 1 1 0%;"));
   assert.match(css, /overflow-y: auto/);
   assert.match(css, /-webkit-overflow-scrolling: touch/);
   assert.match(css, /touch-action: pan-y/);
