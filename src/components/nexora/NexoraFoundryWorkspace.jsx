@@ -253,18 +253,51 @@ export default function NexoraFoundryWorkspace() {
     }));
   }, [activeProject?.id]);
 
-  const createNewProject = () => {
+  const createNewProject = async () => {
     const name = window.prompt("Name your new game project", "Untitled Game");
     if (name === null) return;
     const project = createProject(name.trim() || "Untitled Game");
+    if (API_BASE && authenticatedCloudSession) {
+      if (!cloudLoaded) {
+        setNotice("The cloud workspace has not finished loading. Retry after the secure connection is ready.");
+        return;
+      }
+      try {
+        const saved = await apiRequest("/api/v1/workspace/projects", {
+          method: "POST",
+          body: JSON.stringify({ name: project.name, description: project.description, document: workspaceProjectDocument(project) }),
+        });
+        const remoteProject = workspaceProjectFromCloud(saved, []);
+        cloudBaseline.current.set(remoteProject.id, JSON.stringify(workspaceProjectDocument(remoteProject)));
+        setProjects((current) => [remoteProject, ...current]);
+        setActiveId(remoteProject.id);
+        setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
+        setTab("scene");
+        setNotice("Project created in NEXORA PostgreSQL cloud storage.");
+        return;
+      } catch (error) {
+        setNotice(error.message || "Cloud project creation failed.");
+        return;
+      }
+    }
     setProjects((current) => [project, ...current]);
     setActiveId(project.id);
     setSelectedObjectId(project.scene.objects[0]?.id || "");
     setTab("scene");
   };
 
-  const deleteProject = () => {
-    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from this browser?`)) return;
+  const deleteProject = async () => {
+    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from ${cloudMode ? "NEXORA cloud storage" : "this browser"}?`)) return;
+    if (cloudMode) {
+      try {
+        await apiRequest(`/api/v1/workspace/projects/${activeProject.id}`, { method: "DELETE" });
+        cloudBaseline.current.delete(activeProject.id);
+        setNotice("Cloud project and its private assets were deleted.");
+      } catch (error) {
+        setNotice(error.message || "Could not delete cloud project.");
+        return;
+      }
+    }
     setProjects((current) => current.filter((project) => project.id !== activeProject.id));
     setSelectedObjectId("");
   };
@@ -364,17 +397,150 @@ export default function NexoraFoundryWorkspace() {
           setNotice(`Skipped ${file.name}: each asset must be 100 MB or smaller.`);
           continue;
         }
-        const asset = { id: makeId("asset"), name: file.name, type: extension, mimeType: file.type || "application/octet-stream", size: file.size, addedAt: now(), status: "ingested_local" };
-        await storeAsset(file, activeProject.id, asset.id);
-        accepted.push(asset);
+        if (cloudMode) {
+          const contentTypes = {
+            glb: "model/gltf-binary", gltf: "model/gltf+json", png: "image/png",
+            jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+            wav: "audio/wav", ogg: "audio/ogg", mp3: "audio/mpeg",
+          };
+          const contentType = contentTypes[extension];
+          const intent = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/upload-url`, {
+            method: "POST",
+            body: JSON.stringify({ filename: file.name, content_type: contentType, size: file.size }),
+          });
+          const upload = await fetch(intent.upload_url, {
+            method: "PUT",
+            headers: intent.headers || { "Content-Type": contentType },
+            body: file,
+          });
+          if (!upload.ok) throw new Error(`Private asset upload failed for ${file.name} (HTTP ${upload.status}).`);
+          const completed = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/${intent.asset_id}/complete`, { method: "POST" });
+          accepted.push({
+            id: completed.asset_id, name: file.name, type: extension, mimeType: contentType,
+            size: completed.size, addedAt: now(), status: completed.status, remote: true,
+          });
+        } else {
+          const asset = { id: makeId("asset"), name: file.name, type: extension, mimeType: file.type || "application/octet-stream", size: file.size, addedAt: now(), status: "ingested_local" };
+          await storeAsset(file, activeProject.id, asset.id);
+          accepted.push(asset);
+        }
       }
       if (accepted.length) {
         patchProject((project) => ({ ...project, assets: [...project.assets, ...accepted] }));
-        setNotice(`${accepted.length} asset(s) ingested into this browser's private local storage.`);
+        setNotice(cloudMode
+          ? `${accepted.length} asset(s) uploaded to private NEXORA object storage.`
+          : `${accepted.length} asset(s) ingested into this browser's private local storage.`);
       } else setNotice("No supported assets found. Accepted: GLB, glTF, images and audio (maximum 100 MB each).");
     } catch (error) { setNotice(error.message || "Asset ingestion failed."); }
     finally { setBusy(false); }
   };
+
+  const removeAsset = async (asset) => {
+    try {
+      if (cloudMode && asset.remote) {
+        await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}`, { method: "DELETE" });
+      } else {
+        await removeStoredAsset(asset.id);
+      }
+      patchProject((project) => ({ ...project, assets: project.assets.filter((item) => item.id !== asset.id) }));
+      setNotice(`Removed ${asset.name} from ${cloudMode ? "private cloud storage" : "this browser"}.`);
+    } catch (error) {
+      setNotice(error.message || "Could not remove the stored asset.");
+    }
+  };
+
+  const processAsset = async (asset) => {
+    if (!cloudMode || !asset.remote) {
+      setNotice("Blender processing requires an authenticated NEXORA cloud workspace and a registered build worker.");
+      return;
+    }
+    try {
+      const result = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/process`, { method: "POST" });
+      setNotice(`Blender job queued: ${result.job_id}. Track it in Build centre.`);
+      setTab("build");
+      await refreshJobs();
+    } catch (error) {
+      setNotice(error.message || "Could not queue Blender asset processing.");
+    }
+  };
+
+  const refreshJobs = useCallback(async () => {
+    if (!cloudMode || !activeProject) return;
+    try {
+      const response = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/jobs`);
+      const nextJobs = await Promise.all((response.jobs || []).map(async (job) => {
+        if (job.state !== "completed") return job;
+        try {
+          const downloads = await apiRequest(`/api/v1/workspace/jobs/${job.id}/artifacts`);
+          return { ...job, artifacts: downloads.artifacts || [] };
+        } catch { return job; }
+      }));
+      setJobs(nextJobs);
+    } catch (error) {
+      setNotice(error.message || "Could not refresh production job status.");
+    }
+  }, [activeProject?.id, apiRequest, cloudMode]);
+
+  const queueProductionJob = async (kind, target = "desktop") => {
+    if (!cloudMode || !activeProject) {
+      setNotice("Sign in and connect the NEXORA cloud API before queueing Godot production jobs.");
+      return;
+    }
+    const issues = validateProject();
+    if (issues.length) {
+      setNotice(issues.join(" "));
+      return;
+    }
+    try {
+      const result = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/jobs`, {
+        method: "POST",
+        body: JSON.stringify({ kind, target }),
+      });
+      setNotice(`Queued ${kind} job ${result.job_id}. A dedicated Blender/Godot worker must be online to execute it.`);
+      await refreshJobs();
+    } catch (error) {
+      setNotice(error.message || "Could not queue the production job.");
+    }
+  };
+
+  useEffect(() => {
+    if (!cloudMode || tab !== "build" || !activeProject) return undefined;
+    refreshJobs();
+    const timer = window.setInterval(refreshJobs, 5000);
+    return () => window.clearInterval(timer);
+  }, [activeProject?.id, cloudMode, refreshJobs, tab]);
+
+  useEffect(() => {
+    if (!cloudMode || !cloudLoaded || !activeProject?._remoteVersion) return undefined;
+    const projectId = activeProject.id;
+    const document = workspaceProjectDocument(activeProject);
+    const serialized = JSON.stringify(document);
+    if (cloudBaseline.current.get(projectId) === serialized) return undefined;
+    window.clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = window.setTimeout(async () => {
+      try {
+        const saved = await apiRequest(`/api/v1/workspace/projects/${projectId}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            name: activeProject.name,
+            description: activeProject.description,
+            document,
+            expected_version: activeProject._remoteVersion,
+          }),
+        });
+        const updatedDocument = { ...document, id: saved.id };
+        cloudBaseline.current.set(projectId, JSON.stringify(updatedDocument));
+        setProjects((current) => current.map((item) =>
+          item.id === projectId ? { ...item, _remoteVersion: saved.version, updatedAt: saved.updated_at } : item
+        ));
+        setApiStatus({ state: "online", label: "NEXORA cloud changes saved" });
+      } catch (error) {
+        setApiStatus({ state: "offline", label: error.message || "Cloud save failed" });
+        setNotice(error.message || "Cloud autosave failed. Export a backup before continuing.");
+      }
+    }, 850);
+    return () => window.clearTimeout(cloudSaveTimer.current);
+  }, [activeProject?.id, activeProject?.updatedAt, activeProject?._remoteVersion, cloudLoaded, cloudMode, apiRequest]);
 
   const checkService = useCallback(async () => {
     if (!API_BASE) {
