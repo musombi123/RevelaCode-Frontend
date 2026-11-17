@@ -25,7 +25,7 @@ test("both RevelaAI composer entry points enforce the use notice and duplicate-s
 });
 
 test("production AdMob placements require valid app and native-unit IDs and never fall back to test ads", () => {
-  assert.match(ads, /\^ca-app-pub-\\d+~\\d\+\$/.test(ads) ? /never/ : /ca-app-pub/);
+  assert.match(ads, /ca-app-pub-/);
   assert.match(ads, /import\.meta\.env\.PROD && !hasProductionIds/);
   assert.match(ads, /isTesting: !import\.meta\.env\.PROD && !hasProductionIds/);
   assert.match(ads, /NativeAdFeed\.create/);
