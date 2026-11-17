@@ -562,10 +562,9 @@ export default function NexoraFoundryWorkspace() {
     }
     try {
       const result = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/process`, { method: "POST" });
-      patchProject((project) => ({
-        ...project,
-        assets: project.assets.map((item) => item.id === asset.id ? { ...item, status: "processing" } : item),
-      }));
+      setProjects((current) => current.map((project) => project.id === activeProject.id
+        ? { ...project, assets: project.assets.map((item) => item.id === asset.id ? { ...item, status: "processing" } : item) }
+        : project));
       setNotice(`Blender job queued: ${result.job_id}. Track it in Build centre.`);
       setTab("build");
       await refreshJobs();
