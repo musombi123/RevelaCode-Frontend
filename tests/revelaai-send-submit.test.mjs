@@ -22,7 +22,7 @@ test("AI composer keeps the draft when the dashboard rejects a submission", () =
 });
 
 test("both AI composers await sendMessage and return its acceptance result", () => {
-  assert.equal((dashboard.match(/onSend=\{async \.\.\.args => \{/g) || []).length, 2);
+  assert.equal(dashboard.split("onSend={async (...args) => {").length - 1, 2);
   assert.equal((dashboard.match(/const accepted = await sendMessage\(\.\.\.args\);/g) || []).length, 2);
   assert.equal((dashboard.match(/return accepted;/g) || []).length >= 2, true);
 });
