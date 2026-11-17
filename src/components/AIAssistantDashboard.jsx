@@ -2830,7 +2830,17 @@ export default function AIAssistantDashboard({
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   initialDraft={faithDraftText}
-                  onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
+                  onSend={(...args) => {
+                    const command = String(args[2]?.toolCommand || "").trim().toLowerCase();
+                    if (sendLockRef.current) return false;
+                    if (command !== "/humanize" && complianceStatus !== "accepted") {
+                      setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
+                      return false;
+                    }
+                    try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
+                    void sendMessage(...args);
+                    return true;
+                  }}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
                   freeMode={freeMode}
@@ -2868,7 +2878,17 @@ export default function AIAssistantDashboard({
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     initialDraft={faithDraftText}
-                    onSend={(...args) => { try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ } sendMessage(...args); }}
+                    onSend={(...args) => {
+                    const command = String(args[2]?.toolCommand || "").trim().toLowerCase();
+                    if (sendLockRef.current) return false;
+                    if (command !== "/humanize" && complianceStatus !== "accepted") {
+                      setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
+                      return false;
+                    }
+                    try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
+                    void sendMessage(...args);
+                    return true;
+                  }}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}
                     freeMode={freeMode}
