@@ -12,7 +12,10 @@ test("Android uses one touch-scroll owner for the shared hub workspace", () => {
   const styles = source("src/index.css");
 
   assert.match(shell, /data-app-scroll-root="true"/);
-  assert.match(shell, /height: 0, minHeight: 0/);
+  assert.match(shell, /h-full\\s+flex-1\\s+flex-col\\s+overflow-hidden/);
+  assert.match(shell, /height: "100%", minHeight: 0, maxHeight: "100%"/);
+  assert.doesNotMatch(shell, /height: 0, minHeight: 0/);
+  assert.match(styles, /html\\[data-revelacode-native-app="true"\\] \\[data-app-scroll-root="true"\\] \\{[\\s\\S]*?height: 100%;[\\s\\S]*?max-height: 100%;[\\s\\S]*?flex: 1 1 0%/);
   assert.match(shell, /root\.dataset\.revelacodeNativeApp = "true"/);
   assert.match(styles, /html\[data-revelacode-native-app="true"\] body/);
   assert.match(styles, /overflow-y: auto/);
