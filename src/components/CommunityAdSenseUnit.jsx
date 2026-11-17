@@ -125,7 +125,16 @@ function NativeAdMobPlacement({ config }) {
           return;
         }
 
-        const hasProductionIds = Boolean(ADMOB_APP_ID && config.admobUnitId);
+        const hasProductionIds =
+          /^ca-app-pub-\d+~\d+$/.test(ADMOB_APP_ID) &&
+          /^ca-app-pub-\d+\/\d+$/.test(config.admobUnitId);
+        // Production must never silently request Google's demo ads. Missing or
+        // malformed IDs are a configuration failure, not a test fallback.
+        if (import.meta.env.PROD && !hasProductionIds) {
+          console.error("AdMob production IDs are missing or invalid for placement:", config.feedId);
+          settle("failed");
+          return;
+        }
         feed = await NativeAdFeed.create({
           feedId: config.feedId,
           ...(hasProductionIds ? { adId: config.admobUnitId } : {}),
@@ -133,7 +142,7 @@ function NativeAdMobPlacement({ config }) {
           // Android's native ad view overlays the WebView. Snapshot mode routes
           // scroll gestures back to the WebView while preserving native clicks.
           androidScrollSnapshot: isAndroidNativeApp(),
-          isTesting: !hasProductionIds,
+          isTesting: !import.meta.env.PROD && !hasProductionIds,
           style: {
             backgroundColor: "#0b1220",
             cornerRadius: 12,
