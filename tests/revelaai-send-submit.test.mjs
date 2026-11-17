@@ -8,7 +8,7 @@ const dashboard = read("../src/components/AIAssistantDashboard.jsx");
 const ads = read("../src/components/CommunityAdSenseUnit.jsx");
 
 test("AI composer preserves a draft when the parent rejects a submission", () => {
-  assert.match(composer, /const accepted = onSend\?\.\(value, attachedFile, \{/);
+  assert.match(composer, /const accepted = await onSend\?\.\(value, attachedFile, \{/);
   assert.match(composer, /if \(accepted === false\) return;/);
   assert.ok(
     composer.indexOf("if (accepted === false) return;") < composer.indexOf('setText("");'),
