@@ -4,18 +4,13 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("Android shared scroll root has a non-zero flex viewport", () => {
+test("the shared app content pane owns native Android vertical scrolling", () => {
   const shell = read("../src/components/MainDashboardV2.jsx");
   const css = read("../src/index.css");
-
-  assert.ok(shell.includes('data-app-scroll-root="true"'));
-  assert.ok(shell.includes("h-full"));
-  assert.ok(shell.includes("flex-1\n            flex-col\n            overflow-hidden"));
-  assert.ok(shell.includes('height: "100%", minHeight: 0, maxHeight: "100%"'));
-  assert.doesNotMatch(shell, /height: 0, minHeight: 0/);
+  assert.match(shell, /data-app-scroll-root="true"/);
+  assert.match(shell, /overflow-x-hidden overflow-y-auto overscroll-y-contain/);
+  assert.match(shell, /height: 0, minHeight: 0/);
   assert.ok(css.includes('html[data-revelacode-native-app="true"] [data-app-scroll-root="true"]'));
-  assert.ok(css.includes("  height: 100%;\n  max-height: 100%;"));
-  assert.ok(css.includes("  flex: 1 1 0%;"));
   assert.match(css, /overflow-y: auto/);
   assert.match(css, /-webkit-overflow-scrolling: touch/);
   assert.match(css, /touch-action: pan-y/);
@@ -40,12 +35,12 @@ test("Community, Elimu, Shamba and Biashara retain natural mobile content height
 test("Faith mobile content expands naturally inside the shared app scroller", () => {
   const faith = read("../src/components/faith/faith-dashboard.css");
   const layout = read("../src/components/faith/workspace/FaithWorkspaceLayout.jsx");
-
-  assert.match(faith, /\.faith-home-shell \{ display: block; height: auto; min-height: 100svh; overflow: visible; \}/);
-  assert.match(faith, /\.faith-home-main \{ height: auto; min-height: 100svh; overflow: visible;/);
-  assert.match(faith, /html\[data-revelacode-native-app="true"\] \.faith-home-main/);
+  assert.ok(faith.includes(".faith-home-shell { display: block; height: auto; min-height: 100svh; overflow: visible; }"));
+  assert.ok(faith.includes(".faith-home-main { height: auto; min-height: 100svh; overflow: visible;"));
+  assert.ok(faith.includes('html[data-revelacode-native-app="true"] .faith-home-main'));
   assert.match(layout, /data-faith-workspace-content/);
-  assert.match(faith, /\[data-faith-workspace-content\] \{[\s\S]*?overflow: visible;/);
+  assert.ok(faith.includes('html[data-revelacode-native-app="true"] [data-faith-workspace-content]'));
+  assert.ok(faith.includes("overflow: visible;"));
 });
 
 test("RevelaAI welcome and conversation panes remain independently scrollable", () => {

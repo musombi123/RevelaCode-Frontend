@@ -2849,7 +2849,7 @@ export default function AIAssistantDashboard({
                       return false;
                     }
                     const accepted = await sendMessage(...args);
-                    if (accepted) {
+                    if (accepted !== false) {
                       try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
                     }
                     return accepted;
@@ -2899,7 +2899,7 @@ export default function AIAssistantDashboard({
                       return false;
                     }
                     const accepted = await sendMessage(...args);
-                    if (accepted) {
+                    if (accepted !== false) {
                       try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
                     }
                     return accepted;
