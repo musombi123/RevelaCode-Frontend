@@ -71,3 +71,14 @@ test("Faith Android uses the app scroll root instead of nested vertical scroller
   assert.doesNotMatch(layout, /overflow-x-hidden overscroll-y-contain/);
   assert.match(layout, /faith-android-shell min-h-0 px-3/);
 });
+
+
+test("Android native AdMob placements preserve WebView scroll gestures", () => {
+  const ads = source("src/components/CommunityAdSenseUnit.jsx");
+  const css = source("src/index.css");
+
+  assert.match(ads, /androidScrollSnapshot: isAndroidNativeApp\(\)/);
+  assert.match(ads, /NativeAdFeed\.create\(/);
+  assert.match(ads, /NativeAdTemplate\.Small/);
+  assert.match(css, /capacitor-admob-native\s*\{[^}]*min-height:\s*120px/);
+});

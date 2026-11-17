@@ -130,6 +130,9 @@ function NativeAdMobPlacement({ config }) {
           feedId: config.feedId,
           ...(hasProductionIds ? { adId: config.admobUnitId } : {}),
           template: NativeAdTemplate.Small,
+          // Android's native ad view overlays the WebView. Snapshot mode routes
+          // scroll gestures back to the WebView while preserving native clicks.
+          androidScrollSnapshot: isAndroidNativeApp(),
           isTesting: !hasProductionIds,
           style: {
             backgroundColor: "#0b1220",
