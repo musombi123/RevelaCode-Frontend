@@ -39,7 +39,8 @@ test("Faith mobile content expands naturally inside the shared app scroller", ()
   assert.ok(faith.includes(".faith-home-main { height: auto; min-height: 100svh; overflow: visible;"));
   assert.ok(faith.includes('html[data-revelacode-native-app="true"] .faith-home-main'));
   assert.match(layout, /data-faith-workspace-content/);
-  assert.ok(faith.includes('html[data-revelacode-native-app="true"] [data-faith-workspace-content]'));\n  assert.ok(faith.includes("overflow: visible;"));
+  assert.ok(faith.includes('html[data-revelacode-native-app="true"] [data-faith-workspace-content]'));
+  assert.ok(faith.includes("overflow: visible;"));
 });
 
 test("RevelaAI keeps welcome content and conversation history independently scrollable", () => {
