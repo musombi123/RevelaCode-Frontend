@@ -17,7 +17,7 @@ test("AI composer preserves a draft when the parent rejects a submission", () =>
 });
 
 test("both RevelaAI composer entry points enforce the use notice and duplicate-send lock", () => {
-  const sendHandlers = dashboard.match(/onSend=\{\(\.\.\.args\) => \{/g) || [];
+  const sendHandlers = dashboard.match(/onSend=\{async \(\.\.\.args\) => \{/g) || [];
   assert.equal(sendHandlers.length, 2, "Welcome and conversation composers must both be wired.");
   assert.equal((dashboard.match(/if \(sendLockRef\.current\) return false;/g) || []).length, 2);
   assert.equal((dashboard.match(/command !== "\/humanize" && complianceStatus !== "accepted"/g) || []).length, 2);
