@@ -24,7 +24,7 @@ Google creates the actual Ad Unit ID when you save each unit. Copy the ID in the
 
 ## GitHub Actions configuration
 
-In the **RevelaCode-Android** repository, add these Actions secrets:
+In the **RevelaCode-Android** repository, add these repository Actions variables (Settings → Secrets and variables → Actions → Variables). The build workflow reads them through `vars.*`, not `secrets.*`. These identifiers are public app/ad-unit IDs, not credentials:
 
 | Secret name | Value |
 |---|---|
@@ -33,9 +33,9 @@ In the **RevelaCode-Android** repository, add these Actions secrets:
 | `VITE_ADMOB_COMMUNITY_OVERVIEW_NATIVE_AD_UNIT_ID` | Community Home Native Ad Unit ID |
 | `VITE_ADMOB_FAITH_NATIVE_AD_UNIT_ID` | Faith Overview Native Ad Unit ID |
 
-The build workflow passes these values into the Vite production build. They are public client identifiers, not account passwords, but keep them in Actions secrets so the build is centrally configured. Do not commit a local `.env` file.
+The Android build workflow passes these values into the Vite production build and the native AdMob configuration step. Keep them in repository Variables so the workflow and this setup remain consistent. Do not commit a local `.env` file.
 
-Each Android placement uses production inventory only when **both** the production App ID and that placement's Ad Unit ID are present. Missing placement IDs use Google's test-ad mode; they do not silently reuse another hub's live unit.
+Each Android placement uses production inventory only when **both** the production App ID and that placement's Ad Unit ID are present. A production build fails configuration if any required ID is missing or malformed; it must never silently fall back to Google's test ads or reuse another hub's live unit. Google's test IDs are permitted only in the isolated native-compile workflow, which explicitly sets `ADMOB_ALLOW_TEST_IDS=true`.
 
 ## Ad behaviour and lifecycle
 
