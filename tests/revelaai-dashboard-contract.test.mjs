@@ -111,5 +111,7 @@ test("AI composer awaits send acceptance and preserves rejected drafts", () => {
   assert.match(composer, /if \(accepted === false\) return;/);
   assert.match(composer, /finally \{\s*setSubmitting\(false\);\s*\}/);
   assert.match(dashboard, /setComplianceError\("Read and acknowledge the current RevelaAI use notice before sending a chat message\."\);\s*return false;/);
-  assert.equal((dashboard.match(/return sendMessage\(\.\.\.args\);/g) || []).length, 2);
+  assert.equal((dashboard.match(/onSend=\{async \(\.\.\.args\) => \{/g) || []).length, 2);
+  assert.equal((dashboard.match(/const accepted = await sendMessage\(\.\.\.args\);/g) || []).length, 2);
+  assert.equal((dashboard.match(/return accepted;/g) || []).length, 2);
 });
