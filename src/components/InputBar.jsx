@@ -121,6 +121,7 @@ export default function InputBar({
 }) {
   const { authFetch } = useAuth();
   const [text, setText] = useState(() => String(initialDraft || ""));
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialDraft) setText(String(initialDraft));
@@ -603,11 +604,11 @@ export default function InputBar({
   const activeMode = activeModeConfig ? (toolMode[activeToolCommand] || activeModeConfig.defaultMode) : null;
   const activeModeDefinition = activeModeConfig?.modes?.find((mode) => mode.value === activeMode);
   const effectivePlaceholder = activeModeDefinition?.placeholder || placeholder;
-  const canSend = !disabled && (text.trim().length > 0 || Boolean(attachedFile));
+  const canSend = !disabled && !submitting && (text.trim().length > 0 || Boolean(attachedFile));
 
-  const submit = () => {
+  const submit = async () => {
     const value = text.trim();
-    if (!canSend) return;
+    if (!canSend || submitting) return;
 
     recognitionRef.current?.stop?.();
     const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();

@@ -11,7 +11,7 @@ const STORAGE_KEY = "nexora.foundry.projects.v1";
 const ACTIVE_KEY = "nexora.foundry.active-project.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
-const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "").replace(/\/$/, "");
+const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 const now = () => new Date().toISOString();
@@ -102,6 +102,7 @@ function workspaceProjectFromCloud(row, assets = []) {
 function workspaceProjectDocument(project) {
   const {
     _remoteVersion,
+    _localOnly,
     assets,
     revisions,
     createdAt,
@@ -177,6 +178,7 @@ export default function NexoraFoundryWorkspace() {
   const activeProject = projects.find((item) => item.id === activeId) || projects[0] || null;
   const selectedObject = activeProject?.scene.objects.find((item) => item.id === selectedObjectId) || activeProject?.scene.objects[0] || null;
   const cloudMode = Boolean(API_BASE && authenticatedCloudSession && cloudLoaded);
+  const cloudProjectActive = Boolean(cloudMode && activeProject?._remoteVersion);
 
   const apiRequest = useCallback(async (path, options = {}) => {
     if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
@@ -205,6 +207,13 @@ export default function NexoraFoundryWorkspace() {
     if (!API_BASE || auth.loading) return undefined;
     if (!authenticatedCloudSession) {
       setCloudLoaded(false);
+      // Clear any previously hydrated account-owned projects from component
+      // state on logout/account switch. Keep only device-only drafts.
+      const deviceProjects = readProjects().filter((item) => !item._remoteVersion);
+      setProjects(deviceProjects);
+      setActiveId((current) => deviceProjects.some((item) => item.id === current)
+        ? current
+        : deviceProjects[0]?.id || "");
       setApiStatus({ state: "auth_required", label: "Sign in to connect NEXORA cloud" });
       return undefined;
     }
@@ -226,8 +235,18 @@ export default function NexoraFoundryWorkspace() {
         return project;
       }));
       if (cancelled) return;
-      setProjects(hydrated);
-      setActiveId((current) => hydrated.some((item) => item.id === current) ? current : hydrated[0]?.id || "");
+      // Keep unsynced projects created by earlier browser-only workspace builds.
+      // Do not pull previously cloud-versioned records from another account into
+      // this user's workspace.
+      const cloudIds = new Set(hydrated.map((item) => item.id));
+      const localOnly = readProjects()
+        .filter((item) => !item._remoteVersion && !cloudIds.has(item.id))
+        .map((item) => ({ ...item, _localOnly: true }));
+      const visibleProjects = [...hydrated, ...localOnly];
+      setProjects(visibleProjects);
+      setActiveId((current) => visibleProjects.some((item) => item.id === current)
+        ? current
+        : hydrated[0]?.id || localOnly[0]?.id || "");
       setCloudLoaded(true);
       setApiStatus({ state: "online", label: "NEXORA API, PostgreSQL and private asset storage connected" });
     })().catch((error) => {
@@ -241,14 +260,16 @@ export default function NexoraFoundryWorkspace() {
   }, [auth.loading, authenticatedCloudSession, apiRequest]);
 
   useEffect(() => {
-    if (cloudMode) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
-  }, [projects, cloudMode]);
+    // Retain only device-only drafts in browser storage. Cloud-owned project
+    // documents remain authoritative in PostgreSQL and aren't copied on logout.
+    const localProjects = projects.filter((item) => !item._remoteVersion);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(localProjects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
+  }, [projects]);
 
   useEffect(() => {
     if (activeProject?.id) {
       setActiveId(activeProject.id);
-      if (!cloudMode) localStorage.setItem(ACTIVE_KEY, activeProject.id);
+      if (!cloudMode && !activeProject._remoteVersion) localStorage.setItem(ACTIVE_KEY, activeProject.id);
       if (!selectedObjectId || !activeProject.scene.objects.some((item) => item.id === selectedObjectId)) {
         setSelectedObjectId(activeProject.scene.objects[0]?.id || "");
       }
@@ -266,6 +287,39 @@ export default function NexoraFoundryWorkspace() {
       return { ...next, updatedAt: now() };
     }));
   }, [activeProject?.id]);
+
+  const migrateLocalProject = async () => {
+    if (!cloudMode || !activeProject?._localOnly) return;
+    const localId = activeProject.id;
+    const baseDocument = workspaceProjectDocument(activeProject);
+    const cleanDocument = {
+      ...baseDocument,
+      assets: [],
+      revisions: [],
+      scene: {
+        ...baseDocument.scene,
+        objects: (baseDocument.scene?.objects || []).map(({ asset_id, ...object }) => object),
+      },
+    };
+    try {
+      const saved = await apiRequest("/api/v1/workspace/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          name: activeProject.name,
+          description: activeProject.description,
+          document: cleanDocument,
+        }),
+      });
+      const remoteProject = workspaceProjectFromCloud(saved, []);
+      cloudBaseline.current.set(remoteProject.id, JSON.stringify(workspaceProjectDocument(remoteProject)));
+      setProjects((current) => current.map((item) => item.id === localId ? remoteProject : item));
+      setActiveId(remoteProject.id);
+      setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
+      setNotice("Project metadata migrated to NEXORA PostgreSQL. Re-upload the original GLB/media files to private cloud storage; browser-only binary assets are not copied by this migration.");
+    } catch (error) {
+      setNotice(error.message || "Could not migrate this device-only project to NEXORA cloud.");
+    }
+  };
 
   const createNewProject = async () => {
     const name = window.prompt("Name your new game project", "Untitled Game");
@@ -301,14 +355,23 @@ export default function NexoraFoundryWorkspace() {
   };
 
   const deleteProject = async () => {
-    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from ${cloudMode ? "NEXORA cloud storage" : "this browser"}?`)) return;
-    if (cloudMode) {
+    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from ${cloudProjectActive ? "NEXORA cloud storage" : "this browser"}?`)) return;
+    if (cloudProjectActive) {
       try {
         await apiRequest(`/api/v1/workspace/projects/${activeProject.id}`, { method: "DELETE" });
         cloudBaseline.current.delete(activeProject.id);
-        setNotice("Cloud project and its private assets were deleted.");
+        setNotice("Cloud project, private assets and artifacts were deleted.");
       } catch (error) {
         setNotice(error.message || "Could not delete cloud project.");
+        return;
+      }
+    } else if (!activeProject._remoteVersion) {
+      try {
+        for (const asset of activeProject.assets || []) {
+          if (!asset.remote) await removeStoredAsset(asset.id);
+        }
+      } catch (error) {
+        setNotice(error.message || "Could not clean local project assets.");
         return;
       }
     }
@@ -440,7 +503,7 @@ export default function NexoraFoundryWorkspace() {
           setNotice(`Skipped ${file.name}: each asset must be 100 MB or smaller.`);
           continue;
         }
-        if (cloudMode) {
+        if (cloudProjectActive) {
           const contentTypes = {
             glb: "model/gltf-binary", png: "image/png",
             jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
@@ -470,7 +533,7 @@ export default function NexoraFoundryWorkspace() {
       }
       if (accepted.length) {
         patchProject((project) => ({ ...project, assets: [...project.assets, ...accepted] }));
-        setNotice(cloudMode
+        setNotice(cloudProjectActive
           ? `${accepted.length} asset(s) uploaded to private NEXORA object storage.`
           : `${accepted.length} asset(s) ingested into this browser's private local storage.`);
       } else setNotice("No supported assets found. Accepted: GLB, images and audio (maximum 100 MB each).");
@@ -508,7 +571,7 @@ export default function NexoraFoundryWorkspace() {
   };
 
   const refreshJobs = useCallback(async () => {
-    if (!cloudMode || !activeProject) return;
+    if (!cloudProjectActive || !activeProject) return;
     try {
       const response = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/jobs`);
       const nextJobs = await Promise.all((response.jobs || []).map(async (job) => {
@@ -522,11 +585,11 @@ export default function NexoraFoundryWorkspace() {
     } catch (error) {
       setNotice(error.message || "Could not refresh production job status.");
     }
-  }, [activeProject?.id, apiRequest, cloudMode]);
+  }, [activeProject?.id, apiRequest, cloudProjectActive]);
 
   const queueProductionJob = async (kind, target = "desktop") => {
-    if (!cloudMode || !activeProject) {
-      setNotice("Sign in and connect the NEXORA cloud API before queueing Godot production jobs.");
+    if (!cloudProjectActive || !activeProject) {
+      setNotice("Select a cloud-synced project before queueing Godot production jobs.");
       return;
     }
     const issues = validateProject();
@@ -547,11 +610,11 @@ export default function NexoraFoundryWorkspace() {
   };
 
   useEffect(() => {
-    if (!cloudMode || tab !== "build" || !activeProject) return undefined;
+    if (!cloudProjectActive || tab !== "build" || !activeProject) return undefined;
     refreshJobs();
     const timer = window.setInterval(refreshJobs, 5000);
     return () => window.clearInterval(timer);
-  }, [activeProject?.id, cloudMode, refreshJobs, tab]);
+  }, [activeProject?.id, cloudProjectActive, refreshJobs, tab]);
 
   useEffect(() => {
     if (!cloudMode || !cloudLoaded || !activeProject?._remoteVersion) return undefined;
@@ -628,9 +691,10 @@ export default function NexoraFoundryWorkspace() {
             <div className="min-w-0"><p className="truncate text-sm font-black">{activeProject?.name || "No project selected"}</p><p className="text-[11px] text-slate-500 dark:text-slate-400">{activeProject ? `Updated ${new Date(activeProject.updatedAt).toLocaleString()}` : "Create or import a project to begin"}</p></div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {projects.length > 1 && <select aria-label="Switch NEXORA project" className="min-h-10 max-w-[180px] rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={activeProject?.id || ""} onChange={(event) => setActiveId(event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select>}
-            <StatusPill tone={apiStatus.state === "online" ? "green" : apiStatus.state === "checking" ? "amber" : "slate"}>{apiStatus.label}</StatusPill>
+            {projects.length > 1 && <select aria-label="Switch NEXORA project" className="min-h-10 max-w-[180px] rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={activeProject?.id || ""} onChange={(event) => setActiveId(event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}{project._localOnly ? " · Device-only" : ""}</option>)}</select>}
+            {activeProject?._localOnly && <StatusPill tone="amber">Device-only draft</StatusPill>}<StatusPill tone={apiStatus.state === "online" ? "green" : apiStatus.state === "checking" ? "amber" : "slate"}>{apiStatus.label}</StatusPill>
             <button type="button" className={buttonClass} onClick={checkService}><RefreshCw size={14}/> Check service</button>
+            {cloudMode && activeProject?._localOnly && <button type="button" className={buttonClass} onClick={migrateLocalProject}><UploadCloud size={14}/> Move project to cloud</button>}
             {activeProject && <button type="button" className={buttonClass} onClick={exportProject}><ArrowDownToLine size={14}/> Export</button>}
             {activeProject && <button type="button" className={buttonClass} onClick={saveRevision}><Save size={14}/> Checkpoint</button>}
           </div>
@@ -665,7 +729,7 @@ export default function NexoraFoundryWorkspace() {
             {tab === "scene" && <div className="grid min-w-0 gap-4 xl:grid-cols-[250px_minmax(0,1fr)_290px]">
               <section className={`${panelClass} min-w-0 p-3`}><div className="flex items-center justify-between gap-2 px-1"><h2 className="text-sm font-black">Scene hierarchy</h2><button type="button" onClick={addSceneObject} className="rounded-lg p-2 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950/40" aria-label="Add scene node"><Plus size={16}/></button></div><div className="mt-3 space-y-1">{activeProject.scene.objects.map((object) => <button key={object.id} type="button" onClick={() => setSelectedObjectId(object.id)} className={`flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${selectedObject?.id === object.id ? "bg-violet-50 font-bold text-violet-800 dark:bg-violet-950/50 dark:text-violet-200" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900"}`}><Box size={14}/><span className="truncate">{object.name}</span></button>)}</div></section>
               <section className={`${panelClass} flex min-h-[340px] min-w-0 flex-col overflow-hidden`}><div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800"><div><h2 className="text-sm font-black">Scene preview</h2><p className="text-[10px] text-slate-500">Structural editor • Godot-oriented node model</p></div><StatusPill tone="amber">Preview only</StatusPill></div><div className="relative flex min-h-[280px] flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,rgba(139,92,246,.12),transparent_55%),linear-gradient(rgba(148,163,184,.10)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.10)_1px,transparent_1px)] bg-[size:auto,28px_28px,28px_28px]"><div className="absolute left-3 top-3 text-[9px] font-bold uppercase tracking-widest text-slate-400">3D viewport placeholder</div><div className="flex flex-col items-center gap-4"><div className="flex h-28 w-28 items-center justify-center rounded-3xl border border-violet-300/50 bg-violet-500/10 text-violet-600 shadow-[0_0_60px_rgba(139,92,246,.14)] dark:text-violet-300"><Box size={54}/></div><div className="text-center"><p className="text-sm font-black">{selectedObject?.name || "Select a scene node"}</p><p className="mt-1 text-[10px] text-slate-500">{selectedObject?.type || "No node selected"}</p></div></div></div><div className="flex flex-wrap gap-2 border-t border-slate-100 p-3 dark:border-slate-800"><button type="button" onClick={addSceneObject} className={buttonClass}><Plus size={14}/> Add node</button><button type="button" onClick={() => setNotice("A live Godot viewport will be enabled when the NEXORA editor runtime is connected.")} className={buttonClass}><Play size={14}/> Run preview</button></div></section>
-              <section className={`${panelClass} min-w-0 p-4`}><h2 className="text-sm font-black">Inspector</h2>{selectedObject ? <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Node name<input className={`${fieldClass} mt-1.5`} value={selectedObject.name} onChange={(e) => updateSelected("name", e.target.value)}/></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Node type<select className={`${fieldClass} mt-1.5`} value={selectedObject.type} onChange={(e) => updateSelected("type", e.target.value)}>{["Node3D","MeshInstance3D","CharacterBody3D","StaticBody3D","Area3D","Marker3D","Camera3D","DirectionalLight3D"].map((type) => <option key={type}>{type}</option>)}</select></label>{cloudMode && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Creator GLB model<select className={`${fieldClass} mt-1.5`} value={selectedObject.asset_id || ""} onChange={(e) => updateSelected("asset_id", e.target.value || null)}><option value="">Use procedural primitive</option>{activeProject.assets.filter((asset) => asset.remote && asset.type === "glb" && ["ready","processed"].includes(asset.status)).map((asset) => <option key={asset.id} value={asset.id}>{asset.name}{asset.status === "processed" ? " · Blender processed" : ""}</option>)}</select><span className="mt-1 block text-[10px] font-normal text-slate-500">Selected GLB files are copied into the Godot project and instantiated in the scene by the build worker.</span></label>}{["position","rotation","scale"].map((field) => <fieldset key={field}><legend className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">{field}</legend><div className="grid grid-cols-3 gap-1.5">{selectedObject[field].map((value,index) => <input key={index} aria-label={`${field} ${"XYZ"[index]}`} className={fieldClass} type="number" step="0.1" value={value} onChange={(e) => {const next=[...selectedObject[field]];next[index]=Number(e.target.value);updateSelected(field,next);}}/>)}</div></fieldset>)}<label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={selectedObject.visible !== false} onChange={(e) => updateSelected("visible",e.target.checked)}/> Visible</label><button type="button" className="mt-2 inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30" onClick={() => {patchProject((p)=>({...p,scene:{...p.scene,objects:p.scene.objects.filter((o)=>o.id!==selectedObject.id)}}));setSelectedObjectId("");}}><Trash2 size={14}/> Delete node</button></div> : <p className="mt-3 text-xs text-slate-500">Select a node to edit its properties.</p>}</section>
+              <section className={`${panelClass} min-w-0 p-4`}><h2 className="text-sm font-black">Inspector</h2>{selectedObject ? <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Node name<input className={`${fieldClass} mt-1.5`} value={selectedObject.name} onChange={(e) => updateSelected("name", e.target.value)}/></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Node type<select className={`${fieldClass} mt-1.5`} value={selectedObject.type} onChange={(e) => updateSelected("type", e.target.value)}>{["Node3D","MeshInstance3D","CharacterBody3D","StaticBody3D","Area3D","Marker3D","Camera3D","DirectionalLight3D"].map((type) => <option key={type}>{type}</option>)}</select></label>{cloudProjectActive && <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Creator GLB model<select className={`${fieldClass} mt-1.5`} value={selectedObject.asset_id || ""} onChange={(e) => updateSelected("asset_id", e.target.value || null)}><option value="">Use procedural primitive</option>{activeProject.assets.filter((asset) => asset.remote && asset.type === "glb" && ["ready","processed"].includes(asset.status)).map((asset) => <option key={asset.id} value={asset.id}>{asset.name}{asset.status === "processed" ? " · Blender processed" : ""}</option>)}</select><span className="mt-1 block text-[10px] font-normal text-slate-500">Selected GLB files are copied into the Godot project and instantiated in the scene by the build worker.</span></label>}{["position","rotation","scale"].map((field) => <fieldset key={field}><legend className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">{field}</legend><div className="grid grid-cols-3 gap-1.5">{selectedObject[field].map((value,index) => <input key={index} aria-label={`${field} ${"XYZ"[index]}`} className={fieldClass} type="number" step="0.1" value={value} onChange={(e) => {const next=[...selectedObject[field]];next[index]=Number(e.target.value);updateSelected(field,next);}}/>)}</div></fieldset>)}<label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={selectedObject.visible !== false} onChange={(e) => updateSelected("visible",e.target.checked)}/> Visible</label><button type="button" className="mt-2 inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30" onClick={() => {patchProject((p)=>({...p,scene:{...p.scene,objects:p.scene.objects.filter((o)=>o.id!==selectedObject.id)}}));setSelectedObjectId("");}}><Trash2 size={14}/> Delete node</button></div> : <p className="mt-3 text-xs text-slate-500">Select a node to edit its properties.</p>}</section>
             </div>}
 
             {tab === "assets" && <div className="space-y-4">
@@ -675,11 +739,11 @@ export default function NexoraFoundryWorkspace() {
 
             {tab === "gameplay" && <div className="grid gap-4 md:grid-cols-3"><section className={`${panelClass} p-5`}><h2 className="font-black">Enemies</h2><p className="mt-1 text-xs text-slate-500">Define enemy archetypes for later runtime integration.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,enemies:[...p.gameplay.enemies,{id:makeId("enemy"),name:`Enemy ${p.gameplay.enemies.length+1}`,behavior:"patrol"}]}}))}><Plus size={14}/> Add enemy</button>{activeProject.gameplay.enemies.map((enemy)=><div key={enemy.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{enemy.name}</p><p className="mt-1 text-slate-500">Behavior: {enemy.behavior}</p></div>)}</section><section className={`${panelClass} p-5`}><h2 className="font-black">Mechanics</h2><p className="mt-1 text-xs text-slate-500">Capture core player interactions and systems.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,mechanics:[...p.gameplay.mechanics,{id:makeId("mechanic"),name:`Mechanic ${p.gameplay.mechanics.length+1}`,status:"proposed"}]}}))}><Plus size={14}/> Add mechanic</button>{activeProject.gameplay.mechanics.map((item)=><div key={item.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{item.name}</p><p className="mt-1 text-slate-500">Status: {item.status}</p></div>)}</section><section className={`${panelClass} p-5`}><h2 className="font-black">Objectives</h2><p className="mt-1 text-xs text-slate-500">Plan mission and progression goals.</p><button type="button" className={`${buttonClass} mt-4`} onClick={()=>patchProject((p)=>({...p,gameplay:{...p.gameplay,objectives:[...p.gameplay.objectives,{id:makeId("objective"),name:`Objective ${p.gameplay.objectives.length+1}`,status:"draft"}]}}))}><Plus size={14}/> Add objective</button>{activeProject.gameplay.objectives.map((item)=><div key={item.id} className="mt-3 rounded-xl bg-slate-50 p-3 text-xs dark:bg-slate-900"><p className="font-bold">{item.name}</p><p className="mt-1 text-slate-500">Status: {item.status}</p></div>)}</section></div>}
 
-            {tab === "build" && <div className="grid gap-4 xl:grid-cols-[1fr_340px]"><section className={`${panelClass} p-5`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"><Code2 size={19}/></div><div><h2 className="font-black">Build and release centre</h2><p className="text-xs text-slate-500">Godot scene generation and export queue</p></div></div><div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 p-4 text-xs leading-5 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-200"><strong>Cloud worker pipeline.</strong> Requests are persisted in NEXORA PostgreSQL. A dedicated worker must be online with Blender, Godot 4 and platform export templates to execute them.</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" className={buttonClass} onClick={()=>{const issues=validateProject();setNotice(issues.length?issues.join(" "):"Browser-side structural validation passed. This is not a Godot runtime test.");}}><ShieldCheck size={14}/> Validate document</button><button type="button" className={buttonClass} onClick={exportProject}><ArrowDownToLine size={14}/> Export JSON backup</button><button type="button" className={buttonClass} disabled={!cloudMode} onClick={()=>queueProductionJob("scene.generate","desktop")}><Layers3 size={14}/> Generate Godot scene</button><button type="button" className={buttonClass} disabled={!cloudMode} onClick={()=>queueProductionJob("build.export","desktop")}><Play size={14}/> Build desktop</button><button type="button" className={buttonClass} disabled={!cloudMode} onClick={()=>queueProductionJob("build.export","android")}><ArrowDownToLine size={14}/> Build Android</button><button type="button" className={buttonClass} disabled={!cloudMode} onClick={()=>queueProductionJob("build.export","desktop_android")}><Gamepad2 size={14}/> Build all targets</button></div><div className="mt-5 flex items-center justify-between gap-3"><h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Production jobs</h3><button type="button" className={buttonClass} onClick={refreshJobs} disabled={!cloudMode}><RefreshCw size={13}/> Refresh</button></div>{jobs.length ? <div className="mt-3 space-y-2">{jobs.map((job)=><div key={job.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold">{job.kind} · {job.id.slice(0,8)}</p><StatusPill tone={job.state === "completed" ? "green" : job.state === "failed" ? "amber" : "violet"}>{job.state} · {job.progress}%</StatusPill></div><p className="mt-1 text-[11px] text-slate-500">{job.message}</p>{job.error && <p className="mt-2 text-[11px] text-rose-600">{job.error}</p>}{job.artifacts?.map((artifact)=><a key={artifact.id} className="mt-2 mr-3 inline-flex text-xs font-bold text-violet-600 underline" href={artifact.download_url} target="_blank" rel="noreferrer">{artifact.filename}</a>)}</div>)}</div>:<p className="mt-3 text-xs text-slate-500">No production jobs yet.</p>}<div className="mt-5"><h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Document validation</h3>{validationPassed?<p className="mt-2 flex items-center gap-2 text-xs font-semibold text-emerald-600"><Check size={14}/> No structural issues detected</p>:<ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-700 dark:text-amber-300">{validationIssues.map((issue,index)=><li key={index}>{issue}</li>)}</ul>}</div></section><section className={`${panelClass} p-5`}><h2 className="font-black">Service connection</h2><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">NEXORA verifies your RevelaCode session, then stores game project data in its own PostgreSQL database and private R2 bucket.</p><div className="mt-4 flex items-center gap-2 text-xs"><span className={`h-2 w-2 rounded-full ${apiStatus.state === "online" ? "bg-emerald-500" : apiStatus.state === "checking" ? "animate-pulse bg-amber-500" : "bg-slate-400"}`}/>{apiStatus.label}</div><p className="mt-3 text-[11px] text-slate-500">{cloudMode ? "Authenticated cloud session active." : "Cloud project operations require verified sign-in and a configured API."}</p><button type="button" onClick={checkService} className={`${buttonClass} mt-4 w-full`}><RefreshCw size={14}/> Check cloud readiness</button></section></div>}
+            {tab === "build" && <div className="grid gap-4 xl:grid-cols-[1fr_340px]"><section className={`${panelClass} p-5`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"><Code2 size={19}/></div><div><h2 className="font-black">Build and release centre</h2><p className="text-xs text-slate-500">Godot scene generation and export queue</p></div></div><div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 p-4 text-xs leading-5 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-200"><strong>Cloud worker pipeline.</strong> Requests are persisted in NEXORA PostgreSQL. A dedicated worker must be online with Blender, Godot 4 and platform export templates to execute them.</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" className={buttonClass} onClick={()=>{const issues=validateProject();setNotice(issues.length?issues.join(" "):"Browser-side structural validation passed. This is not a Godot runtime test.");}}><ShieldCheck size={14}/> Validate document</button><button type="button" className={buttonClass} onClick={exportProject}><ArrowDownToLine size={14}/> Export JSON backup</button><button type="button" className={buttonClass} disabled={!cloudProjectActive} onClick={()=>queueProductionJob("scene.generate","desktop")}><Layers3 size={14}/> Generate Godot scene</button><button type="button" className={buttonClass} disabled={!cloudProjectActive} onClick={()=>queueProductionJob("build.export","desktop")}><Play size={14}/> Build desktop</button><button type="button" className={buttonClass} disabled={!cloudProjectActive} onClick={()=>queueProductionJob("build.export","android")}><ArrowDownToLine size={14}/> Build Android</button><button type="button" className={buttonClass} disabled={!cloudProjectActive} onClick={()=>queueProductionJob("build.export","desktop_android")}><Gamepad2 size={14}/> Build all targets</button></div><div className="mt-5 flex items-center justify-between gap-3"><h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Production jobs</h3><button type="button" className={buttonClass} onClick={refreshJobs} disabled={!cloudMode}><RefreshCw size={13}/> Refresh</button></div>{cloudProjectActive && jobs.length ? <div className="mt-3 space-y-2">{jobs.map((job)=><div key={job.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold">{job.kind} · {job.id.slice(0,8)}</p><StatusPill tone={job.state === "completed" ? "green" : job.state === "failed" ? "amber" : "violet"}>{job.state} · {job.progress}%</StatusPill></div><p className="mt-1 text-[11px] text-slate-500">{job.message}</p>{job.error && <p className="mt-2 text-[11px] text-rose-600">{job.error}</p>}{job.artifacts?.map((artifact)=><a key={artifact.id} className="mt-2 mr-3 inline-flex text-xs font-bold text-violet-600 underline" href={artifact.download_url} target="_blank" rel="noreferrer">{artifact.filename}</a>)}</div>)}</div>:<p className="mt-3 text-xs text-slate-500">No production jobs yet.</p>}<div className="mt-5"><h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Document validation</h3>{validationPassed?<p className="mt-2 flex items-center gap-2 text-xs font-semibold text-emerald-600"><Check size={14}/> No structural issues detected</p>:<ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-700 dark:text-amber-300">{validationIssues.map((issue,index)=><li key={index}>{issue}</li>)}</ul>}</div></section><section className={`${panelClass} p-5`}><h2 className="font-black">Service connection</h2><p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">NEXORA verifies your RevelaCode session, then stores game project data in its own PostgreSQL database and private R2 bucket.</p><div className="mt-4 flex items-center gap-2 text-xs"><span className={`h-2 w-2 rounded-full ${apiStatus.state === "online" ? "bg-emerald-500" : apiStatus.state === "checking" ? "animate-pulse bg-amber-500" : "bg-slate-400"}`}/>{apiStatus.label}</div><p className="mt-3 text-[11px] text-slate-500">{cloudMode ? "Authenticated cloud session active." : "Cloud project operations require verified sign-in and a configured API."}</p><button type="button" onClick={checkService} className={`${buttonClass} mt-4 w-full`}><RefreshCw size={14}/> Check cloud readiness</button></section></div>}
           </>
         )}
 
-        {activeProject && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] text-slate-400">{cloudMode ? "PostgreSQL cloud autosave active" : "Local autosave active"}</span><span className={`h-1 w-1 rounded-full ${cloudMode ? "bg-emerald-500" : "bg-amber-500"}`}/><span className="text-[10px] text-slate-400">{cloudMode ? "Private R2 assets enabled" : "Project data stays in this browser until cloud sign-in is ready"}</span></div><div className="flex gap-2"><button type="button" onClick={deleteProject} className="inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"><Trash2 size={13}/> Delete project</button><button type="button" onClick={exportProject} className={buttonClass}><ArrowDownToLine size={13}/> Export .nexora.json</button></div></div>}
+        {activeProject && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] text-slate-400">{cloudProjectActive ? "PostgreSQL cloud autosave active" : "Local autosave active"}</span><span className={`h-1 w-1 rounded-full ${cloudProjectActive ? "bg-emerald-500" : "bg-amber-500"}`}/><span className="text-[10px] text-slate-400">{cloudProjectActive ? "Private R2 assets enabled" : activeProject._localOnly ? "Device-only project; move it to cloud when ready" : "Project data stays in this browser until cloud sign-in is ready"}</span></div><div className="flex gap-2"><button type="button" onClick={deleteProject} className="inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"><Trash2 size={13}/> Delete project</button><button type="button" onClick={exportProject} className={buttonClass}><ArrowDownToLine size={13}/> Export .nexora.json</button></div></div>}
       </div>
     </div>
   );
