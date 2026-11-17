@@ -507,3 +507,41 @@
   .faith-home-cross i { left: 22px; width: 30px; height: 44px; }
   .faith-home-cross b { left: 34px; width: 28px; height: 38px; }
 }
+
+
+/* Android Faith: the global app scroll root is the only vertical scroll owner.
+   Faith's home and study pages must contribute natural document height; fixed
+   navigation is accounted for with safe-area-aware trailing space. */
+@media (max-width: 640px) {
+  html[data-revelacode-native-app="true"] #revelacode-dashboard-content.faith-dashboard-host {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  html[data-revelacode-native-app="true"] .faith-home-shell {
+    display: block !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 100svh;
+    overflow: visible !important;
+  }
+
+  html[data-revelacode-native-app="true"] .faith-home-main {
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Native Faith study pages are content-height sections inside the app scroller.
+   Avoid overflow-x:hidden here: it can compute overflow-y:auto and create a
+   second vertical scroll container on Android WebView. */
+html[data-revelacode-native-app="true"] [data-faith-workspace-content] {
+  min-height: 0;
+  overflow: visible;
+  padding-bottom: 0.75rem;
+}
