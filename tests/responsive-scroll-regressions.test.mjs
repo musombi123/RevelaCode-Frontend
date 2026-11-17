@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("the shared app content pane is the native Android vertical scroll owner", () => {
+test("the shared app content pane is the native Android vertical scroll owner", () => {\n  // Assert real mobile scroll ownership, not just presence of a scroll class.
   const shell = read("../src/components/MainDashboardV2.jsx");
   const css = read("../src/index.css");
   assert.match(shell, /data-app-scroll-root="true"/);
