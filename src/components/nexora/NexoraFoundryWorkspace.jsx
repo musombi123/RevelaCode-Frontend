@@ -375,11 +375,40 @@ export default function NexoraFoundryWorkspace() {
         settings: parsed.settings && typeof parsed.settings === "object" ? parsed.settings : { target: "Desktop", orientation: "Landscape", renderPipeline: "Forward+" },
         revisions: [],
       };
+      if (cloudMode) {
+        // A .nexora.json file contains project metadata, not the private binary
+        // assets. Strip old asset bindings and ask the creator to upload assets
+        // again so no foreign object key can be reused.
+        const cloudImport = {
+          ...imported,
+          assets: [],
+          scene: {
+            ...imported.scene,
+            objects: imported.scene.objects.map(({ asset_id, ...object }) => object),
+          },
+        };
+        const saved = await apiRequest("/api/v1/workspace/projects", {
+          method: "POST",
+          body: JSON.stringify({
+            name: cloudImport.name,
+            description: cloudImport.description,
+            document: workspaceProjectDocument(cloudImport),
+          }),
+        });
+        const remoteProject = workspaceProjectFromCloud(saved, []);
+        cloudBaseline.current.set(remoteProject.id, JSON.stringify(workspaceProjectDocument(remoteProject)));
+        setProjects((current) => [remoteProject, ...current]);
+        setActiveId(remoteProject.id);
+        setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
+        setTab("scene");
+        setNotice("Project definition imported into PostgreSQL. Re-upload its original GLB and media files to the private NEXORA bucket.");
+        return;
+      }
       setProjects((current) => [imported, ...current]);
       setActiveId(imported.id);
       setSelectedObjectId(imported.scene.objects[0]?.id || "");
       setTab("scene");
-      setNotice("Project imported. Review the scene and asset references before production use.");
+      setNotice("Project imported into this browser. Sign in to move it into private NEXORA cloud storage.");
     } catch (error) { setNotice(error.message || "Could not import project."); }
   };
 
