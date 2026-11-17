@@ -2841,16 +2841,18 @@ export default function AIAssistantDashboard({
                 <InputBar
                   placeholder={hubInputPlaceholder}
                   initialDraft={faithDraftText}
-                  onSend={(...args) => {
+                  onSend={async (...args) => {
                     const command = String(args[2]?.toolCommand || "").trim().toLowerCase();
                     if (sendLockRef.current) return false;
                     if (command !== "/humanize" && complianceStatus !== "accepted") {
                       setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
                       return false;
                     }
-                    try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
-                    void sendMessage(...args);
-                    return true;
+                    const accepted = await sendMessage(...args);
+                    if (accepted) {
+                      try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
+                    }
+                    return accepted;
                   }}
                   onMic={openVoice}
                   onRegisterVision={registerVisionLauncher}
@@ -2889,16 +2891,18 @@ export default function AIAssistantDashboard({
                   <InputBar
                     placeholder={hubInputPlaceholder}
                     initialDraft={faithDraftText}
-                    onSend={(...args) => {
+                    onSend={async (...args) => {
                     const command = String(args[2]?.toolCommand || "").trim().toLowerCase();
                     if (sendLockRef.current) return false;
                     if (command !== "/humanize" && complianceStatus !== "accepted") {
                       setComplianceError("Read and acknowledge the current RevelaAI use notice before sending a chat message.");
                       return false;
                     }
-                    try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
-                    void sendMessage(...args);
-                    return true;
+                    const accepted = await sendMessage(...args);
+                    if (accepted) {
+                      try { sessionStorage.removeItem("revelacode_faith_ai_draft"); } catch { /* The submitted message is now owned by the active chat. */ }
+                    }
+                    return accepted;
                   }}
                     onMic={openVoice}
                     onRegisterVision={registerVisionLauncher}

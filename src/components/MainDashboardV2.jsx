@@ -1419,6 +1419,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             flex
             min-h-0
             min-w-0
+            h-full
             flex-1
             flex-col
             overflow-hidden
@@ -1638,7 +1639,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                   : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
-            style={isAndroidApp ? { height: 0, minHeight: 0, WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
+            style={isAndroidApp ? { height: "100%", minHeight: 0, maxHeight: "100%", WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
           >
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
