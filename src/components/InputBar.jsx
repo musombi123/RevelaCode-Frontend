@@ -615,7 +615,7 @@ export default function InputBar({
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
     const toolLabel = selectedToolCommand?.[1] || TOOL_COMMANDS.find(([item]) => item === (typedCommand ? `/${typedCommand}` : ""))?.[1] || null;
-    const accepted = onSend?.(value, attachedFile, {
+    const accepted = await onSend?.(value, attachedFile, {
       toolCommand: command ? `/${command}` : null,
       toolLabel,
       toolMode: command ? (toolMode[`/${command}`] || TOOL_MODES[`/${command}`]?.defaultMode || null) : null,
