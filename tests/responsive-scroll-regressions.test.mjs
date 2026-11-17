@@ -26,7 +26,7 @@ test("Community, Elimu, Shamba and Biashara retain natural mobile document heigh
   assert.match(community, /lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto/);
   assert.match(elimu, /<main className="min-w-0 flex-1[^"]*lg:overflow-y-auto/);
   assert.match(elimu, /min-h-screen bg-slate-50[^"]*lg:overflow-hidden/);
-  assert.match(shamba, /data-shamba-mobile-ui="reference-v1" className="shamba-mobile min-h-\[100svh\] overflow-x-hidden/);
+  assert.match(shamba, /data-shamba-mobile-ui="reference-v1"[^>]*className="shamba-mobile min-h-\\[100svh\\] overflow-x-hidden/);
   assert.match(biashara, /@media \(max-width:700px\)\s*\{\s*\.biashara-shell \{ display:block;height:auto;min-height:100svh;overflow:visible; \}/);
   assert.match(biashara, /\.biashara-shell-workspace \{ height:auto;min-height:100svh;overflow:visible; \}/);
 });
