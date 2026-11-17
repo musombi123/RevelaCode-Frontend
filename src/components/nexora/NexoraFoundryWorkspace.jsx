@@ -435,14 +435,14 @@ export default function NexoraFoundryWorkspace() {
       const accepted = [];
       for (const file of files) {
         const extension = file.name.split(".").pop()?.toLowerCase();
-        if (!["glb", "gltf", "png", "jpg", "jpeg", "webp", "wav", "ogg", "mp3"].includes(extension)) continue;
+        if (!["glb", "png", "jpg", "jpeg", "webp", "wav", "ogg", "mp3"].includes(extension)) continue;
         if (file.size > 100 * 1024 * 1024) {
           setNotice(`Skipped ${file.name}: each asset must be 100 MB or smaller.`);
           continue;
         }
         if (cloudMode) {
           const contentTypes = {
-            glb: "model/gltf-binary", gltf: "model/gltf+json", png: "image/png",
+            glb: "model/gltf-binary", png: "image/png",
             jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
             wav: "audio/wav", ogg: "audio/ogg", mp3: "audio/mpeg",
           };
@@ -473,7 +473,7 @@ export default function NexoraFoundryWorkspace() {
         setNotice(cloudMode
           ? `${accepted.length} asset(s) uploaded to private NEXORA object storage.`
           : `${accepted.length} asset(s) ingested into this browser's private local storage.`);
-      } else setNotice("No supported assets found. Accepted: GLB, glTF, images and audio (maximum 100 MB each).");
+      } else setNotice("No supported assets found. Accepted: GLB, images and audio (maximum 100 MB each).");
     } catch (error) { setNotice(error.message || "Asset ingestion failed."); }
     finally { setBusy(false); }
   };
@@ -669,7 +669,7 @@ export default function NexoraFoundryWorkspace() {
             </div>}
 
             {tab === "assets" && <div className="space-y-4">
-              <section className={`${panelClass} p-5`}><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-black">Creator asset intake</h2><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Bring your own 3D models, textures and audio into this project. Original files stay in this browser's IndexedDB storage.</p></div><button type="button" disabled={busy} onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-xs font-bold text-white hover:bg-violet-500 disabled:opacity-50">{busy ? <Loader2 className="animate-spin" size={15}/> : <UploadCloud size={15}/>} Add assets</button><input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3" className="hidden" onChange={uploadAssets}/></div><div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/50">Supported: GLB, glTF, PNG, JPG, WebP, WAV, OGG, MP3</div></section>
+              <section className={`${panelClass} p-5`}><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-black">Creator asset intake</h2><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Bring your own 3D models, textures and audio into this project. Original files stay in this browser's IndexedDB storage.</p></div><button type="button" disabled={busy} onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-xs font-bold text-white hover:bg-violet-500 disabled:opacity-50">{busy ? <Loader2 className="animate-spin" size={15}/> : <UploadCloud size={15}/>} Add assets</button><input ref={fileInputRef} type="file" multiple accept=".glb,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3" className="hidden" onChange={uploadAssets}/></div><div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/50">Supported: GLB, glTF, PNG, JPG, WebP, WAV, OGG, MP3</div></section>
               <section className={`${panelClass} p-5`}><h2 className="font-black">Project assets <span className="ml-1 text-xs font-semibold text-slate-400">(${activeProject.assets.length})</span></h2>{activeProject.assets.length ? <div className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">{activeProject.assets.map((asset)=><div key={asset.id} className="flex min-w-0 flex-wrap items-center gap-3 py-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300"><ImagePlus size={16}/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{asset.name}</p><p className="text-[10px] text-slate-500">{asset.type.toUpperCase()} • {(asset.size/1024/1024).toFixed(2)} MB</p></div><StatusPill tone={asset.status === "processed" || asset.status === "ready" ? "green" : "amber"}>{asset.remote ? asset.status : "Stored locally"}</StatusPill>{cloudMode && asset.remote && asset.type === "glb" && <button type="button" className={buttonClass} onClick={()=>processAsset(asset)}>Process with Blender</button>}<button type="button" aria-label={`Remove ${asset.name}`} onClick={()=>removeAsset(asset)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={14}/></button></div>)}</div>:<p className="mt-3 text-xs text-slate-500">No assets added yet.</p>}</section>
             </div>}
 
