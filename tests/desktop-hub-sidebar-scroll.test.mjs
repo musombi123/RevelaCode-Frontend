@@ -58,3 +58,16 @@ test("Faith desktop sidebar remains in its own rail while the main panel scrolls
   assert.match(css, /\.faith-home-main\s*\{[^}]*height:\s*100%;[^}]*overflow-x:\s*hidden;[^}]*overflow-y:\s*auto;/);
   assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*?\.faith-home-shell\s*\{[^}]*height: auto;[^}]*overflow: visible;/);
 });
+
+
+test("Faith Android uses the app scroll root instead of nested vertical scrollers", () => {
+  const css = source("src/components/faith/faith-dashboard.css");
+  const layout = source("src/components/faith/workspace/FaithWorkspaceLayout.jsx");
+
+  assert.match(css, /html\[data-revelacode-native-app="true"\] \.faith-home-shell\s*\{[^}]*height: auto !important;[^}]*overflow: visible !important;/);
+  assert.match(css, /html\[data-revelacode-native-app="true"\] \.faith-home-main\s*\{[^}]*height: auto !important;[^}]*overflow: visible !important;/);
+  assert.match(css, /html\[data-revelacode-native-app="true"\] \[data-faith-workspace-content\]\s*\{[^}]*overflow: visible;/);
+  assert.match(layout, /overflow-x-clip/);
+  assert.doesNotMatch(layout, /overflow-x-hidden overscroll-y-contain/);
+  assert.match(layout, /faith-android-shell min-h-0 px-3/);
+});
