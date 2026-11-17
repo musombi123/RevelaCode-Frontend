@@ -207,6 +207,13 @@ export default function NexoraFoundryWorkspace() {
     if (!API_BASE || auth.loading) return undefined;
     if (!authenticatedCloudSession) {
       setCloudLoaded(false);
+      // Clear any previously hydrated account-owned projects from component
+      // state on logout/account switch. Keep only device-only drafts.
+      const deviceProjects = readProjects().filter((item) => !item._remoteVersion);
+      setProjects(deviceProjects);
+      setActiveId((current) => deviceProjects.some((item) => item.id === current)
+        ? current
+        : deviceProjects[0]?.id || "");
       setApiStatus({ state: "auth_required", label: "Sign in to connect NEXORA cloud" });
       return undefined;
     }
