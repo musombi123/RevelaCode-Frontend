@@ -30,6 +30,7 @@ import {
   ShoppingCart,
   Users,
   ShieldCheck,
+  Gamepad2,
 } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
@@ -829,6 +830,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     "community",
     "payments",
     "humanizer",
+    "nexora",
   ]);
   const showShellHeader = !hubViewsWithOwnHeader.has(activeView);
 
@@ -886,6 +888,7 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     { key: "start", label: "Start", keys: ["home", "ai"] },
     { key: "learn", label: "Learn & Security", keys: ["faith", "education", "security-academy"] },
     { key: "grow", label: "Work & Grow", keys: ["biashara", "shamba"] },
+    { key: "create", label: "Create & Build", keys: ["nexora"] },
     { key: "community", label: "Community & Services", keys: ["community", "payments"] },
     { key: "account", label: "Account & Settings", keys: ["profile", "settings", "accounts"] },
   ];
@@ -1745,6 +1748,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                       : [
                           { key: "biashara", label: "Biashara", Icon: ShoppingCart, detail: "Sales and business" },
                           { key: "shamba", label: "Shamba", Icon: Leaf, detail: "Farms and crops" },
+                          { key: "nexora", label: "NEXORA Foundry", Icon: Gamepad2, detail: "Create 3D games" },
                         ]
                     ).map(({ key, label, Icon, detail }) => {
                       const active = activeView === key;

@@ -372,6 +372,9 @@ export default function App() {
                 }
               />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
+              {/* NEXORA is a dedicated creator workspace inside the RevelaCode frontend. */}
+              <Route path="/dev_nexora" element={<InternalDashboard initialHub="nexora" />} />
+              <Route path="/dev_nexora/*" element={<InternalDashboard initialHub="nexora" />} />
               <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />

@@ -31,6 +31,7 @@ import {
   ChevronDown,
   Construction,
   ShieldCheck,
+  Gamepad2,
 } from "lucide-react";
 
 import { API_ROOT } from "@/services/jumuiyaApi.jsx";
@@ -46,6 +47,7 @@ import usePreferences from "./hooks/usePreferences.jsx";
 import { useHistory } from "@/context/HistoryContext.jsx";
 import DemoLauncher from "@/demo/DemoLauncher.jsx";
 import { ErrorBoundary } from "./common/ErrorBoundary.jsx";
+import NexoraFoundryWorkspace from "./nexora/NexoraFoundryWorkspace.jsx";
 
 /* ======================================================
    HARDENED SAFE LAZY LOADING
@@ -965,6 +967,7 @@ export const HOME_HUBS = Object.freeze([
   { key: "education", title: "Elimu", shortTitle: "Elimu", description: "Schools, classes and learning", icon: GraduationCap, surface: "bg-emerald-50 dark:bg-emerald-950/25", iconTone: "text-emerald-700 dark:text-emerald-300", borderTone: "border-emerald-100 dark:border-emerald-900/50", iconBg: "bg-emerald-100 dark:bg-emerald-900/50" },
   { key: "shamba", title: "Shamba", shortTitle: "Shamba", description: "Farms, crops and market insights", icon: Leaf, surface: "bg-amber-50 dark:bg-amber-950/25", iconTone: "text-amber-700 dark:text-amber-300", borderTone: "border-amber-100 dark:border-amber-900/50", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
   { key: "biashara", title: "Biashara", shortTitle: "Biashara", description: "Products, sales and business growth", icon: ShoppingCart, surface: "bg-blue-50 dark:bg-blue-950/25", iconTone: "text-blue-700 dark:text-blue-300", borderTone: "border-blue-100 dark:border-blue-900/50", iconBg: "bg-blue-100 dark:bg-blue-900/50" },
+  { key: "nexora", title: "NEXORA Foundry", shortTitle: "NEXORA", description: "Create 3D worlds and playable games", icon: Gamepad2, surface: "bg-violet-50 dark:bg-violet-950/25", iconTone: "text-violet-700 dark:text-violet-300", borderTone: "border-violet-100 dark:border-violet-900/50", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
   { key: "community", title: "Community", shortTitle: "Community", description: "People, groups and opportunities", icon: Users, surface: "bg-cyan-50 dark:bg-cyan-950/25", iconTone: "text-cyan-700 dark:text-cyan-300", borderTone: "border-cyan-100 dark:border-cyan-900/50", iconBg: "bg-cyan-100 dark:bg-cyan-900/50" },
 ]);
 
@@ -981,6 +984,12 @@ const HOME_HUB_GROUPS = Object.freeze([
     title: "Work & Grow",
     description: "Business, farming and livelihoods",
     hubKeys: ["biashara", "shamba"],
+  },
+  {
+    key: "create",
+    title: "Create & Build",
+    description: "Game creation and interactive experiences",
+    hubKeys: ["nexora"],
   },
   {
     key: "community",
@@ -2000,6 +2009,14 @@ export const DASHBOARDS = [
   /* ====================================================
      REVELAAI
   ==================================================== */
+
+  {
+    key: "nexora",
+    title: "NEXORA Foundry",
+    label: "NEXORA",
+    icon: Gamepad2,
+    element: <NexoraFoundryWorkspace />,
+  },
 
   {
     key: "ai",
