@@ -9,13 +9,14 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   // Take control immediately. Old shell-cache cleanup is best-effort and must
   // never prevent the new worker from activating.
-  event.waitUntil(self.clients.claim().catch(() => {}));
-  Promise.resolve()
-    .then(() => caches.keys())
-    .then((keys) => Promise.all(keys
-      .filter((key) => key.startsWith("revelacode-app-shell-") && key !== CACHE_NAME)
-      .map((key) => caches.delete(key))))
-    .catch(() => {});
+  event.waitUntil(Promise.all([
+    self.clients.claim().catch(() => {}),
+    caches.keys()
+      .then((keys) => Promise.all(keys
+        .filter((key) => key.startsWith("revelacode-app-shell-") && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))))
+      .catch(() => {}),
+  ]));
 });
 
 self.addEventListener("fetch", (event) => {
@@ -35,12 +36,17 @@ self.addEventListener("fetch", (event) => {
     // Network-first: Cache Storage must never delay a healthy network response.
     try {
       const response = await fetch(request);
-      const contentType = response.headers.get("content-type") || "";
-      const isHtmlFallback = isStaticAsset && /(?:text\\/html|application\\/xhtml\\+xml)/i.test(contentType);
-      const isScriptAsset = /\\.(?:m?js)$/i.test(url.pathname);
-      const isCssAsset = /\\.css$/i.test(url.pathname);
-      const validScriptResponse = !isScriptAsset || /(?:javascript|ecmascript)/i.test(contentType);
-      const validCssResponse = !isCssAsset || /text\\/css/i.test(contentType);
+      const contentType = (response.headers.get("content-type") || "").toLowerCase();
+      const isHtmlFallback = isStaticAsset && (
+        contentType.includes("text/html") || contentType.includes("application/xhtml+xml")
+      );
+      const assetPath = url.pathname.toLowerCase();
+      const isScriptAsset = assetPath.endsWith(".js") || assetPath.endsWith(".mjs");
+      const isCssAsset = assetPath.endsWith(".css");
+      const validScriptResponse = !isScriptAsset || (
+        contentType.includes("javascript") || contentType.includes("ecmascript")
+      );
+      const validCssResponse = !isCssAsset || contentType.includes("text/css");
 
       // Some SPA hosts rewrite a missing /assets/*.js request to index.html
       // with HTTP 200. That is not a JavaScript module. Convert that specific
