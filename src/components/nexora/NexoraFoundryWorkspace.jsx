@@ -867,7 +867,6 @@ export default function NexoraFoundryWorkspace() {
   const studioTimeline = activeProject?.timeline || {duration_seconds:330,playhead_seconds:0,tracks:[
     {id:"video",name:"VIDEO CLIP",clips:[]},{id:"levels",name:"LEVEL SCENE",clips:[]},{id:"events",name:"GAMEPLAY EVENTS",clips:[]},{id:"audio",name:"AUDIO/SFX",clips:[]},
   ]};
-  const studioAssets = activeProject?.assets || [];
   const modelAssets = studioAssets.filter(asset=>["glb","gltf"].includes(asset.type));
   const mediaAssets = studioAssets.filter(asset=>["mp4","mov","mkv","webm","avi","wav","ogg","mp3"].includes(asset.type));
   const sceneNodes = activeProject?.scene?.objects || [];
