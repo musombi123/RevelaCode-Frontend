@@ -30,7 +30,6 @@ import {
   ShoppingCart,
   Users,
   ShieldCheck,
-  Gamepad2,
 } from "lucide-react";
 
 import { DASHBOARDS } from "./dashboardConfig.jsx";
@@ -830,7 +829,6 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     "community",
     "payments",
     "humanizer",
-    "nexora",
   ]);
   const showShellHeader = !hubViewsWithOwnHeader.has(activeView);
 
@@ -888,7 +886,6 @@ export default function MainDashboardV2({ initialDashboardKey = null } = {}) {
     { key: "start", label: "Start", keys: ["home", "ai"] },
     { key: "learn", label: "Learn & Security", keys: ["faith", "education", "security-academy"] },
     { key: "grow", label: "Work & Grow", keys: ["biashara", "shamba"] },
-    { key: "create", label: "Create & Build", keys: ["nexora"] },
     { key: "community", label: "Community & Services", keys: ["community", "payments"] },
     { key: "account", label: "Account & Settings", keys: ["profile", "settings", "accounts"] },
   ];
@@ -1419,6 +1416,7 @@ const BIASHARA_SECTION_KEYS = new Set(
             flex
             min-h-0
             min-w-0
+            h-full
             flex-1
             flex-col
             overflow-hidden
@@ -1638,7 +1636,7 @@ const BIASHARA_SECTION_KEYS = new Set(
                   ? "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-2 pt-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))] dark:bg-slate-950"
                   : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950"
                 : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain bg-slate-100 px-3 pt-3 pb-24 dark:bg-slate-950 sm:px-4 sm:py-4 lg:px-6 lg:py-6 lg:pb-6")}
-            style={isAndroidApp ? { height: 0, minHeight: 0, WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
+            style={isAndroidApp ? { height: "100%", minHeight: 0, maxHeight: "100%", WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } : undefined}
           >
             <ConnectionStatusBanner />
             <SDAQuarterlyBackgroundSync />
@@ -1748,7 +1746,6 @@ const BIASHARA_SECTION_KEYS = new Set(
                       : [
                           { key: "biashara", label: "Biashara", Icon: ShoppingCart, detail: "Sales and business" },
                           { key: "shamba", label: "Shamba", Icon: Leaf, detail: "Farms and crops" },
-                          { key: "nexora", label: "NEXORA Foundry", Icon: Gamepad2, detail: "Create 3D games" },
                         ]
                     ).map(({ key, label, Icon, detail }) => {
                       const active = activeView === key;

@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AndroidBuildConsole from "./AndroidBuildConsole.jsx";
+import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, CircleHelp, Code2,
@@ -167,6 +169,7 @@ export default function NexoraFoundryWorkspace() {
   const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) || "");
   const [tab, setTab] = useState("overview");
   const [jobs, setJobs] = useState([]);
+  const [androidBuild, setAndroidBuild] = useState({ app_name: "NEXORA Game", package_id: "com.nexora.game", version_name: "1.0.0", version_code: 1, build_type: "debug", artifact_format: "apk", orientation: "landscape", internet_permission: true, camera_permission: false, microphone_permission: false, icon_asset_id: null });
   const cloudBaseline = useRef(new Map());
   const cloudSaveTimer = useRef(null);
   const [selectedObjectId, setSelectedObjectId] = useState("");
@@ -595,7 +598,7 @@ export default function NexoraFoundryWorkspace() {
     }
   }, [activeProject?.id, apiRequest, cloudProjectActive]);
 
-  const queueProductionJob = async (kind, target = "desktop") => {
+  const queueProductionJob = async (kind, target = "desktop", android = null) => {
     if (!cloudProjectActive || !activeProject) {
       setNotice("Select a cloud-synced project before queueing Godot production jobs.");
       return;
@@ -605,10 +608,11 @@ export default function NexoraFoundryWorkspace() {
       setNotice(issues.join(" "));
       return;
     }
+    if (android?.build_type === "release" && !window.confirm("Queue a signed release candidate? The worker must have a protected release keystore configured. This does not publish the game.")) return;
     try {
       const result = await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/jobs`, {
         method: "POST",
-        body: JSON.stringify({ kind, target }),
+        body: JSON.stringify({ kind, target, ...(android ? { android } : {}) }),
       });
       setNotice(`Queued ${kind} job ${result.job_id}. A dedicated Blender/Godot worker must be online to execute it.`);
       await refreshJobs();
@@ -677,20 +681,15 @@ export default function NexoraFoundryWorkspace() {
   const validationPassed = activeProject && validationIssues.length === 0;
   const exportProject = () => activeProject && downloadJson(activeProject, `${activeProject.name.replace(/[^a-z0-9-_]+/gi, "-").toLowerCase() || "nexora-project"}.nexora.json`);
 
+  const studioAssets = activeProject?.assets || [];
+  const pipelineRows = [["Video Intake","Source media",studioAssets.length?"Ready":"Waiting"],["Character Extraction","Characters & rigging",studioAssets.some(a=>a.type==="glb")?"Ready":"Waiting"],["Motion Capture","Motion cleanup","Waiting"],["World Builder","Environment generation","Waiting"],["Enemy AI","Behavior data",activeProject?.gameplay?.enemies?.length?"Ready":"Waiting"],["Quest Logic","Objectives & triggers",activeProject?.gameplay?.objectives?.length?"Ready":"Waiting"]];
   return (
-    <div className="min-h-full min-w-0 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 p-3 pb-28 sm:p-5 lg:p-7 lg:pb-8">
-        <header className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 p-5 text-white shadow-xl sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-violet-300/30 bg-violet-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[.2em] text-violet-200">NEXORA Interactive Studios</span><StatusPill tone="violet">Foundry workspace</StatusPill></div>
-            <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Build worlds. Ship playable experiences.</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">A creator workspace for game projects, editable scenes, private cloud asset intake, Blender processing, Godot generation and release preparation.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => importInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-bold text-white hover:bg-white/15"><FolderOpen size={15}/> Import project</button>
-            <button type="button" onClick={createNewProject} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-violet-500 px-4 text-xs font-black text-white shadow-lg hover:bg-violet-400"><Plus size={16}/> New project</button>
-            <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
-          </div>
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-slate-100">
+      <div className="mx-auto flex max-w-[1900px] flex-col gap-2 p-2">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-900/50 bg-[#080d12] px-3 py-2">
+          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center border border-cyan-400/50 bg-cyan-950/40 text-cyan-300"><Box size={25}/></div><div><div className="text-xl font-black tracking-[.16em]">NEXORA</div><div className="text-[9px] tracking-[.4em] text-cyan-300">STUDIO PRO</div></div></div>
+          <nav className="flex flex-wrap justify-center gap-1">{["PROJECT","TIMELINE","BUILD","AI PIPELINE","PREVIEW","EXPORT","SETTINGS"].map((item,i)=><button key={item} type="button" onClick={()=>{if(i===0)setNotice("Project selector and project creation are available in the asset-library header.");if(i===2)queueProductionJob("scene.generate","desktop");if(i===3)setNotice("AI pipeline is shown at left. Add source media to start intake.");if(i===4)setNotice("The preview panel requires the connected Godot preview runtime.");if(i===5)exportProject();if(i===6)checkService();}} className="border border-cyan-900/50 bg-[#101820] px-3 py-2 text-[10px] font-black text-cyan-100 hover:bg-cyan-950">{item}</button>)}</nav>
+          <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-cyan-200">{apiStatus.state==="online"?"Cloud Synced":apiStatus.state==="checking"?"Connecting":"Cloud Offline"}</span><span className={"h-2 w-2 rounded-full "+(apiStatus.state==="online"?"bg-emerald-400":"bg-amber-400")}/><button type="button" onClick={()=>activeProject?queueProductionJob("playtest","desktop"):createNewProject()} className="border border-amber-400/50 bg-amber-300/10 px-3 py-2 text-[10px] font-black text-amber-100">▶ RUN PLAYTEST</button></div>
         </header>
 
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

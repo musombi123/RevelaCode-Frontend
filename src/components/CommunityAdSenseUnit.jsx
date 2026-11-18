@@ -139,6 +139,9 @@ function NativeAdMobPlacement({ config }) {
           feedId: config.feedId,
           ...(hasProductionIds ? { adId: config.admobUnitId } : {}),
           template: NativeAdTemplate.Small,
+          // v8.3.0+ renders a cached snapshot while scrolling so the native
+          // overlay cannot intercept a swipe that begins on the ad slot.
+          androidScrollSnapshot: isAndroidNativeApp(),
           isTesting: !import.meta.env.PROD && !hasProductionIds,
           style: {
             backgroundColor: "#0b1220",

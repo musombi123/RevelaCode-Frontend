@@ -80,5 +80,8 @@ test("Android native AdMob placements preserve WebView scroll gestures", () => {
   assert.match(ads, /androidScrollSnapshot: isAndroidNativeApp\(\)/);
   assert.match(ads, /NativeAdFeed\.create\(/);
   assert.match(ads, /NativeAdTemplate\.Small/);
+  const lock = JSON.parse(source("package-lock.json"));
+  assert.equal(lock.packages["node_modules/@capacitor-community/admob"].version, "8.3.0");
+  assert.equal(lock.packages["node_modules/@webview-native-ui/engine"].version, "1.0.0");
   assert.match(css, /capacitor-admob-native\s*\{[^}]*min-height:\s*120px/);
 });
