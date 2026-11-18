@@ -242,7 +242,8 @@ export default function NexoraFoundryWorkspace() {
     headers.set("Authorization", "Bearer " + nexoraSession.access_token);
     headers.set("Accept", headers.get("Accept") || "application/json");
     const requestedUrl = String(input);
-    const url = /^https?:\\/\\//i.test(requestedUrl) ? requestedUrl : API_BASE + (requestedUrl.startsWith("/") ? requestedUrl : "/" + requestedUrl);
+    const isAbsoluteUrl = requestedUrl.startsWith("https://") || requestedUrl.startsWith("http://");
+    const url = isAbsoluteUrl ? requestedUrl : API_BASE + (requestedUrl.startsWith("/") ? requestedUrl : "/" + requestedUrl);
     return fetch(url, { ...options, headers, cache: "no-store" });
   }, [nexoraSession?.access_token]);
 
