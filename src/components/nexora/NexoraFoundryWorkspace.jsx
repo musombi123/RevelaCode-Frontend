@@ -402,7 +402,7 @@ export default function NexoraFoundryWorkspace() {
       }
     });
     return () => { cancelled = true; };
-  }, [nexoraAuthLoading, authenticatedCloudSession, apiRequest]);
+  }, [nexoraAuthLoading, authenticatedCloudSession, apiRequest, storageUserId]);
 
   useEffect(() => {
     // Retain only device-only drafts in browser storage. Cloud-owned project
@@ -766,7 +766,7 @@ export default function NexoraFoundryWorkspace() {
       if (cloudMode && asset.remote) {
         await apiRequest(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}`, { method: "DELETE" });
       } else {
-        await removeStoredAsset(asset.id);
+        await removeStoredAsset(asset.id,nexoraUser?.id || "anonymous");
       }
       patchProject((project) => ({ ...project, assets: project.assets.filter((item) => item.id !== asset.id) }));
       setNotice(`Removed ${asset.name} from ${cloudMode ? "private cloud storage" : "this browser"}.`);
