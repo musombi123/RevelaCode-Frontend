@@ -71,7 +71,14 @@ function safeLazy(importFn, name) {
           didReload = sessionStorage.getItem(retryKey) === "1";
           if (!didReload) sessionStorage.setItem(retryKey, "1");
         } catch { didReload = true; }
-        if (!didReload && typeof window !== "undefined") window.location.reload();
+        if (!didReload && typeof window !== "undefined") {
+          // A deployment can publish new HTML before an old cached HTML has
+          // stopped referencing its removed hashed chunks. Reload a fresh HTML
+          // document once so the browser receives the current asset manifest.
+          const refreshUrl = new URL(window.location.href);
+          refreshUrl.searchParams.set("__revela_chunk_refresh", String(Date.now()));
+          window.location.replace(refreshUrl.toString());
+        }
         console.error(`Lazy chunk retry failed for ${name}.`, retryError);
         throw retryError;
       }
