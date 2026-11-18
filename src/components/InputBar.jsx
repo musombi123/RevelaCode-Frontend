@@ -677,8 +677,17 @@ export default function InputBar({
      RENDER
   ======================================================= */
 
+  const handleComposerSubmit = (event) => {
+    event.preventDefault();
+    if (isGenerating) {
+      onStop?.();
+      return;
+    }
+    void submit();
+  };
+
   return (
-    <div className="relative w-full" data-demo="composer">
+    <form onSubmit={handleComposerSubmit} className="relative z-30 w-full pointer-events-auto" data-demo="composer">
       <input
         ref={fileInputRef}
         type="file"
@@ -975,20 +984,20 @@ export default function InputBar({
               <select value={searchTimeRange} onChange={(event) => setSearchTimeRange(event.target.value)} aria-label="Research time range" className="h-8 shrink-0 rounded-full border border-line bg-surface-2 px-3 text-[11px] font-semibold text-fg"><option>Any time</option><option>Past 24 hours</option><option>Past week</option><option>Past month</option><option>Past year</option></select>
             </div></div>
           )}
-          <div className="flex min-h-11 shrink-0 items-center justify-between gap-2 px-2.5 pb-2.5 pt-2">
+          <div className="relative z-10 flex min-h-11 shrink-0 items-center justify-between gap-2 px-2.5 pb-2.5 pt-2 pointer-events-auto">
             <div className="flex min-w-0 items-center gap-1.5">
               <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Add attachment" aria-expanded={attachmentMenuOpen} className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"bg-surface-2 text-accent":"text-muted")}><Plus size={20}/></button>
               <button type="button" onClick={()=>{setAttachmentMenuOpen(v=>!v);setToolsQuery("");}} disabled={disabled} aria-label="Open AI tools" aria-expanded={attachmentMenuOpen} className={"flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:opacity-40 "+(attachmentMenuOpen?"border-emerald-500/30 bg-emerald-500/10 text-accent":"border-line text-fg-secondary hover:bg-surface-2")}><Sparkles size={16}/> Tools</button>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <button type="button" onClick={() => onMic?.()} disabled={disabled || !onMic} aria-label="Start voice conversation" title="Voice conversation" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition-all hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 disabled:cursor-not-allowed disabled:opacity-35"><Mic size={19}/></button>
-              <button type="button" data-demo="ai-send-message" onClick={isGenerating?onStop:submit} disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} title={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} className={"flex h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full p-0 transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<ArrowUp size={20} strokeWidth={2.6}/>}</button>
+              <button type="submit" data-demo="ai-send-message" disabled={isGenerating?!onStop:!canSend} aria-label={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} title={isGenerating?"Stop generating":activeModeDefinition?.action || "Send message"} className={"relative z-20 pointer-events-auto touch-manipulation flex h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full p-0 transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 "+(isGenerating?"bg-rose-500 text-white shadow-lg shadow-rose-500/20":canSend?"bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:brightness-105":"cursor-not-allowed bg-surface-3 text-muted")}>{isGenerating?<XCircle size={19} strokeWidth={2.5}/>:<ArrowUp size={20} strokeWidth={2.6}/>}</button>
             </div>
           </div>
         </div>
         {textareaFocused&&<p className="hidden px-3 pt-1.5 text-[10px] text-muted sm:block"><kbd className="font-sans">Enter</kbd> to send <span className="px-1">·</span><kbd className="font-sans">Shift + Enter</kbd> for new line</p>}
       </div>
 
-    </div>
+    </form>
   );
 }
