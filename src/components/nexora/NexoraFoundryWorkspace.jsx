@@ -203,6 +203,9 @@ export default function NexoraFoundryWorkspace() {
     { id:"alien_tree", name:"Alien Tree", category:"Environments", kind:"tree", description:"Procedural alien vegetation", default_scale:1 },
     { id:"rock_formation", name:"Rock Formation", category:"Environments", kind:"rock", description:"Natural terrain landmark", default_scale:1 },
     { id:"sci_fi_outpost", name:"Sci-Fi Outpost", category:"Environments", kind:"outpost", description:"Modular player shelter / mission site", default_scale:1 },
+    { id:"tactical_android", name:"Tactical Android", category:"Characters", kind:"character", description:"Original low-poly humanoid character blockout", default_scale:1 },
+    { id:"scout_drone", name:"Scout Drone", category:"Props", kind:"drone", description:"Compact reconnaissance drone", default_scale:1 },
+    { id:"heavy_door", name:"Sci-Fi Heavy Door", category:"Props", kind:"door", description:"Industrial sliding bulkhead door", default_scale:1 },
   ]);
   const [previewSelection, setPreviewSelection] = useState({ type:"template", id:"sci_fi_crate" });
   const [previewUrl, setPreviewUrl] = useState("");
