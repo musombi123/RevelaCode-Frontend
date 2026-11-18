@@ -807,7 +807,7 @@ export default function NexoraFoundryWorkspace() {
 
   const convertAssetToGameAsset = async (asset, targetRole = "prop") => {
     if (!cloudProjectActive || !activeProject) {
-      setNotice("Upload and save this asset to a RevelaCode-authenticated cloud project before conversion.");
+      setNotice("Upload and save this asset to your NEXORA account-owned cloud project before conversion.");
       return;
     }
     const acceptedTypes = ["png","jpg","jpeg","webp","glb","gltf","obj","fbx","ply"];
