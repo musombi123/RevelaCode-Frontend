@@ -644,10 +644,7 @@ export default function InputBar({
 
       // A rejected request keeps its draft. If the user starts composing another
       // message while this request runs, never clear that newer draft.
-      if (accepted === false) {
-        setSubmissionError("Message was not sent. Check the chat notice or account requirements, then try again.");
-        return;
-      }
+      if (accepted === false) return;
       setText((current) => current === submittedDraft ? "" : current);
       setAttachedFile((current) => current === submittedFile ? null : current);
       setSelectedToolCommand((current) => current === submittedTool ? null : current);
