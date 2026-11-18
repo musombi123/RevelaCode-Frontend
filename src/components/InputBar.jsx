@@ -122,7 +122,6 @@ export default function InputBar({
   const { authFetch } = useAuth();
   const [text, setText] = useState(() => String(initialDraft || ""));
   const [submitting, setSubmitting] = useState(false);
-  const submittingRef = useRef(false);
   const [submissionError, setSubmissionError] = useState("");
 
   useEffect(() => {
@@ -610,9 +609,7 @@ export default function InputBar({
 
   const submit = async () => {
     const value = text.trim();
-    if (!canSend || submittingRef.current || typeof onSend !== "function") return;
-
-    submittingRef.current = true;
+    if (!canSend || submitting || typeof onSend !== "function") return;
     setSubmissionError("");
     recognitionRef.current?.stop?.();
     const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
@@ -653,7 +650,6 @@ export default function InputBar({
       console.error("RevelaAI message submission failed.", error);
       setSubmissionError(error?.message || "Message could not be submitted. Please try again.");
     } finally {
-      submittingRef.current = false;
       setSubmitting(false);
     }
   };
