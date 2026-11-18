@@ -13,6 +13,8 @@ const makeEpisode = (number) => ({
   estimated_minutes: 10,
 });
 
+const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
+
 const DEFAULT_WORKFLOW = {
   schema_version: "1.0", mode: "story", plan: "basic",
   target_class: "mobile", platform: "android", title: "Untitled Game",
@@ -29,7 +31,7 @@ const PLATFORMS = {
 };
 const money = (value) => Number.isFinite(Number(value)) ? `KES ${Number(value).toLocaleString("en-KE")}` : "Price not configured";
 
-export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProjectActive, setNotice }) {
+export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProjectActive, setNotice, authFetch }) {
   const [workflow, setWorkflow] = useState(DEFAULT_WORKFLOW);
   const [plans, setPlans] = useState([]);
   const [packs, setPacks] = useState([]);
@@ -160,6 +162,27 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   ];
   const stages = pipeline?.stages || [];
   const stageRecord = (id) => stages.find((item) => item.stage === id);
+  const downloadAssembledGame = () => run("download-game", async () => {
+    const fetcher = typeof authFetch === "function" ? authFetch : fetch;
+    const response = await fetcher(`${API_BASE}/api/projects/${projectId}/movie-pipeline/assembly/download`, {
+      headers: { Accept: "application/zip" }, cache: "no-store",
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || `Game package download failed (HTTP ${response.status}).`);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "nexora-game.zip";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return { message: "Playable Godot project package downloaded." };
+  });
+
   const stageAction = (id, path) => {
     const record = stageRecord(id);
     if (!record) return null;
@@ -212,13 +235,18 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
           {workflow.mode==="movie" && <div className="border border-amber-800/60 bg-amber-950/15 p-3">
             <h3 className="mb-2 flex items-center gap-2 text-xs font-black text-amber-200"><Film size={15}/> ADAPTATION RIGHTS CHECK</h3>
             <p className="mb-2 text-[10px] leading-5 text-slate-300">NEXORA cannot determine copyright ownership by analysing a video. Only upload a movie you own, have licensed, or have permission to adapt. Protected dialogue, music, character designs and frames are not copied into the game; the assets created are original.</p>
-            {[["has_adaptation_rights","I own or have a valid licence / permission to adapt this movie."],["has_performer_consents","Required performer / likeness consents are in place, or recognizable real performers will not be recreated."],["has_music_rights","I understand original game music and effects are generated; movie soundtrack is not reused."]].map(([key,label])=><label key={key} className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow[key])} onChange={e=>update({[key]:e.target.checked})} className="mt-0.5"/><span>{label}</span></label>{workflow.mode==="movie"&&<label className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow.avoids_performer_likeness)} onChange={e=>update({avoids_performer_likeness:e.target.checked,has_performer_consents:e.target.checked?false:workflow.has_performer_consents})} className="mt-0.5"/><span>Do not reproduce identifiable real performers or their likenesses; use original generic player and NPC designs.</span></label>})}
+            {[
+              ["has_adaptation_rights","I own or have a valid licence / permission to adapt this movie."],
+              ["has_performer_consents","Required performer / likeness consents are in place for any approved likeness use."],
+              ["has_music_rights","I understand original game music and effects are generated; the movie soundtrack is not reused."],
+            ].map(([key,label]) => <label key={key} className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow[key])} onChange={e=>update({[key]:e.target.checked})} className="mt-0.5"/><span>{label}</span></label>)}
+            <label className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow.avoids_performer_likeness)} onChange={e=>update({avoids_performer_likeness:e.target.checked,has_performer_consents:e.target.checked?false:workflow.has_performer_consents})} className="mt-0.5"/><span>Do not reproduce identifiable real performers or their likenesses; use original generic player and NPC designs.</span></label>
             <label className="mt-3 block text-[10px] text-slate-400">COPYRIGHT STATUS<select value={workflow.copyright_declaration} onChange={e=>update({copyright_declaration:e.target.value})} className="mt-1 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-white"><option value="original">Original / owned</option><option value="licensed">Licensed adaptation</option><option value="public_domain">Public domain</option></select></label>
             <p className="mt-2 text-[10px] text-amber-100">Movie upload is enabled only after the rights declaration, a paid plan and a supported clip duration have been checked.</p>
           </div>}
           <div className="flex flex-wrap gap-2"><button type="button" onClick={saveDocument} disabled={Boolean(busy)||!cloudProjectActive} className="border border-cyan-700 bg-cyan-950/40 px-3 py-2 text-[10px] font-black text-cyan-100 disabled:opacity-40">SAVE GAME DESIGN DOCUMENT</button><button type="button" onClick={createPipeline} disabled={Boolean(busy)||!cloudProjectActive||!canGenerate} className="border border-violet-600 bg-violet-950/40 px-3 py-2 text-[10px] font-black text-violet-100 disabled:opacity-40">CREATE PRODUCTION PIPELINE</button><button type="button" onClick={refreshPipeline} disabled={Boolean(busy)} className="border border-slate-700 px-3 py-2 text-[10px]"><RefreshCw size={12} className="mr-1 inline"/> REFRESH STAGES</button></div>
           {workflow.mode==="movie" && pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 text-xs font-black text-amber-200">MOVIE SOURCE INTAKE</div><label className="flex cursor-pointer items-center gap-2 border border-dashed border-amber-800 p-3 text-xs text-amber-100"><UploadCloud size={18}/> SELECT CLIP · PLAN DURATION IS ENFORCED<input type="file" accept=".mp4,.mov,.mkv,.webm,.avi,video/*" className="hidden" onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)uploadMovie(file);}}/></label>{analysis&&<div className="mt-2 text-[10px] text-slate-300">Analysis: {analysis.scene_detection?.scenes?.length||0} scenes · {analysis.keyframes?.length||0} keyframes · review before approving</div>}</div>}
-          {pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-black text-cyan-200">PRODUCTION STAGES</h3><span className="text-[9px] text-slate-500">{stages.filter((x)=>x.state==="APPROVED").length}/{stages.length} approved</span></div><div className="space-y-1">{stageRows.map(([id,label,path])=>{const rec=stageRecord(id);if(!rec)return null;return <div key={id} className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] p-2"><div className="min-w-0 flex-1"><div className="text-[10px] font-bold text-white">{label}</div><div className="text-[9px] text-slate-500">{rec.summary}</div>{rec.error&&<div className="text-[9px] text-rose-300">{rec.error}</div>}</div><span className={"text-[9px] font-bold "+(rec.state==="APPROVED"?"text-emerald-300":rec.state==="FAILED"?"text-rose-300":rec.state==="REVIEW"?"text-amber-200":"text-slate-400")}>{rec.state}</span>{id==="analysis"&&rec.state==="REVIEW"&&<button type="button" disabled={Boolean(busy)} onClick={()=>approveStage("analysis")} className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">APPROVE SCENE ANALYSIS</button>}{stageAction(id,path)}</div>})}</div>{stageRecord("assembly")?.state==="APPROVED"||stageRecord("assembly")?.state==="REVIEW"?<a href={`${window.location.origin}/api/v1/workspace/projects/${projectId}/movie-pipeline/assembly/download`} onClick={e=>{e.preventDefault();run("download-game",async()=>{const response=await fetch(`${(import.meta.env.VITE_NEXORA_API_URL||"https://nexora-foundry-api.onrender.com").replace(/\/$/,"")}/api/projects/${projectId}/movie-pipeline/assembly/download`,{headers:{Authorization:`Bearer ${localStorage.getItem("accessToken")||""}`}});if(!response.ok)throw new Error("Game package download failed. Refresh your session and retry.");const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="nexora-game.zip";a.click();URL.revokeObjectURL(url);return {message:"Playable Godot project downloaded."};});}} className="mt-3 inline-block border border-emerald-700 px-3 py-2 text-[10px] font-bold text-emerald-200">DOWNLOAD ASSEMBLED GODOT GAME</a>:null}</div>}
+          {pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-black text-cyan-200">PRODUCTION STAGES</h3><span className="text-[9px] text-slate-500">{stages.filter((x)=>x.state==="APPROVED").length}/{stages.length} approved</span></div><div className="space-y-1">{stageRows.map(([id,label,path])=>{const rec=stageRecord(id);if(!rec)return null;return <div key={id} className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] p-2"><div className="min-w-0 flex-1"><div className="text-[10px] font-bold text-white">{label}</div><div className="text-[9px] text-slate-500">{rec.summary}</div>{rec.error&&<div className="text-[9px] text-rose-300">{rec.error}</div>}</div><span className={"text-[9px] font-bold "+(rec.state==="APPROVED"?"text-emerald-300":rec.state==="FAILED"?"text-rose-300":rec.state==="REVIEW"?"text-amber-200":"text-slate-400")}>{rec.state}</span>{id==="analysis"&&rec.state==="REVIEW"&&<button type="button" disabled={Boolean(busy)} onClick={()=>approveStage("analysis")} className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">APPROVE SCENE ANALYSIS</button>}{stageAction(id,path)}</div>})}</div>{stageRecord("assembly")?.state==="APPROVED"||stageRecord("assembly")?.state==="REVIEW"?<button type="button" onClick={downloadAssembledGame} disabled={Boolean(busy)} className="mt-3 inline-block border border-emerald-700 px-3 py-2 text-[10px] font-bold text-emerald-200 disabled:opacity-40">DOWNLOAD ASSEMBLED GODOT GAME</button>:null}</div>}
         </div>
         <aside className="space-y-3">
           <div className="border border-violet-800/50 bg-[#0d1420] p-3"><h3 className="mb-2 text-xs font-black text-violet-200"><Layers3 size={14} className="mr-1 inline"/> CREATOR PLANS</h3>{plans.map((plan)=><button type="button" key={plan.id} onClick={()=>setPlan(plan.id)} className={"mb-2 w-full border p-2 text-left "+(workflow.plan===plan.id?"border-violet-400 bg-violet-950/30":"border-slate-700 bg-[#080d12]")}><div className="flex items-center justify-between"><b className="text-xs text-white">{plan.name}</b><span className="text-[10px] text-amber-200">{plan.price_configured?money(plan.price_kes):"Price not configured"}</span></div><div className="mt-1 text-[9px] text-slate-400">{plan.video_limit_seconds}s movie · {plan.target_class} · {plan.max_episodes} episodes · {plan.max_workload_units} workload units</div></button>)}</div>
