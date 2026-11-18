@@ -374,8 +374,8 @@ export default function App() {
               />
               <Route path="/app" element={<InteractiveWorkspaceRoute />} />
               {/* Standalone NEXORA entry: deliberately bypasses RevelaCode shell/navigation. */}
-              <Route path="/dev_nexora" element={<SPAWrapper deferStartModal><NexoraFoundryWorkspace /></SPAWrapper>} />
-              <Route path="/dev_nexora/*" element={<SPAWrapper deferStartModal><NexoraFoundryWorkspace /></SPAWrapper>} />
+              <Route path="/dev_nexora" element={<NexoraFoundryWorkspace />} />
+              <Route path="/dev_nexora/*" element={<NexoraFoundryWorkspace />} />
               <Route path="/explore/:hub" element={<HubGuestEntryRoute />} />
               <Route path="/profile/:profileId" element={<CommunityPublicRoute mode="profile" />} />
               <Route path="/post/:postId" element={<CommunityPublicRoute mode="post" />} />
