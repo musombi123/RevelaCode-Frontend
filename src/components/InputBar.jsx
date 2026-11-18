@@ -625,7 +625,7 @@ export default function InputBar({
 
     setSubmitting(true);
     try {
-      const accepted = await onSend(value, attachedFile, {
+      const accepted = await onSend?.(value, attachedFile, {
         toolCommand: command ? "/" + command : null,
         toolLabel,
         toolMode: command ? (toolMode["/" + command] || TOOL_MODES["/" + command]?.defaultMode || null) : null,
