@@ -710,7 +710,7 @@ export default function NexoraFoundryWorkspace() {
         method: "POST",
         body: JSON.stringify({ kind, target, ...(android ? { android } : {}) }),
       });
-      setNotice(`Queued ${kind} job ${result.job_id}. A dedicated Blender/Godot worker must be online to execute it.`);
+      setNotice(`Queued ${kind} job ${result.job_id || result.id}. NEXORA will report the actual worker result.`);
       await refreshJobs();
     } catch (error) {
       setNotice(error.message || "Could not queue the production job.");
@@ -986,6 +986,22 @@ export default function NexoraFoundryWorkspace() {
           </div>
           <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
           <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
+          <AndroidBuildConsole
+            settings={androidBuild}
+            onChange={setAndroidBuild}
+            onBuild={(settings)=> {
+              if (settings.artifact_format === "aab" && settings.build_type !== "release") {
+                setNotice("Android App Bundles are release-only in NEXORA. Select Release before building an AAB.");
+                return;
+              }
+              queueProductionJob("build.export","android",settings);
+            }}
+            iconAssets={studioAssets.filter((asset)=>asset.type === "png")}
+            disabled={!cloudProjectActive || busy}
+            deviceStatus="Android builds are exported by the NEXORA worker. USB/wireless installation and logcat use the paired local desktop bridge below."
+          />
+          <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
+
           <div className="mt-3"><h3 className="mb-2 text-[10px] font-black tracking-widest text-amber-200">BUILT-IN 3D TEMPLATES · ADD TO SCENE</h3><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">{templates.map(template=><div key={template.id} className="border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"template",id:template.id})} className="flex h-20 w-full items-center justify-center border border-cyan-900/30 bg-[#0a1118] text-cyan-200"><Box size={30}/></button><div className="mt-1 truncate text-[10px] font-bold">{template.name}</div><div className="text-[9px] text-slate-500">{template.category} · 3D template</div><button type="button" disabled={!activeProject} onClick={()=>addTemplateToScene(template)} className="mt-2 w-full border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-200 disabled:opacity-40">＋ ADD TO SCENE</button></div>)}</div></div>
           <div className="mt-4"><h3 className="mb-2 text-[10px] font-black tracking-widest text-amber-200">YOUR 3D MODELS & MEDIA</h3><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">{studioAssets.map(asset=><div key={asset.id} className="min-w-0 border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"asset",id:asset.id})} className="flex h-20 w-full items-center justify-center bg-gradient-to-br from-cyan-950/60 to-slate-900 text-cyan-300"><ImagePlus size={24}/></button><div className="mt-1 truncate text-[10px] font-bold" title={asset.name}>{asset.name}</div><div className="truncate text-[9px] text-slate-500">{asset.type.toUpperCase()} · {asset.remote?asset.status:"LOCAL"}</div><div className="mt-1 flex gap-1">{["glb","gltf"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToScene(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">USE MODEL</button>}{["mp4","mov","mkv","webm","avi","wav","ogg","mp3"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToTimeline(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">ADD TO TIMELINE</button>}<button type="button" onClick={()=>removeAsset(asset)} className="border border-slate-700 px-1 py-1 text-[9px] text-rose-300">DEL</button></div></div>)}</div>{!studioAssets.length&&<div className="mt-3 border border-dashed border-slate-700 p-5 text-center text-xs text-slate-500">Import source media, 3D models and templates to begin.</div>}</div>
         </section>
