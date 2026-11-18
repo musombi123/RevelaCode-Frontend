@@ -122,6 +122,8 @@ export default function InputBar({
   const { authFetch } = useAuth();
   const [text, setText] = useState(() => String(initialDraft || ""));
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [submissionError, setSubmissionError] = useState("");
 
   useEffect(() => {
     if (initialDraft) setText(String(initialDraft));
@@ -608,8 +610,10 @@ export default function InputBar({
 
   const submit = async () => {
     const value = text.trim();
-    if (!canSend || submitting || typeof onSend !== "function") return;
+    if (!canSend || submittingRef.current || typeof onSend !== "function") return;
 
+    submittingRef.current = true;
+    setSubmissionError("");
     recognitionRef.current?.stop?.();
     const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
@@ -621,7 +625,7 @@ export default function InputBar({
 
     setSubmitting(true);
     try {
-      const accepted = await onSend?.(value, attachedFile, {
+      const accepted = await onSend(value, attachedFile, {
         toolCommand: command ? "/" + command : null,
         toolLabel,
         toolMode: command ? (toolMode["/" + command] || TOOL_MODES["/" + command]?.defaultMode || null) : null,
@@ -640,14 +644,19 @@ export default function InputBar({
 
       // A rejected request keeps its draft. If the user starts composing another
       // message while this request runs, never clear that newer draft.
-      if (accepted === false) return;
+      if (accepted === false) {
+        setSubmissionError("Message was not sent. Check the chat notice or account requirements, then try again.");
+        return;
+      }
       setText((current) => current === submittedDraft ? "" : current);
       setAttachedFile((current) => current === submittedFile ? null : current);
       setSelectedToolCommand((current) => current === submittedTool ? null : current);
       requestAnimationFrame(() => textareaRef.current?.focus());
     } catch (error) {
       console.error("RevelaAI message submission failed.", error);
+      setSubmissionError(error?.message || "Message could not be submitted. Please try again.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -909,6 +918,7 @@ export default function InputBar({
             {attachedFile&&<div className="mb-3 flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface-2 p-2 sm:max-w-sm">{previewUrl?<img src={previewUrl} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover"/>:<span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-accent"><FileText size={20}/></span>}<div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-fg">{attachedFile.name}</p><p className="mt-0.5 text-[11px] text-muted">{formatSize(attachedFile.size)}</p></div><button type="button" onClick={()=>setAttachedFile(null)} aria-label="Remove attachment" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-surface-3"><X size={16}/></button></div>}
             {slashMatches.length>0&&<div role="listbox" aria-label="Slash commands" className="mb-2 flex flex-wrap gap-1.5 rounded-xl border border-line bg-popover p-2">{slashMatches.map(([command,label,Icon])=><button key={command} type="button" role="option" aria-selected="false" onClick={()=>chooseCommand(command)} className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs text-fg-secondary hover:bg-surface-3"><Icon size={16}/><b>{command}</b><span className="text-muted">{label}</span></button>)}</div>}
             <textarea ref={textareaRef} rows={1} value={text} disabled={disabled} placeholder={effectivePlaceholder} onChange={e=>setText(e.target.value)} onKeyDown={handleKeyDown} onPaste={handlePaste} onFocus={()=>setTextareaFocused(true)} onBlur={()=>setTextareaFocused(false)} aria-label={effectivePlaceholder} className="block max-h-[40dvh] min-h-[28px] w-full resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-6 text-fg outline-none placeholder:text-muted focus:border-0 focus:outline-none focus:ring-0 disabled:opacity-50"/>
+            {submissionError && <p role="alert" className="mt-2 px-1 text-[11px] text-rose-500">{submissionError}</p>}
           </div>
           {activeModeConfig?.kind === "image-studio" && (
             <div className="border-t border-line/70 px-3 py-2">
