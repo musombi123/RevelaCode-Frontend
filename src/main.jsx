@@ -9,6 +9,18 @@ import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { warmCrossReferenceDataset, warmFaithStudyCache } from "./components/study/studyMaterialCache.js";
 import "./index.css";
 
+const CHUNK_RELOAD_KEY = "revelacode:chunk-reload-at";
+if (typeof window !== "undefined") {
+  window.addEventListener("vite:preloadError", (event) => {
+    const previous = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+    if (Date.now() - previous < 60_000) return;
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    // Let Vite's rejected import propagate; the one-time reload obtains the
+    // current HTML manifest after a deployment has replaced old hashed chunks.
+    window.location.reload();
+  });
+}
+
 const ADSENSE_SCRIPT_URL =
   "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5357444506450550";
 
