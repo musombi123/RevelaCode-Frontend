@@ -991,6 +991,24 @@ export default function NexoraFoundryWorkspace() {
     addAssetToTimeline(fileAsset);
   };
 
+  const downloadArtifact = async (artifact) => {
+    try {
+      const response = await nexoraAuthFetch(artifact.download_url);
+      if (!response.ok) throw new Error("Artifact download failed (HTTP " + response.status + ").");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = artifact.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      setNotice(error.message || "Artifact download failed.");
+    }
+  };
+
   if (nexoraAuthLoading) {
     return <div className="flex min-h-screen items-center justify-center bg-[#05090f] text-sm text-cyan-100"><span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-900 border-t-cyan-300"/>Checking NEXORA account session…</div>;
   }
@@ -1090,7 +1108,23 @@ export default function NexoraFoundryWorkspace() {
             <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">ENGINE TELEMETRY</b><div className="mt-2 text-[10px] text-slate-400">{apiStatus.state==="online"?"Foundry API reachable":"Foundry API unavailable"}</div><div className="mt-2 border border-slate-800 p-2 text-[9px] text-slate-400">GPU / VRAM / temperature sensors are not exposed by this browser. A trusted desktop sensor agent must be installed before NEXORA can report these values.</div><div className="mt-2 text-[9px] text-slate-500">No estimated or fabricated benchmark values are displayed.</div><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1.5 text-[9px] text-cyan-100"><RefreshCw size={12} className="mr-1 inline"/> CHECK FOUNDRY SERVICE</button></div>
             <div className="mt-2 text-xs font-black text-amber-200">EXPORT TO TARGETS</div><div className="mt-1 grid grid-cols-2 gap-1">{[["WINDOWS","windows"],["LINUX","linux"],["ANDROID","android"],["WEB","web"]].map(([label,target])=><button key={target} type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("build.export",target)} className="border border-slate-700 bg-[#111922] p-2 text-[9px] font-bold text-cyan-100 hover:border-cyan-400/50 disabled:opacity-40">⬡ EXPORT<br/><span className="text-slate-400">{label}</span></button>)}</div>
             {settingsOpen&&<div className="mt-2 border border-cyan-800/50 bg-[#111922] p-2"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-1 text-[9px] text-rose-300">DELETE CURRENT PROJECT</button></div>}
-            <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div><div className="mt-1 space-y-1">{jobs.slice(0,4).map(job=><div key={job.id} className="border border-slate-800 bg-[#111922] p-2"><div className="flex justify-between gap-2 text-[9px]"><b className="truncate">{job.kind||"Foundry job"}</b><span className={job.state==="completed"?"text-emerald-300":job.state==="failed"?"text-rose-300":"text-amber-200"}>{job.state} {job.progress}%</span></div><div className="mt-1 text-[9px] text-slate-500">{job.message}</div>{(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={async()=>{try{const response=await nexoraAuthFetch(artifact.download_url);if(!response.ok)throw new Error("Artifact download failed.");const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=artifact.filename;link.click();URL.revokeObjectURL(url);}catch(error){setNotice(error.message);}}} className="mt-1 block truncate text-[9px] text-cyan-300 underline">{artifact.filename} · DOWNLOAD</button>)}</div>)}</div>}
+            <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div>
+            <div className="mt-1 space-y-1">
+              {jobs.slice(0, 4).map((job) => (
+                <div key={job.id} className="border border-slate-800 bg-[#111922] p-2">
+                  <div className="flex justify-between gap-2 text-[9px]">
+                    <b className="truncate">{job.kind || "Foundry job"}</b>
+                    <span className={job.state === "completed" ? "text-emerald-300" : job.state === "failed" ? "text-rose-300" : "text-amber-200"}>{job.state} {job.progress}%</span>
+                  </div>
+                  <div className="mt-1 text-[9px] text-slate-500">{job.message}</div>
+                  {(job.artifacts || []).map((artifact) => (
+                    <button key={artifact.id} type="button" onClick={() => downloadArtifact(artifact)} className="mt-1 block truncate text-[9px] text-cyan-300 underline">
+                      {artifact.filename} · DOWNLOAD
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
           </aside>
         </main>
 
