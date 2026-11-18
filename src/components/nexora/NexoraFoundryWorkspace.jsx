@@ -61,17 +61,26 @@ function createProject(name = "Untitled Game") {
   };
 }
 
-function readProjects() {
+function projectStorageKey(userId) {
+  return userId ? STORAGE_KEY + ":" + String(userId) : STORAGE_KEY;
+}
+
+function activeProjectStorageKey(userId) {
+  return userId ? ACTIVE_KEY + ":" + String(userId) : ACTIVE_KEY;
+}
+
+function readProjects(userId = "anonymous") {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const parsed = JSON.parse(localStorage.getItem(projectStorageKey(userId)) || "[]");
     return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.scene) : [];
   } catch { return []; }
 }
 
-function openAssetDb() {
+function openAssetDb(userId = "anonymous") {
   return new Promise((resolve, reject) => {
     if (!("indexedDB" in window)) return reject(new Error("This browser does not support local asset storage."));
-    const request = indexedDB.open(DB_NAME, 1);
+    const scopedDatabase = DB_NAME + "-" + String(userId || "anonymous").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const request = indexedDB.open(scopedDatabase, 1);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(DB_STORE)) request.result.createObjectStore(DB_STORE);
     };
@@ -80,8 +89,8 @@ function openAssetDb() {
   });
 }
 
-async function readStoredAssetBlob(assetId) {
-  const db = await openAssetDb();
+async function readStoredAssetBlob(assetId, userId) {
+  const db = await openAssetDb(userId);
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readonly");
     const request = tx.objectStore(DB_STORE).get(assetId);
@@ -90,8 +99,8 @@ async function readStoredAssetBlob(assetId) {
   });
 }
 
-async function storeAsset(file, projectId, assetId) {
-  const db = await openAssetDb();
+async function storeAsset(file, projectId, assetId, userId) {
+  const db = await openAssetDb(userId);
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readwrite");
     tx.objectStore(DB_STORE).put({ blob: file, name: file.name, type: file.type, size: file.size, projectId }, assetId);
@@ -101,8 +110,8 @@ async function storeAsset(file, projectId, assetId) {
   });
 }
 
-async function removeStoredAsset(assetId) {
-  const db = await openAssetDb();
+async function removeStoredAsset(assetId, userId) {
+  const db = await openAssetDb(userId);
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readwrite");
     tx.objectStore(DB_STORE).delete(assetId);
@@ -190,10 +199,13 @@ export default function NexoraFoundryWorkspace() {
   const [nexoraSession, setNexoraSession] = useState(readNexoraSession);
   const [nexoraUser, setNexoraUser] = useState(() => readNexoraSession()?.user || null);
   const [nexoraAuthLoading, setNexoraAuthLoading] = useState(() => Boolean(readNexoraSession()?.access_token));
+  const storageUserId = nexoraUser?.id || "anonymous";
+  const initialStorageUserId = readNexoraSession()?.user?.id || "anonymous";
+  const [projectsScopeId, setProjectsScopeId] = useState(initialStorageUserId);
   const authenticatedCloudSession = Boolean(nexoraSession?.access_token && nexoraUser && !nexoraAuthLoading);
   const [cloudLoaded, setCloudLoaded] = useState(false);
-  const [projects, setProjects] = useState(readProjects);
-  const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) || "");
+  const [projects, setProjects] = useState(() => readProjects(initialStorageUserId));
+  const [activeId, setActiveId] = useState(() => localStorage.getItem(activeProjectStorageKey(initialStorageUserId)) || "");
   const [tab, setTab] = useState("overview");
   const [jobs, setJobs] = useState([]);
   const [androidBuild, setAndroidBuild] = useState({ app_name: "NEXORA Game", package_id: "com.nexora.game", version_name: "1.0.0", version_code: 1, build_type: "debug", artifact_format: "apk", orientation: "landscape", internet_permission: true, camera_permission: false, microphone_permission: false, icon_asset_id: null });
@@ -230,9 +242,9 @@ export default function NexoraFoundryWorkspace() {
 
   const fileInputRef = useRef(null);
   const importInputRef = useRef(null);
-  const activeProject = projects.find((item) => item.id === activeId) || projects[0] || null;
+  const activeProject = projectsScopeId === storageUserId ? (projects.find((item) => item.id === activeId) || projects[0] || null) : null;
   const selectedObject = activeProject?.scene.objects.find((item) => item.id === selectedObjectId) || activeProject?.scene.objects[0] || null;
-  const cloudMode = Boolean(API_BASE && authenticatedCloudSession && cloudLoaded);
+  const cloudMode = Boolean(API_BASE && authenticatedCloudSession && cloudLoaded && projectsScopeId === storageUserId);
   const cloudProjectActive = Boolean(cloudMode && activeProject?._remoteVersion);
 
   const nexoraAuthFetch = useCallback(async (input, options = {}) => {
@@ -342,7 +354,7 @@ export default function NexoraFoundryWorkspace() {
       setCloudLoaded(false);
       // Clear any previously hydrated account-owned projects from component
       // state on logout/account switch. Keep only device-only drafts.
-      const deviceProjects = readProjects().filter((item) => !item._remoteVersion);
+      const deviceProjects = readProjects(storageUserId).filter((item) => !item._remoteVersion);
       setProjects(deviceProjects);
       setActiveId((current) => deviceProjects.some((item) => item.id === current)
         ? current
@@ -372,7 +384,7 @@ export default function NexoraFoundryWorkspace() {
       // Do not pull previously cloud-versioned records from another account into
       // this user's workspace.
       const cloudIds = new Set(hydrated.map((item) => item.id));
-      const localOnly = readProjects()
+      const localOnly = readProjects(storageUserId)
         .filter((item) => !item._remoteVersion && !cloudIds.has(item.id))
         .map((item) => ({ ...item, _localOnly: true }));
       const visibleProjects = [...hydrated, ...localOnly];
@@ -396,21 +408,31 @@ export default function NexoraFoundryWorkspace() {
     // Retain only device-only drafts in browser storage. Cloud-owned project
     // documents remain authoritative in PostgreSQL and aren't copied on logout.
     const localProjects = projects.filter((item) => !item._remoteVersion);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(localProjects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
-  }, [projects]);
+    if (projectsScopeId !== storageUserId) return;
+    try { localStorage.setItem(projectStorageKey(storageUserId), JSON.stringify(localProjects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
+  }, [projects, projectsScopeId, storageUserId]);
+
+  useEffect(() => {
+    if (projectsScopeId === storageUserId) return;
+    const scopedProjects = readProjects(storageUserId);
+    setProjects(scopedProjects);
+    setActiveId(localStorage.getItem(activeProjectStorageKey(storageUserId)) || scopedProjects[0]?.id || "");
+    setCloudLoaded(false);
+    setProjectsScopeId(storageUserId);
+  }, [storageUserId, projectsScopeId]);
 
   useEffect(() => {
     if (activeProject?.id) {
       setActiveId(activeProject.id);
-      if (!cloudMode && !activeProject._remoteVersion) localStorage.setItem(ACTIVE_KEY, activeProject.id);
+      if (!cloudMode && !activeProject._remoteVersion && projectsScopeId === storageUserId) localStorage.setItem(activeProjectStorageKey(storageUserId), activeProject.id);
       if (!selectedObjectId || !activeProject.scene.objects.some((item) => item.id === selectedObjectId)) {
         setSelectedObjectId(activeProject.scene.objects[0]?.id || "");
       }
     } else {
       setActiveId("");
-      if (!cloudMode) localStorage.removeItem(ACTIVE_KEY);
+      if (!cloudMode && projectsScopeId === storageUserId) localStorage.removeItem(activeProjectStorageKey(storageUserId));
     }
-  }, [activeProject?.id, cloudMode]);
+  }, [activeProject?.id, cloudMode, projectsScopeId, storageUserId]);
 
   const patchProject = useCallback((updater) => {
     if (!activeProject) return;
@@ -501,7 +523,7 @@ export default function NexoraFoundryWorkspace() {
     } else if (!activeProject._remoteVersion) {
       try {
         for (const asset of activeProject.assets || []) {
-          if (!asset.remote) await removeStoredAsset(asset.id);
+          if (!asset.remote) await removeStoredAsset(asset.id, nexoraUser?.id || "anonymous");
         }
       } catch (error) {
         setNotice(error.message || "Could not clean local project assets.");
@@ -722,7 +744,7 @@ export default function NexoraFoundryWorkspace() {
           accepted.push(cloudAssetFromApi(result.asset));
         } else {
           const asset = {id:makeId("asset"),name:file.name,type:extension,mimeType:file.type||"application/octet-stream",size:file.size,addedAt:now(),status:"ingested_local",remote:false};
-          await storeAsset(file,activeProject.id,asset.id);
+          await storeAsset(file,activeProject.id,asset.id,nexoraUser?.id || "anonymous");
           accepted.push(asset);
         }
       }
@@ -930,7 +952,7 @@ export default function NexoraFoundryWorkspace() {
             if(!response.ok) throw new Error(`Model file request failed (HTTP ${response.status}).`);
             blob=await response.blob();
           } else {
-            blob=await readStoredAssetBlob(asset.id);
+            blob=await readStoredAssetBlob(asset.id,nexoraUser?.id || "anonymous");
           }
         }
         if(!(blob instanceof Blob) || !blob.size) throw new Error("The selected model file is missing or empty.");
