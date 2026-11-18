@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import AndroidBuildConsole from "./AndroidBuildConsole.jsx";
 import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
+import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, CircleHelp, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -12,12 +12,18 @@ import {
 
 const STORAGE_KEY = "nexora.foundry.projects.v1";
 const ACTIVE_KEY = "nexora.foundry.active-project.v1";
+const NEXORA_SESSION_KEY = "nexora.account.session.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 const now = () => new Date().toISOString();
+
+function readNexoraSession() {
+  try { return JSON.parse(localStorage.getItem(NEXORA_SESSION_KEY) || "null"); }
+  catch { return null; }
+}
 
 function createProject(name = "Untitled Game") {
   const id = makeId("project");
@@ -181,10 +187,10 @@ function Metric({ label, value, helper }) {
 }
 
 export default function NexoraFoundryWorkspace() {
-  const auth = useAuth() || {};
-  const accessToken = auth.getAccessToken?.() || "";
-  const tokenType = auth.getTokenType?.() || "Bearer";
-  const authenticatedCloudSession = Boolean(accessToken && !auth.isGuest && !auth.loading);
+  const [nexoraSession, setNexoraSession] = useState(readNexoraSession);
+  const [nexoraUser, setNexoraUser] = useState(() => readNexoraSession()?.user || null);
+  const [nexoraAuthLoading, setNexoraAuthLoading] = useState(() => Boolean(readNexoraSession()?.access_token));
+  const authenticatedCloudSession = Boolean(nexoraSession?.access_token && nexoraUser && !nexoraAuthLoading);
   const [cloudLoaded, setCloudLoaded] = useState(false);
   const [projects, setProjects] = useState(readProjects);
   const [activeId, setActiveId] = useState(() => localStorage.getItem(ACTIVE_KEY) || "");
@@ -229,31 +235,108 @@ export default function NexoraFoundryWorkspace() {
   const cloudMode = Boolean(API_BASE && authenticatedCloudSession && cloudLoaded);
   const cloudProjectActive = Boolean(cloudMode && activeProject?._remoteVersion);
 
+  const nexoraAuthFetch = useCallback(async (input, options = {}) => {
+    if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
+    if (!nexoraSession?.access_token) throw new Error("Sign in to your NEXORA account.");
+    const headers = new Headers(options.headers || {});
+    headers.set("Authorization", "Bearer " + nexoraSession.access_token);
+    headers.set("Accept", headers.get("Accept") || "application/json");
+    const requestedUrl = String(input);
+    const url = /^https?:\\/\\//i.test(requestedUrl) ? requestedUrl : API_BASE + (requestedUrl.startsWith("/") ? requestedUrl : "/" + requestedUrl);
+    return fetch(url, { ...options, headers, cache: "no-store" });
+  }, [nexoraSession?.access_token]);
+
+  useEffect(() => {
+    const token = nexoraSession?.access_token;
+    if (!token) {
+      setNexoraAuthLoading(false);
+      setNexoraUser(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setNexoraAuthLoading(true);
+    fetch(API_BASE + "/api/v1/auth/me", {
+      headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+      cache: "no-store",
+    }).then(async (response) => {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload?.detail || "Your NEXORA session could not be restored.");
+        error.status = response.status;
+        throw error;
+      }
+      return payload.user;
+    }).then((user) => {
+      if (cancelled) return;
+      const nextSession = { ...nexoraSession, user };
+      localStorage.setItem(NEXORA_SESSION_KEY, JSON.stringify(nextSession));
+      setNexoraSession(nextSession);
+      setNexoraUser(user);
+    }).catch((error) => {
+      if (cancelled) return;
+      if (error.status === 401) {
+        try { localStorage.removeItem(NEXORA_SESSION_KEY); } catch {}
+        setNexoraSession(null);
+        setNexoraUser(null);
+      } else {
+        // Preserve the stored credential during a temporary network outage.
+        setNexoraUser(nexoraSession?.user || null);
+        setApiStatus({ state: "offline", label: error.message || "Could not verify the NEXORA session" });
+      }
+    }).finally(() => {
+      if (!cancelled) setNexoraAuthLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [nexoraSession?.access_token]);
+
+  const acceptNexoraSession = useCallback((session) => {
+    const normalized = { ...session, user: session.user };
+    localStorage.setItem(NEXORA_SESSION_KEY, JSON.stringify(normalized));
+    setNexoraSession(normalized);
+    setNexoraUser(normalized.user);
+    setNexoraAuthLoading(false);
+  }, []);
+
+  const signOutNexora = useCallback(async () => {
+    const token = nexoraSession?.access_token;
+    if (token) {
+      try {
+        await fetch(API_BASE + "/api/v1/auth/logout", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+          cache: "no-store",
+        });
+      } catch {}
+    }
+    try { localStorage.removeItem(NEXORA_SESSION_KEY); } catch {}
+    setNexoraSession(null);
+    setNexoraUser(null);
+    setNexoraAuthLoading(false);
+    setNotice("You have signed out of your NEXORA account.");
+  }, [nexoraSession?.access_token]);
+
   const apiRequest = useCallback(async (path, options = {}) => {
     if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
-    if (!accessToken || auth.isGuest) throw new Error("Sign in with a verified RevelaCode account to use NEXORA cloud storage.");
+    if (!nexoraSession?.access_token) throw new Error("Sign in to your NEXORA account.");
     const headers = new Headers(options.headers || {});
     if (options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     headers.set("Accept", "application/json");
-    const authenticatedFetch = typeof auth.authFetch === "function" ? auth.authFetch : fetch;
-    if (authenticatedFetch === auth.authFetch) {
-      // AuthContext performs the platform's single refresh retry and always
-      // reads the current token at request time.
-      headers.delete("Authorization");
-    } else {
-      headers.set("Authorization", `${tokenType || "Bearer"} ${String(accessToken).replace(/^Bearer\\s+/i, "")}`);
-    }
-    const response = await authenticatedFetch(`${API_BASE}${path}`, { ...options, headers, cache: "no-store" });
+    const response = await nexoraAuthFetch(path, { ...options, headers });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if (response.status === 401) {
+        try { localStorage.removeItem(NEXORA_SESSION_KEY); } catch {}
+        setNexoraSession(null);
+        setNexoraUser(null);
+      }
       const detail = payload?.detail;
       throw new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
     }
     return payload;
-  }, [accessToken, auth.authFetch, auth.isGuest, tokenType]);
+  }, [nexoraSession?.access_token, nexoraAuthFetch]);
 
   useEffect(() => {
-    if (!API_BASE || auth.loading) return undefined;
+    if (!API_BASE || nexoraAuthLoading) return undefined;
     if (!authenticatedCloudSession) {
       setCloudLoaded(false);
       // Clear any previously hydrated account-owned projects from component
@@ -306,7 +389,7 @@ export default function NexoraFoundryWorkspace() {
       }
     });
     return () => { cancelled = true; };
-  }, [auth.loading, authenticatedCloudSession, apiRequest]);
+  }, [nexoraAuthLoading, authenticatedCloudSession, apiRequest]);
 
   useEffect(() => {
     // Retain only device-only drafts in browser storage. Cloud-owned project
@@ -811,7 +894,7 @@ export default function NexoraFoundryWorkspace() {
   useEffect(() => { checkService(); }, [checkService]);
 
   useEffect(() => {
-    if (!authenticatedCloudSession || auth.loading) return undefined;
+    if (!authenticatedCloudSession || nexoraAuthLoading) return undefined;
     let live = true;
     Promise.all([
       apiRequest("/api/v1/studio/templates"),
@@ -822,7 +905,7 @@ export default function NexoraFoundryWorkspace() {
       if (pipeline) setMoviePipeline(pipeline);
     }).catch(error=>{ if(live) setNotice(error.message || "Could not load NEXORA studio resources."); });
     return ()=>{live=false;};
-  },[authenticatedCloudSession,auth.loading,apiRequest,activeProject?.id,activeProject?._remoteVersion]);
+  },[authenticatedCloudSession,nexoraAuthLoading,apiRequest,activeProject?.id,activeProject?._remoteVersion]);
 
   useEffect(() => {
     if (!desktopViewport) return undefined;
@@ -834,15 +917,15 @@ export default function NexoraFoundryWorkspace() {
       try {
         let blob=null;
         if (previewSelection.type==="template") {
-          if (!authenticatedCloudSession) throw new Error("A verified RevelaCode session is required to load the NEXORA template service.");
-          const response=await auth.authFetch(`${API_BASE}/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+          if (!authenticatedCloudSession) throw new Error("Sign in to your NEXORA account to load the template service.");
+          const response=await nexoraAuthFetch(`/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
           if(!response.ok) throw new Error(`3D template request failed (HTTP ${response.status}).`);
           blob=await response.blob();
         } else {
           const asset=activeProject?.assets?.find(item=>item.id===previewSelection.id);
           if(!asset) throw new Error("Select a 3D model from the asset library.");
           if(asset.remote) {
-            const response=await auth.authFetch(`${API_BASE}/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+            const response=await nexoraAuthFetch(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
             if(!response.ok) throw new Error(`Model file request failed (HTTP ${response.status}).`);
             blob=await response.blob();
           } else {
@@ -860,7 +943,7 @@ export default function NexoraFoundryWorkspace() {
     };
     loadModel();
     return ()=>{live=false;if(currentUrl)URL.revokeObjectURL(currentUrl);};
-  },[previewSelection,activeProject?.id,activeProject?.assets,desktopViewport,authenticatedCloudSession,auth.authFetch]);
+  },[previewSelection,activeProject?.id,activeProject?.assets,desktopViewport,authenticatedCloudSession,nexoraAuthFetch]);
 
   useEffect(() => {
     if (typeof window==="undefined" || window.customElements?.get("model-viewer")) return;
@@ -907,6 +990,13 @@ export default function NexoraFoundryWorkspace() {
     addAssetToTimeline(fileAsset);
   };
 
+  if (nexoraAuthLoading) {
+    return <div className="flex min-h-screen items-center justify-center bg-[#05090f] text-sm text-cyan-100"><span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-cyan-900 border-t-cyan-300"/>Checking NEXORA account session…</div>;
+  }
+  if (!nexoraSession?.access_token || !nexoraUser) {
+    return <NexoraAuthGate apiBase={API_BASE} onAuthenticated={acceptNexoraSession} />;
+  }
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-slate-100">
       <div className="mx-auto flex max-w-[1920px] flex-col gap-2 p-2">
@@ -932,14 +1022,15 @@ export default function NexoraFoundryWorkspace() {
             }} className="border border-cyan-900/60 bg-[#101820] px-3 py-2 text-[10px] font-black tracking-wide text-cyan-100 hover:border-cyan-400/70 hover:bg-cyan-950/70">{item}</button>)}
           </nav>
           <div className="flex items-center gap-2">
-            <div className="text-right"><div className="text-[10px] font-bold text-cyan-200">{cloudProjectActive?"CLOUD SYNCED":apiStatus.state==="online"?"FOUNDRY ONLINE":"SERVICE OFFLINE"}</div><div className="text-[9px] text-slate-500">{auth.user?.fullName || auth.user?.name || "RevelaCode identity"}</div></div>
+            <div className="text-right"><div className="text-[10px] font-bold text-cyan-200">{cloudProjectActive?"CLOUD SYNCED":apiStatus.state==="online"?"FOUNDRY ONLINE":"SERVICE OFFLINE"}</div><div className="text-[9px] text-slate-500">{nexoraUser?.display_name || nexoraUser?.email || "NEXORA account"}</div></div>
             <span className={"h-2 w-2 rounded-full "+(apiStatus.state==="online"?"bg-emerald-400":"bg-amber-400")}/>
+            <button type="button" onClick={signOutNexora} className="border border-slate-700 px-2 py-2 text-[9px] font-bold text-slate-300 hover:border-rose-500/60 hover:text-rose-200">SIGN OUT</button>
             <button type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("playtest","desktop")} className="border border-amber-400/50 bg-amber-300/10 px-3 py-2 text-[10px] font-black text-amber-100 disabled:opacity-40">▶ RUN PLAYTEST</button>
           </div>
         </header>
 
-        {!authenticatedCloudSession && <div className="border border-amber-700/50 bg-[#1b1710] px-3 py-2 text-[11px] text-amber-100">{auth.loading?"Restoring RevelaCode identity…":"Sign in through the main RevelaCode account session to unlock NEXORA cloud and production. NEXORA does not create a separate login."}</div>}
-        {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your verified RevelaCode session to NEXORA Foundry…</div>}
+        {!authenticatedCloudSession && <div className="border border-amber-700/50 bg-[#1b1710] px-3 py-2 text-[11px] text-amber-100">Sign in with your independent NEXORA account to access your cloud projects and production tools.</div>}
+        {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
         {notice&&<div role="status" className="flex items-start justify-between gap-3 border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
 
         <section ref={timelineRef} className="border border-slate-700 bg-[#0b1016] p-2">
@@ -998,7 +1089,7 @@ export default function NexoraFoundryWorkspace() {
             <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">ENGINE TELEMETRY</b><div className="mt-2 text-[10px] text-slate-400">{apiStatus.state==="online"?"Foundry API reachable":"Foundry API unavailable"}</div><div className="mt-2 border border-slate-800 p-2 text-[9px] text-slate-400">GPU / VRAM / temperature sensors are not exposed by this browser. A trusted desktop sensor agent must be installed before NEXORA can report these values.</div><div className="mt-2 text-[9px] text-slate-500">No estimated or fabricated benchmark values are displayed.</div><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1.5 text-[9px] text-cyan-100"><RefreshCw size={12} className="mr-1 inline"/> CHECK FOUNDRY SERVICE</button></div>
             <div className="mt-2 text-xs font-black text-amber-200">EXPORT TO TARGETS</div><div className="mt-1 grid grid-cols-2 gap-1">{[["WINDOWS","windows"],["LINUX","linux"],["ANDROID","android"],["WEB","web"]].map(([label,target])=><button key={target} type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("build.export",target)} className="border border-slate-700 bg-[#111922] p-2 text-[9px] font-bold text-cyan-100 hover:border-cyan-400/50 disabled:opacity-40">⬡ EXPORT<br/><span className="text-slate-400">{label}</span></button>)}</div>
             {settingsOpen&&<div className="mt-2 border border-cyan-800/50 bg-[#111922] p-2"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-1 text-[9px] text-rose-300">DELETE CURRENT PROJECT</button></div>}
-            <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div><div className="mt-1 space-y-1">{jobs.slice(0,4).map(job=><div key={job.id} className="border border-slate-800 bg-[#111922] p-2"><div className="flex justify-between gap-2 text-[9px]"><b className="truncate">{job.kind||"Foundry job"}</b><span className={job.state==="completed"?"text-emerald-300":job.state==="failed"?"text-rose-300":"text-amber-200"}>{job.state} {job.progress}%</span></div><div className="mt-1 text-[9px] text-slate-500">{job.message}</div>{(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={async()=>{try{const response=await auth.authFetch(`${API_BASE}${artifact.download_url}`);if(!response.ok)throw new Error("Artifact download failed.");const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=artifact.filename;link.click();URL.revokeObjectURL(url);}catch(error){setNotice(error.message);}}} className="mt-1 block truncate text-[9px] text-cyan-300 underline">{artifact.filename} · DOWNLOAD</button>)}</div>)}</div>}
+            <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div><div className="mt-1 space-y-1">{jobs.slice(0,4).map(job=><div key={job.id} className="border border-slate-800 bg-[#111922] p-2"><div className="flex justify-between gap-2 text-[9px]"><b className="truncate">{job.kind||"Foundry job"}</b><span className={job.state==="completed"?"text-emerald-300":job.state==="failed"?"text-rose-300":"text-amber-200"}>{job.state} {job.progress}%</span></div><div className="mt-1 text-[9px] text-slate-500">{job.message}</div>{(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={async()=>{try{const response=await nexoraAuthFetch(artifact.download_url);if(!response.ok)throw new Error("Artifact download failed.");const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download=artifact.filename;link.click();URL.revokeObjectURL(url);}catch(error){setNotice(error.message);}}} className="mt-1 block truncate text-[9px] text-cyan-300 underline">{artifact.filename} · DOWNLOAD</button>)}</div>)}</div>}
           </aside>
         </main>
 
@@ -1035,7 +1126,7 @@ export default function NexoraFoundryWorkspace() {
           <div className="mt-4"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><h3 className="text-[10px] font-black tracking-widest text-amber-200">YOUR 3D MODELS & MEDIA</h3><label className="text-[9px] text-slate-400">CONVERT AS <select value={assetConversionRole} onChange={e=>setAssetConversionRole(e.target.value)} className="ml-1 border border-slate-700 bg-[#080d12] px-2 py-1 text-[9px] text-cyan-100"><option value="prop">PROP</option><option value="character">CHARACTER</option><option value="environment">ENVIRONMENT</option></select></label></div><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">{studioAssets.map(asset=><div key={asset.id} className="min-w-0 border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"asset",id:asset.id})} className="flex h-20 w-full items-center justify-center bg-gradient-to-br from-cyan-950/60 to-slate-900 text-cyan-300"><ImagePlus size={24}/></button><div className="mt-1 truncate text-[10px] font-bold" title={asset.name}>{asset.name}</div><div className="truncate text-[9px] text-slate-500">{asset.type.toUpperCase()} · {asset.remote?asset.status:"LOCAL"}</div><div className="mt-1 flex gap-1">{["glb","gltf"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToScene(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">USE MODEL</button>}{["png","jpg","jpeg","webp","glb","gltf","obj","fbx","ply"].includes(asset.type)&&<button type="button" onClick={()=>convertAssetToGameAsset(asset,assetConversionRole)} className="flex-1 border border-violet-800 px-1 py-1 text-[9px] text-violet-200">CONVERT</button>}{["mp4","mov","mkv","webm","avi","wav","ogg","mp3"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToTimeline(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">ADD TO TIMELINE</button>}<button type="button" onClick={()=>removeAsset(asset)} className="border border-slate-700 px-1 py-1 text-[9px] text-rose-300">DEL</button></div></div>)}</div>{!studioAssets.length&&<div className="mt-3 border border-dashed border-slate-700 p-5 text-center text-xs text-slate-500">Import source media, 3D models and templates to begin.</div>}</div>
         </section>
 
-        <CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} authFetch={auth.authFetch} />
+        <CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} />
 
         <section className="grid gap-2 lg:grid-cols-2">
           <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">SCENE HIERARCHY / INSPECTOR</h2><div className="mt-2 grid grid-cols-1 gap-3 xl:grid-cols-2"><div className="max-h-48 overflow-auto">{sceneNodes.map(object=><button key={object.id} type="button" onClick={()=>setSelectedObjectId(object.id)} className={"mb-1 block w-full truncate border px-2 py-1.5 text-left text-[10px] "+(selectedObject?.id===object.id?"border-cyan-500 bg-cyan-950/40":"border-slate-800 bg-[#101820]")}>{object.name} · {object.type}</button>)}<button type="button" onClick={addSceneObject} className="mt-1 w-full border border-cyan-800 px-2 py-1.5 text-[9px]">＋ ADD SCENE NODE</button></div>
