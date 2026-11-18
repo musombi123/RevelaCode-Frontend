@@ -1,4 +1,4 @@
-const CACHE_NAME = "revelacode-app-shell-v3";
+const CACHE_NAME = "revelacode-app-shell-v4";
 const ROOT_URL = "/";
 
 self.addEventListener("install", (event) => {
@@ -35,6 +35,28 @@ self.addEventListener("fetch", (event) => {
     // Network-first: Cache Storage must never delay a healthy network response.
     try {
       const response = await fetch(request);
+      const contentType = response.headers.get("content-type") || "";
+      const isHtmlFallback = isStaticAsset && /(?:text\\/html|application\\/xhtml\\+xml)/i.test(contentType);
+      const isScriptAsset = /\\.(?:m?js)$/i.test(url.pathname);
+      const isCssAsset = /\\.css$/i.test(url.pathname);
+      const validScriptResponse = !isScriptAsset || /(?:javascript|ecmascript)/i.test(contentType);
+      const validCssResponse = !isCssAsset || /text\\/css/i.test(contentType);
+
+      // Some SPA hosts rewrite a missing /assets/*.js request to index.html
+      // with HTTP 200. That is not a JavaScript module. Convert that specific
+      // fallback into a real failure so safeLazy can fetch a fresh app shell.
+      if (isHtmlFallback || !validScriptResponse || !validCssResponse) {
+        return new Response("This asset is not present in the current RevelaCode release. Reload the application.", {
+          status: 404,
+          statusText: "Not Found",
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+          },
+        });
+      }
+
       if (response && response.ok && (!isStaticAsset || response.type === "basic")) {
         // Opportunistic cache write only. Do not extend the fetch event or
         // make the returned response depend on Cache Storage succeeding.
