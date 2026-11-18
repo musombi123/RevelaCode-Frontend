@@ -48,7 +48,9 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   const [error, setError] = useState("");
 
   const projectId = activeProject?.id;
-  const canGenerate = cloudProjectActive && Boolean(entitlement?.status === "active");
+  const planRank = { basic: 0, standard: 1, pro: 2, studio: 3 };
+  const entitlementCurrent = entitlement?.status === "active" && (!entitlement.expires_at || new Date(entitlement.expires_at).getTime() > Date.now());
+  const canGenerate = cloudProjectActive && Boolean(entitlementCurrent) && planRank[entitlement?.plan] >= planRank[workflow.plan];
   const workflowPlan = plans.find((item) => item.id === workflow.plan);
   const workload = useMemo(() => {
     const episodeUnits = workflow.episodes.length * 2;
@@ -74,6 +76,16 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   }, [projectId, cloudProjectActive, apiRequest]);
 
   useEffect(() => {
+    setWorkflow(DEFAULT_WORKFLOW);
+    setPipeline(null);
+    setPayment(null);
+    setPaymentStatus("");
+    setReceipt("");
+    setAnalysis(null);
+    setError("");
+  }, [projectId]);
+
+  useEffect(() => {
     let live = true;
     if (!cloudProjectActive) return undefined;
     Promise.all([
@@ -90,6 +102,12 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     refreshPipeline();
     return () => { live = false; };
   }, [cloudProjectActive, projectId, apiRequest, refreshPipeline]);
+
+  useEffect(() => {
+    if (!cloudProjectActive || !pipeline?.stages?.length) return undefined;
+    const timer = window.setInterval(refreshPipeline, 5000);
+    return () => window.clearInterval(timer);
+  }, [cloudProjectActive, pipeline?.stages?.length, refreshPipeline]);
 
   const run = async (key, fn, success) => {
     if (!cloudProjectActive || !activeProject) return;
@@ -148,7 +166,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     return { message: `Movie accepted for analysis. Job ${result.id || result.job_id} is running; inspect the result before approval.` };
   }, refreshPipeline);
 
-  const addEpisode = () => update({ episodes: [...workflow.episodes, makeEpisode(workflow.episodes.length + 1)] });
+  const addEpisode = () => update({ episodes: [...workflow.episodes, { ...makeEpisode(workflow.episodes.length + 1), id: "episode-" + Date.now() }] });
   const removeEpisode = (id) => update({ episodes: workflow.episodes.length > 1 ? workflow.episodes.filter((item) => item.id !== id) : workflow.episodes });
 
   const stageRows = [
@@ -245,7 +263,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
             <p className="mt-2 text-[10px] text-amber-100">Movie upload is enabled only after the rights declaration, a paid plan and a supported clip duration have been checked.</p>
           </div>}
           <div className="flex flex-wrap gap-2"><button type="button" onClick={saveDocument} disabled={Boolean(busy)||!cloudProjectActive} className="border border-cyan-700 bg-cyan-950/40 px-3 py-2 text-[10px] font-black text-cyan-100 disabled:opacity-40">SAVE GAME DESIGN DOCUMENT</button><button type="button" onClick={createPipeline} disabled={Boolean(busy)||!cloudProjectActive||!canGenerate} className="border border-violet-600 bg-violet-950/40 px-3 py-2 text-[10px] font-black text-violet-100 disabled:opacity-40">CREATE PRODUCTION PIPELINE</button><button type="button" onClick={refreshPipeline} disabled={Boolean(busy)} className="border border-slate-700 px-3 py-2 text-[10px]"><RefreshCw size={12} className="mr-1 inline"/> REFRESH STAGES</button></div>
-          {workflow.mode==="movie" && pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 text-xs font-black text-amber-200">MOVIE SOURCE INTAKE</div><label className="flex cursor-pointer items-center gap-2 border border-dashed border-amber-800 p-3 text-xs text-amber-100"><UploadCloud size={18}/> SELECT CLIP · PLAN DURATION IS ENFORCED<input type="file" accept=".mp4,.mov,.mkv,.webm,.avi,video/*" className="hidden" onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)uploadMovie(file);}}/></label>{analysis&&<div className="mt-2 text-[10px] text-slate-300">Analysis: {analysis.scene_detection?.scenes?.length||0} scenes · {analysis.keyframes?.length||0} keyframes · review before approving</div>}</div>}
+          {workflow.mode==="movie" && pipeline?.stages?.length > 0 && <div className="border border-slate-800 p-3"><div className="mb-2 text-xs font-black text-amber-200">MOVIE SOURCE INTAKE</div><label className="flex cursor-pointer items-center gap-2 border border-dashed border-amber-800 p-3 text-xs text-amber-100"><UploadCloud size={18}/> SELECT CLIP · PLAN DURATION IS ENFORCED<input type="file" accept=".mp4,.mov,.mkv,.webm,.avi,video/*" className="hidden" onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)uploadMovie(file);}}/></label>{analysis&&<div className="mt-2 text-[10px] text-slate-300">Analysis: {analysis.scene_detection?.scenes?.length||0} scenes · {analysis.keyframes?.length||0} keyframes · review before approving</div>}</div>}
           {pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-black text-cyan-200">PRODUCTION STAGES</h3><span className="text-[9px] text-slate-500">{stages.filter((x)=>x.state==="APPROVED").length}/{stages.length} approved</span></div><div className="space-y-1">{stageRows.map(([id,label,path])=>{const rec=stageRecord(id);if(!rec)return null;return <div key={id} className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] p-2"><div className="min-w-0 flex-1"><div className="text-[10px] font-bold text-white">{label}</div><div className="text-[9px] text-slate-500">{rec.summary}</div>{rec.error&&<div className="text-[9px] text-rose-300">{rec.error}</div>}</div><span className={"text-[9px] font-bold "+(rec.state==="APPROVED"?"text-emerald-300":rec.state==="FAILED"?"text-rose-300":rec.state==="REVIEW"?"text-amber-200":"text-slate-400")}>{rec.state}</span>{id==="analysis"&&rec.state==="REVIEW"&&<button type="button" disabled={Boolean(busy)} onClick={()=>approveStage("analysis")} className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">APPROVE SCENE ANALYSIS</button>}{stageAction(id,path)}</div>})}</div>{stageRecord("assembly")?.state==="APPROVED"||stageRecord("assembly")?.state==="REVIEW"?<button type="button" onClick={downloadAssembledGame} disabled={Boolean(busy)} className="mt-3 inline-block border border-emerald-700 px-3 py-2 text-[10px] font-bold text-emerald-200 disabled:opacity-40">DOWNLOAD ASSEMBLED GODOT GAME</button>:null}</div>}
         </div>
         <aside className="space-y-3">
