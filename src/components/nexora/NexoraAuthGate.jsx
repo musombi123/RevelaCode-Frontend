@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Eye, EyeOff, Gamepad2, LockKeyhole, Mail, UserRound, Zap } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Gamepad2, LockKeyhole, Mail, User, Zap } from "lucide-react";
 
 export default function NexoraAuthGate({ apiBase, onAuthenticated }) {
   const [mode, setMode] = useState("login");
