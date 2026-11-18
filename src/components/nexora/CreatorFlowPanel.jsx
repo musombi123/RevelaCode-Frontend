@@ -21,7 +21,7 @@ const DEFAULT_WORKFLOW = {
   player_source: "default", enemies: 2, vehicles: 0,
   environment_variants: 1, episodes: [makeEpisode(1)], synopsis: "",
   copyright_declaration: "original", has_adaptation_rights: false,
-  has_music_rights: false, has_performer_consents: false,
+  has_music_rights: false, has_performer_consents: false, avoids_performer_likeness: false,
 };
 const PLATFORMS = {
   basic: ["android", "web"], standard: ["android", "web"],
@@ -135,8 +135,8 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   });
 
   const uploadMovie = (file) => run("video-intake", async () => {
-    if (!workflow.has_adaptation_rights) throw new Error("Declare adaptation permission before uploading a film.");
-    if (!workflow.has_performer_consents) throw new Error("Confirm performer/likeness permissions, or remove recognizable real performers from the adaptation.");
+    if (!workflow.has_adaptation_rights && workflow.copyright_declaration !== "public_domain") throw new Error("Declare adaptation permission or confirm the source is genuinely public domain before uploading a film.");
+    if (!workflow.has_performer_consents && !workflow.avoids_performer_likeness) throw new Error("Confirm performer/likeness permissions, or choose not to reproduce identifiable performers.");
     const form = new FormData();
     form.append("file", file);
     form.append("has_video_rights", "true");
@@ -212,7 +212,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
           {workflow.mode==="movie" && <div className="border border-amber-800/60 bg-amber-950/15 p-3">
             <h3 className="mb-2 flex items-center gap-2 text-xs font-black text-amber-200"><Film size={15}/> ADAPTATION RIGHTS CHECK</h3>
             <p className="mb-2 text-[10px] leading-5 text-slate-300">NEXORA cannot determine copyright ownership by analysing a video. Only upload a movie you own, have licensed, or have permission to adapt. Protected dialogue, music, character designs and frames are not copied into the game; the assets created are original.</p>
-            {[["has_adaptation_rights","I own or have a valid licence / permission to adapt this movie."],["has_performer_consents","Required performer / likeness consents are in place, or recognizable real performers will not be recreated."],["has_music_rights","I understand original game music and effects are generated; movie soundtrack is not reused."]].map(([key,label])=><label key={key} className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow[key])} onChange={e=>update({[key]:e.target.checked})} className="mt-0.5"/><span>{label}</span></label>)}
+            {[["has_adaptation_rights","I own or have a valid licence / permission to adapt this movie."],["has_performer_consents","Required performer / likeness consents are in place, or recognizable real performers will not be recreated."],["has_music_rights","I understand original game music and effects are generated; movie soundtrack is not reused."]].map(([key,label])=><label key={key} className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow[key])} onChange={e=>update({[key]:e.target.checked})} className="mt-0.5"/><span>{label}</span></label>{workflow.mode==="movie"&&<label className="mt-2 flex items-start gap-2 text-[10px] text-slate-200"><input type="checkbox" checked={Boolean(workflow.avoids_performer_likeness)} onChange={e=>update({avoids_performer_likeness:e.target.checked,has_performer_consents:e.target.checked?false:workflow.has_performer_consents})} className="mt-0.5"/><span>Do not reproduce identifiable real performers or their likenesses; use original generic player and NPC designs.</span></label>})}
             <label className="mt-3 block text-[10px] text-slate-400">COPYRIGHT STATUS<select value={workflow.copyright_declaration} onChange={e=>update({copyright_declaration:e.target.value})} className="mt-1 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-white"><option value="original">Original / owned</option><option value="licensed">Licensed adaptation</option><option value="public_domain">Public domain</option></select></label>
             <p className="mt-2 text-[10px] text-amber-100">Movie upload is enabled only after the rights declaration, a paid plan and a supported clip duration have been checked.</p>
           </div>}
