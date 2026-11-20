@@ -1499,6 +1499,7 @@ export default function NexoraFoundryWorkspace() {
           projectId={activeProject?.id || ""}
           onWorkspaceUpdated={refreshFactoryProjects}
           onNavigate={setStudioView}
+          onSelectProject={setActiveId}
           onQueueProduction={(kind, target) => queueProductionJob(kind, target, target === "android" ? androidBuild : null)}
           setNotice={setNotice}
         />
