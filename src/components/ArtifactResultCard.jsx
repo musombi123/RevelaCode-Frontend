@@ -11,6 +11,7 @@ import {
 
 const SAFE_FORMATS = new Set([
   "PDF", "PNG", "JPG", "JPEG", "SVG", "PPTX", "DOCX", "XLSX", "CSV", "GIF", "MP4",
+  "TXT", "MD", "JS", "JSX", "TS", "TSX", "PY", "HTML", "CSS", "JSON", "SQL",
 ]);
 
 function artifactUrl(value) {
