@@ -448,7 +448,7 @@ export default function NexoraFoundryWorkspace() {
     // Account, plans and Pochi billing remain on the NEXORA cloud control plane.
     // All project, media, generation, asset conversion and build operations go
     // to the paired computer's loopback Foundry engine.
-    const cloudControlRequest = /^\/api\/v1\/creator-flow\/(?:plans|packs|checkout|payments(?:\/|$))/.test(String(path));
+    const cloudControlRequest = /^\/api\/v1\/creator-flow\/(?:plans|packs|checkout|payments(?:\/|$)|rewards(?:\/|$))/.test(String(path));
     const response = cloudControlRequest
       ? await nexoraAuthFetch(path, { ...options, headers })
       : await localEngineFetch(path, { ...options, headers });
