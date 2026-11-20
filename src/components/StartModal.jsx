@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext.jsx";
+import { resolveBackendBaseUrl } from "@/auth/backendUrl.mjs";
 import { registerPlugin } from "@capacitor/core";
 
 const NativeBrowser = registerPlugin("Browser");
@@ -61,8 +62,9 @@ export default function StartModal({ onComplete }) {
     }
   };
 
-  const baseUrl =
-    String(import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+  // Use the same backend-origin resolver as the rest of the application.
+  // This honours all supported Vite API aliases and the production fallback.
+  const baseUrl = resolveBackendBaseUrl(import.meta.env || {});
 
   // =======================================================
   // STATE
