@@ -194,7 +194,7 @@ export function buildWorkspaceExportPrompt(prompt, previousAssistantText) {
 
   const instructionLimit = Math.min(instruction.length, 2500);
   const boundedInstruction = instruction.slice(0, instructionLimit);
-  const sourceLimit = Math.max(0, 11000 - boundedInstruction.length);
+  const sourceLimit = Math.max(0, 10000 - boundedInstruction.length);
   const boundedSource = source.slice(0, sourceLimit);
   return [
     "User export instruction:",
