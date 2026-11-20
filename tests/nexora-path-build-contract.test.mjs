@@ -131,3 +131,8 @@ test("workspace shell and dialogs share a valid React fragment root", () => {
   assert.match(workspace, /<\/NexoraStudioShell>[\s\S]*\{projectModalOpen &&/);
   assert.match(workspace, /\{taskModalOpen &&/);
 });
+
+test("NEXORA workspace closes its fragment and component", () => {
+  const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
+  assert.match(workspace, /<\\/NexoraStudioShell>[\\s\\S]*<\\/>\\s*\\);\\s*}\\s*$/);
+});
