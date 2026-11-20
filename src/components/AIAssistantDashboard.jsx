@@ -1379,7 +1379,7 @@ export default function AIAssistantDashboard({
               workspacePayload = { ...workspacePayload, task: "promotion", image_options: { template: "poster", aspect_ratio: "4:5" } };
               if (attachedFile) throw new Error("Campaign generation currently uses the RevelaCode brand pipeline. Add the supplied logo as a document attachment after campaign generation.");
             } else if (workspaceCommand === "/image") {
-              const mode = inputMeta?.toolMode || "generate";
+              const mode = inputMeta?.toolMode || (attachedFile?.type?.startsWith("image/") ? "edit" : "generate");
               if (mode === "generate") {
                 const options = inputMeta?.toolOptions || {};
                 const ratio = ({ "1:1": "1:1", "4:5": "4:5", "16:9": "16:9", "9:16": "9:16" })[options.aspectRatio] || "1:1";
@@ -1409,6 +1409,11 @@ export default function AIAssistantDashboard({
                   image_base64: image,
                   mime_type: attachedFile.type || "image/jpeg",
                   operations: workspaceImageOperations(mode, workspacePrompt),
+                  image_options: {
+                    output_format: inferredWorkspaceExport?.command === "/image"
+                      ? (inferredWorkspaceExport.outputFormat || "png")
+                      : "png",
+                  },
                 };
               } else {
                 throw new Error("The current image engine supports generation and bounded single-image enhancement/editing. Multi-image composition is not enabled in this workspace yet.");
