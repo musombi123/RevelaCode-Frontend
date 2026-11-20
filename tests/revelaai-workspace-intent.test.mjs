@@ -82,7 +82,7 @@ test("routes registered source-code extensions to code generation with the reque
     [".sql", "sql"], [".sh", "bash"], [".go", "go"], [".rs", "rust"],
     [".java", "java"], [".c", "c"], [".cpp", "cpp"], [".cs", "csharp"],
     [".php", "php"], [".rb", "ruby"], [".swift", "swift"], [".kt", "kotlin"],
-    [".xml", "xml"], [".yaml", "yaml"], [".yml", "yaml"], [".toml", "toml"], [".ini", "ini"],
+    [".xml", "xml"], [".yaml", "yaml"], [".yml", "yml"], [".toml", "toml"], [".ini", "ini"],
   ];
   for (const [extension, language] of cases) {
     const request = inferWorkspaceExport("Generate source code as " + extension);
