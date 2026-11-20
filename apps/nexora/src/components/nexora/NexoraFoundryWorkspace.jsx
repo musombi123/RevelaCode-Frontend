@@ -3,6 +3,8 @@ import AndroidBuildConsole from "./AndroidBuildConsole.jsx";
 import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
+import NexoraStudioShell from "./NexoraStudioShell.jsx";
+import { NexoraOverviewPage, NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -13,6 +15,7 @@ import {
 const STORAGE_KEY = "nexora.foundry.projects.v1";
 const ACTIVE_KEY = "nexora.foundry.active-project.v1";
 const NEXORA_SESSION_KEY = "nexora.account.session.v1";
+const TASKS_STORAGE_KEY = "nexora.studio.tasks.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
@@ -67,6 +70,30 @@ function projectStorageKey(userId) {
 
 function activeProjectStorageKey(userId) {
   return userId ? ACTIVE_KEY + ":" + String(userId) : ACTIVE_KEY;
+}
+
+function taskStorageKey(userId = "anonymous") {
+  return TASKS_STORAGE_KEY + ":" + String(userId || "anonymous");
+}
+
+function readStudioTasks(userId = "anonymous") {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(taskStorageKey(userId)) || "[]");
+    return Array.isArray(parsed) ? parsed.filter(item => item && item.id && item.title) : [];
+  } catch { return []; }
+}
+
+function writeStudioTasks(userId, tasks) {
+  try { localStorage.setItem(taskStorageKey(userId), JSON.stringify(tasks)); return true; }
+  catch { return false; }
+}
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "0 B";
+  const units = ["B","KB","MB","GB"];
+  const index = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  return (bytes / Math.pow(1024,index)).toFixed(index === 0 ? 0 : 1) + " " + units[index];
 }
 
 function readProjects(userId = "anonymous") {
@@ -207,7 +234,16 @@ export default function NexoraFoundryWorkspace() {
   const [projects, setProjects] = useState(() => readProjects(initialStorageUserId));
   const [activeId, setActiveId] = useState(() => localStorage.getItem(activeProjectStorageKey(initialStorageUserId)) || "");
   const [tab, setTab] = useState("overview");
-  const [studioView, setStudioView] = useState("preview");
+  const [studioView, setStudioView] = useState("overview");
+  const [studioTasks, setStudioTasks] = useState(() => readStudioTasks(initialStorageUserId));
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [projectDraftName, setProjectDraftName] = useState("");
+  const [projectDraftDescription, setProjectDraftDescription] = useState("");
+  const [projectCreating, setProjectCreating] = useState(false);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskEditingId, setTaskEditingId] = useState("");
+  const [taskDraft, setTaskDraft] = useState({title:"",description:"",projectId:"",category:"Code",priority:"medium",assignee:"",status:"backlog",dueDate:""});
   const [jobs, setJobs] = useState([]);
   const [androidBuild, setAndroidBuild] = useState({ app_name: "NEXORA Game", package_id: "com.nexora.game", version_name: "1.0.0", version_code: 1, build_type: "debug", artifact_format: "apk", orientation: "landscape", internet_permission: true, camera_permission: false, microphone_permission: false, icon_asset_id: null });
   const cloudBaseline = useRef(new Map());
@@ -406,6 +442,17 @@ export default function NexoraFoundryWorkspace() {
     });
     return () => { cancelled = true; };
   }, [nexoraAuthLoading, authenticatedCloudSession, apiRequest, storageUserId]);
+
+  useEffect(() => {
+    if (projectsScopeId !== storageUserId) return;
+    if (!writeStudioTasks(storageUserId, studioTasks)) {
+      setNotice("The local task board could not be saved. Browser storage may be full.");
+    }
+  }, [studioTasks, storageUserId, projectsScopeId]);
+
+  useEffect(() => {
+    setStudioTasks(readStudioTasks(storageUserId));
+  }, [storageUserId]);
 
   useEffect(() => {
     // Retain only device-only drafts in browser storage. Cloud-owned project
