@@ -1178,19 +1178,6 @@ export default function NexoraFoundryWorkspace() {
   const studioAssets = activeProject?.assets || [];
   const pipelineRows = [["Video Intake","Movie / source media",studioAssets.some(a=>["mp4","mov","mkv","webm","avi"].includes(a.type))?"SOURCE AVAILABLE":"WAITING FOR SOURCE"],["Character Extraction","Compatible GLB/glTF source",studioAssets.some(a=>["glb","gltf"].includes(a.type))?"SOURCE AVAILABLE":"WAITING FOR MODEL"],["Motion Capture","Animation cleanup worker","WORKER NOT CONNECTED"],["World Builder","Procedural environment generation","FOUNDRY JOB AVAILABLE"],["Enemy AI","Enemy behavior configuration",activeProject?.gameplay?.enemies?.length?"CONFIGURED":"AWAITING ENEMIES"],["Quest Logic","Objectives and mission logic",activeProject?.gameplay?.objectives?.length?"CONFIGURED":"AWAITING OBJECTIVES"]];
 
-  if (!desktopViewport) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#070b10] p-8 text-center text-cyan-100">
-        <div className="max-w-xl border border-cyan-700/60 bg-[#0b1118] p-8 shadow-[0_0_60px_rgba(34,211,238,.08)]">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-cyan-400/50 bg-cyan-950/40 text-cyan-300"><Box size={34}/></div>
-          <h1 className="text-2xl font-black tracking-[.18em]">NEXORA STUDIO PRO</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">NEXORA is a desktop-only game-production workstation. Open it on a desktop computer with a mouse and a display at least 1200 pixels wide.</p>
-          <p className="mt-3 text-xs text-slate-500">Games produced by NEXORA can target Android, Web and desktop platforms. Mobile is a game output target, not a NEXORA workstation layout.</p>
-        </div>
-      </div>
-    );
-  }
-
   const studioTimeline = activeProject?.timeline || {duration_seconds:330,playhead_seconds:0,tracks:[
     {id:"video",name:"VIDEO CLIP",clips:[]},{id:"levels",name:"LEVEL SCENE",clips:[]},{id:"events",name:"GAMEPLAY EVENTS",clips:[]},{id:"audio",name:"AUDIO/SFX",clips:[]},
   ]};
