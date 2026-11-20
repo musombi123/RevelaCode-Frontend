@@ -405,7 +405,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
   };
 
   const supportedExports = useMemo(() => {
-    if (kind === "document") return ["DOCX", "PDF"];
+    if (kind === "document") return ["DOCX", "PDF", "TXT", "MD"];
     if (kind === "image") return ["PNG", "JPG", "PDF"];
     if (kind === "spreadsheet") return ["XLSX", "CSV"];
     if (kind === "slide_deck") return ["PPTX"];
