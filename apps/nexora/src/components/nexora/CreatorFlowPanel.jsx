@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Film, Gamepad2, Layers3, LockKeyhole, CheckCircle2, CircleAlert, CreditCard, Plus, Trash2, RefreshCw, Play, UploadCloud } from "lucide-react";
+import { BookOpen, Film, Gamepad2, Layers3, LockKeyhole, CheckCircle2, CreditCard, Plus, Trash2, RefreshCw, Play, UploadCloud } from "lucide-react";
 
 const makeEpisode = (number) => ({
   id: `episode-${number}`,
