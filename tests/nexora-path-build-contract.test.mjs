@@ -68,7 +68,7 @@ test("NEXORA Studio Pro exposes all redesigned workspace destinations", () => {
 
 test("World Builder persists its WorldDocument through the NEXORA API", () => {
   const world = read("apps/nexora/src/components/nexora/NexoraWorldBuilderPanel.jsx");
-  assert.match(world, /\/api\/projects\//);
+  assert.match(world, /\/api\/v1\/workspace\/projects\//);
   assert.match(world, /method:\s*"PUT"/);
   assert.match(world, /terrain_edits/);
   assert.match(world, /sun_angle/);
@@ -78,7 +78,8 @@ test("World Builder persists its WorldDocument through the NEXORA API", () => {
 
 test("local team task board and unsupported marketplace integrations are labelled honestly", () => {
   const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
-  assert.match(pages, /Stored in this browser/);
+  assert.match(pages, /Tasks linked to cloud projects sync/);
+  assert.match(pages, /Team-member permissions, cross-member assignments and comments require a separate team service/);
   assert.match(pages, /Paid third-party marketplace checkout is not connected/);
   const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
   assert.match(shell, /Account quota is not exposed by this service/);
@@ -90,4 +91,17 @@ test("World Builder uses owner-scoped NEXORA endpoints and canonical save docume
   assert.doesNotMatch(world, /["']\/api\/projects\//);
   assert.match(world, /payload\.document/);
   assert.match(world, /cloudProjectActive/);
+});
+
+test("NEXORA project tasks use authenticated account-scoped CRUD APIs", () => {
+  const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
+  const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
+  assert.match(workspace, /\/api\/v1\/workspace\/projects\/\$\{projectId\}\/tasks/);
+  assert.match(workspace, /method:"POST", body:JSON\.stringify\(taskPayload\(taskDraft\)\)/);
+  assert.match(workspace, /method:"PUT", body:JSON\.stringify\(taskPayload\(updated\)\)/);
+  assert.match(workspace, /method:"DELETE"/);
+  assert.match(workspace, /_remoteTask/);
+  assert.match(workspace, /studioTasks\.filter\(task => !task\._remoteTask\)/);
+  assert.match(pages, /CLOUD · ACCOUNT SYNC/);
+  assert.match(pages, /LOCAL DRAFT/);
 });
