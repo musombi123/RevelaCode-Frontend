@@ -1072,6 +1072,8 @@ export default function NexoraFoundryWorkspace() {
         {!authenticatedCloudSession && <div className="border border-amber-700/50 bg-[#1b1710] px-3 py-2 text-[11px] text-amber-100">Sign in with your independent NEXORA account to access your cloud projects and production tools.</div>}
         {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
         {notice&&<div role="status" className="flex items-start justify-between gap-3 border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
+        <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
+        <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 {studioView === "timeline" && (
         <section ref={timelineRef} className="border border-slate-700 bg-[#0b1016] p-2">
@@ -1194,7 +1196,6 @@ export default function NexoraFoundryWorkspace() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={videoRightsConfirmed} onChange={event=>setVideoRightsConfirmed(event.target.checked)}/> I own this video or have permission to use it</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
           </div>
-          <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
 
 
           <div className="mt-3"><h3 className="mb-2 text-[10px] font-black tracking-widest text-amber-200">BUILT-IN 3D TEMPLATES · ADD TO SCENE</h3><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">{templates.map(template=><div key={template.id} className="border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"template",id:template.id})} className="flex h-20 w-full items-center justify-center border border-cyan-900/30 bg-[#0a1118] text-cyan-200"><Box size={30}/></button><div className="mt-1 truncate text-[10px] font-bold">{template.name}</div><div className="text-[9px] text-slate-500">{template.category} · 3D template</div><button type="button" disabled={!activeProject} onClick={()=>addTemplateToScene(template)} className="mt-2 w-full border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-200 disabled:opacity-40">＋ ADD TO SCENE</button></div>)}</div></div>
@@ -1216,7 +1217,6 @@ export default function NexoraFoundryWorkspace() {
               </select>
               <button type="button" onClick={createNewProject} className="border border-amber-700/60 px-3 py-2 text-[10px] font-bold text-amber-100">＋ NEW PROJECT</button>
               <button type="button" onClick={()=>importInputRef.current?.click()} className="border border-slate-700 px-3 py-2 text-[10px] font-bold text-cyan-100">IMPORT PROJECT</button>
-              <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
             </div>
         <section className="grid gap-2 lg:grid-cols-2">
           <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">SCENE HIERARCHY / INSPECTOR</h2><div className="mt-2 grid grid-cols-1 gap-3 xl:grid-cols-2"><div className="max-h-48 overflow-auto">{sceneNodes.map(object=><button key={object.id} type="button" onClick={()=>setSelectedObjectId(object.id)} className={"mb-1 block w-full truncate border px-2 py-1.5 text-left text-[10px] "+(selectedObject?.id===object.id?"border-cyan-500 bg-cyan-950/40":"border-slate-800 bg-[#101820]")}>{object.name} · {object.type}</button>)}<button type="button" onClick={addSceneObject} className="mt-1 w-full border border-cyan-800 px-2 py-1.5 text-[9px]">＋ ADD SCENE NODE</button></div>
