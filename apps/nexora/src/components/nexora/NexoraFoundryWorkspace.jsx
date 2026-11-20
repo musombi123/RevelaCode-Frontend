@@ -4,7 +4,7 @@ import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import {
-  Activity, ArrowDownToLine, Box, Check, ChevronRight, CircleHelp, Code2,
+  Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
   MoreHorizontal, Play, Plus, RefreshCw, Save, Settings2, ShieldCheck,
   Sparkles, Trash2, UploadCloud, WandSparkles, X
