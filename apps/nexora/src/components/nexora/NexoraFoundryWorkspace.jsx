@@ -929,6 +929,27 @@ export default function NexoraFoundryWorkspace() {
     setNotice(`${asset.name} added to the scene as an imported 3D model.`);
   };
 
+  const addPolyHavenAssetToScene = (asset, downloaded) => {
+    if (!activeProject || !downloaded?.asset_registry_id) return;
+    const object = {
+      id: makeId("object"),
+      name: asset.name,
+      type: "MeshInstance3D",
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      visible: true,
+      asset_id: downloaded.asset_registry_id,
+    };
+    patchProject(project => ({ ...project, scene: { ...project.scene, objects: [...project.scene.objects, object] } }));
+    setSelectedObjectId(object.id);
+    if (downloaded.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
+      setPreviewSelection({ type: "polyhaven", id: asset.id });
+    }
+    setStudioView("game-editor");
+    setNotice(`${asset.name} added to the 3D scene. Foundry will load the registered model from the local project asset library during the next build.`);
+  };
+
   const updateTimeline = (updater) => {
     if(!activeProject) return;
     patchProject(project=>{
@@ -1166,7 +1187,7 @@ export default function NexoraFoundryWorkspace() {
         method: "POST",
         body: JSON.stringify({ asset_id: asset.id, resolution: polyHavenResolution }),
       });
-      setPolyHavenDownloaded(current => ({ ...current, [asset.id]: result.directory }));
+      setPolyHavenDownloaded(current => ({ ...current, [asset.id]: result }));
       setNotice(`${result.name} downloaded and integrity-verified directly into ${result.directory}. The asset is licensed CC0-1.0.`);
       if (result.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
         setPreviewSelection({ type: "polyhaven", id: asset.id });
@@ -1831,7 +1852,7 @@ export default function NexoraFoundryWorkspace() {
             {polyHavenResults.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">{polyHavenResults.map(asset=><article key={asset.id} className="flex min-w-0 gap-2 border border-slate-800 bg-[#111922] p-2">
               {asset.thumbnail_url?<img src={asset.thumbnail_url} alt="" loading="lazy" className="h-16 w-16 shrink-0 object-cover bg-slate-900"/>:<div className="flex h-16 w-16 shrink-0 items-center justify-center bg-slate-900 text-emerald-300"><Box size={24}/></div>}
               <div className="min-w-0 flex-1"><div className="truncate text-[10px] font-bold text-slate-100" title={asset.name}>{asset.name}</div><div className="mt-1 line-clamp-2 text-[9px] text-slate-400">{asset.description||asset.category}</div><div className="mt-1 text-[8px] text-slate-500">{asset.polycount?Number(asset.polycount).toLocaleString()+" polygons · ":""}CC0-1.0</div>
-                {polyHavenDownloaded[asset.id]?<div className="mt-2 break-all text-[8px] font-bold text-emerald-300">DOWNLOADED · {polyHavenDownloaded[asset.id]}</div>:<button type="button" onClick={()=>downloadPolyHaven3DAsset(asset)} disabled={Boolean(polyHavenDownloading)||!cloudProjectActive} className="mt-2 w-full border border-emerald-700 px-2 py-1.5 text-[9px] font-black text-emerald-200 disabled:opacity-40">{polyHavenDownloading===asset.id?"DOWNLOADING…":"↓ DOWNLOAD TO NEXORA"}</button>}
+                {polyHavenDownloaded[asset.id]?<><div className="mt-2 break-all text-[8px] font-bold text-emerald-300">DOWNLOADED · {polyHavenDownloaded[asset.id].directory}</div><button type="button" onClick={()=>addPolyHavenAssetToScene(asset,polyHavenDownloaded[asset.id])} className="mt-2 w-full border border-cyan-700 px-2 py-1.5 text-[9px] font-black text-cyan-200">＋ ADD TO 3D SCENE</button></>:<button type="button" onClick={()=>downloadPolyHaven3DAsset(asset)} disabled={Boolean(polyHavenDownloading)||!cloudProjectActive} className="mt-2 w-full border border-emerald-700 px-2 py-1.5 text-[9px] font-black text-emerald-200 disabled:opacity-40">{polyHavenDownloading===asset.id?"DOWNLOADING…":"↓ DOWNLOAD TO NEXORA"}</button>}
               </div>
             </article>)}</div>}
             <p className="mt-2 text-[8px] text-slate-500">Downloads are written to the paired computer under game/assets/3d/polyhaven/. File size and provider MD5 are verified. Higher resolutions use more disk space and bandwidth.</p>
