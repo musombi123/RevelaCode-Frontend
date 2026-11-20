@@ -98,6 +98,7 @@ export function runCode(language, code, { onLine, onStatus } = {}) {
           break;
         case "out":
         case "err":
+        case "warn":
           onLine?.(data.type, data.text);
           break;
         case "done":
