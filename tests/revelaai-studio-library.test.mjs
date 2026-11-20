@@ -40,6 +40,8 @@ test("Studio saves versioned source with expected-version conflict protection", 
 
 test("Studio has native editors for documents, workbooks, presentations and code", () => {
   assert.match(studio, /function DocumentEditor/);
+  assert.match(studio, /updateTableCell/);
+  assert.match(studio, /Add table row/);
   assert.match(studio, /function SpreadsheetEditor/);
   assert.match(studio, /function PresentationEditor/);
   assert.match(studio, /function ImageEditor/);
@@ -52,6 +54,7 @@ test("Studio has native editors for documents, workbooks, presentations and code
 test("Exports are explicit user actions and use the authenticated export API", () => {
   assert.match(client, /export async function exportRevelaAIArtifact/);
   assert.match(client, /\/exports/);
+  assert.match(studio, /\["DOCX", "PDF", "TXT", "MD"\]/);
   assert.match(studio, /onClick=\{\(\) => setExportOpen/);
   assert.match(studio, /onClick=\{\(\) => void exportFormat\(format\)\}/);
   assert.match(studio, /disabled=\{!supportedExports.length \|\| Boolean\(busy\) \|\| dirty\}/);
