@@ -18,6 +18,8 @@ test("Files Library uses authenticated artifact list, upload, rename, restore an
   assert.match(library, /uploadRevelaAIArtifact/);
   assert.match(library, /Move to Trash/);
   assert.match(library, /Restore/);
+  assert.match(library, /downloadOriginal/);
+  assert.match(library, /original_download_url/);
   assert.match(library, /Private to your account/);
   assert.match(library, /Filter folder/);
   assert.match(library, /editingFolder/);
