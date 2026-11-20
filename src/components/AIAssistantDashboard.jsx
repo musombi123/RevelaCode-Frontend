@@ -3081,10 +3081,49 @@ export default function AIAssistantDashboard({
       {workspaceArtifact && (
         <RevelaAIWorkspacePanel
           artifact={workspaceArtifact}
+          authFetch={authFetch}
+          onArtifactUpdated={(updated) => {
+            if (!updated?.id) return;
+            setWorkspaceArtifact((current) => {
+              if (!current) return current;
+              const currentId = String(current.artifact?.id || current.id || "");
+              if (currentId && currentId !== String(updated.id)) return current;
+              const editable = updated.preview?.editable_source?.payload || {};
+              return {
+                ...current,
+                artifact: updated,
+                id: updated.id,
+                type: updated.type || current.type,
+                version: updated.version || current.version,
+                filename: updated.filename || current.filename,
+                mime_type: updated.mime_type || current.mime_type,
+                preview: updated.preview || current.preview,
+                code: typeof editable.source === "string" ? editable.source : current.code,
+                download_url: updated.download_url || current.download_url,
+                preview_url: updated.preview_url || current.preview_url,
+                format_downloads: updated.format_downloads || current.format_downloads,
+              };
+            });
+          }}
           onClose={() => setWorkspaceArtifact(null)}
           onOpenStudio={() => void handleArtifactAction("open_studio", workspaceArtifact)}
-          onAskAI={() => {
-            const revisionPrompt = "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
+          onAskAI={(repairContext) => {
+            const isCodeRepair = repairContext?.kind === "code-repair";
+            const revisionPrompt = isCodeRepair
+              ? [
+                  "/code",
+                  "Debug and repair this existing source file using the real execution output below.",
+                  "File: " + String(repairContext.filePath || workspaceArtifact.filename || "source file"),
+                  "Language: " + String(repairContext.language || "source"),
+                  "Actual error and console output:",
+                  String(repairContext.error || "No error text was provided.").slice(0, 5000),
+                  "Current source code:",
+                  "```" + String(repairContext.language || ""),
+                  String(repairContext.source || "").slice(0, 24000),
+                  "```",
+                  "Return the complete corrected source file in exactly one fenced code block. Preserve existing working behaviour and public interfaces, explain the root cause briefly, and do not claim that the correction has been run."
+                ].join("\n\n")
+              : "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
             window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
             setWorkspaceArtifact(null);
           }}
