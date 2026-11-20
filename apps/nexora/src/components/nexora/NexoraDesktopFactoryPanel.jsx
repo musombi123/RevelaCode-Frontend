@@ -257,8 +257,9 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
 
   const prepareRelease = () => {
     if (!projectId || !releaseArtifact) return;
+    if (!window.confirm("Confirm that you own or have distribution rights for every asset included in this build. NEXORA will only prepare a local release manifest; it will not upload or publish it.")) return;
     run("prepare-release", () => request("/api/v1/desktop/projects/" + projectId + "/publish/prepare", {
-      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact })
+      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, confirm_distribution_rights: true })
     }), "Release manifest prepared locally. Nothing has been uploaded or submitted.");
   };
 
@@ -383,7 +384,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
         </article>)}</div>
         <div className="mt-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
           <select className={field} value={releasePlatform} onChange={event => setReleasePlatform(event.target.value)}><option value="android">Android</option><option value="web">Web</option><option value="windows">Windows</option><option value="linux">Linux</option></select>
-          <select className={field} value={releaseArtifact} onChange={event => setReleaseArtifact(event.target.value)}><option value="">Select a build artifact</option>{completedArtifacts.map(item => <option key={item.jobId + ":" + item.id} value={item.id}>{item.filename} · {item.target} · {String(item.jobId).slice(0, 8)}</option>)}</select>
+          <select className={field} value={releaseArtifact} onChange={event => setReleaseArtifact(event.target.value)}><option value="">Select a build artifact</option>{completedArtifacts.map(item => <option key={item.jobId + ":" + item.id} value={item.path}>{item.filename} · {item.target} · {String(item.jobId).slice(0, 8)}</option>)}</select>
           <button type="button" className={primary} disabled={!projectId || !releaseArtifact || Boolean(busy)} onClick={prepareRelease}><ShieldCheck size={13}/> Prepare manifest</button>
         </div>
         <p className="mt-2 text-[9px] leading-4 text-slate-500">The manifest records owner, target, artifact path, size and SHA-256. Upload, store approval and public release are separate steps.</p>
