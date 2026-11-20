@@ -41,3 +41,59 @@ textarea:focus-visible {
   outline: 2px solid #67e8f9;
   outline-offset: 2px;
 }
+
+/* NEXORA Studio Pro workspace chrome */
+html {
+  scroll-behavior: smooth;
+  background: #070D16;
+}
+
+body {
+  background: #070D16;
+  color: #E5EDF7;
+}
+
+::selection {
+  background: rgba(16, 213, 242, 0.28);
+  color: #F8FDFF;
+}
+
+.nexora-shell {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.nexora-shell :focus-visible {
+  outline: 2px solid #10D5F2;
+  outline-offset: 2px;
+}
+
+.nexora-shell ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.nexora-shell ::-webkit-scrollbar-track {
+  background: #081321;
+}
+
+.nexora-shell ::-webkit-scrollbar-thumb {
+  border: 2px solid #081321;
+  border-radius: 999px;
+  background: #29415F;
+}
+
+.nexora-shell ::-webkit-scrollbar-thumb:hover {
+  background: #3C617D;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexora-shell *,
+  .nexora-shell *::before,
+  .nexora-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
