@@ -495,7 +495,7 @@ export default function NexoraFoundryWorkspace() {
       .finally(() => { if (!cancelled) setDefaultAssetPacksLoading(false); });
     // Load actual provider results immediately; the search field remains
     // available for narrowing the catalogue.
-    apiRequest("/api/v1/desktop/assets/3d/search?q=character&limit=24")
+    apiRequest("/api/v1/desktop/assets/3d/search?q=&limit=24")
       .then((payload) => { if (!cancelled) setPolyHavenResults(Array.isArray(payload.results) ? payload.results : []); })
       .catch(() => { if (!cancelled) setPolyHavenResults([]); });
     return () => { cancelled = true; };
