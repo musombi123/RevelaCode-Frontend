@@ -74,5 +74,5 @@ jobs:
         run: node --test tests/revelaai-send-submit.test.mjs
       - name: Run cross-hub responsive scrolling regressions
         run: node --test tests/responsive-scroll-regressions.test.mjs
-      - name: Build production frontend
-        run: npm run build
+      - name: Build NEXORA and RevelaCode production frontends
+        run: npm run build:web
