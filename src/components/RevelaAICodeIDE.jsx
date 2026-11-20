@@ -323,11 +323,17 @@ export default function RevelaAICodeIDE({
         const message = String(result.error || "Execution failed.");
         captured.push({ type: "err", text: message });
         setConsoleLines((items) => [...items, { type: "err", text: message }]);
-        setLastFailure(message + (captured.length ? "\n" + captured.map((line) => line.text).join("\n") : ""));
+        setLastFailure(captured.map((line) => line.text).filter(Boolean).join("\n"));
       } else {
+        const consoleErrors = captured.filter((line) => line.type === "err");
         setConsoleLines((items) => items.length ? items : [{ type: "dim", text: "Execution finished with no output." }]);
-        setNotice("Execution completed in the isolated browser worker.");
-        setLastFailure("");
+        if (consoleErrors.length) {
+          setNotice("Execution finished, but the console reported errors. You can ask AI to repair them.");
+          setLastFailure(consoleErrors.map((line) => line.text).join("\n"));
+        } else {
+          setNotice("Execution completed in the isolated browser worker.");
+          setLastFailure("");
+        }
       }
     } catch (cause) {
       const message = String(cause?.message || "Execution failed.");
@@ -380,7 +386,11 @@ export default function RevelaAICodeIDE({
   };
 
   const repair = async () => {
-    if (!artifactId || !lastFailure) return;
+    if (!lastFailure) return;
+    if (!artifactId || source.length > 12000) {
+      onAskAI?.({ kind: "code-repair", filePath: filename, language, source, error: lastFailure });
+      return;
+    }
     if (dirty) {
       setError("Save your current edits first. AI repair must use the exact source version that was tested.");
       return;
@@ -390,8 +400,8 @@ export default function RevelaAICodeIDE({
     setNotice("");
     let sessionClosed = false;
     try {
-      await closeEditorSession();
       sessionClosed = true;
+      await closeEditorSession();
       const instruction = [
         "Debug and repair this source code using the runtime or validation output below.",
         "File: " + filename,
@@ -538,7 +548,7 @@ export default function RevelaAICodeIDE({
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
               <AlertCircle size={12}/> Run & validation output
             </div>
-            {lastFailure && <button type="button" onClick={() => void repair()} disabled={repairing || dirty || !editSessionReady} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-violet-500/15 px-3 text-[11px] font-bold text-violet-300 disabled:opacity-40">
+            {lastFailure && <button type="button" onClick={() => void repair()} disabled={repairing || dirty || (Boolean(artifactId) && !editSessionReady)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-violet-500/15 px-3 text-[11px] font-bold text-violet-300 disabled:opacity-40">
               {repairing ? <Loader2 size={12} className="animate-spin"/> : <WandSparkles size={12}/>} Fix with AI
             </button>}
           </div>
