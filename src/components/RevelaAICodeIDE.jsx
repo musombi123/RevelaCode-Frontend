@@ -73,7 +73,10 @@ function addPreviewPolicy(source) {
   if (/<head\b[^>]*>/i.test(source)) {
     return source.replace(/<head\b[^>]*>/i, (head) => head + policy);
   }
-  if (/<html\\b[^>]*>/i.test(source)) return source.replace(/<html\\b[^>]*>/i, (htmlTag) => htmlTag + "<head>" + policy + "</head>");\n  return "<!doctype html><html><head>" + policy + "</head><body>" + source + "</body></html>";
+  if (/<html\b[^>]*>/i.test(source)) {
+    return source.replace(/<html\b[^>]*>/i, (htmlTag) => htmlTag + "<head>" + policy + "</head>");
+  }
+  return "<!doctype html><html><head>" + policy + "</head><body>" + source + "</body></html>";
 }
 
 function asConsoleText(value) {
