@@ -10,31 +10,55 @@ async function init() {
   return pyodide;
 }
 
+const nativeNetworkApis = {
+  fetch: self.fetch,
+  XMLHttpRequest: self.XMLHttpRequest,
+  WebSocket: self.WebSocket,
+  EventSource: self.EventSource,
+};
+
+function disableNetworkAccess() {
+  const denied = () => {
+    throw new Error("Network access is disabled in the RevelaAI Python runner. Use local fixtures or mocked responses.");
+  };
+  for (const name of Object.keys(nativeNetworkApis)) {
+    try { self[name] = denied; } catch { /* A browser may expose this API readonly. */ }
+  }
+}
+
+function restoreNetworkAccess() {
+  for (const [name, value] of Object.entries(nativeNetworkApis)) {
+    try { self[name] = value; } catch { /* A browser may expose this API readonly. */ }
+  }
+}
+
 self.onmessage = async (event) => {
   const { code } = event.data;
+  let networkDisabled = false;
   try {
     postMessage({ type: "status", text: "Loading Python runtime…" });
     pyodideReady ??= init();
     const pyodide = await pyodideReady;
 
     postMessage({ type: "status", text: "Loading required Python packages…" });
+    // Resolve imports before disabling network access. Package installation is
+    // limited to Pyodide's configured package index, never arbitrary user URLs.
     await pyodide.loadPackagesFromImports(code);
 
-    // Resolve package imports first; user code itself has no browser network APIs.
-    const denyNetwork = () => {
-      throw new Error("Network access is disabled in the RevelaAI Python runner. Use local fixtures or mocked responses.");
-    };
-    try { self.fetch = denyNetwork; } catch { /* A browser may expose fetch readonly. */ }
-    try { self.XMLHttpRequest = denyNetwork; } catch { /* A browser may expose XHR readonly. */ }
-    try { self.WebSocket = denyNetwork; } catch { /* A browser may expose WebSocket readonly. */ }
-    try { self.EventSource = denyNetwork; } catch { /* A browser may expose EventSource readonly. */ }
-
+    disableNetworkAccess();
+    networkDisabled = true;
     postMessage({ type: "status", text: "" });
     postMessage({ type: "started" });
-    const result = await pyodide.runPythonAsync(code);
-    if (result !== undefined) postMessage({ type: "out", text: "→ " + String(result) });
-    postMessage({ type: "done" });
+    try {
+      const result = await pyodide.runPythonAsync(code);
+      if (result !== undefined) postMessage({ type: "out", text: "→ " + String(result) });
+      postMessage({ type: "done" });
+    } finally {
+      restoreNetworkAccess();
+      networkDisabled = false;
+    }
   } catch (error) {
+    if (networkDisabled) restoreNetworkAccess();
     postMessage({ type: "error", text: String(error?.stack || error?.message || error) });
   }
 };
