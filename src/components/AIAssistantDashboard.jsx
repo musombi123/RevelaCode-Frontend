@@ -1360,14 +1360,18 @@ export default function AIAssistantDashboard({
         const requestMessage = imageDescriptionFollowup
           ? `Generate an image of: ${cleaned}`
           : selectedToolCommand === "/humanize"
-            ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\n\n${cleaned}`
+            ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\\n\\n${cleaned}`
             : selectedToolCommand === "/image"
               ? `Image Studio request. Mode: ${inputMeta?.toolMode || "generate"}. Options: ${JSON.stringify(inputMeta?.toolOptions || {})}. Follow these settings exactly where supported. User brief: ${cleaned}`
               : selectedToolCommand === "/search"
                 ? `Deep Search request. Depth and source preferences: ${JSON.stringify(inputMeta?.toolOptions || {})}. Research question: ${cleaned}`
-                : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
-                  ? `${selectedToolCommand} ${cleaned}`.trim()
-                  : cleaned;
+                : selectedToolCommand === "/code" && inputMeta?.toolMode === "debug"
+                  ? `Code debugging request. Diagnose the supplied source and actual error evidence, then return a complete corrected source file. User details: ${cleaned}`
+                  : selectedToolCommand === "/code"
+                    ? `Code generation request. Produce a complete, maintainable source file with appropriate validation and error handling. User brief: ${cleaned}`
+                    : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
+                      ? `${selectedToolCommand} ${cleaned}`.trim()
+                      : cleaned;
 
         const updateLoadingStage = (stage) => {
           setMessages((previous) => previous.map((message) =>
@@ -1443,8 +1447,16 @@ export default function AIAssistantDashboard({
               const language = inferredWorkspaceExport?.command === "/code"
                 ? inferredWorkspaceExport.language
                 : workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
-              workspacePayload = { ...workspacePayload, task: "code", language };
-              if (attachedFile) throw new Error("Source-file editing is not yet part of the file-export workspace. Paste the code or use the normal chat attachment analysis first.");
+              const codeMode = inputMeta?.toolMode || inputMeta?.toolOptions?.mode || "generate";
+              workspacePayload = {
+                ...workspacePayload,
+                task: "code",
+                language,
+                prompt: codeMode === "debug"
+                  ? "Debug and repair the source supplied in the brief. Use the user's actual error evidence, explain the root cause, preserve existing public interfaces, and return the complete corrected file in one fenced code block. Do not claim execution or testing unless it has occurred.\n\n" + workspaceExecutionPrompt
+                  : workspaceExecutionPrompt,
+              };
+              if (attachedFile) throw new Error("For programming, paste the source and error message into the composer. File-based source editing is not yet supported; no uploaded file has been modified.");
             } else if (workspaceCommand === "/ui") {
               workspacePayload = { ...workspacePayload, task: "ui_design" };
               if (attachedFile) throw new Error("The UI prototype tool currently builds from a written specification. Describe the screen and its interactions in the prompt.");
@@ -3081,11 +3093,51 @@ export default function AIAssistantDashboard({
       {workspaceArtifact && (
         <RevelaAIWorkspacePanel
           artifact={workspaceArtifact}
+          authFetch={authFetch}
+          onArtifactUpdated={(updated) => {
+            if (!updated?.id) return;
+            updateArtifactRecord(updated.id, updated);
+            setWorkspaceArtifact((current) => {
+              if (!current) return current;
+              const currentId = String(current.artifact?.id || current.id || "");
+              if (currentId && currentId !== String(updated.id)) return current;
+              const editable = updated.preview?.editable_source?.payload || {};
+              return {
+                ...current,
+                artifact: updated,
+                id: updated.id,
+                type: updated.type || current.type,
+                version: updated.version || current.version,
+                filename: updated.filename || current.filename,
+                mime_type: updated.mime_type || current.mime_type,
+                preview: updated.preview || current.preview,
+                code: typeof editable.source === "string" ? editable.source : current.code,
+                download_url: updated.download_url || current.download_url,
+                preview_url: updated.preview_url || current.preview_url,
+                format_downloads: updated.format_downloads || current.format_downloads,
+              };
+            });
+          }}
           onClose={() => setWorkspaceArtifact(null)}
           onOpenStudio={() => void handleArtifactAction("open_studio", workspaceArtifact)}
-          onAskAI={() => {
-            const revisionPrompt = "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
-            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
+          onAskAI={(repairContext) => {
+            const isCodeRepair = repairContext?.kind === "code-repair";
+            const revisionPrompt = isCodeRepair
+              ? [
+                  "/code",
+                  "Debug and repair this existing source file using the real execution output below.",
+                  "File: " + String(repairContext.filePath || workspaceArtifact.filename || "source file"),
+                  "Language: " + String(repairContext.language || "source"),
+                  "Actual error and console output:",
+                  String(repairContext.error || "No error text was provided.").slice(0, 5000),
+                  "Current source code:",
+                  "```" + String(repairContext.language || ""),
+                  String(repairContext.source || "").slice(0, 24000),
+                  "```",
+                  "Return the complete corrected source file in exactly one fenced code block. Preserve existing working behaviour and public interfaces, explain the root cause briefly, and do not claim that the correction has been run."
+                ].join("\n\n")
+              : "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
+            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt, toolCommand: isCodeRepair ? "/code" : null, toolMode: isCodeRepair ? "debug" : null } }));
             setWorkspaceArtifact(null);
           }}
         />

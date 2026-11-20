@@ -14,7 +14,7 @@
     "test:offline-ai": "node --test tests/offline-ai.test.mjs tests/revelaai-offline-session.test.mjs",
     "test:jumuiya-samples": "node --test tests/admin-jumuiya-samples.test.mjs",
     "test:staff-invitations": "node --test tests/jumuiya-staff-invitations.test.mjs",
-    "test:revelaai-workspace": "node --test tests/revelaai-workspace-integration.test.mjs tests/revelaai-artifact-cards.test.mjs tests/revelaai-workspace-intent.test.mjs",
+    "test:revelaai-workspace": "node --test tests/revelaai-workspace-integration.test.mjs tests/revelaai-artifact-cards.test.mjs tests/revelaai-workspace-intent.test.mjs tests/revelaai-code-ide.test.mjs",
     "build:nexora": "vite build apps/nexora --config apps/nexora/vite.config.js",
     "build:web": "npm run build:nexora && npm run build && node scripts/verify-nexora-static-output.mjs",
     "test:studio-library": "node --test tests/revelaai-studio-library.test.mjs",

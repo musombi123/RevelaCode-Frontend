@@ -45,6 +45,7 @@ const MAX_FILE_BYTES = 20 * 1024 * 1024;
 export const TOOL_MODES = {
   "/image": { kind: "image-studio", defaultMode: "generate", modes: [{value:"generate",label:"Generate",placeholder:"Describe the image you want",action:"Generate"},{value:"edit",label:"Edit",placeholder:"Describe how to edit the image",action:"Edit"},{value:"merge",label:"Merge",placeholder:"Describe how the images should be combined",action:"Merge"},{value:"enhance",label:"Enhance",placeholder:"Describe how to enhance the image",action:"Enhance"}] },
   "/search": { kind: "deep-search", defaultMode: "deep", modes: [{value:"quick",label:"Quick",placeholder:"What should I research?",action:"Search"},{value:"deep",label:"Deep",placeholder:"What should I research in depth?",action:"Search"},{value:"intensive",label:"Intensive",placeholder:"Define the research question and evidence needed",action:"Research"}] },
+  "/code": { kind: "code-studio", defaultMode: "generate", modes: [{value:"generate",label:"Generate code",placeholder:"Describe the program, feature or script you want to build",action:"Generate code"},{value:"debug",label:"Debug & repair",placeholder:"Paste the code and describe the error you want RevelaAI to diagnose",action:"Diagnose code"}] },
 };
 
 const ACCEPTED_TYPES = [
@@ -214,8 +215,18 @@ export default function InputBar({
 
   useEffect(() => {
     const fillComposer = (event) => {
-      const value = String(event?.detail?.text || "").slice(0, 8000);
+      const detail = event?.detail || {};
+      const value = String(detail.text || "").slice(0, 8000);
       if (!value) return;
+      const command = String(detail.toolCommand || "").trim().toLowerCase();
+      if (command) {
+        const selected = TOOL_COMMANDS.find((item) => item[0] === command);
+        if (selected) setSelectedToolCommand(selected);
+        const mode = String(detail.toolMode || "").trim().toLowerCase();
+        if (mode && TOOL_MODES[command]?.modes?.some((item) => item.value === mode)) {
+          setToolMode((current) => ({ ...current, [command]: mode }));
+        }
+      }
       setText(value);
       requestAnimationFrame(() => textareaRef.current?.focus());
     };
@@ -652,7 +663,7 @@ export default function InputBar({
           bleedMm: Number(imageBleedMm || 0),
           cropMarks: imageCropMarks,
           dpi: 150,
-        } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : null,
+        } : command === "search" ? { depth: activeMode, sources: searchSources, timeRange: searchTimeRange } : command === "code" ? { mode: activeMode || "generate" } : null,
       });
 
       // A rejected request keeps its draft. If the user starts composing another
@@ -993,6 +1004,21 @@ export default function InputBar({
                 </div>
                 <select value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} aria-label="Image style" className="h-8 shrink-0 rounded-full border border-line bg-surface-2 px-3 text-[11px] font-semibold text-fg"><option value="photorealistic">Photorealistic</option><option value="illustration">Illustration</option><option value="cinematic">Cinematic</option><option value="3d">3D render</option><option value="watercolor">Watercolor</option><option value="minimal">Minimal</option></select>
                 <div className="flex h-8 shrink-0 items-center gap-2 rounded-full border border-line px-2"><button type="button" onClick={() => setImageCount((n) => Math.max(1,n-1))} disabled={imageCount<=1} aria-label="Fewer images">−</button><span className="text-[11px] font-semibold">{imageCount}</span><button type="button" onClick={() => setImageCount((n) => Math.min(4,n+1))} disabled={imageCount>=4} aria-label="More images">+</button></div>
+              </div>
+            </div>
+          )}
+          {activeModeConfig?.kind === "code-studio" && (
+            <div className="border-t border-line/70 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex shrink-0 rounded-xl bg-surface-2 p-1" role="group" aria-label="Code workspace mode">
+                  {activeModeConfig.modes.map((mode) => <button key={mode.value} type="button"
+                    onClick={() => setToolMode((current) => ({ ...current, "/code": mode.value }))}
+                    aria-pressed={activeMode === mode.value}
+                    className={"min-h-9 rounded-lg px-3 text-[11px] font-semibold " + (activeMode === mode.value ? "bg-surface-3 text-fg shadow-sm" : "text-muted hover:text-fg")}>
+                    {mode.label}
+                  </button>)}
+                </div>
+                <span className="text-[10px] text-muted">Edit · Run · Validate · Review AI fixes</span>
               </div>
             </div>
           )}
