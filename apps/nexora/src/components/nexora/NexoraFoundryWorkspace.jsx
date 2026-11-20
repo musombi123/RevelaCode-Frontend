@@ -6,7 +6,8 @@ import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
-import { NexoraOverviewPage, NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
+import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
+import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -243,6 +244,7 @@ export default function NexoraFoundryWorkspace() {
   const [studioView, setStudioView] = useState("overview");
   const [studioTasks, setStudioTasks] = useState(() => readStudioTasks(initialStorageUserId));
   const [globalSearch, setGlobalSearch] = useState("");
+  const [overviewRange, setOverviewRange] = useState("week");
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [projectDraftName, setProjectDraftName] = useState("");
   const [projectDraftDescription, setProjectDraftDescription] = useState("");
@@ -1466,6 +1468,8 @@ export default function NexoraFoundryWorkspace() {
       alertItems={productionAlerts}
       storageLabel={selectedStorageLabel}
       storagePercent={null}
+      dateRange={overviewRange}
+      onDateRangeChange={setOverviewRange}
     >
       {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Your NEXORA account is signed in, but cloud project synchronization is not active. Local drafts remain available in this browser.</div>}
       {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
@@ -1474,13 +1478,14 @@ export default function NexoraFoundryWorkspace() {
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 
-      {studioView === "overview" && <NexoraOverviewPage
+      {studioView === "overview" && <NexoraStudioOverview
         projects={projects}
         activeProject={activeProject}
         jobs={jobs}
         tasks={studioTasks}
         apiStatus={apiStatus}
         cloudProjectActive={cloudProjectActive}
+        dateRange={overviewRange}
         onNavigate={setStudioView}
         onOpenProject={openProject}
         onNewProject={createNewProject}
