@@ -437,12 +437,14 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
 
   saveRef.current = save;
   useEffect(() => {
-    if (!dirty || !canEdit || busy || !artifact?.id) return undefined;
+    // Pause automatic retries after a failed save. A new edit clears the error
+    // and schedules another save; the user can also retry manually.
+    if (!dirty || !canEdit || busy || error || !artifact?.id) return undefined;
     const timeout = window.setTimeout(() => {
       void saveRef.current?.({ automatic: true });
-    }, 2200);
+    }, 5000);
     return () => window.clearTimeout(timeout);
-  }, [dirty, source, artifact?.id, artifact?.version, busy, canEdit]);
+  }, [dirty, source, artifact?.id, artifact?.version, busy, canEdit, error]);
 
   const exportFormat = async (format) => {
     if (!artifact?.id || busy) return;
