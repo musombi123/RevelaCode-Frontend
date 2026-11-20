@@ -215,8 +215,18 @@ export default function InputBar({
 
   useEffect(() => {
     const fillComposer = (event) => {
-      const value = String(event?.detail?.text || "").slice(0, 8000);
+      const detail = event?.detail || {};
+      const value = String(detail.text || "").slice(0, 8000);
       if (!value) return;
+      const command = String(detail.toolCommand || "").trim().toLowerCase();
+      if (command) {
+        const selected = TOOL_COMMANDS.find((item) => item[0] === command);
+        if (selected) setSelectedToolCommand(selected);
+        const mode = String(detail.toolMode || "").trim().toLowerCase();
+        if (mode && TOOL_MODES[command]?.modes?.some((item) => item.value === mode)) {
+          setToolMode((current) => ({ ...current, [command]: mode }));
+        }
+      }
       setText(value);
       requestAnimationFrame(() => textareaRef.current?.focus());
     };
