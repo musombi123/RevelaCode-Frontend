@@ -396,14 +396,18 @@ export default function NexoraFoundryWorkspace() {
     }).then((response) => {
       if (!response.ok) throw new Error("Local pairing is no longer valid.");
       return response.json();
-    }).then(() => {
+    }).then((system) => {
+      const pairedUserId = String(system?.agent?.paired_user || "");
+      if (!nexoraUser?.id || pairedUserId !== String(nexoraUser.id)) {
+        throw new Error("The local agent is paired to a different NEXORA account.");
+      }
       if (!cancelled) onLocalAgentConnectionChange(true);
     }).catch(() => {
       try { sessionStorage.removeItem(LOCAL_AGENT_TOKEN_KEY); } catch {}
       if (!cancelled) onLocalAgentConnectionChange(false);
     });
     return () => { cancelled = true; };
-  }, [onLocalAgentConnectionChange]);
+  }, [onLocalAgentConnectionChange, nexoraUser?.id]);
 
   const signOutNexora = useCallback(async () => {
     const token = nexoraSession?.access_token;
