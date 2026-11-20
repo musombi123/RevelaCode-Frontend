@@ -102,8 +102,8 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
       setPacks(packData.packs || []);
       setCapabilities(conversionData);
       setError("");
-    }).catch((e) => live && setError(e.message || "Could not load NEXORA plans."));
-    }).finally(() => live && setCatalogLoading(false));
+    }).catch((e) => { if (live) setError(e.message || "Could not load NEXORA plans."); })
+      .finally(() => { if (live) setCatalogLoading(false); });
     return () => { live = false; };
   }, [apiRequest]);
 
