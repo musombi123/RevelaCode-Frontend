@@ -18,6 +18,7 @@ const makeEpisode = (number) => ({
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 const REWARDED_AD_UNIT_ID = String(import.meta.env.VITE_ADMOB_NEXORA_REWARDED_AD_UNIT_ID || "").trim();
 const REWARDED_TOOL_IDS = ["environment", "actors_props"];
+let rewardedAdMobInitialized = false;
 
 const DEFAULT_WORKFLOW = {
   schema_version: "1.0", mode: "story", plan: "basic",
@@ -198,7 +199,10 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
         consent = await AdMob.showConsentForm();
       }
       if (!consent.canRequestAds) throw new Error("Ad consent is not ready. Review the consent choices before requesting a rewarded video.");
-      await AdMob.initialize();
+      if (!rewardedAdMobInitialized) {
+        await AdMob.initialize();
+        rewardedAdMobInitialized = true;
+      }
       await AdMob.prepareRewardVideoAd({
         adId: REWARDED_AD_UNIT_ID,
         ssv: { userId: String(intent.user_id), customData: String(intent.custom_data) },
