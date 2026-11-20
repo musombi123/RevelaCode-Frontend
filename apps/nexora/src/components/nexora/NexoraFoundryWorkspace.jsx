@@ -1286,33 +1286,30 @@ export default function NexoraFoundryWorkspace() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-slate-100">
-      <div className="mx-auto flex max-w-[1920px] flex-col gap-2 p-2">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-900/60 bg-[#080d12] px-3 py-2">
-          <div className="flex items-center gap-3">
-            <svg viewBox="0 0 64 64" className="h-12 w-12 shrink-0" aria-label="NEXORA Studio Pro mark">
-              <path d="M32 3 57 17v30L32 61 7 47V17Z" fill="#071e2a" stroke="#55e7ed" strokeWidth="2"/>
-              <path d="M32 10 50 20v24L32 54 14 44V20Z" fill="none" stroke="#1c9eae" strokeWidth="1.4"/>
-              <path d="M32 18 43 25v14L32 46 21 39V25Z" fill="#c5a55a" stroke="#f1d58a" strokeWidth="1.4"/>
-              <path d="M32 18V4M43 25l12-8M43 39l12 8M21 39 9 47M21 25 9 17" stroke="#6ef3f4" strokeWidth="1.4"/>
-            </svg>
-            <div><div className="text-2xl font-black tracking-[.16em] text-white">NEXORA</div><div className="text-[9px] font-bold tracking-[.44em] text-amber-200">STUDIO PRO</div></div>
-          </div>
-          <nav aria-label="NEXORA workspace sections" className="flex flex-wrap justify-center gap-1">
-            {[
-              ["project","PROJECT"],["timeline","TIMELINE"],["preview","PREVIEW"],
-              ["assets","ASSETS"],["ai","AI PIPELINE"],["creator","CREATOR FLOW"],
-              ["build","BUILD"],["export","EXPORT"],["settings","SETTINGS"],
-            ].map(([id,label])=><button key={id} type="button" aria-current={studioView===id?"page":undefined} onClick={()=>setStudioView(id)}
-              className={"border px-3 py-2 text-[10px] font-black tracking-wide transition "+(studioView===id?"border-cyan-400 bg-cyan-950/70 text-white shadow-[0_0_16px_rgba(34,211,238,.12)]":"border-cyan-900/60 bg-[#101820] text-cyan-100 hover:border-cyan-400/70 hover:bg-cyan-950/50")}>{label}</button>)}
-          </nav>
-          <div className="flex items-center gap-2">
-            <div className="text-right"><div className="text-[10px] font-bold text-cyan-200">{cloudProjectActive?"CLOUD SYNCED":apiStatus.state==="online"?"FOUNDRY ONLINE":"SERVICE OFFLINE"}</div><div className="text-[9px] text-slate-500">{nexoraUser?.display_name || nexoraUser?.email || "NEXORA account"}</div></div>
-            <span className={"h-2 w-2 rounded-full "+(apiStatus.state==="online"?"bg-emerald-400":"bg-amber-400")}/>
-            <button type="button" onClick={signOutNexora} className="border border-slate-700 px-2 py-2 text-[9px] font-bold text-slate-300 hover:border-rose-500/60 hover:text-rose-200">SIGN OUT</button>
-            <button type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("playtest","desktop")} className="border border-amber-400/50 bg-amber-300/10 px-3 py-2 text-[10px] font-black text-amber-100 disabled:opacity-40">▶ RUN PLAYTEST</button>
-          </div>
-        </header>
+    <NexoraStudioShell
+      activeView={studioView}
+      onNavigate={setStudioView}
+      title={pageTitle}
+      subtitle={pageSubtitle}
+      user={nexoraUser}
+      connectionLabel={apiStatus.label}
+      connectionState={apiStatus.state}
+      onSignOut={signOutNexora}
+      onNewProject={createNewProject}
+      searchValue={globalSearch}
+      onSearchChange={setGlobalSearch}
+      searchResults={globalSearchResults}
+      onSelectSearchResult={selectSearchResult}
+      alertItems={productionAlerts}
+      storageLabel={selectedStorageLabel}
+      storagePercent={null}
+    >
+      {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Your NEXORA account is signed in, but cloud project synchronization is not active. Local drafts remain available in this browser.</div>}
+      {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
+      {notice&&<div role="status" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
+      <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
+      <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
+
 
         {!authenticatedCloudSession && <div className="border border-amber-700/50 bg-[#1b1710] px-3 py-2 text-[11px] text-amber-100">Sign in with your independent NEXORA account to access your cloud projects and production tools.</div>}
         {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
