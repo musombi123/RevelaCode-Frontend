@@ -25,6 +25,27 @@ test("does not route questions about PowerPoint to file generation", () => {
   assert.equal(inferWorkspaceCommand("What is Microsoft PowerPoint?"), null);
 });
 
+test("routes polite presentation requests that do not use a create verb", () => {
+  for (const prompt of [
+    "I'd like a PowerPoint presentation for a RevelaAI product launch.",
+    "Could you put together a short presentation for the leadership team?",
+    "Help me with a presentation introducing RevelaAI.",
+  ]) {
+    assert.equal(inferWorkspaceCommand(prompt), "/deck", prompt);
+  }
+});
+
+test("keeps information-only PowerPoint questions in normal chat", () => {
+  for (const prompt of [
+    "What is Microsoft PowerPoint?",
+    "Could you explain PowerPoint?",
+    "I need to understand how PowerPoint works.",
+  ]) {
+    assert.equal(inferWorkspaceCommand(prompt), null, prompt);
+  }
+});
+
+
 test("keeps an explicit Word or PDF deliverable on the document path", () => {
   assert.equal(
     inferWorkspaceCommand("Create a Word document explaining how to prepare a presentation."),
