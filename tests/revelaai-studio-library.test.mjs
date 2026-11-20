@@ -64,5 +64,5 @@ test("Imported file compatibility and non-execution boundaries are visible", () 
   assert.match(studio, /Import compatibility/);
   assert.match(studio, /Embedded media/);
   assert.match(studio, /Text-only · Not executed/);
-  assert.match(library, /15 MB/);
+  assert.match(client, /15 MB/);
 });
