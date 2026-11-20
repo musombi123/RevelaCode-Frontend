@@ -32,7 +32,8 @@ function languageForFile(filename = "", hint = "") {
   if (extension === "py" || ["python", "py"].includes(normalized)) return "python";
   if (["html", "htm"].includes(extension) || normalized === "html") return "html";
   if (extension === "css" || normalized === "css") return "css";
-  if (["ts", "tsx"].includes(extension) || ["typescript", "tsx"].includes(normalized)) return "typescript";
+  if (extension === "tsx" || normalized === "tsx") return "tsx";
+  if (extension === "ts" || normalized === "typescript") return "typescript";
   if (extension === "jsx" || normalized === "jsx") return "jsx";
   if (extension === "json" || normalized === "json") return "json";
   return normalized || extension || "text";
@@ -41,6 +42,7 @@ function languageForFile(filename = "", hint = "") {
 function editorExtensions(language) {
   if (language === "javascript") return [javascript()];
   if (language === "typescript") return [javascript({ typescript: true })];
+  if (language === "tsx") return [javascript({ typescript: true, jsx: true })];
   if (language === "jsx") return [javascript({ jsx: true })];
   if (language === "html") return [html()];
   if (language === "css") return [css()];
