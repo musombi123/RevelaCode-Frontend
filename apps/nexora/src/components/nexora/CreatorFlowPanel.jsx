@@ -34,6 +34,7 @@ const money = (value) => Number.isFinite(Number(value)) ? `KES ${Number(value).t
 export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProjectActive, setNotice, nexoraAuthFetch }) {
   const [workflow, setWorkflow] = useState(DEFAULT_WORKFLOW);
   const [plans, setPlans] = useState([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [packs, setPacks] = useState([]);
   const [entitlement, setEntitlement] = useState(null);
   const [pipeline, setPipeline] = useState(null);
@@ -88,22 +89,27 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
 
   useEffect(() => {
     let live = true;
-    if (!cloudProjectActive) return undefined;
+    setCatalogLoading(true);
     Promise.all([
       apiRequest("/api/v1/creator-flow/plans"),
       apiRequest("/api/v1/creator-flow/packs"),
       apiRequest("/api/v1/workspace/assets/conversion-capabilities"),
     ]).then(([planData, packData, conversionData]) => {
       if (!live) return;
-      setPlans(planData.plans || []);
+      setPlans(Array.isArray(planData.plans) ? planData.plans : []);
       setPaymentConfig(planData.payment || null);
       setEntitlement(planData.active_entitlement || null);
       setPacks(packData.packs || []);
       setCapabilities(conversionData);
-    }).catch((e) => live && setError(e.message));
-    refreshPipeline();
+      setError("");
+    }).catch((e) => live && setError(e.message || "Could not load NEXORA plans."));
+    }).finally(() => live && setCatalogLoading(false));
     return () => { live = false; };
-  }, [cloudProjectActive, projectId, apiRequest, refreshPipeline]);
+  }, [apiRequest]);
+
+  useEffect(() => {
+    if (cloudProjectActive) refreshPipeline();
+  }, [cloudProjectActive, projectId, refreshPipeline]);
 
   useEffect(() => {
     if (!cloudProjectActive || !pipeline?.stages?.length) return undefined;
@@ -111,8 +117,11 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     return () => window.clearInterval(timer);
   }, [cloudProjectActive, pipeline?.stages?.length, refreshPipeline]);
 
-  const run = async (key, fn, success) => {
-    if (!cloudProjectActive || !activeProject) return;
+  const run = async (key, fn, success, options = {}) => {
+    if (options.requiresProject !== false && (!cloudProjectActive || !activeProject)) {
+      setError("Save or open a NEXORA cloud project before running this operation.");
+      return;
+    }
     setBusy(key); setError("");
     try { const result = await fn(); if (success) success(result); setNotice?.(result?.message || `${key} completed.`); return result; }
     catch (e) { setError(e.message || "Creator Flow operation failed."); setNotice?.(e.message || "Creator Flow operation failed."); }
@@ -140,21 +149,21 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
       method: "POST", body: JSON.stringify({ plan: workflow.plan, project_id: projectId, payer_phone: payerPhone }),
     });
     setPayment(result); setReceipt(""); setPaymentStatus("pending"); return result;
-  });
+  }, null, { requiresProject: false });
 
   const submitReceipt = () => run("claim-payment", async () => {
     const result = await apiRequest(`/api/v1/creator-flow/payments/${payment.payment_id}/claim`, {
       method: "POST", body: JSON.stringify({ mpesa_receipt: receipt.trim(), paid_amount_kes: payment.amount_kes, payer_phone: payerPhone }),
     });
     setPaymentStatus(result.status); return result;
-  });
+  }, null, { requiresProject: false });
 
   const checkPayment = () => run("check-payment", async () => {
     const result = await apiRequest(`/api/v1/creator-flow/payments/${payment.payment_id}`);
     setPaymentStatus(result.status);
     if (result.status === "verified") await refreshPipeline();
     return { message: result.status === "verified" ? "Payment verified. Your Creator Flow plan is active." : "Receipt is still awaiting merchant reconciliation." };
-  });
+  }, null, { requiresProject: false });
 
   const uploadMovie = (file) => run("video-intake", async () => {
     if (!workflow.has_adaptation_rights && workflow.copyright_declaration !== "public_domain") throw new Error("Declare adaptation permission or confirm the source is genuinely public domain before uploading a film.");
@@ -217,7 +226,43 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
         <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center border border-violet-500/60 bg-violet-950/40 text-violet-200"><BookOpen size={22}/></div><div><h2 className="text-sm font-black tracking-[.16em] text-violet-200">NEXORA CREATOR FLOW</h2><p className="text-[9px] text-slate-400">DOCUMENT-DRIVEN GAME PRODUCTION · EPISODE BY EPISODE</p></div></div>
         <div className="flex items-center gap-2"><span className={"border px-2 py-1 text-[9px] font-bold "+(canGenerate?"border-emerald-700 text-emerald-200":"border-amber-700 text-amber-200")}>{canGenerate?`${entitlement.plan.toUpperCase()} ACTIVE`:"PLAN LOCKED"}</span><button type="button" onClick={() => setExpanded((value) => !value)} className="border border-slate-700 px-3 py-1.5 text-[10px]">{expanded?"COLLAPSE":"OPEN CREATOR FLOW"}</button></div>
       </header>
-      {expanded && <div className="grid gap-3 p-3 2xl:grid-cols-[1fr_320px]">
+      {expanded && <div className="space-y-3 p-3">
+        <section className="border border-violet-800/60 bg-[#0d1420] p-3">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-black tracking-wider text-violet-200">NEXORA CREATOR PLANS</h3>
+              <p className="mt-1 text-[10px] text-slate-400">Choose a production tier. Limits are enforced by the NEXORA API when you save and generate.</p>
+            </div>
+            <span className="border border-slate-700 px-2 py-1 text-[9px] text-slate-400">{entitlementCurrent ? `${entitlement.plan.toUpperCase()} ACTIVE` : "NO ACTIVE PLAN"}</span>
+          </div>
+          {catalogLoading && <p className="py-4 text-center text-xs text-slate-400">Loading available plans…</p>}
+          {!catalogLoading && plans.length === 0 && <div className="border border-amber-800/50 bg-amber-950/15 p-3 text-xs text-amber-100">NEXORA could not retrieve the plan catalogue. {error || "Check the NEXORA service connection and retry."}</div>}
+          {!catalogLoading && plans.length > 0 && <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {plans.map((plan) => {
+              const selected = workflow.plan === plan.id;
+              const active = entitlementCurrent && entitlement?.plan === plan.id;
+              return <article key={plan.id} className={"flex min-w-0 flex-col border p-3 transition " + (selected ? "border-violet-400 bg-violet-950/25" : "border-slate-700 bg-[#080d12]")}>
+                <div className="flex items-start justify-between gap-2">
+                  <div><h4 className="text-sm font-black text-white">{plan.name}</h4><p className="mt-0.5 text-[9px] uppercase tracking-wider text-cyan-200">{plan.target_class === "mobile" ? "Mobile production" : "PC production"}</p></div>
+                  {active && <span className="border border-emerald-700 px-1.5 py-0.5 text-[8px] font-bold text-emerald-200">ACTIVE</span>}
+                </div>
+                <div className="mt-3 text-xl font-black text-amber-200">{plan.price_configured ? money(plan.price_kes) : "Price pending"}</div>
+                <div className="mt-1 text-[10px] text-slate-300">{Number(plan.video_limit_seconds) || 0}s maximum movie clip</div>
+                <div className="my-3 h-px bg-slate-800"/>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[10px]">
+                  <div><dt className="text-slate-500">Episodes</dt><dd className="font-bold text-slate-200">Up to {plan.max_episodes}</dd></div>
+                  <div><dt className="text-slate-500">Enemies</dt><dd className="font-bold text-slate-200">Up to {plan.max_enemies}</dd></div>
+                  <div><dt className="text-slate-500">Vehicles</dt><dd className="font-bold text-slate-200">Up to {plan.max_vehicles}</dd></div>
+                  <div><dt className="text-slate-500">Workload</dt><dd className="font-bold text-slate-200">{plan.max_workload_units} units</dd></div>
+                </dl>
+                <p className="mt-3 min-h-8 text-[9px] text-slate-500">Exports: {(plan.allowed_platforms || []).map((item) => item.toUpperCase()).join(" · ") || "Not specified"}</p>
+                <button type="button" aria-pressed={selected} onClick={() => setPlan(plan.id)} className={"mt-auto w-full border px-3 py-2 text-[10px] font-black " + (selected ? "border-violet-400 bg-violet-900/40 text-violet-100" : "border-cyan-800 text-cyan-100 hover:bg-cyan-950/40")}>{selected ? "SELECTED PLAN" : "SELECT PLAN"}</button>
+              </article>;
+            })}
+          </div>}
+          {!catalogLoading && plans.length > 0 && plans.some((plan) => !plan.price_configured) && <p className="mt-3 text-[9px] text-amber-200">Some plan prices have not been configured yet. Selection is available, but checkout stays locked until the approved KES prices are set on the NEXORA API.</p>}
+        </section>
+        <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           {!cloudProjectActive && <div className="border border-amber-700/60 bg-amber-950/20 p-3 text-xs text-amber-100">Save or open your NEXORA cloud project before using paid Creator Flow tools.</div>}
           {error && <div role="alert" className="border border-rose-800/60 bg-rose-950/20 p-2 text-xs text-rose-200">{error}</div>}
@@ -269,12 +314,12 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
           {pipeline && <div className="border border-slate-800 p-3"><div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-black text-cyan-200">PRODUCTION STAGES</h3><span className="text-[9px] text-slate-500">{stages.filter((x)=>x.state==="APPROVED").length}/{stages.length} approved</span></div><div className="space-y-1">{stageRows.map(([id,label,path])=>{const rec=stageRecord(id);if(!rec)return null;return <div key={id} className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] p-2"><div className="min-w-0 flex-1"><div className="text-[10px] font-bold text-white">{label}</div><div className="text-[9px] text-slate-500">{rec.summary}</div>{rec.error&&<div className="text-[9px] text-rose-300">{rec.error}</div>}</div><span className={"text-[9px] font-bold "+(rec.state==="APPROVED"?"text-emerald-300":rec.state==="FAILED"?"text-rose-300":rec.state==="REVIEW"?"text-amber-200":"text-slate-400")}>{rec.state}</span>{id==="analysis"&&rec.state==="REVIEW"&&<button type="button" disabled={Boolean(busy)} onClick={()=>approveStage("analysis")} className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">APPROVE SCENE ANALYSIS</button>}{stageAction(id,path)}</div>})}</div>{stageRecord("assembly")?.state==="APPROVED"||stageRecord("assembly")?.state==="REVIEW"?<button type="button" onClick={downloadAssembledGame} disabled={Boolean(busy)} className="mt-3 inline-block border border-emerald-700 px-3 py-2 text-[10px] font-bold text-emerald-200 disabled:opacity-40">DOWNLOAD ASSEMBLED GODOT GAME</button>:null}</div>}
         </div>
         <aside className="space-y-3">
-          <div className="border border-violet-800/50 bg-[#0d1420] p-3"><h3 className="mb-2 text-xs font-black text-violet-200"><Layers3 size={14} className="mr-1 inline"/> CREATOR PLANS</h3>{plans.map((plan)=><button type="button" key={plan.id} onClick={()=>setPlan(plan.id)} className={"mb-2 w-full border p-2 text-left "+(workflow.plan===plan.id?"border-violet-400 bg-violet-950/30":"border-slate-700 bg-[#080d12]")}><div className="flex items-center justify-between"><b className="text-xs text-white">{plan.name}</b><span className="text-[10px] text-amber-200">{plan.price_configured?money(plan.price_kes):"Price not configured"}</span></div><div className="mt-1 text-[9px] text-slate-400">{plan.video_limit_seconds}s movie · {plan.target_class} · {plan.max_episodes} episodes · {plan.max_workload_units} workload units</div></button>)}</div>
           <div className="border border-slate-800 bg-[#0d141c] p-3"><h3 className="mb-2 text-xs font-black text-cyan-200">WORKLOAD / CAPACITY</h3><div className="text-2xl font-black text-cyan-100">{workload.units} <span className="text-[10px] text-slate-400">/ {workflowPlan?.max_workload_units||"—"} units</span></div><div className="mt-2 h-2 overflow-hidden bg-slate-800"><div className="h-full bg-cyan-500" style={{width:`${Math.min(100,workload.units/Math.max(1,workflowPlan?.max_workload_units||1)*100)}%`}}/></div><div className="mt-2 text-[9px] text-slate-400">Episode count, world size, environment variants, enemies, vehicles and gameplay beats determine the workload tier.</div></div>
           {!canGenerate && <div className="border border-amber-800/60 bg-amber-950/15 p-3"><h3 className="mb-2 text-xs font-black text-amber-200"><CreditCard size={14} className="mr-1 inline"/> PAY DIRECTLY TO POCHI</h3><p className="mb-2 text-[10px] leading-5 text-slate-300">Creator Flow plans are paid. Payment goes directly to the personal Pochi la Biashara merchant account configured for NEXORA. NEXORA does not unlock access from a self-declared receipt.</p><input value={payerPhone} onChange={e=>setPayerPhone(e.target.value)} placeholder="M-PESA phone number" className="mb-2 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-white"/><button type="button" onClick={createCheckout} disabled={Boolean(busy)||!workflowPlan?.price_configured||!paymentConfig?.merchant_number_configured||!plans.length} className="w-full border border-amber-700 px-3 py-2 text-[10px] font-black text-amber-100 disabled:opacity-40">CREATE POCHI PAYMENT REFERENCE</button>{payment&&<div className="mt-2 border border-slate-700 bg-[#080d12] p-2 text-[10px]"><b className="text-white">{money(payment.amount_kes)}</b><div className="mt-1">Pay to Pochi number: <b>{payment.merchant_number}</b></div><div>Reference: <b className="select-all text-cyan-200">{payment.reference}</b></div><ol className="mt-2 list-decimal pl-4 text-slate-400">{(payment.instructions||[]).map(item=><li key={item} className="mt-1">{item}</li>)}</ol><input value={receipt} onChange={e=>setReceipt(e.target.value.toUpperCase())} placeholder="M-PESA receipt code" className="mt-2 w-full border border-slate-700 bg-[#101820] p-2 text-xs text-white"/><button type="button" onClick={submitReceipt} disabled={Boolean(busy)||!receipt.trim()} className="mt-2 w-full border border-amber-700 p-2 text-[10px] text-amber-100">SUBMIT RECEIPT FOR VERIFICATION</button><button type="button" onClick={checkPayment} disabled={Boolean(busy)} className="mt-2 w-full border border-slate-700 p-2 text-[10px] text-cyan-100">CHECK PAYMENT STATUS · {paymentStatus.toUpperCase()}</button></div>}{!workflowPlan?.price_configured&&<p className="mt-2 text-[9px] text-rose-200">{!paymentConfig?.merchant_number_configured ? "Checkout is locked until the NEXORA Pochi la Biashara destination is configured on the NEXORA API." : "Checkout is disabled until NEXORA_PLAN_PRICES_KES contains the approved price for this plan."}</p>}</div>}
           {canGenerate&&<div className="border border-emerald-800/60 bg-emerald-950/10 p-3"><h3 className="text-xs font-black text-emerald-200"><CheckCircle2 size={14} className="mr-1 inline"/> PLAN ACTIVE</h3><p className="mt-1 text-[10px] text-slate-300">{entitlement.plan.toUpperCase()} entitlement is verified for this NEXORA account.</p><p className="mt-1 text-[9px] text-slate-500">Valid until: {entitlement.expires_at?new Date(entitlement.expires_at).toLocaleDateString():"Not provided"}</p></div>}
           <div className="border border-slate-800 p-3"><h3 className="mb-2 text-xs font-black text-cyan-200">TOOLS / WORKERS</h3><div className="space-y-2 text-[10px]"><div className="flex justify-between"><span>Blender model conversion</span><b className={capabilities?.model_conversion?.available?"text-emerald-300":"text-amber-200"}>{capabilities?.model_conversion?.available?"READY":"NOT INSTALLED"}</b></div><div className="flex justify-between"><span>Image → 3D GPU worker</span><b className={capabilities?.image_to_3d?.available?"text-emerald-300":"text-amber-200"}>{capabilities?.image_to_3d?.available?"READY":"NOT INSTALLED"}</b></div><div className="flex justify-between"><span>Blender environment packs</span><b className="text-emerald-300">AVAILABLE ON WORKER</b></div><div className="flex justify-between"><span>Godot assembly</span><b className="text-slate-300">CHECKS AT BUILD</b></div></div><p className="mt-2 text-[9px] text-slate-500">Image reconstruction requires a dedicated CUDA worker. Uploaded 3D meshes can be converted with Blender; static meshes need rigging before character animation.</p></div>
         </aside>
+        </div>
       </div>}
     </section>
   );
