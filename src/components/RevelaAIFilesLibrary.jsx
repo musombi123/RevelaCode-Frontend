@@ -101,6 +101,7 @@ export default function RevelaAIFilesLibrary({
       setEditingId("");
       setEditingTitle("");
       setEditingFolder("");
+      await load();
     } catch (metadataError) {
       setError(String(metadataError?.message || "File details could not be updated."));
     } finally {
