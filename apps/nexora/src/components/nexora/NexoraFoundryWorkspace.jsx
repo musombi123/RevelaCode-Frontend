@@ -455,10 +455,40 @@ export default function NexoraFoundryWorkspace() {
 
   useEffect(() => {
     if (projectsScopeId !== storageUserId) return;
-    if (!writeStudioTasks(storageUserId, studioTasks)) {
+    const localTasks = studioTasks.filter(task => !task._remoteTask);
+    if (!writeStudioTasks(storageUserId, localTasks)) {
       setNotice("The local task board could not be saved. Browser storage may be full.");
     }
   }, [studioTasks, storageUserId, projectsScopeId]);
+
+  const cloudProjectIds = projects
+    .filter(project => project._remoteVersion && !project.archived)
+    .map(project => project.id)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    if (!authenticatedCloudSession || !cloudLoaded || projectsScopeId !== storageUserId) {
+      setStudioTasks(readStudioTasks(storageUserId));
+      return undefined;
+    }
+    const projectIds = cloudProjectIds ? cloudProjectIds.split(",") : [];
+    let live = true;
+    (async () => {
+      const groups = await Promise.all(projectIds.map(async projectId => {
+        const response = await apiRequest(`/api/v1/workspace/projects/${projectId}/tasks`);
+        return (response.tasks || []).map(task => ({...task, projectId, _remoteTask:true}));
+      }));
+      if (!live) return;
+      const remoteTasks = groups.flat();
+      const remoteIds = new Set(remoteTasks.map(task => task.id));
+      const localTasks = readStudioTasks(storageUserId).filter(task => !task._remoteTask && !remoteIds.has(task.id));
+      setStudioTasks([...remoteTasks, ...localTasks]);
+    })().catch(error => {
+      if (live) setNotice(error.message || "Could not sync project tasks from NEXORA cloud.");
+    });
+    return () => { live = false; };
+  }, [authenticatedCloudSession, cloudLoaded, cloudProjectIds, projectsScopeId, storageUserId, apiRequest]);
 
   useEffect(() => {
     try {
@@ -688,26 +718,85 @@ export default function NexoraFoundryWorkspace() {
     setTaskModalOpen(true);
   };
 
-  const saveTask = (event) => {
+  const taskPayload = (task) => ({
+    title:String(task.title || "").trim(),
+    description:String(task.description || ""),
+    category:String(task.category || "General"),
+    priority:["low","medium","high"].includes(task.priority)?task.priority:"medium",
+    assignee:String(task.assignee || ""),
+    status:["backlog","in_progress","in_review","done"].includes(task.status)?task.status:"backlog",
+    due_date:task.dueDate || null,
+  });
+
+  const saveTask = async (event) => {
     event.preventDefault();
     if (!taskDraft.title.trim()) { setNotice("Task title is required."); return; }
     const timestamp = now();
-    if (taskEditingId) {
-      setStudioTasks(current=>current.map(task=>task.id===taskEditingId?{...task,...taskDraft,title:taskDraft.title.trim(),updatedAt:timestamp}:task));
-      setNotice("Task updated in this browser's task board.");
-    } else {
-      const task = {...taskDraft,id:makeId("task"),title:taskDraft.title.trim(),createdAt:timestamp,updatedAt:timestamp};
-      setStudioTasks(current=>[task,...current]);
-      setNotice("Task added to this browser's production board.");
+    const existing = studioTasks.find(task=>task.id===taskEditingId);
+    const selectedProject = projects.find(project=>project.id===taskDraft.projectId);
+    try {
+      if (existing?._remoteTask) {
+        if (taskDraft.projectId !== existing.projectId) {
+          setNotice("A cloud task stays attached to its original project. Create a new task in another project instead.");
+          return;
+        }
+        const response = await apiRequest(`/api/v1/workspace/projects/${existing.projectId}/tasks/${existing.id}`, {
+          method:"PUT", body:JSON.stringify(taskPayload(taskDraft)),
+        });
+        setStudioTasks(current=>current.map(task=>task.id===existing.id?{...response.task,projectId:existing.projectId,_remoteTask:true}:task));
+        setNotice("Cloud task updated in its NEXORA project.");
+      } else if (selectedProject?._remoteVersion) {
+        const response = await apiRequest(`/api/v1/workspace/projects/${selectedProject.id}/tasks`, {
+          method:"POST", body:JSON.stringify(taskPayload(taskDraft)),
+        });
+        setStudioTasks(current=>[
+          {...response.task,projectId:selectedProject.id,_remoteTask:true},
+          ...current.filter(task=>task.id!==taskEditingId),
+        ]);
+        setNotice("Task saved to the NEXORA cloud project.");
+      } else if (taskEditingId) {
+        setStudioTasks(current=>current.map(task=>task.id===taskEditingId?{...task,...taskDraft,title:taskDraft.title.trim(),updatedAt:timestamp,_remoteTask:false}:task));
+        setNotice("Local task updated in this browser.");
+      } else {
+        const task = {...taskDraft,id:makeId("task"),title:taskDraft.title.trim(),createdAt:timestamp,updatedAt:timestamp,_remoteTask:false};
+        setStudioTasks(current=>[task,...current]);
+        setNotice("Task added to the browser-local board.");
+      }
+      setTaskModalOpen(false);
+    } catch(error) {
+      setNotice(error.message || "Task could not be saved.");
     }
-    setTaskModalOpen(false);
   };
 
-  const moveTask = (taskId,status) => setStudioTasks(current=>current.map(task=>task.id===taskId?{...task,status,updatedAt:now()}:task));
-  const deleteTask = (task) => {
+  const moveTask = async (taskId,status) => {
+    const task = studioTasks.find(item=>item.id===taskId);
+    if (!task) return;
+    const updated = {...task,status,updatedAt:now()};
+    try {
+      if (task._remoteTask) {
+        const response = await apiRequest(`/api/v1/workspace/projects/${task.projectId}/tasks/${task.id}`, {
+          method:"PUT", body:JSON.stringify(taskPayload(updated)),
+        });
+        setStudioTasks(current=>current.map(item=>item.id===taskId?{...response.task,projectId:task.projectId,_remoteTask:true}:item));
+      } else {
+        setStudioTasks(current=>current.map(item=>item.id===taskId?updated:item));
+      }
+    } catch(error) {
+      setNotice(error.message || "Task status could not be updated.");
+    }
+  };
+
+  const deleteTask = async (task) => {
     if (!task || !window.confirm("Delete task \"" + task.title + "\"?")) return;
-    setStudioTasks(current=>current.filter(item=>item.id!==task.id));
-    setNotice("Task deleted from this browser's task board.");
+    try {
+      if (task._remoteTask) {
+        await apiRequest(`/api/v1/workspace/projects/${task.projectId}/tasks/${task.id}`, {method:"DELETE"});
+      }
+      setStudioTasks(current=>current.filter(item=>item.id!==task.id));
+      setNotice(task._remoteTask?"Cloud task deleted.":"Local task deleted.");
+    } catch(error) {
+      setNotice(error.message || "Task could not be deleted.");
+    }
   };
 
   const deleteProject = async () => {
