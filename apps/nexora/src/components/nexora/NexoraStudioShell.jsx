@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Activity, Archive, Box, Gamepad2, HardDrive, Layers3, Play, Plus, Settings2,
+  Activity, Archive, BarChart3, Box, Gamepad2, HardDrive, Home, Layers3, Play, Plus, Settings2, Smartphone,
   ShieldCheck, Sparkles, FolderOpen, MoreHorizontal, X, ChevronRight,
   RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, Calendar,
   Wrench, PackageCheck, Laptop
@@ -8,15 +8,15 @@ import {
 
 const NAV_GROUPS = [
   { label: "WORKSPACE", items: [
-    { id: "overview", label: "Overview", icon: Activity },
+    { id: "overview", label: "Overview", icon: Home },
     { id: "projects", label: "Projects", icon: FolderOpen },
     { id: "game-editor", label: "Game Editor", icon: Gamepad2 },
     { id: "ai", label: "AI Studio", icon: Sparkles },
-    { id: "world", label: "World Builder", icon: Layers3 },
-    { id: "assets", label: "Asset Library", icon: Box },
+    { id: "world", label: "World Builder", icon: Box },
+    { id: "assets", label: "Asset Library", icon: Layers3 },
     { id: "build", label: "Build & Test", icon: Play },
-    { id: "device-lab", label: "Device Lab", icon: HardDrive },
-    { id: "analytics", label: "Analytics", icon: Activity },
+    { id: "device-lab", label: "Device Lab", icon: Smartphone },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
   ]},
   { label: "MANAGE", items: [
     { id: "team", label: "Team & Tasks", icon: Users },
