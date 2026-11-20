@@ -349,7 +349,7 @@ export default function RevelaAICodeIDE({
       const message = String(cause?.message || "Execution failed.");
       captured.push({ type: "err", text: message });
       setConsoleLines((items) => [...items, { type: "err", text: message }]);
-      setLastFailure(message + (captured.length ? "\n" + captured.map((line) => line.text).join("\n") : ""));
+      setLastFailure(captured.map((line) => line.text).filter(Boolean).join("\n"));
     } finally {
       setRunning(false);
     }
