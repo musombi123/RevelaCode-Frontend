@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Cloud, Droplets, Layers3, Plus, RefreshCw, Save, Sun, Trash2, Trees } from "lucide-react";
+import { Cloud, Droplets, Layers3, Plus, RefreshCw, Save, Sun, Trash2 } from "lucide-react";
 
 const surface = "rounded-2xl border border-[#20334B] bg-[#101B2C]";
 const defaultWorld = (project) => ({
@@ -84,7 +84,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
 
   return <div className="space-y-4">
     <div className={surface+" flex flex-wrap items-center justify-between gap-3 p-4"}>
-      <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300"><Trees size={20}/></span><div><h2 className="text-sm font-extrabold text-white">World Builder</h2><p className="mt-1 text-[10px] text-slate-500">{project.name} · persisted WorldDocument</p></div></div>
+      <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300"><Layers3 size={20}/></span><div><h2 className="text-sm font-extrabold text-white">World Builder</h2><p className="mt-1 text-[10px] text-slate-500">{project.name} · persisted WorldDocument</p></div></div>
       <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(loaded?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{loaded?"CLOUD WORLD LOADED":"NOT SAVED / LOCAL"}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!cloudProjectActive} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
     </div>
     {!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This project is a local draft. World Builder can edit the draft in memory, but durable server saving is enabled only for cloud-synced projects.</div>}
@@ -115,8 +115,11 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
             {document.objects.map(item=><div key={item.id} className="grid gap-2 rounded-xl border border-[#29415F] bg-[#0B1625] p-3 sm:grid-cols-2 xl:grid-cols-4">
               <label className={label}>NAME<input className={input} maxLength="80" value={item.name} onChange={e=>patchObject(item.id,"name",e.target.value)}/></label>
               <label className={label}>KIND<select className={input} value={item.kind} onChange={e=>patchObject(item.id,"kind",e.target.value)}>{["outpost","beacon","tree","rock","crate","custom"].map(value=><option key={value}>{value}</option>)}</select></label>
-              <label className={label}>X / Y / Z<input className={input} value={[item.x,item.y,item.z].join(", ")} onChange={e=>{const values=e.target.value.split(",").map(Number);if(values.length===3&&values.every(Number.isFinite)){patchObject(item.id,"x",values[0]);patchObject(item.id,"y",values[1]);patchObject(item.id,"z",values[2]);}}}/></label>
-              <div className="flex items-end justify-between gap-2"><label className={label}>SCALE<input className={input} type="number" min="0.25" max="4" step="0.1" value={item.scale} onChange={e=>patchObject(item.id,"scale",Number(e.target.value))}/></label><button type="button" onClick={()=>setDocument(current=>({...current,objects:current.objects.filter(row=>row.id!==item.id)}))} className="mb-1 rounded-lg border border-rose-900/50 p-2 text-rose-300" aria-label="Remove world object"><Trash2 size={13}/></button></div>
+              <div className="grid grid-cols-3 gap-1">
+                {["x","y","z"].map(axis=><label key={axis} className={label}>{axis.toUpperCase()}<input className={input} type="number" step="0.1" value={item[axis] ?? 0} onChange={e=>patchObject(item.id,axis,Number(e.target.value))}/></label>)}
+              </div>
+              <label className={label}>ROTATION<input className={input} type="number" min="-360" max="360" step="1" value={item.rotation ?? 0} onChange={e=>patchObject(item.id,"rotation",Number(e.target.value))}/></label>
+              <div className="flex items-end justify-between gap-2"><label className={label}>SCALE<input className={input} type="number" min="0.25" max="4" step="0.1" value={item.scale} onChange={e=>patchObject(item.id,"scale",Number(e.target.value))}/></label><label className={label}>COLOR<input className="mt-1 h-9 w-full cursor-pointer rounded-lg border border-[#29415F] bg-[#0B1625] p-1" type="color" value={item.color || "#8ba7c7"} onChange={e=>patchObject(item.id,"color",e.target.value)}/></label><button type="button" onClick={()=>setDocument(current=>({...current,objects:current.objects.filter(row=>row.id!==item.id)}))} className="mb-1 rounded-lg border border-rose-900/50 p-2 text-rose-300" aria-label="Remove world object"><Trash2 size={13}/></button></div>
             </div>)}
             {!document.objects.length&&<p className="rounded-lg border border-dashed border-[#29415F] p-5 text-center text-[10px] text-slate-500">No custom world objects yet.</p>}
           </div>
