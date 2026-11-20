@@ -309,3 +309,17 @@ The goal is not just to build software, but to explore how **technology can help
 Native Android packaging is maintained separately in [RevelaCode-Android](https://github.com/musombi123/RevelaCode-Android). This repository remains the source of truth for the React/Vite experience and shared application logic. The Android repository checks out a selected frontend revision, builds the production web bundle, and packages it with Capacitor/Gradle. Android permissions, native plugins, signing, APK/AAB generation, and emulator launch verification no longer run in this web repository.
 
 The main RevelaCode Home owns the ecosystem introduction hero. Individual hub dashboards use compact, task-focused workspace headers rather than repeating the platform hero.
+
+
+## NEXORA application boundary
+
+NEXORA is a separate application in the
+`musombi123/Procedural-Game-Foundry` repository and is deployed independently
+at `https://nexora.revelacode.co.ke`. Do not import NEXORA workspace,
+authentication, payment, API-client or session components into this
+RevelaCode frontend.
+
+The legacy `/dev_nexora` URL exists only as a bootstrap-time redirect to the
+standalone NEXORA host. The redirect is evaluated before RevelaCode React
+providers, authentication, service-worker setup or UI are mounted. NEXORA
+owns its own entry point and account session.
