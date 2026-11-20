@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity, Box, Gamepad2, HardDrive, Layers3, Play, Plus, Settings2,
   ShieldCheck, Sparkles, FolderOpen, MoreHorizontal, X, ChevronRight,
-  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart
+  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, CalendarDays
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -29,7 +29,7 @@ export default function NexoraStudioShell({
   user, connectionLabel, connectionState, onSignOut,
   onNewProject, searchValue, onSearchChange, searchResults = [],
   onSelectSearchResult, alertItems = [], storageLabel = "No project selected",
-  storagePercent = null,
+  storagePercent = null, dateRange = "week", onDateRangeChange,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function NexoraStudioShell({
   const SidebarContent = ({ mobile = false }) => (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[#20334B] px-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/50 bg-cyan-400/10 text-xl font-black text-cyan-300 shadow-[0_0_24px_rgba(16,213,242,.16)]">N</div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center"><svg viewBox="0 0 48 48" className="h-11 w-11 drop-shadow-[0_0_10px_rgba(16,213,242,.2)]" aria-hidden="true"><path d="M24 2.8 44 14v20L24 45.2 4 34V14Z" fill="#0B1B2D" stroke="#10D5F2" strokeWidth="3"/><path d="M14 34V14l20 20V14" fill="none" stroke="#10D5F2" strokeWidth="4" strokeLinejoin="round"/></svg></div>
         {(!collapsed || mobile) && <div className="min-w-0 leading-none"><div className="text-[17px] font-black tracking-[.12em] text-white">NEXORA</div><div className="mt-1 text-[11px] font-bold tracking-[.18em] text-cyan-300">STUDIO PRO</div></div>}
         {mobile && <button type="button" onClick={() => setMobileOpen(false)} className="ml-auto rounded-lg p-2 text-slate-400 hover:bg-white/5" aria-label="Close navigation"><X size={18}/></button>}
       </div>
@@ -122,9 +122,9 @@ export default function NexoraStudioShell({
       {mobileOpen && <div className="fixed inset-0 z-50 xl:hidden"><button type="button" aria-label="Close menu overlay" onClick={()=>setMobileOpen(false)} className="absolute inset-0 bg-black/70"/><aside className="relative h-full w-[min(300px,86vw)] border-r border-[#20334B] bg-[#0A1220]"><SidebarContent mobile/></aside></div>}
 
       <div className={"min-h-screen transition-[padding] duration-200 "+(collapsed?"xl:pl-[76px]":"xl:pl-[230px]")}>
-        <header className="sticky top-0 z-30 flex h-[64px] items-center gap-3 border-b border-[#20334B] bg-[#080F1B]/95 px-4 backdrop-blur-xl lg:px-6">
+        <header className="sticky top-0 z-30 flex h-[58px] items-center gap-3 border-b border-[#20334B] bg-[#080F1B]/95 px-4 backdrop-blur-xl lg:px-6">
           <button type="button" onClick={()=>setMobileOpen(true)} className="rounded-lg p-2 text-slate-300 hover:bg-white/5 xl:hidden" aria-label="Open navigation"><Menu size={19}/></button>
-          <button type="button" onClick={()=>setCollapsed(value=>!value)} className="hidden rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-cyan-200 xl:block" aria-label="Collapse sidebar"><MoreHorizontal size={19}/></button>
+          
           <div className="relative shrink-0">
             <button type="button" onClick={()=>setWorkspaceOpen(value=>!value)} className="flex min-w-[150px] items-center gap-2 rounded-xl border border-[#20334B] bg-[#0D1929] px-3 py-2 text-[11px] font-extrabold tracking-wide text-cyan-300 hover:border-cyan-500/50">
               <span className="text-base">▦</span><span>MAIN STUDIO</span><ChevronDown size={14} className="ml-auto"/>
@@ -173,10 +173,13 @@ export default function NexoraStudioShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1800px] px-4 py-5 lg:px-6 lg:py-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div><h1 className="text-2xl font-black tracking-tight text-white sm:text-[28px]">{title}</h1><p className="mt-1 text-sm text-slate-400">{subtitle}</p></div>
-            <button type="button" onClick={onNewProject} className="inline-flex items-center gap-2 rounded-xl bg-[#10D5F2] px-4 py-2.5 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
+        <main className="mx-auto w-full max-w-[1800px] px-3 py-3 lg:px-3 lg:py-3">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div><h1 className="text-2xl font-black tracking-tight text-white sm:text-[28px]">{title}</h1><p className="mt-0.5 text-sm text-slate-400">{subtitle}</p></div>
+            <div className="flex flex-wrap items-center gap-2">
+              {activeView === "overview" && <label className="flex h-10 items-center gap-2 rounded-lg border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><CalendarDays size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
+              <button type="button" onClick={onNewProject} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
+            </div>
           </div>
           {children}
           <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Cloud project tasks sync to your NEXORA account · Unlinked drafts stay in this browser · Team membership is not connected</span></footer>
