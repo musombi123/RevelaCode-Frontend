@@ -1840,7 +1840,7 @@ export default function NexoraFoundryWorkspace() {
 
           <div className="mt-3 border border-emerald-800/60 bg-[#0c1918] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><h3 className="text-[11px] font-black tracking-widest text-emerald-200">REAL 3D ASSET DOWNLOADS · POLY HAVEN</h3><p className="mt-1 text-[9px] text-slate-400">Search real downloadable 3D models and install them directly into this game's local assets folder. CC0 assets · Powered by Poly Haven.</p></div>
+              <div><h3 className="text-[11px] font-black tracking-widest text-emerald-200">REAL 3D ASSET DOWNLOADS · POLY HAVEN</h3><p className="mt-1 text-[9px] text-slate-400">Search real downloadable 3D models and install them directly into this game's local asset library. 3D text-to-game builds also auto-match up to three lightweight models and place them in the generated scene. CC0 assets · Powered by Poly Haven.</p></div>
               <span className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">LOCAL DOWNLOAD</span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
