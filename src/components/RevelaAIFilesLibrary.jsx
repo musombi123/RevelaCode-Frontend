@@ -51,6 +51,7 @@ export default function RevelaAIFilesLibrary({
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState("");
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingFolder, setEditingFolder] = useState("");
   const [folder, setFolder] = useState("");
   const inputRef = useRef(null);
 
@@ -59,7 +60,8 @@ export default function RevelaAIFilesLibrary({
     setError("");
     try {
       const result = await listRevelaAIArtifacts({
-        authFetch, query, type, includeTrash: showTrash, trashOnly: showTrash, limit: 100,
+        authFetch, query, type, folder: folder.trim() || undefined,
+        includeTrash: showTrash, trashOnly: showTrash, limit: 100,
       });
       setFiles(result.filter((item) => showTrash ? Boolean(item.trashed_at) : !item.trashed_at));
     } catch (loadError) {
@@ -98,6 +100,7 @@ export default function RevelaAIFilesLibrary({
       setNotice("File details updated.");
       setEditingId("");
       setEditingTitle("");
+      setEditingFolder("");
     } catch (metadataError) {
       setError(String(metadataError?.message || "File details could not be updated."));
     } finally {
@@ -145,14 +148,18 @@ export default function RevelaAIFilesLibrary({
 
       <main className="min-h-0 flex-1 overflow-auto p-3 sm:p-6">
         <div className="mx-auto max-w-6xl space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <label className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-line bg-surface px-3">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_170px_180px]">
+            <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3">
               <Search size={16} className="text-muted"/>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your files…" className="min-w-0 flex-1 bg-transparent text-sm outline-none"/>
             </label>
             <select value={type} onChange={(event) => setType(event.target.value)} aria-label="Filter file type" className="min-h-11 rounded-xl border border-line bg-surface px-3 text-sm">
               {TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
+            <label className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3">
+              <FolderOpen size={15} className="shrink-0 text-muted"/>
+              <input value={folder} onChange={(event) => setFolder(event.target.value)} placeholder="Filter folder…" aria-label="Filter folder" className="min-w-0 flex-1 bg-transparent text-sm outline-none"/>
+            </label>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -178,9 +185,12 @@ export default function RevelaAIFilesLibrary({
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-accent"><FileIcon type={artifact.type}/></div>
                       <div className="min-w-0 flex-1">
-                        {editingId === artifact.id ? <div className="flex gap-1">
-                          <input autoFocus value={editingTitle} onChange={(event) => setEditingTitle(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-line bg-input px-2 py-1 text-xs"/>
-                          <button type="button" disabled={Boolean(busy)} onClick={() => void saveMetadata(artifact, { title: editingTitle })} className="rounded-lg bg-accent px-2 text-xs text-white">Save</button>
+                        {editingId === artifact.id ? <div className="space-y-1.5">
+                          <input autoFocus value={editingTitle} onChange={(event) => setEditingTitle(event.target.value)} aria-label="File name" className="w-full min-w-0 rounded-lg border border-line bg-input px-2 py-1 text-xs"/>
+                          <div className="flex gap-1">
+                            <input value={editingFolder} onChange={(event) => setEditingFolder(event.target.value)} aria-label="Folder name" placeholder="Folder (optional)" className="min-w-0 flex-1 rounded-lg border border-line bg-input px-2 py-1 text-xs"/>
+                            <button type="button" disabled={Boolean(busy)} onClick={() => void saveMetadata(artifact, { title: editingTitle, folder: editingFolder })} className="rounded-lg bg-accent px-2 text-xs text-white">Save</button>
+                          </div>
                         </div> : <p className="truncate text-sm font-semibold">{artifact.title || artifact.filename || "Untitled file"}</p>}
                         <p className="mt-1 truncate text-[11px] text-muted">{fileSize(artifact.size_bytes)} · {artifact.source === "uploaded" ? "Imported file" : "RevelaAI generated"} · v{artifact.version || 1}</p>
                         {artifact.folder && <p className="mt-1 truncate text-[10px] text-muted">Folder: {artifact.folder}</p>}
@@ -192,7 +202,7 @@ export default function RevelaAIFilesLibrary({
                       {!showTrash ? <>
                         <button type="button" title="Preview" aria-label="Preview file" onClick={() => onPreview?.(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"><Eye size={15}/></button>
                         <button type="button" title="Open in Studio" aria-label="Open in Studio" onClick={() => onOpenStudio?.(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-accent hover:bg-accent/10"><Maximize2 size={15}/></button>
-                        <button type="button" title="Rename" aria-label="Rename file" onClick={() => { setEditingId(artifact.id); setEditingTitle(artifact.title || ""); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2"><Pencil size={14}/></button>
+                        <button type="button" title="Rename" aria-label="Rename file" onClick={() => { setEditingId(artifact.id); setEditingTitle(artifact.title || ""); setEditingFolder(artifact.folder || ""); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2"><Pencil size={14}/></button>
                         <button type="button" title="Move to Trash" aria-label="Move file to Trash" onClick={() => void moveToTrash(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-rose-500/10 hover:text-rose-600"><Trash2 size={14}/></button>
                       </> : <button type="button" disabled={Boolean(busy)} onClick={() => void restore(artifact)} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-line px-2 text-[11px] font-semibold"><RotateCcw size={13}/> Restore</button>}
                     </div>
