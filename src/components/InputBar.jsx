@@ -76,6 +76,11 @@ const ACCEPTED_TYPES = [
   ".rb",
   ".swift",
   ".kt",
+  ".xml",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".ini",
 ].join(",");
 
 const TOOL_COMMANDS = [
