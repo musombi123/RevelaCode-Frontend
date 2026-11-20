@@ -39,7 +39,7 @@ const EXTENSION_OUTPUTS = {
   kt: { command: "/code", language: "kotlin" },
   xml: { command: "/code", language: "xml" },
   yaml: { command: "/code", language: "yaml" },
-  yml: { command: "/code", language: "yaml" },
+  yml: { command: "/code", language: "yml" },
   toml: { command: "/code", language: "toml" },
   ini: { command: "/code", language: "ini" },
 };
