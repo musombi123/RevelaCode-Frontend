@@ -374,10 +374,51 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
 
           {activeTab === "preview" && (
             <section className="mx-auto max-w-5xl">
-              {previewUrl ? <iframe title="Original file preview" src={previewUrl} className="h-[78vh] w-full rounded-xl border border-line bg-white" /> :
-                artifact?.preview?.source_preview ? <pre className="overflow-auto rounded-xl bg-code p-4 text-xs text-fg-secondary">{artifact.preview.source_preview}</pre> :
-                artifact?.preview?.extracted_text ? <pre className="whitespace-pre-wrap rounded-xl border border-line bg-surface p-4 text-xs text-fg-secondary">{artifact.preview.extracted_text}</pre> :
-                <div className="rounded-xl border border-line bg-surface p-8 text-center text-sm text-muted">No inline preview is available for this file.</div>}
+              {artifact?.preview?.type === "document" && Array.isArray(artifact.preview.sections) ? (
+                <article className="mx-auto max-w-[850px] rounded-lg border border-slate-200 bg-white p-6 text-slate-900 shadow-sm sm:p-10">
+                  <h2 className="mb-7 text-2xl font-bold">{artifact.preview.title || editorTitle}</h2>
+                  {artifact.preview.sections.map((section, index) => (
+                    <section key={index} className="mb-6 space-y-3">
+                      {section.heading && <h3 className="text-lg font-semibold">{section.heading}</h3>}
+                      {(section.paragraphs || []).map((paragraph, itemIndex) => <p key={itemIndex} className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{paragraph}</p>)}
+                      {(section.tables || []).map((table, tableIndex) => (
+                        <div key={tableIndex} className="overflow-x-auto">
+                          <table className="min-w-full border-collapse text-xs">
+                            <thead><tr>{(table.headers || []).map((heading, i) => <th key={i} className="border border-slate-300 p-2 text-left">{heading}</th>)}</tr></thead>
+                            <tbody>{(table.rows || []).map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="border border-slate-300 p-2">{String(cell ?? "")}</td>)}</tr>)}</tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </section>
+                  ))}
+                </article>
+              ) : artifact?.preview?.type === "slides" && Array.isArray(artifact.preview.slides) ? (
+                <div className="mx-auto max-w-5xl space-y-4">
+                  {artifact.preview.slides.map((slide, index) => <article key={index} className="aspect-video rounded-xl border border-line bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white sm:p-10">
+                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-cyan-300">Slide {index + 1}</p>
+                    <h3 className="mt-6 text-2xl font-black sm:text-4xl">{slide.title}</h3>
+                    {slide.subtitle && <p className="mt-3 text-sm text-slate-300">{slide.subtitle}</p>}
+                    <ul className="mt-5 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-100">{(slide.bullets || []).map((bullet, i) => <li key={i}>{bullet}</li>)}</ul>
+                  </article>)}
+                </div>
+              ) : artifact?.preview?.type === "table" && Array.isArray(artifact.preview.sheets) ? (
+                <div className="space-y-4">
+                  {artifact.preview.sheets.map((sheet, index) => <section key={index} className="overflow-auto rounded-xl border border-line bg-surface">
+                    <h3 className="border-b border-line bg-surface-2 px-3 py-2 text-sm font-semibold">{sheet.sheet || "Sheet " + (index + 1)}</h3>
+                    <table className="min-w-full border-collapse text-xs"><tbody>{(sheet.rows || []).map((row, rowIndex) => <tr key={rowIndex}>{(row || []).map((cell, cellIndex) => <td key={cellIndex} className="border-b border-r border-line px-3 py-2">{String(cell ?? "")}</td>)}</tr>)}</tbody></table>
+                  </section>)}
+                </div>
+              ) : artifact?.preview?.type === "image" && previewUrl ? (
+                <img src={previewUrl} alt={editorTitle} className="mx-auto max-h-[78vh] max-w-full rounded-xl border border-line bg-surface object-contain"/>
+              ) : previewUrl ? (
+                <iframe title="Original file preview" src={previewUrl} className="h-[78vh] w-full rounded-xl border border-line bg-white" />
+              ) : artifact?.preview?.source_preview ? (
+                <pre className="overflow-auto rounded-xl bg-code p-4 text-xs text-fg-secondary">{artifact.preview.source_preview}</pre>
+              ) : artifact?.preview?.extracted_text ? (
+                <pre className="whitespace-pre-wrap rounded-xl border border-line bg-surface p-4 text-xs text-fg-secondary">{artifact.preview.extracted_text}</pre>
+              ) : (
+                <div className="rounded-xl border border-line bg-surface p-8 text-center text-sm text-muted">No inline preview is available for this file.</div>
+              )}
             </section>
           )}
 
