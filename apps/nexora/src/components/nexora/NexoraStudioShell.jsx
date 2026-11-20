@@ -29,7 +29,7 @@ export default function NexoraStudioShell({
   user, connectionLabel, connectionState, onSignOut,
   onNewProject, searchValue, onSearchChange, searchResults = [],
   onSelectSearchResult, alertItems = [], storageLabel = "No project selected",
-  storagePercent = 0,
+  storagePercent = null,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -100,8 +100,8 @@ export default function NexoraStudioShell({
       </div>
       {(!collapsed || mobile) && <div className="shrink-0 space-y-3 border-t border-[#20334B] p-3">
         <div className="rounded-xl border border-[#20334B] bg-[#0C1727] p-3">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300"><span>Selected project storage</span><span className="text-cyan-300">{Math.round(storagePercent)}%</span></div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-300" style={{width: Math.max(0,Math.min(100,storagePercent))+"%"}}/></div>
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300"><span>Selected project storage</span><span className="text-cyan-300">{storagePercent == null ? "SIZE ONLY" : Math.round(storagePercent)+"%"}</span></div>
+          {storagePercent == null ? <div className="mt-2 rounded-md border border-[#20334B] bg-[#081321] px-2 py-2 text-[9px] text-slate-500">Account quota is not exposed by this service.</div> : <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-300" style={{width: Math.max(0,Math.min(100,storagePercent))+"%"}}/></div>}
           <p className="mt-2 truncate text-[10px] text-slate-500">{storageLabel}</p>
         </div>
         <button type="button" onClick={() => navigate("ai")} className="flex w-full items-center gap-3 rounded-xl border border-violet-500/40 bg-violet-500/10 p-3 text-left hover:bg-violet-500/15">
