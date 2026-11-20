@@ -12,6 +12,7 @@ import {
 const SAFE_FORMATS = new Set([
   "PDF", "PNG", "JPG", "JPEG", "SVG", "PPTX", "DOCX", "XLSX", "CSV", "GIF", "MP4",
   "TXT", "MD", "JS", "JSX", "TS", "TSX", "PY", "HTML", "CSS", "JSON", "SQL",
+  "SH", "GO", "RS", "JAVA", "C", "CPP", "CS", "PHP", "RB", "SWIFT", "KT",
 ]);
 
 function artifactUrl(value) {
@@ -48,6 +49,10 @@ export default function ArtifactResultCard({ artifact, onAction }) {
   const formats = Array.isArray(artifact.formats)
     ? artifact.formats.map((value) => String(value).toUpperCase()).filter((value) => SAFE_FORMATS.has(value))
     : [];
+  const primaryFormatFromFilename = String(artifact.filename || "").match(/\\.([a-z0-9]+)$/i)?.[1]?.toUpperCase() || "";
+  const defaultDownloadFormat = formats.includes(primaryFormatFromFilename)
+    ? primaryFormatFromFilename
+    : formats[0] || "file";
   const exports = artifact.format_downloads && typeof artifact.format_downloads === "object"
     ? artifact.format_downloads
     : {};
@@ -171,9 +176,9 @@ export default function ArtifactResultCard({ artifact, onAction }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2 p-3 sm:p-4">
-        <button type="button" onClick={() => download(formats[0] || "file", artifact.download_url)} disabled={Boolean(busy)}
+        <button type="button" onClick={() => download(defaultDownloadFormat, artifact.download_url)} disabled={Boolean(busy)}
           className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-white hover:bg-accent-hover disabled:opacity-50">
-          {busy === "download:" + (formats[0] || "file") ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
+          {busy === "download:" + defaultDownloadFormat ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
           Download
         </button>
 
