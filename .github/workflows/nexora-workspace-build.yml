@@ -40,5 +40,5 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Build RevelaCode frontend
-        run: npm run build
+      - name: Build NEXORA and RevelaCode frontends
+        run: npm run build:web
