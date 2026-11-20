@@ -32,3 +32,17 @@ test("RevelaCode service worker leaves the NEXORA path untouched", () => {
   assert.match(worker, /url\.pathname === ["']\/dev_nexora["']/);
   assert.match(worker, /url\.pathname\.startsWith\(["']\/dev_nexora\/["']\)/);
 });
+
+test("NEXORA Creator Flow plans load before a cloud project exists", () => {
+  const panel = read("apps/nexora/src/components/nexora/CreatorFlowPanel.jsx");
+  const catalogueEffectStart = panel.indexOf('apiRequest("/api/v1/creator-flow/plans")');
+  const catalogueEffectEnd = panel.indexOf("}, [apiRequest]);", catalogueEffectStart);
+  assert.notEqual(catalogueEffectStart, -1, "Creator Flow must request the authenticated plan catalogue");
+  assert.notEqual(catalogueEffectEnd, -1, "Plan catalogue request must have a bounded effect");
+  const catalogueEffect = panel.slice(panel.lastIndexOf("useEffect", catalogueEffectStart), catalogueEffectEnd);
+  assert.doesNotMatch(catalogueEffect, /if\s*\(!cloudProjectActive\)/);
+  assert.match(panel, /NEXORA CREATOR PLANS/);
+  assert.match(panel, /plan\.max_workload_units/);
+  assert.match(panel, /requiresProject:\s*false/);
+  assert.match(panel, /Price pending/);
+});
