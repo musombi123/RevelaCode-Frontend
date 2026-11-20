@@ -31,7 +31,7 @@ import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
-import { inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
+import { buildWorkspaceExportPrompt, inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
 import { useAuth } from "@/context/AuthContext";
@@ -1325,8 +1325,13 @@ export default function AIAssistantDashboard({
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
             if (!workspacePrompt && !attachedFile) throw new Error("Describe the artifact you want RevelaAI to create.");
+            const previousAssistantText = [...currentMessages].reverse().find((item) =>
+              item.role === "assistant" && item.status !== "loading"
+              && item.contentType !== "workspace-artifact" && !item.artifact
+            )?.text || "";
+            const workspaceExecutionPrompt = buildWorkspaceExportPrompt(workspacePrompt, previousAssistantText);
             const safeTitle = workspaceOutputTitle(workspacePrompt || attachedFile?.name || "", attachedFile?.name || "RevelaAI output");
-            let workspacePayload = { prompt: workspacePrompt || "Analyze the uploaded file and produce a useful artifact.", title: safeTitle };
+            let workspacePayload = { prompt: workspaceExecutionPrompt || "Analyze the uploaded file and produce a useful artifact.", title: safeTitle };
             let files = [];
 
             if (workspaceCommand === "/doc" || workspaceCommand === "/paper") {
@@ -1398,7 +1403,7 @@ export default function AIAssistantDashboard({
                     crop_marks: options.cropMarks === true,
                     use_ai_background: true,
                   },
-                  prompt: workspacePrompt + (options.style ? "\nVisual style: " + options.style : ""),
+                  prompt: workspaceExecutionPrompt + (options.style ? "\nVisual style: " + options.style : ""),
                 };
                 if (attachedFile) throw new Error("Image generation does not use source-image attachments. Choose Image Studio → Edit or Enhance to process an uploaded image.");
               } else if (mode === "edit" || mode === "enhance") {
