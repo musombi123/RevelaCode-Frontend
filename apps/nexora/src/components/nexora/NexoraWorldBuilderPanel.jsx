@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import React, { useCallback, useEffect, useState } from "react";
 import { Cloud, Droplets, Layers3, Plus, RefreshCw, Save, Sun, Trash2 } from "lucide-react";
 
@@ -107,7 +108,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
       <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300"><Layers3 size={20}/></span><div><h2 className="text-sm font-extrabold text-white">World Builder</h2><p className="mt-1 text-[10px] text-slate-500">{project.name} · persisted WorldDocument</p></div></div>
       <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(loaded?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{project._remoteVersion&&cloudProjectActive?(loaded?"CLOUD WORLD LOADED":"CLOUD WORLD NOT LOADED"):(loaded?"LOCAL WORLD SAVED":"LOCAL WORLD UNSAVED")}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!project} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
     </div>
-    {!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This project is a local draft. World Builder can edit the draft in memory, but durable server saving is enabled only for cloud-synced projects.</div>}
+    {!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This is a local project draft. World Builder can save its WorldDocument in this browser; cloud project sync is available after the project is created in the NEXORA account.</div>}
     {loading&&<div className="text-xs text-cyan-200">Loading saved world document…</div>}
     {error&&<div role="alert" className="rounded-xl border border-rose-800/50 bg-rose-500/5 p-3 text-xs text-rose-200">{error}</div>}
 
