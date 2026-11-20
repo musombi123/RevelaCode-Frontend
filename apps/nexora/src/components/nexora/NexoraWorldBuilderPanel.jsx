@@ -116,6 +116,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
             {document.objects.map(item=><div key={item.id} className="grid gap-2 rounded-xl border border-[#29415F] bg-[#0B1625] p-3 sm:grid-cols-2 xl:grid-cols-4">
               <label className={label}>NAME<input className={input} maxLength="80" value={item.name} onChange={e=>patchObject(item.id,"name",e.target.value)}/></label>
               <label className={label}>KIND<select className={input} value={item.kind} onChange={e=>patchObject(item.id,"kind",e.target.value)}>{["outpost","beacon","tree","rock","crate","custom"].map(value=><option key={value}>{value}</option>)}</select></label>
+              <label className={label}>SOURCE MODEL<select className={input} value={item.model_asset_id || ""} onChange={e=>patchObject(item.id,"model_asset_id",e.target.value || null)}><option value="">No linked model</option>{(project.assets||[]).filter(asset=>["glb","gltf"].includes(asset.type)).map(asset=><option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></label>
               <div className="grid grid-cols-3 gap-1">
                 {["x","y","z"].map(axis=><label key={axis} className={label}>{axis.toUpperCase()}<input className={input} type="number" step="0.1" value={item[axis] ?? 0} onChange={e=>patchObject(item.id,axis,Number(e.target.value))}/></label>)}
               </div>
