@@ -138,3 +138,15 @@ Configure the NEXORA API's `NEXORA_CORS_ORIGINS` to include
 The NEXORA API, Neon database, authentication routes, payment reconciliation
 and entitlement service remain NEXORA-owned. Keep database URLs and payment
 verification secrets on the NEXORA API service only.
+
+## Desktop Factory control area
+
+Open **Desktop Factory** from the Studio sidebar after pairing the Local Agent in **Device Lab**.
+
+- **Workspace:** select the local projects directory, import a Godot project ZIP, open the native Godot Editor, or export a portable project archive.
+- **Toolchains:** inspect installed Godot, Blender, FFmpeg, Java and Android SDK components; run workload preflight and record the detected versions/fingerprints in the project toolchain lock.
+- **Create / Test / Build:** jump into the existing NEXORA scene, asset, Creator Flow, Godot validation, playtest, Android build and device workflows. These continue to use the paired local Foundry engine.
+- **Backup & Versions:** create full-project snapshots, download archives, and restore a checksum-verified snapshot. A safety snapshot is taken before restoring.
+- **Publishing:** prepare a local, checksummed handoff ZIP for a supported store artifact. The feature does not upload or publish anything automatically.
+
+The first implementation intentionally keeps third-party software installation and licence acceptance in the creator's hands. Google Drive OAuth and direct store upload connectors are not enabled until their own OAuth/app-account credentials are configured. The interface must show those states as unavailable rather than simulate a successful connection.
