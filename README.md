@@ -313,21 +313,20 @@ The main RevelaCode Home owns the ecosystem introduction hero. Individual hub da
 
 ## NEXORA application boundary
 
-NEXORA is a separate application in the
-`musombi123/Procedural-Game-Foundry` repository. It has its own Vite/React
-entry point, build, startup lifecycle, account gate, browser session, API,
-database and subscription services. Do not import NEXORA workspace,
-authentication, payment, API-client or session components into this
-RevelaCode frontend.
+NEXORA is an independent application with its own Vite/React document,
+startup entry, workspace, account gate, browser session and API client in
+`apps/nexora/`. Do not import NEXORA components into RevelaCode's
+`App`, providers, authentication or router.
 
-The public entry is `https://revelacode.co.ke/dev_nexora`. The existing
-RevelaCode Render Static Site must apply external **Rewrite** rules for
-`/dev_nexora` and `/dev_nexora/*` to the independent NEXORA Static Site's
-Render-generated `onrender.com` origin. This keeps the browser URL on the
-RevelaCode apex domain while the static-site CDN serves NEXORA's own built
-HTML and assets. It is a server-side path proxy, not a browser redirect and
-not a React route.
+NEXORA does not have a separate Render frontend service. The existing
+RevelaCode Static Site hosts two separately built applications:
+`/` for RevelaCode and `/dev_nexora/` for NEXORA. The root
+`npm run build:web` script builds NEXORA into `public/dev_nexora` first,
+then builds RevelaCode and publishes both outputs under the same CDN. This
+shares static hosting only; the applications retain separate React runtimes.
 
-For the same-domain route configuration and exact Render rules, see
-`docs/NEXORA_PATH_BASED_HOSTING.md`. The NEXORA entry must never mount
-RevelaCode's React providers, authentication, shell or service-worker setup.
+The public NEXORA entry is
+`https://revelacode.co.ke/dev_nexora`. Configure the exact-path and
+wildcard **Rewrite** rules on the existing Render Static Site as documented
+in `docs/NEXORA_PATH_BASED_HOSTING.md`. RevelaCode's service worker skips
+the NEXORA path so it cannot intercept NEXORA assets or sessions.
