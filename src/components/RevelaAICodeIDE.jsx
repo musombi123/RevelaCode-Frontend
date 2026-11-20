@@ -6,8 +6,8 @@ import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
-  AlertCircle, CheckCircle2, CirclePlay, Download, FileCode2, Loader2,
-  Save, ShieldCheck, Square, WandSparkles, X,
+  AlertCircle, CheckCircle2, PlayCircle, Download, FileCode2, Loader2,
+  Save, ShieldCheck, Square, Wand2, X,
 } from "lucide-react";
 import { downloadRemoteArtifact } from "@/components/utils/saveGeneratedFile";
 import {
@@ -543,7 +543,7 @@ export default function RevelaAICodeIDE({
           <div className="flex gap-1.5">
             {running
               ? <button type="button" onClick={stop} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-red-500/15 px-3 text-xs font-bold text-red-300"><Square size={12}/> Stop</button>
-              : <button type="button" onClick={run} disabled={!source.trim() || validating} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 text-xs font-bold text-emerald-300 disabled:opacity-40"><CirclePlay size={13}/> Run / Test</button>}
+              : <button type="button" onClick={run} disabled={!source.trim() || validating} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 text-xs font-bold text-emerald-300 disabled:opacity-40"><PlayCircle size={13}/> Run / Test</button>}
             <button type="button" onClick={() => void validate()} disabled={validating || running} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs font-semibold text-gray-200 disabled:opacity-40">
               {validating ? <Loader2 size={12} className="animate-spin"/> : <ShieldCheck size={12}/>} Validate
             </button>
@@ -566,7 +566,7 @@ export default function RevelaAICodeIDE({
               <AlertCircle size={12}/> Run & validation output
             </div>
             {lastFailure && <button type="button" onClick={() => void repair()} disabled={repairing || dirty || (Boolean(artifactId) && !editSessionReady)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-violet-500/15 px-3 text-[11px] font-bold text-violet-300 disabled:opacity-40">
-              {repairing ? <Loader2 size={12} className="animate-spin"/> : <WandSparkles size={12}/>} Fix with AI
+              {repairing ? <Loader2 size={12} className="animate-spin"/> : <Wand2 size={12}/>} Fix with AI
             </button>}
           </div>
           {notice && <p role="status" className="mb-2 text-xs text-emerald-300">{notice}</p>}
@@ -582,7 +582,7 @@ export default function RevelaAICodeIDE({
       {repairProposal && (
         <section className="space-y-3 rounded-xl border border-violet-500/25 bg-violet-500/5 p-3" aria-label="AI repair proposal">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-bold text-fg"><WandSparkles size={15} className="text-violet-500"/> Proposed code repair</div>
+            <div className="flex items-center gap-2 text-sm font-bold text-fg"><Wand2 size={15} className="text-violet-500"/> Proposed code repair</div>
             <span className="text-[10px] text-muted">Not yet applied</span>
           </div>
           {repairProposal.rationale && <p className="text-xs leading-5 text-fg-secondary">{repairProposal.rationale}</p>}
