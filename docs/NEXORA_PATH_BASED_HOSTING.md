@@ -47,7 +47,9 @@ unchanged. A Redirect is incorrect because it changes the address bar.
 
 Do not add a `/dev_nexora` SPA route to RevelaCode's React router. The
 rewrite must happen at the static-site hosting layer before the RevelaCode
-`index.html` is served.
+`index.html` is served. RevelaCode's service worker also explicitly skips
+`/dev_nexora` and all child paths so its root-shell cache cannot intercept
+or cache NEXORA pages and assets.
 
 ## NEXORA API CORS
 
