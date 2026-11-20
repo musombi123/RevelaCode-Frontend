@@ -239,6 +239,7 @@ export default function NexoraFoundryWorkspace() {
   const timelineRef = useRef(null);
   const pipelineRef = useRef(null);
   const previewRef = useRef(null);
+  const exportRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const importInputRef = useRef(null);
