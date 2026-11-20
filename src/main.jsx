@@ -9,20 +9,7 @@ import { HistoryProvider } from "./context/HistoryContext.jsx";
 import { warmCrossReferenceDataset, warmFaithStudyCache } from "./components/study/studyMaterialCache.js";
 import "./index.css";
 
-import { createNexoraRedirectTarget } from "./utils/nexoraRedirect.mjs";
 
-const nexoraRedirectTarget = typeof window !== "undefined"
-  ? createNexoraRedirectTarget(window.location)
-  : null;
-
-if (nexoraRedirectTarget) {
-  // Redirect before mounting RevelaCode providers, auth/session, service workers or UI.
-  window.location.replace(nexoraRedirectTarget);
-} else {
-  startRevelaCodeApp();
-}
-
-function startRevelaCodeApp() {
 const CHUNK_RELOAD_KEY = "revelacode:chunk-reload-at";
 if (typeof window !== "undefined") {
   window.addEventListener("vite:preloadError", (event) => {
@@ -217,4 +204,3 @@ if (launchSplash) {
   window.setTimeout(() => launchSplash.finish(), 4500);
 }
 
-}
