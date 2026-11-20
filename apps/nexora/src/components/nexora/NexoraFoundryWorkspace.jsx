@@ -265,6 +265,12 @@ export default function NexoraFoundryWorkspace() {
   const [assetConversionRole, setAssetConversionRole] = useState("prop");
   const [assetSearch, setAssetSearch] = useState("");
   const [assetTypeFilter, setAssetTypeFilter] = useState("all");
+  const [polyHavenQuery, setPolyHavenQuery] = useState("character");
+  const [polyHavenResolution, setPolyHavenResolution] = useState("2k");
+  const [polyHavenResults, setPolyHavenResults] = useState([]);
+  const [polyHavenLoading, setPolyHavenLoading] = useState(false);
+  const [polyHavenDownloading, setPolyHavenDownloading] = useState("");
+  const [polyHavenDownloaded, setPolyHavenDownloaded] = useState({});
   const [templates, setTemplates] = useState([
     { id:"sci_fi_crate", name:"Neon Cargo Crate", category:"Props", kind:"crate", description:"Modular industrial cargo container", default_scale:1 },
     { id:"signal_beacon", name:"Signal Beacon", category:"Props", kind:"beacon", description:"Glowing navigation marker", default_scale:1 },
@@ -923,6 +929,27 @@ export default function NexoraFoundryWorkspace() {
     setNotice(`${asset.name} added to the scene as an imported 3D model.`);
   };
 
+  const addPolyHavenAssetToScene = (asset, downloaded) => {
+    if (!activeProject || !downloaded?.asset_registry_id) return;
+    const object = {
+      id: makeId("object"),
+      name: asset.name,
+      type: "MeshInstance3D",
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      visible: true,
+      asset_id: downloaded.asset_registry_id,
+    };
+    patchProject(project => ({ ...project, scene: { ...project.scene, objects: [...project.scene.objects, object] } }));
+    setSelectedObjectId(object.id);
+    if (downloaded.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
+      setPreviewSelection({ type: "polyhaven", id: asset.id });
+    }
+    setStudioView("game-editor");
+    setNotice(`${asset.name} added to the 3D scene. Foundry will load the registered model from the local project asset library during the next build.`);
+  };
+
   const updateTimeline = (updater) => {
     if(!activeProject) return;
     patchProject(project=>{
@@ -1131,6 +1158,48 @@ export default function NexoraFoundryWorkspace() {
     } finally { setBusy(false); }
   };
 
+  const searchPolyHaven3DAssets = async () => {
+    if (!localAgentConnected) {
+      setNotice("Connect the NEXORA desktop agent before searching or downloading 3D assets.");
+      return;
+    }
+    setPolyHavenLoading(true);
+    try {
+      const query = encodeURIComponent(polyHavenQuery.trim());
+      const response = await apiRequest(`/api/v1/desktop/assets/3d/search?q=${query}&limit=40`);
+      setPolyHavenResults(response.results || []);
+      setNotice(`Found ${response.count || 0} real 3D models from Poly Haven. Select a model to download it directly into this project.`);
+    } catch (error) {
+      setNotice(error.message || "Could not search the Poly Haven 3D library.");
+    } finally {
+      setPolyHavenLoading(false);
+    }
+  };
+
+  const downloadPolyHaven3DAsset = async (asset) => {
+    if (!activeProject || !cloudProjectActive || !localAgentConnected) {
+      setNotice("Open a NEXORA project and connect its paired desktop agent before downloading assets.");
+      return;
+    }
+    setPolyHavenDownloading(asset.id);
+    try {
+      const result = await apiRequest(`/api/v1/desktop/projects/${encodeURIComponent(activeProject.id)}/assets/3d/download`, {
+        method: "POST",
+        body: JSON.stringify({ asset_id: asset.id, resolution: polyHavenResolution }),
+      });
+      setPolyHavenDownloaded(current => ({ ...current, [asset.id]: result }));
+      setNotice(`${result.name} downloaded and integrity-verified directly into ${result.directory}. The asset is licensed CC0-1.0.`);
+      if (result.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
+        setPreviewSelection({ type: "polyhaven", id: asset.id });
+        setStudioView("game-editor");
+      }
+    } catch (error) {
+      setNotice(error.message || `Could not download ${asset.name}.`);
+    } finally {
+      setPolyHavenDownloading("");
+    }
+  };
+
   const removeAsset = async (asset) => {
     try {
       if (cloudMode && asset.remote) {
@@ -1305,6 +1374,11 @@ export default function NexoraFoundryWorkspace() {
           if (!localAgentConnected) throw new Error("Connect this computer in NEXORA > Device Lab before loading local 3D templates.");
           const response=await localEngineFetch(`/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
           if(!response.ok) throw new Error(`3D template request failed (HTTP ${response.status}).`);
+          blob=await response.blob();
+        } else if (previewSelection.type==="polyhaven") {
+          if (!activeProject?.id || !localAgentConnected) throw new Error("Open a project and connect the paired desktop agent to preview downloaded 3D models.");
+          const response=await localEngineFetch(`/api/v1/desktop/projects/${encodeURIComponent(activeProject.id)}/assets/3d/${encodeURIComponent(previewSelection.id)}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+          if(!response.ok) throw new Error(`Downloaded 3D model preview failed (HTTP ${response.status}).`);
           blob=await response.blob();
         } else {
           const asset=activeProject?.assets?.find(item=>item.id===previewSelection.id);
@@ -1763,6 +1837,26 @@ export default function NexoraFoundryWorkspace() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
           </div>
 
+
+          <div className="mt-3 border border-emerald-800/60 bg-[#0c1918] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><h3 className="text-[11px] font-black tracking-widest text-emerald-200">REAL 3D ASSET DOWNLOADS · POLY HAVEN</h3><p className="mt-1 text-[9px] text-slate-400">Search real downloadable 3D models and install them directly into this game's local asset library. 3D text-to-game builds also auto-match up to three lightweight models and place them in the generated scene. CC0 assets · Powered by Poly Haven.</p></div>
+              <span className="border border-emerald-700 px-2 py-1 text-[9px] text-emerald-200">LOCAL DOWNLOAD</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input aria-label="Search Poly Haven 3D models" value={polyHavenQuery} onChange={event=>setPolyHavenQuery(event.target.value)} onKeyDown={event=>{if(event.key==="Enter")searchPolyHaven3DAssets();}} placeholder="Search models: character, tree, car…" className="min-w-[180px] flex-1 border border-slate-700 bg-[#080d12] px-3 py-2 text-[10px] text-white"/>
+              <select aria-label="3D model resolution" value={polyHavenResolution} onChange={event=>setPolyHavenResolution(event.target.value)} className="border border-slate-700 bg-[#080d12] px-2 py-2 text-[10px] text-white"><option value="1k">1K · smaller</option><option value="2k">2K · balanced</option><option value="4k">4K · detailed</option></select>
+              <button type="button" onClick={searchPolyHaven3DAssets} disabled={polyHavenLoading||!localAgentConnected} className="border border-emerald-600 bg-emerald-950/50 px-3 py-2 text-[10px] font-black text-emerald-100 disabled:opacity-40">{polyHavenLoading?"SEARCHING…":"SEARCH 3D LIBRARY"}</button>
+            </div>
+            {!localAgentConnected&&<p className="mt-2 text-[9px] text-amber-300">Pair the desktop agent to use direct downloads.</p>}
+            {polyHavenResults.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">{polyHavenResults.map(asset=><article key={asset.id} className="flex min-w-0 gap-2 border border-slate-800 bg-[#111922] p-2">
+              {asset.thumbnail_url?<img src={asset.thumbnail_url} alt="" loading="lazy" className="h-16 w-16 shrink-0 object-cover bg-slate-900"/>:<div className="flex h-16 w-16 shrink-0 items-center justify-center bg-slate-900 text-emerald-300"><Box size={24}/></div>}
+              <div className="min-w-0 flex-1"><div className="truncate text-[10px] font-bold text-slate-100" title={asset.name}>{asset.name}</div><div className="mt-1 line-clamp-2 text-[9px] text-slate-400">{asset.description||asset.category}</div><div className="mt-1 text-[8px] text-slate-500">{asset.polycount?Number(asset.polycount).toLocaleString()+" polygons · ":""}CC0-1.0</div>
+                {polyHavenDownloaded[asset.id]?<><div className="mt-2 break-all text-[8px] font-bold text-emerald-300">DOWNLOADED · {polyHavenDownloaded[asset.id].directory}</div><button type="button" onClick={()=>addPolyHavenAssetToScene(asset,polyHavenDownloaded[asset.id])} className="mt-2 w-full border border-cyan-700 px-2 py-1.5 text-[9px] font-black text-cyan-200">＋ ADD TO 3D SCENE</button></>:<button type="button" onClick={()=>downloadPolyHaven3DAsset(asset)} disabled={Boolean(polyHavenDownloading)||!cloudProjectActive} className="mt-2 w-full border border-emerald-700 px-2 py-1.5 text-[9px] font-black text-emerald-200 disabled:opacity-40">{polyHavenDownloading===asset.id?"DOWNLOADING…":"↓ DOWNLOAD TO NEXORA"}</button>}
+              </div>
+            </article>)}</div>}
+            <p className="mt-2 text-[8px] text-slate-500">Downloads are written to the paired computer under the project asset library at assets/3d/polyhaven/ and registered for Godot scene assembly. File size and provider MD5 are verified. Higher resolutions use more disk space and bandwidth.</p>
+          </div>
 
           <div className="mt-3"><h3 className="mb-2 text-[10px] font-black tracking-widest text-amber-200">BUILT-IN 3D TEMPLATES · ADD TO SCENE</h3><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">{templates.map(template=><div key={template.id} className="border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>{setPreviewSelection({type:"template",id:template.id});setStudioView("game-editor");}} className="flex h-20 w-full items-center justify-center border border-cyan-900/30 bg-[#0a1118] text-cyan-200"><Box size={30}/></button><div className="mt-1 truncate text-[10px] font-bold">{template.name}</div><div className="text-[9px] text-slate-500">{template.category} · 3D template</div><button type="button" disabled={!activeProject} onClick={()=>addTemplateToScene(template)} className="mt-2 w-full border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-200 disabled:opacity-40">＋ ADD TO SCENE</button></div>)}</div></div>
           <div className="mt-4"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><h3 className="text-[10px] font-black tracking-widest text-amber-200">YOUR 3D MODELS & MEDIA</h3><div className="flex flex-wrap gap-2"><input aria-label="Search project assets" value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Search assets…" className="w-36 border border-slate-700 bg-[#080d12] px-2 py-1 text-[9px] text-cyan-100"/><select aria-label="Filter asset type" value={assetTypeFilter} onChange={e=>setAssetTypeFilter(e.target.value)} className="border border-slate-700 bg-[#080d12] px-2 py-1 text-[9px] text-cyan-100"><option value="all">ALL TYPES</option>{["glb","gltf","obj","fbx","ply","png","jpg","jpeg","webp","wav","ogg","mp3","mp4","mov","mkv","webm","avi"].map(type=><option key={type} value={type}>{type.toUpperCase()}</option>)}</select><label className="text-[9px] text-slate-400">CONVERT AS <select value={assetConversionRole} onChange={e=>setAssetConversionRole(e.target.value)} className="ml-1 border border-slate-700 bg-[#080d12] px-2 py-1 text-[9px] text-cyan-100"><option value="prop">PROP</option><option value="character">CHARACTER</option><option value="environment">ENVIRONMENT</option></select></label></div></div><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">{studioAssets.filter(asset=>(assetTypeFilter==="all"||asset.type===assetTypeFilter)&&(asset.name||"").toLowerCase().includes(assetSearch.toLowerCase())).map(asset=><div key={asset.id} className="min-w-0 border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>{if(!["glb","gltf"].includes(asset.type)){setNotice("Only GLB/glTF models can be opened in the 3D preview.");return;}setPreviewSelection({type:"asset",id:asset.id});setStudioView("game-editor");}} className="flex h-20 w-full items-center justify-center bg-gradient-to-br from-cyan-950/60 to-slate-900 text-cyan-300"><ImagePlus size={24}/></button><div className="mt-1 truncate text-[10px] font-bold" title={asset.name}>{asset.name}</div><div className="truncate text-[9px] text-slate-500">{asset.type.toUpperCase()} · {formatBytes(asset.size)} · {asset.remote?asset.status:"LOCAL"}</div><div className="mt-1 flex gap-1">{["glb","gltf"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToScene(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">USE MODEL</button>}{["png","jpg","jpeg","webp","glb","gltf","obj","fbx","ply"].includes(asset.type)&&<button type="button" onClick={()=>convertAssetToGameAsset(asset,assetConversionRole)} className="flex-1 border border-violet-800 px-1 py-1 text-[9px] text-violet-200">CONVERT</button>}{["mp4","mov","mkv","webm","avi","wav","ogg","mp3"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToTimeline(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">ADD TO TIMELINE</button>}<button type="button" onClick={()=>removeAsset(asset)} className="border border-slate-700 px-1 py-1 text-[9px] text-rose-300">DEL</button></div></div>)}</div>{!studioAssets.filter(asset=>(assetTypeFilter==="all"||asset.type===assetTypeFilter)&&(asset.name||"").toLowerCase().includes(assetSearch.toLowerCase())).length&&<div className="mt-3 border border-dashed border-slate-700 p-5 text-center text-xs text-slate-500">{studioAssets.length?"No project assets match your search or type filter.":"Import source media, 3D models and templates to begin."}</div>}</div>
