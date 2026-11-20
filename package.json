@@ -17,7 +17,8 @@
     "test:revelaai-workspace": "node --test tests/revelaai-workspace-integration.test.mjs tests/revelaai-artifact-cards.test.mjs",
     "build:nexora": "vite build apps/nexora --config apps/nexora/vite.config.js",
     "build:web": "npm run build:nexora && npm run build && node scripts/verify-nexora-static-output.mjs",
-    "test:studio-library": "node --test tests/revelaai-studio-library.test.mjs"
+    "test:studio-library": "node --test tests/revelaai-studio-library.test.mjs",
+    "test:capacitor": "node --test tests/capacitor-plugin-registry.test.mjs"
   },
   "engines": {
     "node": "22.x"
