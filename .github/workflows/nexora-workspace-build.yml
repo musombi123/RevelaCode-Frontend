@@ -17,10 +17,11 @@ on:
       - main
       - feat/nexora-foundry-workspace-integration
     paths:
-      - "src/components/nexora/**"
-      - "src/components/dashboardConfig.jsx"
-      - "src/components/MainDashboardV2.jsx"
+      - "src/utils/nexoraRedirect.mjs"
+      - "tests/nexora-redirect.test.mjs"
       - "src/App.jsx"
+      - "src/main.jsx"
+      - "public/_redirects"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/nexora-workspace-build.yml"
