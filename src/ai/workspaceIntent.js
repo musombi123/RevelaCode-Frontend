@@ -2,8 +2,8 @@ const CREATION_VERB = /\b(?:create|make|prepare|generate|produce|build|draft|wri
 const PRESENTATION_REQUEST = /\b(?:power\s*point|pptx|presentation(?:s)?|slide\s*deck|slides?)\b/i;
 const DOCUMENT_REQUEST = /\b(?:document|documents|pdf|pdfs|proposal|introduction|letter|memo|report|submission|letterhead|word)\b/i;
 const IMAGE_REQUEST = /\b(?:image|picture|photo|graphic|illustration|poster|flyer|leaflet|invitation|logo|banner|thumbnail|diagram|chart|visual|artwork)\b/i;
-const PRESENTATION_REQUEST_CUE = /\b(?:please|can you|could you|would you|i(?:'d| would) like(?: you)? to|help me|make me|give me|put together)\b/i;
-const PRESENTATION_EXPLANATION_ONLY = /^\s*(?:what is|what are|explain|define|how does|how do|why is|tell me about)\b/i;
+const PRESENTATION_REQUEST_CUE = /\b(?:please|can you|could you|would you|i(?:'d| would) like(?: you)?(?: to)?|help me|help with|make me|give me|put together)\b/i;
+const PRESENTATION_EXPLANATION_ONLY = /^\s*(?:(?:please\s+)?(?:can|could|would)\s+you\s+)?(?:what is|what are|explain|define|how does|how do|why is|tell me about)\b/i;
 const EXPLICIT_PRESENTATION_ACTION = /\b(?:create|make|prepare|generate|produce|build|draft|write|design|export|convert|turn|save|download|provide|deliver|attach|develop|assemble|craft|compile|put together)\b/i;
 const DATA_REQUEST = /\b(?:spreadsheet|workbook|excel|xlsx|csv|comma[- ]separated)\b/i;
 
@@ -110,10 +110,18 @@ export function inferWorkspaceExport(prompt, attachedFile = null) {
   // exporter even when the user says "I'd like" or "help me with" rather
   // than using a narrow create/generate verb. Information-only questions
   // about PowerPoint remain normal chat.
+  const explicitPresentationAction = EXPLICIT_PRESENTATION_ACTION.test(text);
+  const presentationInformationQuestion = PRESENTATION_EXPLANATION_ONLY.test(text)
+    || /\b(?:need|want)\s+to\s+(?:know|understand|learn)\b/i.test(text);
   const presentationIntent = PRESENTATION_REQUEST.test(text) && (
-    EXPLICIT_PRESENTATION_ACTION.test(text)
-    || (PRESENTATION_REQUEST_CUE.test(text) && !PRESENTATION_EXPLANATION_ONLY.test(text))
+    explicitPresentationAction
+    || (PRESENTATION_REQUEST_CUE.test(text) && !presentationInformationQuestion)
   );
+  if (
+    PRESENTATION_REQUEST.test(text)
+    && presentationInformationQuestion
+    && !explicitPresentationAction
+  ) return null;
   if (!CREATION_VERB.test(text) && !presentationIntent) return null;
 
   const extension = fileExtensionRequest(text);
