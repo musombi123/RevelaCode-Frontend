@@ -55,7 +55,6 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
       const result = await task();
       if (successMessage) onNotice(successMessage);
       else if (result?.message) onNotice(result.message);
-      onRefresh();
       return result;
     } catch (cause) {
       const message = cause?.message || "The local desktop operation failed.";
@@ -117,6 +116,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   const chooseWorkspace = () => run("workspace", async () => {
     const result = await request("/api/v1/desktop/workspace", { method: "PUT", body: JSON.stringify({ path: workspacePath }) });
     await loadStatus();
+    await onRefresh();
     return result;
   }, "NEXORA's local projects directory has been updated.");
 
@@ -131,6 +131,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
     setImportPath("");
     setImportName("");
     await loadStatus();
+    await onRefresh();
     return result;
   }, "Existing Godot project copied into your NEXORA workspace.");
 
