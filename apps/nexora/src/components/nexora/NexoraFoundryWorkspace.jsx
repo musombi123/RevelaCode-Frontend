@@ -1371,6 +1371,7 @@ export default function NexoraFoundryWorkspace() {
   };
 
   return (
+    <>
     <NexoraStudioShell
       activeView={studioView}
       onNavigate={setStudioView}
