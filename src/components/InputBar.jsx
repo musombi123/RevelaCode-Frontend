@@ -64,6 +64,23 @@ const ACCEPTED_TYPES = [
   ".tsx",
   ".html",
   ".css",
+  ".sql",
+  ".sh",
+  ".go",
+  ".rs",
+  ".java",
+  ".c",
+  ".cpp",
+  ".cs",
+  ".php",
+  ".rb",
+  ".swift",
+  ".kt",
+  ".xml",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".ini",
 ].join(",");
 
 const TOOL_COMMANDS = [

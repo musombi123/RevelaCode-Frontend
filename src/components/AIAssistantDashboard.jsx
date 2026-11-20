@@ -31,7 +31,7 @@ import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
-import { inferWorkspaceCommand, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
+import { buildWorkspaceExportPrompt, inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
 import { useAuth } from "@/context/AuthContext";
@@ -79,6 +79,15 @@ function requestedWorkspaceDocumentCount(prompt) {
 function workspaceDownloadUrl(value) {
   if (typeof value === "string") return value;
   return value?.download_url || value?.url || null;
+}
+
+function workspaceOutputTitle(prompt, fallback = "RevelaAI output") {
+  const cleaned = String(prompt || "")
+    .replace(/\s+(?:as|to|into|in)\s+(?:(?:a|an|the)\s+)?\.[a-z0-9]{1,8}\s*$/i, "")
+    .replace(/\s+(?:as|to|into|in)\s+(?:pptx|docx|xlsx|csv|pdf|md|markdown|txt|png|jpe?g|svg)\s*$/i, "")
+    .replace(/^\s*(?:please\s+)?(?:create|generate|make|prepare|export|save|build|write|produce|design)\s+/i, "")
+    .trim();
+  return (cleaned || fallback).slice(0, 120);
 }
 
 function buildWorkspaceArtifact(result, title, prompt) {
@@ -1302,25 +1311,36 @@ export default function AIAssistantDashboard({
         try {
           updateLoadingStage(attachedFile ? (freeMode ? "local-analysis-only" : "local-analysis") : freeMode ? "local-reasoning" : "connecting");
 
-          const workspaceCommands = new Set(["/doc", "/deck", "/sheet", "/data", "/ledger", "/paper", "/code", "/ui", "/promo", "/image"]);
-          const inferredWorkspaceCommand = inferWorkspaceCommand(cleaned, attachedFile);
+          const workspaceCommands = new Set(["/doc", "/deck", "/sheet", "/data", "/ledger", "/paper", "/code", "/ui", "/promo", "/image", "/export-unsupported"]);
+          const inferredWorkspaceExport = inferWorkspaceExport(cleaned, attachedFile);
+          const inferredWorkspaceCommand = inferredWorkspaceExport?.command || inferWorkspaceCommand(cleaned, attachedFile);
           const workspaceCommand = selectWorkspaceCommand(selectedToolCommand, inferredWorkspaceCommand, workspaceCommands);
           const runWorkspace = workspaceCommands.has(workspaceCommand) && !(workspaceCommand === "/image" && inputMeta?.toolMode === "merge");
           if (runWorkspace) {
             workspaceRequested = true;
+            if (workspaceCommand === "/export-unsupported") {
+              throw new Error(inferredWorkspaceExport?.message || "That export extension is not currently supported. RevelaAI has not substituted a different format.");
+            }
             if (freeMode) throw new Error("Switch to Adaptive mode to generate hosted documents, workbooks, code files, designs or campaign assets. Free mode remains local-only.");
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
             if (!workspacePrompt && !attachedFile) throw new Error("Describe the artifact you want RevelaAI to create.");
-            const safeTitle = (workspacePrompt || attachedFile?.name || "RevelaAI output").slice(0, 120);
-            let workspacePayload = { prompt: workspacePrompt || "Analyze the uploaded file and produce a useful artifact.", title: safeTitle };
+            const previousAssistantText = [...currentMessages].reverse().find((item) =>
+              item.role === "assistant" && item.status !== "loading"
+              && item.contentType !== "workspace-artifact" && !item.artifact
+            )?.text || "";
+            const workspaceExecutionPrompt = buildWorkspaceExportPrompt(workspacePrompt, previousAssistantText);
+            const safeTitle = workspaceOutputTitle(workspacePrompt || attachedFile?.name || "", attachedFile?.name || "RevelaAI output");
+            let workspacePayload = { prompt: workspaceExecutionPrompt || "Analyze the uploaded file and produce a useful artifact.", title: safeTitle };
             let files = [];
 
             if (workspaceCommand === "/doc" || workspaceCommand === "/paper") {
               workspacePayload = {
                 ...workspacePayload,
                 task: "document",
-                format: /\bpdfs?\b/i.test(workspacePrompt) ? "pdf" : "word",
+                format: inferredWorkspaceExport?.command === "/doc"
+                  ? inferredWorkspaceExport.format
+                  : /\bpdfs?\b/i.test(workspacePrompt) ? "pdf" : "word",
                 document_style: /\b(official|officially|formal|formally|institutional|letterhead)\b/i.test(workspacePrompt) ? "official" : "auto",
                 document_count: requestedWorkspaceDocumentCount(workspacePrompt),
               };
@@ -1340,7 +1360,11 @@ export default function AIAssistantDashboard({
                 workspacePayload = { ...workspacePayload, image_placement: "title_slide", image_width_inches: 1.2 };
               } else if (attachedFile) throw new Error("Attach a PNG, JPEG or WEBP image to place it on the presentation title slide.");
             } else if (workspaceCommand === "/sheet" || workspaceCommand === "/ledger") {
-              workspacePayload = { ...workspacePayload, task: "document", format: "spreadsheet" };
+              workspacePayload = {
+                ...workspacePayload,
+                task: "document",
+                format: inferredWorkspaceExport?.command === "/sheet" ? inferredWorkspaceExport.format : "spreadsheet",
+              };
               if (attachedFile) workspacePayload.dataset = await datasetFromWorkspaceAttachment(attachedFile);
             } else if (workspaceCommand === "/data") {
               workspacePayload = { ...workspacePayload, task: "analytics" };
@@ -1348,7 +1372,9 @@ export default function AIAssistantDashboard({
               else if (workspacePrompt.includes("\n") && workspacePrompt.includes(",")) workspacePayload.dataset = workspacePrompt;
               else throw new Error("Attach a CSV or JSON dataset, or paste CSV rows with a header line, to run deterministic data analysis.");
             } else if (workspaceCommand === "/code") {
-              const language = workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
+              const language = inferredWorkspaceExport?.command === "/code"
+                ? inferredWorkspaceExport.language
+                : workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
               workspacePayload = { ...workspacePayload, task: "code", language };
               if (attachedFile) throw new Error("Source-file editing is not yet part of the file-export workspace. Paste the code or use the normal chat attachment analysis first.");
             } else if (workspaceCommand === "/ui") {
@@ -1358,7 +1384,7 @@ export default function AIAssistantDashboard({
               workspacePayload = { ...workspacePayload, task: "promotion", image_options: { template: "poster", aspect_ratio: "4:5" } };
               if (attachedFile) throw new Error("Campaign generation currently uses the RevelaCode brand pipeline. Add the supplied logo as a document attachment after campaign generation.");
             } else if (workspaceCommand === "/image") {
-              const mode = inputMeta?.toolMode || "generate";
+              const mode = inputMeta?.toolMode || (attachedFile?.type?.startsWith("image/") ? "edit" : "generate");
               if (mode === "generate") {
                 const options = inputMeta?.toolOptions || {};
                 const ratio = ({ "1:1": "1:1", "4:5": "4:5", "16:9": "16:9", "9:16": "9:16" })[options.aspectRatio] || "1:1";
@@ -1367,7 +1393,9 @@ export default function AIAssistantDashboard({
                   image_options: {
                     aspect_ratio: ratio,
                     format_preset: options.formatPreset || "INSTAGRAM_SQUARE",
-                    output_format: "png",
+                    output_format: inferredWorkspaceExport?.command === "/image"
+                      ? (inferredWorkspaceExport.outputFormat || "png")
+                      : "png",
                     language: options.language || "en",
                     text_direction: options.textDirection || (options.language === "ar" ? "rtl" : "ltr"),
                     dpi: Number(options.dpi || 150),
@@ -1375,7 +1403,7 @@ export default function AIAssistantDashboard({
                     crop_marks: options.cropMarks === true,
                     use_ai_background: true,
                   },
-                  prompt: workspacePrompt + (options.style ? "\nVisual style: " + options.style : ""),
+                  prompt: workspaceExecutionPrompt + (options.style ? "\nVisual style: " + options.style : ""),
                 };
                 if (attachedFile) throw new Error("Image generation does not use source-image attachments. Choose Image Studio → Edit or Enhance to process an uploaded image.");
               } else if (mode === "edit" || mode === "enhance") {
@@ -1386,6 +1414,11 @@ export default function AIAssistantDashboard({
                   image_base64: image,
                   mime_type: attachedFile.type || "image/jpeg",
                   operations: workspaceImageOperations(mode, workspacePrompt),
+                  image_options: {
+                    output_format: inferredWorkspaceExport?.command === "/image"
+                      ? (inferredWorkspaceExport.outputFormat || "png")
+                      : "png",
+                  },
                 };
               } else {
                 throw new Error("The current image engine supports generation and bounded single-image enhancement/editing. Multi-image composition is not enabled in this workspace yet.");
