@@ -55,7 +55,7 @@ function fileExtensionRequest(text) {
   );
   if (dotted) return String(dotted[1] || "").toLowerCase();
 
-  const direct = value.match(/\\.([a-z0-9]{1,8})\\b/i);
+  const direct = value.match(/\.([a-z0-9]{1,8})\b/i);
   const directExtension = String(direct?.[1] || "").toLowerCase();
   if (directExtension && (
     Object.prototype.hasOwnProperty.call(EXTENSION_OUTPUTS, directExtension)
