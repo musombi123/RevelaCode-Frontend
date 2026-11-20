@@ -30,7 +30,7 @@ self.onmessage = async (event) => {
     log: send("out"),
     info: send("out"),
     debug: send("out"),
-    warn: send("err"),
+    warn: send("warn"),
     error: send("err"),
   };
 
