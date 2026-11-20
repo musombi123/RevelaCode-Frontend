@@ -69,7 +69,7 @@ export default function RevelaAIFilesLibrary({
     } finally {
       setLoading(false);
     }
-  }, [authFetch, query, type, showTrash]);
+  }, [authFetch, query, type, folder, showTrash]);
 
   useEffect(() => { void load(); }, [load]);
 
