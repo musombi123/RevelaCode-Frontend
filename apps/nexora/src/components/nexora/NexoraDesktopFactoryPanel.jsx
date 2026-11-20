@@ -357,11 +357,12 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
             <div className="flex flex-wrap gap-2">
               <State ready={Boolean(driveStatus?.connected)}>{driveStatus?.connected ? "Connected" : driveStatus?.configured ? "Not connected" : "OAuth not configured"}</State>
               <button type="button" className={button} disabled={Boolean(busy)} onClick={() => run("drive-status", loadDriveData)}><RefreshCw size={12}/> Refresh</button>
-              {!driveStatus?.connected && <button type="button" className={primary} disabled={Boolean(busy) || !driveStatus?.configured} onClick={connectDrive}>Connect Google Drive</button>}
+              {!driveStatus?.connected && <button type="button" className={primary} disabled={Boolean(busy) || !driveStatus?.configured || !driveStatus?.credential_vault_ready} onClick={connectDrive}>Connect Google Drive</button>}
               {driveStatus?.connected && <button type="button" className={button} disabled={Boolean(busy)} onClick={disconnectDrive}>Disconnect</button>}
             </div>
           </div>
-          {!driveStatus?.configured && <p className="mt-2 text-[9px] leading-4 text-amber-200/80">Set NEXORA_GOOGLE_OAUTH_CLIENT_ID to your Google OAuth Desktop client ID in the Local Agent environment, then restart the agent. The redirect URI must match the local agent callback.</p>}
+          {!driveStatus?.configured && <p className="mt-2 text-[9px] leading-4 text-amber-200/80">Set NEXORA_GOOGLE_OAUTH_CLIENT_ID to your Google OAuth Desktop client ID in the Local Agent environment, then restart the agent. The redirect URI is the Local Agent loopback root.</p>}
+          {driveStatus?.configured && !driveStatus?.credential_vault_ready && <p className="mt-2 text-[9px] leading-4 text-amber-200/80">{driveStatus.credential_vault_error || "A supported operating-system credential vault is required before connecting Google Drive."}</p>}
           {driveStatus?.connected && <div className="mt-3 border-t border-white/5 pt-3">
             <div className="mb-2 text-[9px] font-bold text-slate-400">REMOTE BACKUPS FOR THIS PROJECT</div>
             {driveBackups.map(file => <div key={file.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 py-2">
