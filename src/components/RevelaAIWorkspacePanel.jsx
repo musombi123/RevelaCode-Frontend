@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { downloadFile } from "@/components/utils/downloadFile.js";
 import RevelaAIProjectIDE from "@/components/RevelaAIProjectIDE.jsx";
+import RevelaAICodeIDE from "@/components/RevelaAICodeIDE.jsx";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical, Maximize2 } from "lucide-react";
 import {
   downloadRemoteArtifact,
@@ -44,7 +45,15 @@ const MIME_BY_EXTENSION = {
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["ide", "IDE", Code2], ["versions", "Versions", History]];
 
-export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onOpenStudio }) {
+export default function RevelaAIWorkspacePanel({ artifact, authFetch, onArtifactUpdated, onAskAI, onClose, onOpenStudio }) {
+  const editableCodeSource = artifact?.artifact?.preview?.editable_source
+    || artifact?.preview?.editable_source
+    || null;
+  const hasEditableCodeIDE = Boolean(
+    artifact?.type === "code"
+    || artifact?.artifact?.type === "code"
+    || editableCodeSource?.kind === "code"
+  );
   const [tab, setTab] = useState("preview");
   const [filter, setFilter] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
@@ -59,9 +68,9 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onO
 
   useEffect(() => {
     setVisible(true);
-    setTab("preview");
+    setTab(artifact?.project || hasEditableCodeIDE ? "ide" : "preview");
     setFilter("");
-  }, [artifact]);
+  }, [artifact, hasEditableCodeIDE]);
 
   useEffect(() => {
     if (!visible) return undefined;
@@ -180,7 +189,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onO
       </header>
 
       <nav className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2" aria-label="Workspace tabs">
-        {TABS.filter(([id]) => id !== "ide" || Boolean(artifact?.project)).map(([id, label, Icon]) => (
+        {TABS.filter(([id]) => id !== "ide" || Boolean(artifact?.project) || hasEditableCodeIDE).map(([id, label, Icon]) => (
           <button key={id} type="button" onClick={() => setTab(id)} data-demo={"workspace-tab-" + id}
             aria-pressed={tab === id}
             className={"flex min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-semibold " +
@@ -264,6 +273,14 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onO
         </div>}
 
         {tab === "ide" && artifact?.project && <RevelaAIProjectIDE project={artifact.project} />}
+        {tab === "ide" && hasEditableCodeIDE && !artifact?.project && (
+          <RevelaAICodeIDE
+            artifact={artifact}
+            authFetch={authFetch}
+            onArtifactUpdated={onArtifactUpdated}
+            onAskAI={onAskAI}
+          />
+        )}
 
         {tab === "data" && <div>
           <input value={filter} onChange={(event) => { setFilter(event.target.value); setScrollTop(0); }}
