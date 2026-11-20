@@ -62,7 +62,7 @@ test("Chat attachments and the quick inspector can open the same artifact in Stu
 
 test("Imported file compatibility and non-execution boundaries are visible", () => {
   assert.match(studio, /Import compatibility/);
-  assert.match(studio, /Embedded media/);
+  assert.match(studio, /embedded media/);
   assert.match(studio, /Text-only · Not executed/);
   assert.match(client, /15 MB/);
 });
