@@ -745,22 +745,10 @@ export default function AIAssistantDashboard({
     }
   };
 
-  const [freeMode, setFreeMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem("revelaai.free_mode.v1") === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("revelaai.free_mode.v1", freeMode ? "true" : "false");
-    } catch {
-      // Privacy mode or a full browser store must not stop the assistant from working.
-    }
-  }, [freeMode]);
+  // On-device mode is an explicit, session-only privacy choice. A Free
+  // subscription still uses the hosted Adaptive model unless the user selects
+  // this mode; do not persist it and unexpectedly downgrade later sessions.
+  const [freeMode, setFreeMode] = useState(false);
 
   // The backend owns specialist routing. The UI never pins a conversation to one hub.
   const activeBrainHub = "auto";
@@ -1401,7 +1389,7 @@ export default function AIAssistantDashboard({
             if (workspaceCommand === "/export-unsupported") {
               throw new Error(inferredWorkspaceExport?.message || "That export extension is not currently supported. RevelaAI has not substituted a different format.");
             }
-            if (freeMode) throw new Error("Switch to Adaptive mode to generate hosted documents, workbooks, code files, designs or campaign assets. Free mode remains local-only.");
+            if (freeMode) throw new Error("On-device mode is active. Switch back to Adaptive mode to use hosted exports. This choice is separate from your Free account plan.");
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
             if (!workspacePrompt && !attachedFile) throw new Error("Describe the artifact you want RevelaAI to create.");
@@ -2068,19 +2056,20 @@ export default function AIAssistantDashboard({
             .slice(-6)
             .map((item) => item.role + ": " + String(item.text || "").slice(0, 300))
             .join("\n");
-          const localFallback = !workspaceRequested && !isProviderPipelineFailure && (freeMode || isNetworkFailure)
+          // Never silently replace a failed hosted model with weaker local
+          // templates. Local answers are used only when the user explicitly
+          // selected On-device mode for this session.
+          const localFallback = !workspaceRequested && freeMode
             ? answerLocally(cleaned || userDisplayText, recentContext)
             : "";
-          const localFallbackNotice = freeMode
-            ? "Free mode is active. This answer was generated locally without a hosted model."
-            : "The hosted AI service was unavailable, so this response uses RevelaAI Free on-device rules. You can retry Adaptive mode when connectivity returns.";
+          const localFallbackNotice = "On-device mode is active. This answer was generated locally without a hosted model.";
           const visibleText = workspaceRequested
             ? "Workspace execution failed: " + String(error?.message || "RevelaAI could not create this artifact.") + " No artifact was created."
             : isProviderPipelineFailure
               ? String(error?.message || "RevelaAI could not complete the requested model operation. No completed answer was generated.")
               : localFallback
                 ? localFallback + "\n\n" + localFallbackNotice
-                : (isNetworkFailure ? "Poor connection. Please reconnect and try again." : "RevelaAI is temporarily unavailable. Please try again.");
+                : (isNetworkFailure ? "Poor connection. The hosted AI model could not be reached, so RevelaAI did not substitute a weaker local answer. Please reconnect and retry." : "RevelaAI is temporarily unavailable. Please try again.");
 
           if (localFallback) {
             void recordConversationTurn({
@@ -3204,7 +3193,7 @@ export default function AIAssistantDashboard({
             </header>
 
             <p className="mt-5 text-sm leading-6 text-fg-secondary">
-              RevelaAI routes questions through the configured AI service when Adaptive mode is available. When you choose Free mode—or the service cannot be reached—the dashboard can keep working with on-device rules and local media measurements.
+              RevelaAI routes questions through the configured AI service when Adaptive mode is available. When you choose On-device mode—or the service cannot be reached—the dashboard can keep working with on-device rules and local media measurements.
             </p>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -3213,7 +3202,7 @@ export default function AIAssistantDashboard({
                 <p className="mt-2 text-xs leading-5 text-muted">Uses the configured hosted AI and backend routing when network access and credentials are available.</p>
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-fg"><WifiOff size={16} className="text-accent" /> Free mode</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-fg"><WifiOff size={16} className="text-accent" /> On-device mode</div>
                 <p className="mt-2 text-xs leading-5 text-muted">Local text templates, supported document extraction, pixel statistics and sampled video analysis. It is not a full local language model.</p>
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
@@ -3222,18 +3211,18 @@ export default function AIAssistantDashboard({
               </article>
               <article className="rounded-2xl border border-line bg-surface p-3">
                 <div className="flex items-center gap-2 text-sm font-bold text-fg"><Camera size={16} className="text-chart-2" /> Vision</div>
-                <p className="mt-2 text-xs leading-5 text-muted">Adaptive mode can request server vision analysis. Free mode keeps camera frames on-device and reports only pixel measurements.</p>
+                <p className="mt-2 text-xs leading-5 text-muted">Adaptive mode can request server vision analysis. On-device mode keeps camera frames on-device and reports only pixel measurements.</p>
               </article>
             </div>
 
             <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-3">
               <p className="text-xs font-bold text-fg-secondary">Privacy and capability boundary</p>
-              <p className="mt-1 text-xs leading-5 text-muted">Free mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
+              <p className="mt-1 text-xs leading-5 text-muted">On-device mode avoids hosted AI requests from typed chat, camera capture and this voice session. Local pixel statistics cannot prove object identity or read scene meaning. The dashboard does not expose internal USECT core controls here.</p>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button type="button" onClick={() => { setFreeMode(true); setIdentityOpen(false); }} className="min-h-12 rounded-xl bg-accent px-3 py-2.5 text-xs font-extrabold text-inverse transition hover:bg-accent-hover">
-                Use Free mode
+                Use On-device mode
               </button>
               <button type="button" onClick={() => { setFreeMode(false); setIdentityOpen(false); }} className="min-h-12 rounded-xl border border-line px-3 py-2.5 text-xs font-bold text-fg-secondary transition hover:bg-surface-2">
                 Adaptive mode
