@@ -6,7 +6,7 @@ const field = "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2
 const button = "inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200";
 const primary = "inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-violet-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50";
 
-export default function NexoraDeviceBridge({ packageId = "com.nexora.game", accountAccessToken = "", onConnectionChange = () => {} }) {
+export default function NexoraDeviceBridge({ packageId = "com.nexora.game", accountAccessToken = "", expectedAccountUserId = "", onConnectionChange = () => {} }) {
   const [pairCode, setPairCode] = useState("");
   const [token, setToken] = useState("");
   const [status, setStatus] = useState("Checking local desktop bridge…");
@@ -42,6 +42,10 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     setHardwareBusy(true);
     try {
       const system = await request("/system/capabilities", {}, true, authToken);
+      const pairedUserId = String(system?.agent?.paired_user || "");
+      if (expectedAccountUserId && pairedUserId !== String(expectedAccountUserId)) {
+        throw new Error("This computer is paired to a different NEXORA account. Disconnect it and pair again with the current account.");
+      }
       const check = await request("/requirements/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,7 +92,8 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
           setStatus("Local compute agent reconnected for this browser session.");
         } catch {
           sessionStorage.removeItem("nexora.local-agent.token");
-          if (!cancelled) setStatus("The saved local pairing expired. Pair this computer again.");
+          onConnectionChange(false);
+          if (!cancelled) setStatus("The saved local pairing is expired or belongs to another NEXORA account. Pair this computer again.");
         }
       })
       .catch(() => { if (!cancelled) setStatus("Local agent not detected. Install and start the NEXORA Local Compute Agent on your desktop."); });
