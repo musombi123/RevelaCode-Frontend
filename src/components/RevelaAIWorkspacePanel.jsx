@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { downloadFile } from "@/components/utils/downloadFile.js";
+import RevelaAIProjectIDE from "@/components/RevelaAIProjectIDE.jsx";
 import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical, Maximize2 } from "lucide-react";
 import {
   downloadRemoteArtifact,
@@ -41,7 +42,7 @@ const MIME_BY_EXTENSION = {
   jpeg: "image/jpeg",
 };
 
-const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
+const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["ide", "IDE", Code2], ["versions", "Versions", History]];
 
 export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onOpenStudio }) {
   const [tab, setTab] = useState("preview");
@@ -179,7 +180,7 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onO
       </header>
 
       <nav className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2" aria-label="Workspace tabs">
-        {TABS.map(([id, label, Icon]) => (
+        {TABS.filter(([id]) => id !== "ide" || Boolean(artifact?.project)).map(([id, label, Icon]) => (
           <button key={id} type="button" onClick={() => setTab(id)} data-demo={"workspace-tab-" + id}
             aria-pressed={tab === id}
             className={"flex min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-semibold " +
@@ -261,6 +262,8 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onO
           </>}
           {artifact.preview_text && <pre className="whitespace-pre-wrap rounded-xl bg-code p-3 text-xs text-fg-secondary">{artifact.preview_text}</pre>}
         </div>}
+
+        {tab === "ide" && artifact?.project && <RevelaAIProjectIDE project={artifact.project} />}
 
         {tab === "data" && <div>
           <input value={filter} onChange={(event) => { setFilter(event.target.value); setScrollTop(0); }}
