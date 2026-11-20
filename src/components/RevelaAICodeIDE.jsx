@@ -324,6 +324,11 @@ export default function RevelaAICodeIDE({
           if (status) setNotice(status);
         },
       });
+      if (result.stopped) {
+        setNotice("Execution stopped by the user.");
+        setConsoleLines((items) => items.length ? items : [{ type: "dim", text: "Execution stopped." }]);
+        return;
+      }
       if (!result.ok) {
         const message = String(result.error || "Execution failed.");
         captured.push({ type: "err", text: message });
