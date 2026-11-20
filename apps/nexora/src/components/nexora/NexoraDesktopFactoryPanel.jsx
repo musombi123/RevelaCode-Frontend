@@ -34,6 +34,8 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   const [openedFile, setOpenedFile] = useState(null);
   const [editedContent, setEditedContent] = useState("");
   const [snapshots, setSnapshots] = useState([]);
+  const [driveStatus, setDriveStatus] = useState(null);
+  const [driveBackups, setDriveBackups] = useState([]);
   const [toolchains, setToolchains] = useState(null);
   const [selectedTools, setSelectedTools] = useState([]);
   const [publishers, setPublishers] = useState([]);
@@ -97,6 +99,18 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
     setPublishers(result.providers || []);
   }, [request]);
 
+  const loadDriveData = useCallback(async () => {
+    const result = await request("/api/v1/desktop/drive/status");
+    setDriveStatus(result);
+    if (projectId && result.connected) {
+      const remote = await request("/api/v1/desktop/drive/projects/" + projectId + "/backups");
+      setDriveBackups(remote.files || []);
+    } else {
+      setDriveBackups([]);
+    }
+    return result;
+  }, [projectId, request]);
+
   useEffect(() => {
     let live = true;
     setError("");
@@ -107,11 +121,12 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
     }
     if (view === "toolchains") tasks.push(loadToolchains());
     if (view === "release-center") tasks.push(loadPublishing());
+    if (view === "backups") tasks.push(loadDriveData());
     Promise.all(tasks).catch(cause => {
       if (live) setError(cause?.message || "Could not connect to the NEXORA Local Agent.");
     });
     return () => { live = false; };
-  }, [view, projectId, loadStatus, loadProjectFiles, loadSnapshots, loadToolchains, loadPublishing]);
+  }, [view, projectId, loadStatus, loadProjectFiles, loadSnapshots, loadToolchains, loadPublishing, loadDriveData]);
 
   const chooseWorkspace = () => run("workspace", async () => {
     const result = await request("/api/v1/desktop/workspace", { method: "PUT", body: JSON.stringify({ path: workspacePath }) });
@@ -170,6 +185,50 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
     await loadSnapshots();
     return result;
   }, "A verified local project snapshot was created.");
+
+  const connectDrive = async () => {
+    const popup = window.open("about:blank", "_blank");
+    if (!popup) {
+      onNotice("Allow pop-ups for NEXORA so Google can complete the local OAuth callback.");
+      return;
+    }
+    const result = await run("drive-connect", async () =>
+      request("/api/v1/desktop/drive/authorize", { method: "POST", body: "{}" })
+    );
+    if (result?.authorization_url) {
+      popup.opener = null;
+      popup.location.href = result.authorization_url;
+      onNotice("Complete Google consent in the opened tab, then refresh the Drive connection status.");
+    } else {
+      popup.close();
+    }
+  };
+
+  const disconnectDrive = () => run("drive-disconnect", async () => {
+    const result = await request("/api/v1/desktop/drive/disconnect", { method: "POST", body: "{}" });
+    await loadDriveData();
+    return result;
+  }, "Google Drive has been disconnected from this computer.");
+
+  const uploadSnapshotToDrive = (snapshot) => run("drive-upload", async () => {
+    const result = await request("/api/v1/desktop/drive/projects/" + projectId + "/snapshots/" + snapshot.id + "/upload", {
+      method: "POST", body: "{}"
+    });
+    await loadDriveData();
+    return result;
+  }, "Snapshot uploaded to your Google Drive.");
+
+  const restoreDriveBackup = (file) => {
+    if (!window.confirm("Restore this Google Drive backup over the current Godot project folder? Local snapshots will be retained.")) return;
+    run("drive-restore", async () => {
+      const result = await request("/api/v1/desktop/drive/projects/" + projectId + "/backups/" + file.id + "/restore", {
+        method: "POST", body: "{}"
+      });
+      await loadProjectFiles("");
+      await loadSnapshots();
+      return result;
+    }, "Google Drive backup restored into the selected local project.");
+  };
 
   const restoreSnapshot = (snapshot) => {
     if (!window.confirm("Restore " + snapshot.id + "? This replaces the current Godot project folder. The snapshot will be retained.")) return;
@@ -284,9 +343,32 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
       {view === "backups" && <section className={panel + " p-4"}>
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 text-xs font-black text-white"><Archive size={16} className="text-cyan-300"/> LOCAL VERSIONS & BACKUPS</h3><p className="mt-1 text-[10px] text-slate-500">Create integrity-checked snapshots. Restore replaces only the Godot project folder and retains the backup.</p></div><button className={primary} type="button" disabled={!projectId || Boolean(busy)} onClick={createSnapshot}><Archive size={13}/> Create snapshot</button></div>
         {!project ? <div className="mt-4 text-xs text-slate-500">Select a project to manage snapshots.</div> : <div className="mt-4 space-y-2">{snapshots.map(snapshot => <article key={snapshot.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#20334B] bg-[#0A1524] p-3">
-          <div className="min-w-0"><div className="truncate text-xs font-bold text-white">{snapshot.id}</div><div className="mt-1 text-[9px] text-slate-500">{snapshot.file_count} files · <Bytes value={snapshot.source_bytes}/> source · archive <Bytes value={snapshot.archive_bytes}/></div><div className="mt-1 break-all text-[8px] text-slate-600">SHA-256 {snapshot.sha256}</div></div><button type="button" className={button} disabled={Boolean(busy)} onClick={() => restoreSnapshot(snapshot)}><RefreshCw size={12}/> Restore</button>
+          <div className="min-w-0"><div className="truncate text-xs font-bold text-white">{snapshot.id}</div><div className="mt-1 text-[9px] text-slate-500">{snapshot.file_count} files · <Bytes value={snapshot.source_bytes}/> source · archive <Bytes value={snapshot.archive_bytes}/></div><div className="mt-1 break-all text-[8px] text-slate-600">SHA-256 {snapshot.sha256}</div></div><div className="flex flex-wrap gap-2">
+            {driveStatus?.connected && !driveBackups.some(file => file.appProperties?.nexoraSnapshotId === snapshot.id) && <button type="button" className={button} disabled={Boolean(busy)} onClick={() => uploadSnapshotToDrive(snapshot)}><Upload size={12}/> Back up to Drive</button>}
+            {driveStatus?.connected && driveBackups.some(file => file.appProperties?.nexoraSnapshotId === snapshot.id) && <State ready={true}>Drive copy exists</State>}
+            <button type="button" className={button} disabled={Boolean(busy)} onClick={() => restoreSnapshot(snapshot)}><RefreshCw size={12}/> Restore</button>
+          </div>
         </article>)}{!snapshots.length && <div className="rounded-xl border border-dashed border-[#29415F] p-6 text-center text-xs text-slate-500">No snapshots yet. Create your first local restore point.</div>}</div>}
-        <div className="mt-4 rounded-xl border border-amber-800/40 bg-amber-950/20 p-3"><div className="flex items-center gap-2 text-[10px] font-bold text-amber-200"><LockKeyhole size={13}/> OPTIONAL OFF-SITE BACKUP</div><p className="mt-1 text-[9px] leading-4 text-amber-100/70">Google Drive upload is not yet connected. Local snapshots are active; do not treat them as off-device disaster recovery.</p></div>
+        <div className="mt-4 rounded-xl border border-[#29415F] bg-[#0A1524] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><div className="flex items-center gap-2 text-[10px] font-bold text-slate-200"><LockKeyhole size={13}/> GOOGLE DRIVE BACKUP</div><p className="mt-1 text-[9px] text-slate-500">Your Google account · drive.file scope · refresh token in the operating-system credential vault.</p></div>
+            <div className="flex flex-wrap gap-2">
+              <State ready={Boolean(driveStatus?.connected)}>{driveStatus?.connected ? "Connected" : driveStatus?.configured ? "Not connected" : "OAuth not configured"}</State>
+              <button type="button" className={button} disabled={Boolean(busy)} onClick={() => run("drive-status", loadDriveData)}><RefreshCw size={12}/> Refresh</button>
+              {!driveStatus?.connected && <button type="button" className={primary} disabled={Boolean(busy) || !driveStatus?.configured} onClick={connectDrive}>Connect Google Drive</button>}
+              {driveStatus?.connected && <button type="button" className={button} disabled={Boolean(busy)} onClick={disconnectDrive}>Disconnect</button>}
+            </div>
+          </div>
+          {!driveStatus?.configured && <p className="mt-2 text-[9px] leading-4 text-amber-200/80">Set NEXORA_GOOGLE_OAUTH_CLIENT_ID to your Google OAuth Desktop client ID in the Local Agent environment, then restart the agent. The redirect URI must match the local agent callback.</p>}
+          {driveStatus?.connected && <div className="mt-3 border-t border-white/5 pt-3">
+            <div className="mb-2 text-[9px] font-bold text-slate-400">REMOTE BACKUPS FOR THIS PROJECT</div>
+            {driveBackups.map(file => <div key={file.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 py-2">
+              <div className="min-w-0"><div className="truncate text-[10px] font-bold text-slate-200">{file.name}</div><div className="text-[9px] text-slate-500"><Bytes value={file.size}/> · {file.modifiedTime || "Drive backup"}</div></div>
+              <button type="button" className={button} disabled={Boolean(busy)} onClick={() => restoreDriveBackup(file)}><RefreshCw size={12}/> Restore from Drive</button>
+            </div>)}
+            {!driveBackups.length && <div className="text-[9px] text-slate-600">No NEXORA backups found for this project in Drive.</div>}
+          </div>}
+        </div>
       </section>}
 
       {view === "release-center" && <section className={panel + " p-4"}>
