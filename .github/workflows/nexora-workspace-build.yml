@@ -13,6 +13,7 @@ on:
       - "docs/NEXORA_PATH_BASED_HOSTING.md"
       - "package.json"
       - "package-lock.json"
+      - "tests/nexora-path-build-contract.test.mjs"
       - ".github/workflows/nexora-workspace-build.yml"
   push:
     branches:
@@ -42,5 +43,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify NEXORA path isolation contract
+        run: node --test tests/nexora-path-build-contract.test.mjs
       - name: Build NEXORA and RevelaCode frontends
         run: npm run build:web
