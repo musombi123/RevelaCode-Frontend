@@ -179,7 +179,7 @@ export default function NexoraStudioShell({
             <button type="button" onClick={onNewProject} className="inline-flex items-center gap-2 rounded-xl bg-[#10D5F2] px-4 py-2.5 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
           </div>
           {children}
-          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project data is account-scoped · Local task board stays on this browser</span></footer>
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Cloud project tasks sync to your NEXORA account · Unlinked drafts stay in this browser · Team membership is not connected</span></footer>
         </main>
       </div>
 
