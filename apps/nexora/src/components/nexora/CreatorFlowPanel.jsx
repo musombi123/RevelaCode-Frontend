@@ -203,7 +203,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
         adId: REWARDED_AD_UNIT_ID,
         ssv: { userId: String(intent.user_id), customData: String(intent.custom_data) },
       });
-      const earned = await AdMob.showRewardVideoAd({adId:REWARDED_AD_UNIT_ID});
+      const earned = await AdMob.showRewardVideoAd();
       if (Number(earned?.amount || 0) < 1 || earned?.type !== intent.reward_item) throw new Error("The ad provider did not report the configured reward. No tool credit was granted.");
       let latest = null;
       for (let attempt=0; attempt<30; attempt+=1) {
