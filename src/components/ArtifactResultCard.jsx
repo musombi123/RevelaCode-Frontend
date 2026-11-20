@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  Check, Download, ExternalLink, FileText, Image as ImageIcon,
-  Link2, Loader2, MessageCircle, Redo2, Share2, Sparkles,
+  Check, Download, ExternalLink, Eye, FileText, Image as ImageIcon,
+  Link2, Loader2, Maximize2, MessageCircle, Redo2, Share2, Sparkles,
   Undo2, X,
 } from "lucide-react";
 import {
@@ -174,6 +174,16 @@ export default function ArtifactResultCard({ artifact, onAction }) {
           className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-white hover:bg-accent-hover disabled:opacity-50">
           {busy === "download:" + (formats[0] || "file") ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
           Download
+        </button>
+
+        <button type="button" onClick={() => void runAction("preview")} disabled={Boolean(busy)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2 disabled:opacity-50">
+          <Eye size={14}/> Preview
+        </button>
+
+        <button type="button" onClick={() => void runAction("open_studio")} disabled={Boolean(busy)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/30 px-3 text-xs font-semibold text-accent hover:bg-accent/10 disabled:opacity-50">
+          <Maximize2 size={14}/> Open in Studio
         </button>
 
         <button type="button"
