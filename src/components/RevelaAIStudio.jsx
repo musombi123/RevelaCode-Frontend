@@ -59,6 +59,40 @@ function DocumentEditor({ payload, onChange }) {
       : section);
     onChange({ ...payload, sections: next });
   };
+  const updateTable = (sectionIndex, tableIndex, updater) => {
+    const next = sections.map((section, itemIndex) => {
+      if (itemIndex !== sectionIndex) return section;
+      const tables = (section.tables || []).map((table, index) => index === tableIndex ? updater(table) : table);
+      return { ...section, tables };
+    });
+    onChange({ ...payload, sections: next });
+  };
+  const updateTableHeader = (sectionIndex, tableIndex, columnIndex, value) => updateTable(
+    sectionIndex, tableIndex, (table) => {
+      const headers = [...(table.headers || [])];
+      headers[columnIndex] = value;
+      return { ...table, headers };
+    }
+  );
+  const updateTableCell = (sectionIndex, tableIndex, rowIndex, columnIndex, value) => updateTable(
+    sectionIndex, tableIndex, (table) => {
+      const rows = (table.rows || []).map((row, index) => index === rowIndex ? [...row] : [...row]);
+      rows[rowIndex][columnIndex] = value;
+      return { ...table, rows };
+    }
+  );
+  const addTableRow = (sectionIndex, tableIndex) => updateTable(
+    sectionIndex, tableIndex, (table) => ({
+      ...table,
+      rows: [...(table.rows || []), (table.headers || []).map(() => "")],
+    })
+  );
+  const addTable = (sectionIndex) => updateSection(sectionIndex, {
+    tables: [
+      ...(sections[sectionIndex].tables || []),
+      { headers: ["Column 1", "Column 2"], rows: [["", ""]] },
+    ],
+  });
   const addSection = () => onChange({
     ...payload,
     sections: [...sections, { heading: "New section", level: 1, paragraphs: [""], tables: [] }],
@@ -82,6 +116,37 @@ function DocumentEditor({ payload, onChange }) {
                 className="w-full resize-y border-0 bg-transparent text-[15px] leading-7 text-slate-700 outline-none focus:bg-blue-50/40"/>
             ))}
             <button type="button" onClick={() => addParagraph(index)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add paragraph</button>
+            {(section.tables || []).map((table, tableIndex) => (
+              <div key={tableIndex} className="overflow-x-auto rounded-lg border border-slate-200">
+                <table className="min-w-full border-collapse text-xs">
+                  <thead>
+                    <tr>{(table.headers || []).map((header, columnIndex) => (
+                      <th key={columnIndex} className="border-b border-r border-slate-200 bg-slate-50 p-1">
+                        <input value={header ?? ""} onChange={(event) => updateTableHeader(index, tableIndex, columnIndex, event.target.value)}
+                          aria-label={"Section " + (index + 1) + " table " + (tableIndex + 1) + " column " + (columnIndex + 1) + " heading"}
+                          className="w-full min-w-28 bg-transparent px-2 py-2 text-left font-bold text-slate-800 outline-none"/>
+                      </th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {(table.rows || []).map((row, rowIndex) => (
+                      <tr key={rowIndex}>{(table.headers || []).map((_, columnIndex) => (
+                        <td key={columnIndex} className="border-b border-r border-slate-200 p-0">
+                          <input value={row?.[columnIndex] == null ? "" : String(row[columnIndex])}
+                            onChange={(event) => updateTableCell(index, tableIndex, rowIndex, columnIndex, event.target.value)}
+                            aria-label={"Section " + (index + 1) + " table " + (tableIndex + 1) + " row " + (rowIndex + 1) + " column " + (columnIndex + 1)}
+                            className="w-full min-w-28 bg-transparent px-2 py-2 text-slate-700 outline-none focus:bg-blue-50/50"/>
+                        </td>
+                      ))}</tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="border-t border-slate-200 bg-slate-50 px-3 py-2">
+                  <button type="button" onClick={() => addTableRow(index, tableIndex)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add table row</button>
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={() => addTable(index)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add table</button>
           </section>
         ))}
         <button type="button" onClick={addSection} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-700">
