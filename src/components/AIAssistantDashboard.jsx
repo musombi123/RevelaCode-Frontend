@@ -3137,7 +3137,7 @@ export default function AIAssistantDashboard({
                   "Return the complete corrected source file in exactly one fenced code block. Preserve existing working behaviour and public interfaces, explain the root cause briefly, and do not claim that the correction has been run."
                 ].join("\n\n")
               : "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
-            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
+            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt, toolCommand: isCodeRepair ? "/code" : null, toolMode: isCodeRepair ? "debug" : null } }));
             setWorkspaceArtifact(null);
           }}
         />
