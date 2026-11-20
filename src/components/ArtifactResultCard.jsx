@@ -49,7 +49,7 @@ export default function ArtifactResultCard({ artifact, onAction }) {
   const formats = Array.isArray(artifact.formats)
     ? artifact.formats.map((value) => String(value).toUpperCase()).filter((value) => SAFE_FORMATS.has(value))
     : [];
-  const primaryFormatFromFilename = String(artifact.filename || "").match(/\\.([a-z0-9]+)$/i)?.[1]?.toUpperCase() || "";
+  const primaryFormatFromFilename = String(artifact.filename || "").match(/\.([a-z0-9]+)$/i)?.[1]?.toUpperCase() || "";
   const defaultDownloadFormat = formats.includes(primaryFormatFromFilename)
     ? primaryFormatFromFilename
     : formats[0] || "file";
