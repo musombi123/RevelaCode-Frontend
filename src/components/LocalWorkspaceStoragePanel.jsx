@@ -200,7 +200,7 @@ export default function LocalWorkspaceStoragePanel() {
         <details className="text-[10px] text-slate-500">
           <summary className="cursor-pointer font-semibold">How to start the local agent (Windows PowerShell)</summary>
           <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-100 p-2 font-mono text-[10px] dark:bg-slate-900">$env:REVELAAI_AUTOMATION_WORKSPACE="$HOME\\RevelaAIWorkspace"
-$env:REVELAAI_AUTOMATION_ALLOWED_ORIGINS="https://revelacode.co.ke"
+$env:REVELAAI_AUTOMATION_ALLOWED_ORIGINS="https://revelacode.co.ke,https://www.revelacode.co.ke"
 python -m automation_fabric.local_agent --show-token</pre>
           <p className="mt-1">Run the command from your local RevelaAI backend checkout with its Python dependencies installed. Keep the printed token private.</p>
         </details>
