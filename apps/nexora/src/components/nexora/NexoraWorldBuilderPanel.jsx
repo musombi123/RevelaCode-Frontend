@@ -31,7 +31,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
     setLoading(true);
     setError("");
     try {
-      const response = await nexoraAuthFetch("/api/projects/"+encodeURIComponent(project.id)+"/world", {headers:{Accept:"application/json"},cache:"no-store"});
+      const response = await nexoraAuthFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world", {headers:{Accept:"application/json"},cache:"no-store"});
       const payload = await response.json().catch(()=>({}));
       if (!response.ok) throw new Error(payload?.detail || "World document could not be loaded.");
       const base = defaultWorld(project);
@@ -68,7 +68,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
     }
     setSaving(true);setError("");
     try {
-      const response=await nexoraAuthFetch("/api/projects/"+encodeURIComponent(project.id)+"/world",{
+      const response=await nexoraAuthFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world",{
         method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(document),
       });
       const payload=await response.json().catch(()=>({}));
