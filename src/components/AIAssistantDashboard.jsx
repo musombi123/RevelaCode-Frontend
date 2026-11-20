@@ -2978,10 +2978,25 @@ export default function AIAssistantDashboard({
               setStudioArtifact(updated);
             }
           }}
-          onAskAI={(artifact) => {
-            const prompt = "Help me improve the file " + JSON.stringify(artifact?.title || "RevelaAI artifact") +
-              " (artifact ID " + String(artifact?.id || "") + "). Ask for my requested changes before modifying the file.";
-            window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId: artifact?.id } }));
+          onAskAI={async (artifact) => {
+            const artifactId = String(artifact?.id || "");
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            try {
+              const response = await authFetch(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ action: "returned" }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(payload?.detail?.message || payload?.detail || "Could not return this file to chat.");
+              if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+              setStudioArtifact(null);
+              const prompt = "Help me improve the file " + JSON.stringify(artifact?.title || "RevelaAI artifact") +
+                " (artifact ID " + artifactId + "). Ask for my requested changes and propose one reviewable edit at a time. Do not change the saved file without my confirmation.";
+              window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId } }));
+            } catch (error) {
+              window.alert(error?.message || "Could not return this file to chat.");
+            }
           }}
         />
       )}
