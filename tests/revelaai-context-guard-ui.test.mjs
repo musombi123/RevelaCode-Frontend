@@ -39,7 +39,10 @@ test("chat exports route generated PDF and text files through the shared native-
   assert.match(smartExport, /delivery/);
   assert.match(pdfExport, /doc\.output\("blob"\)/);
   assert.match(pdfExport, /saveGeneratedFile\(blob/);
-  assert.match(saver, /registerPlugin\("RevelaDownload"\)/);
+  const pluginRegistry = read("../src/native/capacitorPlugins.js");
+  assert.match(saver, /import \{ NativeDownloads \} from "@\/native\/capacitorPlugins\.js"/);
+  assert.match(pluginRegistry, /getRevelaCapacitorPlugin\("RevelaDownload"\)/);
+  assert.match(pluginRegistry, /registerPlugin\(pluginName\)/);
   assert.match(saver, /nativePlugin\.saveFile/);
   assert.match(saver, /downloadUrl/);
   assert.match(saver, /20 MB native-save limit/);
