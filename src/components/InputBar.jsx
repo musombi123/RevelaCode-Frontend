@@ -611,7 +611,6 @@ export default function InputBar({
     const value = text.trim();
     if (!canSend || submitting || typeof onSend !== "function") return;
     setSubmissionError("");
-    recognitionRef.current?.stop?.();
     const typedCommand = value.match(/^\/(search|image|data|sheet|deck|doc|ledger|quantum|robot|paper|code|ui|promo|humanize)\b/i)?.[1]?.toLowerCase();
     const selectedCommand = selectedToolCommand?.[0]?.replace(/^\//, "");
     const command = selectedCommand || typedCommand || null;
