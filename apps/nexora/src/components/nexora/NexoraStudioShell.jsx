@@ -115,7 +115,7 @@ export default function NexoraStudioShell({
   );
 
   return (
-    <div className="nexora-shell min-h-screen bg-[#070D16] text-slate-100">
+    <div className="dark nexora-shell min-h-screen bg-[#070D16] text-slate-100">
       <aside className={"fixed inset-y-0 left-0 z-40 hidden border-r border-[#20334B] bg-[#0A1220] transition-all duration-200 xl:block "+(collapsed?"w-[76px]":"w-[230px]")}>
         <SidebarContent/>
       </aside>
