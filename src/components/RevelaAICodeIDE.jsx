@@ -111,6 +111,8 @@ export default function RevelaAICodeIDE({
   const sessionRef = useRef({ artifactId: "", opened: false });
   const repairProposalRef = useRef(null);
   const artifactId = String(manifest?.id || manifest?.artifact_id || initial.manifest?.id || "");
+  const activeArtifactIdRef = useRef(artifactId);
+  activeArtifactIdRef.current = artifactId;
   const dirty = source !== savedSource;
   const runtimeLanguage = language === "javascript" || language === "python";
   const canValidateLocally = Boolean(localConfig.token);
@@ -172,8 +174,8 @@ export default function RevelaAICodeIDE({
       void setRevelaAIArtifactEditorState({ authFetch, artifactId: session.artifactId, action: "returned" }).catch(() => {});
     }
     const proposal = repairProposalRef.current;
-    if (proposal?.proposal_id && session.artifactId) {
-      void cancelRevelaAIArtifactEdit({ authFetch, artifactId: session.artifactId }).catch(() => {});
+    if (proposal?.proposal_id && activeArtifactIdRef.current) {
+      void cancelRevelaAIArtifactEdit({ authFetch, artifactId: activeArtifactIdRef.current }).catch(() => {});
     }
   }, [authFetch]);
 
