@@ -94,8 +94,9 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
       if (workflowResult?.workflow) setWorkflow(workflowResult.workflow);
       if (workflowResult?.entitlement) setEntitlement(workflowResult.entitlement);
       try { const report = await apiRequest(`/api/v1/workspace/projects/${projectId}/video-analysis`); setAnalysis(report); } catch { setAnalysis(null); }
+      await refreshRewards();
     } catch (e) { setError(e.message); }
-  }, [projectId, cloudProjectActive, apiRequest]);
+  }, [projectId, cloudProjectActive, apiRequest, refreshRewards]);
 
   useEffect(() => {
     setWorkflow(DEFAULT_WORKFLOW);
@@ -203,7 +204,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
         ssv: { userId: String(intent.user_id), customData: String(intent.custom_data) },
       });
       const earned = await AdMob.showRewardVideoAd({adId:REWARDED_AD_UNIT_ID});
-      if (Number(earned?.amount || 0) < 1) throw new Error("The ad provider did not report a reward. No tool credit was granted.");
+      if (Number(earned?.amount || 0) < 1 || earned?.type !== intent.reward_item) throw new Error("The ad provider did not report the configured reward. No tool credit was granted.");
       let latest = null;
       for (let attempt=0; attempt<30; attempt+=1) {
         latest = await apiRequest(`/api/v1/creator-flow/rewards/intents/${encodeURIComponent(intent.intent_id)}`);
