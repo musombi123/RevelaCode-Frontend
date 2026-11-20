@@ -2,10 +2,6 @@ import { saveGeneratedFile } from "@/components/utils/saveGeneratedFile";
 
 // Turns a markdown answer into a clean, multi-page A4 PDF.
 
-import { Capacitor, registerPlugin } from "@capacitor/core";
-
-const NativeDownloads = registerPlugin("RevelaDownload");
-
 const clean = (value = "") =>
   String(value)
     .replace(/[\u2018\u2019]/g, "'")
