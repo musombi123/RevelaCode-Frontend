@@ -314,12 +314,20 @@ The main RevelaCode Home owns the ecosystem introduction hero. Individual hub da
 ## NEXORA application boundary
 
 NEXORA is a separate application in the
-`musombi123/Procedural-Game-Foundry` repository and is deployed independently
-at `https://nexora.revelacode.co.ke`. Do not import NEXORA workspace,
+`musombi123/Procedural-Game-Foundry` repository. It has its own Vite/React
+entry point, build, startup lifecycle, account gate, browser session, API,
+database and subscription services. Do not import NEXORA workspace,
 authentication, payment, API-client or session components into this
 RevelaCode frontend.
 
-The legacy `/dev_nexora` URL exists only as a bootstrap-time redirect to the
-standalone NEXORA host. The redirect is evaluated before RevelaCode React
-providers, authentication, service-worker setup or UI are mounted. NEXORA
-owns its own entry point and account session.
+The public entry is `https://revelacode.co.ke/dev_nexora`. The existing
+RevelaCode Render Static Site must apply external **Rewrite** rules for
+`/dev_nexora` and `/dev_nexora/*` to the independent NEXORA Static Site's
+Render-generated `onrender.com` origin. This keeps the browser URL on the
+RevelaCode apex domain while the static-site CDN serves NEXORA's own built
+HTML and assets. It is a server-side path proxy, not a browser redirect and
+not a React route.
+
+For the same-domain route configuration and exact Render rules, see
+`docs/NEXORA_PATH_BASED_HOSTING.md`. The NEXORA entry must never mount
+RevelaCode's React providers, authentication, shell or service-worker setup.
