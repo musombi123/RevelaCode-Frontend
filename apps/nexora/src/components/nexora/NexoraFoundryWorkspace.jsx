@@ -1540,9 +1540,36 @@ export default function NexoraFoundryWorkspace() {
         />}
 
 
-        <footer className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] px-3 py-2 text-[9px] text-slate-500"><div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name||"—"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>VERSION: NEXORA STUDIO PRO</span><span>{cloudProjectActive?"CLOUD PROJECT":"LOCAL DRAFT"}</span></div><div className="flex gap-3"><span>MEMORY: {sceneNodes.length} SCENE NODES</span><span>GPU LOAD: NOT MEASURED BY BROWSER</span></div></footer>
-      </div>
-    </div>
-  );
+      <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600">
+        <div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name || "—"}</span><span>{cloudProjectActive?"CLOUD PROJECT":"LOCAL DRAFT"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>NEXORA STUDIO PRO</span></div>
+        <div className="flex gap-3"><span>{sceneNodes.length} SCENE NODES</span><span>GPU TELEMETRY: NOT AVAILABLE IN BROWSER</span></div>
+      </footer>
+    </NexoraStudioShell>
 
-}
+    {projectModalOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" onMouseDown={event=>{if(event.target===event.currentTarget&&!projectCreating)setProjectModalOpen(false);}}>
+      <form onSubmit={submitNewProject} className="w-full max-w-lg rounded-2xl border border-[#29415F] bg-[#101C2D] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">NEXORA PROJECT SETUP</div><h2 className="mt-1 text-lg font-black text-white">Create New Project</h2><p className="mt-1 text-xs text-slate-500">A project is created in your NEXORA cloud account when sync is available; otherwise a local draft is created.</p></div><button type="button" onClick={()=>setProjectModalOpen(false)} disabled={projectCreating} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close project dialog"><X size={17}/></button></div>
+        <label className="mt-5 block text-[10px] font-bold text-slate-400">PROJECT NAME<input autoFocus required maxLength="80" value={projectDraftName} onChange={e=>setProjectDraftName(e.target.value)} placeholder="e.g. Echoes of Orbit" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400/60"/></label>
+        <label className="mt-3 block text-[10px] font-bold text-slate-400">DESCRIPTION<textarea maxLength="2000" rows="3" value={projectDraftDescription} onChange={e=>setProjectDraftDescription(e.target.value)} placeholder="What are you building?" className="mt-1.5 w-full resize-y rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400/60"/></label>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={projectCreating} onClick={()=>setProjectModalOpen(false)} className="rounded-lg border border-[#29415F] px-4 py-2.5 text-xs font-bold text-slate-300">Cancel</button><button type="submit" disabled={projectCreating||!projectDraftName.trim()} className="rounded-lg bg-cyan-400 px-4 py-2.5 text-xs font-black text-[#04111A] disabled:opacity-40">{projectCreating?"Creating…":"Create Project"}</button></div>
+      </form>
+    </div>}
+
+    {taskModalOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" onMouseDown={event=>{if(event.target===event.currentTarget)setTaskModalOpen(false);}}>
+      <form onSubmit={saveTask} className="w-full max-w-2xl rounded-2xl border border-[#29415F] bg-[#101C2D] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">LOCAL PRODUCTION BOARD</div><h2 className="mt-1 text-lg font-black text-white">{taskEditingId?"Edit Task":"Create Task"}</h2><p className="mt-1 text-xs text-slate-500">Tasks are stored in this browser only. Team-wide sync is not connected.</p></div><button type="button" onClick={()=>setTaskModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close task dialog"><X size={17}/></button></div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <label className="block text-[10px] font-bold text-slate-400 sm:col-span-2">TASK TITLE<input autoFocus required maxLength="160" value={taskDraft.title} onChange={e=>setTaskDraft(current=>({...current,title:e.target.value}))} placeholder="e.g. Implement player inventory" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400/60"/></label>
+          <label className="block text-[10px] font-bold text-slate-400">LINKED PROJECT<select value={taskDraft.projectId} onChange={e=>setTaskDraft(current=>({...current,projectId:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"><option value="">No project</option>{projects.filter(project=>!project.archived).map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+          <label className="block text-[10px] font-bold text-slate-400">CATEGORY<select value={taskDraft.category} onChange={e=>setTaskDraft(current=>({...current,category:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white">{["Art","Code","Audio","Design","QA","World","Production","General"].map(value=><option key={value}>{value}</option>)}</select></label>
+          <label className="block text-[10px] font-bold text-slate-400">PRIORITY<select value={taskDraft.priority} onChange={e=>setTaskDraft(current=>({...current,priority:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+          <label className="block text-[10px] font-bold text-slate-400">STATUS<select value={taskDraft.status} onChange={e=>setTaskDraft(current=>({...current,status:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"><option value="backlog">Backlog</option><option value="in_progress">In Progress</option><option value="in_review">In Review</option><option value="done">Done</option></select></label>
+          <label className="block text-[10px] font-bold text-slate-400">ASSIGNEE<input maxLength="100" value={taskDraft.assignee||""} onChange={e=>setTaskDraft(current=>({...current,assignee:e.target.value}))} placeholder="Person / role" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"/></label>
+          <label className="block text-[10px] font-bold text-slate-400">DUE DATE<input type="date" value={taskDraft.dueDate||""} onChange={e=>setTaskDraft(current=>({...current,dueDate:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"/></label>
+          <label className="block text-[10px] font-bold text-slate-400 sm:col-span-2">DESCRIPTION<textarea rows="2" maxLength="1200" value={taskDraft.description||""} onChange={e=>setTaskDraft(current=>({...current,description:e.target.value}))} className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white"/></label>
+        </div>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={()=>setTaskModalOpen(false)} className="rounded-lg border border-[#29415F] px-4 py-2.5 text-xs font-bold text-slate-300">Cancel</button><button type="submit" disabled={!taskDraft.title.trim()} className="rounded-lg bg-cyan-400 px-4 py-2.5 text-xs font-black text-[#04111A]">{taskEditingId?"Save Changes":"Create Task"}</button></div>
+      </form>
+    </div>}
+    </>
+  );
