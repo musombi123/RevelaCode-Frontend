@@ -1,12 +1,11 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
-
-const RevelaDownload = registerPlugin("RevelaDownload");
+import { Capacitor } from "@capacitor/core";
+import { NativeDownloads } from "@/native/capacitorPlugins.js";
 
 const NATIVE_FILE_LIMIT_BYTES = 20 * 1024 * 1024;
 
 function getNativeDownloadPlugin() {
   if (!Capacitor.isNativePlatform()) return null;
-  return RevelaDownload;
+  return NativeDownloads;
 }
 
 async function blobToBase64(blob) {

@@ -1,6 +1,5 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
-
-const NativeDownloads = registerPlugin("RevelaDownload");
+import { Capacitor } from "@capacitor/core";
+import { NativeDownloads } from "@/native/capacitorPlugins.js";
 
 const MIME_TYPES = {
   pdf: "application/pdf",
