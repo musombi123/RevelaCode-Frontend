@@ -83,3 +83,11 @@ test("local team task board and unsupported marketplace integrations are labelle
   const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
   assert.match(shell, /Account quota is not exposed by this service/);
 });
+
+test("World Builder uses owner-scoped NEXORA endpoints and canonical save documents", () => {
+  const world = read("apps/nexora/src/components/nexora/NexoraWorldBuilderPanel.jsx");
+  assert.match(world, /\/api\/v1\/workspace\/projects\/.*\/world/);
+  assert.doesNotMatch(world, /["']\/api\/projects\//);
+  assert.match(world, /payload\.document/);
+  assert.match(world, /cloudProjectActive/);
+});
