@@ -21,6 +21,7 @@ test("generated code artifacts open directly in the existing RevelaAI workspace 
   assert.match(workspacePanel, /setTab\(artifact\?\.project \|\| hasEditableCodeIDE \? "ide" : "preview"\)/);
   assert.match(codeIde, /<CodeMirror/);
   assert.match(codeIde, /getEditableArtifact/);
+  assert.match(codeIde, /javascript\(\{ typescript: true, jsx: true \}\)/);
 });
 
 test("Code generation tool provides distinct Generate and Debug modes", () => {
