@@ -25,7 +25,7 @@ test("generated code artifacts open directly in the existing RevelaAI workspace 
 });
 
 test("Code generation tool provides distinct Generate and Debug modes", () => {
-  assert.match(inputBar, /"\/code": \{ kind: "code-studio"/);
+  assert.ok(inputBar.includes('["/code", "Code generation", Code2]'));
   assert.match(inputBar, /value:"generate",label:"Generate code"/);
   assert.match(inputBar, /value:"debug",label:"Debug & repair"/);
   assert.match(inputBar, /command === "code" \? \{ mode: activeMode \|\| "generate" \}/);
