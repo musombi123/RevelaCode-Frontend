@@ -3096,6 +3096,7 @@ export default function AIAssistantDashboard({
           authFetch={authFetch}
           onArtifactUpdated={(updated) => {
             if (!updated?.id) return;
+            updateArtifactRecord(updated.id, updated);
             setWorkspaceArtifact((current) => {
               if (!current) return current;
               const currentId = String(current.artifact?.id || current.id || "");
