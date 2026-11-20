@@ -6,6 +6,7 @@ on:
     paths:
       - "src/main.jsx"
       - "src/App.jsx"
+      - "public/revelacode-sw.js"
       - "README.md"
       - "docs/NEXORA_PATH_BASED_HOSTING.md"
       - "package.json"
