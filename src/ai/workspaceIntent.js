@@ -1,4 +1,4 @@
-const CREATION_VERB = /\b(?:create|make|prepare|generate|produce|build|draft|write|design|export|convert|turn|save)\b/i;
+const CREATION_VERB = /\b(?:create|make|prepare|generate|produce|build|draft|write|design|export|convert|turn|save|need|want|require|download|provide|deliver|attach|give)\b/i;
 const PRESENTATION_REQUEST = /\b(?:power\s*point|pptx|presentation(?:s)?|slide\s*deck|slides?)\b/i;
 const DOCUMENT_REQUEST = /\b(?:document|documents|pdf|pdfs|proposal|introduction|letter|memo|report|submission|letterhead|word)\b/i;
 const IMAGE_REQUEST = /\b(?:image|picture|photo|graphic|illustration|poster|flyer|leaflet|invitation|logo|banner|thumbnail|diagram|chart|visual|artwork)\b/i;
