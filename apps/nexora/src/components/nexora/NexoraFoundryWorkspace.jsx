@@ -372,9 +372,11 @@ export default function NexoraFoundryWorkspace() {
     const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
     if (!token) throw new Error("Connect your computer in NEXORA > Device Lab before opening projects or starting production.");
     const requested = String(input);
-    const path = requested.startsWith("http://") || requested.startsWith("https://")
-      ? requested
-      : LOCAL_ENGINE_BASE + (requested.startsWith("/") ? requested : "/" + requested);
+    const path = requested.startsWith(API_BASE + "/")
+      ? LOCAL_ENGINE_BASE + requested.slice(API_BASE.length)
+      : requested.startsWith("http://") || requested.startsWith("https://")
+        ? requested
+        : LOCAL_ENGINE_BASE + (requested.startsWith("/") ? requested : "/" + requested);
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", "Bearer " + token);
     headers.set("Accept", headers.get("Accept") || "application/json");
@@ -1676,7 +1678,7 @@ export default function NexoraFoundryWorkspace() {
             }}
             iconAssets={studioAssets.filter((asset)=>asset.type === "png")}
             disabled={!cloudProjectActive || busy}
-            deviceStatus="Android builds are exported by the NEXORA worker. USB/wireless installation and logcat use the paired local desktop bridge below."
+            deviceStatus="Game compilation runs on your paired computer. USB/wireless installation and logcat use the same local agent."
           />
           </section>
         </div>
@@ -1684,7 +1686,7 @@ export default function NexoraFoundryWorkspace() {
         <div hidden={studioView !== "device-lab"}>
           <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
             <h2 className="text-lg font-black text-cyan-200">DEVICE LAB</h2>
-            <p className="mt-1 text-xs text-slate-400">Pair this desktop browser with the NEXORA desktop companion to install builds, launch games and access device logs.</p>
+            <p className="mt-1 text-xs text-slate-400">Install and pair the local compute agent. Check CPU, RAM, GPU and storage before generating games, then connect Android devices for direct installation.</p>
           </section>
           <div className="mx-auto w-full max-w-5xl">
             <NexoraDeviceBridge
