@@ -71,7 +71,7 @@ export default function NexoraStudioShell({
     setWorkspaceOpen(false);
   };
   const userLabel = user?.display_name || user?.name || user?.email || "NEXORA Creator";
-  const initials = userLabel.split(/[\\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "NX";
+  const initials = userLabel.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "NX";
 
   const SidebarContent = ({ mobile = false }) => (
     <div className="flex h-full min-h-0 flex-col">
