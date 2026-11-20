@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, ChevronDown, FileDown, FileText, History,
+  ArrowLeft, ChevronDown, Download, FileDown, FileText, History,
   Image as ImageIcon, Plus, Redo2, Save, Sparkles, Undo2,
 } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
@@ -10,6 +10,7 @@ import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import {
   exportRevelaAIArtifact,
+  getRevelaAIArtifact,
   saveRevelaAIArtifactSource,
 } from "@/ai/revelaAIClient.js";
 import {
@@ -256,6 +257,31 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
     }
   };
 
+  const downloadOriginal = async () => {
+    if (!artifact?.id || busy) return;
+    setBusy("download");
+    setError("");
+    setNotice("Preparing original file…");
+    try {
+      const latest = await getRevelaAIArtifact({ authFetch, artifactId: artifact.id });
+      const current = latest || artifact;
+      const url = resolveRevelaAIArtifactUrl(current.download_url || artifact.download_url);
+      const name = current.filename || (String(current.title || "RevelaAI-file").replace(/[^a-z0-9._-]+/gi, "-") + ".bin");
+      const outcome = await downloadRemoteArtifact(url, {
+        fileName: name,
+        mimeType: current.mime_type || "application/octet-stream",
+      });
+      setArtifact(current);
+      onArtifactUpdated?.(current);
+      setNotice(outcome.method === "native" ? "Original saved to Android Downloads/RevelaCode." : "Original download started.");
+    } catch (downloadError) {
+      setError(String(downloadError?.message || "The original file could not be downloaded."));
+      setNotice("");
+    } finally {
+      setBusy("");
+    }
+  };
+
   const supportedExports = useMemo(() => {
     if (kind === "document") return ["DOCX", "PDF"];
     if (kind === "spreadsheet") return ["XLSX", "CSV"];
@@ -329,6 +355,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
           {artifact?.can_undo && <button type="button" disabled={Boolean(busy)} onClick={() => void runHistoryAction("undo")} className="hidden h-10 items-center gap-1 rounded-lg border border-line px-3 text-xs sm:inline-flex"><Undo2 size={14}/> Undo</button>}
           {artifact?.can_redo && <button type="button" disabled={Boolean(busy)} onClick={() => void runHistoryAction("redo")} className="hidden h-10 items-center gap-1 rounded-lg border border-line px-3 text-xs sm:inline-flex"><Redo2 size={14}/> Redo</button>}
           <button type="button" disabled={!canSave} onClick={() => void save()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"><Save size={14}/>{busy === "save" ? "Saving" : "Save"}</button>
+          <button type="button" disabled={Boolean(busy) || !artifact?.download_url} onClick={() => void downloadOriginal()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary disabled:opacity-40"><Download size={14}/> Original</button>
           <div className="relative">
             <button type="button" disabled={!supportedExports.length || Boolean(busy) || dirty} onClick={() => setExportOpen((value) => !value)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-line px-3 text-xs font-semibold text-fg-secondary disabled:opacity-40"><FileDown size={14}/> Export <ChevronDown size={13}/></button>
             {exportOpen && <div className="absolute right-0 top-12 z-20 w-44 rounded-xl border border-line bg-popover p-1 shadow-xl">{supportedExports.map((format) => <button key={format} type="button" onClick={() => void exportFormat(format)} className="flex min-h-10 w-full items-center rounded-lg px-3 text-left text-xs font-semibold hover:bg-surface-2">{format}</button>)}</div>}
