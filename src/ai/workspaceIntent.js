@@ -98,6 +98,11 @@ export function inferWorkspaceExport(prompt, attachedFile = null) {
       }
       return { ...mapped, extension };
     }
+    return {
+      command: "/export-unsupported",
+      extension,
+      message: "RevelaAI does not currently generate ." + extension + " files. It will not substitute another extension. Supported exports include DOCX, PDF, PPTX, XLSX, CSV, TXT, Markdown, PNG, JPG, SVG and the registered source-code formats.",
+    };
   }
 
   if (PRESENTATION_REQUEST.test(text)) return { command: "/deck", format: "powerpoint", extension: "pptx" };
