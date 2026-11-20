@@ -28,6 +28,7 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
+import LocalWorkspaceProposalReview from "@/components/LocalWorkspaceProposalReview.jsx";
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
@@ -166,6 +167,20 @@ function buildWorkspaceArtifact(result, title, prompt) {
     verification: result?.verification || null,
     source_prompt: prompt,
   };
+}
+
+function buildLocalWorkspaceProposal(toolExecution) {
+  const outcomes = Array.isArray(toolExecution?.results)
+    ? toolExecution.results
+    : (Array.isArray(toolExecution?.tool_results) ? toolExecution.tool_results : []);
+  const outcome = outcomes.find((item) =>
+    item?.tool === "revelaai_propose_local_project_changes" &&
+    item?.status === "proposed" &&
+    item?.executed === false
+  );
+  const proposal = outcome?.result?.proposal;
+  if (!proposal || !Array.isArray(proposal.files) || !proposal.files.length) return null;
+  return proposal;
 }
 
 function buildNativeWorkspaceArtifact(toolExecution, title, prompt) {
@@ -616,6 +631,7 @@ export default function AIAssistantDashboard({
   const [messages, setMessages] =
     useState([]);
   const [workspaceArtifact, setWorkspaceArtifact] = useState(null);
+  const [localWorkspaceProposal, setLocalWorkspaceProposal] = useState(null);
   const [studioArtifact, setStudioArtifact] = useState(null);
   const [filesLibraryOpen, setFilesLibraryOpen] = useState(false);
 
@@ -1768,6 +1784,10 @@ export default function AIAssistantDashboard({
             window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
 
             const imagePayload = payload?.data || payload || {};
+            const localProjectProposal = buildLocalWorkspaceProposal(imagePayload?.tool_execution);
+            if (localProjectProposal) {
+              setLocalWorkspaceProposal(localProjectProposal);
+            }
             nativeWorkspaceArtifact = buildNativeWorkspaceArtifact(
               imagePayload?.tool_execution,
               workspaceOutputTitle(requestMessage || cleaned, "RevelaAI output"),
@@ -3056,6 +3076,18 @@ export default function AIAssistantDashboard({
           </section>
         )}
       </main>
+
+      {localWorkspaceProposal && (
+        <LocalWorkspaceProposalReview
+          proposal={localWorkspaceProposal}
+          onClose={() => setLocalWorkspaceProposal(null)}
+          onApplied={() => {
+            window.dispatchEvent(new CustomEvent("revelaai:local-project-changed", {
+              detail: { proposalId: localWorkspaceProposal.proposal_id },
+            }));
+          }}
+        />
+      )}
 
       {workspaceArtifact && (
         <RevelaAIWorkspacePanel
