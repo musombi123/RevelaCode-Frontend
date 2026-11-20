@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import {
-  Activity, ArrowRight, ArrowUpRight, Box, CheckCircle2, ChevronRight,
-  Code2, FolderOpen, Gamepad2, Globe, HardDrive, Image as ImageIcon,
-  Layers3, Music, Play, RefreshCw, ShieldCheck, Sparkles, Users,
-  Zap, Monitor, Smartphone, CircleAlert, Cloud
+  Activity, ArrowRight, Box, CheckCircle2, ChevronRight, Code2, FolderOpen,
+  HardDrive, Image as ImageIcon, Layers3, Music, Play, RefreshCw,
+  ShieldCheck, Sparkles, Users, Zap, Monitor, Smartphone, AlertCircle
 } from "lucide-react";
 
 const panel = "rounded-xl border border-[#20334B] bg-[#0D1828]";
@@ -173,7 +172,7 @@ export default function NexoraStudioOverview({
     { id: "in_review", label: "IN REVIEW", tone: "amber" },
     { id: "done", label: "DONE", tone: "green" }
   ];
-  const latestProgress = Number.isFinite(Number(latestJob?.progress)) ? Math.max(0, Math.min(100, Number(latestJob.progress))) : null;
+  const latestProgress = latestJob?.progress != null && Number.isFinite(Number(latestJob.progress)) ? Math.max(0, Math.min(100, Number(latestJob.progress))) : null;
 
   return <div className="space-y-3">
     <section className="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-4">
@@ -219,7 +218,7 @@ export default function NexoraStudioOverview({
             <div className="text-center"><div className="text-[27px] font-black leading-none text-white">{healthScore}%</div><div className="mt-1 text-[10px] font-bold text-emerald-300">{healthScore >= 75 ? "Healthy" : "Attention"}</div></div>
           </div>
         </div>
-        <div className="mt-3 space-y-2.5">{healthChecks.map(item => <div key={item.label} className="flex items-center gap-2.5 text-[10px]"><span className={"flex h-4 w-4 shrink-0 items-center justify-center rounded-full " + (item.ok ? "bg-emerald-500 text-[#04150d]" : "bg-amber-500/15 text-amber-300")}>{item.ok ? <CheckCircle2 size={13} strokeWidth={3}/> : <CircleAlert size={13}/>}</span><span className="min-w-0 flex-1 text-slate-200">{item.label}</span><span className={"max-w-[48%] truncate text-right " + (item.ok ? "text-emerald-300" : "text-amber-200")}>{item.detail}</span></div>)}</div>
+        <div className="mt-3 space-y-2.5">{healthChecks.map(item => <div key={item.label} className="flex items-center gap-2.5 text-[10px]"><span className={"flex h-4 w-4 shrink-0 items-center justify-center rounded-full " + (item.ok ? "bg-emerald-500 text-[#04150d]" : "bg-amber-500/15 text-amber-300")}>{item.ok ? <CheckCircle2 size={13} strokeWidth={3}/> : <AlertCircle size={13}/>}</span><span className="min-w-0 flex-1 text-slate-200">{item.label}</span><span className={"max-w-[48%] truncate text-right " + (item.ok ? "text-emerald-300" : "text-amber-200")}>{item.detail}</span></div>)}</div>
       </article>
     </section>
 
