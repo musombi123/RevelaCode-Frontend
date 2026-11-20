@@ -129,7 +129,20 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   }, [view, projectId, loadStatus, loadProjectFiles, loadSnapshots, loadToolchains, loadPublishing, loadDriveData]);
 
   const chooseWorkspace = () => run("workspace", async () => {
-    const result = await request("/api/v1/desktop/workspace", { method: "PUT", body: JSON.stringify({ path: workspacePath }) });
+    let result;
+    try {
+      result = await request("/api/v1/desktop/workspace", {
+        method: "PUT",
+        body: JSON.stringify({ path: workspacePath, confirm_migration: false }),
+      });
+    } catch (cause) {
+      const message = String(cause?.message || "");
+      if (!message.includes("will be copied") || !window.confirm(message + "\\n\\nThe previous folder will remain untouched. Continue?")) throw cause;
+      result = await request("/api/v1/desktop/workspace", {
+        method: "PUT",
+        body: JSON.stringify({ path: workspacePath, confirm_migration: true }),
+      });
+    }
     await loadStatus();
     await onRefresh();
     return result;
