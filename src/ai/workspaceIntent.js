@@ -179,3 +179,31 @@ export function selectWorkspaceCommand(selectedToolCommand, inferredCommand, val
   if (selected && valid.has(selected)) return selected;
   return selected || inferred || null;
 }
+
+
+/**
+ * Resolve referential export requests against the latest available assistant
+ * text. Source text is bounded and explicitly marked as content, not commands.
+ */
+export function buildWorkspaceExportPrompt(prompt, previousAssistantText) {
+  const instruction = String(prompt || "").trim();
+  const source = String(previousAssistantText || "").trim();
+  const refersToPrior = /\b(?:this|that|it|above|previous|last|same|the answer|the response|the content)\b/i.test(instruction);
+  const asksToExport = /\b(?:export|convert|save|download|turn|format|make|create|produce)\b/i.test(instruction);
+  if (!instruction || !source || !refersToPrior || !asksToExport) return instruction;
+
+  const instructionLimit = Math.min(instruction.length, 2500);
+  const boundedInstruction = instruction.slice(0, instructionLimit);
+  const sourceLimit = Math.max(0, 11000 - boundedInstruction.length);
+  const boundedSource = source.slice(0, sourceLimit);
+  return [
+    "User export instruction:",
+    boundedInstruction,
+    "",
+    "Create the requested file using the following existing conversation content as the source. Preserve its meaning, named entities, structure and factual details. Do not answer with a description of how to create the file.",
+    "",
+    "<conversation_source>",
+    boundedSource,
+    "</conversation_source>",
+  ].join("\n");
+}
