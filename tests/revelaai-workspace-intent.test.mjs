@@ -42,3 +42,74 @@ test("natural-language artifact intent overrides an unrelated selected shortcut"
   assert.equal(selectWorkspaceCommand("/deck", null, commands), "/deck");
   assert.equal(selectWorkspaceCommand("/search", null, commands), "/search");
 });
+
+
+
+test("routes every registered Office and text extension to the matching exporter", () => {
+  const cases = [
+    ["Create a document as .docx", "/doc"],
+    ["Export this report as .pdf", "/doc"],
+    ["Generate slides as .pptx", "/deck"],
+    ["Create an Excel workbook as .xlsx", "/sheet"],
+    ["Create a data export as .csv", "/sheet"],
+    ["Create a Markdown guide as .md", "/doc"],
+    ["Create a plain text file as .txt", "/doc"],
+  ];
+  for (const [prompt, command] of cases) {
+    assert.equal(inferWorkspaceCommand(prompt), command, prompt);
+  }
+});
+
+test("preserves the exact Office or text output format in the export descriptor", () => {
+  const cases = [
+    ["Create a document as .docx", "word"],
+    ["Export this report as .pdf", "pdf"],
+    ["Generate slides as .pptx", "powerpoint"],
+    ["Create an Excel workbook as .xlsx", "spreadsheet"],
+    ["Create a data export as .csv", "csv"],
+    ["Create a Markdown guide as .md", "markdown"],
+    ["Create a plain text file as .txt", "text"],
+  ];
+  for (const [prompt, format] of cases) {
+    assert.equal(inferWorkspaceExport(prompt)?.format, format, prompt);
+  }
+});
+
+test("routes registered source-code extensions to code generation with the requested language", () => {
+  const cases = [
+    [".py", "python"], [".js", "javascript"], [".jsx", "jsx"], [".ts", "typescript"],
+    [".tsx", "tsx"], [".html", "html"], [".css", "css"], [".json", "json"],
+    [".sql", "sql"], [".sh", "bash"], [".go", "go"], [".rs", "rust"],
+    [".java", "java"], [".c", "c"], [".cpp", "cpp"], [".cs", "csharp"],
+    [".php", "php"], [".rb", "ruby"], [".swift", "swift"], [".kt", "kotlin"],
+  ];
+  for (const [extension, language] of cases) {
+    const request = inferWorkspaceExport("Generate source code as " + extension);
+    assert.equal(request?.command, "/code", extension);
+    assert.equal(request?.language, language, extension);
+  }
+});
+
+test("routes image exports to Image Studio with the requested format", () => {
+  for (const extension of ["png", "jpg", "jpeg", "svg"]) {
+    const request = inferWorkspaceExport("Generate a poster as ." + extension);
+    assert.equal(request?.command, "/image", extension);
+    assert.equal(request?.outputFormat, extension === "jpeg" ? "jpg" : extension, extension);
+  }
+  const pdfImage = inferWorkspaceExport("Create a promotional poster as .pdf");
+  assert.equal(pdfImage?.command, "/image");
+  assert.equal(pdfImage?.outputFormat, "pdf");
+});
+
+test("unsupported legacy or media formats are surfaced rather than silently substituted", () => {
+  for (const extension of ["doc", "xls", "ppt", "odt", "ods", "odp", "rtf", "gif", "mp4", "zip"]) {
+    const request = inferWorkspaceExport("Export this file as ." + extension);
+    assert.equal(request?.command, "/export-unsupported", extension);
+    assert.match(request?.message || "", /will not substitute/i);
+  }
+});
+
+test("ordinary topic mentions do not trigger an export tool", () => {
+  assert.equal(inferWorkspaceCommand("Explain how CSV data is structured."), null);
+  assert.equal(inferWorkspaceCommand("What is a PDF document?"), null);
+});
