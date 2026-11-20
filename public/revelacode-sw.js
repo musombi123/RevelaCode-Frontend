@@ -25,7 +25,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // NEXORA is served by an independent origin behind the /dev_nexora path proxy.
+  // NEXORA is a separately built application published under /dev_nexora.
   // Do not intercept its navigation or assets with RevelaCode's shell cache.
   if (url.pathname === "/dev_nexora" || url.pathname.startsWith("/dev_nexora/")) return;
   if (/^\/(api|auth|admin|socket\.io)(\/|$)/i.test(url.pathname)) return;
