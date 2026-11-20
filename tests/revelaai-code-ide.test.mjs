@@ -83,3 +83,15 @@ test("a real run error is passed into the AI repair prompt with its source file"
   assert.match(dashboard, /Current source code/);
   assert.match(dashboard, /Return the complete corrected source file/);
 });
+
+
+test("existing tool picker choices remain available alongside the programming IDE", () => {
+  for (const label of [
+    "Image Studio", "Spreadsheet", "PowerPoint", "Word document", "UI prototype",
+    "Deep Search", "Data analysis", "Accounting", "Quantum science", "Robotics",
+    "Code generation", "Publications", "Campaign studio", "Humanizer",
+  ]) {
+    assert.ok(inputBar.includes(label), "Missing existing tool option: " + label);
+  }
+  assert.match(inputBar, /\["\\/code", "Code generation", Code2\]/);
+});
