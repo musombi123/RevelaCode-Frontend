@@ -7,7 +7,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import { Download, ExternalLink, FileCode2, Play, Save, ShieldCheck, Square, Terminal } from "lucide-react";
 import { resolveRevelaAIArtifactUrl } from "@/components/utils/saveGeneratedFile";
 import { downloadRemoteArtifact } from "@/components/utils/saveGeneratedFile";
-import { getLocalWorkspaceAgentConfig, validateLocalWorkspaceSource, writeLocalWorkspaceFile } from "@/ai/localWorkspaceAgent";
+import { getLocalWorkspaceAgentConfig, runLocalWorkspaceCommand, validateLocalWorkspaceSource, writeLocalWorkspaceFile } from "@/ai/localWorkspaceAgent";
 import { runCode, stopCode } from "@/ide/runners";
 
 function languageForPath(path = "") {
@@ -50,6 +50,9 @@ export default function RevelaAIProjectIDE({ project, onDownload }) {
   const [running, setRunning] = useState(false);
   const [previewDoc, setPreviewDoc] = useState("");
   const [consoleLines, setConsoleLines] = useState([]);
+  const [terminalCommand, setTerminalCommand] = useState("help");
+  const [terminalLines, setTerminalLines] = useState([]);
+  const [terminalBusy, setTerminalBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [localConfig, setLocalConfig] = useState(() => getLocalWorkspaceAgentConfig());
@@ -144,6 +147,26 @@ export default function RevelaAIProjectIDE({ project, onDownload }) {
     stopCode(language);
     setRunning(false);
     setConsoleLines((items) => [...items, { type: "err", text: "Worker stopped." }]);
+  };
+
+  const executeTerminalCommand = async (event) => {
+    event?.preventDefault?.();
+    const command = String(terminalCommand || "").trim();
+    if (!command) return;
+    setTerminalBusy(true);
+    setTerminalLines((items) => [...items, { type: "cmd", text: "$ " + command }]);
+    try {
+      const result = await runLocalWorkspaceCommand(command, localConfig);
+      setTerminalLines((items) => [...items, {
+        type: result.status === "invalid" ? "err" : "out",
+        text: String(result.output || "(command completed without output)"),
+      }]);
+    } catch (cause) {
+      setTerminalLines((items) => [...items, { type: "err", text: cause?.message || "Local terminal request failed." }]);
+    } finally {
+      setTerminalBusy(false);
+      setTerminalCommand("");
+    }
   };
 
   const saveToLocalProject = async () => {
@@ -248,6 +271,32 @@ export default function RevelaAIProjectIDE({ project, onDownload }) {
           </div>
         </div>
       </div>
+
+      <section className="overflow-hidden rounded-xl border border-line bg-[#0d1117]" aria-label="Local project terminal">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-gray-200"><Terminal size={13}/> Local Project Terminal</div>
+          <span className="text-[10px] text-gray-500">Restricted · read-only · no shell</span>
+        </div>
+        <div className="max-h-48 space-y-1 overflow-auto px-3 py-2 font-mono text-[11px] leading-5" aria-live="polite">
+          {terminalLines.length ? terminalLines.map((line, index) => (
+            <pre key={index} className={"whitespace-pre-wrap break-words " + (line.type === "err" ? "text-red-400" : line.type === "cmd" ? "text-cyan-300" : "text-gray-200")}>{line.text}</pre>
+          )) : <p className="text-gray-600">Connect the local agent to inspect and validate the selected project folder.</p>}
+        </div>
+        <form onSubmit={executeTerminalCommand} className="flex gap-2 border-t border-white/10 p-2">
+          <span className="flex items-center pl-1 font-mono text-xs text-emerald-400">$</span>
+          <input value={terminalCommand} onChange={(event) => setTerminalCommand(event.target.value)}
+            placeholder={localConfig.token ? "help, pwd, ls, find, cat src/app.js, grep login src/auth.js, validate src/main.py" : "Connect the local agent to enable terminal commands"}
+            disabled={!localConfig.token || terminalBusy}
+            className="min-h-10 min-w-0 flex-1 bg-transparent font-mono text-xs text-gray-100 outline-none placeholder:text-gray-600 disabled:opacity-40"/>
+          <button type="submit" disabled={!localConfig.token || terminalBusy || !terminalCommand.trim()}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white disabled:opacity-40">
+            {terminalBusy ? "Running…" : "Run"}
+          </button>
+        </form>
+        <p className="border-t border-white/10 px-3 py-2 text-[10px] leading-4 text-gray-500">
+          Allowed commands: <code>help</code>, <code>pwd</code>, <code>ls</code>, <code>find</code>, <code>cat</code>, <code>grep</code>, <code>validate</code>. The local agent never invokes a system shell, installs packages, or runs arbitrary commands.
+        </p>
+      </section>
 
       {project?.preview_url && <div className="space-y-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-muted"><ShieldCheck size={13}/> Live isolated preview</div>
