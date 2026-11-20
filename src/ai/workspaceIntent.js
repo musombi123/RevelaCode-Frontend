@@ -45,13 +45,13 @@ const EXTENSION_OUTPUTS = {
 };
 
 const UNSUPPORTED_EXTENSIONS = new Set([
-  "doc", "xls", "ppt", "odt", "ods", "odp", "rtf", "gif", "mp4", "zip", "7z",
+  "doc", "xls", "ppt", "odt", "ods", "odp", "rtf", "gif", "mp4", "webp", "zip", "7z",
 ]);
 
 function fileExtensionRequest(text) {
   const value = String(text || "");
   const target = value.match(
-    /\b(?:as|to|into|in|format|export|save|download)\s+(?:(?:a|an|the)\s+)?(?:file\s+as\s+)?(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|xml|yaml|yml|toml|ini|doc|xls|ppt|odt|ods|odp|rtf|gif|mp4|zip|7z)\b/i
+    /\b(?:as|to|into|in|format|export|save|download)\s+(?:(?:a|an|the)\s+)?(?:file\s+as\s+)?(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|xml|yaml|yml|toml|ini|doc|xls|ppt|odt|ods|odp|rtf|gif|mp4|webp|zip|7z)\b/i
   );
   if (target) {
     const raw = String(target[1] || "").toLowerCase();
@@ -88,7 +88,8 @@ function fileExtensionRequest(text) {
   const after = value.slice(named.index + named[0].length, named.index + named[0].length + 24);
   const exportCue = /\b(?:as|to|into|format|extension|export|save|download)\s*$/i.test(before)
     || /^\s*(?:file|format|export|output|document|workbook|deck)\b/i.test(after)
-    || /^(?:pptx|docx|xlsx|csv|pdf|markdown|md|txt)$/i.test(token);
+    || /^(?:pptx|docx|xlsx|csv|pdf|markdown|md|txt)$/i.test(token)
+    || UNSUPPORTED_EXTENSIONS.has(token);
   return exportCue ? token : "";
 }
 
