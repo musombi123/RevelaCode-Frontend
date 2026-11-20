@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { downloadFile } from "@/components/utils/downloadFile.js";
-import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
+import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical, Maximize2 } from "lucide-react";
 import {
   downloadRemoteArtifact,
   resolveRevelaAIArtifactUrl,
@@ -20,7 +20,7 @@ const MIME_BY_EXTENSION = {
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
 
-export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
+export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onOpenStudio }) {
   const [tab, setTab] = useState("preview");
   const [filter, setFilter] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
@@ -258,10 +258,31 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
         </div>}
 
         {tab === "code" && <pre className="max-h-[42dvh] overflow-auto whitespace-pre-wrap rounded-xl bg-code p-3 text-xs text-fg-secondary">{artifact.code || "No source code was attached to this output."}</pre>}
-        {tab === "versions" && <p className="text-sm text-muted">Version history is not yet available for this artifact type.</p>}
+        {tab === "versions" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div><h3 className="text-sm font-bold text-fg">Version history</h3><p className="mt-1 text-xs text-muted">Each saved edit is kept as an immutable version.</p></div>
+              <span className="rounded-full border border-line px-2 py-1 text-[10px] font-semibold text-muted">Current v{Number(artifact.version || 1)}</span>
+            </div>
+            {(artifact.version_history || []).length ? (artifact.version_history || []).map((version) => (
+              <div key={version.version} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-fg">Version {version.version} {version.active ? "· Current" : ""}</p>
+                  <p className="mt-1 text-[11px] text-muted">{version.created_at ? new Date(version.created_at).toLocaleString() : "Date unavailable"}</p>
+                  <p className="mt-1 truncate text-[10px] text-muted">{(version.formats || []).join(" · ")}</p>
+                </div>
+                {version.active && <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">Active</span>}
+              </div>
+            )) : <p className="text-sm text-muted">The first saved version is ready. Future saves will appear here.</p>}
+            {onOpenStudio && <button type="button" onClick={onOpenStudio} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary hover:bg-surface-2"><Maximize2 size={14}/> Manage versions in Studio</button>}
+          </div>
+        )}
       </div>
 
       <footer className="flex flex-wrap gap-2 border-t border-line p-3">
+        {onOpenStudio && <button type="button" onClick={onOpenStudio} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-semibold text-white hover:bg-accent-hover">
+          <Maximize2 size={14}/> Open in Studio
+        </button>}
         <button type="button" onClick={onAskAI} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/30 px-3 text-xs font-semibold text-accent hover:bg-accent/10">
           <MessageSquare size={14}/> Ask AI to change this
         </button>

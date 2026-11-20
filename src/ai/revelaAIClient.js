@@ -438,3 +438,126 @@ export async function analyzeRevelaAIVision({
   }
   return { ...payload, ...data };
 }
+
+
+async function artifactRequest({ authFetch, path, method = "GET", body, file }) {
+  if (typeof authFetch !== "function") {
+    throw new Error("Sign in to access your RevelaAI Files Library.");
+  }
+  const headers = { Accept: "application/json" };
+  let requestBody;
+  if (file) {
+    requestBody = new FormData();
+    requestBody.append("file", file, file.name || "upload");
+    if (body?.title) requestBody.append("title", String(body.title));
+  } else if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    requestBody = JSON.stringify(body);
+  }
+  const response = await authFetch(API_BASE + path, {
+    method,
+    headers,
+    ...(requestBody !== undefined ? { body: requestBody } : {}),
+  });
+  let payload = {};
+  try { payload = await response.json(); } catch { /* Use a stable error below. */ }
+  if (!response.ok || payload?.status === "error" || payload?.success === false) {
+    const detail = payload?.detail;
+    const message = typeof detail === "string"
+      ? detail
+      : detail?.message || payload?.message || payload?.error?.message
+        || "RevelaAI file request failed (HTTP " + response.status + ").";
+    const error = new Error(String(message));
+    error.status = response.status;
+    error.code = detail?.code || payload?.error?.code;
+    throw error;
+  }
+  return payload;
+}
+
+export async function listRevelaAIArtifacts({
+  authFetch, query = "", type = "", folder, includeTrash = false, trashOnly = false, limit = 100,
+}) {
+  const params = new URLSearchParams({ limit: String(Math.max(1, Math.min(100, Number(limit) || 100))) });
+  if (query.trim()) params.set("q", query.trim());
+  if (type) params.set("type", type);
+  if (folder !== undefined && folder !== null) params.set("folder", folder);
+  if (includeTrash) params.set("include_trash", "true");
+  if (trashOnly) params.set("trash_only", "true");
+  const payload = await artifactRequest({ authFetch, path: "/api/artifacts?" + params.toString() });
+  return Array.isArray(payload?.artifacts) ? payload.artifacts : [];
+}
+
+export async function getRevelaAIArtifact({ authFetch, artifactId }) {
+  const payload = await artifactRequest({
+    authFetch, path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")),
+  });
+  return payload?.artifact || null;
+}
+
+export async function uploadRevelaAIArtifact({ authFetch, file, title = "" }) {
+  if (!(file instanceof File)) throw new Error("Choose a file to import.");
+  if (file.size <= 0 || file.size > 15 * 1024 * 1024) {
+    throw new Error("Choose a non-empty file no larger than 15 MB.");
+  }
+  const payload = await artifactRequest({
+    authFetch, path: "/api/artifacts", method: "POST", file,
+    body: { title: String(title || file.name).slice(0, 180) },
+  });
+  return payload?.artifact || null;
+}
+
+export async function setRevelaAIArtifactEditorState({ authFetch, artifactId, action }) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/edit",
+    method: "POST",
+    body: { action },
+  });
+  return payload?.artifact || null;
+}
+
+export async function saveRevelaAIArtifactSource({
+  authFetch, artifactId, expectedVersion, source,
+}) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/content",
+    method: "PUT",
+    body: { expected_version: Number(expectedVersion), source },
+  });
+  return payload?.artifact || null;
+}
+
+export async function exportRevelaAIArtifact({
+  authFetch, artifactId, expectedVersion, format,
+}) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/exports",
+    method: "POST",
+    body: { expected_version: Number(expectedVersion), format: String(format || "").toUpperCase() },
+  });
+  return { artifact: payload?.artifact || null, downloadUrl: payload?.export?.download_url || "" };
+}
+
+export async function updateRevelaAIArtifactMetadata({
+  authFetch, artifactId, changes,
+}) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")),
+    method: "PATCH",
+    body: changes || {},
+  });
+  return payload?.artifact || null;
+}
+
+export async function trashRevelaAIArtifact({ authFetch, artifactId }) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")),
+    method: "DELETE",
+  });
+  return payload?.artifact || null;
+}

@@ -16,7 +16,8 @@
     "test:staff-invitations": "node --test tests/jumuiya-staff-invitations.test.mjs",
     "test:revelaai-workspace": "node --test tests/revelaai-workspace-integration.test.mjs tests/revelaai-artifact-cards.test.mjs",
     "build:nexora": "vite build apps/nexora --config apps/nexora/vite.config.js",
-    "build:web": "npm run build:nexora && npm run build && node scripts/verify-nexora-static-output.mjs"
+    "build:web": "npm run build:nexora && npm run build && node scripts/verify-nexora-static-output.mjs",
+    "test:studio-library": "node --test tests/revelaai-studio-library.test.mjs"
   },
   "engines": {
     "node": "22.x"
@@ -47,7 +48,8 @@
     "tailwind-merge": "^3.4.0",
     "@capacitor/app": "^8.1.2",
     "@capgo/capacitor-speech-recognition": "^8.5.1",
-    "@capgo/capacitor-speech-synthesis": "^8.0.27"
+    "@capgo/capacitor-speech-synthesis": "^8.0.27",
+    "@codemirror/lang-css": "^6.3.1"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

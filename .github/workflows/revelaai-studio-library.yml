@@ -1,0 +1,49 @@
+name: RevelaAI Studio and Files Library
+
+on:
+  pull_request:
+    paths:
+      - "src/ai/revelaAIClient.js"
+      - "src/components/AIAssistantDashboard.jsx"
+      - "src/components/ArtifactResultCard.jsx"
+      - "src/components/RevelaAIStudio.jsx"
+      - "src/components/RevelaAIFilesLibrary.jsx"
+      - "src/components/RevelaAIWorkspacePanel.jsx"
+      - "tests/revelaai-studio-library.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/revelaai-studio-library.yml"
+  push:
+    paths:
+      - "src/ai/revelaAIClient.js"
+      - "src/components/AIAssistantDashboard.jsx"
+      - "src/components/ArtifactResultCard.jsx"
+      - "src/components/RevelaAIStudio.jsx"
+      - "src/components/RevelaAIFilesLibrary.jsx"
+      - "src/components/RevelaAIWorkspacePanel.jsx"
+      - "tests/revelaai-studio-library.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/revelaai-studio-library.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  studio-library:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Run Studio and Library regression tests
+        run: npm run test:studio-library
+      - name: Build RevelaCode frontend
+        run: npm run build

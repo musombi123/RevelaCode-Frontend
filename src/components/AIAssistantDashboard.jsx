@@ -22,12 +22,15 @@ import {
   Camera,
   WifiOff,
   Pencil,
+  FolderOpen,
 } from "lucide-react";
 
 import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
+import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
+import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
@@ -557,6 +560,8 @@ export default function AIAssistantDashboard({
   const [messages, setMessages] =
     useState([]);
   const [workspaceArtifact, setWorkspaceArtifact] = useState(null);
+  const [studioArtifact, setStudioArtifact] = useState(null);
+  const [filesLibraryOpen, setFilesLibraryOpen] = useState(false);
 
   const [sidebarOpen, setSidebarOpen] =
     useState(!compactMode);
@@ -2221,6 +2226,27 @@ export default function AIAssistantDashboard({
       return payload || {};
     };
 
+    if (action === "preview") {
+      const detail = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId));
+      const freshArtifact = detail?.artifact || artifact;
+      updateArtifactRecord(artifactId, freshArtifact);
+      setWorkspaceArtifact(freshArtifact);
+      return { message: "Opened the attachment preview.", artifact: freshArtifact };
+    }
+
+    if (action === "open_studio") {
+      const detail = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId));
+      const opened = await requestJson(
+        apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit",
+        { method: "POST", body: JSON.stringify({ action: "user_opened" }) }
+      );
+      const nextArtifact = opened?.artifact || detail?.artifact;
+      if (!nextArtifact?.id) throw new Error("RevelaAI could not load this file into Studio.");
+      updateArtifactRecord(artifactId, nextArtifact);
+      setStudioArtifact(nextArtifact);
+      return { message: "Opened in RevelaAI Studio.", artifact: nextArtifact };
+    }
+
     const editAction = async (editPayload) => {
       const payload = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit", { method: "POST", body: JSON.stringify(editPayload) });
       if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
@@ -2767,6 +2793,15 @@ export default function AIAssistantDashboard({
             </div>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setFilesLibraryOpen(true)}
+            className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-fg-secondary transition hover:bg-surface-2 hover:text-fg"
+            aria-label="Open Files Library"
+            title="My Files"
+          >
+            <FolderOpen size={15}/> <span className="hidden sm:inline">My Files</span>
+          </button>
           <span className="w-1 shrink-0" aria-hidden="true"/>
         </header>
 
@@ -2926,10 +2961,77 @@ export default function AIAssistantDashboard({
         <RevelaAIWorkspacePanel
           artifact={workspaceArtifact}
           onClose={() => setWorkspaceArtifact(null)}
+          onOpenStudio={() => void handleArtifactAction("open_studio", workspaceArtifact)}
           onAskAI={() => {
             const revisionPrompt = "Revise the latest generated artifact titled " + JSON.stringify(workspaceArtifact.title) + ". Original brief: " + String(workspaceArtifact.source_prompt || "").slice(0, 1400) + ". Preserve correct facts and only apply these changes: ";
             window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: revisionPrompt } }));
             setWorkspaceArtifact(null);
+          }}
+        />
+      )}
+
+      {studioArtifact && (
+        <RevelaAIStudio
+          artifact={studioArtifact}
+          authFetch={authFetch}
+          onClose={() => setStudioArtifact(null)}
+          onArtifactUpdated={(updated) => {
+            if (updated?.id) {
+              updateArtifactRecord(updated.id, updated);
+              setStudioArtifact(updated);
+            }
+          }}
+          onAskAI={async (artifact) => {
+            const artifactId = String(artifact?.id || "");
+            const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            try {
+              const response = await authFetch(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId) + "/edit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ action: "returned" }),
+              });
+              const payload = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(payload?.detail?.message || payload?.detail || "Could not return this file to chat.");
+              if (payload?.artifact) updateArtifactRecord(artifactId, payload.artifact);
+              setStudioArtifact(null);
+              const prompt = "Help me improve the file " + JSON.stringify(artifact?.title || "RevelaAI artifact") +
+                " (artifact ID " + artifactId + "). Ask for my requested changes and propose one reviewable edit at a time. Do not change the saved file without my confirmation.";
+              window.dispatchEvent(new CustomEvent("revelaai:fill-composer", { detail: { text: prompt, artifactId } }));
+            } catch (error) {
+              window.alert(error?.message || "Could not return this file to chat.");
+            }
+          }}
+        />
+      )}
+
+      {filesLibraryOpen && (
+        <RevelaAIFilesLibrary
+          authFetch={authFetch}
+          onClose={() => setFilesLibraryOpen(false)}
+          onPreview={(artifact) => {
+            setFilesLibraryOpen(false);
+            setWorkspaceArtifact(artifact);
+          }}
+          onOpenStudio={(artifact) => {
+            void (async () => {
+              try {
+                const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+                const response = await authFetch(apiBase + "/api/artifacts/" + encodeURIComponent(artifact.id) + "/edit", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Accept: "application/json" },
+                  body: JSON.stringify({ action: "user_opened" }),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload?.detail?.message || payload?.detail || "Could not open this file in Studio.");
+                setFilesLibraryOpen(false);
+                const updated = payload?.artifact || artifact;
+                updateArtifactRecord(artifact.id, updated);
+                setStudioArtifact(updated);
+              } catch (error) {
+                console.error("Could not open Library file in RevelaAI Studio.", error);
+                window.alert(error?.message || "Could not open this file in Studio.");
+              }
+            })();
           }}
         />
       )}
