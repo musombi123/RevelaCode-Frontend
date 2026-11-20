@@ -12,7 +12,7 @@ import {
 const SAFE_FORMATS = new Set([
   "PDF", "PNG", "JPG", "JPEG", "SVG", "PPTX", "DOCX", "XLSX", "CSV", "GIF", "MP4",
   "TXT", "MD", "JS", "JSX", "TS", "TSX", "PY", "HTML", "CSS", "JSON", "SQL",
-  "SH", "GO", "RS", "JAVA", "C", "CPP", "CS", "PHP", "RB", "SWIFT", "KT",
+  "SH", "GO", "RS", "JAVA", "C", "CPP", "CS", "PHP", "RB", "SWIFT", "KT", "XML", "YAML", "YML", "TOML", "INI",
 ]);
 
 function artifactUrl(value) {
