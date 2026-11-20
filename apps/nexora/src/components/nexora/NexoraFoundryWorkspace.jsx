@@ -7,7 +7,7 @@ import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
   MoreHorizontal, Play, Plus, RefreshCw, Save, Settings2, ShieldCheck,
-  Sparkles, Trash2, UploadCloud, WandSparkles, X
+  Sparkles, Trash2, UploadCloud, X
 } from "lucide-react";
 
 const STORAGE_KEY = "nexora.foundry.projects.v1";
