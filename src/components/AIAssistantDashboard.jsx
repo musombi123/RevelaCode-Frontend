@@ -2227,8 +2227,11 @@ export default function AIAssistantDashboard({
     };
 
     if (action === "preview") {
-      setWorkspaceArtifact(artifact);
-      return { message: "Opened the attachment preview.", artifact };
+      const detail = await requestJson(apiBase + "/api/artifacts/" + encodeURIComponent(artifactId));
+      const freshArtifact = detail?.artifact || artifact;
+      updateArtifactRecord(artifactId, freshArtifact);
+      setWorkspaceArtifact(freshArtifact);
+      return { message: "Opened the attachment preview.", artifact: freshArtifact };
     }
 
     if (action === "open_studio") {
