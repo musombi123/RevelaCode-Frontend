@@ -1446,14 +1446,14 @@ export default function AIAssistantDashboard({
             } else if (workspaceCommand === "/code") {
               const language = inferredWorkspaceExport?.command === "/code"
                 ? inferredWorkspaceExport.language
-                : workspacePrompt.match(/\\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\\+\\+|c#|php|ruby|swift|kotlin)\\b/i)?.[1] || "";
+                : workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
               const codeMode = inputMeta?.toolMode || inputMeta?.toolOptions?.mode || "generate";
               workspacePayload = {
                 ...workspacePayload,
                 task: "code",
                 language,
                 prompt: codeMode === "debug"
-                  ? "Debug and repair the source supplied in the brief. Use the user's actual error evidence, explain the root cause, preserve existing public interfaces, and return the complete corrected file in one fenced code block. Do not claim execution or testing unless it has occurred.\\n\\n" + workspaceExecutionPrompt
+                  ? "Debug and repair the source supplied in the brief. Use the user's actual error evidence, explain the root cause, preserve existing public interfaces, and return the complete corrected file in one fenced code block. Do not claim execution or testing unless it has occurred.\n\n" + workspaceExecutionPrompt
                   : workspaceExecutionPrompt,
               };
               if (attachedFile) throw new Error("For programming, paste the source and error message into the composer. File-based source editing is not yet supported; no uploaded file has been modified.");
