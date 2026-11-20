@@ -7,6 +7,7 @@ import NexoraStudioShell from "./NexoraStudioShell.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
+import NexoraFactoryControlPanel from "./NexoraFactoryControlPanel.jsx";
 import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
@@ -1392,6 +1393,7 @@ export default function NexoraFoundryWorkspace() {
     assets:["Asset Library","Manage imported 3D models and production media"],
     build:["Build & Test","Configure Android builds, export targets and inspect actual worker results"],
     "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
+    factory:["Desktop Factory","Configure the local workspace, toolchains, recovery points and store handoff"],
     analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
     team:["Team & Tasks","Manage cloud-linked project tasks and your production workflow"],
     marketplace:["Marketplace","Browse the built-in NEXORA procedural template catalogue"],
@@ -1427,6 +1429,20 @@ export default function NexoraFoundryWorkspace() {
   const selectedStorageBytes = (activeProject?.assets||[]).reduce((sum,asset)=>sum+Number(asset.size||0),0);
   const selectedStorageLabel = activeProject ? formatBytes(selectedStorageBytes)+" in "+activeProject.name : "No project selected";
   const refreshWorkspace = () => { checkService(); if (cloudProjectActive) refreshJobs(); };
+  const refreshFactoryProjects = async () => {
+    const response = await apiRequest("/api/v1/workspace/projects");
+    const rows = Array.isArray(response.projects) ? response.projects : [];
+    const nextProjects = rows.map((row) => {
+      const previous = projects.find((item) => item.id === String(row.id));
+      const project = workspaceProjectFromCloud(row, previous?.assets || []);
+      cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+      return project;
+    });
+    setProjects(nextProjects);
+    setActiveId((current) => nextProjects.some((item) => item.id === current) ? current : nextProjects[0]?.id || "");
+    setCloudLoaded(true);
+  };
+
   const quickAction = (action) => {
     if (!activeProject) {
       setNotice("Create or open a project before using scene and playtest actions.");
@@ -1477,6 +1493,15 @@ export default function NexoraFoundryWorkspace() {
       <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
+
+      <div hidden={studioView !== "factory"}>
+        <NexoraFactoryControlPanel
+          projectId={activeProject?.id || ""}
+          onWorkspaceUpdated={refreshFactoryProjects}
+          onNavigate={setStudioView}
+          setNotice={setNotice}
+        />
+      </div>
 
       {studioView === "overview" && <NexoraStudioOverview
         projects={projects}
