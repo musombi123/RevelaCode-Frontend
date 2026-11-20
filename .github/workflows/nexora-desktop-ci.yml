@@ -1,0 +1,38 @@
+name: NEXORA desktop Studio CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/nexora/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexora-desktop-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/nexora/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexora-desktop-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-studio-build:
+    name: Build NEXORA and verify static integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build NEXORA and RevelaCode static site
+        run: npm run build:web

@@ -41,6 +41,9 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   const [publishers, setPublishers] = useState([]);
   const [releasePlatform, setReleasePlatform] = useState("android");
   const [releaseArtifact, setReleaseArtifact] = useState("");
+  const [releaseVersion, setReleaseVersion] = useState("1.0.0");
+  const [releaseNotes, setReleaseNotes] = useState("");
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -129,7 +132,20 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   }, [view, projectId, loadStatus, loadProjectFiles, loadSnapshots, loadToolchains, loadPublishing, loadDriveData]);
 
   const chooseWorkspace = () => run("workspace", async () => {
-    const result = await request("/api/v1/desktop/workspace", { method: "PUT", body: JSON.stringify({ path: workspacePath }) });
+    let result;
+    try {
+      result = await request("/api/v1/desktop/workspace", {
+        method: "PUT",
+        body: JSON.stringify({ path: workspacePath, confirm_migration: false }),
+      });
+    } catch (cause) {
+      const message = String(cause?.message || "");
+      if (!message.includes("will be copied") || !window.confirm(message + "\\n\\nThe previous folder will remain untouched. Continue?")) throw cause;
+      result = await request("/api/v1/desktop/workspace", {
+        method: "PUT",
+        body: JSON.stringify({ path: workspacePath, confirm_migration: true }),
+      });
+    }
     await loadStatus();
     await onRefresh();
     return result;
@@ -255,11 +271,20 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
     });
   };
 
+  const lockToolchains = () => run("lock-toolchains", async () => {
+    const result = await request("/api/v1/desktop/toolchains/lock", {
+      method: "POST",
+      body: JSON.stringify({ project_id: projectId || null, targets: ["web", "android", "windows"] }),
+    });
+    await loadToolchains();
+    return result;
+  }, "Detected tool versions and paths were pinned in the local project lockfile.");
+
   const prepareRelease = () => {
     if (!projectId || !releaseArtifact) return;
     if (!window.confirm("Confirm that you own or have distribution rights for every asset included in this build. NEXORA will only prepare a local release manifest; it will not upload or publish it.")) return;
     run("prepare-release", () => request("/api/v1/desktop/projects/" + projectId + "/publish/prepare", {
-      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, confirm_distribution_rights: true })
+      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, version: releaseVersion, release_notes: releaseNotes, rights_confirmed: rightsConfirmed })
     }), "Release manifest prepared locally. Nothing has been uploaded or submitted.");
   };
 
@@ -335,10 +360,10 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
             const detected = toolchains.tools?.[detectedKey];
             return <label key={item.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#20334B] bg-[#0A1524] p-3">
               <input type="checkbox" checked={selectedTools.includes(item.id)} onChange={event => setSelectedTools(current => event.target.checked ? [...current, item.id] : current.filter(value => value !== item.id))} className="mt-1 accent-cyan-400"/>
-              <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><b className="text-xs text-white">{item.label}</b><State ready={Boolean(detected?.available)}>{detected?.available ? "Detected" : "Not detected"}</State></span><span className="mt-1 block text-[10px] leading-4 text-slate-500">{item.purpose}</span><span className="mt-1 block break-all text-[9px] text-slate-600">{detected?.version || item.winget_id}</span></span>
+              <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><b className="text-xs text-white">{item.label}</b><State ready={Boolean(detected?.available)}>{detected?.available ? "Detected" : "Not detected"}</State></span><span className="mt-1 block text-[10px] leading-4 text-slate-500">{item.purpose}</span><span className="mt-1 block break-all text-[9px] text-slate-600">{detected?.version || item.winget_id || "Manual official setup"}</span>{item.url && <a className="mt-1 inline-block text-[9px] font-bold text-cyan-300 hover:text-cyan-100" href={item.url} target="_blank" rel="noreferrer">Official download and setup guide ↗</a>}</span>
             </label>;
           })}</div>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2"><p className="max-w-2xl text-[9px] leading-4 text-slate-500">Installs use a fixed package allowlist and no arbitrary shell commands. Android SDK components and export templates may still require official managers and licence acceptance.</p><button className={primary} type="button" disabled={!selectedTools.length || Boolean(busy) || !toolchains.install_provider} onClick={installSelectedTools}><Download size={13}/> Install selected tools</button></div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2"><p className="max-w-2xl text-[9px] leading-4 text-slate-500">Installs use a fixed package allowlist and no arbitrary shell commands. Android SDK components and export templates may still require official managers and licence acceptance.</p><div className="flex flex-wrap gap-2"><button className={button} type="button" disabled={!projectId || Boolean(busy)} onClick={lockToolchains}><ShieldCheck size={12}/> Pin detected versions</button><button className={primary} type="button" disabled={!selectedTools.length || Boolean(busy) || !toolchains.install_provider} onClick={installSelectedTools}><Download size={13}/> Install selected tools</button></div></div>
           {toolchains.lock && <div className="mt-4 rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[10px] font-bold text-slate-300">PROJECT TOOLCHAIN LOCK</div><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all text-[9px] text-slate-500">{JSON.stringify(toolchains.lock, null, 2)}</pre></div>}
         </>}
       </section>}
@@ -384,9 +409,18 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
         </article>)}</div>
         <div className="mt-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
           <select className={field} value={releasePlatform} onChange={event => setReleasePlatform(event.target.value)}><option value="android">Android</option><option value="web">Web</option><option value="windows">Windows</option><option value="linux">Linux</option></select>
-          <select className={field} value={releaseArtifact} onChange={event => setReleaseArtifact(event.target.value)}><option value="">Select a build artifact</option>{completedArtifacts.map(item => <option key={item.jobId + ":" + item.id} value={item.path}>{item.filename} · {item.target} · {String(item.jobId).slice(0, 8)}</option>)}</select>
-          <button type="button" className={primary} disabled={!projectId || !releaseArtifact || Boolean(busy)} onClick={prepareRelease}><ShieldCheck size={13}/> Prepare manifest</button>
+          <select className={field} value={releaseArtifact} onChange={event => setReleaseArtifact(event.target.value)}><option value="">Select a build artifact</option>{completedArtifacts.map(item => <option key={item.jobId + ":" + item.id} value={item.id}>{item.filename} · {item.target} · {String(item.jobId).slice(0, 8)}</option>)}</select>
+          <button type="button" className={primary} disabled={!projectId || !releaseArtifact || !rightsConfirmed || Boolean(busy)} onClick={prepareRelease}><ShieldCheck size={13}/> Prepare manifest</button>
         </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[220px_1fr]">
+          <label className="text-[10px] font-bold text-slate-400">RELEASE VERSION
+            <input className={field + " mt-1.5"} value={releaseVersion} maxLength={40} onChange={event => setReleaseVersion(event.target.value)} placeholder="1.0.0"/>
+          </label>
+          <label className="text-[10px] font-bold text-slate-400">RELEASE NOTES
+            <textarea className={field + " mt-1.5"} value={releaseNotes} maxLength={5000} rows={2} onChange={event => setReleaseNotes(event.target.value)} placeholder="What changed in this release?"/>
+          </label>
+        </div>
+        <label className="mt-3 flex items-start gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 p-3 text-[10px] leading-5 text-amber-100"><input type="checkbox" checked={rightsConfirmed} onChange={event => setRightsConfirmed(event.target.checked)} className="mt-1"/> I own or have permission to distribute this game and every included source file, model, texture, audio track, font and other asset.</label>
         <p className="mt-2 text-[9px] leading-4 text-slate-500">The manifest records owner, target, artifact path, size and SHA-256. Upload, store approval and public release are separate steps.</p>
       </section>}
     </div>

@@ -8,7 +8,6 @@ import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
-import NexoraFactoryControlPanel from "./NexoraFactoryControlPanel.jsx";
 import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
@@ -1515,17 +1514,6 @@ export default function NexoraFoundryWorkspace() {
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 
-      <div hidden={studioView !== "factory"}>
-        <NexoraFactoryControlPanel
-          projectId={activeProject?.id || ""}
-          onWorkspaceUpdated={refreshFactoryProjects}
-          onNavigate={setStudioView}
-          onSelectProject={setActiveId}
-          onQueueProduction={(kind, target) => queueProductionJob(kind, target, target === "android" ? androidBuild : null)}
-          setNotice={setNotice}
-        />
-      </div>
-
       {studioView === "overview" && <NexoraStudioOverview
         projects={projects}
         activeProject={activeProject}
@@ -1789,6 +1777,15 @@ export default function NexoraFoundryWorkspace() {
           nexoraAuthFetch={localEngineFetch}
           onNotice={setNotice}
           userId={nexoraUser?.id || "anonymous"}
+        />}
+
+        {["factory", "toolchains", "backups", "release-center"].includes(studioView) && <NexoraDesktopFactoryPanel
+          view={studioView}
+          project={activeProject}
+          jobs={jobs}
+          apiRequest={apiRequest}
+          onNotice={setNotice}
+          onRefresh={refreshWorkspace}
         />}
 
 
