@@ -322,11 +322,11 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
     try {
       const latest = await getRevelaAIArtifact({ authFetch, artifactId: artifact.id });
       const current = latest || artifact;
-      const url = resolveRevelaAIArtifactUrl(current.download_url || artifact.download_url);
-      const name = current.filename || (String(current.title || "RevelaAI-file").replace(/[^a-z0-9._-]+/gi, "-") + ".bin");
+      const url = resolveRevelaAIArtifactUrl(current.original_download_url || current.download_url || artifact.download_url);
+      const name = current.original_filename || current.filename || (String(current.title || "RevelaAI-file").replace(/[^a-z0-9._-]+/gi, "-") + ".bin");
       const outcome = await downloadRemoteArtifact(url, {
         fileName: name,
-        mimeType: current.mime_type || "application/octet-stream",
+        mimeType: current.original_mime_type || current.mime_type || "application/octet-stream",
       });
       setArtifact(current);
       onArtifactUpdated?.(current);
@@ -404,6 +404,9 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
   const previewUrl = artifact?.preview_url
     ? (() => { try { return resolveRevelaAIArtifactUrl(artifact.preview_url); } catch { return ""; } })()
     : "";
+  const originalPreviewUrl = artifact?.original_preview_url
+    ? (() => { try { return resolveRevelaAIArtifactUrl(artifact.original_preview_url); } catch { return previewUrl; } })()
+    : previewUrl;
 
   return (
     <div className="fixed inset-0 z-[120] flex flex-col bg-app text-fg" data-demo="revelaai-studio" role="dialog" aria-modal="true" aria-label="RevelaAI Studio">
@@ -456,7 +459,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
               {hasMediaLossRisk && <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-xs text-rose-700 dark:text-rose-300">Editing is disabled to protect embedded media. You can still preview and export the original file.</div>}
               {!canEdit && !hasMediaLossRisk && <div className="mb-4 rounded-xl border border-line bg-surface p-4 text-sm text-muted">This artifact is available in preview mode. A native editable source is not available for this file type yet.</div>}
               {canEdit && kind === "document" && <DocumentEditor payload={payload} onChange={updatePayload}/>}
-              {canEdit && kind === "image" && <ImageEditor payload={payload} onChange={updatePayload} previewUrl={previewUrl}/>}
+              {canEdit && kind === "image" && <ImageEditor payload={payload} onChange={updatePayload} previewUrl={originalPreviewUrl}/>}
               {canEdit && kind === "spreadsheet" && <SpreadsheetEditor payload={payload} onChange={updatePayload}/>}
               {canEdit && kind === "slide_deck" && <PresentationEditor payload={payload} onChange={updatePayload}/>}
               {canEdit && kind === "code" && (
