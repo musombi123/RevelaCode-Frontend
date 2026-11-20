@@ -26,6 +26,8 @@ test("Studio saves versioned source with expected-version conflict protection", 
   assert.match(client, /\/content/);
   assert.match(studio, /saveRevelaAIArtifactSource/);
   assert.match(studio, /Save/);
+  assert.match(studio, /Autosaved as version/);
+  assert.match(studio, /2200/);
   assert.match(studio, /Unsaved changes/);
   assert.match(studio, /Version history/);
 });
