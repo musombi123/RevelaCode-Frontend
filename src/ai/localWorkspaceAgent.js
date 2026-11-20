@@ -130,3 +130,12 @@ export async function getLocalWorkspaceContext(query, config = getLocalWorkspace
     ].join("\n\n"),
   };
 }
+
+
+export async function runLocalWorkspaceCommand(command, config = getLocalWorkspaceAgentConfig()) {
+  return localAgentRequest("/local-workspace/terminal", {
+    method: "POST",
+    body: { command: String(command || "").slice(0, 1000) },
+    config,
+  });
+}
