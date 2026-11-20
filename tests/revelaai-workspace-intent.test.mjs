@@ -114,3 +114,22 @@ test("ordinary topic mentions do not trigger an export tool", () => {
   assert.equal(inferWorkspaceCommand("Explain how CSV data is structured."), null);
   assert.equal(inferWorkspaceCommand("What is a PDF document?"), null);
 });
+
+
+
+test("conversion requests use the destination extension, not the source file extension", () => {
+  const request = inferWorkspaceExport("Convert this DOCX report to PDF.");
+  assert.equal(request?.command, "/doc");
+  assert.equal(request?.format, "pdf");
+  assert.equal(request?.extension, "pdf");
+});
+
+test("a bare registered extension is routed to its matching tool", () => {
+  const request = inferWorkspaceExport("Generate .py");
+  assert.equal(request?.command, "/code");
+  assert.equal(request?.language, "python");
+});
+
+test("a website domain is not mistaken for an export extension", () => {
+  assert.equal(inferWorkspaceExport("Create a website for revelacode.co.ke"), null);
+});
