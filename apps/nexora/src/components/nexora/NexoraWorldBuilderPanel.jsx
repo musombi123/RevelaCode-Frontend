@@ -73,7 +73,8 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
       });
       const payload=await response.json().catch(()=>({}));
       if(!response.ok) throw new Error(payload?.detail || "World document could not be saved.");
-      setDocument(current=>({...current,...payload,world:{...current.world,...(payload.world||{})}}));
+      if (!payload.document || typeof payload.document !== "object") throw new Error("World Builder received an invalid save response.");
+      setDocument(payload.document);
       setLoaded(true);
       onNotice?.("World settings and scene objects saved to the NEXORA project.");
     }catch(e){setError(e.message||"World save failed.");}
