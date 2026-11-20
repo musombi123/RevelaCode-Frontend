@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Activity, Box, Gamepad2, HardDrive, Layers3, Play, Plus, Settings2,
   ShieldCheck, Sparkles, FolderOpen, MoreHorizontal, X, ChevronRight,
-  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, CalendarDays
+  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, Calendar
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -177,7 +177,7 @@ export default function NexoraStudioShell({
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div><h1 className="text-2xl font-black tracking-tight text-white sm:text-[28px]">{title}</h1><p className="mt-0.5 text-sm text-slate-400">{subtitle}</p></div>
             <div className="flex flex-wrap items-center gap-2">
-              {activeView === "overview" && <label className="flex h-10 items-center gap-2 rounded-lg border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><CalendarDays size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
+              {activeView === "overview" && <label className="flex h-10 items-center gap-2 rounded-lg border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
               <button type="button" onClick={onNewProject} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
             </div>
           </div>
