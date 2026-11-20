@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inferWorkspaceCommand, selectWorkspaceCommand } from "../src/ai/workspaceIntent.js";
+import { inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "../src/ai/workspaceIntent.js";
 
 test("routes the user's exact natural-language request to the PowerPoint workspace", () => {
   assert.equal(
