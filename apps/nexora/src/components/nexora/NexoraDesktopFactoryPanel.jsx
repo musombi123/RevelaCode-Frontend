@@ -219,26 +219,28 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   }, "Snapshot uploaded to your Google Drive.");
 
   const restoreDriveBackup = (file) => {
-    if (!window.confirm("Restore this Google Drive backup over the current Godot project folder? Local snapshots will be retained.")) return;
+    if (!window.confirm("Restore this Google Drive backup over the current project files and workspace metadata? The owner record and local backup history will be retained.")) return;
     run("drive-restore", async () => {
       const result = await request("/api/v1/desktop/drive/projects/" + projectId + "/backups/" + file.id + "/restore", {
         method: "POST", body: "{}"
       });
       await loadProjectFiles("");
       await loadSnapshots();
+      await onRefresh();
       return result;
     }, "Google Drive backup restored into the selected local project.");
   };
 
   const restoreSnapshot = (snapshot) => {
-    if (!window.confirm("Restore " + snapshot.id + "? This replaces the current Godot project folder. The snapshot will be retained.")) return;
+    if (!window.confirm("Restore " + snapshot.id + "? This restores the full project source and workspace metadata. The owner record and snapshot history will be retained.")) return;
     run("restore", async () => {
       const result = await request("/api/v1/desktop/projects/" + projectId + "/snapshots/" + snapshot.id + "/restore", { method: "POST", body: "{}" });
       await loadProjectFiles("");
       setOpenedFile(null);
       await loadSnapshots();
+      await onRefresh();
       return result;
-    }, "The Godot project folder was restored from the selected snapshot.");
+    }, "The complete project was restored from the selected snapshot.");
   };
 
   const installSelectedTools = () => {
@@ -341,7 +343,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
       </section>}
 
       {view === "backups" && <section className={panel + " p-4"}>
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 text-xs font-black text-white"><Archive size={16} className="text-cyan-300"/> LOCAL VERSIONS & BACKUPS</h3><p className="mt-1 text-[10px] text-slate-500">Create integrity-checked snapshots. Restore replaces only the Godot project folder and retains the backup.</p></div><button className={primary} type="button" disabled={!projectId || Boolean(busy)} onClick={createSnapshot}><Archive size={13}/> Create snapshot</button></div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 text-xs font-black text-white"><Archive size={16} className="text-cyan-300"/> LOCAL VERSIONS & BACKUPS</h3><p className="mt-1 text-[10px] text-slate-500">Create integrity-checked snapshots. Restore recovers the full project source and workspace metadata while preserving the owner record and backup history.</p></div><button className={primary} type="button" disabled={!projectId || Boolean(busy)} onClick={createSnapshot}><Archive size={13}/> Create snapshot</button></div>
         {!project ? <div className="mt-4 text-xs text-slate-500">Select a project to manage snapshots.</div> : <div className="mt-4 space-y-2">{snapshots.map(snapshot => <article key={snapshot.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#20334B] bg-[#0A1524] p-3">
           <div className="min-w-0"><div className="truncate text-xs font-bold text-white">{snapshot.id}</div><div className="mt-1 text-[9px] text-slate-500">{snapshot.file_count} files · <Bytes value={snapshot.source_bytes}/> source · archive <Bytes value={snapshot.archive_bytes}/></div><div className="mt-1 break-all text-[8px] text-slate-600">SHA-256 {snapshot.sha256}</div></div><div className="flex flex-wrap gap-2">
             {driveStatus?.connected && !driveBackups.some(file => file.appProperties?.nexoraSnapshotId === snapshot.id) && <button type="button" className={button} disabled={Boolean(busy)} onClick={() => uploadSnapshotToDrive(snapshot)}><Upload size={12}/> Back up to Drive</button>}
