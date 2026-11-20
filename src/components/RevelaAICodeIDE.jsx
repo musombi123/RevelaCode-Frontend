@@ -73,7 +73,7 @@ function addPreviewPolicy(source) {
   if (/<head\b[^>]*>/i.test(source)) {
     return source.replace(/<head\b[^>]*>/i, (head) => head + policy);
   }
-  return "<!doctype html><html><head>" + policy + "</head><body>" + source + "</body></html>";
+  if (/<html\\b[^>]*>/i.test(source)) return source.replace(/<html\\b[^>]*>/i, (htmlTag) => htmlTag + "<head>" + policy + "</head>");\n  return "<!doctype html><html><head>" + policy + "</head><body>" + source + "</body></html>";
 }
 
 function asConsoleText(value) {
@@ -109,6 +109,7 @@ export default function RevelaAICodeIDE({
   const [lastFailure, setLastFailure] = useState("");
   const [localConfig] = useState(() => getLocalWorkspaceAgentConfig());
   const sessionRef = useRef({ artifactId: "", opened: false });
+  const repairProposalRef = useRef(null);
   const artifactId = String(manifest?.id || manifest?.artifact_id || initial.manifest?.id || "");
   const dirty = source !== savedSource;
   const runtimeLanguage = language === "javascript" || language === "python";
@@ -159,10 +160,43 @@ export default function RevelaAICodeIDE({
     };
   }, [authFetch, artifactId]);
 
+  useEffect(() => {
+    repairProposalRef.current = repairProposal;
+  }, [repairProposal]);
+
   useEffect(() => () => {
     stopCode("javascript");
     stopCode("python");
-  }, []);
+    const session = sessionRef.current;
+    if (session.opened && session.artifactId) {
+      void setRevelaAIArtifactEditorState({ authFetch, artifactId: session.artifactId, action: "returned" }).catch(() => {});
+    }
+    const proposal = repairProposalRef.current;
+    if (proposal?.proposal_id && session.artifactId) {
+      void cancelRevelaAIArtifactEdit({ authFetch, artifactId: session.artifactId }).catch(() => {});
+    }
+  }, [authFetch]);
+
+  const closeEditorSession = async () => {
+    const session = sessionRef.current;
+    if (!session.opened || !session.artifactId) {
+      setEditSessionReady(false);
+      return;
+    }
+    sessionRef.current = { artifactId: "", opened: false };
+    setEditSessionReady(false);
+    await setRevelaAIArtifactEditorState({ authFetch, artifactId: session.artifactId, action: "returned" });
+  };
+
+  const openEditorSession = async () => {
+    if (!artifactId) throw new Error("The saved source artifact is unavailable.");
+    const opened = await setRevelaAIArtifactEditorState({ authFetch, artifactId, action: "user_opened" });
+    sessionRef.current = { artifactId, opened: true };
+    if (opened?.id) setManifest(opened);
+    setEditSessionReady(true);
+    setEditSessionError("");
+    return opened;
+  };
 
   const validate = useCallback(async () => {
     setValidating(true);
@@ -354,7 +388,10 @@ export default function RevelaAICodeIDE({
     setRepairing(true);
     setError("");
     setNotice("");
+    let sessionClosed = false;
     try {
+      await closeEditorSession();
+      sessionClosed = true;
       const instruction = [
         "Debug and repair this source code using the runtime or validation output below.",
         "File: " + filename,
@@ -375,6 +412,11 @@ export default function RevelaAICodeIDE({
       setRepairProposal(result.proposal);
       setNotice("RevelaAI prepared a repair proposal. Review the replacement before applying it.");
     } catch (cause) {
+      if (sessionClosed) {
+        try { await openEditorSession(); } catch (reopenError) {
+          setEditSessionError(reopenError?.message || "The editor session could not be reopened.");
+        }
+      }
       setError(cause?.message || "The AI repair proposal could not be prepared.");
     } finally {
       setRepairing(false);
@@ -404,8 +446,7 @@ export default function RevelaAICodeIDE({
       setNotice("Repair applied as version " + Number(updated.version || 1) + ". It has not been executed again.");
       onArtifactUpdated?.(updated);
       try {
-        const reopened = await setRevelaAIArtifactEditorState({ authFetch, artifactId, action: "user_opened" });
-        if (reopened?.id) setManifest(reopened);
+        await openEditorSession();
       } catch (cause) {
         setEditSessionError(cause?.message || "The repair was saved, but the editor session could not be reopened.");
       }
@@ -418,9 +459,19 @@ export default function RevelaAICodeIDE({
 
   const discardRepair = async () => {
     if (repairProposal?.proposal_id && artifactId) {
-      try { await cancelRevelaAIArtifactEdit({ authFetch, artifactId }); } catch { /* The proposal may already have expired. */ }
+      try {
+        await cancelRevelaAIArtifactEdit({ authFetch, artifactId });
+      } catch (cause) {
+        setError(cause?.message || "The AI repair proposal could not be discarded.");
+        return;
+      }
     }
     setRepairProposal(null);
+    try {
+      await openEditorSession();
+    } catch (cause) {
+      setEditSessionError(cause?.message || "The editor session could not be reopened.");
+    }
   };
 
   const download = async () => {
