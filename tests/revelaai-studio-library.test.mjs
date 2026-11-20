@@ -19,6 +19,8 @@ test("Files Library uses authenticated artifact list, upload, rename, restore an
   assert.match(library, /Move to Trash/);
   assert.match(library, /Restore/);
   assert.match(library, /Private to your account/);
+  assert.match(library, /Filter folder/);
+  assert.match(library, /editingFolder/);
 });
 
 test("Studio saves versioned source with expected-version conflict protection", () => {
