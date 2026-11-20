@@ -397,7 +397,12 @@ export default function RevelaAICodeIDE({
 
   const repair = async () => {
     if (!lastFailure) return;
-    if (!artifactId || source.length > 12000) {
+    const sourceBytes = new TextEncoder().encode(source).length;
+    if (sourceBytes > 24000) {
+      setError("This source is too large for one AI repair request. Select the failing function or reduce the file to a focused, complete example first.");
+      return;
+    }
+    if (!artifactId || sourceBytes > 12000) {
       onAskAI?.({ kind: "code-repair", filePath: filename, language, source, error: lastFailure });
       return;
     }
