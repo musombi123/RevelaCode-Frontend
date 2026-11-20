@@ -14,18 +14,35 @@ const defaultWorld = (project) => ({
 const input = "mt-1 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-400/60";
 const label = "block text-[10px] font-semibold text-slate-400";
 
-export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexoraAuthFetch,onNotice}) {
+export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexoraAuthFetch,onNotice,userId="anonymous"}) {
   const [document,setDocument] = useState(()=>defaultWorld(project));
   const [loading,setLoading] = useState(false);
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState("");
   const [loaded,setLoaded] = useState(false);
+  const localWorldKey = "nexora.world-document.v1:"+String(userId||"anonymous")+":"+String(project?.id||"no-project");
 
   const loadWorld = useCallback(async ()=>{
     if (!project?._remoteVersion || !cloudProjectActive) {
-      setDocument(defaultWorld(project));
-      setLoaded(false);
+      setLoading(true);
       setError("");
+      try {
+        const saved = localStorage.getItem(localWorldKey);
+        const base = defaultWorld(project);
+        const payload = saved ? JSON.parse(saved) : null;
+        setDocument(payload && typeof payload === "object" ? {
+          ...base,
+          ...payload,
+          world:{...base.world,...(payload.world||{})},
+          objects:Array.isArray(payload.objects)?payload.objects:[],
+          terrain_edits:Array.isArray(payload.terrain_edits)?payload.terrain_edits:[],
+        } : base);
+        setLoaded(Boolean(payload));
+      } catch (e) {
+        setDocument(defaultWorld(project));
+        setLoaded(false);
+        setError(e.message || "Local world document could not be read.");
+      } finally { setLoading(false); }
       return;
     }
     setLoading(true);
@@ -51,7 +68,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
       setError(e.message || "World document could not be loaded.");
       setLoaded(false);
     } finally {setLoading(false);}
-  },[project?.id,project?._remoteVersion,cloudProjectActive,nexoraAuthFetch]);
+  },[project?.id,project?._remoteVersion,cloudProjectActive,nexoraAuthFetch,localWorldKey]);
 
   useEffect(()=>{loadWorld();},[loadWorld]);
 
@@ -62,12 +79,14 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
   const addTerrainEdit = () => setDocument(current=>({...current,terrain_edits:[...current.terrain_edits,{id:"terrain-edit-"+Date.now().toString(36),operation:"raise",x:0,z:0,radius:6,strength:2}]}));
 
   const saveWorld = async () => {
-    if (!project?._remoteVersion || !cloudProjectActive) {
-      setError("Save or migrate this project to NEXORA cloud before persisting its world document.");
-      return;
-    }
     setSaving(true);setError("");
     try {
+      if (!project?._remoteVersion || !cloudProjectActive) {
+        localStorage.setItem(localWorldKey,JSON.stringify(document));
+        setLoaded(true);
+        onNotice?.("World settings and scene objects saved to this browser's local project storage.");
+        return;
+      }
       const response=await nexoraAuthFetch("/api/v1/workspace/projects/"+encodeURIComponent(project.id)+"/world",{
         method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(document),
       });
@@ -76,7 +95,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
       if (!payload.document || typeof payload.document !== "object") throw new Error("World Builder received an invalid save response.");
       setDocument(payload.document);
       setLoaded(true);
-      onNotice?.("World settings and scene objects saved to the NEXORA project.");
+      onNotice?.("World settings and scene objects saved to the NEXORA cloud project.");
     }catch(e){setError(e.message||"World save failed.");}
     finally{setSaving(false);}
   };
@@ -86,7 +105,7 @@ export default function NexoraWorldBuilderPanel({project,cloudProjectActive,nexo
   return <div className="space-y-4">
     <div className={surface+" flex flex-wrap items-center justify-between gap-3 p-4"}>
       <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300"><Layers3 size={20}/></span><div><h2 className="text-sm font-extrabold text-white">World Builder</h2><p className="mt-1 text-[10px] text-slate-500">{project.name} · persisted WorldDocument</p></div></div>
-      <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(loaded?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{loaded?"CLOUD WORLD LOADED":"NOT SAVED / LOCAL"}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!cloudProjectActive} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
+      <div className="flex items-center gap-2"><span className={"rounded-lg px-2 py-1 text-[9px] font-bold "+(loaded?"bg-emerald-500/10 text-emerald-300":"bg-amber-500/10 text-amber-200")}>{project._remoteVersion&&cloudProjectActive?(loaded?"CLOUD WORLD LOADED":"CLOUD WORLD NOT LOADED"):(loaded?"LOCAL WORLD SAVED":"LOCAL WORLD UNSAVED")}</span><button type="button" onClick={loadWorld} disabled={loading} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-slate-300"><RefreshCw size={12} className="mr-1 inline"/> Refresh</button><button type="button" onClick={saveWorld} disabled={saving||!project} className="rounded-lg bg-cyan-400 px-3 py-2 text-[10px] font-black text-[#04111A] disabled:opacity-40"><Save size={12} className="mr-1 inline"/>{saving?"Saving…":"Save World"}</button></div>
     </div>
     {!cloudProjectActive&&<div className="rounded-xl border border-amber-700/40 bg-amber-500/5 p-3 text-[11px] text-amber-100">This project is a local draft. World Builder can edit the draft in memory, but durable server saving is enabled only for cloud-synced projects.</div>}
     {loading&&<div className="text-xs text-cyan-200">Loading saved world document…</div>}
