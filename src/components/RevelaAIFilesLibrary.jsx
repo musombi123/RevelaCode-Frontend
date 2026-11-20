@@ -1,15 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  AlertCircle, FileCode2, FileImage, FileSpreadsheet, FileText,
+  AlertCircle, Download, FileCode2, FileImage, FileSpreadsheet, FileText,
   FolderOpen, Loader2, Pencil, Plus, RefreshCw, Search, Trash2,
   UploadCloud, X, RotateCcw, Eye, Maximize2,
 } from "lucide-react";
 import {
+  getRevelaAIArtifact,
   listRevelaAIArtifacts,
   trashRevelaAIArtifact,
   updateRevelaAIArtifactMetadata,
   uploadRevelaAIArtifact,
 } from "@/ai/revelaAIClient.js";
+import {
+  downloadRemoteArtifact,
+  resolveRevelaAIArtifactUrl,
+} from "@/components/utils/saveGeneratedFile";
+
 
 const TYPES = [
   { value: "", label: "All files" },
@@ -87,6 +93,27 @@ export default function RevelaAIFilesLibrary({
     } finally {
       setBusy("");
       if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const downloadOriginal = async (artifact) => {
+    if (!artifact?.id || busy) return;
+    setBusy("download:" + artifact.id);
+    setError("");
+    setNotice("");
+    try {
+      const latest = await getRevelaAIArtifact({ authFetch, artifactId: artifact.id });
+      const current = latest || artifact;
+      const url = resolveRevelaAIArtifactUrl(current.original_download_url || current.download_url);
+      const result = await downloadRemoteArtifact(url, {
+        fileName: current.original_filename || current.filename || current.title || "revelaai-file",
+        mimeType: current.original_mime_type || current.mime_type || "application/octet-stream",
+      });
+      setNotice(result.method === "native" ? "Original saved to Android Downloads/RevelaCode." : "Original download started.");
+    } catch (downloadError) {
+      setError(String(downloadError?.message || "The original file could not be downloaded."));
+    } finally {
+      setBusy("");
     }
   };
 
@@ -201,6 +228,7 @@ export default function RevelaAIFilesLibrary({
                     <span className="hidden text-xs text-muted sm:block">{artifact.updated_at ? new Date(artifact.updated_at).toLocaleDateString() : "—"}</span>
                     <div className="flex flex-wrap items-center justify-end gap-1">
                       {!showTrash ? <>
+                        <button type="button" title="Download original" aria-label="Download original file" disabled={Boolean(busy)} onClick={() => void downloadOriginal(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-40"><Download size={15}/></button>
                         <button type="button" title="Preview" aria-label="Preview file" onClick={() => onPreview?.(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"><Eye size={15}/></button>
                         <button type="button" title="Open in Studio" aria-label="Open in Studio" onClick={() => onOpenStudio?.(artifact)} className="flex h-9 w-9 items-center justify-center rounded-lg text-accent hover:bg-accent/10"><Maximize2 size={15}/></button>
                         <button type="button" title="Rename" aria-label="Rename file" onClick={() => { setEditingId(artifact.id); setEditingTitle(artifact.title || ""); setEditingFolder(artifact.folder || ""); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2"><Pencil size={14}/></button>
