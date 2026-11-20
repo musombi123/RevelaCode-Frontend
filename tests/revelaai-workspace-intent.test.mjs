@@ -156,5 +156,5 @@ test("new export requests do not absorb unrelated prior conversation content", (
 
 test("referential export source is bounded to the workspace prompt limit", () => {
   const result = buildWorkspaceExportPrompt("Export this as .txt", "A".repeat(20000));
-  assert.ok(result.length <= 11050);
+  assert.ok(result.length <= 10300);
 });
