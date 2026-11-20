@@ -22,6 +22,9 @@ const PREFERENCES_STORAGE_KEY = "nexora.studio.preferences.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
+const LOCAL_AGENT_BASE = "http://127.0.0.1:8765";
+const LOCAL_ENGINE_BASE = LOCAL_AGENT_BASE + "/engine";
+const LOCAL_AGENT_TOKEN_KEY = "nexora.local-agent.token";
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 const now = () => new Date().toISOString();
@@ -252,7 +255,8 @@ export default function NexoraFoundryWorkspace() {
   const cloudBaseline = useRef(new Map());
   const cloudSaveTimer = useRef(null);
   const [selectedObjectId, setSelectedObjectId] = useState("");
-  const [apiStatus, setApiStatus] = useState({ state: API_BASE ? "checking" : "not_configured", label: API_BASE ? "Checking NEXORA service" : "API not connected" });
+  const [apiStatus, setApiStatus] = useState({ state: API_BASE ? "checking" : "not_configured", label: API_BASE ? "Checking NEXORA account service" : "API not connected" });
+  const [localAgentConnected, setLocalAgentConnected] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [assetConversionRole, setAssetConversionRole] = useState("prop");
@@ -359,8 +363,61 @@ export default function NexoraFoundryWorkspace() {
     setNexoraAuthLoading(false);
   }, []);
 
+  const onLocalAgentConnectionChange = useCallback((connected) => {
+    setLocalAgentConnected(Boolean(connected));
+    if (!connected) setCloudLoaded(false);
+  }, []);
+
+  const localEngineFetch = useCallback(async (input, options = {}) => {
+    const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
+    if (!token) throw new Error("Connect your computer in NEXORA > Device Lab before opening projects or starting production.");
+    const requested = String(input);
+    const path = requested.startsWith("http://") || requested.startsWith("https://")
+      ? requested
+      : LOCAL_ENGINE_BASE + (requested.startsWith("/") ? requested : "/" + requested);
+    const headers = new Headers(options.headers || {});
+    headers.set("Authorization", "Bearer " + token);
+    headers.set("Accept", headers.get("Accept") || "application/json");
+    return fetch(path, { ...options, headers, mode: "cors", credentials: "omit", cache: "no-store" });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
+    if (!token) {
+      setLocalAgentConnected(false);
+      return undefined;
+    }
+    fetch(LOCAL_AGENT_BASE + "/system/capabilities", {
+      headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+      mode: "cors", credentials: "omit", cache: "no-store",
+    }).then((response) => {
+      if (!response.ok) throw new Error("Local pairing is no longer valid.");
+      return response.json();
+    }).then(() => {
+      if (!cancelled) onLocalAgentConnectionChange(true);
+    }).catch(() => {
+      try { sessionStorage.removeItem(LOCAL_AGENT_TOKEN_KEY); } catch {}
+      if (!cancelled) onLocalAgentConnectionChange(false);
+    });
+    return () => { cancelled = true; };
+  }, [onLocalAgentConnectionChange]);
+
   const signOutNexora = useCallback(async () => {
     const token = nexoraSession?.access_token;
+    const localToken = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
+    if (localToken) {
+      try {
+        await fetch(LOCAL_AGENT_BASE + "/disconnect", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + localToken, Accept: "application/json" },
+          mode: "cors", credentials: "omit", cache: "no-store",
+        });
+      } catch {}
+    }
+    try { sessionStorage.removeItem(LOCAL_AGENT_TOKEN_KEY); } catch {}
+    setLocalAgentConnected(false);
+    setCloudLoaded(false);
     if (token) {
       try {
         await fetch(API_BASE + "/api/v1/auth/logout", {
@@ -378,15 +435,20 @@ export default function NexoraFoundryWorkspace() {
   }, [nexoraSession?.access_token]);
 
   const apiRequest = useCallback(async (path, options = {}) => {
-    if (!API_BASE) throw new Error("NEXORA API URL is not configured.");
     if (!nexoraSession?.access_token) throw new Error("Sign in to your NEXORA account.");
     const headers = new Headers(options.headers || {});
     if (options.body && !(typeof FormData !== "undefined" && options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     headers.set("Accept", "application/json");
-    const response = await nexoraAuthFetch(path, { ...options, headers });
+    // Account, plans and Pochi billing remain on the NEXORA cloud control plane.
+    // All project, media, generation, asset conversion and build operations go
+    // to the paired computer's loopback Foundry engine.
+    const cloudControlRequest = /^\/api\/v1\/creator-flow\/(?:plans|packs|checkout|payments(?:\/|$))/.test(String(path));
+    const response = cloudControlRequest
+      ? await nexoraAuthFetch(path, { ...options, headers })
+      : await localEngineFetch(path, { ...options, headers });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 401) {
+      if (cloudControlRequest && response.status === 401) {
         try { localStorage.removeItem(NEXORA_SESSION_KEY); } catch {}
         setNexoraSession(null);
         setNexoraUser(null);
@@ -395,7 +457,7 @@ export default function NexoraFoundryWorkspace() {
       throw new Error(typeof detail === "string" ? detail : detail?.message || payload?.message || `NEXORA request failed (HTTP ${response.status}).`);
     }
     return payload;
-  }, [nexoraSession?.access_token, nexoraAuthFetch]);
+  }, [nexoraSession?.access_token, nexoraAuthFetch, localEngineFetch]);
 
   useEffect(() => {
     if (!API_BASE || nexoraAuthLoading) return undefined;
@@ -408,11 +470,16 @@ export default function NexoraFoundryWorkspace() {
       setActiveId((current) => deviceProjects.some((item) => item.id === current)
         ? current
         : deviceProjects[0]?.id || "");
-      setApiStatus({ state: "auth_required", label: "Sign in to connect NEXORA cloud" });
+      setApiStatus({ state: "auth_required", label: "Sign in to your NEXORA account" });
+      return undefined;
+    }
+    if (!localAgentConnected) {
+      setCloudLoaded(false);
+      setApiStatus({ state: "local_setup_required", label: "Connect your computer in Device Lab to load local projects and create games" });
       return undefined;
     }
     let cancelled = false;
-    setApiStatus({ state: "checking", label: "Connecting secure NEXORA workspace" });
+    setApiStatus({ state: "checking", label: "Connecting to your local NEXORA project environment" });
     (async () => {
       const response = await apiRequest("/api/v1/workspace/projects");
       const rows = Array.isArray(response.projects) ? response.projects : [];
@@ -442,7 +509,7 @@ export default function NexoraFoundryWorkspace() {
         ? current
         : hydrated[0]?.id || localOnly[0]?.id || "");
       setCloudLoaded(true);
-      setApiStatus({ state: "online", label: "NEXORA API, PostgreSQL and private asset storage connected" });
+      setApiStatus({ state: "online", label: "Local compute environment and project storage connected" });
     })().catch((error) => {
       if (!cancelled) {
         setCloudLoaded(false);
@@ -451,7 +518,7 @@ export default function NexoraFoundryWorkspace() {
       }
     });
     return () => { cancelled = true; };
-  }, [nexoraAuthLoading, authenticatedCloudSession, apiRequest, storageUserId]);
+  }, [nexoraAuthLoading, authenticatedCloudSession, localAgentConnected, apiRequest, storageUserId]);
 
   useEffect(() => {
     if (projectsScopeId !== storageUserId) return;
@@ -1620,7 +1687,11 @@ export default function NexoraFoundryWorkspace() {
             <p className="mt-1 text-xs text-slate-400">Pair this desktop browser with the NEXORA desktop companion to install builds, launch games and access device logs.</p>
           </section>
           <div className="mx-auto w-full max-w-5xl">
-            <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
+            <NexoraDeviceBridge
+              packageId={androidBuild.package_id || "com.nexora.game"}
+              accountAccessToken={nexoraSession?.access_token || ""}
+              onConnectionChange={onLocalAgentConnectionChange}
+            />
           </div>
         </div>
 
@@ -1640,26 +1711,26 @@ export default function NexoraFoundryWorkspace() {
         </section>
         )}
 
-        <div hidden={studioView !== "ai"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} /></div></div>
+        <div hidden={studioView !== "ai"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div></div>
 
         {studioView === "world" && <NexoraWorldBuilderPanel
           project={activeProject}
           cloudProjectActive={cloudProjectActive}
-          nexoraAuthFetch={nexoraAuthFetch}
+          nexoraAuthFetch={localEngineFetch}
           onNotice={setNotice}
           userId={nexoraUser?.id || "anonymous"}
         />}
 
 
       <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600">
-        <div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name || "—"}</span><span>{cloudProjectActive?"CLOUD PROJECT":"LOCAL DRAFT"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>NEXORA STUDIO PRO</span></div>
+        <div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name || "—"}</span><span>{cloudProjectActive?"LOCAL PROJECT SERVER":"LOCAL DRAFT"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>NEXORA STUDIO PRO</span></div>
         <div className="flex gap-3"><span>{sceneNodes.length} SCENE NODES</span><span>GPU TELEMETRY: NOT AVAILABLE IN BROWSER</span></div>
       </footer>
     </NexoraStudioShell>
 
     {projectModalOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" onMouseDown={event=>{if(event.target===event.currentTarget&&!projectCreating)setProjectModalOpen(false);}}>
       <form onSubmit={submitNewProject} className="w-full max-w-lg rounded-2xl border border-[#29415F] bg-[#101C2D] p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">NEXORA PROJECT SETUP</div><h2 className="mt-1 text-lg font-black text-white">Create New Project</h2><p className="mt-1 text-xs text-slate-500">A project is created in your NEXORA cloud account when sync is available; otherwise a local draft is created.</p></div><button type="button" onClick={()=>setProjectModalOpen(false)} disabled={projectCreating} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close project dialog"><X size={17}/></button></div>
+        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">NEXORA PROJECT SETUP</div><h2 className="mt-1 text-lg font-black text-white">Create New Project</h2><p className="mt-1 text-xs text-slate-500">Projects, source media and generated assets stay on your paired computer. NEXORA cloud is reserved for accounts, billing and finished-game distribution.</p></div><button type="button" onClick={()=>setProjectModalOpen(false)} disabled={projectCreating} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close project dialog"><X size={17}/></button></div>
         <label className="mt-5 block text-[10px] font-bold text-slate-400">PROJECT NAME<input autoFocus required maxLength="80" value={projectDraftName} onChange={e=>setProjectDraftName(e.target.value)} placeholder="e.g. Echoes of Orbit" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400/60"/></label>
         <label className="mt-3 block text-[10px] font-bold text-slate-400">DESCRIPTION<textarea maxLength="2000" rows="3" value={projectDraftDescription} onChange={e=>setProjectDraftDescription(e.target.value)} placeholder="What are you building?" className="mt-1.5 w-full resize-y rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400/60"/></label>
         <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={projectCreating} onClick={()=>setProjectModalOpen(false)} className="rounded-lg border border-[#29415F] px-4 py-2.5 text-xs font-bold text-slate-300">Cancel</button><button type="submit" disabled={projectCreating||!projectDraftName.trim()} className="rounded-lg bg-cyan-400 px-4 py-2.5 text-xs font-black text-[#04111A] disabled:opacity-40">{projectCreating?"Creating…":"Create Project"}</button></div>
