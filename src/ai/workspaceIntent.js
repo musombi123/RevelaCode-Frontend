@@ -17,8 +17,9 @@ export function inferWorkspaceCommand(prompt, attachedFile = null) {
 
   // Prioritize a requested slide deck over general document wording that may
   // appear in the deck's subject (for example, "slides about official reports").
-  const presentationCreation = CREATION_VERB.test(text) && PRESENTATION_REQUEST.test(text);
-  const presentationConversion = /\\b(?:turn|convert)\\b[\\s\\S]{0,100}\\b(?:into|to)\\b[\\s\\S]{0,50}\\b(?:power\\s*point|pptx|presentation|slide\\s*deck|slides?)\\b/i.test(text);
+  const explicitOtherDeliverable = /\\b(?:word document|word file|docx|pdf document|pdf report|excel workbook|spreadsheet|csv file)\\b/i.test(text);
+  const presentationCreation = !explicitOtherDeliverable && CREATION_VERB.test(text) && PRESENTATION_REQUEST.test(text);
+  const presentationConversion = !explicitOtherDeliverable && /\\b(?:turn|convert)\\b[\\s\\S]{0,100}\\b(?:into|to)\\b[\\s\\S]{0,50}\\b(?:power\\s*point|pptx|presentation|slide\\s*deck|slides?)\\b/i.test(text);
   if (presentationCreation || presentationConversion) return "/deck";
 
   if (/\\b(official|formal|business|institutional)\\b.{0,45}\\b(letter|memo|proposal|submission|report|notice)\\b|\\b(create|draft|write|prepare|generate)\\b.{0,50}\\b(official letter|formal letter|memorandum|business letter|institutional proposal|word document|pdf report)\\b/i.test(text)) return "/doc";
