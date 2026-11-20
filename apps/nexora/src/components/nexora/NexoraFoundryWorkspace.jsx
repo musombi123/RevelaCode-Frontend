@@ -1358,7 +1358,7 @@ export default function NexoraFoundryWorkspace() {
 
   const downloadArtifact = async (artifact) => {
     try {
-      const response = await nexoraAuthFetch(artifact.download_url);
+      const response = await localEngineFetch(artifact.download_url);
       if (!response.ok) throw new Error("Artifact download failed (HTTP " + response.status + ").");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
