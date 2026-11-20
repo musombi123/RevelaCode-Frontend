@@ -665,7 +665,7 @@ export default function NexoraFoundryWorkspace() {
     project.description = projectDraftDescription.trim();
     if (API_BASE && authenticatedCloudSession) {
       if (!cloudLoaded) {
-        setNotice("The cloud workspace has not finished loading. Retry after the secure connection is ready.");
+        setNotice("The paired local workspace has not finished loading. Retry after the desktop agent is connected.");
         setProjectCreating(false);
         return;
       }
@@ -681,10 +681,12 @@ export default function NexoraFoundryWorkspace() {
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
         setStudioView("game-editor");
         setProjectModalOpen(false);
-        try { await apiRequest(`/api/v1/desktop/projects/${remoteProject.id}/initialize`, { method: "POST", body: "{}" }); } catch (manifestError) { setNotice(manifestError.message || "Project created, but its local NEXORA manifest could not be initialized."); }
-        setNotice("Project created in your paired computer workspace.");
+        let manifestWarning = "";
+        try { await apiRequest(`/api/v1/desktop/projects/${remoteProject.id}/initialize`, { method: "POST", body: "{}" }); }
+        catch (manifestError) { manifestWarning = manifestError.message || "Project created, but its local NEXORA manifest could not be initialized."; }
+        setNotice(manifestWarning || "Project created in your paired computer workspace.");
       } catch (error) {
-        setNotice(error.message || "Cloud project creation failed.");
+        setNotice(error.message || "Local project creation failed.");
       } finally {
         setProjectCreating(false);
       }
@@ -697,7 +699,7 @@ export default function NexoraFoundryWorkspace() {
     setStudioView("game-editor");
     setProjectModalOpen(false);
     setProjectCreating(false);
-    setNotice("Local project draft created in this browser. Migrate it to cloud when the NEXORA service is available.");
+    setNotice("The desktop agent is not connected. This is only a temporary browser draft; pair the agent before production.");
   };
 
   const openProject = (project) => {
