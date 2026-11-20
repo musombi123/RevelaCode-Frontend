@@ -91,6 +91,10 @@ test("World Builder uses owner-scoped NEXORA endpoints and canonical save docume
   assert.doesNotMatch(world, /["']\/api\/projects\//);
   assert.match(world, /payload\.document/);
   assert.match(world, /cloudProjectActive/);
+  assert.match(world, /localStorage\.getItem\(localWorldKey\)/);
+  assert.match(world, /localStorage\.setItem\(localWorldKey/);
+  const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
+  assert.match(workspace, /userId=\{nexoraUser\?\.id \|\| "anonymous"\}/);
 });
 
 test("NEXORA project tasks use authenticated account-scoped CRUD APIs", () => {
