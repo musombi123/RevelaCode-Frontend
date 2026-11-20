@@ -1159,7 +1159,7 @@ export default function NexoraFoundryWorkspace() {
           </aside>
         </div>}
 
-        {studioView === "build" && (
+        <div hidden={studioView !== "build"}>
           <section className="mx-auto w-full max-w-5xl space-y-3">
             <header className="border border-cyan-900/60 bg-[#0b1118] p-3">
               <h2 className="text-lg font-black text-cyan-200">BUILD CENTRE</h2>
@@ -1181,7 +1181,7 @@ export default function NexoraFoundryWorkspace() {
           />
           <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
           </section>
-        )}
+        </div>
 
         {studioView === "settings" && (
 <section className="mx-auto w-full max-w-3xl border border-cyan-800/50 bg-[#0b1118] p-4"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-2 text-xs text-rose-300">DELETE CURRENT PROJECT</button></section>
@@ -1203,7 +1203,7 @@ export default function NexoraFoundryWorkspace() {
         </section>
         )}
 
-        {studioView === "creator" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} /></div>}
+        <div hidden={studioView !== "creator"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} /></div></div>
 
         {studioView === "project" && (
           <div className="mx-auto w-full max-w-5xl">
