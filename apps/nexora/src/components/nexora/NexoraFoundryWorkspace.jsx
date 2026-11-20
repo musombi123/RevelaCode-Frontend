@@ -1317,6 +1317,67 @@ export default function NexoraFoundryWorkspace() {
         <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
         <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
+      {studioView === "overview" && <NexoraOverviewPage
+        projects={projects}
+        activeProject={activeProject}
+        jobs={jobs}
+        tasks={studioTasks}
+        apiStatus={apiStatus}
+        cloudProjectActive={cloudProjectActive}
+        onNavigate={setStudioView}
+        onOpenProject={openProject}
+        onNewProject={createNewProject}
+        onQuickAction={quickAction}
+        onRefresh={refreshWorkspace}
+      />}
+
+      {studioView === "projects" && <NexoraProjectsPage
+        projects={projects}
+        activeProject={activeProject}
+        onOpen={openProject}
+        onNewProject={createNewProject}
+        onDuplicate={duplicateProject}
+        onArchive={archiveProject}
+        onDelete={deleteProjectById}
+      />}
+
+      {studioView === "team" && <NexoraTasksPage
+        tasks={studioTasks}
+        projects={projects}
+        onCreate={()=>startTask()}
+        onEdit={startTask}
+        onMove={moveTask}
+        onDelete={deleteTask}
+      />}
+
+      {studioView === "analytics" && <NexoraAnalyticsPage
+        projects={projects}
+        jobs={jobs}
+        tasks={studioTasks}
+        activeProject={activeProject}
+      />}
+
+      {studioView === "marketplace" && <NexoraMarketplacePage
+        templates={templates}
+        activeProject={activeProject}
+        onAddTemplate={addTemplateToScene}
+        onPreviewTemplate={previewTemplate}
+      />}
+
+      {studioView === "settings" && <NexoraSettingsPage
+        user={nexoraUser}
+        connectionLabel={apiStatus.label}
+        connectionState={apiStatus.state}
+        apiStatus={apiStatus}
+        onNavigate={setStudioView}
+        onCheckService={checkService}
+        previewAutoRotate={previewAutoRotate}
+        onPreviewAutoRotate={setPreviewAutoRotate}
+        timelineZoom={timelineZoom}
+        onTimelineZoom={setTimelineZoom}
+        onSignOut={signOutNexora}
+      />}
+
 {studioView === "game-editor" && (
         <section ref={timelineRef} className="border border-slate-700 bg-[#0b1016] p-2">
           <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-[11px] font-black uppercase tracking-wider text-cyan-200">TIMELINE EDITOR — VIDEO CLIP → GAME LEVELS</h2><div className="flex items-center gap-2">
