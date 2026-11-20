@@ -3,28 +3,28 @@ name: RevelaCode and NEXORA independent frontend build
 on:
   workflow_dispatch:
   pull_request:
+    branches: [main]
     paths:
       - "apps/nexora/**"
       - "src/main.jsx"
       - "src/App.jsx"
       - "public/revelacode-sw.js"
-      - "public/revelacode-sw.js"
-      - "README.md"
-      - "docs/NEXORA_PATH_BASED_HOSTING.md"
       - "package.json"
       - "package-lock.json"
       - "tests/nexora-path-build-contract.test.mjs"
+      - "docs/NEXORA_PATH_BASED_HOSTING.md"
       - ".github/workflows/nexora-workspace-build.yml"
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
+      - "apps/nexora/**"
       - "src/main.jsx"
       - "src/App.jsx"
-      - "README.md"
-      - "docs/NEXORA_PATH_BASED_HOSTING.md"
+      - "public/revelacode-sw.js"
       - "package.json"
       - "package-lock.json"
+      - "tests/nexora-path-build-contract.test.mjs"
+      - "docs/NEXORA_PATH_BASED_HOSTING.md"
       - ".github/workflows/nexora-workspace-build.yml"
 
 permissions:
@@ -33,15 +33,16 @@ permissions:
 jobs:
   frontend-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: npm ci
       - name: Verify NEXORA path isolation contract
         run: node --test tests/nexora-path-build-contract.test.mjs
