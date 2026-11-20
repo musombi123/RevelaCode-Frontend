@@ -271,6 +271,10 @@ export default function NexoraFoundryWorkspace() {
   const [polyHavenLoading, setPolyHavenLoading] = useState(false);
   const [polyHavenDownloading, setPolyHavenDownloading] = useState("");
   const [polyHavenDownloaded, setPolyHavenDownloaded] = useState({});
+  const [defaultAssetPacks, setDefaultAssetPacks] = useState([]);
+  const [defaultAssetPacksLoading, setDefaultAssetPacksLoading] = useState(false);
+  const [defaultAssetInstalling, setDefaultAssetInstalling] = useState("");
+  const [installedDefaultPack, setInstalledDefaultPack] = useState(null);
   const [templates, setTemplates] = useState([
     { id:"sci_fi_crate", name:"Neon Cargo Crate", category:"Props", kind:"crate", description:"Modular industrial cargo container", default_scale:1 },
     { id:"signal_beacon", name:"Signal Beacon", category:"Props", kind:"beacon", description:"Glowing navigation marker", default_scale:1 },
@@ -473,6 +477,49 @@ export default function NexoraFoundryWorkspace() {
     }
     return payload;
   }, [nexoraSession?.access_token, nexoraAuthFetch, localEngineFetch]);
+
+  // Populate the Asset Factory as soon as the creator opens it on a paired
+  // desktop. Catalogue metadata and all file operations stay on the local
+  // Foundry agent; no game binaries are sent to the cloud.
+  useEffect(() => {
+    if (!localAgentConnected || studioView !== "assets") return undefined;
+    let cancelled = false;
+    setDefaultAssetPacksLoading(true);
+    apiRequest("/api/v1/desktop/assets/default-packs")
+      .then((payload) => {
+        if (!cancelled) setDefaultAssetPacks(Array.isArray(payload.packs) ? payload.packs : []);
+      })
+      .catch((error) => {
+        if (!cancelled) setNotice(error.message || "Could not load the offline starter asset catalogue.");
+      })
+      .finally(() => { if (!cancelled) setDefaultAssetPacksLoading(false); });
+    // Load actual provider results immediately; the search field remains
+    // available for narrowing the catalogue.
+    apiRequest("/api/v1/desktop/assets/3d/search?q=&limit=24")
+      .then((payload) => { if (!cancelled) setPolyHavenResults(Array.isArray(payload.results) ? payload.results : []); })
+      .catch(() => { if (!cancelled) setPolyHavenResults([]); });
+    return () => { cancelled = true; };
+  }, [localAgentConnected, studioView, activeProject?.id, apiRequest]);
+
+  const installDefaultAssetPack = async (pack) => {
+    if (!activeProject || !cloudProjectActive || !localAgentConnected) {
+      setNotice("Open a saved NEXORA project and pair the desktop agent before installing a starter pack.");
+      return;
+    }
+    setDefaultAssetInstalling(pack.id);
+    try {
+      const result = await apiRequest(`/api/v1/desktop/projects/${encodeURIComponent(activeProject.id)}/assets/default-pack`, {
+        method: "POST",
+        body: JSON.stringify({ pack_id: pack.id, overwrite_existing: false }),
+      });
+      setInstalledDefaultPack({ ...result, pack_id: pack.id, pack_name: pack.name });
+      setNotice(`${pack.name} starter assets installed in the local Godot project: ${result.asset_count || result.assets?.length || "asset"} files.`);
+    } catch (error) {
+      setNotice(error.message || `Could not install the ${pack.name} starter pack.`);
+    } finally {
+      setDefaultAssetInstalling("");
+    }
+  };
 
   useEffect(() => {
     if (!API_BASE || nexoraAuthLoading) return undefined;
@@ -1837,6 +1884,28 @@ export default function NexoraFoundryWorkspace() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
           </div>
 
+
+          <div className="mt-3 border border-cyan-800/60 bg-[#0d1722] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><h3 className="text-[11px] font-black tracking-widest text-cyan-200">BUILT-IN 2D ASSET PACKS</h3><p className="mt-1 text-[9px] text-slate-400">Real, locally generated SVG sprites, environment tiles, UI textures and WAV sound effects. CC0 original assets; works offline after installation.</p></div>
+              <span className="border border-cyan-700 px-2 py-1 text-[9px] text-cyan-200">4 STARTER PACKS</span>
+            </div>
+            {!localAgentConnected ? <p className="mt-3 text-[10px] text-amber-300">Pair the desktop agent in Device Lab to load and install the local asset catalogue.</p> :
+              defaultAssetPacksLoading ? <p className="mt-3 text-[10px] text-cyan-200">Loading starter catalogue…</p> :
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {defaultAssetPacks.map(pack => <article key={pack.id} className="border border-slate-700 bg-[#111d29] p-3">
+                  <div className="mb-2 flex h-16 items-center justify-center border border-slate-700 bg-gradient-to-br from-cyan-950 to-slate-900">
+                    <div className="flex items-center gap-1"><span className="h-8 w-8 rounded-md border-2 border-cyan-300 bg-cyan-500/20"></span><span className="h-5 w-5 rounded-full border-2 border-amber-300 bg-amber-400/20"></span><span className="h-6 w-6 border-2 border-emerald-300 bg-emerald-500/20"></span></div>
+                  </div>
+                  <h4 className="text-[11px] font-black text-white">{pack.name}</h4>
+                  <p className="mt-1 min-h-8 text-[9px] text-slate-400">{pack.description}</p>
+                  <p className="mt-2 text-[8px] text-slate-500">{(pack.asset_types || []).join(" · ")} · {pack.license}</p>
+                  <button type="button" onClick={() => installDefaultAssetPack(pack)} disabled={!cloudProjectActive || Boolean(defaultAssetInstalling)} className="mt-3 w-full border border-cyan-700 bg-cyan-950/50 px-2 py-2 text-[9px] font-black text-cyan-100 disabled:opacity-40">{defaultAssetInstalling === pack.id ? "INSTALLING…" : installedDefaultPack?.pack_id === pack.id ? "INSTALLED · REINSTALL" : "↓ INSTALL INTO PROJECT"}</button>
+                </article>)}
+              </div>}
+            {installedDefaultPack && <p className="mt-2 break-all text-[9px] text-emerald-300">Installed locally: {installedDefaultPack.directory || "assets/nexora-defaults"} · {installedDefaultPack.asset_count || installedDefaultPack.assets?.length || "Starter"} files</p>}
+            <p className="mt-2 text-[8px] text-slate-500">Each pack contains editable SVG character poses, backgrounds, platforms, props, enemies, collectibles, UI elements and synthesized WAV audio. These are original starter assets—not skeletal 3D characters.</p>
+          </div>
 
           <div className="mt-3 border border-emerald-800/60 bg-[#0c1918] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
