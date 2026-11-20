@@ -81,6 +81,15 @@ function workspaceDownloadUrl(value) {
   return value?.download_url || value?.url || null;
 }
 
+function workspaceOutputTitle(prompt, fallback = "RevelaAI output") {
+  const cleaned = String(prompt || "")
+    .replace(/\s+(?:as|to|into|in)\s+(?:(?:a|an|the)\s+)?\.[a-z0-9]{1,8}\s*$/i, "")
+    .replace(/\s+(?:as|to|into|in)\s+(?:pptx|docx|xlsx|csv|pdf|md|markdown|txt|png|jpe?g|svg)\s*$/i, "")
+    .replace(/^\s*(?:please\s+)?(?:create|generate|make|prepare|export|save|build|write|produce|design)\s+/i, "")
+    .trim();
+  return (cleaned || fallback).slice(0, 120);
+}
+
 function buildWorkspaceArtifact(result, title, prompt) {
   const primarySource = result?.artifact || result?.poster?.artifact || result?.document || result?.workbook;
   const previewSource = result?.preview_file || result?.document_preview;
@@ -1316,7 +1325,7 @@ export default function AIAssistantDashboard({
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
             if (!workspacePrompt && !attachedFile) throw new Error("Describe the artifact you want RevelaAI to create.");
-            const safeTitle = (workspacePrompt || attachedFile?.name || "RevelaAI output").slice(0, 120);
+            const safeTitle = workspaceOutputTitle(workspacePrompt || attachedFile?.name || "", attachedFile?.name || "RevelaAI output");
             let workspacePayload = { prompt: workspacePrompt || "Analyze the uploaded file and produce a useful artifact.", title: safeTitle };
             let files = [];
 
