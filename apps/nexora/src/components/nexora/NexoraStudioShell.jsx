@@ -10,16 +10,12 @@ const NAV_GROUPS = [
   { label: "WORKSPACE", items: [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "projects", label: "Projects", icon: FolderOpen },
-    { id: "factory", label: "Project Factory", icon: Laptop },
     { id: "game-editor", label: "Game Editor", icon: Gamepad2 },
     { id: "ai", label: "AI Studio", icon: Sparkles },
     { id: "world", label: "World Builder", icon: Layers3 },
     { id: "assets", label: "Asset Library", icon: Box },
     { id: "build", label: "Build & Test", icon: Play },
     { id: "device-lab", label: "Device Lab", icon: HardDrive },
-    { id: "toolchains", label: "Toolchain Manager", icon: Wrench },
-    { id: "backups", label: "Backup & Versions", icon: Archive },
-    { id: "release-center", label: "Release Center", icon: PackageCheck },
     { id: "analytics", label: "Analytics", icon: Activity },
   ]},
   { label: "MANAGE", items: [
@@ -45,7 +41,15 @@ export default function NexoraStudioShell({
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
 
-  const navLookup = useMemo(() => NAV_GROUPS.flatMap(group => group.items), []);
+  // Advanced production workspaces stay available through Ctrl+K and the Factory hub,
+  // while the primary sidebar mirrors the compact command-center navigation.
+  const advancedNavItems = [
+    { id: "factory", label: "Project Factory", icon: Laptop },
+    { id: "toolchains", label: "Toolchain Manager", icon: Wrench },
+    { id: "backups", label: "Backup & Versions", icon: Archive },
+    { id: "release-center", label: "Release Center", icon: PackageCheck },
+  ];
+  const navLookup = useMemo(() => [...NAV_GROUPS.flatMap(group => group.items), ...advancedNavItems], []);
   const commandResults = navLookup.filter(item =>
     item.label.toLowerCase().includes(commandQuery.trim().toLowerCase())
   );
