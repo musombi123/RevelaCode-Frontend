@@ -18,6 +18,7 @@ const STORAGE_KEY = "nexora.foundry.projects.v1";
 const ACTIVE_KEY = "nexora.foundry.active-project.v1";
 const NEXORA_SESSION_KEY = "nexora.account.session.v1";
 const TASKS_STORAGE_KEY = "nexora.studio.tasks.v1";
+const PREFERENCES_STORAGE_KEY = "nexora.studio.preferences.v1";
 const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
@@ -255,7 +256,6 @@ export default function NexoraFoundryWorkspace() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [assetConversionRole, setAssetConversionRole] = useState("prop");
-  const [desktopViewport, setDesktopViewport] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 1200px) and (pointer: fine)").matches);
   const [templates, setTemplates] = useState([
     { id:"sci_fi_crate", name:"Neon Cargo Crate", category:"Props", kind:"crate", description:"Modular industrial cargo container", default_scale:1 },
     { id:"signal_beacon", name:"Signal Beacon", category:"Props", kind:"beacon", description:"Glowing navigation marker", default_scale:1 },
@@ -269,9 +269,15 @@ export default function NexoraFoundryWorkspace() {
   const [previewSelection, setPreviewSelection] = useState({ type:"template", id:"sci_fi_crate" });
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewAutoRotate, setPreviewAutoRotate] = useState(true);
+  const [previewAutoRotate, setPreviewAutoRotate] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(PREFERENCES_STORAGE_KEY) || "{}").previewAutoRotate ?? true; }
+    catch { return true; }
+  });
   const [previewProfile, setPreviewProfile] = useState("PC ULTRA");
-  const [timelineZoom, setTimelineZoom] = useState(1);
+  const [timelineZoom, setTimelineZoom] = useState(() => {
+    try { return Number(JSON.parse(localStorage.getItem(PREFERENCES_STORAGE_KEY) || "{}").timelineZoom || 1); }
+    catch { return 1; }
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoRightsConfirmed, setVideoRightsConfirmed] = useState(false);
   const [originalAssetsConfirmed, setOriginalAssetsConfirmed] = useState(true);
@@ -451,6 +457,14 @@ export default function NexoraFoundryWorkspace() {
       setNotice("The local task board could not be saved. Browser storage may be full.");
     }
   }, [studioTasks, storageUserId, projectsScopeId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify({ previewAutoRotate, timelineZoom }));
+    } catch {
+      setNotice("Studio preferences could not be saved in this browser.");
+    }
+  }, [previewAutoRotate, timelineZoom]);
 
   useEffect(() => {
     setStudioTasks(readStudioTasks(storageUserId));
@@ -1091,14 +1105,6 @@ export default function NexoraFoundryWorkspace() {
     }
   }, []);
 
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 1200px) and (pointer: fine)");
-    const update = () => setDesktopViewport(media.matches);
-    update();
-    media.addEventListener?.("change",update);
-    return () => media.removeEventListener?.("change",update);
-  }, []);
-
   useEffect(() => { checkService(); }, [checkService]);
 
   useEffect(() => {
@@ -1116,7 +1122,6 @@ export default function NexoraFoundryWorkspace() {
   },[authenticatedCloudSession,nexoraAuthLoading,apiRequest,activeProject?.id,activeProject?._remoteVersion]);
 
   useEffect(() => {
-    if (!desktopViewport) return undefined;
     let live=true;
     let currentUrl="";
     const loadModel = async () => {
@@ -1151,7 +1156,7 @@ export default function NexoraFoundryWorkspace() {
     };
     loadModel();
     return ()=>{live=false;if(currentUrl)URL.revokeObjectURL(currentUrl);};
-  },[previewSelection,activeProject?.id,activeProject?.assets,desktopViewport,authenticatedCloudSession,nexoraAuthFetch]);
+  },[previewSelection,activeProject?.id,activeProject?.assets,authenticatedCloudSession,nexoraAuthFetch]);
 
   useEffect(() => {
     if (typeof window==="undefined" || window.customElements?.get("model-viewer")) return;
