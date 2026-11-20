@@ -31,7 +31,7 @@ import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
-import { inferWorkspaceCommand, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
+import { inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
 import { useAuth } from "@/context/AuthContext";
@@ -1302,12 +1302,16 @@ export default function AIAssistantDashboard({
         try {
           updateLoadingStage(attachedFile ? (freeMode ? "local-analysis-only" : "local-analysis") : freeMode ? "local-reasoning" : "connecting");
 
-          const workspaceCommands = new Set(["/doc", "/deck", "/sheet", "/data", "/ledger", "/paper", "/code", "/ui", "/promo", "/image"]);
-          const inferredWorkspaceCommand = inferWorkspaceCommand(cleaned, attachedFile);
+          const workspaceCommands = new Set(["/doc", "/deck", "/sheet", "/data", "/ledger", "/paper", "/code", "/ui", "/promo", "/image", "/export-unsupported"]);
+          const inferredWorkspaceExport = inferWorkspaceExport(cleaned, attachedFile);
+          const inferredWorkspaceCommand = inferredWorkspaceExport?.command || inferWorkspaceCommand(cleaned, attachedFile);
           const workspaceCommand = selectWorkspaceCommand(selectedToolCommand, inferredWorkspaceCommand, workspaceCommands);
           const runWorkspace = workspaceCommands.has(workspaceCommand) && !(workspaceCommand === "/image" && inputMeta?.toolMode === "merge");
           if (runWorkspace) {
             workspaceRequested = true;
+            if (workspaceCommand === "/export-unsupported") {
+              throw new Error(inferredWorkspaceExport?.message || "That export extension is not currently supported. RevelaAI has not substituted a different format.");
+            }
             if (freeMode) throw new Error("Switch to Adaptive mode to generate hosted documents, workbooks, code files, designs or campaign assets. Free mode remains local-only.");
             updateLoadingStage("workspace-executing");
             const workspacePrompt = String(cleaned || requestMessage || "").replace(/^\/(?:doc|deck|sheet|data|ledger|paper|code|ui|promo|image)\b\s*/i, "").trim();
@@ -1320,7 +1324,9 @@ export default function AIAssistantDashboard({
               workspacePayload = {
                 ...workspacePayload,
                 task: "document",
-                format: /\bpdfs?\b/i.test(workspacePrompt) ? "pdf" : "word",
+                format: inferredWorkspaceExport?.command === "/doc"
+                  ? inferredWorkspaceExport.format
+                  : /\bpdfs?\b/i.test(workspacePrompt) ? "pdf" : "word",
                 document_style: /\b(official|officially|formal|formally|institutional|letterhead)\b/i.test(workspacePrompt) ? "official" : "auto",
                 document_count: requestedWorkspaceDocumentCount(workspacePrompt),
               };
@@ -1340,7 +1346,11 @@ export default function AIAssistantDashboard({
                 workspacePayload = { ...workspacePayload, image_placement: "title_slide", image_width_inches: 1.2 };
               } else if (attachedFile) throw new Error("Attach a PNG, JPEG or WEBP image to place it on the presentation title slide.");
             } else if (workspaceCommand === "/sheet" || workspaceCommand === "/ledger") {
-              workspacePayload = { ...workspacePayload, task: "document", format: "spreadsheet" };
+              workspacePayload = {
+                ...workspacePayload,
+                task: "document",
+                format: inferredWorkspaceExport?.command === "/sheet" ? inferredWorkspaceExport.format : "spreadsheet",
+              };
               if (attachedFile) workspacePayload.dataset = await datasetFromWorkspaceAttachment(attachedFile);
             } else if (workspaceCommand === "/data") {
               workspacePayload = { ...workspacePayload, task: "analytics" };
@@ -1348,7 +1358,9 @@ export default function AIAssistantDashboard({
               else if (workspacePrompt.includes("\n") && workspacePrompt.includes(",")) workspacePayload.dataset = workspacePrompt;
               else throw new Error("Attach a CSV or JSON dataset, or paste CSV rows with a header line, to run deterministic data analysis.");
             } else if (workspaceCommand === "/code") {
-              const language = workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
+              const language = inferredWorkspaceExport?.command === "/code"
+                ? inferredWorkspaceExport.language
+                : workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
               workspacePayload = { ...workspacePayload, task: "code", language };
               if (attachedFile) throw new Error("Source-file editing is not yet part of the file-export workspace. Paste the code or use the normal chat attachment analysis first.");
             } else if (workspaceCommand === "/ui") {
@@ -1367,7 +1379,9 @@ export default function AIAssistantDashboard({
                   image_options: {
                     aspect_ratio: ratio,
                     format_preset: options.formatPreset || "INSTAGRAM_SQUARE",
-                    output_format: "png",
+                    output_format: inferredWorkspaceExport?.command === "/image"
+                      ? (inferredWorkspaceExport.outputFormat || "png")
+                      : "png",
                     language: options.language || "en",
                     text_direction: options.textDirection || (options.language === "ar" ? "rtl" : "ltr"),
                     dpi: Number(options.dpi || 150),
