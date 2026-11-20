@@ -214,7 +214,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
           <button type="button" className={button} disabled={Boolean(busy)} onClick={() => run("refresh", loadStatus)}><RefreshCw size={13}/> Refresh machine</button>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[9px] text-slate-500">OPERATING SYSTEM</div><div className="mt-1 text-xs font-bold text-white">{status?.machine?.system || status?.machine?.platform || "Checking…"}</div></div>
+          <div className="rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[9px] text-slate-500">OPERATING SYSTEM</div><div className="mt-1 text-xs font-bold text-white">{status?.machine?.os || "Checking…"}</div></div>
           <div className="rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[9px] text-slate-500">CPU / MEMORY</div><div className="mt-1 text-xs font-bold text-white">{status?.machine?.logical_cpu_count || "—"} cores · {status?.machine?.ram_total_gib || "—"} GiB</div></div>
           <div className="rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[9px] text-slate-500">FREE DISK</div><div className="mt-1 text-xs font-bold text-white">{status?.machine?.disk_free_gib ?? "—"} GiB</div></div>
           <div className="rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[9px] text-slate-500">LOCAL PROJECTS</div><div className="mt-1 text-xs font-bold text-white">{status?.projects ?? "—"}</div></div>
