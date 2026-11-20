@@ -30,7 +30,7 @@ function terminateWorker(language) {
 export function stopCode(language) {
   const active = activeRuns[language];
   if (active?.finish) {
-    active.finish({ ok: false, error: "Execution stopped by the user." }, true);
+    active.finish({ ok: false, stopped: true, error: "Execution stopped by the user." }, true);
     return;
   }
   terminateWorker(language);
