@@ -8,6 +8,7 @@ import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
+import NexoraFactoryControlPanel from "./NexoraFactoryControlPanel.jsx";
 import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
@@ -1400,6 +1401,7 @@ export default function NexoraFoundryWorkspace() {
     assets:["Asset Library","Manage imported 3D models and production media"],
     build:["Build & Test","Configure Android builds, export targets and inspect actual worker results"],
     "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
+    factory:["Desktop Factory","Configure the local workspace, toolchains, recovery points and store handoff"],
     analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
     team:["Team & Tasks","Manage cloud-linked project tasks and your production workflow"],
     marketplace:["Marketplace","Browse the built-in NEXORA procedural template catalogue"],
@@ -1513,6 +1515,17 @@ export default function NexoraFoundryWorkspace() {
       <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
+
+      <div hidden={studioView !== "factory"}>
+        <NexoraFactoryControlPanel
+          projectId={activeProject?.id || ""}
+          onWorkspaceUpdated={refreshFactoryProjects}
+          onNavigate={setStudioView}
+          onSelectProject={setActiveId}
+          onQueueProduction={(kind, target) => queueProductionJob(kind, target, target === "android" ? androidBuild : null)}
+          setNotice={setNotice}
+        />
+      </div>
 
       {studioView === "overview" && <NexoraStudioOverview
         projects={projects}

@@ -1,0 +1,44 @@
+name: NEXORA Desktop Studio Build
+
+on:
+  pull_request:
+    paths:
+      - "apps/nexora/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexora-desktop.yml"
+  push:
+    branches:
+      - main
+      - "nexora-*"
+      - "feat/**"
+    paths:
+      - "apps/nexora/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/nexora-desktop.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nexora-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build desktop Studio
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build NEXORA desktop Studio
+        run: npm run build:nexora

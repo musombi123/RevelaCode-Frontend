@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus, MessageSquare, PanelLeftClose, PanelLeftOpen, Sparkles, MessageCircle,
   GraduationCap, Trash2, Pencil, Check, X, Mic, Camera, WifiOff, Search,
-  Pin, Settings2, History, ChevronDown, Wrench
+  Pin, Settings2, History, ChevronDown, Wrench, FolderOpen
 } from "lucide-react";
 import { resolveChatTitle } from "@/components/utils/chatTitle";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -45,7 +45,7 @@ function dateBucket(value) {
 
 export default function Sidebar({
   open, setOpen, chats = [], onNewChat, onSelectChat, onDeleteChat, onRenameChat,
-  onOpenVoice, onOpenVision, onOpenIdentity, freeMode = false, onToggleFreeMode,
+  onOpenVoice, onOpenVision, onOpenIdentity, onOpenFiles, freeMode = false, onToggleFreeMode,
   activeChatId = null,
 }) {
   const { user } = useAuth();
@@ -280,6 +280,13 @@ export default function Sidebar({
             title="New chat" aria-label="New chat"
             className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-3 text-sm font-bold text-accent hover:bg-accent/15 active:scale-[.99] " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
             <Plus size={18}/><span className={collapsed ? "lg:hidden" : ""}>New chat</span>
+          </button>
+
+          <button type="button" data-demo="sidebar-files-library"
+            onClick={() => { onOpenFiles?.(); setToolsOpen(false); setOpen(false); }}
+            title="My Files" aria-label="Open Files Library"
+            className={"flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-sm font-semibold text-fg-secondary hover:border-accent/35 hover:text-accent " + (collapsed ? "lg:px-0" : "lg:justify-start")}>
+            <FolderOpen size={17}/><span className={collapsed ? "lg:hidden" : ""}>My Files</span>
           </button>
 
           <button
