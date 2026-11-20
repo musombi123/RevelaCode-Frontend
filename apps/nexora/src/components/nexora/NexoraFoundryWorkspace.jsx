@@ -1421,6 +1421,28 @@ export default function NexoraFoundryWorkspace() {
           </section>
         </div>}
 
+        {studioView === "ai" && <section className="mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-[#20334B] bg-[#101B2C] p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="text-sm font-extrabold text-white">AI & Production Job Queue</h2><p className="mt-1 text-[10px] text-slate-500">Live status from the selected cloud project. Retry is available only for supported Foundry job types.</p></div>
+            <button type="button" onClick={refreshJobs} disabled={!cloudProjectActive||busy} className="rounded-lg border border-[#29415F] px-3 py-2 text-[10px] font-bold text-cyan-200 disabled:opacity-40"><RefreshCw size={12} className="mr-1 inline"/> Refresh Queue</button>
+          </div>
+          {jobs.length ? <div className="space-y-2">{jobs.map(job=>{
+            const retryable=["scene.generate","build.export","playtest"].includes(job.kind);
+            const percent=Number.isFinite(Number(job.progress))?Math.max(0,Math.min(100,Number(job.progress))):null;
+            return <article key={job.id} className="rounded-xl border border-[#29415F] bg-[#0B1625] p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0"><h3 className="truncate text-xs font-bold text-white">{job.kind||"Foundry job"}</h3><p className="mt-1 text-[10px] text-slate-500">{job.message||"Status returned by the NEXORA worker."}</p><p className="mt-1 text-[9px] text-slate-600">Job ID: {job.id}</p></div>
+                <span className={"rounded-md px-2 py-1 text-[9px] font-black uppercase "+(job.state==="completed"?"bg-emerald-500/10 text-emerald-300":job.state==="failed"?"bg-rose-500/10 text-rose-300":job.state==="review"?"bg-amber-500/10 text-amber-200":"bg-cyan-500/10 text-cyan-200")}>{job.state}</span>
+              </div>
+              {percent!==null&&<div className="mt-3"><div className="mb-1 flex justify-between text-[9px] text-slate-500"><span>Worker progress</span><span>{percent}%</span></div><div className="h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-cyan-400 transition-all" style={{width:percent+"%"}}/></div></div>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {retryable&&job.state==="failed"&&<button type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob(job.kind,job.target||"desktop")} className="rounded-lg border border-amber-500/30 px-3 py-1.5 text-[9px] font-bold text-amber-200 disabled:opacity-40">Retry Job</button>}
+                {(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={()=>downloadArtifact(artifact)} className="rounded-lg border border-cyan-500/30 px-3 py-1.5 text-[9px] font-bold text-cyan-200">Download {artifact.filename}</button>)}
+              </div>
+            </article>;
+          })}</div> : <div className="rounded-xl border border-dashed border-[#29415F] p-7 text-center text-xs text-slate-500">{cloudProjectActive?"No jobs recorded for this project yet.":"Open a cloud-synced project to view its production job history."}</div>}
+        </section>}
+
         {studioView === "game-editor" && <div className="mx-auto w-full max-w-6xl">
           <section ref={previewRef} className="flex min-h-[520px] min-w-0 flex-col border border-cyan-900/60 bg-[#0b1118]">
             <div className="px-2 pt-2 text-center"><h2 className="text-2xl font-black text-cyan-200">3D GAME PREVIEW <span className="border border-red-500/40 bg-red-950/40 px-1 text-[9px] text-red-300">LIVE</span></h2><div className="text-[10px] font-bold tracking-widest text-cyan-300">INTERACTIVE 3D MODEL VIEW · DRAG TO ORBIT</div></div>
