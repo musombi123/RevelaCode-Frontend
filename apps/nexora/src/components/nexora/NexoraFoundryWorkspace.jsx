@@ -4,6 +4,7 @@ import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
+import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import { NexoraOverviewPage, NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
@@ -1220,6 +1221,69 @@ export default function NexoraFoundryWorkspace() {
   if (!nexoraSession?.access_token || !nexoraUser) {
     return <NexoraAuthGate apiBase={API_BASE} onAuthenticated={acceptNexoraSession} />;
   }
+
+  const pageMeta = {
+    overview:["Studio Overview","Your production command center"],
+    projects:["Projects","Manage your NEXORA game projects"],
+    "game-editor":["Game Editor","Edit scenes, inspect objects and work with the production timeline"],
+    ai:["AI Studio","Review production tools, AI jobs and Creator Flow"],
+    world:["World Builder","Organize scene nodes, inspect transforms and add procedural templates"],
+    assets:["Asset Library","Manage imported 3D models and production media"],
+    build:["Build & Test","Configure Android builds, export targets and inspect actual worker results"],
+    "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
+    analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
+    team:["Team & Tasks","Organize tasks in this browser-local production board"],
+    marketplace:["Marketplace","Browse the built-in NEXORA procedural template catalogue"],
+    settings:["Settings","Account, workspace preferences, connection and billing access"],
+  };
+  const [pageTitle,pageSubtitle] = pageMeta[studioView] || pageMeta.overview;
+  const searchText = globalSearch.trim().toLowerCase();
+  const globalSearchResults = searchText ? [
+    ...projects.filter(project => !project.archived && (project.name+" "+(project.description||"")).toLowerCase().includes(searchText))
+      .slice(0,5).map(project=>({id:"project:"+project.id,kind:"Project",title:project.name,subtitle:project.description||"Open project",projectId:project.id})),
+    ...projects.flatMap(project=>(project.assets||[]).filter(asset=>(asset.name||"").toLowerCase().includes(searchText))
+      .slice(0,5).map(asset=>({id:"asset:"+project.id+":"+asset.id,kind:"Asset",title:asset.name,subtitle:project.name+" · "+asset.type,projectId:project.id,asset}))),
+    ...studioTasks.filter(task=>(task.title+" "+(task.assignee||"")+" "+(task.category||"")).toLowerCase().includes(searchText))
+      .slice(0,5).map(task=>({id:"task:"+task.id,kind:"Task",title:task.title,subtitle:task.status.replace("_"," "),taskId:task.id})),
+  ].slice(0,10) : [];
+  const selectSearchResult = (result) => {
+    if (result.kind === "Project") {
+      const project = projects.find(item=>item.id===result.projectId);
+      if (project) openProject(project);
+    } else if (result.kind === "Asset") {
+      const project = projects.find(item=>item.id===result.projectId);
+      if (project) {
+        setActiveId(project.id);
+        if (["glb","gltf"].includes(result.asset?.type)) setPreviewSelection({type:"asset",id:result.asset.id});
+        setStudioView("assets");
+      }
+    } else if (result.kind === "Task") {
+      setStudioView("team");
+    }
+  };
+  const productionAlerts = jobs.filter(job=>job.state==="failed" || job.state==="review")
+    .slice(0,6).map(job=>({id:job.id,kind:"build",severity:job.state==="failed"?"error":"warning",title:job.kind||"Production job",description:job.message||("Job status: "+job.state)}));
+  const selectedStorageBytes = (activeProject?.assets||[]).reduce((sum,asset)=>sum+Number(asset.size||0),0);
+  const selectedStorageLabel = activeProject ? formatBytes(selectedStorageBytes)+" in "+activeProject.name : "No project selected";
+  const refreshWorkspace = () => { checkService(); if (cloudProjectActive) refreshJobs(); };
+  const quickAction = (action) => {
+    if (!activeProject) {
+      setNotice("Create or open a project before using scene and playtest actions.");
+      setProjectModalOpen(true);
+      return;
+    }
+    if (action === "scene") {
+      addSceneObject();
+      setStudioView("game-editor");
+    } else if (action === "playtest") {
+      setStudioView("build");
+      queueProductionJob("playtest","desktop");
+    }
+  };
+  const previewTemplate = (template) => {
+    setPreviewSelection({type:"template",id:template.id});
+    setStudioView("game-editor");
+  };
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#070b10] text-slate-100">
