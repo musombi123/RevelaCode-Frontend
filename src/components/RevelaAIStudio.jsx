@@ -92,6 +92,51 @@ function DocumentEditor({ payload, onChange }) {
   );
 }
 
+function ImageEditor({ payload, onChange, previewUrl }) {
+  const transform = payload.transform || {
+    rotation: 0, brightness: 100, contrast: 100, saturation: 100,
+    grayscale: 0, flip_x: false, flip_y: false,
+  };
+  const update = (patch) => onChange({ ...payload, transform: { ...transform, ...patch } });
+  const filter = [
+    "brightness(" + Number(transform.brightness ?? 100) + "%)",
+    "contrast(" + Number(transform.contrast ?? 100) + "%)",
+    "saturate(" + Number(transform.saturation ?? 100) + "%)",
+    "grayscale(" + Number(transform.grayscale ?? 0) + "%)",
+  ].join(" ");
+  const imageTransform = "rotate(" + Number(transform.rotation ?? 0) + "deg) scaleX(" + (transform.flip_x ? -1 : 1) + ") scaleY(" + (transform.flip_y ? -1 : 1) + ")";
+  return (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <div className="flex min-h-[320px] items-center justify-center overflow-hidden rounded-2xl border border-line bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%,transparent_75%,#e5e7eb_75%),linear-gradient(45deg,#e5e7eb_25%,#fff_25%,#fff_75%,#e5e7eb_75%)] bg-[length:24px_24px] bg-[position:0_0,12px_12px] p-5">
+        {previewUrl ? <img src={previewUrl} alt="Image editing preview" className="max-h-[58vh] max-w-full object-contain shadow-xl"
+          style={{ filter, transform: imageTransform, transformOrigin: "center" }}/> :
+          <p className="text-sm text-muted">Image preview is unavailable.</p>}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => update({ rotation: (Number(transform.rotation || 0) + 270) % 360 })} className="min-h-10 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary">Rotate left 90°</button>
+        <button type="button" onClick={() => update({ rotation: (Number(transform.rotation || 0) + 90) % 360 })} className="min-h-10 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary">Rotate right 90°</button>
+        <button type="button" onClick={() => update({ flip_x: !transform.flip_x })} aria-pressed={Boolean(transform.flip_x)} className="min-h-10 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary">Flip horizontal</button>
+        <button type="button" onClick={() => update({ flip_y: !transform.flip_y })} aria-pressed={Boolean(transform.flip_y)} className="min-h-10 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary">Flip vertical</button>
+        <button type="button" onClick={() => update({ rotation: 0, brightness: 100, contrast: 100, saturation: 100, grayscale: 0, flip_x: false, flip_y: false })} className="min-h-10 rounded-lg border border-line px-3 text-xs font-semibold text-fg-secondary">Reset adjustments</button>
+      </div>
+      <div className="grid gap-3 rounded-2xl border border-line bg-surface p-4 sm:grid-cols-2">
+        {[
+          ["brightness", "Brightness", 0, 200],
+          ["contrast", "Contrast", 0, 200],
+          ["saturation", "Saturation", 0, 200],
+          ["grayscale", "Grayscale", 0, 100],
+        ].map(([key, label, min, max]) => (
+          <label key={key} className="block space-y-2">
+            <span className="flex items-center justify-between text-xs font-semibold text-fg-secondary"><span>{label}</span><span className="tabular-nums">{Number(transform[key] ?? 100)}%</span></span>
+            <input type="range" min={min} max={max} step="1" value={Number(transform[key] ?? 100)} onChange={(event) => update({ [key]: Number(event.target.value) })} className="w-full accent-current"/>
+          </label>
+        ))}
+      </div>
+      <p className="text-[11px] leading-5 text-muted">Adjustments are applied to the preserved original image when you save. The original upload remains available in version history.</p>
+    </div>
+  );
+}
+
 function SpreadsheetEditor({ payload, onChange }) {
   const sheets = Array.isArray(payload.sheets) ? payload.sheets : [];
   const [activeSheet, setActiveSheet] = useState(0);
@@ -284,6 +329,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
 
   const supportedExports = useMemo(() => {
     if (kind === "document") return ["DOCX", "PDF"];
+    if (kind === "image") return ["PNG", "JPG", "PDF"];
     if (kind === "spreadsheet") return ["XLSX", "CSV"];
     if (kind === "slide_deck") return ["PPTX"];
     if (kind === "code") return [extension.toUpperCase(), "TXT"].filter((item, index, all) => all.indexOf(item) === index);
@@ -390,6 +436,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
               {hasMediaLossRisk && <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-xs text-rose-700 dark:text-rose-300">Editing is disabled to protect embedded media. You can still preview and export the original file.</div>}
               {!canEdit && !hasMediaLossRisk && <div className="mb-4 rounded-xl border border-line bg-surface p-4 text-sm text-muted">This artifact is available in preview mode. A native editable source is not available for this file type yet.</div>}
               {canEdit && kind === "document" && <DocumentEditor payload={payload} onChange={updatePayload}/>}
+              {canEdit && kind === "image" && <ImageEditor payload={payload} onChange={updatePayload} previewUrl={previewUrl}/>}
               {canEdit && kind === "spreadsheet" && <SpreadsheetEditor payload={payload} onChange={updatePayload}/>}
               {canEdit && kind === "slide_deck" && <PresentationEditor payload={payload} onChange={updatePayload}/>}
               {canEdit && kind === "code" && (
