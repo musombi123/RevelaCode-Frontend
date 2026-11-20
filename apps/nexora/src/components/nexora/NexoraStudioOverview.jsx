@@ -88,9 +88,6 @@ function SceneArtwork({ variant = "orbit" }) {
         <radialGradient id={sceneId + "-moon"}>
           <stop stopColor="#fff8ed"/><stop offset=".7" stopColor="#cbbcf5"/><stop offset="1" stopColor="#898acb"/>
         </radialGradient>
-        <linearGradient id={sceneId + "-mist"} x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#d4eeff" stopOpacity=".34"/><stop offset="1" stopColor="#b0d9f4" stopOpacity="0"/>
-        </linearGradient>
       </defs>
       <rect width="1100" height="270" fill={"url(#" + sceneId + "-sky)"}/>
       {variant !== "forest" && <>
@@ -151,7 +148,6 @@ function SceneArtwork({ variant = "orbit" }) {
         <path d="M0 188 Q120 160 236 183 M704 187 Q800 150 914 180" fill="none" stroke={palette.glow} strokeOpacity=".58" strokeWidth="2"/>
         <path d="M380 223 390 270 M420 214 432 270 M844 198 854 270 M878 192 895 270" stroke="#a9eaff" strokeOpacity=".34" strokeWidth="4"/>
       </>}
-      <g fill="url(#none)" opacity="0"><circle cx="0" cy="0" r="0"/></g>
       <rect width="1100" height="270" fill="#102b49" opacity={variant === "neon" ? ".15" : ".08"}/>
     </svg>
     <div className="absolute inset-0 bg-gradient-to-r from-[#071322]/70 via-[#071322]/20 to-transparent"/>
