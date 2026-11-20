@@ -115,3 +115,19 @@ test("generated NEXORA output is excluded from source control", () => {
   const ignore = read(".gitignore");
   assert.match(ignore, /^public\/dev_nexora\/$/m);
 });
+
+test("World Builder imports its React hooks exactly once", () => {
+  const world = read("apps/nexora/src/components/nexora/NexoraWorldBuilderPanel.jsx");
+  const reactImports = world.match(/import[^\n]+from ["']react["'];/g) || [];
+  assert.equal(reactImports.length, 1);
+  assert.match(reactImports[0], /useCallback/);
+  assert.match(reactImports[0], /useEffect/);
+  assert.match(reactImports[0], /useState/);
+});
+
+test("workspace shell and dialogs share a valid React fragment root", () => {
+  const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
+  assert.match(workspace, /return \(\s*<>\s*<NexoraStudioShell/);
+  assert.match(workspace, /<\/NexoraStudioShell>[\s\S]*\{projectModalOpen &&/);
+  assert.match(workspace, /\{taskModalOpen &&/);
+});
