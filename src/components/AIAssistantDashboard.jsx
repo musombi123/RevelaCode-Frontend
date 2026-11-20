@@ -1360,14 +1360,18 @@ export default function AIAssistantDashboard({
         const requestMessage = imageDescriptionFollowup
           ? `Generate an image of: ${cleaned}`
           : selectedToolCommand === "/humanize"
-            ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\n\n${cleaned}`
+            ? `Humanize the following text while preserving its original meaning, facts, and intent. Return only the improved text unless explanation is requested.\\n\\n${cleaned}`
             : selectedToolCommand === "/image"
               ? `Image Studio request. Mode: ${inputMeta?.toolMode || "generate"}. Options: ${JSON.stringify(inputMeta?.toolOptions || {})}. Follow these settings exactly where supported. User brief: ${cleaned}`
               : selectedToolCommand === "/search"
                 ? `Deep Search request. Depth and source preferences: ${JSON.stringify(inputMeta?.toolOptions || {})}. Research question: ${cleaned}`
-                : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
-                  ? `${selectedToolCommand} ${cleaned}`.trim()
-                  : cleaned;
+                : selectedToolCommand === "/code" && inputMeta?.toolMode === "debug"
+                  ? `Code debugging request. Diagnose the supplied source and actual error evidence, then return a complete corrected source file. User details: ${cleaned}`
+                  : selectedToolCommand === "/code"
+                    ? `Code generation request. Produce a complete, maintainable source file with appropriate validation and error handling. User brief: ${cleaned}`
+                    : selectedToolCommand && !cleaned.toLowerCase().startsWith(selectedToolCommand)
+                      ? `${selectedToolCommand} ${cleaned}`.trim()
+                      : cleaned;
 
         const updateLoadingStage = (stage) => {
           setMessages((previous) => previous.map((message) =>
@@ -1442,9 +1446,17 @@ export default function AIAssistantDashboard({
             } else if (workspaceCommand === "/code") {
               const language = inferredWorkspaceExport?.command === "/code"
                 ? inferredWorkspaceExport.language
-                : workspacePrompt.match(/\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\+\+|c#|php|ruby|swift|kotlin)\b/i)?.[1] || "";
-              workspacePayload = { ...workspacePayload, task: "code", language };
-              if (attachedFile) throw new Error("Source-file editing is not yet part of the file-export workspace. Paste the code or use the normal chat attachment analysis first.");
+                : workspacePrompt.match(/\\b(python|javascript|typescript|tsx|jsx|html|css|json|sql|bash|go|rust|java|c\\+\\+|c#|php|ruby|swift|kotlin)\\b/i)?.[1] || "";
+              const codeMode = inputMeta?.toolMode || inputMeta?.toolOptions?.mode || "generate";
+              workspacePayload = {
+                ...workspacePayload,
+                task: "code",
+                language,
+                prompt: codeMode === "debug"
+                  ? "Debug and repair the source supplied in the brief. Use the user's actual error evidence, explain the root cause, preserve existing public interfaces, and return the complete corrected file in one fenced code block. Do not claim execution or testing unless it has occurred.\\n\\n" + workspaceExecutionPrompt
+                  : workspaceExecutionPrompt,
+              };
+              if (attachedFile) throw new Error("For programming, paste the source and error message into the composer. File-based source editing is not yet supported; no uploaded file has been modified.");
             } else if (workspaceCommand === "/ui") {
               workspacePayload = { ...workspacePayload, task: "ui_design" };
               if (attachedFile) throw new Error("The UI prototype tool currently builds from a written specification. Describe the screen and its interactions in the prompt.");
