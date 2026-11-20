@@ -4,6 +4,7 @@ import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
+import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
@@ -680,7 +681,8 @@ export default function NexoraFoundryWorkspace() {
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
         setStudioView("game-editor");
         setProjectModalOpen(false);
-        setNotice("Project created in NEXORA cloud storage.");
+        try { await apiRequest(`/api/v1/desktop/projects/${remoteProject.id}/initialize`, { method: "POST", body: "{}" }); } catch (manifestError) { setNotice(manifestError.message || "Project created, but its local NEXORA manifest could not be initialized."); }
+        setNotice("Project created in your paired computer workspace.");
       } catch (error) {
         setNotice(error.message || "Cloud project creation failed.");
       } finally {
@@ -1386,6 +1388,10 @@ export default function NexoraFoundryWorkspace() {
   const pageMeta = {
     overview:["Studio Overview","Your production command center"],
     projects:["Projects","Manage your NEXORA game projects"],
+    factory:["Project Factory","Create, import and manage the local Godot workspace"],
+    toolchains:["Toolchain Manager","Detect and install the desktop game-development toolchain"],
+    backups:["Backup & Versions","Create and restore integrity-checked local project snapshots"],
+    "release-center":["Release Center","Prepare release manifests and verify your publisher setup"],
     "game-editor":["Game Editor","Edit scenes, inspect objects and work with the production timeline"],
     ai:["AI Studio","Review production tools, AI jobs and Creator Flow"],
     world:["World Builder","Organize scene nodes, inspect transforms and add procedural templates"],
@@ -1490,6 +1496,15 @@ export default function NexoraFoundryWorkspace() {
         onOpenProject={openProject}
         onNewProject={createNewProject}
         onQuickAction={quickAction}
+        onRefresh={refreshWorkspace}
+      />}
+
+      {["factory","toolchains","backups","release-center"].includes(studioView) && <NexoraDesktopFactoryPanel
+        view={studioView}
+        project={activeProject}
+        jobs={jobs}
+        apiRequest={apiRequest}
+        onNotice={setNotice}
         onRefresh={refreshWorkspace}
       />}
 
