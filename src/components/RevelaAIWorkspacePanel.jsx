@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { downloadFile } from "@/components/utils/downloadFile.js";
-import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical } from "lucide-react";
+import { Code2, Database, Eye, History, Download, Share2, RotateCcw, MessageSquare, X, GripVertical, Maximize2 } from "lucide-react";
 import {
   downloadRemoteArtifact,
   resolveRevelaAIArtifactUrl,
@@ -20,7 +20,7 @@ const MIME_BY_EXTENSION = {
 
 const TABS = [["preview", "Preview", Eye], ["data", "Data", Database], ["code", "Code", Code2], ["versions", "Versions", History]];
 
-export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
+export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose, onOpenStudio }) {
   const [tab, setTab] = useState("preview");
   const [filter, setFilter] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
@@ -262,6 +262,9 @@ export default function RevelaAIWorkspacePanel({ artifact, onAskAI, onClose }) {
       </div>
 
       <footer className="flex flex-wrap gap-2 border-t border-line p-3">
+        {onOpenStudio && <button type="button" onClick={onOpenStudio} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-semibold text-white hover:bg-accent-hover">
+          <Maximize2 size={14}/> Open in Studio
+        </button>}
         <button type="button" onClick={onAskAI} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/30 px-3 text-xs font-semibold text-accent hover:bg-accent/10">
           <MessageSquare size={14}/> Ask AI to change this
         </button>
