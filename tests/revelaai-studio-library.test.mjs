@@ -34,6 +34,7 @@ test("Studio has native editors for documents, workbooks, presentations and code
   assert.match(studio, /function DocumentEditor/);
   assert.match(studio, /function SpreadsheetEditor/);
   assert.match(studio, /function PresentationEditor/);
+  assert.match(studio, /function ImageEditor/);
   assert.match(studio, /CodeMirror/);
   assert.match(studio, /addSection/);
   assert.match(studio, /addRow/);
