@@ -1296,14 +1296,15 @@ export default function NexoraFoundryWorkspace() {
         let blob=null;
         if (previewSelection.type==="template") {
           if (!authenticatedCloudSession) throw new Error("Sign in to your NEXORA account to load the template service.");
-          const response=await nexoraAuthFetch(`/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+          if (!localAgentConnected) throw new Error("Connect this computer in NEXORA > Device Lab before loading local 3D templates.");
+          const response=await localEngineFetch(`/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
           if(!response.ok) throw new Error(`3D template request failed (HTTP ${response.status}).`);
           blob=await response.blob();
         } else {
           const asset=activeProject?.assets?.find(item=>item.id===previewSelection.id);
           if(!asset) throw new Error("Select a 3D model from the asset library.");
           if(asset.remote) {
-            const response=await nexoraAuthFetch(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+            const response=await localEngineFetch(`/api/v1/workspace/projects/${activeProject.id}/assets/${asset.id}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
             if(!response.ok) throw new Error(`Model file request failed (HTTP ${response.status}).`);
             blob=await response.blob();
           } else {
@@ -1321,7 +1322,7 @@ export default function NexoraFoundryWorkspace() {
     };
     loadModel();
     return ()=>{live=false;if(currentUrl)URL.revokeObjectURL(currentUrl);};
-  },[previewSelection,activeProject?.id,activeProject?.assets,authenticatedCloudSession,nexoraAuthFetch]);
+  },[previewSelection,activeProject?.id,activeProject?.assets,authenticatedCloudSession,localAgentConnected,localEngineFetch]);
 
   useEffect(() => {
     if (typeof window==="undefined" || window.customElements?.get("model-viewer")) return;
