@@ -207,6 +207,7 @@ export default function NexoraFoundryWorkspace() {
   const [projects, setProjects] = useState(() => readProjects(initialStorageUserId));
   const [activeId, setActiveId] = useState(() => localStorage.getItem(activeProjectStorageKey(initialStorageUserId)) || "");
   const [tab, setTab] = useState("overview");
+  const [studioView, setStudioView] = useState("preview");
   const [jobs, setJobs] = useState([]);
   const [androidBuild, setAndroidBuild] = useState({ app_name: "NEXORA Game", package_id: "com.nexora.game", version_name: "1.0.0", version_code: 1, build_type: "debug", artifact_format: "apk", orientation: "landscape", internet_permission: true, camera_permission: false, microphone_permission: false, icon_asset_id: null });
   const cloudBaseline = useRef(new Map());
@@ -1052,16 +1053,13 @@ export default function NexoraFoundryWorkspace() {
             </svg>
             <div><div className="text-2xl font-black tracking-[.16em] text-white">NEXORA</div><div className="text-[9px] font-bold tracking-[.44em] text-amber-200">STUDIO PRO</div></div>
           </div>
-          <nav className="flex flex-wrap justify-center gap-1">
-            {["PROJECT","TIMELINE","BUILD","AI PIPELINE","PREVIEW","EXPORT","SETTINGS"].map((item,i)=><button key={item} type="button" onClick={()=>{
-              if(i===0) createNewProject();
-              if(i===1) scrollTo(timelineRef);
-              if(i===2) queueProductionJob("scene.generate","desktop");
-              if(i===3) scrollTo(pipelineRef);
-              if(i===4) scrollTo(previewRef);
-              if(i===5) scrollTo(exportRef);
-              if(i===6) setSettingsOpen(value=>!value);
-            }} className="border border-cyan-900/60 bg-[#101820] px-3 py-2 text-[10px] font-black tracking-wide text-cyan-100 hover:border-cyan-400/70 hover:bg-cyan-950/70">{item}</button>)}
+          <nav aria-label="NEXORA workspace sections" className="flex flex-wrap justify-center gap-1">
+            {[
+              ["project","PROJECT"],["timeline","TIMELINE"],["preview","PREVIEW"],
+              ["assets","ASSETS"],["ai","AI PIPELINE"],["creator","CREATOR FLOW"],
+              ["build","BUILD"],["export","EXPORT"],["settings","SETTINGS"],
+            ].map(([id,label])=><button key={id} type="button" aria-current={studioView===id?"page":undefined} onClick={()=>setStudioView(id)}
+              className={"border px-3 py-2 text-[10px] font-black tracking-wide transition "+(studioView===id?"border-cyan-400 bg-cyan-950/70 text-white shadow-[0_0_16px_rgba(34,211,238,.12)]":"border-cyan-900/60 bg-[#101820] text-cyan-100 hover:border-cyan-400/70 hover:bg-cyan-950/50")}>{label}</button>)}
           </nav>
           <div className="flex items-center gap-2">
             <div className="text-right"><div className="text-[10px] font-bold text-cyan-200">{cloudProjectActive?"CLOUD SYNCED":apiStatus.state==="online"?"FOUNDRY ONLINE":"SERVICE OFFLINE"}</div><div className="text-[9px] text-slate-500">{nexoraUser?.display_name || nexoraUser?.email || "NEXORA account"}</div></div>
@@ -1075,6 +1073,7 @@ export default function NexoraFoundryWorkspace() {
         {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
         {notice&&<div role="status" className="flex items-start justify-between gap-3 border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
 
+{studioView === "timeline" && (
         <section ref={timelineRef} className="border border-slate-700 bg-[#0b1016] p-2">
           <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-[11px] font-black uppercase tracking-wider text-cyan-200">TIMELINE EDITOR — VIDEO CLIP → GAME LEVELS</h2><div className="flex items-center gap-2">
             <label className="text-[9px] text-slate-500">ZOOM <input aria-label="Timeline zoom" type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))} className="ml-2 align-middle accent-cyan-400"/></label>
@@ -1099,8 +1098,11 @@ export default function NexoraFoundryWorkspace() {
             <div className="flex items-center gap-3 border-t border-slate-800 pt-2"><span className="w-[135px] text-[9px] text-slate-500">GLOBAL PLAYHEAD</span><input aria-label="Timeline playhead" type="range" min="0" max={studioTimeline.duration_seconds||330} step="0.1" value={Math.min(Number(studioTimeline.playhead_seconds||0),Number(studioTimeline.duration_seconds||330))} onChange={event=>seekTimeline(event.target.value)} className="flex-1 accent-cyan-300"/></div>
           </div></div>
         </section>
+        )}
 
-        <main className="grid min-w-0 gap-2 xl:grid-cols-[minmax(220px,19%)_minmax(0,1fr)_minmax(250px,21%)]">
+
+
+        {studioView === "ai" && <div className="mx-auto w-full max-w-4xl">
           <section ref={pipelineRef} className="min-w-0 border border-cyan-900/60 bg-[#0b1118]">
             <h2 className="border-b border-cyan-900/50 px-3 py-3 text-lg font-black text-cyan-300">◉ AI PIPELINE</h2>
             <div className="space-y-1 p-2">{pipelineRows.map(([name,desc,status],i)=><button key={name} type="button" onClick={()=>{if(i===0)fileInputRef.current?.click();else if(i===1)setNotice("Import a GLB/glTF character model and use ADD TO SCENE. Character rigging depends on compatible source skeleton data.");else if(i===2)setNotice("Import animated GLB/glTF files. Motion capture cleaning is not reported as complete unless a worker returns a verified result.");else if(i===3)queueProductionJob("scene.generate","desktop");else setTab("gameplay");}} className="w-full border border-slate-800 bg-[#111922] p-2 text-left hover:border-cyan-700/60">
@@ -1111,7 +1113,9 @@ export default function NexoraFoundryWorkspace() {
               {moviePipeline?.stages?.some(stage=>stage.stage==="analysis"&&stage.state==="REVIEW")&&<button type="button" onClick={approveVideoAnalysis} className="mt-2 w-full border border-amber-600/50 bg-amber-300/10 px-2 py-1.5 text-[9px] font-bold text-amber-100">APPROVE VIDEO ANALYSIS</button>}
             </div>
           </section>
+        </div>}
 
+        {studioView === "preview" && <div className="mx-auto w-full max-w-6xl">
           <section ref={previewRef} className="flex min-h-[520px] min-w-0 flex-col border border-cyan-900/60 bg-[#0b1118]">
             <div className="px-2 pt-2 text-center"><h2 className="text-2xl font-black text-cyan-200">3D GAME PREVIEW <span className="border border-red-500/40 bg-red-950/40 px-1 text-[9px] text-red-300">LIVE</span></h2><div className="text-[10px] font-bold tracking-widest text-cyan-300">INTERACTIVE 3D MODEL VIEW · DRAG TO ORBIT</div></div>
             <div className="grid flex-1 grid-cols-1 gap-1 p-2 md:grid-cols-2">
@@ -1124,13 +1128,15 @@ export default function NexoraFoundryWorkspace() {
             <div className="flex justify-center gap-2 px-2 pb-2"><button type="button" onClick={()=>setPreviewAutoRotate(false)} className="border border-cyan-800 bg-cyan-950/40 px-4 py-1.5 text-[10px] font-bold text-cyan-200">Ⅱ PAUSE ROTATION</button><button type="button" onClick={()=>setPreviewAutoRotate(true)} className="border border-cyan-800 bg-cyan-950/40 px-4 py-1.5 text-[10px] font-bold text-cyan-200">▶ ROTATE</button><button type="button" onClick={()=>queueProductionJob("playtest","desktop")} disabled={!cloudProjectActive||busy} className="border border-cyan-800 bg-cyan-950/40 px-4 py-1.5 text-[10px] font-bold text-cyan-200 disabled:opacity-40">RUN GODOT SMOKE TEST</button></div>
             <div className="border-t border-slate-800 px-2 py-1 text-center text-[9px] text-slate-500">Selected: {previewSelection.id} · {previewSelection.type} · Project: {activeProject?.name||"No project"}</div>
           </section>
+        </div>}
 
+        {studioView === "export" && <div className="mx-auto w-full max-w-4xl">
           <aside ref={exportRef} className="min-w-0 border border-amber-700/50 bg-[#0b1118] p-2">
             <h2 className="text-center text-sm font-black text-amber-200">PERFORMANCE & EXPORT</h2>
             <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">PLATFORM TARGET</b>{activeProject&&<select aria-label="Project target" className="mt-2 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-cyan-100" value={activeProject.settings?.target||"Desktop"} onChange={event=>patchProject(project=>({...project,settings:{...project.settings,target:event.target.value}}))}><option>Desktop</option><option>Android</option><option>Desktop + Android</option></select>}</div>
             <div className="mt-2 border border-slate-700 bg-[#111922] p-2"><b className="text-xs text-cyan-200">ENGINE TELEMETRY</b><div className="mt-2 text-[10px] text-slate-400">{apiStatus.state==="online"?"Foundry API reachable":"Foundry API unavailable"}</div><div className="mt-2 border border-slate-800 p-2 text-[9px] text-slate-400">GPU / VRAM / temperature sensors are not exposed by this browser. A trusted desktop sensor agent must be installed before NEXORA can report these values.</div><div className="mt-2 text-[9px] text-slate-500">No estimated or fabricated benchmark values are displayed.</div><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1.5 text-[9px] text-cyan-100"><RefreshCw size={12} className="mr-1 inline"/> CHECK FOUNDRY SERVICE</button></div>
             <div className="mt-2 text-xs font-black text-amber-200">EXPORT TO TARGETS</div><div className="mt-1 grid grid-cols-2 gap-1">{[["WINDOWS","windows"],["LINUX","linux"],["ANDROID","android"],["WEB","web"]].map(([label,target])=><button key={target} type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob("build.export",target)} className="border border-slate-700 bg-[#111922] p-2 text-[9px] font-bold text-cyan-100 hover:border-cyan-400/50 disabled:opacity-40">⬡ EXPORT<br/><span className="text-slate-400">{label}</span></button>)}</div>
-            {settingsOpen&&<div className="mt-2 border border-cyan-800/50 bg-[#111922] p-2"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-1 text-[9px] text-rose-300">DELETE CURRENT PROJECT</button></div>}
+            
             <div className="mt-2 text-[9px] font-black text-amber-200">RECENT JOBS</div>
             <div className="mt-1 space-y-1">
               {jobs.slice(0, 4).map((job) => (
@@ -1149,21 +1155,14 @@ export default function NexoraFoundryWorkspace() {
               ))}
             </div>
           </aside>
-        </main>
+        </div>}
 
-        <section className="border border-cyan-900/60 bg-[#0b1118] p-2">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-black text-cyan-200">ASSET LIBRARY</h2><p className="text-[9px] uppercase tracking-wider text-slate-500">Procedural templates · creator GLB/glTF models · video and audio</p></div><div className="flex flex-wrap gap-1">
-            <select aria-label="Switch NEXORA project" value={activeProject?.id||""} onChange={event=>setActiveId(event.target.value)} className="max-w-[180px] border border-slate-700 bg-[#080d12] p-2 text-xs text-cyan-100">{projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select>
-            <button type="button" onClick={createNewProject} className="border border-amber-700/40 px-2 py-1.5 text-[10px] font-bold text-amber-100">＋ NEW PROJECT</button>
-            <button type="button" onClick={()=>importInputRef.current?.click()} className="border border-slate-700 px-2 py-1.5 text-[10px] font-bold text-cyan-100">IMPORT PROJECT</button>
-            <button type="button" onClick={()=>fileInputRef.current?.click()} disabled={!activeProject||busy} className="border border-cyan-700 bg-cyan-950/40 px-2 py-1.5 text-[10px] font-bold text-cyan-100 disabled:opacity-40">＋ IMPORT 3D / MEDIA</button>
-          </div></div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 border border-amber-800/40 bg-[#18140d] p-2 text-[10px] text-amber-100">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={videoRightsConfirmed} onChange={event=>setVideoRightsConfirmed(event.target.checked)}/> I own this video or have permission to use it</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
-          </div>
-          <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
-          <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
+        {studioView === "build" && (
+          <section className="mx-auto w-full max-w-5xl space-y-3">
+            <header className="border border-cyan-900/60 bg-[#0b1118] p-3">
+              <h2 className="text-lg font-black text-cyan-200">BUILD CENTRE</h2>
+              <p className="mt-1 text-xs text-slate-400">Configure game packages, queue a worker build, and pair a local desktop device bridge.</p>
+            </header>
           <AndroidBuildConsole
             settings={androidBuild}
             onChange={setAndroidBuild}
@@ -1179,18 +1178,53 @@ export default function NexoraFoundryWorkspace() {
             deviceStatus="Android builds are exported by the NEXORA worker. USB/wireless installation and logcat use the paired local desktop bridge below."
           />
           <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
+          </section>
+        )}
+
+        {studioView === "settings" && (
+<section className="mx-auto w-full max-w-3xl border border-cyan-800/50 bg-[#0b1118] p-4"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-2 text-xs text-rose-300">DELETE CURRENT PROJECT</button></section>
+        )}
+
+        {studioView === "assets" && (
+        <section className="border border-cyan-900/60 bg-[#0b1118] p-2">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-black text-cyan-200">ASSET LIBRARY</h2><p className="text-[9px] uppercase tracking-wider text-slate-500">Procedural templates · creator GLB/glTF models · video and audio</p></div><div className="flex flex-wrap gap-1">
+            <button type="button" onClick={()=>fileInputRef.current?.click()} disabled={!activeProject||busy} className="border border-cyan-700 bg-cyan-950/40 px-2 py-1.5 text-[10px] font-bold text-cyan-100 disabled:opacity-40">＋ IMPORT 3D / MEDIA</button>
+          </div></div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 border border-amber-800/40 bg-[#18140d] p-2 text-[10px] text-amber-100">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={videoRightsConfirmed} onChange={event=>setVideoRightsConfirmed(event.target.checked)}/> I own this video or have permission to use it</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={originalAssetsConfirmed} onChange={event=>setOriginalAssetsConfirmed(event.target.checked)}/> Generate original assets; do not copy protected source assets</label>
+          </div>
+          <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
+
 
           <div className="mt-3"><h3 className="mb-2 text-[10px] font-black tracking-widest text-amber-200">BUILT-IN 3D TEMPLATES · ADD TO SCENE</h3><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">{templates.map(template=><div key={template.id} className="border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"template",id:template.id})} className="flex h-20 w-full items-center justify-center border border-cyan-900/30 bg-[#0a1118] text-cyan-200"><Box size={30}/></button><div className="mt-1 truncate text-[10px] font-bold">{template.name}</div><div className="text-[9px] text-slate-500">{template.category} · 3D template</div><button type="button" disabled={!activeProject} onClick={()=>addTemplateToScene(template)} className="mt-2 w-full border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-200 disabled:opacity-40">＋ ADD TO SCENE</button></div>)}</div></div>
           <div className="mt-4"><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><h3 className="text-[10px] font-black tracking-widest text-amber-200">YOUR 3D MODELS & MEDIA</h3><label className="text-[9px] text-slate-400">CONVERT AS <select value={assetConversionRole} onChange={e=>setAssetConversionRole(e.target.value)} className="ml-1 border border-slate-700 bg-[#080d12] px-2 py-1 text-[9px] text-cyan-100"><option value="prop">PROP</option><option value="character">CHARACTER</option><option value="environment">ENVIRONMENT</option></select></label></div><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">{studioAssets.map(asset=><div key={asset.id} className="min-w-0 border border-slate-800 bg-[#111922] p-2"><button type="button" onClick={()=>setPreviewSelection({type:"asset",id:asset.id})} className="flex h-20 w-full items-center justify-center bg-gradient-to-br from-cyan-950/60 to-slate-900 text-cyan-300"><ImagePlus size={24}/></button><div className="mt-1 truncate text-[10px] font-bold" title={asset.name}>{asset.name}</div><div className="truncate text-[9px] text-slate-500">{asset.type.toUpperCase()} · {asset.remote?asset.status:"LOCAL"}</div><div className="mt-1 flex gap-1">{["glb","gltf"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToScene(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">USE MODEL</button>}{["png","jpg","jpeg","webp","glb","gltf","obj","fbx","ply"].includes(asset.type)&&<button type="button" onClick={()=>convertAssetToGameAsset(asset,assetConversionRole)} className="flex-1 border border-violet-800 px-1 py-1 text-[9px] text-violet-200">CONVERT</button>}{["mp4","mov","mkv","webm","avi","wav","ogg","mp3"].includes(asset.type)&&<button type="button" onClick={()=>addAssetToTimeline(asset)} className="flex-1 border border-cyan-800 px-1 py-1 text-[9px] text-cyan-200">ADD TO TIMELINE</button>}<button type="button" onClick={()=>removeAsset(asset)} className="border border-slate-700 px-1 py-1 text-[9px] text-rose-300">DEL</button></div></div>)}</div>{!studioAssets.length&&<div className="mt-3 border border-dashed border-slate-700 p-5 text-center text-xs text-slate-500">Import source media, 3D models and templates to begin.</div>}</div>
         </section>
+        )}
 
-        <CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} />
+        {studioView === "creator" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} /></div>}
 
+        {studioView === "project" && (
+          <div className="mx-auto w-full max-w-5xl">
+            <div className="mb-3 flex flex-wrap items-center gap-2 border border-cyan-900/60 bg-[#0b1118] p-3">
+              <div className="mr-auto min-w-[220px]">
+                <h2 className="text-sm font-black text-cyan-200">PROJECT WORKSPACE</h2>
+                <p className="mt-1 text-[10px] text-slate-500">Switch projects, create a new game, or import a NEXORA project file.</p>
+              </div>
+              <select aria-label="Switch NEXORA project" value={activeProject?.id||""} onChange={event=>setActiveId(event.target.value)} className="min-w-[180px] border border-slate-700 bg-[#080d12] p-2 text-xs text-cyan-100">
+                {projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
+              </select>
+              <button type="button" onClick={createNewProject} className="border border-amber-700/60 px-3 py-2 text-[10px] font-bold text-amber-100">＋ NEW PROJECT</button>
+              <button type="button" onClick={()=>importInputRef.current?.click()} className="border border-slate-700 px-3 py-2 text-[10px] font-bold text-cyan-100">IMPORT PROJECT</button>
+              <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
+            </div>
         <section className="grid gap-2 lg:grid-cols-2">
           <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">SCENE HIERARCHY / INSPECTOR</h2><div className="mt-2 grid grid-cols-1 gap-3 xl:grid-cols-2"><div className="max-h-48 overflow-auto">{sceneNodes.map(object=><button key={object.id} type="button" onClick={()=>setSelectedObjectId(object.id)} className={"mb-1 block w-full truncate border px-2 py-1.5 text-left text-[10px] "+(selectedObject?.id===object.id?"border-cyan-500 bg-cyan-950/40":"border-slate-800 bg-[#101820]")}>{object.name} · {object.type}</button>)}<button type="button" onClick={addSceneObject} className="mt-1 w-full border border-cyan-800 px-2 py-1.5 text-[9px]">＋ ADD SCENE NODE</button></div>
             {selectedObject&&<div className="space-y-2"><label className="block text-[9px] text-slate-400">OBJECT NAME<input className={fieldClass+" mt-1"} value={selectedObject.name} onChange={event=>updateSelected("name",event.target.value)}/></label>{["position","rotation","scale"].map(field=><fieldset key={field}><legend className="text-[9px] uppercase text-slate-500">{field}</legend><div className="grid grid-cols-3 gap-1">{(selectedObject[field]||[0,0,0]).map((value,index)=><input key={index} aria-label={field+" "+index} className={fieldClass} type="number" step="0.1" value={value} onChange={event=>{const next=[...(selectedObject[field]||[0,0,0])];next[index]=Number(event.target.value);updateSelected(field,next);}}/>)}</div></fieldset>)}<button type="button" onClick={()=>patchProject(project=>({...project,scene:{...project.scene,objects:project.scene.objects.filter(item=>item.id!==selectedObject.id)}}))} className="border border-rose-900 px-2 py-1 text-[9px] text-rose-300">DELETE SELECTED OBJECT</button></div>}</div></div>
           <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">WORKSPACE OPERATIONS</h2><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={saveRevision} className="border border-slate-700 px-3 py-2 text-[9px]">SAVE CHECKPOINT</button><button type="button" onClick={exportProject} className="border border-slate-700 px-3 py-2 text-[9px]">EXPORT PROJECT JSON</button><button type="button" onClick={deleteProject} className="border border-rose-900 px-3 py-2 text-[9px] text-rose-300">DELETE PROJECT</button><button type="button" onClick={checkService} className="border border-slate-700 px-3 py-2 text-[9px]">CHECK SERVICE</button></div>{validationIssues.length>0&&<div className="mt-2 text-[9px] text-amber-200">{validationIssues.join(" · ")}</div>}</div>
         </section>
+          </div>
+        )}
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] px-3 py-2 text-[9px] text-slate-500"><div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name||"—"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>VERSION: NEXORA STUDIO PRO</span><span>{cloudProjectActive?"CLOUD PROJECT":"LOCAL DRAFT"}</span></div><div className="flex gap-3"><span>MEMORY: {sceneNodes.length} SCENE NODES</span><span>GPU LOAD: NOT MEASURED BY BROWSER</span></div></footer>
       </div>
