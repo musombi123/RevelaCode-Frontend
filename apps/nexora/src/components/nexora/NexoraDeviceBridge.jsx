@@ -35,6 +35,25 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     return payload;
   }, [token]);
 
+
+
+  const loadHardware = useCallback(async (authToken = token) => {
+    if (!authToken) return;
+    setHardwareBusy(true);
+    try {
+      const system = await request("/system/capabilities", {}, true, authToken);
+      const check = await request("/requirements/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: workloadProfile }),
+      }, true, authToken);
+      setCapabilities(system);
+      setPreflight(check);
+    } finally {
+      setHardwareBusy(false);
+    }
+  }, [request, token, workloadProfile]);
+
   const refreshDevices = useCallback(async () => {
     if (!token) return;
     const result = await request("/devices");
@@ -44,6 +63,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     await loadHardware(token);
     setStatus("Local compute agent connected");
   }, [request, token, loadHardware]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -74,23 +94,6 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       .catch(() => { if (!cancelled) setStatus("Local agent not detected. Install and start the NEXORA Local Compute Agent on your desktop."); });
     return () => { cancelled = true; };
   }, [loadHardware, onConnectionChange]);
-
-  const loadHardware = useCallback(async (authToken = token) => {
-    if (!authToken) return;
-    setHardwareBusy(true);
-    try {
-      const system = await request("/system/capabilities", {}, true, authToken);
-      const check = await request("/requirements/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profile: workloadProfile }),
-      }, true, authToken);
-      setCapabilities(system);
-      setPreflight(check);
-    } finally {
-      setHardwareBusy(false);
-    }
-  }, [request, token, workloadProfile]);
 
   const pair = async () => {
     if (!accountAccessToken) {
