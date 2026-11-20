@@ -16,12 +16,12 @@ export default function LocalWorkspaceProposalReview({ proposal, onClose, onAppl
     setApplying(true);
     setError("");
     setAppliedFiles([]);
+    let completed = [];
     try {
       if (!config.enabled || !config.token || !config.path) {
         throw new Error("Reconnect the local agent and select the destination folder in Files & Local Workspace.");
       }
       await testLocalWorkspaceAgent(config);
-      const completed = [];
       for (const file of files) {
         await writeLocalWorkspaceFile(file.path, file.content, {
           approved: true,
@@ -33,7 +33,8 @@ export default function LocalWorkspaceProposalReview({ proposal, onClose, onAppl
       setComplete(true);
       onApplied?.(completed);
     } catch (cause) {
-      const partial = appliedFiles.length;
+      const partial = completed.length;
+      setAppliedFiles([...completed]);
       setError(
         (cause?.message || "The local file changes could not be applied.") +
         (partial ? " " + partial + " file(s) were already written before the failure; review the list before retrying." : "")
