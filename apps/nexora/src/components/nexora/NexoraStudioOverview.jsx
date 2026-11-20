@@ -67,48 +67,99 @@ function SectionHeading({ icon: Icon, title, action, onAction, right }) {
   </div>;
 }
 function SceneArtwork({ variant = "orbit" }) {
-  const filter = variant === "neon" ? "hue-rotate(65deg) saturate(1.35)" : variant === "forest" ? "hue-rotate(135deg) saturate(1.2)" : "none";
-  return <div className="absolute inset-0 overflow-hidden" aria-hidden="true" style={{ filter }}>
+  const sceneId = React.useId().replace(/:/g, "");
+  const palette = variant === "neon"
+    ? { skyTop: "#080d2a", skyMid: "#43205e", skyBottom: "#ec5c91", glow: "#ff5fd2", water: "#101438" }
+    : variant === "forest"
+      ? { skyTop: "#061a24", skyMid: "#216454", skyBottom: "#c4c77e", glow: "#9df4bd", water: "#0b302d" }
+      : { skyTop: "#07172d", skyMid: "#315c91", skyBottom: "#ee9bb7", glow: "#26ddf7", water: "#0a2037" };
+  return <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
     <svg viewBox="0 0 1100 270" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
       <defs>
-        <linearGradient id="nexoraSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#091a38"/><stop offset=".52" stopColor="#315c91"/><stop offset="1" stopColor="#e38ab1"/></linearGradient>
-        <linearGradient id="nexoraWater" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#153e67"/><stop offset="1" stopColor="#07172a"/></linearGradient>
-        <linearGradient id="nexoraGlow" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#12def8"/><stop offset="1" stopColor="#625dff"/></linearGradient>
-        <radialGradient id="nexoraMoon"><stop stopColor="#fff4ed"/><stop offset=".75" stopColor="#c8bbf7"/><stop offset="1" stopColor="#8b8ad6"/></radialGradient>
+        <linearGradient id={sceneId + "-sky"} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={palette.skyTop}/><stop offset=".55" stopColor={palette.skyMid}/><stop offset="1" stopColor={palette.skyBottom}/>
+        </linearGradient>
+        <linearGradient id={sceneId + "-island"} x1="0" y1="0" x2="0" y2="1">
+          <stop stopColor="#527e9f"/><stop offset=".28" stopColor="#193c5e"/><stop offset="1" stopColor="#071729"/>
+        </linearGradient>
+        <linearGradient id={sceneId + "-water"} x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor={palette.water}/><stop offset="1" stopColor="#040d19"/>
+        </linearGradient>
+        <radialGradient id={sceneId + "-moon"}>
+          <stop stopColor="#fff8ed"/><stop offset=".7" stopColor="#cbbcf5"/><stop offset="1" stopColor="#898acb"/>
+        </radialGradient>
+        <linearGradient id={sceneId + "-mist"} x1="0" y1="0" x2="0" y2="1">
+          <stop stopColor="#d4eeff" stopOpacity=".34"/><stop offset="1" stopColor="#b0d9f4" stopOpacity="0"/>
+        </linearGradient>
       </defs>
-      <rect width="1100" height="270" fill="url(#nexoraSky)"/>
-      <circle cx="278" cy="70" r="54" fill="#d6cbff" opacity=".12"/>
-      <circle cx="278" cy="70" r="43" fill="url(#nexoraMoon)"/>
-      <path d="M0 135 Q95 92 190 132 T390 124 T590 139 T800 122 T1100 130 V190 H0Z" fill="#314d79" opacity=".52"/>
-      <path d="M0 170 L150 111 223 164 327 122 434 170 540 117 634 172 742 127 865 169 986 117 1100 164 V270 H0Z" fill="#243b65"/>
-      <path d="M0 196 L120 151 221 190 352 148 456 207 573 157 676 201 809 153 930 198 1068 151 1100 173 V270 H0Z" fill="#152c4e"/>
-      <g fill="#0b1b32">
-        <path d="M0 190 L130 154 205 190 190 270 H0Z"/><path d="M770 173 L855 135 924 174 914 270 H760Z"/><path d="M950 168 L1034 126 1100 162 V270 H930Z"/>
+      <rect width="1100" height="270" fill={"url(#" + sceneId + "-sky)"}/>
+      {variant !== "forest" && <>
+        <circle cx="278" cy="70" r="58" fill="#d9ceff" opacity=".13"/>
+        <circle cx="278" cy="70" r="43" fill={"url(#" + sceneId + "-moon)"}/>
+        <path d="M0 137 Q115 92 220 132 T430 128 T645 138 T860 119 T1100 132 V194 H0Z" fill="#9ac1ec" opacity=".18"/>
+        <path d="M0 174 L130 122 215 165 328 112 437 174 548 119 654 175 761 122 874 168 985 112 1100 160 V270 H0Z" fill="#243d67" opacity=".88"/>
+      </>}
+      {variant === "forest" && <>
+        <circle cx="845" cy="44" r="34" fill="#fff4c4" opacity=".42"/>
+        <path d="M0 152 Q150 70 300 151 T610 132 T910 151 T1100 126 V270 H0Z" fill="#174d42" opacity=".65"/>
+        <path d="M0 184 L125 112 250 183 370 92 504 180 650 105 783 185 920 98 1100 174 V270 H0Z" fill="#123e39"/>
+      </>}
+      <g fill="#f4e9ff" opacity=".75">
+        <circle cx="78" cy="36" r="1.8"/><circle cx="139" cy="88" r="1.4"/><circle cx="405" cy="36" r="1.4"/>
+        <circle cx="517" cy="73" r="1.2"/><circle cx="930" cy="37" r="1.6"/><circle cx="1040" cy="58" r="1.2"/>
+        <circle cx="720" cy="29" r="1.2"/><circle cx="590" cy="48" r="1.1"/>
       </g>
-      <g fill="#122b4a" stroke="#20d9f4" strokeOpacity=".42" strokeWidth="2">
-        <path d="M595 175 V96 L614 78 632 96 V175Z"/><path d="M638 181 V55 L658 32 678 55 V181Z"/><path d="M680 180 V112 L696 96 712 112 V180Z"/>
-        <path d="M720 181 V87 L747 61 775 87 V181Z"/><path d="M785 177 V118 L801 99 818 118 V177Z"/><path d="M837 181 V96 L864 74 891 96 V181Z"/>
-        <path d="M900 181 V128 L918 110 936 128 V181Z"/><path d="M970 182 V101 L999 75 1028 101 V182Z"/>
-      </g>
-      <g fill="#38dff9" opacity=".9">
-        <rect x="607" y="109" width="5" height="9" rx="1"/><rect x="620" y="109" width="5" height="9" rx="1"/>
-        <rect x="651" y="61" width="6" height="10" rx="1"/><rect x="666" y="61" width="6" height="10" rx="1"/>
-        <rect x="651" y="85" width="6" height="10" rx="1"/><rect x="666" y="85" width="6" height="10" rx="1"/>
-        <rect x="737" y="94" width="7" height="11" rx="1"/><rect x="752" y="94" width="7" height="11" rx="1"/>
-        <rect x="850" y="104" width="6" height="10" rx="1"/><rect x="868" y="104" width="6" height="10" rx="1"/>
-        <rect x="987" y="111" width="7" height="12" rx="1"/><rect x="1006" y="111" width="7" height="12" rx="1"/>
-      </g>
-      <path d="M0 220 Q200 180 380 218 T730 213 T1100 205 V270 H0Z" fill="url(#nexoraWater)" opacity=".94"/>
-      <path d="M0 218 Q190 190 380 218 T735 213 T1100 205" fill="none" stroke="#7beaff" strokeOpacity=".45" strokeWidth="2"/>
-      <path d="M0 238 Q250 211 475 243 T900 232 T1100 233" fill="none" stroke="#61cffa" strokeOpacity=".22" strokeWidth="4"/>
-      <g fill="#d3eaff" opacity=".48"><ellipse cx="530" cy="210" rx="220" ry="10"/><ellipse cx="810" cy="222" rx="180" ry="8"/><ellipse cx="245" cy="226" rx="180" ry="7"/></g>
-      <g fill="#f6d4ff" opacity=".85"><circle cx="78" cy="36" r="1.8"/><circle cx="139" cy="88" r="1.4"/><circle cx="405" cy="36" r="1.4"/><circle cx="517" cy="73" r="1.2"/><circle cx="930" cy="37" r="1.6"/><circle cx="1040" cy="58" r="1.2"/></g>
-      <path d="M0 0 H1100 V270 H0Z" fill="url(#nexoraGlow)" opacity=".07"/>
+      {variant === "forest" ? <>
+        <g fill="#0a2928">
+          <path d="M35 221 80 105 125 221Z"/><path d="M88 228 146 70 205 228Z"/><path d="M180 220 232 98 285 220Z"/>
+          <path d="M820 223 870 83 925 223Z"/><path d="M885 225 955 53 1025 225Z"/><path d="M985 229 1030 105 1075 229Z"/>
+        </g>
+        <g fill="#1e6752">
+          <path d="M60 218 112 82 164 218Z"/><path d="M150 222 207 68 264 222Z"/><path d="M760 221 817 91 874 221Z"/>
+          <path d="M905 220 968 58 1031 220Z"/>
+        </g>
+        <path d="M0 202 Q160 168 320 195 T650 192 T1100 178 V270 H0Z" fill="#173f38"/>
+        <path d="M370 270 Q480 208 545 206 Q625 205 705 270Z" fill="#1b8b84" opacity=".7"/>
+        <path d="M425 270 Q515 220 566 221 Q625 223 673 270Z" fill="#a8eee1" opacity=".28"/>
+        <g fill="#b9f5b6" opacity=".85"><circle cx="110" cy="149" r="3"/><circle cx="191" cy="125" r="2"/><circle cx="872" cy="134" r="3"/><circle cx="970" cy="112" r="2"/></g>
+      </> : <>
+        <path d="M0 202 112 164 220 188 327 157 431 203 548 151 654 199 766 155 874 199 988 146 1100 184 V270 H0Z" fill="#142f51"/>
+        <path d="M0 222 130 183 238 212 349 174 456 224 570 169 688 218 805 171 922 220 1040 170 1100 189 V270 H0Z" fill="#0c203c"/>
+        <g fill="#102946" stroke={palette.glow} strokeOpacity=".35" strokeWidth="2">
+          <path d="M585 180 V100 L604 82 623 100 V180Z"/><path d="M630 182 V54 L653 29 676 54 V182Z"/>
+          <path d="M680 181 V112 L698 94 716 112 V181Z"/><path d="M720 181 V86 L748 57 776 86 V181Z"/>
+          <path d="M785 181 V119 L803 100 821 119 V181Z"/><path d="M838 182 V94 L864 69 890 94 V182Z"/>
+          <path d="M902 182 V126 L920 108 938 126 V182Z"/><path d="M970 182 V96 L1001 70 1032 96 V182Z"/>
+        </g>
+        <g fill={palette.glow} opacity=".9">
+          {Array.from({length: 22}, (_, i) => <rect key={i} x={596 + (i % 8) * 44} y={108 + Math.floor(i / 8) * 22} width="5" height="8" rx="1" opacity={i % 3 === 0 ? ".4" : ".9"}/>)}
+        </g>
+        {variant === "orbit" && <>
+          <path d="M150 98 176 90 206 96 227 104 201 109 172 106Z" fill="#162c49" stroke="#58dfff" strokeWidth="1.6"/>
+          <path d="M181 96 192 77 202 96Z" fill="#24496b" stroke="#58dfff" strokeWidth="1"/>
+          <path d="M225 103 246 99 260 103" fill="none" stroke="#9deaff" strokeWidth="2" opacity=".8"/>
+          <path d="M780 51 794 48 814 52 830 58 813 62 794 59Z" fill="#142e4e" stroke="#53dfff" strokeWidth="1.5"/>
+          <path d="M799 51 808 38 817 52Z" fill="#294d71" stroke="#53dfff" strokeWidth="1"/>
+        </>}
+      </>}
+      <path d="M0 222 Q200 190 380 218 T730 213 T1100 205 V270 H0Z" fill={"url(#" + sceneId + "-water)"} opacity=".9"/>
+      <path d="M0 220 Q190 190 380 218 T735 213 T1100 205" fill="none" stroke={palette.glow} strokeOpacity=".4" strokeWidth="2"/>
+      <path d="M0 238 Q250 211 475 243 T900 232 T1100 233" fill="none" stroke="#b4eaff" strokeOpacity=".18" strokeWidth="4"/>
+      {variant !== "forest" && <>
+        <path d="M0 179 Q210 165 360 191 L440 222 390 270 H0Z" fill={"url(#" + sceneId + "-island)"}/>
+        <path d="M705 185 810 151 915 180 958 270 H680Z" fill={"url(#" + sceneId + "-island)"}/>
+        <path d="M0 188 Q120 160 236 183 M704 187 Q800 150 914 180" fill="none" stroke={palette.glow} strokeOpacity=".58" strokeWidth="2"/>
+        <path d="M380 223 390 270 M420 214 432 270 M844 198 854 270 M878 192 895 270" stroke="#a9eaff" strokeOpacity=".34" strokeWidth="4"/>
+      </>}
+      <g fill="url(#none)" opacity="0"><circle cx="0" cy="0" r="0"/></g>
+      <rect width="1100" height="270" fill="#102b49" opacity={variant === "neon" ? ".15" : ".08"}/>
     </svg>
-    <div className="absolute inset-0 bg-gradient-to-r from-[#071322]/65 via-[#071322]/15 to-transparent"/>
-    <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#071322]/70 to-transparent"/>
+    <div className="absolute inset-0 bg-gradient-to-r from-[#071322]/70 via-[#071322]/20 to-transparent"/>
+    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#071322]/75 to-transparent"/>
+    <div className="absolute inset-0 opacity-[.12]" style={{backgroundImage:"linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px)",backgroundSize:"52px 52px"}}/>
   </div>;
 }
+
 function Avatar({ label }) {
   const text = String(label || "—").trim();
   const initials = text.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "—";
@@ -188,9 +239,9 @@ export default function NexoraStudioOverview({
           <h2 className="flex items-center gap-2 text-[13px] font-extrabold text-white"><Play size={16} className="fill-cyan-400 text-cyan-400"/>Continue Working</h2>
           <button type="button" onClick={() => onNavigate("projects")} className="text-[10px] font-semibold text-cyan-300 hover:text-white">Resume Your Project <ArrowRight size={12} className="ml-1 inline"/></button>
         </div>
-        {activeProject ? <div className="relative min-h-[222px] overflow-hidden">
+        {activeProject ? <div className="relative min-h-[240px] overflow-hidden">
           <SceneArtwork variant="orbit"/>
-          <div className="relative z-10 flex min-h-[222px] flex-col justify-end p-4 sm:p-5">
+          <div className="relative z-10 flex min-h-[240px] flex-col justify-end p-4 sm:p-5">
             <span className="w-fit rounded-md border border-white/15 bg-black/35 px-2 py-1 text-[8px] font-extrabold tracking-wide text-cyan-100">{cloudProjectActive ? "CLOUD SYNCED" : "LOCAL DRAFT"}</span>
             <h2 className="mt-2 max-w-2xl truncate text-[23px] font-black uppercase leading-tight tracking-tight text-white drop-shadow-lg sm:text-[27px]">{activeProject.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
@@ -207,7 +258,7 @@ export default function NexoraStudioOverview({
             </div>
             {linkedTasks.length === 0 && <span className="mt-2 text-[9px] text-white/65">Add tasks linked to this project to calculate its completion progress.</span>}
           </div>
-        </div> : <div className="relative flex min-h-[222px] items-center justify-center overflow-hidden bg-[#0A1524] p-6 text-center"><SceneArtwork variant="orbit"/><div className="relative z-10 max-w-md"><div className="text-lg font-black text-white">Your studio is ready for its first project</div><p className="mt-2 text-xs leading-5 text-slate-300">Create a project to unlock the editor, asset library and production tools.</p><button type="button" onClick={onNewProject} className="mt-4 rounded-lg bg-cyan-400 px-4 py-2 text-xs font-black text-[#04111A]"><span className="inline-flex items-center gap-2"><Play size={13}/>Create your first project</span></button></div></div>}
+        </div> : <div className="relative flex min-h-[240px] items-center justify-center overflow-hidden bg-[#0A1524] p-6 text-center"><SceneArtwork variant="orbit"/><div className="relative z-10 max-w-md"><div className="text-lg font-black text-white">Your studio is ready for its first project</div><p className="mt-2 text-xs leading-5 text-slate-300">Create a project to unlock the editor, asset library and production tools.</p><button type="button" onClick={onNewProject} className="mt-4 rounded-lg bg-cyan-400 px-4 py-2 text-xs font-black text-[#04111A]"><span className="inline-flex items-center gap-2"><Play size={13}/>Create your first project</span></button></div></div>}
       </article>
 
       <article className={panel + " p-3.5"}>
@@ -246,7 +297,7 @@ export default function NexoraStudioOverview({
       </div>
     </section>
 
-    <section className="grid gap-3 2xl:grid-cols-[minmax(0,1.45fr)_minmax(270px,.9fr)_minmax(250px,.85fr)]">
+    <section className="grid gap-3 2xl:grid-cols-[minmax(0,2.4fr)_minmax(270px,.95fr)_minmax(250px,.9fr)]">
       <article className={panel + " min-w-0 p-3"}>
         <SectionHeading icon={FolderOpen} title="Recent Projects" action="View All" onAction={() => onNavigate("projects")}/>
         {recentProjects.length ? <div className="grid gap-2 sm:grid-cols-3">{recentProjects.map((project, index) => {
@@ -279,7 +330,7 @@ export default function NexoraStudioOverview({
     </section>
 
     <section className={panel + " flex flex-wrap items-center gap-2 p-2.5"}>
-      <div className="mr-1 flex min-w-[118px] items-center gap-2 px-1.5 text-[13px] font-extrabold text-slate-100"><Zap size={18} className="text-amber-400"/>Quick Actions</div>
+      <div className="mr-1 flex min-w-[142px] items-center gap-2 px-1.5 text-[13px] font-extrabold text-slate-100"><Zap size={18} className="text-amber-400"/>Quick Actions</div>
       <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 2xl:grid-cols-4">
         {[
           { label: "Create Scene", icon: Layers3, target: "scene" },
