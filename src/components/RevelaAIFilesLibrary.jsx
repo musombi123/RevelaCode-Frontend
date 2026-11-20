@@ -59,7 +59,7 @@ export default function RevelaAIFilesLibrary({
     setError("");
     try {
       const result = await listRevelaAIArtifacts({
-        authFetch, query, type, includeTrash: true, limit: 100,
+        authFetch, query, type, includeTrash: showTrash, trashOnly: showTrash, limit: 100,
       });
       setFiles(result.filter((item) => showTrash ? Boolean(item.trashed_at) : !item.trashed_at));
     } catch (loadError) {
