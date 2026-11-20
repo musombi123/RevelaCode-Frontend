@@ -45,11 +45,23 @@ const UNSUPPORTED_EXTENSIONS = new Set([
 
 function fileExtensionRequest(text) {
   const value = String(text || "");
-  const dotted = value.match(/(?:\b(?:as|to|into|format|extension|file|export|save)\b[\s\S]{0,45}?)\.([a-z0-9]{1,8})\b/i)
-    || value.match(/\b\.([a-z0-9]{1,8})\b/i);
+  const dotted = value.match(
+    /\b(?:as|to|into|format|extension|file|export|save|download)\s+(?:(?:a|an|the)\s+)?(?:[\w-]+\s+){0,2}\.([a-z0-9]{1,8})\b/i
+  );
   if (dotted) return String(dotted[1] || "").toLowerCase();
-  const named = value.match(/\b(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|odt|ods|odp|rtf|gif|mp4|zip)\b/i);
-  return named ? String(named[1]).toLowerCase() : "";
+
+  const named = value.match(
+    /\b(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|odt|ods|odp|rtf|gif|mp4|zip)\b/i
+  );
+  if (!named) return "";
+
+  const token = String(named[1] || "").toLowerCase();
+  const before = value.slice(Math.max(0, named.index - 28), named.index);
+  const after = value.slice(named.index + named[0].length, named.index + named[0].length + 24);
+  const exportCue = /\b(?:as|to|into|format|extension|export|save|download)\s*$/i.test(before)
+    || /^\s*(?:file|format|export|output|document|workbook|deck)\b/i.test(after)
+    || /^(?:pptx|docx|xlsx|csv|pdf|markdown|md|txt)$/i.test(token);
+  return exportCue ? token : "";
 }
 
 /**
@@ -78,8 +90,11 @@ export function inferWorkspaceExport(prompt, attachedFile = null) {
     }
     const mapped = EXTENSION_OUTPUTS[extension];
     if (mapped) {
+      if (extension === "html" && /\b(?:ui|interface|website|prototype|dashboard|web app)\b/i.test(text)) {
+        return { ...mapped, extension, command: "/ui" };
+      }
       if (["png", "jpg", "jpeg", "svg"].includes(extension) || (extension === "pdf" && imageContext)) {
-        return { ...mapped, extension, command: "/image" };
+        return { ...mapped, extension, command: "/image", outputFormat: extension === "pdf" ? "pdf" : mapped.outputFormat };
       }
       return { ...mapped, extension };
     }
