@@ -1391,7 +1391,6 @@ export default function NexoraFoundryWorkspace() {
   const pageMeta = {
     overview:["Studio Overview","Your production command center"],
     projects:["Projects","Manage your NEXORA game projects"],
-    factory:["Project Factory","Create, import and manage the local Godot workspace"],
     toolchains:["Toolchain Manager","Detect and install the desktop game-development toolchain"],
     backups:["Backup & Versions","Create and restore integrity-checked local project snapshots"],
     "release-center":["Release Center","Prepare release manifests and verify your publisher setup"],
