@@ -103,7 +103,7 @@ test("routes image exports to Image Studio with the requested format", () => {
 });
 
 test("unsupported legacy or media formats are surfaced rather than silently substituted", () => {
-  for (const extension of ["doc", "xls", "ppt", "odt", "ods", "odp", "rtf", "gif", "mp4", "zip"]) {
+  for (const extension of ["doc", "xls", "ppt", "odt", "ods", "odp", "rtf", "gif", "mp4", "webp", "zip"]) {
     const request = inferWorkspaceExport("Export this file as ." + extension);
     assert.equal(request?.command, "/export-unsupported", extension);
     assert.match(request?.message || "", /will not substitute/i);
