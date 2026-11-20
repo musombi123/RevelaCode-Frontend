@@ -244,15 +244,31 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   };
 
   const installSelectedTools = () => {
-    if (!selectedTools.length) return;
-    if (!window.confirm("Install these selected toolchains on this computer: " + selectedTools.join(", ") + "? Continue?")) return;
+    if (!selectedTools.includes("android_sdk")) return;
+    if (!window.confirm("Install the pinned Android SDK components on this computer? This downloads the official Android platform tools, build tools, platform, NDK and CMake. You may need to accept Android SDK licences first.")) return;
     run("install-tools", async () => {
       const result = await request("/api/v1/desktop/toolchains/install", {
-        method: "POST", body: JSON.stringify({ tools: selectedTools, confirm_install: true })
+        method: "POST", body: JSON.stringify({ tools: ["android_sdk"], confirm_install: true })
       });
+      setSelectedTools([]);
       await loadToolchains();
       return result;
     });
+  };
+
+  const lockDetectedToolchains = () => {
+    if (!projectId || !toolchains?.tools) return;
+    const detected = Object.entries(toolchains.tools)
+      .filter(([key, value]) => key !== "sdkmanager" && value?.available)
+      .map(([key]) => key);
+    if (!detected.length) return;
+    run("lock-toolchains", async () => {
+      const result = await request("/api/v1/desktop/projects/" + projectId + "/toolchains/lock", {
+        method: "POST", body: JSON.stringify({ tools: detected })
+      });
+      await loadToolchains();
+      return result;
+    }, "Detected tool versions have been locked to this project.");
   };
 
   const prepareRelease = () => {
@@ -331,14 +347,14 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
         {!toolchains ? <div className="mt-4 text-xs text-slate-500">Detecting local toolchains…</div> : <>
           <div className="mt-3 flex flex-wrap gap-2 text-[9px] text-slate-400"><span className="rounded-md border border-[#29415F] px-2 py-1">OS: {toolchains.machine?.system || "Unknown"}</span><span className="rounded-md border border-[#29415F] px-2 py-1">Installer: {toolchains.install_provider || "manual setup"}</span></div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">{toolchains.catalog?.map(item => {
-            const detectedKey = item.id === "java17" ? "java" : item.id;
+            const detectedKey = item.id;
             const detected = toolchains.tools?.[detectedKey];
             return <label key={item.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#20334B] bg-[#0A1524] p-3">
-              <input type="checkbox" checked={selectedTools.includes(item.id)} onChange={event => setSelectedTools(current => event.target.checked ? [...current, item.id] : current.filter(value => value !== item.id))} className="mt-1 accent-cyan-400"/>
-              <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><b className="text-xs text-white">{item.label}</b><State ready={Boolean(detected?.available)}>{detected?.available ? "Detected" : "Not detected"}</State></span><span className="mt-1 block text-[10px] leading-4 text-slate-500">{item.purpose}</span><span className="mt-1 block break-all text-[9px] text-slate-600">{detected?.version || item.winget_id}</span></span>
+              <input type="checkbox" checked={selectedTools.includes(item.id)} disabled={!item.installable || (item.id === "android_sdk" && !toolchains.tools?.sdkmanager?.available)} onChange={event => setSelectedTools(current => event.target.checked ? [...current, item.id] : current.filter(value => value !== item.id))} className="mt-1 accent-cyan-400"/>
+              <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><b className="text-xs text-white">{item.label}</b><State ready={Boolean(detected?.available)}>{detected?.available ? "Detected" : "Not detected"}</State></span><span className="mt-1 block text-[10px] leading-4 text-slate-500">{item.purpose}</span><span className="mt-1 block text-[9px] text-cyan-300/70">{item.installable ? "Install through Android SDK Manager" : "Install from official vendor; NEXORA detects and locks it"}</span><span className="mt-1 block break-all text-[9px] text-slate-600">{detected?.version || item.winget_id}</span></span>
             </label>;
           })}</div>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2"><p className="max-w-2xl text-[9px] leading-4 text-slate-500">Installs use a fixed package allowlist and no arbitrary shell commands. Android SDK components and export templates may still require official managers and licence acceptance.</p><button className={primary} type="button" disabled={!selectedTools.length || Boolean(busy) || !toolchains.install_provider} onClick={installSelectedTools}><Download size={13}/> Install selected tools</button></div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2"><p className="max-w-2xl text-[9px] leading-4 text-slate-500">NEXORA only installs a fixed Android SDK package set through the official sdkmanager. Godot, Java, Blender and FFmpeg are detected locally; install them from their official vendors. Accept SDK licences before installation.</p><div className="flex flex-wrap gap-2"><button className={button} type="button" disabled={!projectId || Boolean(busy) || !Object.values(toolchains.tools || {}).some(item => item?.available)} onClick={lockDetectedToolchains}><ShieldCheck size={13}/> Lock detected versions</button><button className={primary} type="button" disabled={!selectedTools.includes("android_sdk") || Boolean(busy) || !toolchains.tools?.sdkmanager?.available} onClick={installSelectedTools}><Download size={13}/> Install Android SDK</button></div></div>
           {toolchains.lock && <div className="mt-4 rounded-xl border border-[#20334B] bg-[#0A1524] p-3"><div className="text-[10px] font-bold text-slate-300">PROJECT TOOLCHAIN LOCK</div><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all text-[9px] text-slate-500">{JSON.stringify(toolchains.lock, null, 2)}</pre></div>}
         </>}
       </section>}
