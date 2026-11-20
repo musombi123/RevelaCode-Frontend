@@ -40,33 +40,48 @@ function formatBytes(value) {
 
 function DocumentEditor({ payload, onChange }) {
   const sections = Array.isArray(payload.sections) ? payload.sections : [];
+
   const updateSection = (index, patch) => onChange({
     ...payload,
     sections: sections.map((section, itemIndex) => itemIndex === index ? { ...section, ...patch } : section),
   });
+
   const updateParagraph = (sectionIndex, paragraphIndex, value) => {
-    const next = sections.map((section, itemIndex) => {
-      if (itemIndex !== sectionIndex) return section;
-      const paragraphs = [...(section.paragraphs || [])];
-      paragraphs[paragraphIndex] = value;
-      return { ...section, paragraphs };
-    });
-    onChange({ ...payload, sections: next });
+    const section = sections[sectionIndex] || {};
+    if (Array.isArray(section.blocks)) {
+      const targetBlockIndex = section.blocks
+        .map((block, index) => ({ block, index }))
+        .filter(({ block }) => block?.type === "paragraph")[paragraphIndex]?.index;
+      if (targetBlockIndex == null) return;
+      updateOrderedBlock(sectionIndex, targetBlockIndex, { text: value });
+      return;
+    }
+    const paragraphs = [...(section.paragraphs || [])];
+    paragraphs[paragraphIndex] = value;
+    updateSection(sectionIndex, { paragraphs });
   };
-  const addParagraph = (sectionIndex) => {
-    const next = sections.map((section, itemIndex) => itemIndex === sectionIndex
-      ? { ...section, paragraphs: [...(section.paragraphs || []), ""] }
-      : section);
-    onChange({ ...payload, sections: next });
+
+  const updateOrderedBlock = (sectionIndex, blockIndex, patch) => {
+    const section = sections[sectionIndex] || {};
+    const blocks = [...(section.blocks || [])];
+    blocks[blockIndex] = { ...blocks[blockIndex], ...patch };
+    updateSection(sectionIndex, { blocks });
   };
+
   const updateTable = (sectionIndex, tableIndex, updater) => {
-    const next = sections.map((section, itemIndex) => {
-      if (itemIndex !== sectionIndex) return section;
-      const tables = (section.tables || []).map((table, index) => index === tableIndex ? updater(table) : table);
-      return { ...section, tables };
-    });
-    onChange({ ...payload, sections: next });
+    const section = sections[sectionIndex] || {};
+    const tables = (section.tables || []).map((table, index) => index === tableIndex ? updater(table) : table);
+    updateSection(sectionIndex, { tables });
   };
+
+  const updateTableBlock = (sectionIndex, blockIndex, updater) => {
+    const section = sections[sectionIndex] || {};
+    const blocks = (section.blocks || []).map((block, index) =>
+      index === blockIndex ? updater(block) : block
+    );
+    updateSection(sectionIndex, { blocks });
+  };
+
   const updateTableHeader = (sectionIndex, tableIndex, columnIndex, value) => updateTable(
     sectionIndex, tableIndex, (table) => {
       const headers = [...(table.headers || [])];
@@ -74,29 +89,115 @@ function DocumentEditor({ payload, onChange }) {
       return { ...table, headers };
     }
   );
+
   const updateTableCell = (sectionIndex, tableIndex, rowIndex, columnIndex, value) => updateTable(
     sectionIndex, tableIndex, (table) => {
-      const rows = (table.rows || []).map((row, index) => index === rowIndex ? [...row] : [...row]);
+      const rows = (table.rows || []).map((row) => [...row]);
+      if (!rows[rowIndex]) rows[rowIndex] = [];
       rows[rowIndex][columnIndex] = value;
       return { ...table, rows };
     }
   );
+
+  const updateTableBlockHeader = (sectionIndex, blockIndex, columnIndex, value) => updateTableBlock(
+    sectionIndex, blockIndex, (table) => {
+      const headers = [...(table.headers || [])];
+      headers[columnIndex] = value;
+      return { ...table, headers };
+    }
+  );
+
+  const updateTableBlockCell = (sectionIndex, blockIndex, rowIndex, columnIndex, value) => updateTableBlock(
+    sectionIndex, blockIndex, (table) => {
+      const rows = (table.rows || []).map((row) => [...row]);
+      if (!rows[rowIndex]) rows[rowIndex] = [];
+      rows[rowIndex][columnIndex] = value;
+      return { ...table, rows };
+    }
+  );
+
+  const addParagraph = (sectionIndex) => {
+    const section = sections[sectionIndex] || {};
+    if (Array.isArray(section.blocks)) {
+      updateSection(sectionIndex, {
+        blocks: [...section.blocks, { type: "paragraph", text: "" }],
+      });
+    } else {
+      updateSection(sectionIndex, { paragraphs: [...(section.paragraphs || []), ""] });
+    }
+  };
+
   const addTableRow = (sectionIndex, tableIndex) => updateTable(
     sectionIndex, tableIndex, (table) => ({
       ...table,
       rows: [...(table.rows || []), (table.headers || []).map(() => "")],
     })
   );
-  const addTable = (sectionIndex) => updateSection(sectionIndex, {
-    tables: [
-      ...(sections[sectionIndex].tables || []),
-      { headers: ["Column 1", "Column 2"], rows: [["", ""]] },
-    ],
-  });
+
+  const addTableBlockRow = (sectionIndex, blockIndex) => updateTableBlock(
+    sectionIndex, blockIndex, (table) => ({
+      ...table,
+      rows: [...(table.rows || []), (table.headers || []).map(() => "")],
+    })
+  );
+
+  const addTable = (sectionIndex) => {
+    const section = sections[sectionIndex] || {};
+    const table = { headers: ["Column 1", "Column 2"], rows: [["", ""]] };
+    if (Array.isArray(section.blocks)) {
+      updateSection(sectionIndex, { blocks: [...section.blocks, { type: "table", ...table }] });
+    } else {
+      updateSection(sectionIndex, { tables: [...(section.tables || []), table] });
+    }
+  };
+
   const addSection = () => onChange({
     ...payload,
-    sections: [...sections, { heading: "New section", level: 1, paragraphs: [""], tables: [] }],
+    sections: [...sections, {
+      heading: "New section",
+      level: 1,
+      paragraphs: [],
+      tables: [],
+      blocks: [{ type: "paragraph", text: "" }],
+    }],
   });
+
+  const renderTable = (table, sectionIndex, tableIndex, ordered = false) => {
+    const updateHeader = ordered ? updateTableBlockHeader : updateTableHeader;
+    const updateCell = ordered ? updateTableBlockCell : updateTableCell;
+    const addRow = ordered ? addTableBlockRow : addTableRow;
+    return (
+      <div key={(ordered ? "block-" : "table-") + tableIndex} className="overflow-x-auto rounded-lg border border-slate-200">
+        <table className="min-w-full border-collapse text-xs">
+          <thead>
+            <tr>{(table.headers || []).map((header, columnIndex) => (
+              <th key={columnIndex} className="border-b border-r border-slate-200 bg-slate-50 p-1">
+                <input value={header ?? ""} onChange={(event) => updateHeader(sectionIndex, tableIndex, columnIndex, event.target.value)}
+                  aria-label={"Section " + (sectionIndex + 1) + " table " + (tableIndex + 1) + " column " + (columnIndex + 1) + " heading"}
+                  className="w-full min-w-28 bg-transparent px-2 py-2 text-left font-bold text-slate-800 outline-none"/>
+              </th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {(table.rows || []).map((row, rowIndex) => (
+              <tr key={rowIndex}>{(table.headers || []).map((_, columnIndex) => (
+                <td key={columnIndex} className="border-b border-r border-slate-200 p-0">
+                  <input value={row?.[columnIndex] == null ? "" : String(row[columnIndex])}
+                    onChange={(event) => updateCell(sectionIndex, tableIndex, rowIndex, columnIndex, event.target.value)}
+                    aria-label={"Section " + (sectionIndex + 1) + " table " + (tableIndex + 1) + " row " + (rowIndex + 1) + " column " + (columnIndex + 1)}
+                    className="w-full min-w-28 bg-transparent px-2 py-2 text-slate-700 outline-none focus:bg-blue-50/50"/>
+                </td>
+              ))}</tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="border-t border-slate-200 bg-slate-50 px-3 py-2">
+          <button type="button" onClick={() => addRow(sectionIndex, tableIndex)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add table row</button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="mx-auto max-w-[850px] space-y-4">
       <article className="min-h-[700px] rounded-lg border border-slate-200 bg-white p-6 text-slate-900 shadow-sm sm:p-10">
@@ -107,45 +208,35 @@ function DocumentEditor({ payload, onChange }) {
             <input value={section.heading || ""} onChange={(event) => updateSection(index, { heading: event.target.value })}
               aria-label={"Section " + (index + 1) + " heading"} placeholder="Section heading"
               className="w-full border-0 border-b border-slate-100 bg-transparent py-1 text-lg font-semibold outline-none focus:border-blue-500"/>
-            {(section.paragraphs || []).map((paragraph, paragraphIndex) => (
-              <textarea key={paragraphIndex} value={paragraph || ""}
-                onChange={(event) => updateParagraph(index, paragraphIndex, event.target.value)}
-                aria-label={"Section " + (index + 1) + " paragraph " + (paragraphIndex + 1)}
-                rows={Math.max(2, Math.min(8, String(paragraph || "").split("\n").length + 1))}
-                placeholder="Write your paragraph…"
-                className="w-full resize-y border-0 bg-transparent text-[15px] leading-7 text-slate-700 outline-none focus:bg-blue-50/40"/>
-            ))}
+
+            {Array.isArray(section.blocks) ? (
+              section.blocks.map((block, blockIndex) => block?.type === "table" ? (
+                renderTable(block, index, blockIndex, true)
+              ) : (
+                <textarea key={"paragraph-" + blockIndex} value={block?.text || ""}
+                  onChange={(event) => updateParagraph(index,
+                    section.blocks.slice(0, blockIndex + 1).filter((item) => item?.type === "paragraph").length - 1,
+                    event.target.value)}
+                  aria-label={"Section " + (index + 1) + " paragraph block " + (blockIndex + 1)}
+                  rows={Math.max(2, Math.min(8, String(block?.text || "").split("\n").length + 1))}
+                  placeholder="Write your paragraph…"
+                  className="w-full resize-y border-0 bg-transparent text-[15px] leading-7 text-slate-700 outline-none focus:bg-blue-50/40"/>
+              ))
+            ) : (
+              <>
+                {(section.paragraphs || []).map((paragraph, paragraphIndex) => (
+                  <textarea key={paragraphIndex} value={paragraph || ""}
+                    onChange={(event) => updateParagraph(index, paragraphIndex, event.target.value)}
+                    aria-label={"Section " + (index + 1) + " paragraph " + (paragraphIndex + 1)}
+                    rows={Math.max(2, Math.min(8, String(paragraph || "").split("\n").length + 1))}
+                    placeholder="Write your paragraph…"
+                    className="w-full resize-y border-0 bg-transparent text-[15px] leading-7 text-slate-700 outline-none focus:bg-blue-50/40"/>
+                ))}
+                {(section.tables || []).map((table, tableIndex) => renderTable(table, index, tableIndex))}
+              </>
+            )}
+
             <button type="button" onClick={() => addParagraph(index)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add paragraph</button>
-            {(section.tables || []).map((table, tableIndex) => (
-              <div key={tableIndex} className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="min-w-full border-collapse text-xs">
-                  <thead>
-                    <tr>{(table.headers || []).map((header, columnIndex) => (
-                      <th key={columnIndex} className="border-b border-r border-slate-200 bg-slate-50 p-1">
-                        <input value={header ?? ""} onChange={(event) => updateTableHeader(index, tableIndex, columnIndex, event.target.value)}
-                          aria-label={"Section " + (index + 1) + " table " + (tableIndex + 1) + " column " + (columnIndex + 1) + " heading"}
-                          className="w-full min-w-28 bg-transparent px-2 py-2 text-left font-bold text-slate-800 outline-none"/>
-                      </th>
-                    ))}</tr>
-                  </thead>
-                  <tbody>
-                    {(table.rows || []).map((row, rowIndex) => (
-                      <tr key={rowIndex}>{(table.headers || []).map((_, columnIndex) => (
-                        <td key={columnIndex} className="border-b border-r border-slate-200 p-0">
-                          <input value={row?.[columnIndex] == null ? "" : String(row[columnIndex])}
-                            onChange={(event) => updateTableCell(index, tableIndex, rowIndex, columnIndex, event.target.value)}
-                            aria-label={"Section " + (index + 1) + " table " + (tableIndex + 1) + " row " + (rowIndex + 1) + " column " + (columnIndex + 1)}
-                            className="w-full min-w-28 bg-transparent px-2 py-2 text-slate-700 outline-none focus:bg-blue-50/50"/>
-                        </td>
-                      ))}</tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="border-t border-slate-200 bg-slate-50 px-3 py-2">
-                  <button type="button" onClick={() => addTableRow(index, tableIndex)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add table row</button>
-                </div>
-              </div>
-            ))}
             <button type="button" onClick={() => addTable(index)} className="text-xs font-semibold text-blue-700 hover:underline">+ Add table</button>
           </section>
         ))}
