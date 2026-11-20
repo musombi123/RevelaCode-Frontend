@@ -517,6 +517,49 @@ export async function setRevelaAIArtifactEditorState({ authFetch, artifactId, ac
   return payload?.artifact || null;
 }
 
+export async function proposeRevelaAIArtifactEdit({
+  authFetch, artifactId, instruction, mode = "do_it_for_me",
+}) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/edit",
+    method: "POST",
+    body: { action: "propose", instruction: String(instruction || "").slice(0, 2400), mode },
+  });
+  return {
+    artifact: payload?.artifact || null,
+    proposal: payload?.proposal || payload?.artifact?.pending_edit || null,
+    requiresConfirmation: payload?.requires_confirmation === true,
+    message: String(payload?.message || ""),
+  };
+}
+
+export async function confirmRevelaAIArtifactEdit({
+  authFetch, artifactId, proposalId, expectedVersion,
+}) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/edit",
+    method: "POST",
+    body: {
+      action: "confirm",
+      proposal_id: String(proposalId || ""),
+      expected_version: Number(expectedVersion),
+    },
+  });
+  return payload?.artifact || null;
+}
+
+export async function cancelRevelaAIArtifactEdit({ authFetch, artifactId }) {
+  const payload = await artifactRequest({
+    authFetch,
+    path: "/api/artifacts/" + encodeURIComponent(String(artifactId || "")) + "/edit",
+    method: "POST",
+    body: { action: "cancel" },
+  });
+  return payload?.artifact || null;
+}
+
 export async function saveRevelaAIArtifactSource({
   authFetch, artifactId, expectedVersion, source,
 }) {
