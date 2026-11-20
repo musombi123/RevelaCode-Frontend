@@ -1434,7 +1434,35 @@ export default function NexoraFoundryWorkspace() {
     .slice(0,6).map(job=>({id:job.id,kind:"build",severity:job.state==="failed"?"error":"warning",title:job.kind||"Production job",description:job.message||("Job status: "+job.state)}));
   const selectedStorageBytes = (activeProject?.assets||[]).reduce((sum,asset)=>sum+Number(asset.size||0),0);
   const selectedStorageLabel = activeProject ? formatBytes(selectedStorageBytes)+" in "+activeProject.name : "No project selected";
-  const refreshWorkspace = () => { checkService(); if (cloudProjectActive) refreshJobs(); };
+  const refreshWorkspace = async () => {
+    checkService();
+    if (authenticatedCloudSession && localAgentConnected) {
+      try {
+        const response = await apiRequest("/api/v1/workspace/projects");
+        const rows = Array.isArray(response.projects) ? response.projects : [];
+        const hydrated = await Promise.all(rows.map(async (row) => {
+          let assets = [];
+          try {
+            const assetResponse = await apiRequest("/api/v1/workspace/projects/" + row.id + "/assets");
+            assets = (assetResponse.assets || []).map(cloudAssetFromApi);
+          } catch {}
+          const project = workspaceProjectFromCloud(row, assets);
+          cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+          return project;
+        }));
+        const knownIds = new Set(hydrated.map(item => item.id));
+        const localOnly = readProjects(storageUserId).filter(item => !item._remoteVersion && !knownIds.has(item.id));
+        const visible = [...hydrated, ...localOnly];
+        setProjects(visible);
+        setActiveId(current => visible.some(item => item.id === current) ? current : (hydrated[0]?.id || localOnly[0]?.id || ""));
+        setCloudLoaded(true);
+        setApiStatus({ state: "online", label: "Local NEXORA workspace refreshed" });
+      } catch (error) {
+        setNotice(error.message || "Could not refresh projects from the local agent.");
+      }
+    }
+    if (cloudProjectActive) refreshJobs();
+  };
   const quickAction = (action) => {
     if (!activeProject) {
       setNotice("Create or open a project before using scene and playtest actions.");
