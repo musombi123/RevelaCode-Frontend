@@ -526,13 +526,23 @@ export default function NexoraFoundryWorkspace() {
     }
   };
 
-  const createNewProject = async () => {
-    const name = window.prompt("Name your new game project", "Untitled Game");
-    if (name === null) return;
-    const project = createProject(name.trim() || "Untitled Game");
+  const createNewProject = () => {
+    setProjectDraftName("");
+    setProjectDraftDescription("");
+    setProjectModalOpen(true);
+  };
+
+  const submitNewProject = async (event) => {
+    event.preventDefault();
+    const name = projectDraftName.trim();
+    if (!name) { setNotice("Enter a project name first."); return; }
+    setProjectCreating(true);
+    const project = createProject(name);
+    project.description = projectDraftDescription.trim();
     if (API_BASE && authenticatedCloudSession) {
       if (!cloudLoaded) {
         setNotice("The cloud workspace has not finished loading. Retry after the secure connection is ready.");
+        setProjectCreating(false);
         return;
       }
       try {
@@ -545,18 +555,141 @@ export default function NexoraFoundryWorkspace() {
         setProjects((current) => [remoteProject, ...current]);
         setActiveId(remoteProject.id);
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
-        setTab("scene");
-        setNotice("Project created in NEXORA PostgreSQL cloud storage.");
-        return;
+        setStudioView("game-editor");
+        setProjectModalOpen(false);
+        setNotice("Project created in NEXORA cloud storage.");
       } catch (error) {
         setNotice(error.message || "Cloud project creation failed.");
-        return;
+      } finally {
+        setProjectCreating(false);
       }
+      return;
     }
+    project._localOnly = true;
     setProjects((current) => [project, ...current]);
     setActiveId(project.id);
     setSelectedObjectId(project.scene.objects[0]?.id || "");
-    setTab("scene");
+    setStudioView("game-editor");
+    setProjectModalOpen(false);
+    setProjectCreating(false);
+    setNotice("Local project draft created in this browser. Migrate it to cloud when the NEXORA service is available.");
+  };
+
+  const openProject = (project) => {
+    if (!project) return;
+    setActiveId(project.id);
+    setSelectedObjectId(project.scene?.objects?.[0]?.id || "");
+    setStudioView("game-editor");
+  };
+
+  const duplicateProject = async (project) => {
+    if (!project) return;
+    const clone = {
+      ...workspaceProjectDocument(project),
+      name: (project.name || "Untitled Game") + " Copy",
+      description: project.description || "",
+      scene: {
+        ...project.scene,
+        id: makeId("scene"),
+        objects: (project.scene?.objects || []).map(({asset_id, ...object}) => ({...object,id:makeId("object")})),
+      },
+      assets: [],
+      revisions: [],
+      build: {lastBuildAt:null,lastBuildStatus:"not_started",artifacts:[]},
+    };
+    try {
+      if (authenticatedCloudSession && cloudLoaded) {
+        const saved = await apiRequest("/api/v1/workspace/projects", {
+          method:"POST",
+          body:JSON.stringify({name:clone.name,description:clone.description,document:clone}),
+        });
+        const created = workspaceProjectFromCloud(saved,[]);
+        cloudBaseline.current.set(created.id,JSON.stringify(workspaceProjectDocument(created)));
+        setProjects(current=>[created,...current]);
+        setNotice("Project duplicated in NEXORA cloud. Binary assets must be imported again into the copy.");
+      } else {
+        const created = {...clone,id:makeId("project"),createdAt:now(),updatedAt:now(),_localOnly:true};
+        setProjects(current=>[{...created},...current]);
+        setNotice("Project duplicated as a local draft. Binary assets are not copied.");
+      }
+    } catch(error) {
+      setNotice(error.message || "Could not duplicate project.");
+    }
+  };
+
+  const archiveProject = async (project) => {
+    if (!project) return;
+    const next = {...project,archived:!project.archived,updatedAt:now()};
+    try {
+      if (project._remoteVersion) {
+        const document = workspaceProjectDocument(next);
+        const saved = await apiRequest("/api/v1/workspace/projects/"+project.id,{
+          method:"PUT",
+          body:JSON.stringify({name:next.name,description:next.description,document,expected_version:project._remoteVersion}),
+        });
+        next._remoteVersion = saved.version;
+        next.updatedAt = saved.updated_at || next.updatedAt;
+        cloudBaseline.current.set(project.id,JSON.stringify(document));
+      }
+      setProjects(current=>current.map(item=>item.id===project.id?next:item));
+      setNotice(next.archived?"Project archived.":"Project restored from archive.");
+    } catch(error) {
+      setNotice(error.message || "Could not update the project archive state.");
+    }
+  };
+
+  const deleteProjectById = async (project) => {
+    if (!project || !window.confirm("Delete \"" + project.name + "\" and its project assets? This cannot be undone.")) return;
+    try {
+      if (project._remoteVersion) {
+        await apiRequest("/api/v1/workspace/projects/"+project.id,{method:"DELETE"});
+        cloudBaseline.current.delete(project.id);
+      } else {
+        for (const asset of project.assets || []) {
+          if (!asset.remote) await removeStoredAsset(asset.id,nexoraUser?.id || "anonymous");
+        }
+      }
+      setProjects(current=>current.filter(item=>item.id!==project.id));
+      if (activeId===project.id) {
+        const next = projects.find(item=>item.id!==project.id&&!item.archived);
+        setActiveId(next?.id || "");
+        setSelectedObjectId(next?.scene?.objects?.[0]?.id || "");
+      }
+      setNotice("Project deleted.");
+    } catch(error) {
+      setNotice(error.message || "Could not delete project.");
+    }
+  };
+
+  const startTask = (task = null) => {
+    setTaskEditingId(task?.id || "");
+    setTaskDraft(task ? {...task} : {
+      title:"",description:"",projectId:activeProject?.id || "",category:"Code",
+      priority:"medium",assignee:nexoraUser?.display_name || "Me",status:"backlog",dueDate:"",
+    });
+    setTaskModalOpen(true);
+  };
+
+  const saveTask = (event) => {
+    event.preventDefault();
+    if (!taskDraft.title.trim()) { setNotice("Task title is required."); return; }
+    const timestamp = now();
+    if (taskEditingId) {
+      setStudioTasks(current=>current.map(task=>task.id===taskEditingId?{...task,...taskDraft,title:taskDraft.title.trim(),updatedAt:timestamp}:task));
+      setNotice("Task updated in this browser's task board.");
+    } else {
+      const task = {...taskDraft,id:makeId("task"),title:taskDraft.title.trim(),createdAt:timestamp,updatedAt:timestamp};
+      setStudioTasks(current=>[task,...current]);
+      setNotice("Task added to this browser's production board.");
+    }
+    setTaskModalOpen(false);
+  };
+
+  const moveTask = (taskId,status) => setStudioTasks(current=>current.map(task=>task.id===taskId?{...task,status,updatedAt:now()}:task));
+  const deleteTask = (task) => {
+    if (!task || !window.confirm("Delete task \"" + task.title + "\"?")) return;
+    setStudioTasks(current=>current.filter(item=>item.id!==task.id));
+    setNotice("Task deleted from this browser's task board.");
   };
 
   const deleteProject = async () => {
