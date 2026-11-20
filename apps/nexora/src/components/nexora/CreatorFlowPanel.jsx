@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Film, Gamepad2, Layers3, LockKeyhole, CheckCircle2, CreditCard, Plus, Trash2, RefreshCw, Play, UploadCloud } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { AdMob, AdmobConsentStatus } from "@capacitor-community/admob";
+import { BookOpen, Film, Gamepad2, Layers3, LockKeyhole, CheckCircle2, CreditCard, Plus, Trash2, RefreshCw, Play, UploadCloud, Gift } from "lucide-react";
 
 const makeEpisode = (number) => ({
   id: `episode-${number}`,
@@ -14,6 +16,8 @@ const makeEpisode = (number) => ({
 });
 
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
+const REWARDED_AD_UNIT_ID = String(import.meta.env.VITE_ADMOB_NEXORA_REWARDED_AD_UNIT_ID || "").trim();
+const REWARDED_TOOL_IDS = ["environment", "actors_props"];
 
 const DEFAULT_WORKFLOW = {
   schema_version: "1.0", mode: "story", plan: "basic",
@@ -48,6 +52,9 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   const [capabilities, setCapabilities] = useState(null);
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [error, setError] = useState("");
+  const [rewardState, setRewardState] = useState({ enabled:false, platform:"android", balances:{environment:0,actors_props:0}, tools:[] });
+  const [rewardNotice, setRewardNotice] = useState("");
+  const [rewardBusy, setRewardBusy] = useState("");
 
   const projectId = activeProject?.id;
   const planRank = { basic: 0, standard: 1, pro: 2, studio: 3 };
@@ -63,6 +70,17 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     const units = episodeUnits + size * workflow.environment_variants + workflow.enemies + workflow.vehicles * 2 + events;
     return { units, events };
   }, [workflow]);
+
+  const refreshRewards = useCallback(async () => {
+    try {
+      const result = await apiRequest("/api/v1/creator-flow/rewards");
+      setRewardState(result || { enabled:false, balances:{environment:0,actors_props:0} });
+      return result;
+    } catch {
+      setRewardState({ enabled:false, balances:{environment:0,actors_props:0} });
+      return null;
+    }
+  }, [apiRequest]);
 
   const refreshPipeline = useCallback(async () => {
     if (!projectId || !cloudProjectActive) return;
@@ -115,6 +133,11 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   }, [cloudProjectActive, projectId, refreshPipeline]);
 
   useEffect(() => {
+    refreshRewards();
+  }, [refreshRewards, entitlement?.plan, entitlement?.status]);
+
+
+  useEffect(() => {
     if (!cloudProjectActive || !pipeline?.stages?.length) return undefined;
     const timer = window.setInterval(refreshPipeline, 5000);
     return () => window.clearInterval(timer);
@@ -142,10 +165,64 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     method: "PUT", body: JSON.stringify(workflow),
   }), (data) => { if (data.entitlement) setEntitlement(data.entitlement); setWorkflow(data.workflow); });
   const createPipeline = () => run("create-pipeline", () => apiRequest(`/api/v1/workspace/projects/${projectId}/creator-workflow/pipeline`, { method: "POST", body: "{}" }), (data) => { setPipeline(data.pipeline); });
-  const buildStage = (stage, path) => run(stage, () => apiRequest(`/api/v1/workspace/projects/${projectId}/creator-workflow/${path}`, { method: "POST", body: "{}" }), refreshPipeline);
+  const buildStage = (stage, path) => run(stage, async () => {
+    const result = await apiRequest(`/api/v1/workspace/projects/${projectId}/creator-workflow/${path}`, { method: "POST", body: "{}" });
+    await refreshRewards();
+    return result;
+  }, refreshPipeline);
   const approveStage = (stage) => run(`approve-${stage}`, () => apiRequest(`/api/v1/workspace/projects/${projectId}/movie-pipeline/stages/${stage}/approve`, {
     method: "POST", body: JSON.stringify({ note: "Creator reviewed the generated output in NEXORA Creator Flow." }),
   }), refreshPipeline);
+
+  const watchRewardedToolAd = async (toolId) => {
+    const toolName = toolId === "environment" ? "Blender environment generation" : "enemies and vehicles generation";
+    if (Capacitor.getPlatform() !== "android") {
+      setRewardNotice("Rewarded tool ads are available in the RevelaCode Android app, not a desktop browser.");
+      return;
+    }
+    if (!REWARDED_AD_UNIT_ID) {
+      setRewardNotice("The NEXORA rewarded AdMob unit ID has not been configured in the Android build yet.");
+      return;
+    }
+    if (rewardBusy) return;
+    setRewardBusy(toolId);
+    setRewardNotice("");
+    try {
+      const intent = await apiRequest("/api/v1/creator-flow/rewards/intents", {
+        method:"POST",
+        body:JSON.stringify({tool_id:toolId}),
+      });
+      let consent = await AdMob.requestConsentInfo();
+      if (consent.isConsentFormAvailable && consent.status === AdmobConsentStatus.REQUIRED) {
+        consent = await AdMob.showConsentForm();
+      }
+      if (!consent.canRequestAds) throw new Error("Ad consent is not ready. Review the consent choices before requesting a rewarded video.");
+      await AdMob.initialize();
+      await AdMob.prepareRewardVideoAd({
+        adId: REWARDED_AD_UNIT_ID,
+        ssv: { userId: String(intent.user_id), customData: String(intent.custom_data) },
+      });
+      const earned = await AdMob.showRewardVideoAd({adId:REWARDED_AD_UNIT_ID});
+      if (Number(earned?.amount || 0) < 1) throw new Error("The ad provider did not report a reward. No tool credit was granted.");
+      let latest = null;
+      for (let attempt=0; attempt<30; attempt+=1) {
+        latest = await apiRequest(`/api/v1/creator-flow/rewards/intents/${encodeURIComponent(intent.intent_id)}`);
+        if (latest.status === "credited") break;
+        if (latest.status === "expired" || latest.status === "rejected") break;
+        await new Promise((resolve)=>window.setTimeout(resolve,1500));
+      }
+      await refreshRewards();
+      if (latest?.status === "credited") {
+        setRewardNotice(`Verified. One use of ${toolName} is now available.`);
+      } else {
+        setRewardNotice("The video reward was reported by the app, but Google's signed verification has not arrived yet. Refresh credits in a moment; production remains locked until verification completes.");
+      }
+    } catch (e) {
+      setRewardNotice(e.message || "Rewarded ad could not be completed.");
+    } finally {
+      setRewardBusy("");
+    }
+  };
 
   const createCheckout = () => run("checkout", async () => {
     const result = await apiRequest("/api/v1/creator-flow/checkout", {
@@ -219,7 +296,9 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     const record = stageRecord(id);
     if (!record) return null;
     if (record.state === "REVIEW") return <button type="button" disabled={Boolean(busy)} onClick={() => approveStage(id)} className="border border-emerald-700 px-2 py-1 text-[9px] font-bold text-emerald-200">APPROVE REVIEW</button>;
-    if (record.state === "READY" && path) return <button type="button" disabled={Boolean(busy) || !canGenerate} onClick={() => buildStage(id, path)} className="border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-100 disabled:opacity-40">BUILD</button>;
+    const needsAdCredit = entitlement?.plan === "basic" && entitlementCurrent && REWARDED_TOOL_IDS.includes(id);
+    const hasAdCredit = Number(rewardState?.balances?.[id] || 0) > 0;
+    if (record.state === "READY" && path) return <button type="button" disabled={Boolean(busy) || !canGenerate || (needsAdCredit && !hasAdCredit)} onClick={() => buildStage(id, path)} className="border border-cyan-800 px-2 py-1 text-[9px] font-bold text-cyan-100 disabled:opacity-40">{needsAdCredit ? (hasAdCredit ? "BUILD · 1 AD CREDIT" : "NEED AD CREDIT") : "BUILD"}</button>;
     return null;
   };
 
@@ -320,6 +399,21 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
           <div className="border border-slate-800 bg-[#0d141c] p-3"><h3 className="mb-2 text-xs font-black text-cyan-200">WORKLOAD / CAPACITY</h3><div className="text-2xl font-black text-cyan-100">{workload.units} <span className="text-[10px] text-slate-400">/ {workflowPlan?.max_workload_units||"—"} units</span></div><div className="mt-2 h-2 overflow-hidden bg-slate-800"><div className="h-full bg-cyan-500" style={{width:`${Math.min(100,workload.units/Math.max(1,workflowPlan?.max_workload_units||1)*100)}%`}}/></div><div className="mt-2 text-[9px] text-slate-400">Episode count, world size, environment variants, enemies, vehicles and gameplay beats determine the workload tier.</div></div>
           {needsCheckout && <div className="border border-amber-800/60 bg-amber-950/15 p-3"><h3 className="mb-2 text-xs font-black text-amber-200"><CreditCard size={14} className="mr-1 inline"/> PAY DIRECTLY TO POCHI</h3><p className="mb-2 text-[10px] leading-5 text-slate-300">Creator Flow plans are paid. Payment goes directly to the personal Pochi la Biashara merchant account configured for NEXORA. NEXORA does not unlock access from a self-declared receipt.</p><input type="tel" inputMode="tel" autoComplete="tel" value={payerPhone} onChange={e=>setPayerPhone(e.target.value)} placeholder="M-PESA phone number" className="mb-2 w-full border border-slate-700 bg-[#080d12] p-2 text-xs text-white"/><button type="button" onClick={createCheckout} disabled={Boolean(busy)||!payerPhone.trim()||!workflowPlan?.price_configured||!paymentConfig?.merchant_number_configured||!plans.length} className="w-full border border-amber-700 px-3 py-2 text-[10px] font-black text-amber-100 disabled:opacity-40">CREATE POCHI PAYMENT REFERENCE</button>{payment&&<div className="mt-2 border border-slate-700 bg-[#080d12] p-2 text-[10px]"><b className="text-white">{money(payment.amount_kes)}</b><div className="mt-1">Pay to Pochi number: <b>{payment.merchant_number}</b></div><div>Reference: <b className="select-all text-cyan-200">{payment.reference}</b></div><ol className="mt-2 list-decimal pl-4 text-slate-400">{(payment.instructions||[]).map(item=><li key={item} className="mt-1">{item}</li>)}</ol><input value={receipt} onChange={e=>setReceipt(e.target.value.toUpperCase())} placeholder="M-PESA receipt code" className="mt-2 w-full border border-slate-700 bg-[#101820] p-2 text-xs text-white"/><button type="button" onClick={submitReceipt} disabled={Boolean(busy)||!receipt.trim()} className="mt-2 w-full border border-amber-700 p-2 text-[10px] text-amber-100">SUBMIT RECEIPT FOR VERIFICATION</button><button type="button" onClick={checkPayment} disabled={Boolean(busy)} className="mt-2 w-full border border-slate-700 p-2 text-[10px] text-cyan-100">CHECK PAYMENT STATUS · {paymentStatus.toUpperCase()}</button></div>}{!workflowPlan?.price_configured&&<p className="mt-2 text-[9px] text-rose-200">{!paymentConfig?.merchant_number_configured ? "Checkout is locked until the NEXORA Pochi la Biashara destination is configured on the NEXORA API." : "Checkout is disabled until NEXORA_PLAN_PRICES_KES contains the approved price for this plan."}</p>}</div>}
           {canGenerate&&<div className="border border-emerald-800/60 bg-emerald-950/10 p-3"><h3 className="text-xs font-black text-emerald-200"><CheckCircle2 size={14} className="mr-1 inline"/> PLAN ACTIVE</h3><p className="mt-1 text-[10px] text-slate-300">{entitlement.plan.toUpperCase()} entitlement is verified for this NEXORA account.</p><p className="mt-1 text-[9px] text-slate-500">Valid until: {entitlement.expires_at?new Date(entitlement.expires_at).toLocaleDateString():"Not provided"}</p></div>}
+          {entitlementCurrent && entitlement?.plan === "basic" && workflow.plan === "basic" && <div className="border border-amber-800/60 bg-amber-950/15 p-3">
+            <h3 className="mb-2 flex items-center gap-2 text-xs font-black text-amber-200"><Gift size={14}/> BASIC REWARDED TOOLS</h3>
+            <p className="mb-3 text-[10px] leading-5 text-slate-300">Watch a rewarded video to unlock one use of a selected production tool. Credits are account-bound, non-transferable and have no cash value. Only Google's verified callback can grant them.</p>
+            {!rewardState.enabled && <p className="mb-2 text-[10px] text-amber-100">Rewarded access is not configured yet. The NEXORA API needs Neon storage and the approved AdMob rewarded unit with server-side verification enabled.</p>}
+            {[
+              ["environment","Blender environment generation"],
+              ["actors_props","Enemies and vehicles generation"],
+            ].map(([toolId,label])=><div key={toolId} className="mb-2 flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] p-2">
+              <div><div className="text-[10px] font-bold text-slate-100">{label}</div><div className="text-[9px] text-slate-400">{Number(rewardState?.balances?.[toolId]||0)} verified use credits available</div></div>
+              <button type="button" disabled={!rewardState.enabled || !rewardState.basic_subscriber || !REWARDED_AD_UNIT_ID || Boolean(rewardBusy)} onClick={()=>watchRewardedToolAd(toolId)} className="border border-amber-700 px-3 py-2 text-[9px] font-black text-amber-100 disabled:opacity-40">{rewardBusy===toolId?"WAITING FOR AD…":"WATCH AD · +1 USE"}</button>
+            </div>)}
+            {rewardNotice && <p role="status" className="mt-2 text-[10px] text-amber-100">{rewardNotice}</p>}
+            <button type="button" onClick={refreshRewards} disabled={Boolean(rewardBusy)} className="mt-1 text-[9px] text-cyan-200 underline">REFRESH REWARDED CREDITS</button>
+            {Capacitor.getPlatform()!=="android" && <p className="mt-2 text-[9px] text-slate-500">Ad viewing is enabled in the RevelaCode Android app only.</p>}
+          </div>}
           <div className="border border-slate-800 p-3"><h3 className="mb-2 text-xs font-black text-cyan-200">TOOLS / WORKERS</h3><div className="space-y-2 text-[10px]"><div className="flex justify-between"><span>Blender model conversion</span><b className={capabilities?.model_conversion?.available?"text-emerald-300":"text-amber-200"}>{capabilities?.model_conversion?.available?"READY":"NOT INSTALLED"}</b></div><div className="flex justify-between"><span>Image → 3D GPU worker</span><b className={capabilities?.image_to_3d?.available?"text-emerald-300":"text-amber-200"}>{capabilities?.image_to_3d?.available?"READY":"NOT INSTALLED"}</b></div><div className="flex justify-between"><span>Blender environment packs</span><b className="text-emerald-300">AVAILABLE ON WORKER</b></div><div className="flex justify-between"><span>Godot assembly</span><b className="text-slate-300">CHECKS AT BUILD</b></div></div><p className="mt-2 text-[9px] text-slate-500">Image reconstruction requires a dedicated CUDA worker. Uploaded 3D meshes can be converted with Blender; static meshes need rigging before character animation.</p></div>
         </aside>
         </div>
