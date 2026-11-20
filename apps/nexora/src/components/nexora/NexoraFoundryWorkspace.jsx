@@ -4,6 +4,7 @@ import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
 import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
+import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
 import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
@@ -665,7 +666,7 @@ export default function NexoraFoundryWorkspace() {
     project.description = projectDraftDescription.trim();
     if (API_BASE && authenticatedCloudSession) {
       if (!cloudLoaded) {
-        setNotice("The cloud workspace has not finished loading. Retry after the secure connection is ready.");
+        setNotice("The paired local workspace has not finished loading. Retry after the desktop agent is connected.");
         setProjectCreating(false);
         return;
       }
@@ -681,9 +682,12 @@ export default function NexoraFoundryWorkspace() {
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
         setStudioView("game-editor");
         setProjectModalOpen(false);
-        setNotice("Project created in NEXORA cloud storage.");
+        let manifestWarning = "";
+        try { await apiRequest(`/api/v1/desktop/projects/${remoteProject.id}/initialize`, { method: "POST", body: "{}" }); }
+        catch (manifestError) { manifestWarning = manifestError.message || "Project created, but its local NEXORA manifest could not be initialized."; }
+        setNotice(manifestWarning || "Project created in your paired computer workspace.");
       } catch (error) {
-        setNotice(error.message || "Cloud project creation failed.");
+        setNotice(error.message || "Local project creation failed.");
       } finally {
         setProjectCreating(false);
       }
@@ -696,7 +700,7 @@ export default function NexoraFoundryWorkspace() {
     setStudioView("game-editor");
     setProjectModalOpen(false);
     setProjectCreating(false);
-    setNotice("Local project draft created in this browser. Migrate it to cloud when the NEXORA service is available.");
+    setNotice("The desktop agent is not connected. This is only a temporary browser draft; pair the agent before production.");
   };
 
   const openProject = (project) => {
@@ -1387,6 +1391,10 @@ export default function NexoraFoundryWorkspace() {
   const pageMeta = {
     overview:["Studio Overview","Your production command center"],
     projects:["Projects","Manage your NEXORA game projects"],
+    factory:["Project Factory","Create, import and manage the local Godot workspace"],
+    toolchains:["Toolchain Manager","Detect and install the desktop game-development toolchain"],
+    backups:["Backup & Versions","Create and restore integrity-checked local project snapshots"],
+    "release-center":["Release Center","Prepare release manifests and verify your publisher setup"],
     "game-editor":["Game Editor","Edit scenes, inspect objects and work with the production timeline"],
     ai:["AI Studio","Review production tools, AI jobs and Creator Flow"],
     world:["World Builder","Organize scene nodes, inspect transforms and add procedural templates"],
@@ -1428,21 +1436,35 @@ export default function NexoraFoundryWorkspace() {
     .slice(0,6).map(job=>({id:job.id,kind:"build",severity:job.state==="failed"?"error":"warning",title:job.kind||"Production job",description:job.message||("Job status: "+job.state)}));
   const selectedStorageBytes = (activeProject?.assets||[]).reduce((sum,asset)=>sum+Number(asset.size||0),0);
   const selectedStorageLabel = activeProject ? formatBytes(selectedStorageBytes)+" in "+activeProject.name : "No project selected";
-  const refreshWorkspace = () => { checkService(); if (cloudProjectActive) refreshJobs(); };
-  const refreshFactoryProjects = async () => {
-    const response = await apiRequest("/api/v1/workspace/projects");
-    const rows = Array.isArray(response.projects) ? response.projects : [];
-    const nextProjects = rows.map((row) => {
-      const previous = projects.find((item) => item.id === String(row.id));
-      const project = workspaceProjectFromCloud(row, previous?.assets || []);
-      cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
-      return project;
-    });
-    setProjects(nextProjects);
-    setActiveId((current) => nextProjects.some((item) => item.id === current) ? current : nextProjects[0]?.id || "");
-    setCloudLoaded(true);
+  const refreshWorkspace = async () => {
+    checkService();
+    if (authenticatedCloudSession && localAgentConnected) {
+      try {
+        const response = await apiRequest("/api/v1/workspace/projects");
+        const rows = Array.isArray(response.projects) ? response.projects : [];
+        const hydrated = await Promise.all(rows.map(async (row) => {
+          let assets = [];
+          try {
+            const assetResponse = await apiRequest("/api/v1/workspace/projects/" + row.id + "/assets");
+            assets = (assetResponse.assets || []).map(cloudAssetFromApi);
+          } catch {}
+          const project = workspaceProjectFromCloud(row, assets);
+          cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+          return project;
+        }));
+        const knownIds = new Set(hydrated.map(item => item.id));
+        const localOnly = readProjects(storageUserId).filter(item => !item._remoteVersion && !knownIds.has(item.id));
+        const visible = [...hydrated, ...localOnly];
+        setProjects(visible);
+        setActiveId(current => visible.some(item => item.id === current) ? current : (hydrated[0]?.id || localOnly[0]?.id || ""));
+        setCloudLoaded(true);
+        setApiStatus({ state: "online", label: "Local NEXORA workspace refreshed" });
+      } catch (error) {
+        setNotice(error.message || "Could not refresh projects from the local agent.");
+      }
+    }
+    if (cloudProjectActive) refreshJobs();
   };
-
   const quickAction = (action) => {
     if (!activeProject) {
       setNotice("Create or open a project before using scene and playtest actions.");
@@ -1517,6 +1539,15 @@ export default function NexoraFoundryWorkspace() {
         onOpenProject={openProject}
         onNewProject={createNewProject}
         onQuickAction={quickAction}
+        onRefresh={refreshWorkspace}
+      />}
+
+      {["factory","toolchains","backups","release-center"].includes(studioView) && <NexoraDesktopFactoryPanel
+        view={studioView}
+        project={activeProject}
+        jobs={jobs}
+        apiRequest={apiRequest}
+        onNotice={setNotice}
         onRefresh={refreshWorkspace}
       />}
 

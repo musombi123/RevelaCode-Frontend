@@ -1,21 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Activity, Box, Gamepad2, HardDrive, Layers3, Play, Plus, Settings2,
+  Activity, Archive, Box, Gamepad2, HardDrive, Layers3, Play, Plus, Settings2,
   ShieldCheck, Sparkles, FolderOpen, MoreHorizontal, X, ChevronRight,
-  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, Calendar
+  RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, Calendar,
+  Wrench, PackageCheck, Laptop
 } from "lucide-react";
 
 const NAV_GROUPS = [
   { label: "WORKSPACE", items: [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "projects", label: "Projects", icon: FolderOpen },
+    { id: "factory", label: "Project Factory", icon: Laptop },
     { id: "game-editor", label: "Game Editor", icon: Gamepad2 },
     { id: "ai", label: "AI Studio", icon: Sparkles },
     { id: "world", label: "World Builder", icon: Layers3 },
     { id: "assets", label: "Asset Library", icon: Box },
     { id: "build", label: "Build & Test", icon: Play },
     { id: "device-lab", label: "Device Lab", icon: HardDrive },
-    { id: "factory", label: "Desktop Factory", icon: Settings2 },
+    { id: "toolchains", label: "Toolchain Manager", icon: Wrench },
+    { id: "backups", label: "Backup & Versions", icon: Archive },
+    { id: "release-center", label: "Release Center", icon: PackageCheck },
     { id: "analytics", label: "Analytics", icon: Activity },
   ]},
   { label: "MANAGE", items: [
@@ -183,7 +187,7 @@ export default function NexoraStudioShell({
             </div>
           </div>
           {children}
-          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project source, snapshots and builds stay on your paired desktop · Store accounts and signing keys remain creator-owned</span></footer>
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project files and builds stay on your paired computer · Account identity and billing use the NEXORA control plane</span></footer>
         </main>
       </div>
 
