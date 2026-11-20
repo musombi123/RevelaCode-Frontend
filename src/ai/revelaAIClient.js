@@ -476,13 +476,14 @@ async function artifactRequest({ authFetch, path, method = "GET", body, file }) 
 }
 
 export async function listRevelaAIArtifacts({
-  authFetch, query = "", type = "", folder, includeTrash = false, limit = 100,
+  authFetch, query = "", type = "", folder, includeTrash = false, trashOnly = false, limit = 100,
 }) {
   const params = new URLSearchParams({ limit: String(Math.max(1, Math.min(100, Number(limit) || 100))) });
   if (query.trim()) params.set("q", query.trim());
   if (type) params.set("type", type);
   if (folder !== undefined && folder !== null) params.set("folder", folder);
   if (includeTrash) params.set("include_trash", "true");
+  if (trashOnly) params.set("trash_only", "true");
   const payload = await artifactRequest({ authFetch, path: "/api/artifacts?" + params.toString() });
   return Array.isArray(payload?.artifacts) ? payload.artifacts : [];
 }
