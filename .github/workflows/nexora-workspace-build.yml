@@ -1,18 +1,14 @@
-name: NEXORA workspace build
+name: RevelaCode build — legacy NEXORA redirect
 
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "src/components/nexora/**"
-      - "src/components/dashboardConfig.jsx"
-      - "src/components/MainDashboardV2.jsx"
+      - "src/utils/nexoraRedirect.mjs"
+      - "tests/nexora-redirect.test.mjs"
       - "src/App.jsx"
       - "src/main.jsx"
-      - "public/_headers"
       - "public/_redirects"
-      - "public/.htaccess"
-      - "public/404.html"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/nexora-workspace-build.yml"
@@ -47,3 +43,5 @@ jobs:
         run: npm ci
       - name: Build RevelaCode frontend
         run: npm run build
+      - name: Verify legacy NEXORA redirect boundary
+        run: node --test tests/nexora-redirect.test.mjs
