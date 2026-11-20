@@ -46,3 +46,40 @@ test("NEXORA Creator Flow plans load before a cloud project exists", () => {
   assert.match(panel, /requiresProject:\s*false/);
   assert.match(panel, /Price pending/);
 });
+
+test("NEXORA Studio Pro exposes all redesigned workspace destinations", () => {
+  const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
+  const workspace = read("apps/nexora/src/components/nexora/NexoraFoundryWorkspace.jsx");
+  const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
+  for (const route of ["overview","projects","game-editor","ai","world","assets","build","device-lab","analytics","team","marketplace","settings"]) {
+    assert.ok(shell.includes('"'+route+'"'), "Sidebar is missing "+route);
+    assert.ok(workspace.includes('studioView === "'+route+'"') || workspace.includes('studioView !== "'+route+'"'), "Workspace does not route "+route);
+  }
+  assert.match(workspace, /<NexoraStudioShell/);
+  assert.match(workspace, /<NexoraOverviewPage/);
+  assert.match(workspace, /<NexoraProjectsPage/);
+  assert.match(workspace, /<NexoraTasksPage/);
+  assert.match(workspace, /<NexoraAnalyticsPage/);
+  assert.match(workspace, /<NexoraMarketplacePage/);
+  assert.match(workspace, /<NexoraSettingsPage/);
+  assert.match(pages, /Grid/);
+  assert.match(pages, /List/);
+});
+
+test("World Builder persists its WorldDocument through the NEXORA API", () => {
+  const world = read("apps/nexora/src/components/nexora/NexoraWorldBuilderPanel.jsx");
+  assert.match(world, /\/api\/projects\//);
+  assert.match(world, /method:\s*"PUT"/);
+  assert.match(world, /terrain_edits/);
+  assert.match(world, /sun_angle/);
+  assert.match(world, /water_level/);
+  assert.match(world, /cloudProjectActive/);
+});
+
+test("local team task board and unsupported marketplace integrations are labelled honestly", () => {
+  const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
+  assert.match(pages, /Stored in this browser/);
+  assert.match(pages, /Paid third-party marketplace checkout is not connected/);
+  const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
+  assert.match(shell, /Account quota is not exposed by this service/);
+});
