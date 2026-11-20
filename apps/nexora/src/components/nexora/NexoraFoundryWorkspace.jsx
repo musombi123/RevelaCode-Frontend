@@ -1317,7 +1317,7 @@ export default function NexoraFoundryWorkspace() {
     build:["Build & Test","Configure Android builds, export targets and inspect actual worker results"],
     "device-lab":["Device Lab","Pair your local desktop companion and test on connected devices"],
     analytics:["Analytics","Production metrics calculated from loaded project and worker records"],
-    team:["Team & Tasks","Organize tasks in this browser-local production board"],
+    team:["Team & Tasks","Manage cloud-linked project tasks and your production workflow"],
     marketplace:["Marketplace","Browse the built-in NEXORA procedural template catalogue"],
     settings:["Settings","Account, workspace preferences, connection and billing access"],
   };
