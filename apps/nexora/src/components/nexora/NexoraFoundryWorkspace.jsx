@@ -1643,6 +1643,7 @@ export default function NexoraFoundryWorkspace() {
           cloudProjectActive={cloudProjectActive}
           nexoraAuthFetch={nexoraAuthFetch}
           onNotice={setNotice}
+          userId={nexoraUser?.id || "anonymous"}
         />}
 
 
