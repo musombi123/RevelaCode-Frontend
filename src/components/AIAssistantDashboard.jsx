@@ -22,7 +22,6 @@ import {
   Camera,
   WifiOff,
   Pencil,
-  FolderOpen,
 } from "lucide-react";
 
 import Sidebar from "@/components/Sidebar";
@@ -2708,6 +2707,7 @@ export default function AIAssistantDashboard({
         onSelectChat={selectChat}
         onDeleteChat={deleteChat}
         onRenameChat={renameChat}
+        onOpenFiles={() => setFilesLibraryOpen(true)}
         onOpenVoice={openVoice}
         onOpenVision={openVision}
         onOpenIdentity={() => setIdentityOpen(true)}
@@ -2793,16 +2793,7 @@ export default function AIAssistantDashboard({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setFilesLibraryOpen(true)}
-            className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-xs font-semibold text-fg-secondary transition hover:bg-surface-2 hover:text-fg"
-            aria-label="Open Files Library"
-            title="My Files"
-          >
-            <FolderOpen size={15}/> <span className="hidden sm:inline">My Files</span>
-          </button>
-          <span className="w-1 shrink-0" aria-hidden="true"/>
+
         </header>
 
         {!humanizerOpen && complianceStatus !== "accepted" && (
