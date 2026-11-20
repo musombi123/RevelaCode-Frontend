@@ -70,7 +70,7 @@ Verify and save that URL in AdMob. On the NEXORA Render API, configure:
 
 Set `VITE_ADMOB_NEXORA_REWARDED_AD_UNIT_ID` as an Actions **Variable** in the RevelaCode-Android repository. This variable is optional while the rewarded unit is not yet created; the rest of the Android build must continue to work without it. The Android workflow also packages the separate NEXORA site at `/dev_nexora` inside the app so Creator Flow can use the native Capacitor AdMob bridge.
 
-The two Basic rewarded tools are Blender environment generation and enemies/vehicles generation. One verified SSV event grants one account-bound use credit. The local Foundry worker consumes a credit when it queues a production job, and returns the credit if that job fails. Standard, Pro and Studio do not consume Basic ad credits. The browser never creates reward credits from a client-side callback.
+The two Basic rewarded tools are Blender environment generation and enemies/vehicles generation. One verified SSV event grants one account-bound use credit. The local Foundry worker consumes one credit when it accepts the production job into its queue. A failed generation attempt does not automatically return the credit; another attempt requires another verified rewarded ad. Confirm that the required local worker tools are installed before spending a credit. Standard, Pro and Studio do not consume Basic ad credits. The browser never creates reward credits from a client-side callback.
 
 AdMob test inventory is not proof of production SSV: Google test rewarded ads do not call the production SSV endpoint, so they must not credit a customer. Never click your own live ads. Ad revenue is paid to the AdMob publisher payment profile, not the Pochi merchant number used for NEXORA plan purchases.
 
