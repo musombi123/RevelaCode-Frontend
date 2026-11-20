@@ -15,6 +15,7 @@ const NAV_GROUPS = [
     { id: "assets", label: "Asset Library", icon: Box },
     { id: "build", label: "Build & Test", icon: Play },
     { id: "device-lab", label: "Device Lab", icon: HardDrive },
+    { id: "factory", label: "Desktop Factory", icon: Settings2 },
     { id: "analytics", label: "Analytics", icon: Activity },
   ]},
   { label: "MANAGE", items: [
@@ -182,7 +183,7 @@ export default function NexoraStudioShell({
             </div>
           </div>
           {children}
-          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Cloud project tasks sync to your NEXORA account · Unlinked drafts stay in this browser · Team membership is not connected</span></footer>
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project source, snapshots and builds stay on your paired desktop · Store accounts and signing keys remain creator-owned</span></footer>
         </main>
       </div>
 
