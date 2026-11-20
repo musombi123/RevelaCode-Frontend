@@ -1692,6 +1692,7 @@ export default function NexoraFoundryWorkspace() {
             <NexoraDeviceBridge
               packageId={androidBuild.package_id || "com.nexora.game"}
               accountAccessToken={nexoraSession?.access_token || ""}
+              expectedAccountUserId={nexoraUser?.id || ""}
               onConnectionChange={onLocalAgentConnectionChange}
             />
           </div>
