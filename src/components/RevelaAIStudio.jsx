@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, ChevronDown, Download, FileDown, FileText, History,
   Image as ImageIcon, Plus, Redo2, Save, Sparkles, Undo2,
@@ -226,6 +226,7 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
   const [dirty, setDirty] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const [exportOpen, setExportOpen] = useState(false);
+  const saveRef = useRef(null);
 
   useEffect(() => {
     const raw = initialArtifact?.editable_source || initialArtifact?.preview?.editable_source || null;
@@ -253,11 +254,11 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
     setError("");
   };
 
-  const save = async () => {
-    if (!canEdit || !source || !artifact?.id || !dirty || busy) return;
+  const save = async ({ automatic = false } = {}) => {
+    if (!canEdit || !source || !artifact?.id || !dirty || busy) return false;
     setBusy("save");
     setError("");
-    setNotice("Saving changes…");
+    setNotice(automatic ? "Saving automatically…" : "Saving changes…");
     try {
       const updated = await saveRevelaAIArtifactSource({
         authFetch, artifactId: artifact.id, expectedVersion: artifact.version, source,
@@ -266,15 +267,26 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
       const nextSource = updated?.editable_source || updated?.preview?.editable_source || source;
       setSource(clone(nextSource));
       setDirty(false);
-      setNotice("Saved as version " + Number(updated?.version || artifact.version + 1));
+      setNotice((automatic ? "Autosaved as version " : "Saved as version ") + Number(updated?.version || artifact.version + 1));
       onArtifactUpdated?.(updated);
+      return true;
     } catch (saveError) {
       setError(String(saveError?.message || "The file could not be saved."));
       setNotice("");
+      return false;
     } finally {
       setBusy("");
     }
   };
+
+  saveRef.current = save;
+  useEffect(() => {
+    if (!dirty || !canEdit || busy || !artifact?.id) return undefined;
+    const timeout = window.setTimeout(() => {
+      void saveRef.current?.({ automatic: true });
+    }, 2200);
+    return () => window.clearTimeout(timeout);
+  }, [dirty, source, artifact?.id, artifact?.version, busy, canEdit]);
 
   const exportFormat = async (format) => {
     if (!artifact?.id || busy) return;
@@ -369,7 +381,15 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
   };
 
   const close = async () => {
-    if (dirty && !window.confirm("You have unsaved changes. Close Studio without saving them?")) return;
+    if (dirty) {
+      const shouldSave = window.confirm("You have unsaved changes. Save them before closing Studio? Press Cancel to keep editing.");
+      if (shouldSave) {
+        const saved = await save();
+        if (!saved) return;
+      } else if (!window.confirm("Discard unsaved changes and close Studio?")) {
+        return;
+      }
+    }
     if (artifact?.id) {
       try {
         const base = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
