@@ -20,7 +20,7 @@ function Status({ok, children}) {
   return <span className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-black " + (ok ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-200")}>{ok ? <CheckCircle2 size={11}/> : <CircleAlert size={11}/>} {children}</span>;
 }
 
-export default function NexoraFactoryControlPanel({projectId="", onWorkspaceUpdated=()=>{}, onNavigate=()=>{}, setNotice=()=>{}}) {
+export default function NexoraFactoryControlPanel({projectId="", onWorkspaceUpdated=()=>{}, onNavigate=()=>{}, onQueueProduction=()=>{}, setNotice=()=>{}}) {
   const [tab,setTab] = useState("workspace");
   const [workspace,setWorkspace] = useState(null);
   const [tools,setTools] = useState(null);
@@ -31,6 +31,7 @@ export default function NexoraFactoryControlPanel({projectId="", onWorkspaceUpda
   const [selectedId,setSelectedId] = useState(projectId);
   const [rootDraft,setRootDraft] = useState("");
   const [snapshotNote,setSnapshotNote] = useState("Manual checkpoint before major changes");
+  const [buildTarget,setBuildTarget] = useState("web");
   const [provider,setProvider] = useState("google_play");
   const [artifactPath,setArtifactPath] = useState("");
   const [packageId,setPackageId] = useState("com.studio.mygame");
@@ -191,6 +192,25 @@ export default function NexoraFactoryControlPanel({projectId="", onWorkspaceUpda
     {tab==="workflow" && <section className={panel+" space-y-4 p-4 sm:p-5"}>
       <header><h3 className="text-sm font-black text-white">3–5. Creation, testing and build pipeline</h3><p className="mt-1 text-xs text-slate-400">NEXORA orchestrates production; Godot remains the native engine/editor. Jobs execute on the paired desktop.</p></header>
       <div className="grid gap-2 sm:grid-cols-3"><button type="button" className={panel+" p-4 text-left hover:border-cyan-500/50"} onClick={()=>onNavigate("game-editor")}><Code2 className="text-cyan-300" size={20}/><div className="mt-2 text-xs font-extrabold text-white">Creation workspace</div><p className="mt-1 text-[9px] leading-4 text-slate-500">Scene editor, Creator Flow, World Builder and Asset Library.</p><span className="mt-3 inline-block text-[9px] font-bold text-cyan-300">Open workspace →</span></button><button type="button" className={panel+" p-4 text-left hover:border-cyan-500/50"} onClick={()=>onNavigate("build")}><ShieldCheck className="text-emerald-300" size={20}/><div className="mt-2 text-xs font-extrabold text-white">Test & validation</div><p className="mt-1 text-[9px] leading-4 text-slate-500">Godot headless checks, local playtests and build logs.</p><span className="mt-3 inline-block text-[9px] font-bold text-cyan-300">Open Build & Test →</span></button><button type="button" className={panel+" p-4 text-left hover:border-cyan-500/50"} onClick={()=>onNavigate("device-lab")}><Smartphone className="text-violet-300" size={20}/><div className="mt-2 text-xs font-extrabold text-white">Device lab</div><p className="mt-1 text-[9px] leading-4 text-slate-500">Optional Android ADB install, launch and logcat.</p><span className="mt-3 inline-block text-[9px] font-bold text-cyan-300">Open Device Lab →</span></button></div>
+      <div className="rounded-xl border border-[#20334B] bg-[#081321] p-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <label className="min-w-[220px] flex-1 text-[10px] font-bold text-slate-400">LOCAL EXPORT TARGET
+            <select className={field+" mt-1"} value={buildTarget} onChange={(event)=>setBuildTarget(event.target.value)}>
+              <option value="web">Web (HTML / WASM bundle)</option>
+              <option value="windows">Windows desktop (.exe)</option>
+              <option value="linux">Linux desktop (.x86_64)</option>
+              <option value="android">Android (APK / AAB settings in Build & Test)</option>
+            </select>
+          </label>
+          <button type="button" className={primary} onClick={()=>onQueueProduction("build.export",buildTarget)} disabled={!selectedId || !!busy}>
+            <PackageCheck size={12}/> Queue {buildTarget} export
+          </button>
+          <button type="button" className={btn} onClick={()=>onQueueProduction("playtest","desktop")} disabled={!selectedId || !!busy}>
+            <Play size={12}/> Run local playtest
+          </button>
+        </div>
+        <p className="mt-2 text-[9px] leading-4 text-slate-500">Builds run on the paired desktop. Android release signing requires a protected local keystore; an AAB is release-only. This does not submit to any app store.</p>
+      </div>
       <div className="rounded-xl border border-[#20334B] bg-[#081321] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><div className="text-xs font-bold text-white">Selected local project</div><div className="mt-1 text-[10px] text-slate-500">{selectedProject?.name || "Choose a project in Workspace first"}</div></div><Status ok={Boolean(selectedId)}>{selectedId?"Selected":"No project"}</Status></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={btn} onClick={openGodot} disabled={!selectedId || !!busy}><Play size={12}/> Launch Godot Editor</button><button type="button" className={btn} onClick={()=>onNavigate("build")} disabled={!selectedId}><PackageCheck size={12}/> Export targets</button></div></div>
       <div className="border-t border-[#20334B] pt-3"><div className="mb-2 text-xs font-extrabold text-white">Recent local production jobs</div><div className="space-y-2">{jobs.slice(0,8).map((job)=><div key={job.id} className="rounded-lg border border-[#20334B] bg-[#081321] p-3"><div className="flex flex-wrap justify-between gap-2"><span className="text-[10px] font-bold text-slate-200">{job.kind || "Production job"}</span><Status ok={job.state==="completed"}>{job.state}</Status></div><p className="mt-1 text-[9px] leading-4 text-slate-500">{job.message || "No job details"}</p>{(job.artifacts || []).map((item)=><div key={item.id} className="mt-1 break-all text-[9px] text-cyan-300">{item.filename} · {item.path}</div>)}</div>)}{!jobs.length && <p className="text-[10px] text-slate-500">No jobs recorded for this project yet.</p>}</div></div>
     </section>}
