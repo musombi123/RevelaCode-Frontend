@@ -41,6 +41,8 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   const [publishers, setPublishers] = useState([]);
   const [releasePlatform, setReleasePlatform] = useState("android");
   const [releaseArtifact, setReleaseArtifact] = useState("");
+  const [releaseVersion, setReleaseVersion] = useState("1.0.0");
+  const [releaseNotes, setReleaseNotes] = useState("");
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -281,7 +283,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
   const prepareRelease = () => {
     if (!projectId || !releaseArtifact) return;
     run("prepare-release", () => request("/api/v1/desktop/projects/" + projectId + "/publish/prepare", {
-      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, rights_confirmed: rightsConfirmed })
+      method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, version: releaseVersion, release_notes: releaseNotes, rights_confirmed: rightsConfirmed })
     }), "Release manifest prepared locally. Nothing has been uploaded or submitted.");
   };
 
@@ -408,6 +410,14 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
           <select className={field} value={releasePlatform} onChange={event => setReleasePlatform(event.target.value)}><option value="android">Android</option><option value="web">Web</option><option value="windows">Windows</option><option value="linux">Linux</option></select>
           <select className={field} value={releaseArtifact} onChange={event => setReleaseArtifact(event.target.value)}><option value="">Select a build artifact</option>{completedArtifacts.map(item => <option key={item.jobId + ":" + item.id} value={item.id}>{item.filename} · {item.target} · {String(item.jobId).slice(0, 8)}</option>)}</select>
           <button type="button" className={primary} disabled={!projectId || !releaseArtifact || !rightsConfirmed || Boolean(busy)} onClick={prepareRelease}><ShieldCheck size={13}/> Prepare manifest</button>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[220px_1fr]">
+          <label className="text-[10px] font-bold text-slate-400">RELEASE VERSION
+            <input className={field + " mt-1.5"} value={releaseVersion} maxLength={40} onChange={event => setReleaseVersion(event.target.value)} placeholder="1.0.0"/>
+          </label>
+          <label className="text-[10px] font-bold text-slate-400">RELEASE NOTES
+            <textarea className={field + " mt-1.5"} value={releaseNotes} maxLength={5000} rows={2} onChange={event => setReleaseNotes(event.target.value)} placeholder="What changed in this release?"/>
+          </label>
         </div>
         <label className="mt-3 flex items-start gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 p-3 text-[10px] leading-5 text-amber-100"><input type="checkbox" checked={rightsConfirmed} onChange={event => setRightsConfirmed(event.target.checked)} className="mt-1"/> I own or have permission to distribute this game and every included source file, model, texture, audio track, font and other asset.</label>
         <p className="mt-2 text-[9px] leading-4 text-slate-500">The manifest records owner, target, artifact path, size and SHA-256. Upload, store approval and public release are separate steps.</p>
