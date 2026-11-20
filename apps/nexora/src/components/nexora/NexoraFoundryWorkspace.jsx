@@ -1360,6 +1360,9 @@ export default function NexoraFoundryWorkspace() {
     if (action === "scene") {
       addSceneObject();
       setStudioView("game-editor");
+    } else if (action === "import") {
+      setStudioView("assets");
+      fileInputRef.current?.click();
     } else if (action === "playtest") {
       setStudioView("build");
       queueProductionJob("playtest","desktop");
