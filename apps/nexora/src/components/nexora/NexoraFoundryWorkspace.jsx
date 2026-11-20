@@ -1367,13 +1367,18 @@ export default function NexoraFoundryWorkspace() {
             disabled={!cloudProjectActive || busy}
             deviceStatus="Android builds are exported by the NEXORA worker. USB/wireless installation and logcat use the paired local desktop bridge below."
           />
-          <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
           </section>
         </div>
 
-        {studioView === "settings" && (
-<section className="mx-auto w-full max-w-3xl border border-cyan-800/50 bg-[#0b1118] p-4"><div className="text-xs font-black text-cyan-200">STUDIO SETTINGS</div><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Model auto-rotate<input type="checkbox" checked={previewAutoRotate} onChange={event=>setPreviewAutoRotate(event.target.checked)}/></label><label className="mt-2 flex items-center justify-between text-[10px] text-slate-300">Timeline zoom<input type="range" min="0.5" max="2.5" step="0.1" value={timelineZoom} onChange={event=>setTimelineZoom(Number(event.target.value))}/></label><button type="button" onClick={checkService} className="mt-2 w-full border border-slate-700 p-1 text-[9px]">VERIFY AUTHENTICATED SERVICE</button><button type="button" onClick={deleteProject} className="mt-2 w-full border border-rose-900/60 p-2 text-xs text-rose-300">DELETE CURRENT PROJECT</button></section>
-        )}
+        <div hidden={studioView !== "device-lab"}>
+          <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
+            <h2 className="text-lg font-black text-cyan-200">DEVICE LAB</h2>
+            <p className="mt-1 text-xs text-slate-400">Pair this desktop browser with the NEXORA desktop companion to install builds, launch games and access device logs.</p>
+          </section>
+          <div className="mx-auto w-full max-w-5xl">
+            <NexoraDeviceBridge packageId={androidBuild.package_id || "com.nexora.game"} />
+          </div>
+        </div>
 
         {studioView === "assets" && (
         <section className="border border-cyan-900/60 bg-[#0b1118] p-2">
