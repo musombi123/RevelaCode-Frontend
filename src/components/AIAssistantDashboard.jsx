@@ -28,9 +28,11 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import InputBar from "@/components/InputBar";
 import RevelaAIWorkspacePanel from "@/components/RevelaAIWorkspacePanel.jsx";
+import LocalWorkspaceProposalReview from "@/components/LocalWorkspaceProposalReview.jsx";
 import RevelaAIStudio from "@/components/RevelaAIStudio.jsx";
 import RevelaAIFilesLibrary from "@/components/RevelaAIFilesLibrary.jsx";
 import { executeRevelaAIWorkspace } from "@/ai/revelaAIClient.js";
+import { getLocalWorkspaceContext } from "@/ai/localWorkspaceAgent.js";
 import { buildWorkspaceExportPrompt, inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "@/ai/workspaceIntent.js";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import HumanizerWorkspace from "@/pages/HumanizerWorkspace";
@@ -160,9 +162,86 @@ function buildWorkspaceArtifact(result, title, prompt) {
       missing: item.missing, missing_pct: item.missing_pct, unique: item.unique,
     })) : result?.data || []),
     code: result?.source_preview || result?.code || "",
+    project: result?.project || null,
     campaign: campaign || null,
     verification: result?.verification || null,
     source_prompt: prompt,
+  };
+}
+
+function buildLocalWorkspaceProposal(toolExecution) {
+  const outcomes = Array.isArray(toolExecution?.results)
+    ? toolExecution.results
+    : (Array.isArray(toolExecution?.tool_results) ? toolExecution.tool_results : []);
+  const outcome = outcomes.find((item) =>
+    item?.tool === "revelaai_propose_local_project_changes" &&
+    item?.status === "proposed" &&
+    item?.executed === false
+  );
+  const proposal = outcome?.result?.proposal;
+  if (!proposal || !Array.isArray(proposal.files) || !proposal.files.length) return null;
+  return proposal;
+}
+
+function buildNativeWorkspaceArtifact(toolExecution, title, prompt) {
+  const outcomes = Array.isArray(toolExecution?.results)
+    ? toolExecution.results
+    : (Array.isArray(toolExecution?.tool_results) ? toolExecution.tool_results : []);
+  const outcome = outcomes.find((item) =>
+    item?.status === "executed" &&
+    ["revelaai_export_artifact", "revelaai_generate_image", "revelaai_create_web_project", "revelaai_create_zip"].includes(item?.tool)
+  );
+  if (!outcome) return null;
+  const result = outcome.result && typeof outcome.result === "object" ? outcome.result : {};
+
+  if (result.project) {
+    const project = result.project;
+    return {
+      title: project.title || title || "RevelaAI web project",
+      description: "Website source files are hosted in an isolated filesystem workspace. Open the IDE to inspect files, preview the site, and download its ZIP.",
+      summary: Number(project.file_count || 0) + " project files · " + (project.storage || "local filesystem"),
+      id: project.project_id || null,
+      type: "code",
+      project,
+      formats: ["ZIP"],
+      format_downloads: project.zip_download_url ? { ZIP: project.zip_download_url } : {},
+      download_url: project.zip_download_url || null,
+      filename: project.zip_filename || "revelaai-project.zip",
+      mime_type: "application/zip",
+      preview: null,
+      preview_url: null,
+      code: "",
+      source_prompt: prompt,
+      verification: { file_created: Boolean(project.project_id), storage: "local_filesystem" },
+    };
+  }
+
+  const archive = result.archive;
+  const manifest = result.artifact || archive?.artifact;
+  if (!manifest || typeof manifest !== "object") return null;
+  return {
+    title: manifest.title || title || "RevelaAI artifact",
+    description: "RevelaAI created a real downloadable artifact using a registered native tool.",
+    summary: outcome.tool === "revelaai_generate_image"
+      ? "Image generated and registered in the private filesystem artifact store."
+      : "File generated and registered in the private filesystem artifact store.",
+    id: manifest.id || manifest.artifact_id || null,
+    type: manifest.type || null,
+    formats: manifest.formats || [],
+    artifact: manifest,
+    artifacts: [manifest],
+    format_downloads: manifest.format_downloads || {},
+    download_url: manifest.download_url || archive?.download_url || null,
+    filename: manifest.filename || archive?.filename || null,
+    mime_type: manifest.mime_type || null,
+    preview: manifest.preview || null,
+    preview_url: manifest.preview_url || null,
+    image_url: result.image_url || (outcome.tool === "revelaai_generate_image" ? manifest.preview_url : null),
+    downloads: manifest.format_downloads || {},
+    code: manifest.preview?.source || "",
+    version: manifest.version || 1,
+    source_prompt: prompt,
+    verification: { file_created: Boolean(manifest.download_url), storage: "local_filesystem" },
   };
 }
 
@@ -552,6 +631,7 @@ export default function AIAssistantDashboard({
   const [messages, setMessages] =
     useState([]);
   const [workspaceArtifact, setWorkspaceArtifact] = useState(null);
+  const [localWorkspaceProposal, setLocalWorkspaceProposal] = useState(null);
   const [studioArtifact, setStudioArtifact] = useState(null);
   const [filesLibraryOpen, setFilesLibraryOpen] = useState(false);
 
@@ -1484,6 +1564,7 @@ export default function AIAssistantDashboard({
            */
           let localText = "";
           let localType = "text";
+          let nativeWorkspaceArtifact = null;
           let localImageUrls = [];
           let localSources = [];
           let brainMetadata = {};
@@ -1633,6 +1714,14 @@ export default function AIAssistantDashboard({
             // Adaptive mode uses the hosted model. Network failures are recovered below
             // using the free local engine instead of leaving a dead-end error bubble.
             const apiBase = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
+            let localProjectContext = null;
+            try {
+              localProjectContext = await getLocalWorkspaceContext(requestMessage || cleaned);
+            } catch (localContextError) {
+              // Local-agent failures must not interrupt hosted chat. Only the
+              // loopback agent reads source; no hosted fallback scans the device.
+              await recordLocalDiagnostic("local-project-context", localContextError);
+            }
             let response;
             try {
               updateLoadingStage("connecting");
@@ -1656,6 +1745,7 @@ export default function AIAssistantDashboard({
                       role: item.role === "assistant" ? "assistant" : "user",
                       content: item.text || "",
                     })),
+                    ...(localProjectContext ? [localProjectContext] : []),
                   ],
                 }),
               });
@@ -1694,6 +1784,19 @@ export default function AIAssistantDashboard({
             window.dispatchEvent(new CustomEvent("revelacode:connection-state", { detail: { state: "online" } }));
 
             const imagePayload = payload?.data || payload || {};
+            const localProjectProposal = buildLocalWorkspaceProposal(imagePayload?.tool_execution);
+            if (localProjectProposal) {
+              setLocalWorkspaceProposal(localProjectProposal);
+            }
+            nativeWorkspaceArtifact = buildNativeWorkspaceArtifact(
+              imagePayload?.tool_execution,
+              workspaceOutputTitle(requestMessage || cleaned, "RevelaAI output"),
+              requestMessage || cleaned,
+            );
+            if (nativeWorkspaceArtifact) {
+              setWorkspaceArtifact(nativeWorkspaceArtifact);
+              localType = "workspace-artifact";
+            }
             const remoteImageUrls = Array.isArray(imagePayload?.urls)
               ? imagePayload.urls.filter((url) => /^https?:\/\//i.test(String(url || "")))
               : [];
@@ -1838,6 +1941,8 @@ export default function AIAssistantDashboard({
               version: "2.0",
             },
             type: localType,
+            artifact: nativeWorkspaceArtifact,
+            artifacts: nativeWorkspaceArtifact?.artifacts || (nativeWorkspaceArtifact?.artifact ? [nativeWorkspaceArtifact.artifact] : []),
           };
 
           // Lightweight typewriter streaming keeps rendering incremental on low-end phones.
@@ -1890,6 +1995,12 @@ export default function AIAssistantDashboard({
 
               contentType:
                 normalized.type,
+
+              artifact:
+                normalized.artifact || null,
+
+              artifacts:
+                Array.isArray(normalized.artifacts) ? normalized.artifacts : [],
 
               // Keep the originating request with the answer so export format
               // can be selected from the user's intent instead of guessing from
@@ -2965,6 +3076,18 @@ export default function AIAssistantDashboard({
           </section>
         )}
       </main>
+
+      {localWorkspaceProposal && (
+        <LocalWorkspaceProposalReview
+          proposal={localWorkspaceProposal}
+          onClose={() => setLocalWorkspaceProposal(null)}
+          onApplied={() => {
+            window.dispatchEvent(new CustomEvent("revelaai:local-project-changed", {
+              detail: { proposalId: localWorkspaceProposal.proposal_id },
+            }));
+          }}
+        />
+      )}
 
       {workspaceArtifact && (
         <RevelaAIWorkspacePanel

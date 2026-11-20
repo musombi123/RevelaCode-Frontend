@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Database, FolderOpen, HardDrive, Download, Trash2, RefreshCw, ShieldCheck } from "lucide-react";
+import { Database, FolderOpen, HardDrive, Download, Trash2, RefreshCw, ShieldCheck, Search, Wifi, Unplug } from "lucide-react";
+import { clearLocalWorkspaceAgentConfig, getLocalWorkspaceAgentConfig, indexLocalWorkspace, saveLocalWorkspaceAgentConfig, selectLocalWorkspacePath, testLocalWorkspaceAgent } from "@/ai/localWorkspaceAgent";
 import { deleteLocalFile, getLocalStorageEstimate, listLocalFiles, requestPersistentStorage, saveLocalFile, chooseWorkspaceFolder, writeFileToWorkspaceFolder } from "@/ai/localWorkspaceStorage";
 
 function formatBytes(value) {
@@ -16,6 +17,14 @@ export default function LocalWorkspaceStoragePanel() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [agentConfig, setAgentConfig] = useState(() => getLocalWorkspaceAgentConfig());
+  const [agentUrl, setAgentUrl] = useState(() => getLocalWorkspaceAgentConfig().baseUrl);
+  const [agentToken, setAgentToken] = useState(() => getLocalWorkspaceAgentConfig().token);
+  const [projectPath, setProjectPath] = useState(() => getLocalWorkspaceAgentConfig().path);
+  const [agentStatus, setAgentStatus] = useState("");
+  const [agentError, setAgentError] = useState("");
+  const [agentFiles, setAgentFiles] = useState([]);
+  const [agentBusy, setAgentBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -80,6 +89,66 @@ export default function LocalWorkspaceStoragePanel() {
     await refresh();
   }
 
+  async function connectLocalAgent() {
+    setAgentBusy(true); setAgentError(""); setAgentStatus(""); setAgentFiles([]);
+    try {
+      const config = saveLocalWorkspaceAgentConfig({
+        baseUrl: agentUrl,
+        token: agentToken,
+        path: projectPath,
+        enabled: agentConfig.enabled,
+      });
+      const status = await testLocalWorkspaceAgent(config);
+      setAgentConfig(config);
+      setAgentUrl(config.baseUrl);
+      setAgentToken(config.token);
+      setProjectPath(status.selected_path || config.path);
+      setAgentStatus("Connected to the local device agent at " + (status.selected_path || "the local workspace") + ".");
+    } catch (err) { setAgentError(err.message || "Could not connect to the local agent."); }
+    finally { setAgentBusy(false); }
+  }
+
+  async function useLocalProjectFolder() {
+    setAgentBusy(true); setAgentError(""); setAgentStatus(""); setAgentFiles([]);
+    try {
+      const config = saveLocalWorkspaceAgentConfig({ baseUrl: agentUrl, token: agentToken, path: projectPath, enabled: agentConfig.enabled });
+      const result = await selectLocalWorkspacePath(projectPath, config);
+      const next = getLocalWorkspaceAgentConfig();
+      setAgentConfig(next);
+      setProjectPath(result.selected_path);
+      setAgentStatus("Selected local project: " + result.selected_path);
+    } catch (err) { setAgentError(err.message || "Could not select this local folder."); }
+    finally { setAgentBusy(false); }
+  }
+
+  async function scanLocalProject() {
+    setAgentBusy(true); setAgentError(""); setAgentStatus("");
+    try {
+      const config = saveLocalWorkspaceAgentConfig({ baseUrl: agentUrl, token: agentToken, path: projectPath, enabled: agentConfig.enabled });
+      const result = await indexLocalWorkspace("", 150, config);
+      setAgentFiles(result.files || []);
+      setAgentStatus("Indexed " + Number(result.count || 0) + " text files on this device. Binary files and secret files were skipped.");
+    } catch (err) { setAgentError(err.message || "Could not index the local project."); }
+    finally { setAgentBusy(false); }
+  }
+
+  function toggleLocalContext(enabled) {
+    const next = saveLocalWorkspaceAgentConfig({ enabled });
+    setAgentConfig(next);
+  }
+
+  function disconnectLocalAgent() {
+    clearLocalWorkspaceAgentConfig();
+    const next = getLocalWorkspaceAgentConfig();
+    setAgentConfig(next);
+    setAgentUrl(next.baseUrl);
+    setAgentToken("");
+    setProjectPath("");
+    setAgentFiles([]);
+    setAgentStatus("Local agent disconnected. No local project files will be added to chat context.");
+    setAgentError("");
+  }
+
   return (
     <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-slate-900/70" aria-label="Local workspace storage">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -92,6 +161,51 @@ export default function LocalWorkspaceStoragePanel() {
         <button type="button" onClick={persist} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-white/15"><ShieldCheck size={14}/>Request persistent storage</button>
       </div>
       {estimate && <p className="mt-2 text-[10px] text-slate-500">Browser storage: {formatBytes(estimate.usage)} used of {formatBytes(estimate.quota)} estimated quota.</p>}
+
+      <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2"><Wifi size={15}/><div><h4 className="text-xs font-extrabold text-slate-900 dark:text-white">Local Project Agent</h4><p className="text-[10px] text-slate-500">Connect this browser to the loopback agent running on your own computer.</p></div></div>
+          <button type="button" onClick={disconnectLocalAgent} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-slate-300 px-2 text-[10px] font-bold dark:border-white/15"><Unplug size={12}/>Disconnect</button>
+        </div>
+        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300">Local agent endpoint
+          <input value={agentUrl} onChange={(event) => setAgentUrl(event.target.value)} placeholder="http://127.0.0.1:38741/api/v1" spellCheck={false}
+            className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"/>
+        </label>
+        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300">Local bearer token
+          <input type="password" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste the token printed by your local agent" autoComplete="off"
+            className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"/>
+        </label>
+        <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300">Project folder path
+          <input value={projectPath} onChange={(event) => setProjectPath(event.target.value)} placeholder="C:/admin/project" spellCheck={false}
+            className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-white/15 dark:bg-slate-900 dark:text-white"/>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={connectLocalAgent} disabled={agentBusy || !agentToken} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white disabled:opacity-50">{agentBusy ? "Connecting…" : "Connect agent"}</button>
+          <button type="button" onClick={useLocalProjectFolder} disabled={agentBusy || !projectPath || !agentToken} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-bold dark:border-white/15 disabled:opacity-50"><FolderOpen size={13}/>Use folder</button>
+          <button type="button" onClick={scanLocalProject} disabled={agentBusy || !agentToken} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-bold dark:border-white/15 disabled:opacity-50"><Search size={13}/>Scan project</button>
+        </div>
+        <label className="flex items-start gap-2 rounded-lg bg-slate-50 p-2 text-[10px] text-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          <input type="checkbox" checked={agentConfig.enabled} onChange={(event) => toggleLocalContext(event.target.checked)} className="mt-0.5"/>
+          <span><b>Share relevant project context with RevelaAI</b><br/>When enabled, only bounded UTF-8 snippets from relevant, non-secret files are sent with your next chat request. Binary files and credential files are excluded.</span>
+        </label>
+        {agentStatus && <p role="status" className="text-[10px] text-emerald-700 dark:text-emerald-300">{agentStatus}</p>}
+        {agentError && <p role="alert" className="text-[10px] text-rose-600">{agentError}</p>}
+        {agentFiles.length > 0 && <div className="max-h-40 overflow-auto rounded-lg border border-slate-200 p-2 dark:border-white/10">
+          <p className="mb-1 text-[10px] font-bold text-slate-500">{agentFiles.length} indexed files</p>
+          {agentFiles.map((file) => <div key={file.path} className="flex items-center justify-between gap-2 py-1 text-[10px]">
+            <span className="min-w-0 truncate font-mono text-slate-700 dark:text-slate-300">{file.path}</span>
+            <span className="shrink-0 text-slate-400">{formatBytes(file.size_bytes)}</span>
+          </div>)}
+        </div>}
+        <details className="text-[10px] text-slate-500">
+          <summary className="cursor-pointer font-semibold">How to start the local agent (Windows PowerShell)</summary>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-100 p-2 font-mono text-[10px] dark:bg-slate-900">$env:REVELAAI_AUTOMATION_WORKSPACE="$HOME\\RevelaAIWorkspace"
+$env:REVELAAI_AUTOMATION_ALLOWED_ORIGINS="https://revelacode.co.ke,https://www.revelacode.co.ke"
+python -m automation_fabric.local_agent --show-token</pre>
+          <p className="mt-1">Run the command from your local RevelaAI backend checkout with its Python dependencies installed. Keep the printed token private.</p>
+        </details>
+      </div>
+
       {message && <p role="status" className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">{message}</p>}
       {error && <p role="alert" className="mt-2 text-xs text-rose-600">{error}</p>}
       <div className="mt-3 space-y-2">
