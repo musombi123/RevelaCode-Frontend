@@ -24,7 +24,8 @@ test("NEXORA builds into the shared static site's dedicated path", () => {
 test("web build compiles NEXORA before RevelaCode", () => {
   const pkg = JSON.parse(read("package.json"));
   assert.match(pkg.scripts["build:nexora"], /vite build apps\/nexora/);
-  assert.equal(pkg.scripts["build:web"], "npm run build:nexora && npm run build");
+  assert.equal(pkg.scripts["build:web"], "npm run build:nexora && npm run build && node scripts/verify-nexora-static-output.mjs");
+  assert.match(read("scripts/verify-nexora-static-output.mjs"), /dist.*dev_nexora.*index\.html/);
 });
 
 test("RevelaCode service worker leaves the NEXORA path untouched", () => {
@@ -79,7 +80,7 @@ test("World Builder persists its WorldDocument through the NEXORA API", () => {
 test("local team task board and unsupported marketplace integrations are labelled honestly", () => {
   const pages = read("apps/nexora/src/components/nexora/NexoraWorkspacePages.jsx");
   assert.match(pages, /Tasks linked to cloud projects sync/);
-  assert.match(pages, /Team-member permissions, cross-member assignments and comments require a separate team service/);
+  assert.match(pages, /Team-member permissions, cross-member assignments and comments require a collaborative team service/);
   assert.match(pages, /Paid third-party marketplace checkout is not connected/);
   const shell = read("apps/nexora/src/components/nexora/NexoraStudioShell.jsx");
   assert.match(shell, /Account quota is not exposed by this service/);
@@ -108,4 +109,9 @@ test("NEXORA project tasks use authenticated account-scoped CRUD APIs", () => {
   assert.match(workspace, /studioTasks\.filter\(task => !task\._remoteTask\)/);
   assert.match(pages, /CLOUD · ACCOUNT SYNC/);
   assert.match(pages, /LOCAL DRAFT/);
+});
+
+test("generated NEXORA output is excluded from source control", () => {
+  const ignore = read(".gitignore");
+  assert.match(ignore, /^public\/dev_nexora\/$/m);
 });
