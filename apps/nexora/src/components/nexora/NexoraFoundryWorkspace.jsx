@@ -698,6 +698,7 @@ export default function NexoraFoundryWorkspace() {
         }
       }
       setProjects(current=>current.filter(item=>item.id!==project.id));
+      setStudioTasks(current=>current.filter(task=>task.projectId!==project.id));
       if (activeId===project.id) {
         const next = projects.find(item=>item.id!==project.id&&!item.archived);
         setActiveId(next?.id || "");
@@ -977,14 +978,14 @@ export default function NexoraFoundryWorkspace() {
         setProjects((current) => [remoteProject, ...current]);
         setActiveId(remoteProject.id);
         setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
-        setTab("scene");
+        setStudioView("game-editor");
         setNotice("Project definition imported into PostgreSQL. Re-upload its original GLB and media files to the private NEXORA bucket.");
         return;
       }
       setProjects((current) => [imported, ...current]);
       setActiveId(imported.id);
       setSelectedObjectId(imported.scene.objects[0]?.id || "");
-      setTab("scene");
+      setStudioView("game-editor");
       setNotice("Project imported into this browser. Sign in to move it into private NEXORA cloud storage.");
     } catch (error) { setNotice(error.message || "Could not import project."); }
   };
