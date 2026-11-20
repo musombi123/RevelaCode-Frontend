@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "../src/ai/workspaceIntent.js";
+import { buildWorkspaceExportPrompt, inferWorkspaceCommand, inferWorkspaceExport, selectWorkspaceCommand } from "../src/ai/workspaceIntent.js";
 
 test("routes the user's exact natural-language request to the PowerPoint workspace", () => {
   assert.equal(
@@ -132,4 +132,29 @@ test("a bare registered extension is routed to its matching tool", () => {
 
 test("a website domain is not mistaken for an export extension", () => {
   assert.equal(inferWorkspaceExport("Create a website for revelacode.co.ke"), null);
+});
+
+
+
+test("referential exports include the previous assistant response as source content", () => {
+  const result = buildWorkspaceExportPrompt(
+    "Convert this to PDF.",
+    "RevelaAI is the intelligence layer of RevelaCode. It routes requests to tools and returns verified artifacts.",
+  );
+  assert.match(result, /User export instruction:/);
+  assert.match(result, /Create the requested file/);
+  assert.match(result, /RevelaAI is the intelligence layer/);
+});
+
+test("new export requests do not absorb unrelated prior conversation content", () => {
+  const result = buildWorkspaceExportPrompt(
+    "Create a new PDF about export workflows.",
+    "An earlier answer about agriculture.",
+  );
+  assert.equal(result, "Create a new PDF about export workflows.");
+});
+
+test("referential export source is bounded to the workspace prompt limit", () => {
+  const result = buildWorkspaceExportPrompt("Export this as .txt", "A".repeat(20000));
+  assert.ok(result.length <= 11050);
 });
