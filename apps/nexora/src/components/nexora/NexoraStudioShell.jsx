@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Activity, Archive, BarChart3, Box, Gamepad2, HardDrive, Home, Layers3, Play, Plus, Settings2, Smartphone,
+  Activity, Archive, BarChart3, Box, Gamepad2, HardDrive, Home, Layers3, LayoutGrid, HelpCircle, Play, Plus, Settings2, Smartphone,
   ShieldCheck, Sparkles, FolderOpen, MoreHorizontal, X, ChevronRight,
   RefreshCw, Search, Bell, Menu, ChevronDown, Users, ShoppingCart, Calendar,
   Wrench, PackageCheck, Laptop
@@ -89,15 +89,15 @@ export default function NexoraStudioShell({
         {(!collapsed || mobile) && <div className="min-w-0 leading-none"><div className="text-[17px] font-black tracking-[.12em] text-white">NEXORA</div><div className="mt-1 text-[11px] font-bold tracking-[.18em] text-cyan-300">STUDIO PRO</div></div>}
         {mobile && <button type="button" onClick={() => setMobileOpen(false)} className="ml-auto rounded-lg p-2 text-slate-400 hover:bg-white/5" aria-label="Close navigation"><X size={18}/></button>}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-4">
-        {NAV_GROUPS.map(group => <div key={group.label} className="mb-5">
+      <div className="nexora-sidebar-nav min-h-0 flex-1 overflow-y-auto px-2 py-3.5">
+        {NAV_GROUPS.map(group => <div key={group.label} className="mb-[18px]">
           {(!collapsed || mobile) && <div className="mb-2 px-3 text-[10px] font-bold tracking-[.18em] text-slate-500">{group.label}</div>}
           <div className="space-y-1">{group.items.map(item => {
             const Icon = item.icon;
             const active = activeView === item.id;
             return <button key={item.id} type="button" title={collapsed && !mobile ? item.label : undefined}
               onClick={() => navigate(item.id)}
-              className={"group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold transition "+(active
+              className={"group relative flex h-[45px] w-full items-center gap-3 rounded-lg px-3 text-left text-[14px] font-medium transition "+(active
                 ? "bg-gradient-to-r from-cyan-500/20 to-cyan-500/5 text-cyan-200 shadow-[inset_3px_0_0_#10D5F2]"
                 : "text-slate-400 hover:bg-white/[.045] hover:text-slate-100")}>
               <Icon size={18} strokeWidth={active ? 2.4 : 1.9} className={active ? "shrink-0 text-cyan-300" : "shrink-0 text-slate-500 group-hover:text-cyan-200"}/>
@@ -109,13 +109,13 @@ export default function NexoraStudioShell({
       </div>
       {(!collapsed || mobile) && <div className="shrink-0 space-y-3 border-t border-[#20334B] p-3">
         <div className="rounded-xl border border-[#20334B] bg-[#0C1727] p-3">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300"><span>Selected project storage</span><span className="text-cyan-300">{storagePercent == null ? "SIZE ONLY" : Math.round(storagePercent)+"%"}</span></div>
-          {storagePercent == null ? <div className="mt-2 rounded-md border border-[#20334B] bg-[#081321] px-2 py-2 text-[9px] text-slate-500">Account quota is not exposed by this service.</div> : <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-300" style={{width: Math.max(0,Math.min(100,storagePercent))+"%"}}/></div>}
-          <p className="mt-2 truncate text-[10px] text-slate-500">{storageLabel}</p>
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300"><span>Storage Usage</span><span className="text-cyan-300">{storagePercent == null ? "LOCAL" : Math.round(storagePercent)+"%"}</span></div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-300" style={{width: storagePercent == null ? "0%" : Math.max(0,Math.min(100,storagePercent))+"%"}}/></div>
+          <p className="mt-2 truncate text-[10px] text-slate-400">{storageLabel}</p>
         </div>
         <button type="button" onClick={() => navigate("ai")} className="flex w-full items-center gap-3 rounded-xl border border-violet-500/40 bg-violet-500/10 p-3 text-left hover:bg-violet-500/15">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 text-violet-300"><Sparkles size={18}/></span>
-          <span className="min-w-0 flex-1"><span className="block text-xs font-extrabold text-white">CREATOR PLANS</span><span className="mt-1 block text-[10px] text-violet-300">View plans & billing</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-xs font-extrabold text-white">STUDIO PLANS</span><span className="mt-1 block text-[10px] text-violet-300">View plans & billing</span></span>
           <ChevronRight size={15} className="text-violet-300"/>
         </button>
       </div>}
@@ -131,12 +131,12 @@ export default function NexoraStudioShell({
       {mobileOpen && <div className="fixed inset-0 z-50 xl:hidden"><button type="button" aria-label="Close menu overlay" onClick={()=>setMobileOpen(false)} className="absolute inset-0 bg-black/70"/><aside className="relative h-full w-[min(300px,86vw)] border-r border-[#20334B] bg-[#0A1220]"><SidebarContent mobile/></aside></div>}
 
       <div className={"min-h-screen transition-[padding] duration-200 "+(collapsed?"xl:pl-[76px]":"xl:pl-[230px]")}>
-        <header className="sticky top-0 z-30 flex h-[58px] items-center gap-3 border-b border-[#20334B] bg-[#080F1B]/95 px-4 backdrop-blur-xl lg:px-6">
+        <header className="nexora-topbar sticky top-0 z-30 flex h-[58px] items-center gap-3 border-b border-[#20334B] bg-[#080F1B]/95 px-[14px] backdrop-blur-xl">
           <button type="button" onClick={()=>setMobileOpen(true)} className="rounded-lg p-2 text-slate-300 hover:bg-white/5 xl:hidden" aria-label="Open navigation"><Menu size={19}/></button>
           
           <div className="relative shrink-0">
-            <button type="button" onClick={()=>setWorkspaceOpen(value=>!value)} className="flex min-w-[150px] items-center gap-2 rounded-xl border border-[#20334B] bg-[#0D1929] px-3 py-2 text-[11px] font-extrabold tracking-wide text-cyan-300 hover:border-cyan-500/50">
-              <span className="text-base">▦</span><span>MAIN STUDIO</span><ChevronDown size={14} className="ml-auto"/>
+            <button type="button" onClick={()=>setWorkspaceOpen(value=>!value)} className="flex h-[37px] w-[224px] shrink-0 items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-[11px] font-extrabold tracking-wide text-cyan-300 hover:border-cyan-500/50">
+              <LayoutGrid size={17} className="text-cyan-400"/><span>MAIN STUDIO</span><ChevronDown size={14} className="ml-auto"/>
             </button>
             {workspaceOpen && <div className="absolute left-0 top-12 z-50 w-56 rounded-xl border border-[#29415F] bg-[#101C2D] p-2 shadow-2xl">
               <div className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Current workspace</div>
@@ -145,10 +145,10 @@ export default function NexoraStudioShell({
             </div>}
           </div>
 
-          <div className="relative min-w-0 max-w-[650px] flex-1">
+          <div className="relative min-w-0 max-w-[646px] flex-1">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><Search size={17}/></div>
             <input value={searchValue} onChange={event=>onSearchChange(event.target.value)} onFocus={()=>setWorkspaceOpen(false)}
-              placeholder="Search projects, assets, tasks…" className="h-10 w-full rounded-xl border border-[#20334B] bg-[#0D1929] pl-10 pr-14 text-xs text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"/>
+              placeholder="Search projects, assets, tasks…" className="h-[37px] w-full rounded-[9px] border border-[#20334B] bg-[#0D1929] pl-10 pr-14 text-xs text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"/>
             <button type="button" onClick={()=>setCommandOpen(true)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-[#29415F] px-1.5 py-1 text-[9px] font-bold text-slate-500 hover:text-cyan-200">⌘ K</button>
             {searchValue.trim() && <div className="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-xl border border-[#29415F] bg-[#101C2D] shadow-2xl">
               {searchResults.length ? searchResults.slice(0,8).map(result=><button key={result.id} type="button" onClick={()=>{onSelectSearchResult(result);onSearchChange("");}} className="flex w-full items-center gap-3 border-b border-white/5 px-3 py-3 text-left hover:bg-white/5">
@@ -160,7 +160,7 @@ export default function NexoraStudioShell({
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            <button type="button" onClick={()=>setHelpOpen(true)} className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-cyan-200 md:block" title="Workspace help">? </button>
+            <button type="button" onClick={()=>setHelpOpen(true)} className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-cyan-200 md:block" title="Workspace help" aria-label="Workspace help"><HelpCircle size={21}/></button>
             <div className="relative">
               <button type="button" onClick={()=>setNotificationsOpen(value=>!value)} className="relative rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-cyan-200" aria-label="Notifications"><Bell size={18}/>{alertItems.length>0&&<span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white">{Math.min(9,alertItems.length)}</span>}</button>
               {notificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 max-w-[88vw] rounded-xl border border-[#29415F] bg-[#101C2D] p-2 shadow-2xl">
@@ -170,8 +170,7 @@ export default function NexoraStudioShell({
             </div>
             <div className="relative">
               <button type="button" onClick={()=>setProfileOpen(value=>!value)} className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-white/5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/15 text-[11px] font-black text-cyan-200">{initials}</span>
-                <span className="hidden max-w-[110px] truncate text-[11px] font-semibold text-slate-300 lg:block">{userLabel}</span><ChevronDown size={13} className="text-slate-500"/>
+                <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/15 text-[10px] font-black text-cyan-100">{initials}</span><ChevronDown size={13} className="text-slate-400"/>
               </button>
               {profileOpen && <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-[#29415F] bg-[#101C2D] p-2 shadow-2xl">
                 <div className="border-b border-white/5 px-2 pb-3 pt-1"><div className="truncate text-xs font-bold text-white">{userLabel}</div><div className="mt-1 text-[10px] text-slate-500">{connectionLabel}</div></div>
@@ -182,16 +181,16 @@ export default function NexoraStudioShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1800px] px-3 py-3 lg:px-3 lg:py-3">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div><h1 className="text-2xl font-black tracking-tight text-white sm:text-[28px]">{title}</h1><p className="mt-0.5 text-sm text-slate-400">{subtitle}</p></div>
+        <main className="nexora-main-content w-full">
+          <div className="nexora-page-heading mb-[11px] flex flex-wrap items-end justify-between gap-3">
+            <div><h1 className="text-[28px] font-black leading-[32px] tracking-tight text-white">{title}</h1><p className="mt-[1px] text-[16px] leading-[20px] text-slate-400">{subtitle}</p></div>
             <div className="flex flex-wrap items-center gap-2">
-              {activeView === "overview" && <label className="flex h-10 items-center gap-2 rounded-lg border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
-              <button type="button" onClick={onNewProject} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
+              {activeView === "overview" && <label className="flex h-[38px] items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
+              <button type="button" onClick={onNewProject} className="inline-flex h-[38px] items-center gap-2 rounded-[9px] bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
             </div>
           </div>
           {children}
-          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project files and builds stay on your paired computer · Account identity and billing use the NEXORA control plane</span></footer>
+          {activeView !== "overview" && <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600"><span>NEXORA STUDIO PRO · {connectionLabel}</span><span>Project files and builds stay on your paired computer · Account identity and billing use the NEXORA control plane</span></footer>}
         </main>
       </div>
 
