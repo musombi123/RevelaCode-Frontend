@@ -5,6 +5,7 @@ import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
 import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
+import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
 import { NexoraOverviewPage, NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
@@ -1311,12 +1312,6 @@ export default function NexoraFoundryWorkspace() {
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 
-        {!authenticatedCloudSession && <div className="border border-amber-700/50 bg-[#1b1710] px-3 py-2 text-[11px] text-amber-100">Sign in with your independent NEXORA account to access your cloud projects and production tools.</div>}
-        {authenticatedCloudSession&&!cloudLoaded&&<div className="border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
-        {notice&&<div role="status" className="flex items-start justify-between gap-3 border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
-        <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
-        <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
-
       {studioView === "overview" && <NexoraOverviewPage
         projects={projects}
         activeProject={activeProject}
@@ -1336,6 +1331,7 @@ export default function NexoraFoundryWorkspace() {
         activeProject={activeProject}
         onOpen={openProject}
         onNewProject={createNewProject}
+        onImport={()=>importInputRef.current?.click()}
         onDuplicate={duplicateProject}
         onArchive={archiveProject}
         onDelete={deleteProjectById}
@@ -1442,6 +1438,22 @@ export default function NexoraFoundryWorkspace() {
           </section>
         </div>}
 
+        {studioView === "game-editor" && <NexoraSceneInspector
+          project={activeProject}
+          nodes={sceneNodes}
+          selectedObject={selectedObject}
+          selectedObjectId={selectedObjectId}
+          onSelect={setSelectedObjectId}
+          onAdd={addSceneObject}
+          onUpdate={updateSelected}
+          onDeleteSelected={()=>selectedObject&&patchProject(project=>({...project,scene:{...project.scene,objects:project.scene.objects.filter(item=>item.id!==selectedObject.id)}}))}
+          onSaveRevision={saveRevision}
+          onExport={exportProject}
+          onDeleteProject={deleteProject}
+          onCheckService={checkService}
+          validationIssues={validationIssues}
+        />}
+
         {studioView === "build" && <div className="mx-auto w-full max-w-4xl">
           <aside ref={exportRef} className="min-w-0 border border-amber-700/50 bg-[#0b1118] p-2">
             <h2 className="text-center text-sm font-black text-amber-200">PERFORMANCE & EXPORT</h2>
@@ -1520,26 +1532,13 @@ export default function NexoraFoundryWorkspace() {
 
         <div hidden={studioView !== "ai"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={nexoraAuthFetch} /></div></div>
 
-        {studioView === "world" && (
-          <div className="mx-auto w-full max-w-5xl">
-            <div className="mb-3 flex flex-wrap items-center gap-2 border border-cyan-900/60 bg-[#0b1118] p-3">
-              <div className="mr-auto min-w-[220px]">
-                <h2 className="text-sm font-black text-cyan-200">PROJECT WORKSPACE</h2>
-                <p className="mt-1 text-[10px] text-slate-500">Switch projects, create a new game, or import a NEXORA project file.</p>
-              </div>
-              <select aria-label="Switch NEXORA project" value={activeProject?.id||""} onChange={event=>setActiveId(event.target.value)} className="min-w-[180px] border border-slate-700 bg-[#080d12] p-2 text-xs text-cyan-100">
-                {projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}
-              </select>
-              <button type="button" onClick={createNewProject} className="border border-amber-700/60 px-3 py-2 text-[10px] font-bold text-amber-100">＋ NEW PROJECT</button>
-              <button type="button" onClick={()=>importInputRef.current?.click()} className="border border-slate-700 px-3 py-2 text-[10px] font-bold text-cyan-100">IMPORT PROJECT</button>
-            </div>
-        <section className="grid gap-2 lg:grid-cols-2">
-          <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">SCENE HIERARCHY / INSPECTOR</h2><div className="mt-2 grid grid-cols-1 gap-3 xl:grid-cols-2"><div className="max-h-48 overflow-auto">{sceneNodes.map(object=><button key={object.id} type="button" onClick={()=>setSelectedObjectId(object.id)} className={"mb-1 block w-full truncate border px-2 py-1.5 text-left text-[10px] "+(selectedObject?.id===object.id?"border-cyan-500 bg-cyan-950/40":"border-slate-800 bg-[#101820]")}>{object.name} · {object.type}</button>)}<button type="button" onClick={addSceneObject} className="mt-1 w-full border border-cyan-800 px-2 py-1.5 text-[9px]">＋ ADD SCENE NODE</button></div>
-            {selectedObject&&<div className="space-y-2"><label className="block text-[9px] text-slate-400">OBJECT NAME<input className={fieldClass+" mt-1"} value={selectedObject.name} onChange={event=>updateSelected("name",event.target.value)}/></label>{["position","rotation","scale"].map(field=><fieldset key={field}><legend className="text-[9px] uppercase text-slate-500">{field}</legend><div className="grid grid-cols-3 gap-1">{(selectedObject[field]||[0,0,0]).map((value,index)=><input key={index} aria-label={field+" "+index} className={fieldClass} type="number" step="0.1" value={value} onChange={event=>{const next=[...(selectedObject[field]||[0,0,0])];next[index]=Number(event.target.value);updateSelected(field,next);}}/>)}</div></fieldset>)}<button type="button" onClick={()=>patchProject(project=>({...project,scene:{...project.scene,objects:project.scene.objects.filter(item=>item.id!==selectedObject.id)}}))} className="border border-rose-900 px-2 py-1 text-[9px] text-rose-300">DELETE SELECTED OBJECT</button></div>}</div></div>
-          <div className="border border-cyan-900/60 bg-[#0b1118] p-3"><h2 className="text-xs font-black text-cyan-200">WORKSPACE OPERATIONS</h2><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={saveRevision} className="border border-slate-700 px-3 py-2 text-[9px]">SAVE CHECKPOINT</button><button type="button" onClick={exportProject} className="border border-slate-700 px-3 py-2 text-[9px]">EXPORT PROJECT JSON</button><button type="button" onClick={deleteProject} className="border border-rose-900 px-3 py-2 text-[9px] text-rose-300">DELETE PROJECT</button><button type="button" onClick={checkService} className="border border-slate-700 px-3 py-2 text-[9px]">CHECK SERVICE</button></div>{validationIssues.length>0&&<div className="mt-2 text-[9px] text-amber-200">{validationIssues.join(" · ")}</div>}</div>
-        </section>
-          </div>
-        )}
+        {studioView === "world" && <NexoraWorldBuilderPanel
+          project={activeProject}
+          cloudProjectActive={cloudProjectActive}
+          nexoraAuthFetch={nexoraAuthFetch}
+          onNotice={setNotice}
+        />}
+
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border border-slate-800 bg-[#080d12] px-3 py-2 text-[9px] text-slate-500"><div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name||"—"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>VERSION: NEXORA STUDIO PRO</span><span>{cloudProjectActive?"CLOUD PROJECT":"LOCAL DRAFT"}</span></div><div className="flex gap-3"><span>MEMORY: {sceneNodes.length} SCENE NODES</span><span>GPU LOAD: NOT MEASURED BY BROWSER</span></div></footer>
       </div>
