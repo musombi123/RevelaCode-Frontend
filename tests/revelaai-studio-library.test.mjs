@@ -21,6 +21,8 @@ test("Files Library uses authenticated artifact list, upload, rename, restore an
   assert.match(library, /downloadOriginal/);
   assert.match(library, /original_download_url/);
   assert.match(library, /Private to your account/);
+  assert.match(library, /downloadCurrent/);
+  assert.match(library, /Download current version/);
   assert.match(library, /Filter folder/);
   assert.match(library, /editingFolder/);
 });
