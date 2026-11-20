@@ -1684,3 +1684,4 @@ export default function NexoraFoundryWorkspace() {
     </div>}
     </>
   );
+}
