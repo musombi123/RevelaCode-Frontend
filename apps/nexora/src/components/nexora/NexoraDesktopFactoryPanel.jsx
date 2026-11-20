@@ -282,6 +282,7 @@ export default function NexoraDesktopFactoryPanel({ view = "factory", project, j
 
   const prepareRelease = () => {
     if (!projectId || !releaseArtifact) return;
+    if (!window.confirm("Confirm that you own or have distribution rights for every asset included in this build. NEXORA will only prepare a local release manifest; it will not upload or publish it.")) return;
     run("prepare-release", () => request("/api/v1/desktop/projects/" + projectId + "/publish/prepare", {
       method: "POST", body: JSON.stringify({ platform: releasePlatform, artifact_id: releaseArtifact, version: releaseVersion, release_notes: releaseNotes, rights_confirmed: rightsConfirmed })
     }), "Release manifest prepared locally. Nothing has been uploaded or submitted.");

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Archive, CheckCircle2, CircleAlert, Cloud, Code2, Download, ExternalLink, FileArchive, Folder, FolderOpen, HardDrive, History, Laptop, LockKeyhole, PackageCheck, Play, RefreshCw, Save, ShieldCheck, Smartphone, Upload, Wrench, X } from "lucide-react";
+import { Archive, CheckCircle2, AlertCircle, Cloud, Code2, Download, ExternalLink, FileArchive, Folder, FolderOpen, HardDrive, History, Laptop, LockKeyhole, PackageCheck, Play, RefreshCw, Save, ShieldCheck, Smartphone, Upload, Wrench, X } from "lucide-react";
 
 const AGENT = "http://127.0.0.1:8765";
 const TOKEN_KEY = "nexora.local-agent.token";
@@ -17,7 +17,7 @@ function formatBytes(value) {
   return (bytes / Math.pow(1024,index)).toFixed(index ? 1 : 0) + " " + units[index];
 }
 function Status({ok, children}) {
-  return <span className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-black " + (ok ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-200")}>{ok ? <CheckCircle2 size={11}/> : <CircleAlert size={11}/>} {children}</span>;
+  return <span className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-black " + (ok ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-200")}>{ok ? <CheckCircle2 size={11}/> : <AlertCircle size={11}/>} {children}</span>;
 }
 
 export default function NexoraFactoryControlPanel({projectId="", onWorkspaceUpdated=()=>{}, onNavigate=()=>{}, onSelectProject=()=>{}, onQueueProduction=()=>{}, setNotice=()=>{}}) {
