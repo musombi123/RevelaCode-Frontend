@@ -55,12 +55,24 @@ function fileExtensionRequest(text) {
   );
   if (dotted) return String(dotted[1] || "").toLowerCase();
 
+  const direct = value.match(/\\.([a-z0-9]{1,8})\\b/i);
+  const directExtension = String(direct?.[1] || "").toLowerCase();
+  if (directExtension && (
+    Object.prototype.hasOwnProperty.call(EXTENSION_OUTPUTS, directExtension)
+    || UNSUPPORTED_EXTENSIONS.has(directExtension)
+  )) return directExtension;
+
   const named = value.match(
-    /\b(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|odt|ods|odp|rtf|gif|mp4|zip)\b/i
+    /\b(pptx|docx|xlsx|csv|markdown|md|txt|pdf|png|jpe?g|svg|jsx|tsx|typescript|javascript|python|json|html|css|sql|bash|shell|golang|rust|java|cpp|csharp|php|ruby|swift|kotlin|xml|yaml|yml|toml|ini|doc|xls|ppt|odt|ods|odp|rtf|gif|mp4|zip)\b/i
   );
   if (!named) return "";
 
-  const token = String(named[1] || "").toLowerCase();
+  const rawToken = String(named[1] || "").toLowerCase();
+  const token = ({
+    markdown: "md", jpeg: "jpg", typescript: "ts", javascript: "js",
+    python: "py", golang: "go", rust: "rs", csharp: "cs",
+    bash: "sh", shell: "sh", ruby: "rb", kotlin: "kt",
+  })[rawToken] || rawToken;
   const before = value.slice(Math.max(0, named.index - 28), named.index);
   const after = value.slice(named.index + named[0].length, named.index + named[0].length + 24);
   const exportCue = /\b(?:as|to|into|format|extension|export|save|download)\s*$/i.test(before)
