@@ -4,80 +4,89 @@
 
 `https://revelacode.co.ke/dev_nexora`
 
-The browser must remain on this URL. Do not use a redirect to
-`nexora.revelacode.co.ke` or to the NEXORA Render hostname.
+NEXORA does not have a dedicated Render frontend service. Both application
+frontends are served by the existing RevelaCode Render Static Site, but
+they are built as separate React applications with separate HTML documents
+and separate JavaScript entry points.
 
-## Independent NEXORA deployment
+## Independent NEXORA app source
 
-Create a separate Render **Static Site** using:
+NEXORA's frontend source lives at `apps/nexora` in this repository:
 
-- Repository: `musombi123/Procedural-Game-Foundry`
-- Branch: `main`
-- Root directory: `apps/nexora-frontend`
-- Build command: `npm install && npm run build`
+- `apps/nexora/index.html` — NEXORA document entry.
+- `apps/nexora/src/main.jsx` — NEXORA React startup.
+- `apps/nexora/src/components/nexora/` — workspace and account components.
+- `apps/nexora/vite.config.js` — independent Vite base and build output.
+
+It does not import RevelaCode's `App`, React providers, authentication,
+router or service-worker setup. The two apps share the deployed static
+hosting service and HTTPS origin only.
+
+## Build
+
+The root `package.json` provides:
+
+- `npm run build:nexora` — builds the independent NEXORA entry into
+  `public/dev_nexora`.
+- `npm run build:web` — runs the NEXORA build first, then builds the
+  RevelaCode frontend. Vite copies the generated NEXORA files into
+  `dist/dev_nexora`.
+
+Configure the existing RevelaCode Static Site in Render:
+
+- Build command: `npm ci && npm run build:web`
 - Publish directory: `dist`
-- Environment: `VITE_NEXORA_API_URL=https://nexora-foundry-api.onrender.com`
+- Build environment:
+  `VITE_NEXORA_API_URL=https://nexora-foundry-api.onrender.com`
 
-Keep the Render-generated `*.onrender.com` hostname. Do not add a custom
-domain to this service. NEXORA is built and deployed independently; the
-Render hostname is the private-to-the-product upstream origin for the public
-path proxy.
+Keep the existing Render service and custom domain. Do not create a second
+static site or assign `nexora.revelacode.co.ke`.
 
-The NEXORA Vite production base is `/dev_nexora/`. This ensures that its
-HTML references scripts and styles beneath the same public path.
+## Render route rules
 
-## Configure the existing RevelaCode Static Site
-
-In Render Dashboard, open the **existing RevelaCode Static Site** and go to
-**Settings → Redirects/Rewrites**. Add these two rules with Action **Rewrite**:
+In the existing RevelaCode Static Site, open
+**Settings → Redirects/Rewrites**. Add these rules with Action **Rewrite**:
 
 | Source | Destination |
 | --- | --- |
-| `/dev_nexora` | `https://<NEXORA-STATIC-SITE>.onrender.com/` |
-| `/dev_nexora/*` | `https://<NEXORA-STATIC-SITE>.onrender.com/*` |
+| `/dev_nexora` | `/dev_nexora/index.html` |
+| `/dev_nexora/*` | `/dev_nexora/index.html` |
 
-Replace `<NEXORA-STATIC-SITE>` with the exact host assigned by Render to
-the standalone NEXORA Static Site.
+Put both rules above the broad RevelaCode SPA fallback
+`/* → /index.html`. Render serves real NEXORA assets such as
+`/dev_nexora/assets/...` directly when the files exist; the rules provide
+the HTML entry for the app root and its client-side routes. A Rewrite keeps
+the original browser URL unchanged.
 
-Place both rules above any broad catch-all rule such as `/* → /index.html`.
-The exact rule serves NEXORA's index document; the wildcard rule forwards
-asset requests such as `/dev_nexora/assets/...` to the corresponding
-`/assets/...` path on the NEXORA origin. A Rewrite keeps the browser URL
-unchanged. A Redirect is incorrect because it changes the address bar.
+## Service-worker boundary
 
-Do not add a `/dev_nexora` SPA route to RevelaCode's React router. The
-rewrite must happen at the static-site hosting layer before the RevelaCode
-`index.html` is served. RevelaCode's service worker also explicitly skips
-`/dev_nexora` and all child paths so its root-shell cache cannot intercept
-or cache NEXORA pages and assets.
+RevelaCode's service worker explicitly skips `/dev_nexora` and every child
+path. It cannot intercept or cache NEXORA's HTML, JS, CSS or other assets.
 
-## NEXORA API CORS
+## NEXORA API CORS and identity
 
-On the NEXORA API Render service, set:
+The NEXORA browser app calls `https://nexora-foundry-api.onrender.com`
+directly. Configure the NEXORA API Render service with:
 
-`NEXORA_CORS_ORIGINS=https://revelacode.co.ke,http://localhost:5173,http://127.0.0.1:5173`
+`NEXORA_CORS_ORIGINS=https://revelacode.co.ke,http://localhost:5174,http://127.0.0.1:5174`
 
-The production browser origin is `https://revelacode.co.ke`, even though
-the NEXORA frontend files come from a separate Render Static Site. The
-browser calls `https://nexora-foundry-api.onrender.com` directly.
-
-Keep `NEXORA_DATABASE_URL`, `NEXORA_AUTH_REQUIRED=true`, payment
-verification secrets, payment reconciliation and user sessions on the
-NEXORA backend. Do not put any of those secrets in the frontend or
-RevelaCode environment.
+The public production origin is `https://revelacode.co.ke`. The NEXORA API,
+Neon database, account sessions, payment reconciliation and entitlements
+remain NEXORA-owned. Keep `NEXORA_DATABASE_URL`, authentication settings
+and payment verification secrets on the NEXORA API service only.
 
 ## Verification
 
-1. Confirm the standalone NEXORA Static Site has a successful deploy.
-2. Confirm the two external Rewrite rules are saved on the RevelaCode Static
-   Site and precede the catch-all rule.
-3. Redeploy the NEXORA API after changing `NEXORA_CORS_ORIGINS`.
+1. Deploy the existing RevelaCode Static Site using the updated web build
+   command.
+2. Confirm `dist/dev_nexora/index.html` and its assets are published.
+3. Confirm the two Render rewrite rules appear above the catch-all rule.
 4. Open `https://revelacode.co.ke/dev_nexora` in a private browser window.
-5. Confirm NEXORA's own registration/sign-in page appears and the address
-   bar stays on `revelacode.co.ke/dev_nexora`.
-6. Register a dedicated NEXORA account and verify it does not use the
-   RevelaCode session.
+5. Confirm the NEXORA registration/sign-in page appears without changing
+   the browser URL.
+6. Register a NEXORA test account and verify that its session is independent
+   from the RevelaCode account session.
 
-A source-code commit does not configure Render dashboard routing. The
-external Rewrite rules and separate Static Site must both exist before the
-public URL can work.
+A commit does not change the Render dashboard build command or route rules.
+Those two existing-service settings must also be saved before the path is
+live.
