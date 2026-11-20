@@ -1168,6 +1168,10 @@ export default function NexoraFoundryWorkspace() {
       });
       setPolyHavenDownloaded(current => ({ ...current, [asset.id]: result.directory }));
       setNotice(`${result.name} downloaded and integrity-verified directly into ${result.directory}. The asset is licensed CC0-1.0.`);
+      if (result.files?.some(file => file.path.toLowerCase().endsWith(".glb"))) {
+        setPreviewSelection({ type: "polyhaven", id: asset.id });
+        setStudioView("game-editor");
+      }
     } catch (error) {
       setNotice(error.message || `Could not download ${asset.name}.`);
     } finally {
@@ -1349,6 +1353,11 @@ export default function NexoraFoundryWorkspace() {
           if (!localAgentConnected) throw new Error("Connect this computer in NEXORA > Device Lab before loading local 3D templates.");
           const response=await localEngineFetch(`/api/v1/studio/templates/${encodeURIComponent(previewSelection.id)}/model`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
           if(!response.ok) throw new Error(`3D template request failed (HTTP ${response.status}).`);
+          blob=await response.blob();
+        } else if (previewSelection.type==="polyhaven") {
+          if (!activeProject?.id || !localAgentConnected) throw new Error("Open a project and connect the paired desktop agent to preview downloaded 3D models.");
+          const response=await localEngineFetch(`/api/v1/desktop/projects/${encodeURIComponent(activeProject.id)}/assets/3d/${encodeURIComponent(previewSelection.id)}/file`,{headers:{Accept:"model/gltf-binary"},cache:"no-store"});
+          if(!response.ok) throw new Error(`Downloaded 3D model preview failed (HTTP ${response.status}).`);
           blob=await response.blob();
         } else {
           const asset=activeProject?.assets?.find(item=>item.id===previewSelection.id);
