@@ -266,13 +266,17 @@ export default function RevelaAIStudio({ artifact: initialArtifact, authFetch, o
 
   const runHistoryAction = async (action) => {
     if (!artifact?.id || busy) return;
+    if (dirty) {
+      setError("Save or discard your unsaved changes before restoring a previous version.");
+      return;
+    }
     setBusy(action);
     setError("");
     try {
       const base = (import.meta.env.VITE_REVELAAI_API_URL || "https://revelaai.onrender.com").replace(/\/$/, "");
       const response = await authFetch(
         base + "/api/artifacts/" + encodeURIComponent(artifact.id) + "/edit",
-        { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action }) }
+        { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action, studio_session: true }) }
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.detail?.message || data?.detail || "Version history could not be updated.");
