@@ -37,6 +37,11 @@ const EXTENSION_OUTPUTS = {
   rb: { command: "/code", language: "ruby" },
   swift: { command: "/code", language: "swift" },
   kt: { command: "/code", language: "kotlin" },
+  xml: { command: "/code", language: "xml" },
+  yaml: { command: "/code", language: "yaml" },
+  yml: { command: "/code", language: "yaml" },
+  toml: { command: "/code", language: "toml" },
+  ini: { command: "/code", language: "ini" },
 };
 
 const UNSUPPORTED_EXTENSIONS = new Set([
