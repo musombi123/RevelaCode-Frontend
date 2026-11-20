@@ -27,7 +27,11 @@ test("generated code artifacts open directly in the existing RevelaAI workspace 
 test("Code generation tool provides distinct Generate and Debug modes", () => {
   assert.ok(inputBar.includes('["/code", "Code generation", Code2]'));
   assert.match(inputBar, /value:"generate",label:"Generate code"/);
-  assert.match(inputBar, /value:"debug",label:"Debug & repair"/);\n  assert.match(inputBar, /setSelectedToolCommand\(selected\)/);\n  assert.match(inputBar, /setToolMode\(\(current\) => \(\{ \.\.\.current, \[command\]: mode \}\)\)/);\n  assert.match(dashboard, /toolCommand: isCodeRepair \? "\/code" : null/);\n  assert.match(dashboard, /toolMode: isCodeRepair \? "debug" : null/);
+  assert.match(inputBar, /value:"debug",label:"Debug & repair"/);
+  assert.match(inputBar, /setSelectedToolCommand\(selected\)/);
+  assert.match(inputBar, /setToolMode\(\(current\) => \(\{ \.\.\.current, \[command\]: mode \}\)\)/);
+  assert.match(dashboard, /toolCommand: isCodeRepair \? "\/code" : null/);
+  assert.match(dashboard, /toolMode: isCodeRepair \? "debug" : null/);
   assert.match(inputBar, /command === "code" \? \{ mode: activeMode \|\| "generate" \}/);
   assert.match(dashboard, /workspaceCommand === "\/code"/);
   assert.match(dashboard, /task: "code"/);
