@@ -1506,7 +1506,7 @@ export default function ElimuDashboardWorkspace({
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:min-h-0 lg:overflow-y-auto lg:overscroll-y-contain lg:px-8">
+          <main className="elimu-desktop-scroll-area min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:min-h-0 lg:overflow-y-scroll lg:overscroll-y-contain lg:px-8">
             <div data-demo={isWebsiteCenter ? "elimu-school-pages" : normalizedPath === "elimu/students" ? "elimu-student-records" : undefined} className="mx-auto w-full max-w-[1600px] space-y-6">
               <ElimuDashboardHeader
                 access={access}

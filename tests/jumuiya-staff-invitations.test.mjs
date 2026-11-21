@@ -15,6 +15,9 @@ test("Elimu exposes school-scoped staff invitations in the school workspace", ()
   assert.match(workspace, /ElimuStaffManagement/);
   assert.match(workspace, /normalizedPath === "elimu\/staff"/);
   assert.match(api, /post\("staff\/invite"/);
+  assert.match(page, /result\.email_sent === true/);
+  assert.match(page, /invitation\.email_status/);
+  assert.match(page, /invitation\?\.email_error/);
 });
 
 test("Biashara exposes invitation creation, one-time share link, and authenticated acceptance", () => {
