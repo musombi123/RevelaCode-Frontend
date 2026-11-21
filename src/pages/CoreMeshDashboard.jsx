@@ -171,8 +171,8 @@ function genesisDispatchStatusLabel(configuration) {
 
 function zeroDispatcherStatusLabel(configuration) {
   if (configuration.zero_tool_dispatcher_ready === true) return "Ready";
-  if (configuration.zero_brain_dispatcher_enabled === true) return "Enabled · waiting for core";
-  return "Awaiting brain credential";
+  if (configuration.zero_gateway_dispatcher_enabled === true) return "Enabled · waiting for core";
+  return configuration.core_service_token_configured === true ? "Dispatcher disabled" : "Shared gateway credential missing";
 }
 
 function StatusPill({ reachable, unknown = false, configured }) {
@@ -304,6 +304,7 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Core routing" value="Internal dispatcher" />
               <DataPoint label="ZERO dispatcher" value={zeroDispatcherStatusLabel(configuration)} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
+              <DataPoint label="Shared core credential" value={configuration.core_service_token_configured ? "Configured on gateway" : "Missing on gateway"} />
               <DataPoint label="ZERO built-in capabilities" value={configuration.zero_catalogue_tool_count ?? "—"} />
               <DataPoint label="ZERO access scopes" value={configuration.zero_catalogue_tool_count == null ? "Unknown" : `${configuration.zero_read_only_tool_count ?? 0} read-only / ${configuration.zero_action_tool_count ?? 0} scoped actions`} />
               <DataPoint label="Genesis orchestration" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
