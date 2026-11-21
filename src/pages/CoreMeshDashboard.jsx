@@ -135,7 +135,13 @@ function DataPoint({ label, value }) {
   );
 }
 
-function knownCountLabel(value) {
+function knownCountLabel(value, registryAvailable, legacyRegistryReady) {
+  if (
+    registryAvailable === false ||
+    (registryAvailable === undefined && legacyRegistryReady === false)
+  ) {
+    return "Unknown";
+  }
   return Number.isInteger(value) && value >= 0 ? String(value) : "Unknown";
 }
 
@@ -303,7 +309,7 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Genesis orchestration" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Genesis signed registry" value={registryStatusLabel(configuration.genesis_registry_status, configuration.genesis_registry_ready)} />
               <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
-              <DataPoint label="Active signed tools" value={knownCountLabel(configuration.active_signed_tools_count)} />
+              <DataPoint label="Active signed tools" value={knownCountLabel(configuration.active_signed_tools_count, configuration.genesis_registry_available, configuration.genesis_registry_ready)} />
               <DataPoint label="Genesis tool dispatch" value={genesisDispatchStatusLabel(configuration)} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
               {configuration.genesis_registry_failure_reason && <DataPoint label="Genesis registry diagnostic" value={configuration.genesis_registry_failure_reason} />}
@@ -365,7 +371,7 @@ export default function CoreMeshDashboard() {
                     {key === "one" && <DataPoint label="Inventions" value={core.invention_count ?? "—"} />}
                     {key === "one" && <DataPoint label="Guardian" value={core.guardian_ready === true ? "Ready" : core.guardian_ready === false ? "Needs attention" : "Unknown"} />}
                     {key === "one" && <DataPoint label="Signed registry" value={registryStatusLabel(core.signed_tool_registry_status, core.signed_tool_registry_ready)} />}
-                    {key === "one" && <DataPoint label="Active signed tools" value={knownCountLabel(core.active_signed_tools_count)} />}
+                    {key === "one" && <DataPoint label="Active signed tools" value={knownCountLabel(core.active_signed_tools_count, core.signed_tool_registry_available, core.signed_tool_registry_ready)} />}
                     {key === "one" && core.signed_tool_registry_failure_reason && <DataPoint label="Registry diagnostic" value={core.signed_tool_registry_failure_reason} />}
                     {key === "two" && <DataPoint label="Learning records" value={core.learning_feedback_count ?? "—"} />}
                     {key === "two" && <DataPoint label="Metrics" value={core.metrics_available ? "Available" : "Unavailable"} />}
