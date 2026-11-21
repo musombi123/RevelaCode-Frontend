@@ -246,14 +246,16 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
       const result = unwrap(response) || {};
       const invitation = result.invitation && typeof result.invitation === "object" ? result.invitation : {};
       const emailSent = result.email_sent === true && String(invitation.email_status || "").toLowerCase() === "sent";
+      let deliveryErrorMessage = "";
       if (emailSent) {
         setNotice(`Invitation email accepted by the mail provider for ${email} as ${ROLE_LABELS[form.role] || form.role}.`);
         setForm({ display_name: "", email: "", role: "teacher", expires_in_days: "7", department: "", store: "" });
       } else {
         const deliveryError = invitation.email_error || result.delivery_message || "The mail provider did not confirm acceptance. Check RESEND_API_KEY and EMAIL_FROM in the backend environment.";
-        setError(`The invitation record was created for ${email}, but the email was not sent. ${deliveryError}`);
+        deliveryErrorMessage = `The invitation record was created for ${email}, but the email was not sent. ${deliveryError}`;
       }
       await load();
+      if (deliveryErrorMessage) setError(deliveryErrorMessage);
     } catch (requestError) {
       setError(requestError?.message || "The invitation could not be created.");
     } finally {
@@ -271,13 +273,15 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
       const response = unwrap(await api.resendStaffInvitation(invitationId)) || {};
       const updatedInvitation = response.invitation && typeof response.invitation === "object" ? response.invitation : {};
       const emailSent = response.email_sent === true && String(updatedInvitation.email_status || "").toLowerCase() === "sent";
+      let deliveryErrorMessage = "";
       if (emailSent) {
         setNotice(`A fresh invitation email was accepted by the mail provider for ${invitation?.email || "the invitee"}. The previous link has been replaced.`);
       } else {
         const deliveryError = updatedInvitation.email_error || response.delivery_message || "The mail provider did not confirm acceptance. Check RESEND_API_KEY and EMAIL_FROM in the backend environment.";
-        setError(`The invitation email could not be resent to ${invitation?.email || "this recipient"}. ${deliveryError}`);
+        deliveryErrorMessage = `The invitation email could not be resent to ${invitation?.email || "this recipient"}. ${deliveryError}`;
       }
       await load();
+      if (deliveryErrorMessage) setError(deliveryErrorMessage);
     } catch (requestError) {
       setError(requestError?.message || "The invitation email could not be resent.");
     } finally {
