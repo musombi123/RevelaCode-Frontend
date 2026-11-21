@@ -172,7 +172,8 @@ export default function ElimuDashboardHeader({
         </div>
 
         {formattedLastUpdated ? (
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <ArrowUpRight size={13} aria-hidden="true" />
             Updated at {formattedLastUpdated}
           </p>
         ) : null}
@@ -209,4 +210,5 @@ export default function ElimuDashboardHeader({
         ) : null}
       </div>
     </header>
+  );
 }
