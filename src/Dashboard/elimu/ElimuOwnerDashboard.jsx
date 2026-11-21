@@ -434,7 +434,14 @@ export default function ElimuOwnerDashboard({
     const failures = results.reduce(
       (failed, result, index) => {
         if (result.status === "rejected") {
-          failed.push(requests[index].name);
+          failed.push({
+            name: requests[index].name,
+            message: String(
+              result.reason?.message ||
+                result.reason?.response?.data?.message ||
+                "Request failed."
+            ).trim().slice(0, 180),
+          });
         }
 
         return failed;
@@ -443,10 +450,16 @@ export default function ElimuOwnerDashboard({
     );
 
     if (failures.length) {
+      const failedNames = failures.map((failure) => failure.name);
+      const staffFailure = failures.find((failure) => failure.name === "staff");
+      const failureDetails = staffFailure?.message
+        ? ` Staff: ${staffFailure.message}`
+        : "";
+
       setError(
-        `Some school information could not be loaded (${failures.join(
+        `Some school information could not be loaded (${failedNames.join(
           ", "
-        )}). Available data is still displayed.`
+        )}).${failureDetails} Available data is still displayed.`
       );
     }
 
