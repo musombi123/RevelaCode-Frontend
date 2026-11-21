@@ -434,7 +434,14 @@ export default function ElimuOwnerDashboard({
     const failures = results.reduce(
       (failed, result, index) => {
         if (result.status === "rejected") {
-          failed.push(requests[index].name);
+          failed.push({
+            name: requests[index].name,
+            message: String(
+              result.reason?.message ||
+                result.reason?.response?.data?.message ||
+                "Request failed."
+            ).trim().slice(0, 180),
+          });
         }
 
         return failed;
@@ -443,10 +450,16 @@ export default function ElimuOwnerDashboard({
     );
 
     if (failures.length) {
+      const failedNames = failures.map((failure) => failure.name);
+      const staffFailure = failures.find((failure) => failure.name === "staff");
+      const failureDetails = staffFailure?.message
+        ? ` Staff: ${staffFailure.message}`
+        : "";
+
       setError(
-        `Some school information could not be loaded (${failures.join(
+        `Some school information could not be loaded (${failedNames.join(
           ", "
-        )}). Available data is still displayed.`
+        )}).${failureDetails} Available data is still displayed.`
       );
     }
 
@@ -502,12 +515,14 @@ export default function ElimuOwnerDashboard({
     getMetric(metrics, ["students", "total_students"]) ??
     students.length;
 
+  const reportedStaffTotal = getMetric(metrics, [
+    "staff",
+    "total_staff",
+    "teachers",
+  ]);
+  const staffLoadFailed = /\bstaff\b/i.test(error);
   const totalStaff =
-    getMetric(metrics, [
-      "staff",
-      "total_staff",
-      "teachers",
-    ]) ?? staff.length;
+    reportedStaffTotal ?? (staffLoadFailed ? null : staff.length);
 
   const totalLessons =
     getMetric(metrics, ["lessons", "total_lessons"]) ??
@@ -673,6 +688,15 @@ export default function ElimuOwnerDashboard({
 
             <button
               type="button"
+              onClick={() => navigate("elimu/staff")}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            >
+              <Users size={17} />
+              Staff &amp; invitations
+            </button>
+
+            <button
+              type="button"
               onClick={() => navigate("elimu/documents")}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
@@ -742,8 +766,14 @@ export default function ElimuOwnerDashboard({
             <MetricCard
               icon={Users}
               label="Staff members"
-              value={numberFormat.format(totalStaff)}
-              detail="School staff records available"
+              value={
+                totalStaff === null ? "—" : numberFormat.format(totalStaff)
+              }
+              detail={
+                totalStaff === null
+                  ? "Staff records could not be loaded"
+                  : "School staff records available"
+              }
               tone="green"
             />
 
@@ -772,6 +802,26 @@ export default function ElimuOwnerDashboard({
             />
           </div>
         )}
+      </section>
+
+      {/* Leadership actions */}
+      <section>
+        <SectionHeading
+          title="Leadership actions"
+          description="Open the school management area you need."
+        />
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map((action) => (
+            <QuickAction
+              key={action.path}
+              icon={action.icon}
+              title={action.title}
+              description={action.description}
+              onClick={() => navigate(action.path)}
+            />
+          ))}
+        </div>
       </section>
 
       {/* School media centre */}
@@ -836,26 +886,6 @@ export default function ElimuOwnerDashboard({
           Public visibility depends on the media publication status
           and the school&apos;s configured permissions.
         </p>
-      </section>
-
-      {/* Leadership actions */}
-      <section>
-        <SectionHeading
-          title="Leadership actions"
-          description="Open the school management area you need."
-        />
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {quickActions.map((action) => (
-            <QuickAction
-              key={action.path}
-              icon={action.icon}
-              title={action.title}
-              description={action.description}
-              onClick={() => navigate(action.path)}
-            />
-          ))}
-        </div>
       </section>
 
       {/* Document centre */}

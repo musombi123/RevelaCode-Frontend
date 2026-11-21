@@ -431,10 +431,12 @@ export default function ElimuDashboardSidebar({
         return false;
       }
 
-      // Staff management additionally requires permission.
+      // Elimu uses granular staff permissions; "staff.manage" is not
+      // part of the backend permission catalogue.
       if (
         item.id === "staff" &&
-        !hasPermission("staff.manage")
+        !hasPermission("staff.view") &&
+        !hasPermission("staff.invite")
       ) {
         return false;
       }
@@ -484,11 +486,11 @@ export default function ElimuDashboardSidebar({
         data-demo="elimu-open-nav"
         aria-label="Elimu dashboard navigation"
         className={[
-          "flex h-full min-h-0 flex-col border-r border-slate-200 bg-white",
+          "elimu-workspace-sidebar flex h-full min-h-0 flex-col border-r border-slate-200 bg-white",
           "transition-[width,transform] duration-200 ease-out",
           "dark:border-slate-800 dark:bg-slate-950",
           collapsed ? "w-[76px]" : "w-[272px]",
-          "fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:z-20",
+          "fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:z-20 lg:h-[100dvh] lg:max-h-[100dvh]",
           mobileOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0",

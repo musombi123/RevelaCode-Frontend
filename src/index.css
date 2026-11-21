@@ -2448,74 +2448,82 @@ html, body, #root {
 }
 [data-app-scroll-root="true"]::-webkit-scrollbar { display: none; }
 
-/* Elimu desktop workspace: constrain the shell to the viewport so the
-   content pane, not the page body, owns vertical scrolling. */
+/* Elimu uses RevelaCode's dashboard content scroller as its single
+   vertical scroll owner. Show that actual scrollbar only while Elimu is
+   mounted, and let the complete overview grow naturally inside it. */
 @media (min-width: 1024px) {
-  .elimu-workspace-root {
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
+  #revelacode-dashboard-content:has(.elimu-workspace-root) {
     min-height: 0;
-    overflow: hidden;
-  }
-
-  .elimu-workspace-layout {
-    display: flex;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .elimu-workspace-column {
-    display: flex;
-    height: 100%;
-    min-height: 0;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .elimu-desktop-scroll-area {
-    display: block;
-    flex: 1 1 0%;
-    height: 0;
-    min-height: 0;
-    max-height: 100%;
-    overflow-x: hidden;
-    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     overscroll-behavior-y: contain;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: #64748b #e2e8f0;
   }
 
-  .elimu-desktop-scroll-area::-webkit-scrollbar {
+  #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar {
+    display: block !important;
     width: 10px;
   }
 
-  .elimu-desktop-scroll-area::-webkit-scrollbar-track {
+  #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar-track {
     background: #e2e8f0;
     border-radius: 999px;
   }
 
-  .elimu-desktop-scroll-area::-webkit-scrollbar-thumb {
+  #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar-thumb {
     background: #64748b;
     border: 2px solid #e2e8f0;
     border-radius: 999px;
   }
 
-  .elimu-desktop-scroll-area::-webkit-scrollbar-thumb:hover {
+  #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar-thumb:hover {
     background: #475569;
   }
 
-  .dark .elimu-desktop-scroll-area {
+  .elimu-workspace-root {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100%;
+    overflow: visible !important;
+  }
+
+  .elimu-workspace-layout {
+    height: auto !important;
+    min-height: max(100%, 100dvh);
+    overflow: visible !important;
+  }
+
+  .elimu-workspace-column {
+    height: auto !important;
+    min-height: 100%;
+    overflow: visible !important;
+  }
+
+  .elimu-desktop-scroll-area {
+    display: block;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .elimu-workspace-root .elimu-workspace-sidebar {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .dark #revelacode-dashboard-content:has(.elimu-workspace-root) {
     scrollbar-color: #64748b #0f172a;
   }
 
-  .dark .elimu-desktop-scroll-area::-webkit-scrollbar-track {
+  .dark #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar-track {
     background: #0f172a;
   }
 
-  .dark .elimu-desktop-scroll-area::-webkit-scrollbar-thumb {
+  .dark #revelacode-dashboard-content:has(.elimu-workspace-root)::-webkit-scrollbar-thumb {
     border-color: #0f172a;
   }
 }

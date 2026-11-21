@@ -74,19 +74,35 @@ test("Elimu invitation links preserve login context and open through Android App
 });
 
 
-test("Elimu desktop workspace scrolls inside a viewport-bounded content pane and avoids repeated hero banners", () => {
+test("Elimu overview keeps its role dashboard while subpages use compact headings", () => {
   const workspace = read("src/Dashboard/ElimuDashboardWorkspace.jsx");
   const header = read("src/Dashboard/elimu/components/ElimuDashboardHeader.jsx");
-  const styles = read("src/index.css");
 
-  assert.match(workspace, /elimu-workspace-root/);
-  assert.match(workspace, /elimu-workspace-layout/);
-  assert.match(workspace, /elimu-workspace-column/);
-  assert.match(workspace, /elimu-desktop-scroll-area/);
   assert.match(workspace, /isOverviewDashboard/);
   assert.match(workspace, /!isOverviewDashboard && \(/);
+  assert.match(workspace, /<RoleDashboard/);
   assert.match(header, /border-b border-slate-200/);
   assert.doesNotMatch(header, /rounded-3xl border border-slate-800 bg-slate-950/);
-  assert.match(styles, /\.elimu-workspace-root\s*\{[\s\S]*?height:\s*100dvh/);
-  assert.match(styles, /\.elimu-desktop-scroll-area\s*\{[\s\S]*?overflow-y:\s*scroll\s*!important/);
+});
+
+
+test("Elimu uses one visible desktop scroll root and keeps owner staff actions reachable", () => {
+  const workspace = read("src/Dashboard/ElimuDashboardWorkspace.jsx");
+  const styles = read("src/index.css");
+  const sidebar = read("src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx");
+  const owner = read("src/Dashboard/elimu/ElimuOwnerDashboard.jsx");
+
+  assert.match(workspace, /elimu-workspace-root/);
+  assert.match(workspace, /elimu-desktop-scroll-area/);
+  assert.doesNotMatch(workspace, /lg:overflow-y-scroll/);
+  assert.match(styles, /#revelacode-dashboard-content:has\(\.elimu-workspace-root\)/);
+  assert.match(styles, /overflow-y:\s*auto\s*!important/);
+  assert.match(styles, /::-webkit-scrollbar\s*\{\s*display:\s*block\s*!important/);
+  assert.match(styles, /\.elimu-desktop-scroll-area\s*\{[\s\S]*?overflow:\s*visible\s*!important/);
+  assert.match(sidebar, /hasPermission\("staff\.view"\)/);
+  assert.match(sidebar, /hasPermission\("staff\.invite"\)/);
+  assert.doesNotMatch(sidebar, /hasPermission\("staff\.manage"\)/);
+  assert.match(owner, /Staff &amp; invitations/);
+  assert.ok(owner.indexOf("{/* Leadership actions */}") < owner.indexOf("{/* School media centre */}"));
+  assert.match(owner, /totalStaff === null \? "—"/);
 });
