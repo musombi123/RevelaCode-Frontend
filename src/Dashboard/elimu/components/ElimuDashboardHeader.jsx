@@ -134,108 +134,81 @@ export default function ElimuDashboardHeader({
       : "";
 
   return (
-    <header data-demo="elimu-overview" className="space-y-4">
-      <section className="relative isolate overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-xl">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-16 -top-24 -z-10 h-72 w-72 rounded-full bg-emerald-500/15 blur-3xl"
-        />
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-24 left-1/3 -z-10 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl"
-        />
-
-        <div className="relative p-5 sm:p-7 lg:p-8">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">
-                  <GraduationCap size={15} aria-hidden="true" />
-                  Elimu Private Workspace
-                </span>
-
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300">
-                  {roleLabel}
-                </span>
-              </div>
-
-              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                {title || "School management"}
-              </p>
-
-              <h1 className="mt-2 break-words text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-                {schoolName}
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                {description ||
-                  "Manage your school's information, academic operations and role-specific responsibilities from one workspace."}
-              </p>
-
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                {verificationStatus ? (
-                  <StatusBadge status={verificationStatus} />
-                ) : null}
-
-                {location ? (
-                  <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300">
-                    <MapPin size={13} aria-hidden="true" />
-                    <span className="truncate">{location}</span>
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {showSchoolProfileAction ? (
-                <button
-                  type="button"
-                  onClick={handleProfile}
-                  data-demo="elimu-school-pages"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-4 focus:ring-white/10"
-                >
-                  <Building2 size={16} aria-hidden="true" />
-                  School profile
-                  <ChevronRight size={15} aria-hidden="true" />
-                </button>
-              ) : null}
-
-              {typeof onRefresh === "function" ? (
-                <button
-                  type="button"
-                  onClick={onRefresh}
-                  disabled={refreshing}
-                  aria-label="Refresh school dashboard"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <RefreshCw
-                    size={16}
-                    aria-hidden="true"
-                    className={refreshing ? "animate-spin" : ""}
-                  />
-                  <span>
-                    {refreshing ? "Refreshing..." : "Refresh"}
-                  </span>
-                </button>
-              ) : null}
-            </div>
-          </div>
+    <header
+      data-demo="elimu-overview"
+      className="flex flex-col gap-4 border-b border-slate-200 pb-4 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+            <GraduationCap size={14} aria-hidden="true" />
+            Elimu workspace
+          </span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            {roleLabel}
+          </span>
         </div>
-      </section>
 
-      {formattedLastUpdated ? (
-        <div className="flex items-center justify-between gap-3 px-1">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Workspace data
-          </p>
+        <h1 className="mt-3 break-words text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
+          {title || "School management"}
+        </h1>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+          {description ||
+            "Manage your school's information, academic operations and role-specific responsibilities from one workspace."}
+        </p>
 
-          <p className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <Building2 size={13} aria-hidden="true" />
+            <span className="truncate">{schoolName}</span>
+          </span>
+          {verificationStatus ? <StatusBadge status={verificationStatus} /> : null}
+          {location ? (
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              <MapPin size={13} aria-hidden="true" />
+              <span className="truncate">{location}</span>
+            </span>
+          ) : null}
+        </div>
+
+        {formattedLastUpdated ? (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <ArrowUpRight size={13} aria-hidden="true" />
             Updated at {formattedLastUpdated}
           </p>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {showSchoolProfileAction ? (
+          <button
+            type="button"
+            onClick={handleProfile}
+            data-demo="elimu-school-pages"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <Building2 size={15} aria-hidden="true" />
+            School profile
+            <ChevronRight size={14} aria-hidden="true" />
+          </button>
+        ) : null}
+        {typeof onRefresh === "function" ? (
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            aria-label="Refresh school dashboard"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw
+              size={15}
+              aria-hidden="true"
+              className={refreshing ? "animate-spin" : ""}
+            />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        ) : null}
+      </div>
     </header>
   );
 }

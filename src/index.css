@@ -2448,10 +2448,39 @@ html, body, #root {
 }
 [data-app-scroll-root="true"]::-webkit-scrollbar { display: none; }
 
-/* Elimu desktop workspace: keep a visible, usable right-side scrollbar. */
+/* Elimu desktop workspace: constrain the shell to the viewport so the
+   content pane, not the page body, owns vertical scrolling. */
 @media (min-width: 1024px) {
-  .elimu-desktop-scroll-area {
+  .elimu-workspace-root {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
     min-height: 0;
+    overflow: hidden;
+  }
+
+  .elimu-workspace-layout {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .elimu-workspace-column {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .elimu-desktop-scroll-area {
+    display: block;
+    flex: 1 1 0%;
+    height: 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow-x: hidden;
     overflow-y: scroll !important;
     overscroll-behavior-y: contain;
     scrollbar-gutter: stable;
