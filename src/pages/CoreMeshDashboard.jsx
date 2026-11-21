@@ -135,6 +135,46 @@ function DataPoint({ label, value }) {
   );
 }
 
+function knownCountLabel(value, registryAvailable, legacyRegistryReady) {
+  if (
+    registryAvailable === false ||
+    (registryAvailable === undefined && legacyRegistryReady === false)
+  ) {
+    return "Unknown";
+  }
+  return Number.isInteger(value) && value >= 0 ? String(value) : "Unknown";
+}
+
+function registryStatusLabel(status, ready) {
+  switch (String(status || "").toLowerCase()) {
+    case "ready":
+      return "Available";
+    case "unavailable":
+      return "Unavailable";
+    case "signing_key_missing":
+      return "Signing key missing";
+    case "signing_key_unknown":
+      return "Signing key unknown";
+    default:
+      return ready === true ? "Available" : ready === false ? "Not ready" : "Unknown";
+  }
+}
+
+function genesisDispatchStatusLabel(configuration) {
+  if (configuration.genesis_signed_tools_ready_to_dispatch === true) return "Ready";
+  if (configuration.genesis_registry_status === "unavailable") return "Registry unavailable";
+  if (configuration.genesis_registry_status === "signing_key_missing") return "Signing key missing";
+  if (configuration.genesis_orchestrator_tools_enabled !== true) return "Orchestration disabled";
+  if (configuration.active_signed_tools_count === 0) return "No active signed tools";
+  return "Not ready";
+}
+
+function zeroDispatcherStatusLabel(configuration) {
+  if (configuration.zero_tool_dispatcher_ready === true) return "Ready";
+  if (configuration.zero_brain_dispatcher_enabled === true) return "Enabled · waiting for core";
+  return "Awaiting brain credential";
+}
+
 function StatusPill({ reachable, unknown = false, configured }) {
   const notConfigured = configured === false;
   const classes = reachable
@@ -262,12 +302,17 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Tool addressing" value="Capability name" />
               <DataPoint label="Per-tool URLs" value="Not required" />
               <DataPoint label="Core routing" value="Internal dispatcher" />
-              <DataPoint label="ZERO dispatcher" value={configuration.zero_brain_dispatcher_enabled ? "Enabled" : "Awaiting gateway runtime"} />
+              <DataPoint label="ZERO dispatcher" value={zeroDispatcherStatusLabel(configuration)} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
-              <DataPoint label="Genesis signed registry" value={configuration.genesis_registry_ready ? "Available" : "Unavailable"} />
+              <DataPoint label="ZERO built-in capabilities" value={configuration.zero_catalogue_tool_count ?? "—"} />
+              <DataPoint label="ZERO access scopes" value={configuration.zero_catalogue_tool_count == null ? "Unknown" : `${configuration.zero_read_only_tool_count ?? 0} read-only / ${configuration.zero_action_tool_count ?? 0} scoped actions`} />
+              <DataPoint label="Genesis orchestration" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
+              <DataPoint label="Genesis signed registry" value={registryStatusLabel(configuration.genesis_registry_status, configuration.genesis_registry_ready)} />
               <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
-              <DataPoint label="Active signed tools" value={configuration.active_signed_tools_count ?? 0} />
+              <DataPoint label="Active signed tools" value={knownCountLabel(configuration.active_signed_tools_count, configuration.genesis_registry_available, configuration.genesis_registry_ready)} />
+              <DataPoint label="Genesis tool dispatch" value={genesisDispatchStatusLabel(configuration)} />
               <DataPoint label="Operator allowlist" value={configuration.core_mesh_operator_allowlist_configured ? "Configured" : "Missing"} />
+              {configuration.genesis_registry_failure_reason && <DataPoint label="Genesis registry diagnostic" value={configuration.genesis_registry_failure_reason} />}
             </div>
             <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
               <div className="flex items-start gap-3">
@@ -325,8 +370,9 @@ export default function CoreMeshDashboard() {
                     <DataPoint label="Execution mode" value={mode} />
                     {key === "one" && <DataPoint label="Inventions" value={core.invention_count ?? "—"} />}
                     {key === "one" && <DataPoint label="Guardian" value={core.guardian_ready === true ? "Ready" : core.guardian_ready === false ? "Needs attention" : "Unknown"} />}
-                    {key === "one" && <DataPoint label="Signed registry" value={core.signed_tool_registry_ready ? "Reachable" : "Unavailable"} />}
-                    {key === "one" && <DataPoint label="Active signed tools" value={core.active_signed_tools_count ?? 0} />}
+                    {key === "one" && <DataPoint label="Signed registry" value={registryStatusLabel(core.signed_tool_registry_status, core.signed_tool_registry_ready)} />}
+                    {key === "one" && <DataPoint label="Active signed tools" value={knownCountLabel(core.active_signed_tools_count, core.signed_tool_registry_available, core.signed_tool_registry_ready)} />}
+                    {key === "one" && core.signed_tool_registry_failure_reason && <DataPoint label="Registry diagnostic" value={core.signed_tool_registry_failure_reason} />}
                     {key === "two" && <DataPoint label="Learning records" value={core.learning_feedback_count ?? "—"} />}
                     {key === "two" && <DataPoint label="Metrics" value={core.metrics_available ? "Available" : "Unavailable"} />}
                     {key === "zero" && <DataPoint label="Audit log" value={core.audit_log_observed === true ? "Observed" : core.audit_log_observed === false ? "Not observed" : "Unknown"} />}
