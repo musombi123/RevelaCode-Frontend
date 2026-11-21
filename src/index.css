@@ -2448,6 +2448,49 @@ html, body, #root {
 }
 [data-app-scroll-root="true"]::-webkit-scrollbar { display: none; }
 
+/* Elimu desktop workspace: keep a visible, usable right-side scrollbar. */
+@media (min-width: 1024px) {
+  .elimu-desktop-scroll-area {
+    min-height: 0;
+    overflow-y: scroll !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #64748b #e2e8f0;
+  }
+
+  .elimu-desktop-scroll-area::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .elimu-desktop-scroll-area::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 999px;
+  }
+
+  .elimu-desktop-scroll-area::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border: 2px solid #e2e8f0;
+    border-radius: 999px;
+  }
+
+  .elimu-desktop-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
+  .dark .elimu-desktop-scroll-area {
+    scrollbar-color: #64748b #0f172a;
+  }
+
+  .dark .elimu-desktop-scroll-area::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+
+  .dark .elimu-desktop-scroll-area::-webkit-scrollbar-thumb {
+    border-color: #0f172a;
+  }
+}
+
 /* =========================================================
    SHAMBA PHONE SKIN — LIGHT MODE
    The mobile dashboard has an intentional dark farm palette. These
