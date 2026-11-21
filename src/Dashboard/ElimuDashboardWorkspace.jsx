@@ -1431,8 +1431,8 @@ export default function ElimuDashboardWorkspace({
           onClose={() => setMobileSidebarOpen(false)}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
+          <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
             <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <button
@@ -1712,7 +1712,7 @@ export default function ElimuDashboardWorkspace({
             </div>
           </main>
 
-          <footer className="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
             <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
               <span>Elimu Â· School management workspace</span>
 
