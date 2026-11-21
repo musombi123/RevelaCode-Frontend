@@ -486,7 +486,7 @@ export default function ElimuDashboardSidebar({
         data-demo="elimu-open-nav"
         aria-label="Elimu dashboard navigation"
         className={[
-          "flex h-full min-h-0 flex-col border-r border-slate-200 bg-white",
+          "elimu-workspace-sidebar flex h-full min-h-0 flex-col border-r border-slate-200 bg-white",
           "transition-[width,transform] duration-200 ease-out",
           "dark:border-slate-800 dark:bg-slate-950",
           collapsed ? "w-[76px]" : "w-[272px]",
