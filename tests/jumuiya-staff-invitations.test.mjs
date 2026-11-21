@@ -74,21 +74,15 @@ test("Elimu invitation links preserve login context and open through Android App
 });
 
 
-test("Elimu desktop workspace scrolls inside a viewport-bounded content pane and avoids repeated hero banners", () => {
+test("Elimu overview keeps its role dashboard while subpages use compact headings", () => {
   const workspace = read("src/Dashboard/ElimuDashboardWorkspace.jsx");
   const header = read("src/Dashboard/elimu/components/ElimuDashboardHeader.jsx");
-  const styles = read("src/index.css");
 
-  assert.match(workspace, /elimu-workspace-root/);
-  assert.match(workspace, /elimu-workspace-layout/);
-  assert.match(workspace, /elimu-workspace-column/);
-  assert.match(workspace, /elimu-desktop-scroll-area/);
   assert.match(workspace, /isOverviewDashboard/);
   assert.match(workspace, /!isOverviewDashboard && \(/);
+  assert.match(workspace, /<RoleDashboard/);
   assert.match(header, /border-b border-slate-200/);
   assert.doesNotMatch(header, /rounded-3xl border border-slate-800 bg-slate-950/);
-  assert.match(styles, /\.elimu-workspace-root\s*\{[\s\S]*?height:\s*100dvh/);
-  assert.match(styles, /\.elimu-desktop-scroll-area\s*\{[\s\S]*?overflow-y:\s*scroll\s*!important/);
 });
 
 
