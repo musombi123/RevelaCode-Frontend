@@ -244,12 +244,15 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
         },
       });
       const result = unwrap(response) || {};
-      if (result.email_sent === false) {
-        setNotice(`The invitation record was created for ${email}, but the email could not be delivered. Check the backend email settings, then use Resend invitation below.`);
+      const invitation = result.invitation && typeof result.invitation === "object" ? result.invitation : {};
+      const emailSent = result.email_sent === true && String(invitation.email_status || "").toLowerCase() === "sent";
+      if (emailSent) {
+        setNotice(`Invitation email accepted by the mail provider for ${email} as ${ROLE_LABELS[form.role] || form.role}.`);
+        setForm({ display_name: "", email: "", role: "teacher", expires_in_days: "7", department: "", store: "" });
       } else {
-        setNotice(`Invitation sent directly to ${email} as ${ROLE_LABELS[form.role] || form.role}.`);
+        const deliveryError = invitation.email_error || result.delivery_message || "The mail provider did not confirm acceptance. Check RESEND_API_KEY and EMAIL_FROM in the backend environment.";
+        setError(`The invitation record was created for ${email}, but the email was not sent. ${deliveryError}`);
       }
-      setForm({ display_name: "", email: "", role: "teacher", expires_in_days: "7", department: "", store: "" });
       await load();
     } catch (requestError) {
       setError(requestError?.message || "The invitation could not be created.");
@@ -266,9 +269,14 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
     setNotice("");
     try {
       const response = unwrap(await api.resendStaffInvitation(invitationId)) || {};
-      setNotice(response.email_sent === false
-        ? `Email delivery failed again for ${invitation?.email || "this invitation"}. Check RESEND_API_KEY and EMAIL_FROM in the backend environment.`
-        : `A fresh invitation email has been sent to ${invitation?.email || "the invitee"}. The previous link has been replaced.`);
+      const updatedInvitation = response.invitation && typeof response.invitation === "object" ? response.invitation : {};
+      const emailSent = response.email_sent === true && String(updatedInvitation.email_status || "").toLowerCase() === "sent";
+      if (emailSent) {
+        setNotice(`A fresh invitation email was accepted by the mail provider for ${invitation?.email || "the invitee"}. The previous link has been replaced.`);
+      } else {
+        const deliveryError = updatedInvitation.email_error || response.delivery_message || "The mail provider did not confirm acceptance. Check RESEND_API_KEY and EMAIL_FROM in the backend environment.";
+        setError(`The invitation email could not be resent to ${invitation?.email || "this recipient"}. ${deliveryError}`);
+      }
       await load();
     } catch (requestError) {
       setError(requestError?.message || "The invitation email could not be resent.");
@@ -501,7 +509,7 @@ export default function ElimuStaffManagement({ access, school, role, onNavigate 
             const mailFailed = invitation?.email_status === "failed";
             const busy = Boolean(invitationId && busyInvitationId === invitationId);
             const tone = status === "accepted" ? "green" : (mailFailed ? "red" : status === "invited" ? (invitation?.email_status === "sent" ? "blue" : "amber") : "slate");
-            return <article key={invitationId || index} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center"><div className="flex min-w-0 flex-1 items-start gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${mailFailed ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" : "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300"}`}>{mailFailed ? <AlertCircle size={18} /> : status === "accepted" ? <CheckCircle2 size={18} /> : <Mail size={18} />}</span><div className="min-w-0 flex-1"><p className="break-all text-sm font-semibold text-slate-900 dark:text-white">{text(invitation?.email, "Unknown recipient")}</p><p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{invitationName(invitation)} · {ROLE_LABELS[String(invitation?.role || "").toLowerCase()] || text(invitation?.role, "Staff role")}</p><div className="mt-2 flex flex-wrap items-center gap-2"><StatusPill tone={tone}>{invitationStatusLabel(invitation)}</StatusPill><span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400"><Clock size={12} />Expires {formatDate(invitation?.expires_at)}</span></div>{mailFailed && <p className="mt-2 text-xs leading-5 text-red-700 dark:text-red-300">Email delivery failed. Check the backend email-provider configuration and resend.</p>}</div></div><div className="flex flex-wrap gap-2 lg:justify-end">{isPending && <><Button type="button" disabled={busy || Boolean(busyInvitationId)} onClick={() => void handleResend(invitation)}>{busy ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}Resend email</Button><Button type="button" variant="danger" disabled={busy || Boolean(busyInvitationId)} onClick={() => void handleRevokeInvitation(invitation)}><X size={14} /> Revoke</Button></>}</div></article>;
+            return <article key={invitationId || index} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center"><div className="flex min-w-0 flex-1 items-start gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${mailFailed ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" : "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300"}`}>{mailFailed ? <AlertCircle size={18} /> : status === "accepted" ? <CheckCircle2 size={18} /> : <Mail size={18} />}</span><div className="min-w-0 flex-1"><p className="break-all text-sm font-semibold text-slate-900 dark:text-white">{text(invitation?.email, "Unknown recipient")}</p><p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{invitationName(invitation)} · {ROLE_LABELS[String(invitation?.role || "").toLowerCase()] || text(invitation?.role, "Staff role")}</p><div className="mt-2 flex flex-wrap items-center gap-2"><StatusPill tone={tone}>{invitationStatusLabel(invitation)}</StatusPill><span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400"><Clock size={12} />Expires {formatDate(invitation?.expires_at)}</span></div>{mailFailed && <p className="mt-2 text-xs leading-5 text-red-700 dark:text-red-300">{text(invitation?.email_error, "Email delivery failed. Check the backend email-provider configuration and resend.")}{invitation?.email_error_code ? ` (Code: ${invitation.email_error_code})` : ""}</p>}</div></div><div className="flex flex-wrap gap-2 lg:justify-end">{isPending && <><Button type="button" disabled={busy || Boolean(busyInvitationId)} onClick={() => void handleResend(invitation)}>{busy ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}Resend email</Button><Button type="button" variant="danger" disabled={busy || Boolean(busyInvitationId)} onClick={() => void handleRevokeInvitation(invitation)}><X size={14} /> Revoke</Button></>}</div></article>;
           }) : <div className="py-8 text-center"><Mail size={24} className="mx-auto text-slate-300 dark:text-slate-600" /><p className="mt-3 text-sm font-semibold text-slate-700 dark:text-slate-200">No invitations yet</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Invitations you send will appear here with their delivery and acceptance status.</p></div>}
         </div>
       </section>
