@@ -90,3 +90,25 @@ test("Elimu desktop workspace scrolls inside a viewport-bounded content pane and
   assert.match(styles, /\.elimu-workspace-root\s*\{[\s\S]*?height:\s*100dvh/);
   assert.match(styles, /\.elimu-desktop-scroll-area\s*\{[\s\S]*?overflow-y:\s*scroll\s*!important/);
 });
+
+
+test("Elimu uses one visible desktop scroll root and keeps owner staff actions reachable", () => {
+  const workspace = read("src/Dashboard/ElimuDashboardWorkspace.jsx");
+  const styles = read("src/index.css");
+  const sidebar = read("src/Dashboard/elimu/components/ElimuDashboardSidebar.jsx");
+  const owner = read("src/Dashboard/elimu/ElimuOwnerDashboard.jsx");
+
+  assert.match(workspace, /elimu-workspace-root/);
+  assert.match(workspace, /elimu-desktop-scroll-area/);
+  assert.doesNotMatch(workspace, /lg:overflow-y-scroll/);
+  assert.match(styles, /#revelacode-dashboard-content:has\(\.elimu-workspace-root\)/);
+  assert.match(styles, /overflow-y:\s*auto\s*!important/);
+  assert.match(styles, /::-webkit-scrollbar\s*\{\s*display:\s*block\s*!important/);
+  assert.match(styles, /\.elimu-desktop-scroll-area\s*\{[\s\S]*?overflow:\s*visible\s*!important/);
+  assert.match(sidebar, /hasPermission\("staff\.view"\)/);
+  assert.match(sidebar, /hasPermission\("staff\.invite"\)/);
+  assert.doesNotMatch(sidebar, /hasPermission\("staff\.manage"\)/);
+  assert.match(owner, /Staff &amp; invitations/);
+  assert.ok(owner.indexOf("{/* Leadership actions */}") < owner.indexOf("{/* School media centre */}"));
+  assert.match(owner, /totalStaff === null \? "—"/);
+});
