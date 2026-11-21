@@ -507,7 +507,7 @@ export default function ElimuOwnerDashboard({
     "total_staff",
     "teachers",
   ]);
-  const staffLoadFailed = /(?:^|[,\s])staff(?:[,\s)]|$)/i.test(error);
+  const staffLoadFailed = /\bstaff\b/i.test(error);
   const totalStaff =
     reportedStaffTotal ?? (staffLoadFailed ? null : staff.length);
 
