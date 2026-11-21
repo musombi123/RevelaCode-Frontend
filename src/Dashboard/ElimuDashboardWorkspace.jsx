@@ -1420,8 +1420,8 @@ export default function ElimuDashboardWorkspace({
           : FileText;
 
   return (
-    <div data-demo="elimu-overview" className="elimu-workspace-root min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white lg:h-full lg:min-h-0 lg:overflow-hidden">
-      <div className="elimu-workspace-layout flex min-h-screen lg:h-full lg:min-h-0">
+    <div data-demo="elimu-overview" className="elimu-workspace-root min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white lg:min-h-[100dvh] lg:overflow-visible">
+      <div className="elimu-workspace-layout flex min-h-screen">
         <ElimuDashboardSidebar
           access={access}
           school={school}
@@ -1432,7 +1432,7 @@ export default function ElimuDashboardWorkspace({
           onClose={() => setMobileSidebarOpen(false)}
         />
 
-        <div className="elimu-workspace-column flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
+        <div className="elimu-workspace-column flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95">
             <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
               <div className="flex min-w-0 items-center gap-3">
@@ -1507,7 +1507,7 @@ export default function ElimuDashboardWorkspace({
             </div>
           </header>
 
-          <main className="elimu-desktop-scroll-area min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:min-h-0 lg:overflow-y-scroll lg:overscroll-y-contain lg:px-8">
+          <main className="elimu-desktop-scroll-area min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
             <div data-demo={isWebsiteCenter ? "elimu-school-pages" : normalizedPath === "elimu/students" ? "elimu-student-records" : undefined} className="mx-auto w-full max-w-[1600px] space-y-6">
               {!isOverviewDashboard && (
                 <ElimuDashboardHeader
