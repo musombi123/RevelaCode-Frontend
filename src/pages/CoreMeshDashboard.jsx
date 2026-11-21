@@ -304,8 +304,8 @@ export default function CoreMeshDashboard() {
               <DataPoint label="Core routing" value="Internal dispatcher" />
               <DataPoint label="ZERO dispatcher" value={zeroDispatcherStatusLabel(configuration)} />
               <DataPoint label="ZERO enabled" value={configuration.zero_enabled ? "Enabled" : "Disabled"} />
-              <DataPoint label="ZERO registered tools" value={configuration.zero_registered_tool_count ?? "—"} />
-              <DataPoint label="ZERO scopes" value={configuration.zero_registered_tool_count == null ? "Unknown" : `${configuration.zero_read_only_tool_count ?? 0} read-only / ${configuration.zero_action_tool_count ?? 0} scoped actions`} />
+              <DataPoint label="ZERO built-in capabilities" value={configuration.zero_catalogue_tool_count ?? "—"} />
+              <DataPoint label="ZERO access scopes" value={configuration.zero_catalogue_tool_count == null ? "Unknown" : `${configuration.zero_read_only_tool_count ?? 0} read-only / ${configuration.zero_action_tool_count ?? 0} scoped actions`} />
               <DataPoint label="Genesis orchestration" value={configuration.genesis_orchestrator_tools_enabled ? "Enabled" : "Disabled"} />
               <DataPoint label="Genesis signed registry" value={registryStatusLabel(configuration.genesis_registry_status, configuration.genesis_registry_ready)} />
               <DataPoint label="Genesis signing key" value={configuration.genesis_signing_key_configured === true ? "Configured" : configuration.genesis_signing_key_configured === false ? "Missing" : "Unknown"} />
