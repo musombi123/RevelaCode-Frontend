@@ -25,15 +25,17 @@ test("heavy workspace tools are split into lazy-loaded modules", () => {
     "NexoraSceneInspector",
     "NexoraWorldBuilderPanel",
   ]) {
-    assert.match(workspace, new RegExp(`const ${moduleName} = lazy\\(\\(\\) => import\\(`));
+    assert.ok(workspace.includes("const " + moduleName + " = lazy("));
   }
 });
 
 test("build, device lab and AI panels mount only when selected", () => {
-  assert.match(workspace, /studioView === "build" &&/);
-  assert.match(workspace, /studioView === "device-lab" &&/);
-  assert.match(workspace, /studioView === "ai" &&/);
-  assert.doesNotMatch(workspace, /<div hidden=\\{studioView !== "(?:build|device-lab|ai)"\\}>/);
+  assert.ok(workspace.includes('studioView === "build" &&'));
+  assert.ok(workspace.includes('studioView === "device-lab" &&'));
+  assert.ok(workspace.includes('studioView === "ai" &&'));
+  assert.ok(!workspace.includes('hidden={studioView !== "build"'));
+  assert.ok(!workspace.includes('hidden={studioView !== "device-lab"'));
+  assert.ok(!workspace.includes('hidden={studioView !== "ai"'));
 });
 
 test("factory panel is rendered once to prevent duplicate workspace UI", () => {
@@ -42,32 +44,32 @@ test("factory panel is rendered once to prevent duplicate workspace UI", () => {
 
 test("primary navigation is compact and advanced workspace routes remain accessible", () => {
   assert.equal((shell.match(/id: "(?:overview|projects|game-editor|ai|assets|build|device-lab)"/g) || []).length, 7);
-  assert.match(shell, /TOOLS & INFRASTRUCTURE/);
+  assert.ok(shell.includes("TOOLS & INFRASTRUCTURE"));
   for (const route of ["world", "team", "analytics", "marketplace", "settings", "factory", "toolchains", "backups", "release-center"]) {
-    assert.match(shell, new RegExp('id: "' + route + '"'));
+    assert.ok(shell.includes('id: "' + route + '"'));
   }
 });
 
 test("Local Agent status uses paired session and reported capability data", () => {
-  assert.match(workspace, /setLocalAgentCapabilities\\(connected \\? \\(capabilities \\|\\| null\\) : null\\)/);
-  assert.match(workspace, /localAgentCapabilities=\\{localAgentCapabilities\\}/);
-  assert.match(shell, /Local Agent/);
-  assert.match(overview, /Toolchain verification/);
-  assert.doesNotMatch(overview, /healthScore|healthChecks/);
+  assert.ok(workspace.includes("setLocalAgentCapabilities(connected ? (capabilities || null) : null)"));
+  assert.ok(workspace.includes("localAgentCapabilities={localAgentCapabilities}"));
+  assert.ok(shell.includes("Local Agent"));
+  assert.ok(overview.includes("Toolchain verification"));
+  assert.ok(!overview.includes("healthScore") && !overview.includes("healthChecks"));
 });
 
 test("overview does not invent job progress or sample projects", () => {
-  assert.match(overview, /Worker progress not reported/);
-  assert.match(overview, /No projects to resume yet/);
-  assert.doesNotMatch(overview, /Orbit concept|Neon concept|Wildwood concept/);
-  assert.match(overview, /latestBuild\\?\\.progress/);
+  assert.ok(overview.includes("Worker progress not reported"));
+  assert.ok(overview.includes("No projects to resume yet"));
+  assert.ok(!overview.includes("Orbit concept") && !overview.includes("Neon concept") && !overview.includes("Wildwood concept"));
+  assert.ok(overview.includes("latestBuild?.progress"));
 });
 
 test("collapsed sidebar width remains controlled by the responsive nav classes", () => {
-  assert.doesNotMatch(css, /\\.nexora-shell aside\\.fixed\\s*\\{\\s*width:\\s*230px/);
+  assert.ok(!css.includes(".nexora-shell aside.fixed {\n  width: 230px;"));
 });
 
 test("production build defines shared React and icon vendor chunks", () => {
-  assert.match(viteConfig, /vendor-react/);
-  assert.match(viteConfig, /vendor-icons/);
+  assert.ok(viteConfig.includes("vendor-react"));
+  assert.ok(viteConfig.includes("vendor-icons"));
 });
