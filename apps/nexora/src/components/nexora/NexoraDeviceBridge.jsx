@@ -53,10 +53,11 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       }, true, authToken);
       setCapabilities(system);
       setPreflight(check);
+      onConnectionChange(true, system);
     } finally {
       setHardwareBusy(false);
     }
-  }, [request, token, workloadProfile]);
+  }, [request, token, workloadProfile, onConnectionChange]);
 
   const refreshDevices = useCallback(async () => {
     if (!token) return;
@@ -140,6 +141,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       });
       setCapabilities(system);
       setPreflight(check);
+      onConnectionChange(true, system);
     } catch (error) {
       setStatus(error.message);
     } finally {

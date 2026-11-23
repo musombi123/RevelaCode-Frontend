@@ -8,23 +8,28 @@ import {
 
 const NAV_GROUPS = [
   { label: "STUDIO", items: [
-    { id: "overview", label: "Overview", icon: Home },
+    { id: "overview", label: "Home", icon: Home },
     { id: "projects", label: "Projects", icon: FolderOpen },
-    { id: "game-editor", label: "Create / Edit Game", icon: Gamepad2 },
+    { id: "game-editor", label: "Create Game", icon: Gamepad2 },
     { id: "ai", label: "AI Studio", icon: Sparkles },
   ]},
   { label: "PRODUCTION", items: [
-    { id: "world", label: "World Builder", icon: Box },
     { id: "assets", label: "Asset Library", icon: Layers3 },
     { id: "build", label: "Build & Test", icon: Play },
     { id: "device-lab", label: "Device Lab", icon: Smartphone },
   ]},
-  { label: "MANAGE", items: [
-    { id: "team", label: "Team & Tasks", icon: Users },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "marketplace", label: "Marketplace", icon: ShoppingCart },
-    { id: "settings", label: "Settings", icon: Settings2 },
-  ]},
+];
+
+const ADVANCED_NAV_ITEMS = [
+  { id: "world", label: "World Builder", icon: Box },
+  { id: "team", label: "Team & Tasks", icon: Users },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "marketplace", label: "Marketplace", icon: ShoppingCart },
+  { id: "settings", label: "Settings", icon: Settings2 },
+  { id: "factory", label: "Project Factory", icon: Laptop },
+  { id: "toolchains", label: "Toolchain Manager", icon: Wrench },
+  { id: "backups", label: "Backup & Versions", icon: Archive },
+  { id: "release-center", label: "Release Center", icon: PackageCheck },
 ];
 
 export default function NexoraStudioShell({
@@ -33,6 +38,7 @@ export default function NexoraStudioShell({
   onNewProject, searchValue, onSearchChange, searchResults = [],
   onSelectSearchResult, alertItems = [], storageLabel = "No project selected",
   storagePercent = null, dateRange = "week", onDateRangeChange,
+  localAgentConnected = false, localAgentState = "offline", localAgentCapabilities = null,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -42,16 +48,9 @@ export default function NexoraStudioShell({
   const [helpOpen, setHelpOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Advanced production workspaces stay available through Ctrl+K and the Factory hub,
-  // while the primary sidebar mirrors the compact command-center navigation.
-  const advancedNavItems = [
-    { id: "factory", label: "Project Factory", icon: Laptop },
-    { id: "toolchains", label: "Toolchain Manager", icon: Wrench },
-    { id: "backups", label: "Backup & Versions", icon: Archive },
-    { id: "release-center", label: "Release Center", icon: PackageCheck },
-  ];
-  const navLookup = useMemo(() => [...NAV_GROUPS.flatMap(group => group.items), ...advancedNavItems], []);
+  const navLookup = useMemo(() => [...NAV_GROUPS.flatMap(group => group.items), ...ADVANCED_NAV_ITEMS], []);
   const commandResults = navLookup.filter(item =>
     item.label.toLowerCase().includes(commandQuery.trim().toLowerCase())
   );
@@ -74,6 +73,10 @@ export default function NexoraStudioShell({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  useEffect(() => {
+    if (ADVANCED_NAV_ITEMS.some(item => item.id === activeView)) setAdvancedOpen(true);
+  }, [activeView]);
 
   const navigate = (id) => {
     onNavigate(id);
@@ -108,8 +111,40 @@ export default function NexoraStudioShell({
             </button>;
           })}</div>
         </div>)}
+        <div className="mt-1">
+          {(!collapsed || mobile) && <div className="mb-2 px-3 text-[10px] font-bold tracking-[.18em] text-slate-500">TOOLS & INFRASTRUCTURE</div>}
+          <button type="button" title={collapsed && !mobile ? "Tools & Infrastructure" : undefined}
+            aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(value => !value)}
+            className="flex h-[42px] w-full items-center gap-3 rounded-lg px-3 text-left text-[12px] font-bold text-slate-400 transition hover:bg-white/[.045] hover:text-slate-100">
+            <Wrench size={17} className="shrink-0 text-slate-500"/>
+            {(!collapsed || mobile) && <><span className="min-w-0 flex-1">Advanced workspace</span><ChevronDown size={13} className={advancedOpen ? "rotate-180 transition-transform" : "transition-transform"}/></>}
+          </button>
+          {advancedOpen && <div className="mt-1 space-y-1">{ADVANCED_NAV_ITEMS.map(item => {
+            const Icon = item.icon;
+            const active = activeView === item.id;
+            return <button key={item.id} type="button" title={collapsed && !mobile ? item.label : undefined}
+              onClick={() => navigate(item.id)}
+              className={"flex h-[39px] w-full items-center gap-3 rounded-lg px-3 text-left text-[12px] font-medium transition "+(active ? "bg-cyan-500/15 text-cyan-200" : "text-slate-500 hover:bg-white/[.04] hover:text-slate-200")}>
+              <Icon size={16} className="shrink-0"/>{(!collapsed || mobile) && <span className="truncate">{item.label}</span>}
+            </button>;
+          })}</div>}
+        </div>
       </div>
       {(!collapsed || mobile) && <div className="shrink-0 space-y-3 border-t border-[#20334B] p-3">
+        <div className="rounded-xl border border-[#20334B] bg-[#0C1727] p-3">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-extrabold text-white">Local Agent</span>
+            <span className={"flex items-center gap-1.5 text-[9px] font-bold "+(localAgentConnected ? "text-emerald-300" : localAgentState === "checking" ? "text-amber-300" : "text-slate-500")}>
+              <i className={"h-1.5 w-1.5 rounded-full "+(localAgentConnected ? "bg-emerald-400" : localAgentState === "checking" ? "bg-amber-300" : "bg-slate-500")}/>
+              {localAgentConnected ? "CONNECTED" : localAgentState === "checking" ? "CHECKING" : "OFFLINE"}
+            </span>
+          </div>
+          <p className="text-[10px] leading-4 text-slate-400">{localAgentConnected ? "Paired computer verified for this account." : localAgentState === "checking" ? "Checking the paired desktop agent." : "Connect your computer to run local production jobs."}</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="truncate text-[9px] text-slate-500">{localAgentCapabilities?.tools ? (() => { const keys = ["blender","godot","ffmpeg","ffprobe","java","adb"]; const ready = keys.filter(key => localAgentCapabilities.tools?.[key]?.available).length; return "Toolchains detected · " + ready + "/" + keys.length; })() : "Toolchain inventory not checked"}</span>
+            <button type="button" onClick={() => navigate("device-lab")} className="shrink-0 rounded-md border border-cyan-800/70 px-2 py-1 text-[9px] font-extrabold text-cyan-200 hover:bg-cyan-500/10">{localAgentConnected ? "Manage" : "Connect"}</button>
+          </div>
+        </div>
         <div className="rounded-xl border border-[#20334B] bg-[#0C1727] p-3">
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300"><span>Storage Usage</span><span className="text-cyan-300">{storagePercent == null ? "LOCAL" : Math.round(storagePercent)+"%"}</span></div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-300" style={{width: storagePercent == null ? "0%" : Math.max(0,Math.min(100,storagePercent))+"%"}}/></div>
@@ -121,7 +156,10 @@ export default function NexoraStudioShell({
           <ChevronRight size={15} className="text-violet-300"/>
         </button>
       </div>}
-      {collapsed && !mobile && <div className="border-t border-[#20334B] p-2"><button type="button" onClick={()=>navigate("ai")} title="Creator plans" className="flex w-full justify-center rounded-lg p-3 text-violet-300 hover:bg-violet-500/10"><Sparkles size={18}/></button></div>}
+      {collapsed && !mobile && <div className="border-t border-[#20334B] p-2 space-y-1">
+        <button type="button" onClick={()=>navigate("device-lab")} title={localAgentConnected ? "Local Agent connected — manage" : "Local Agent offline — connect"} className="flex w-full justify-center rounded-lg p-3 text-cyan-200 hover:bg-cyan-500/10"><span className={"h-2.5 w-2.5 rounded-full "+(localAgentConnected ? "bg-emerald-400" : localAgentState === "checking" ? "bg-amber-300" : "bg-slate-500")}/></button>
+        <button type="button" onClick={()=>navigate("ai")} title="Creator plans" className="flex w-full justify-center rounded-lg p-3 text-violet-300 hover:bg-violet-500/10"><Sparkles size={18}/></button>
+      </div>}
     </div>
   );
 
@@ -187,8 +225,8 @@ export default function NexoraStudioShell({
           <div className="nexora-page-heading mb-[11px] flex flex-wrap items-end justify-between gap-3">
             <div><h1 className="text-[28px] font-black leading-[32px] tracking-tight text-white">{title}</h1><p className="mt-[1px] text-[16px] leading-[20px] text-slate-400">{subtitle}</p></div>
             <div className="flex flex-wrap items-center gap-2">
-              {activeView === "overview" && <label className="flex h-[38px] items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">This week</option><option value="month">This month</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
-              <button type="button" onClick={onNewProject} className="inline-flex h-[38px] items-center gap-2 rounded-[9px] bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/> New Project</button>
+              {activeView === "overview" && <label className="flex h-[38px] items-center gap-2 rounded-[9px] border border-[#20334B] bg-[#0D1929] px-3 text-xs font-semibold text-slate-200"><Calendar size={16} className="text-slate-400"/><select aria-label="Overview date range" value={dateRange} onChange={event=>onDateRangeChange?.(event.target.value)} className="max-w-[125px] bg-transparent text-xs font-semibold text-slate-200 outline-none"><option value="week">Last 7 days</option><option value="month">Last 30 days</option><option value="all">All time</option></select><ChevronDown size={13} className="text-slate-400"/></label>}
+              <button type="button" onClick={onNewProject} className="inline-flex h-[38px] items-center gap-2 rounded-[9px] bg-[#10D5F2] px-4 text-xs font-black text-[#04111A] shadow-[0_8px_28px_rgba(16,213,242,.16)] transition hover:-translate-y-0.5 hover:bg-cyan-300"><Plus size={16}/>{activeView === "overview" ? "Create Game" : "New Project"}</button>
             </div>
           </div>
           {children}
