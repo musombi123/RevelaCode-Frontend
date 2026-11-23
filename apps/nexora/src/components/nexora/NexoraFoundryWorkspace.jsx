@@ -264,6 +264,8 @@ export default function NexoraFoundryWorkspace() {
   const [selectedObjectId, setSelectedObjectId] = useState("");
   const [apiStatus, setApiStatus] = useState({ state: API_BASE ? "checking" : "not_configured", label: API_BASE ? "Checking NEXORA account service" : "API not connected" });
   const [localAgentConnected, setLocalAgentConnected] = useState(false);
+  const [localAgentState, setLocalAgentState] = useState("checking");
+  const [localAgentCapabilities, setLocalAgentCapabilities] = useState(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [assetConversionRole, setAssetConversionRole] = useState("prop");
@@ -380,8 +382,10 @@ export default function NexoraFoundryWorkspace() {
     setNexoraAuthLoading(false);
   }, []);
 
-  const onLocalAgentConnectionChange = useCallback((connected) => {
+  const onLocalAgentConnectionChange = useCallback((connected, capabilities = null) => {
     setLocalAgentConnected(Boolean(connected));
+    setLocalAgentState(connected ? "connected" : "offline");
+    setLocalAgentCapabilities(connected ? (capabilities || null) : null);
     if (!connected) setCloudLoaded(false);
   }, []);
 
@@ -405,8 +409,11 @@ export default function NexoraFoundryWorkspace() {
     const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
     if (!token) {
       setLocalAgentConnected(false);
+      setLocalAgentState("offline");
+      setLocalAgentCapabilities(null);
       return undefined;
     }
+    setLocalAgentState("checking");
     fetch(LOCAL_AGENT_BASE + "/system/capabilities", {
       headers: { Authorization: "Bearer " + token, Accept: "application/json" },
       mode: "cors", credentials: "omit", cache: "no-store",
@@ -418,7 +425,7 @@ export default function NexoraFoundryWorkspace() {
       if (!nexoraUser?.id || pairedUserId !== String(nexoraUser.id)) {
         throw new Error("The local agent is paired to a different NEXORA account.");
       }
-      if (!cancelled) onLocalAgentConnectionChange(true);
+      if (!cancelled) onLocalAgentConnectionChange(true, system);
     }).catch(() => {
       try { sessionStorage.removeItem(LOCAL_AGENT_TOKEN_KEY); } catch {}
       if (!cancelled) onLocalAgentConnectionChange(false);
@@ -1620,6 +1627,9 @@ export default function NexoraFoundryWorkspace() {
       user={nexoraUser}
       connectionLabel={apiStatus.label}
       connectionState={apiStatus.state}
+      localAgentConnected={localAgentConnected}
+      localAgentState={localAgentState}
+      localAgentCapabilities={localAgentCapabilities}
       onSignOut={signOutNexora}
       onNewProject={createNewProject}
       searchValue={globalSearch}
@@ -1647,12 +1657,16 @@ export default function NexoraFoundryWorkspace() {
         tasks={studioTasks}
         apiStatus={apiStatus}
         cloudProjectActive={cloudProjectActive}
+        localAgentConnected={localAgentConnected}
+        localAgentState={localAgentState}
+        localAgentCapabilities={localAgentCapabilities}
         dateRange={overviewRange}
         onNavigate={setStudioView}
         onOpenProject={openProject}
         onNewProject={createNewProject}
         onQuickAction={quickAction}
         onRefresh={refreshWorkspace}
+        onRetryJob={(job) => queueProductionJob(job.kind, job.target || "desktop")}
       />}
 
       {studioView === "projects" && <NexoraProjectsPage
