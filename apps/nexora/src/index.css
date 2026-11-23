@@ -108,9 +108,6 @@ body {
 }
 .nexora-page-heading { min-height: 52px; }
 .nexora-sidebar-nav { scrollbar-width: thin; }
-.nexora-shell aside.fixed {
-  width: 230px;
-}
 .nexora-shell aside.fixed > div {
   min-height: 0;
 }
@@ -564,7 +561,7 @@ body {
   .nexora-page-heading h1 { font-size: 24px; }
   .nx-hero-grid { grid-template-columns: 1fr; height: auto; }
   .nx-hero-card { height: 260px; }
-  .nx-health-card { height: 250px; }
+  .nx-agent-card { height: auto; min-height: 250px; }
   .nx-pipeline-card { height: auto; }
   .nx-pipeline-grid { height: auto; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .nx-pipeline-column { height: 148px; }
@@ -733,3 +730,38 @@ body {
  .nx-job-drawer-header { padding: 16px; }
  .nx-job-metadata { grid-template-columns: 1fr; }
 }
+
+
+/* NEXORA command-centre readiness and truthful empty states */
+.nx-agent-card { min-width: 0; min-height: 245px; display: flex; flex-direction: column; gap: 13px; padding: 15px; border: 1px solid #20334b; border-radius: 12px; background: linear-gradient(145deg,#0e1b2c,#0b1523); }
+.nx-agent-card .nx-section-title { margin-bottom: 0; }
+.nx-agent-status { display: flex; align-items: flex-start; gap: 11px; min-width: 0; }
+.nx-agent-indicator { width: 10px; height: 10px; flex: 0 0 10px; margin-top: 4px; border-radius: 50%; background: #64748b; }
+.nx-agent-indicator.is-connected { background: #18e6a3; box-shadow: 0 0 13px rgba(24,230,163,.4); }
+.nx-agent-indicator.is-checking { background: #f4b64b; box-shadow: 0 0 12px rgba(244,182,75,.3); }
+.nx-agent-status strong { color: #eff7ff; font-size: 13px; }
+.nx-agent-status p { margin-top: 4px; color: #8da1b9; font-size: 10px; line-height: 1.5; }
+.nx-agent-toolchain { padding: 10px; border: 1px solid #1d334a; border-radius: 9px; background: rgba(5,14,25,.42); }
+.nx-agent-toolchain-heading { display: flex; justify-content: space-between; gap: 8px; color: #8da1b9; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.nx-agent-toolchain-heading b { color: #a9dbea; }
+.nx-agent-tool-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.nx-agent-tool-list span { padding: 4px 6px; border-radius: 5px; font-size: 9px; font-weight: 700; }
+.nx-agent-tool-list .is-available { color: #7ee7bf; background: rgba(16,185,129,.1); }
+.nx-agent-tool-list .is-missing { color: #91a1b5; background: rgba(100,116,139,.12); }
+.nx-agent-no-tools { margin-top: 8px; color: #73879f; font-size: 10px; line-height: 1.5; }
+.nx-agent-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; color: #71869e; font-size: 9px; }
+.nx-agent-actions button, .nx-job-retry { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(16,213,242,.35); border-radius: 7px; padding: 7px 9px; color: #9beafa; font-size: 9px; font-weight: 800; }
+.nx-agent-actions button:hover, .nx-job-retry:hover { background: rgba(16,213,242,.08); }
+.nx-project-context { display: flex; flex-wrap: wrap; gap: 7px 13px; margin-top: 8px; color: #9bb0c8; font-size: 10px; }
+.nx-build-no-progress { height: 28px; display: flex; align-items: center; margin-top: 5px; color: #70859e; font-size: 9px; }
+.nx-recent-empty { grid-column: 1 / -1; min-height: 110px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border: 1px dashed #29415f; border-radius: 9px; padding: 14px; color: #8da1b9; text-align: center; font-size: 10px; }
+.nx-recent-empty button { display: inline-flex; align-items: center; gap: 6px; color: #72e5f7; font-size: 10px; font-weight: 800; }
+.nx-job-stage { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border: 1px solid #20334b; border-radius: 8px; color: #8297b0; font-size: 10px; }
+.nx-job-stage strong { color: #bceaf5; text-align: right; }
+.nx-job-timeline { padding: 12px; border: 1px solid #20334b; border-radius: 9px; }
+.nx-job-timeline h3 { margin-bottom: 8px; color: #9fb3c8; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.nx-job-timeline > div { display: flex; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.05); }
+.nx-job-timeline > div > i { width: 6px; height: 6px; flex: 0 0 6px; margin-top: 4px; border-radius: 50%; background: #17cde8; }
+.nx-job-timeline b { display: block; color: #dce9f6; font-size: 10px; }
+.nx-job-timeline small { display: block; margin-top: 2px; color: #71869e; font-size: 9px; line-height: 1.4; }
+@media (max-width: 760px) { .nx-agent-card { min-height: 0; height: auto; } }
