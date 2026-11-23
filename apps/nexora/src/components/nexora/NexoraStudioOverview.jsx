@@ -15,9 +15,9 @@ function getDate(item) {
 function withinRange(item, range) {
   if (range === "all") return true;
   const stamp = getDate(item);
-  if (!stamp) return true;
+  if (!stamp) return range === "all";
   const date = new Date(stamp);
-  if (Number.isNaN(date.getTime())) return true;
+  if (Number.isNaN(date.getTime())) return range === "all";
   return Date.now() - date.getTime() <= (range === "month" ? 30 : 7) * 86400000;
 }
 function makeTrend(items) {
@@ -78,8 +78,8 @@ function platformLabels(project) {
   const lower = target.toLowerCase();
   const values = [];
   if (lower.includes("android")) values.push("ANDROID");
-  else if (lower.includes("desktop") || lower === "pc" || lower.includes("windows")) values.push("PC");
-  else values.push(target.toUpperCase());
+  if (lower.includes("desktop") || lower === "pc" || lower.includes("windows")) values.push("PC");
+  if (!values.length) values.push(target.toUpperCase());
   return values;
 }
 function PlatformTags({ project }) {
@@ -111,9 +111,15 @@ function Avatar({ label, tone = "purple" }) {
 export default function NexoraStudioOverview({
   projects = [], activeProject, jobs = [], tasks = [], apiStatus = { state: "unknown", label: "Service state unavailable" },
   cloudProjectActive = false, dateRange = "week", onNavigate, onOpenProject, onNewProject,
-  onQuickAction, onRefresh
+  onQuickAction, onRefresh, localAgentConnected = false, localAgentState = "offline",
+  localAgentCapabilities = null, onRetryJob,
 }) {
   const [selectedJob, setSelectedJob] = useState(null);
+  React.useEffect(() => {
+    if (!selectedJob?.id) return;
+    const latest = jobs.find(job => String(job.id) === String(selectedJob.id));
+    if (latest && latest !== selectedJob) setSelectedJob(latest);
+  }, [jobs, selectedJob?.id]);
   const activeJobList = useMemo(() => jobs.filter(job => ["running","queued","in_progress","pending"].includes(String(job.state || "").toLowerCase())), [jobs]);
   const jobLogText = selectedJob ? (selectedJob.logs ?? selectedJob.log ?? selectedJob.output_log ?? selectedJob.output ?? null) : null;
   const activeProjects = useMemo(() => projects.filter(project => !project.archived), [projects]);
@@ -125,19 +131,13 @@ export default function NexoraStudioOverview({
   const finishedBuilds = buildJobs.filter(job => job.state === "completed" || job.state === "failed");
   const successfulBuilds = finishedBuilds.filter(job => job.state === "completed").length;
   const successRate = finishedBuilds.length ? (Math.round(successfulBuilds / finishedBuilds.length * 1000) / 10) + "%" : "—";
-  const completedTasks = rangeTasks.filter(task => task.status === "done");
-  const linkedTasks = activeProject ? tasks.filter(task => String(task.projectId || "") === String(activeProject.id)) : [];
   const progress = activeProject ? projectProgress(activeProject, tasks) : null;
-  const assets = activeProject?.assets || [];
   const latestJob = [...jobs].sort((a,b) => String(getDate(b) || "").localeCompare(String(getDate(a) || "")))[0] || null;
   const latestBuild = [...jobs].filter(job => String(job.kind || "").toLowerCase().includes("build")).sort((a,b) => String(getDate(b) || "").localeCompare(String(getDate(a) || "")))[0] || null;
-  const healthChecks = [
-    { label: "Foundry service", detail: apiStatus.state === "online" ? "Connected" : "Unavailable", ok: apiStatus.state === "online" },
-    { label: "Project workspace", detail: activeProject ? "Project selected" : "No project selected", ok: Boolean(activeProject) },
-    { label: "Asset library", detail: assets.length ? assets.length + " asset" + (assets.length === 1 ? "" : "s") : "No project assets", ok: assets.length > 0 },
-    { label: "Latest build", detail: latestBuild ? String(latestBuild.state || "queued").replaceAll("_", " ") : "No build recorded", ok: latestBuild?.state === "completed" }
-  ];
-  const healthScore = Math.round(healthChecks.filter(item => item.ok).length / healthChecks.length * 100);
+  const totalAssets = activeProjects.reduce((sum, project) => sum + (Array.isArray(project.assets) ? project.assets.length : 0), 0);
+  const toolchainKeys = [["blender","Blender"],["godot","Godot"],["ffmpeg","FFmpeg"],["ffprobe","FFprobe"],["java","Java"],["adb","ADB"]];
+  const reportedTools = localAgentCapabilities?.tools || null;
+  const availableTools = reportedTools ? toolchainKeys.filter(([key]) => reportedTools[key]?.available).length : null;
   const pipeline = [
     { id: "backlog", label: "BACKLOG", tone: "slate" },
     { id: "in_progress", label: "IN PROGRESS", tone: "cyan" },
@@ -146,15 +146,18 @@ export default function NexoraStudioOverview({
   ];
   const latestProgress = latestJob?.progress != null && Number.isFinite(Number(latestJob.progress))
     ? Math.max(0, Math.min(100, Number(latestJob.progress))) : null;
-  const status = latestJob?.state === "running" || latestJob?.state === "queued" ? "IN PRODUCTION"
-    : activeProject?.build?.lastBuildStatus === "completed" ? "BUILD COMPLETE" : "PROJECT READY";
+  const status = latestJob?.state === "running" || latestJob?.state === "queued" || latestJob?.state === "in_progress" ? "IN PRODUCTION"
+    : activeProject?.build?.lastBuildStatus ? String(activeProject.build.lastBuildStatus).replaceAll("_"," ").toUpperCase()
+    : "STATUS NOT REPORTED";
+  const engineLabel = typeof activeProject?.engine === "string" ? activeProject.engine
+    : activeProject?.engine?.name || activeProject?.settings?.engine || "Engine not reported";
 
   return <div className="nexora-overview">
     <section className="nx-stats-grid">
-      <StatCard label="Active Projects" value={String(activeProjects.length).padStart(2, "0")} detail={activeProjects.length + " in this workspace"} icon={Folder} tone="cyan" trend={makeTrend(activeProjects)}/>
-      <StatCard label="Build Success" value={successRate} detail={finishedBuilds.length ? successfulBuilds + " successful · " + (finishedBuilds.length - successfulBuilds) + " failed" : "No completed build history"} icon={CheckCircle2} tone="green" trend={makeTrend(buildJobs.filter(job => job.state === "completed"))}/>
-      <StatCard label="Tasks Completed" value={completedTasks.length} detail={rangeTasks.length + " tasks in selected period"} icon={ClipboardCheck} tone="purple" trend={makeTrend(completedTasks)}/>
-      <StatCard label="Team Capacity" value="—" detail="Team capacity data unavailable" icon={Users} tone="amber" trend={[]}/>
+      <StatCard label="Active Projects" value={String(activeProjects.length).padStart(2, "0")} detail="Non-archived projects" icon={Folder} tone="cyan" trend={makeTrend(activeProjects)}/>
+      <StatCard label={dateRange === "week" ? "Builds This Week" : dateRange === "month" ? "Builds This Month" : "Builds · All Time"} value={buildJobs.length} detail={buildJobs.length ? "Build jobs in the selected period" : "No build records in this period"} icon={Activity} tone="purple" trend={makeTrend(buildJobs)}/>
+      <StatCard label="Build Success" value={successRate} detail={finishedBuilds.length ? successfulBuilds + " successful · " + (finishedBuilds.length - successfulBuilds) + " failed · n=" + finishedBuilds.length : "No completed or failed builds in this period"} icon={CheckCircle2} tone="green" trend={makeTrend(buildJobs.filter(job => job.state === "completed"))}/>
+      <StatCard label="Assets" value={totalAssets} detail="Assets in loaded projects" icon={HardDrive} tone="amber" trend={makeTrend(activeProjects.flatMap(project => project.assets || []))}/>
     </section>
 
     <section className="nx-hero-grid">
@@ -168,10 +171,12 @@ export default function NexoraStudioOverview({
             <div className="nx-project-state"><span className="nx-live-dot"/>{cloudProjectActive ? "CLOUD SYNCED" : "LOCAL PROJECT"}</div>
             <h2>{activeProject.name}</h2>
             <div className="nx-hero-meta"><PlatformTags project={activeProject}/><span className="nx-production-state"><i/>{status}</span></div>
+            <div className="nx-project-context"><span>{engineLabel}</span><span>{getDate(activeProject) ? "Updated " + shortTime(getDate(activeProject)) : "Last edit time not reported"}</span></div>
             <div className="nx-hero-progress"><div><span style={{ width: (progress ?? latestProgress ?? 0) + "%" }}/></div><strong>{progress ?? latestProgress ?? "—"}{progress != null || latestProgress != null ? "%" : ""}</strong></div>
             <div className="nx-hero-actions">
               <button type="button" onClick={() => onOpenProject(activeProject)}><Play size={15} fill="currentColor"/>Open Project</button>
-              <button type="button" onClick={() => onNavigate("build")}><Box size={17}/>View Build</button>
+              <button type="button" onClick={() => onNavigate("build")}><Box size={17}/>View Builds</button>
+              <button type="button" onClick={() => onNavigate("ai")}><Sparkles size={15}/>Ask AI</button>
             </div>
           </div> : <div className="nx-hero-empty">
             <div className="nx-project-state"><span className="nx-live-dot"/>MAIN STUDIO</div>
@@ -182,16 +187,23 @@ export default function NexoraStudioOverview({
         </div>
       </article>
 
-      <article className="nx-health-card">
-        <SectionTitle icon={Activity} action="View Details" onAction={() => onNavigate("analytics")}>Production Health</SectionTitle>
-        <div className="nx-health-gauge">
-          <svg viewBox="0 0 120 120" aria-hidden="true">
-            <circle cx="60" cy="60" r="49" fill="none" stroke="#18384b" strokeWidth="9"/>
-            <circle cx="60" cy="60" r="49" fill="none" stroke="#11e5b3" strokeWidth="9" strokeLinecap="round" strokeDasharray={(healthScore / 100 * 307.9) + " 307.9"}/>
-          </svg>
-          <div><strong>{healthScore}%</strong><span>{healthScore >= 75 ? "Healthy" : "Attention"}</span></div>
+      <article className="nx-agent-card">
+        <SectionTitle icon={Activity} action="Open Device Lab" onAction={() => onNavigate("device-lab")}>Local Agent</SectionTitle>
+        <div className="nx-agent-status">
+          <span className={"nx-agent-indicator "+(localAgentConnected ? "is-connected" : localAgentState === "checking" ? "is-checking" : "is-offline")}/>
+          <div className="min-w-0">
+            <strong>{localAgentConnected ? "Connected · account paired" : localAgentState === "checking" ? "Checking local agent" : "Agent offline"}</strong>
+            <p>{localAgentConnected ? "The local capabilities endpoint responded and the paired account matches this session." : localAgentState === "checking" ? "Verifying the local agent and its account pairing." : "Pair or reconnect your desktop computer in Device Lab to run local production work."}</p>
+          </div>
         </div>
-        <div className="nx-health-checks">{healthChecks.map(item => <div key={item.label}><span className={item.ok ? "is-ok" : "is-warn"}>{item.ok ? <CheckCircle2 size={15}/> : <AlertCircle size={15}/>}</span><span>{item.label}</span><b>{item.detail}</b></div>)}</div>
+        <div className="nx-agent-toolchain">
+          <div className="nx-agent-toolchain-heading"><span>Toolchain verification</span><b>{availableTools == null ? "Not checked" : availableTools + "/" + toolchainKeys.length + " detected"}</b></div>
+          {reportedTools ? <div className="nx-agent-tool-list">{toolchainKeys.map(([key,label])=><span key={key} className={reportedTools[key]?.available ? "is-available" : "is-missing"}>{reportedTools[key]?.available ? "✓" : "–"} {label}</span>)}</div> : <p className="nx-agent-no-tools">Tool inventory is not available in this session. Device Lab performs the detailed environment preflight.</p>}
+        </div>
+        <div className="nx-agent-actions">
+          <span>{localAgentConnected ? "Local execution endpoint verified" : "Local builds are unavailable while offline"}</span>
+          <button type="button" onClick={() => onNavigate("device-lab")}>{localAgentConnected ? "Manage Agent" : "Connect Computer"} <ArrowRight size={12}/></button>
+        </div>
       </article>
     </section>
 
@@ -245,11 +257,7 @@ export default function NexoraStudioOverview({
               <PlatformTags project={project}/>
               <span className="nx-recent-progress"><i><b style={{width: (percent ?? 0) + "%"}}/></i><strong>{percent == null ? "—" : percent + "%"}</strong></span>
             </button>;
-          }) : [0,1,2].map(index => <button key={index} type="button" className="nx-recent-project nx-recent-placeholder" onClick={onNewProject}>
-            <ProjectImage index={index}/>
-            <span className="nx-recent-project-name">{["Orbit concept","Neon concept","Wildwood concept"][index]}</span>
-            <span className="nx-concept-caption">START A PROJECT <ArrowRight size={11}/></span>
-          </button>)}
+          }) : <div className="nx-recent-empty"><p>No projects to resume yet. Create a game to start building your workspace.</p><button type="button" onClick={onNewProject}>Create your first game <ArrowRight size={12}/></button></div>}
         </div>
       </article>
 
@@ -267,10 +275,10 @@ export default function NexoraStudioOverview({
 
       <article className="nx-build-card">
         <SectionTitle icon={Activity} action="View Builds" onAction={() => onNavigate("build")}>Build Monitor</SectionTitle>
-        <div className={"nx-build-status " + (apiStatus.state === "online" ? "is-online" : "is-offline")}><span>{apiStatus.state === "online" ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>}</span>{apiStatus.state === "online" ? "All systems operational" : "Service needs attention"}</div>
+        <div className={"nx-build-status " + (apiStatus.state === "online" ? "is-online" : "is-offline")}><span>{apiStatus.state === "online" ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>}</span>{apiStatus.state === "online" ? "NEXORA service reachable" : "NEXORA service unavailable"}</div>
         <div className="nx-build-latest">{latestBuild ? "Latest Build: " + (latestBuild.id || latestBuild.kind) + " · " + shortTime(getDate(latestBuild)) : "No production build recorded"}</div>
         <div className="nx-build-platforms"><span><Monitor size={13}/>PC</span><span><Smartphone size={13}/>ANDROID</span><span><Activity size={13}/>WEB</span></div>
-        {latestProgress != null ? <div className="nx-build-progress"><div><i style={{width: latestProgress + "%"}}/></div><b>{latestProgress}%</b></div> : <div className="nx-build-spark"><svg viewBox="0 0 280 36" preserveAspectRatio="none"><path d="M1 24 L25 30 L49 19 L76 25 L101 21 L124 28 L150 16 L177 22 L202 12 L226 19 L253 8 L279 15" fill="none" stroke="#0bcab5" strokeWidth="2"/><path d="M1 24 L25 30 L49 19 L76 25 L101 21 L124 28 L150 16 L177 22 L202 12 L226 19 L253 8 L279 15 L279 36 L1 36Z" fill="#08cab5" opacity=".09"/></svg></div>}
+        {latestProgress != null ? <div className="nx-build-progress"><div><i style={{width: latestProgress + "%"}}/></div><b>{latestProgress}%</b></div> : <div className="nx-build-no-progress">Worker progress not reported</div>}
         <div className="nx-build-footer"><span>{apiStatus.state === "online" ? "API CONNECTED" : "API: " + apiStatus.state}</span><button type="button" onClick={onRefresh}><RefreshCw size={12}/>Refresh</button></div>
       </article>
     </section>
@@ -301,6 +309,8 @@ export default function NexoraStudioOverview({
         <div className="nx-job-drawer-body">
           <div className={"nx-job-detail-status nx-job-state-"+String(selectedJob.state||"unknown").toLowerCase()}>{String(selectedJob.state || "unknown").replaceAll("_"," ")}{selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) ? " · "+Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%" : ""}</div>
           {selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) && <div className="nx-job-detail-progress"><i style={{width:Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%"}}/></div>}
+          {(selectedJob.stage || selectedJob.current_stage) && <div className="nx-job-stage"><span>Current stage</span><strong>{selectedJob.stage || selectedJob.current_stage}</strong></div>}
+          {Array.isArray(selectedJob.timeline || selectedJob.events || selectedJob.stages) && (selectedJob.timeline || selectedJob.events || selectedJob.stages).length > 0 && <section className="nx-job-timeline"><h3>Execution timeline</h3>{(selectedJob.timeline || selectedJob.events || selectedJob.stages).map((event,index)=><div key={event.id || event.name || event.stage || index}><i/><span><b>{event.name || event.stage || event.title || event.state || "Execution event"}</b><small>{event.message || event.detail || event.status || ""}{(event.timestamp || event.created_at) ? " · " + shortTime(event.timestamp || event.created_at) : ""}</small></span></div>)}</section>}
           <dl className="nx-job-metadata">
             <div><dt>Target</dt><dd>{selectedJob.target || "Not reported"}</dd></div>
             <div><dt>Created</dt><dd>{getDate(selectedJob) ? new Date(getDate(selectedJob)).toLocaleString() : "Timestamp unavailable"}</dd></div>
@@ -310,6 +320,7 @@ export default function NexoraStudioOverview({
           <section className="nx-job-log-section"><h3><Terminal size={15}/>Execution output</h3>
             {jobLogText != null ? <pre className="nx-job-log-output">{typeof jobLogText === "string" ? jobLogText : JSON.stringify(jobLogText,null,2)}</pre> : <div className="nx-job-log-unavailable">Logs were not included in this job response. This inspector displays only output returned by the API; it does not invent or fetch a separate log source.</div>}
           </section>
+          {selectedJob.state === "failed" && ["scene.generate","build.export","playtest"].includes(selectedJob.kind) && onRetryJob && <button type="button" className="nx-job-retry" onClick={() => onRetryJob(selectedJob)}>Retry supported job <ArrowRight size={13}/></button>}
           <section className="nx-job-artifacts"><h3><HardDrive size={15}/>Artifacts</h3>
             {Array.isArray(selectedJob.artifacts) && selectedJob.artifacts.length ? selectedJob.artifacts.map((artifact,index)=><div key={artifact.id || index} className="nx-job-artifact-row"><span>{artifact.name || artifact.filename || artifact.label || "Output artifact"}</span>{artifact.url || artifact.download_url ? <a href={artifact.url || artifact.download_url} target="_blank" rel="noreferrer" aria-label="Open artifact"><ExternalLink size={14}/></a> : <small>Link unavailable</small>}</div>) : <div className="nx-job-log-unavailable">No artifact details returned for this job.</div>}
           </section>
