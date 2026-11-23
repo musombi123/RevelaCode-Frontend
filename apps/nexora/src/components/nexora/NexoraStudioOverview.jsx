@@ -3,7 +3,7 @@ import {
   Activity, ArrowRight, Box, CheckCircle2, ChevronRight, Code2, FolderOpen,
   HardDrive, Image as ImageIcon, Layers3, Music, Play, RefreshCw,
   ShieldCheck, Sparkles, Users, Zap, Monitor, Smartphone, AlertCircle,
-  ClipboardCheck, Folder
+  ClipboardCheck, Folder, X, ExternalLink, Clock, Terminal
 } from "lucide-react";
 
 const HERO_ART = import.meta.env.BASE_URL + "nexora-hero.webp";
@@ -113,6 +113,9 @@ export default function NexoraStudioOverview({
   cloudProjectActive = false, dateRange = "week", onNavigate, onOpenProject, onNewProject,
   onQuickAction, onRefresh
 }) {
+  const [selectedJob, setSelectedJob] = useState(null);
+  const activeJobList = useMemo(() => jobs.filter(job => ["running","queued","in_progress","pending"].includes(String(job.state || "").toLowerCase())), [jobs]);
+  const jobLogText = selectedJob ? (selectedJob.logs ?? selectedJob.log ?? selectedJob.output_log ?? selectedJob.output ?? null) : null;
   const activeProjects = useMemo(() => projects.filter(project => !project.archived), [projects]);
   const rangeTasks = useMemo(() => tasks.filter(task => withinRange(task, dateRange)), [tasks, dateRange]);
   const rangeJobs = useMemo(() => jobs.filter(job => withinRange(job, dateRange)), [jobs, dateRange]);
@@ -190,6 +193,21 @@ export default function NexoraStudioOverview({
         </div>
         <div className="nx-health-checks">{healthChecks.map(item => <div key={item.label}><span className={item.ok ? "is-ok" : "is-warn"}>{item.ok ? <CheckCircle2 size={15}/> : <AlertCircle size={15}/>}</span><span>{item.label}</span><b>{item.detail}</b></div>)}</div>
       </article>
+    </section>
+
+    <section className="nx-live-jobs-card">
+      <SectionTitle icon={Activity} action={jobs.length ? "Inspect all jobs" : undefined} onAction={() => jobs.length && setSelectedJob(jobs[0])}>Production Jobs <span className="nx-live-job-count">{activeJobList.length} active</span></SectionTitle>
+      {activeJobList.length ? <div className="nx-live-job-list">{activeJobList.slice(0,4).map(job => {
+        const percent = Number.isFinite(Number(job.progress)) ? Math.max(0,Math.min(100,Number(job.progress))) : null;
+        return <button key={job.id} type="button" className="nx-live-job-row" onClick={() => setSelectedJob(job)}>
+          <span className="nx-live-job-indicator"><Activity size={15}/></span>
+          <span className="nx-live-job-copy"><strong>{job.kind || "Production job"}</strong><small>{job.message || "Waiting for worker update"} · {shortTime(getDate(job))}</small></span>
+          <span className="nx-live-job-state">{String(job.state).replaceAll("_"," ")}</span>
+          {percent != null && <span className="nx-live-job-progress"><i style={{width:percent+"%"}}/><b>{percent}%</b></span>}
+          <ChevronRight size={15}/>
+        </button>;
+      })}</div> : <div className="nx-live-jobs-empty">{jobs.length ? "No jobs are currently running. Select a recent job below to inspect its result." : "No production jobs yet. Jobs appear here when queued or received from the worker."}</div>}
+      {jobs.length > 0 && <div className="nx-live-job-recent"><span>Recent job</span><button type="button" onClick={() => setSelectedJob(jobs[0])}>{jobs[0].kind || "Production job"} · {String(jobs[0].state || "unknown").replaceAll("_"," ")} <ChevronRight size={13}/></button></div>}
     </section>
 
     <section className="nx-pipeline-card">
@@ -274,5 +292,29 @@ export default function NexoraStudioOverview({
         </React.Fragment>;
       })}
     </section>
+    {selectedJob && <div className="nx-job-drawer-overlay" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedJob(null);}}>
+      <aside className="nx-job-drawer" role="dialog" aria-modal="true" aria-label="Production job details">
+        <header className="nx-job-drawer-header">
+          <div><span className="nx-job-drawer-eyebrow">JOB INSPECTOR</span><h2>{selectedJob.kind || "Production job"}</h2><p>{selectedJob.id || "Job ID unavailable"}</p></div>
+          <button type="button" aria-label="Close job inspector" onClick={() => setSelectedJob(null)}><X size={18}/></button>
+        </header>
+        <div className="nx-job-drawer-body">
+          <div className={"nx-job-detail-status nx-job-state-"+String(selectedJob.state||"unknown").toLowerCase()}>{String(selectedJob.state || "unknown").replaceAll("_"," ")}{selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) ? " · "+Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%" : ""}</div>
+          {selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) && <div className="nx-job-detail-progress"><i style={{width:Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%"}}/></div>}
+          <dl className="nx-job-metadata">
+            <div><dt>Target</dt><dd>{selectedJob.target || "Not reported"}</dd></div>
+            <div><dt>Created</dt><dd>{getDate(selectedJob) ? new Date(getDate(selectedJob)).toLocaleString() : "Timestamp unavailable"}</dd></div>
+            <div><dt>Updated</dt><dd>{selectedJob.updatedAt || selectedJob.updated_at ? new Date(selectedJob.updatedAt || selectedJob.updated_at).toLocaleString() : "Timestamp unavailable"}</dd></div>
+            <div><dt>Worker message</dt><dd>{selectedJob.message || "No message returned"}</dd></div>
+          </dl>
+          <section className="nx-job-log-section"><h3><Terminal size={15}/>Execution output</h3>
+            {jobLogText != null ? <pre className="nx-job-log-output">{typeof jobLogText === "string" ? jobLogText : JSON.stringify(jobLogText,null,2)}</pre> : <div className="nx-job-log-unavailable">Logs were not included in this job response. This inspector displays only output returned by the API; it does not invent or fetch a separate log source.</div>}
+          </section>
+          <section className="nx-job-artifacts"><h3><HardDrive size={15}/>Artifacts</h3>
+            {Array.isArray(selectedJob.artifacts) && selectedJob.artifacts.length ? selectedJob.artifacts.map((artifact,index)=><div key={artifact.id || index} className="nx-job-artifact-row"><span>{artifact.name || artifact.filename || artifact.label || "Output artifact"}</span>{artifact.url || artifact.download_url ? <a href={artifact.url || artifact.download_url} target="_blank" rel="noreferrer" aria-label="Open artifact"><ExternalLink size={14}/></a> : <small>Link unavailable</small>}</div>) : <div className="nx-job-log-unavailable">No artifact details returned for this job.</div>}
+          </section>
+        </div>
+      </aside>
+    </div>}
   </div>;
 }
