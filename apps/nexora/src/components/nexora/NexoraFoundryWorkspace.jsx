@@ -1698,7 +1698,7 @@ export default function NexoraFoundryWorkspace() {
       setStudioView("team");
     }
   };
-  const productionAlerts = jobs.filter(job=>job.state==="failed" || job.state==="review")
+  const productionAlerts = jobs.filter(job=>["failed","review","interrupted","recovered"].includes(job.state))
     .slice(0,6).map(job=>({id:job.id,kind:"build",severity:job.state==="failed"?"error":"warning",title:job.kind||"Production job",description:job.message||("Job status: "+job.state)}));
   const selectedStorageBytes = (activeProject?.assets||[]).reduce((sum,asset)=>sum+Number(asset.size||0),0);
   const selectedStorageLabel = activeProject ? formatBytes(selectedStorageBytes)+" in "+activeProject.name : "No project selected";
@@ -1943,7 +1943,7 @@ export default function NexoraFoundryWorkspace() {
               </div>
               {percent!==null&&<div className="mt-3"><div className="mb-1 flex justify-between text-[9px] text-slate-500"><span>Worker progress</span><span>{percent}%</span></div><div className="h-1.5 overflow-hidden rounded-full bg-[#20334B]"><div className="h-full rounded-full bg-cyan-400 transition-all" style={{width:percent+"%"}}/></div></div>}
               <div className="mt-3 flex flex-wrap gap-2">
-                {retryable&&job.state==="failed"&&<button type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob(job.kind,job.target||"desktop")} className="rounded-lg border border-amber-500/30 px-3 py-1.5 text-[9px] font-bold text-amber-200 disabled:opacity-40">Retry Job</button>}
+                {retryable&&["failed","interrupted"].includes(job.state)&&<button type="button" disabled={!cloudProjectActive||busy} onClick={()=>queueProductionJob(job.kind,job.target||"desktop")} className="rounded-lg border border-amber-500/30 px-3 py-1.5 text-[9px] font-bold text-amber-200 disabled:opacity-40">Retry Job</button>}
                 {(job.artifacts||[]).map(artifact=><button key={artifact.id} type="button" onClick={()=>downloadArtifact(artifact)} className="rounded-lg border border-cyan-500/30 px-3 py-1.5 text-[9px] font-bold text-cyan-200">Download {artifact.filename}</button>)}
               </div>
             </article>;
