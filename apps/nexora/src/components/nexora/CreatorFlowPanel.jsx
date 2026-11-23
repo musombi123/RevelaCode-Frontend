@@ -13,8 +13,6 @@ const makeEpisode = (number) => ({
   estimated_minutes: 10,
 });
 
-const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
-
 const DEFAULT_WORKFLOW = {
   schema_version: "1.0", mode: "story", plan: "basic",
   target_class: "mobile", platform: "android", title: "Untitled Game",
@@ -31,7 +29,7 @@ const PLATFORMS = {
 };
 const money = (value) => Number.isFinite(Number(value)) ? `KES ${Number(value).toLocaleString("en-KE")}` : "Price not configured";
 
-export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProjectActive, setNotice, nexoraAuthFetch }) {
+export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProjectActive, setNotice, localAgentFetch }) {
   const [workflow, setWorkflow] = useState(DEFAULT_WORKFLOW);
   const [plans, setPlans] = useState([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -195,15 +193,25 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
   const stages = pipeline?.stages || [];
   const stageRecord = (id) => stages.find((item) => item.stage === id);
   const downloadAssembledGame = () => run("download-game", async () => {
-    const fetcher = typeof nexoraAuthFetch === "function" ? nexoraAuthFetch : fetch;
-    const response = await fetcher(`${API_BASE}/api/projects/${projectId}/movie-pipeline/assembly/download`, {
-      headers: { Accept: "application/zip" }, cache: "no-store",
+    if (typeof localAgentFetch !== "function") {
+      throw new Error("Connect the NEXORA Local Agent before downloading an assembled game.");
+    }
+    setNotice?.("Retrieving the assembled Godot project from your paired computer…");
+    const response = await localAgentFetch(`/api/projects/${encodeURIComponent(projectId)}/movie-pipeline/assembly/download`, {
+      headers: { Accept: "application/zip" },
+      cache: "no-store",
     });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || `Game package download failed (HTTP ${response.status}).`);
+      const detail = payload?.detail;
+      throw new Error(typeof detail === "string" ? detail : detail?.message || `Local game download failed (HTTP ${response.status}).`);
     }
     const blob = await response.blob();
+    if (!blob.size) throw new Error("The Local Agent returned an empty game package. Re-run assembly and try again.");
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType && !contentType.includes("application/zip") && !contentType.includes("application/octet-stream")) {
+      throw new Error("The Local Agent returned an unexpected file type instead of a Godot project ZIP.");
+    }
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -212,7 +220,7 @@ export default function CreatorFlowPanel({ activeProject, apiRequest, cloudProje
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 30000);
-    return { message: "Playable Godot project package downloaded." };
+    return { message: "Playable Godot project package downloaded from your Local Agent." };
   });
 
   const stageAction = (id, path) => {

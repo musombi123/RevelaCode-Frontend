@@ -8,6 +8,7 @@ const NexoraDesktopFactoryPanel = lazy(() => import("./NexoraDesktopFactoryPanel
 const NexoraSceneInspector = lazy(() => import("./NexoraSceneInspector.jsx"));
 const NexoraWorldBuilderPanel = lazy(() => import("./NexoraWorldBuilderPanel.jsx"));
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
+import { resolveLocalEngineUrl } from "./localEngineRouting.js";
 const NexoraProjectsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraProjectsPage })));
 const NexoraTasksPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraTasksPage })));
 const NexoraAnalyticsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraAnalyticsPage })));
@@ -29,7 +30,6 @@ const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 const LOCAL_AGENT_BASE = "http://127.0.0.1:8765";
-const LOCAL_ENGINE_BASE = LOCAL_AGENT_BASE + "/engine";
 const LOCAL_AGENT_TOKEN_KEY = "nexora.local-agent.token";
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -392,12 +392,7 @@ export default function NexoraFoundryWorkspace() {
   const localEngineFetch = useCallback(async (input, options = {}) => {
     const token = sessionStorage.getItem(LOCAL_AGENT_TOKEN_KEY);
     if (!token) throw new Error("Connect your computer in NEXORA > Device Lab before opening projects or starting production.");
-    const requested = String(input);
-    const path = requested.startsWith(API_BASE + "/")
-      ? LOCAL_ENGINE_BASE + requested.slice(API_BASE.length)
-      : requested.startsWith("http://") || requested.startsWith("https://")
-        ? requested
-        : LOCAL_ENGINE_BASE + (requested.startsWith("/") ? requested : "/" + requested);
+    const path = resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE);
     const headers = new Headers(options.headers || {});
     headers.set("Authorization", "Bearer " + token);
     headers.set("Accept", headers.get("Accept") || "application/json");
@@ -708,7 +703,7 @@ export default function NexoraFoundryWorkspace() {
       setProjects((current) => current.map((item) => item.id === localId ? remoteProject : item));
       setActiveId(remoteProject.id);
       setSelectedObjectId(remoteProject.scene.objects[0]?.id || "");
-      setNotice("Project metadata migrated to NEXORA PostgreSQL. Re-upload the original GLB/media files to private cloud storage; browser-only binary assets are not copied by this migration.");
+      setNotice("Project metadata migrated to your paired NEXORA workspace. Re-upload the original GLB/media files; browser-only binary assets are not copied by this migration.");
     } catch (error) {
       setNotice(error.message || "Could not migrate this device-only project to NEXORA cloud.");
     }
@@ -1942,12 +1937,12 @@ export default function NexoraFoundryWorkspace() {
         </section>
         )}
 
-        {studioView === "ai" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div>}
+        {studioView === "ai" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} localAgentFetch={localEngineFetch} /></div>}
 
         {studioView === "world" && <NexoraWorldBuilderPanel
           project={activeProject}
           cloudProjectActive={cloudProjectActive}
-          nexoraAuthFetch={localEngineFetch}
+          localAgentFetch={localEngineFetch}
           onNotice={setNotice}
           userId={nexoraUser?.id || "anonymous"}
         />}
