@@ -30,7 +30,6 @@ const DB_NAME = "nexora-foundry-assets";
 const DB_STORE = "files";
 const API_BASE = String(import.meta.env.VITE_NEXORA_API_URL || "https://nexora-foundry-api.onrender.com").replace(/\/$/, "");
 const LOCAL_AGENT_BASE = "http://127.0.0.1:8765";
-const LOCAL_ENGINE_BASE = LOCAL_AGENT_BASE + "/engine";
 const LOCAL_AGENT_TOKEN_KEY = "nexora.local-agent.token";
 
 const makeId = (prefix = "item") => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
