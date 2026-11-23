@@ -760,9 +760,12 @@ export default function NexoraFoundryWorkspace() {
       const pending = baseline !== undefined
         ? baseline !== serialized
         : Boolean(project._pendingLocalRecovery || previous?.pending);
+      const recoveryBaseVersion = project._recoveryConflict && previous?.remote_version
+        ? previous.remote_version
+        : project._remoteVersion;
       if (!writeProjectRecovery(localStorage, storageUserId, project, {
         pending,
-        remoteVersion: project._remoteVersion,
+        remoteVersion: recoveryBaseVersion,
       })) failed = true;
     }
     if (failed) setNotice("A browser recovery copy could not be updated. Export the project before continuing.");
