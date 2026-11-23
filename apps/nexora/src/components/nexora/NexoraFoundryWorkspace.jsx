@@ -1,14 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import AndroidBuildConsole from "./AndroidBuildConsole.jsx";
-import NexoraDeviceBridge from "./NexoraDeviceBridge.jsx";
-import CreatorFlowPanel from "./CreatorFlowPanel.jsx";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+const AndroidBuildConsole = lazy(() => import("./AndroidBuildConsole.jsx"));
+const NexoraDeviceBridge = lazy(() => import("./NexoraDeviceBridge.jsx"));
+const CreatorFlowPanel = lazy(() => import("./CreatorFlowPanel.jsx"));
 import NexoraAuthGate from "./NexoraAuthGate.jsx";
 import NexoraStudioShell from "./NexoraStudioShell.jsx";
-import NexoraDesktopFactoryPanel from "./NexoraDesktopFactoryPanel.jsx";
-import NexoraSceneInspector from "./NexoraSceneInspector.jsx";
-import NexoraWorldBuilderPanel from "./NexoraWorldBuilderPanel.jsx";
+const NexoraDesktopFactoryPanel = lazy(() => import("./NexoraDesktopFactoryPanel.jsx"));
+const NexoraSceneInspector = lazy(() => import("./NexoraSceneInspector.jsx"));
+const NexoraWorldBuilderPanel = lazy(() => import("./NexoraWorldBuilderPanel.jsx"));
 import NexoraStudioOverview from "./NexoraStudioOverview.jsx";
-import { NexoraProjectsPage, NexoraTasksPage, NexoraAnalyticsPage, NexoraMarketplacePage, NexoraSettingsPage } from "./NexoraWorkspacePages.jsx";
+const NexoraProjectsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraProjectsPage })));
+const NexoraTasksPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraTasksPage })));
+const NexoraAnalyticsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraAnalyticsPage })));
+const NexoraMarketplacePage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraMarketplacePage })));
+const NexoraSettingsPage = lazy(() => import("./NexoraWorkspacePages.jsx").then(module => ({ default: module.NexoraSettingsPage })));
 import {
   Activity, ArrowDownToLine, Box, Check, ChevronRight, Code2,
   FilePlus2, FolderOpen, Gamepad2, HardDrive, ImagePlus, Layers3, Loader2,
@@ -1635,6 +1639,7 @@ export default function NexoraFoundryWorkspace() {
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
 
+      <Suspense fallback={<div role="status" className="mx-auto my-8 max-w-5xl rounded-xl border border-cyan-900/50 bg-[#0b1118] p-5 text-xs text-cyan-200">Loading workspace tool…</div>}>
       {studioView === "overview" && <NexoraStudioOverview
         projects={projects}
         activeProject={activeProject}
@@ -1647,15 +1652,6 @@ export default function NexoraFoundryWorkspace() {
         onOpenProject={openProject}
         onNewProject={createNewProject}
         onQuickAction={quickAction}
-        onRefresh={refreshWorkspace}
-      />}
-
-      {["factory","toolchains","backups","release-center"].includes(studioView) && <NexoraDesktopFactoryPanel
-        view={studioView}
-        project={activeProject}
-        jobs={jobs}
-        apiRequest={apiRequest}
-        onNotice={setNotice}
         onRefresh={refreshWorkspace}
       />}
 
@@ -1836,7 +1832,7 @@ export default function NexoraFoundryWorkspace() {
           </aside>
         </div>}
 
-        <div hidden={studioView !== "build"}>
+        {studioView === "build" && <div>
           <section className="mx-auto w-full max-w-5xl space-y-3">
             <header className="border border-cyan-900/60 bg-[#0b1118] p-3">
               <h2 className="text-lg font-black text-cyan-200">BUILD CENTRE</h2>
@@ -1859,7 +1855,7 @@ export default function NexoraFoundryWorkspace() {
           </section>
         </div>
 
-        <div hidden={studioView !== "device-lab"}>
+        {studioView === "device-lab" && <div>
           <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
             <h2 className="text-lg font-black text-cyan-200">DEVICE LAB</h2>
             <p className="mt-1 text-xs text-slate-400">Install and pair the local compute agent. Check CPU, RAM, GPU and storage before generating games, then connect Android devices for direct installation.</p>
@@ -1872,7 +1868,7 @@ export default function NexoraFoundryWorkspace() {
               onConnectionChange={onLocalAgentConnectionChange}
             />
           </div>
-        </div>
+        </div>}
 
         {studioView === "assets" && (
         <section className="border border-cyan-900/60 bg-[#0b1118] p-2">
@@ -1932,7 +1928,7 @@ export default function NexoraFoundryWorkspace() {
         </section>
         )}
 
-        <div hidden={studioView !== "ai"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div></div>
+        {studioView === "ai" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div>}
 
         {studioView === "world" && <NexoraWorldBuilderPanel
           project={activeProject}
@@ -1952,6 +1948,7 @@ export default function NexoraFoundryWorkspace() {
         />}
 
 
+      </Suspense>
       <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#20334B] py-4 text-[10px] text-slate-600">
         <div className="flex flex-wrap gap-3"><span>PROJECT: {activeProject?.name || "—"}</span><span>{cloudProjectActive?"LOCAL PROJECT SERVER":"LOCAL DRAFT"}</span><span>AUTO-SAVE: {activeProject?.updatedAt?new Date(activeProject.updatedAt).toLocaleTimeString():"—"}</span><span>NEXORA STUDIO PRO</span></div>
         <div className="flex gap-3"><span>{sceneNodes.length} SCENE NODES</span><span>GPU TELEMETRY: NOT AVAILABLE IN BROWSER</span></div>
