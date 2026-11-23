@@ -35,6 +35,6 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Run NEXORA workspace regression tests
-        run: node --test apps/nexora/scripts/workspace-smoke.test.mjs
+        run: node --test apps/nexora/scripts/workspace-smoke.test.mjs apps/nexora/scripts/local-agent-routing.test.mjs
       - name: Build NEXORA and RevelaCode static site
         run: npm run build:web
