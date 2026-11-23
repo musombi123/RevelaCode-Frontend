@@ -57,7 +57,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
     } finally {
       setHardwareBusy(false);
     }
-  }, [request, token, workloadProfile]);
+  }, [request, token, workloadProfile, onConnectionChange]);
 
   const refreshDevices = useCallback(async () => {
     if (!token) return;
