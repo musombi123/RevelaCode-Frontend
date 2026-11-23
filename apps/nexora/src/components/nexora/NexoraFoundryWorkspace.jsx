@@ -682,7 +682,7 @@ export default function NexoraFoundryWorkspace() {
     })().catch((error) => {
       if (!cancelled) {
         setCloudLoaded(false);
-        setApiStatus({ state: "offline", label: error.message || "NEXORA cloud workspace unavailable" });
+        setApiStatus({ state: "offline", label: error.message || "paired computer workspace unavailable" });
         setNotice(error.message || "Could not load projects from the paired computer.");
       }
     });
@@ -1064,8 +1064,12 @@ export default function NexoraFoundryWorkspace() {
   };
 
   const deleteProject = async () => {
-    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from ${cloudProjectActive ? "NEXORA cloud storage" : "this browser"}?`)) return;
-    if (cloudProjectActive) {
+    if (!activeProject || !window.confirm(`Delete "${activeProject.name}" from ${activeProject._remoteVersion ? "the paired computer" : "this browser"}?`)) return;
+    if (activeProject._remoteVersion) {
+      if (!cloudProjectActive || !localAgentConnected) {
+        setNotice("Reconnect the paired computer before deleting this project. Its browser recovery copy has been kept.");
+        return;
+      }
       try {
         await apiRequest(`/api/v1/workspace/projects/${activeProject.id}`, { method: "DELETE" });
         cloudBaseline.current.delete(activeProject.id);
@@ -1075,7 +1079,7 @@ export default function NexoraFoundryWorkspace() {
         setNotice(error.message || "Could not delete project on the paired computer.");
         return;
       }
-    } else if (!activeProject._remoteVersion) {
+    } else {
       try {
         for (const asset of activeProject.assets || []) {
           if (!asset.remote) await removeStoredAsset(asset.id, nexoraUser?.id || "anonymous");
@@ -1085,7 +1089,7 @@ export default function NexoraFoundryWorkspace() {
         return;
       }
     }
-    setProjects((current) => current.filter((project) => project.id !== activeProject.id));
+    setProjects((current) => current.filter((item) => item.id !== activeProject.id));
     setSelectedObjectId("");
   };
 
@@ -1801,8 +1805,8 @@ export default function NexoraFoundryWorkspace() {
       dateRange={overviewRange}
       onDateRangeChange={setOverviewRange}
     >
-      {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Your NEXORA account is signed in, but project on the paired computer synchronization is not active. Local drafts remain available in this browser.</div>}
-      {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting your NEXORA account to Studio Pro…</div>}
+      {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Sign in to your NEXORA account to retrieve saved projects. Browser-only drafts remain available in this browser.</div>}
+      {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting NEXORA Studio to the paired computer workspace…</div>}
       {notice&&<div role="status" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
       <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
@@ -2130,7 +2134,7 @@ export default function NexoraFoundryWorkspace() {
 
     {projectModalOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4" onMouseDown={event=>{if(event.target===event.currentTarget&&!projectCreating)setProjectModalOpen(false);}}>
       <form onSubmit={submitNewProject} className="w-full max-w-lg rounded-2xl border border-[#29415F] bg-[#101C2D] p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">NEXORA PROJECT SETUP</div><h2 className="mt-1 text-lg font-black text-white">Create New Project</h2><p className="mt-1 text-xs text-slate-500">Projects, source media and generated assets stay on your paired computer. NEXORA cloud is reserved for accounts, billing and finished-game distribution.</p></div><button type="button" onClick={()=>setProjectModalOpen(false)} disabled={projectCreating} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close project dialog"><X size={17}/></button></div>
+        <div className="flex items-start justify-between gap-3"><div><div className="text-[9px] font-black tracking-[.18em] text-cyan-300">NEXORA PROJECT SETUP</div><h2 className="mt-1 text-lg font-black text-white">Create New Project</h2><p className="mt-1 text-xs text-slate-500">Projects, source media and generated assets stay on your paired computer. NEXORA online services handle account access and billing.</p></div><button type="button" onClick={()=>setProjectModalOpen(false)} disabled={projectCreating} className="rounded-lg p-2 text-slate-500 hover:bg-white/5" aria-label="Close project dialog"><X size={17}/></button></div>
         <label className="mt-5 block text-[10px] font-bold text-slate-400">PROJECT NAME<input autoFocus required maxLength="80" value={projectDraftName} onChange={e=>setProjectDraftName(e.target.value)} placeholder="e.g. Echoes of Orbit" className="mt-1.5 w-full rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400/60"/></label>
         <label className="mt-3 block text-[10px] font-bold text-slate-400">DESCRIPTION<textarea maxLength="2000" rows="3" value={projectDraftDescription} onChange={e=>setProjectDraftDescription(e.target.value)} placeholder="What are you building?" className="mt-1.5 w-full resize-y rounded-lg border border-[#29415F] bg-[#0B1625] px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400/60"/></label>
         <div className="mt-5 flex justify-end gap-2"><button type="button" disabled={projectCreating} onClick={()=>setProjectModalOpen(false)} className="rounded-lg border border-[#29415F] px-4 py-2.5 text-xs font-bold text-slate-300">Cancel</button><button type="submit" disabled={projectCreating||!projectDraftName.trim()} className="rounded-lg bg-cyan-400 px-4 py-2.5 text-xs font-black text-[#04111A] disabled:opacity-40">{projectCreating?"Creating…":"Create Project"}</button></div>
