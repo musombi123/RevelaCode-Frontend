@@ -39,6 +39,17 @@ test("Creator Flow assembly download calls the Local Agent with a relative Found
   assert.match(creatorFlow, /blob\.size/);
 });
 
+test("Creator Flow production stages use the Local Agent-backed workspace API client", async () => {
+  const [workspace, creatorFlow] = await Promise.all([
+    readComponent("NexoraFoundryWorkspace.jsx"),
+    readComponent("CreatorFlowPanel.jsx"),
+  ]);
+  assert.match(workspace, /cloudControlRequest[\\s\\S]*?await localEngineFetch\\(path/);
+  assert.match(creatorFlow, /apiRequest\\(\\`\\/api\\/v1\\/workspace\\/projects\\/\\$\\{projectId\\}\\/creator-workflow\\/\\$\\{path\\}/);
+  assert.match(creatorFlow, /const buildStage = \\(stage, path\\) => run/);
+  assert.match(creatorFlow, /const createPipeline = \\(\\) => run/);
+});
+
 test("World Builder and Creator Flow paths resolve to the mounted local Foundry app", () => {
   const apiBase = "https://nexora-foundry-api.onrender.com";
   const localAgent = "http://127.0.0.1:8765";
