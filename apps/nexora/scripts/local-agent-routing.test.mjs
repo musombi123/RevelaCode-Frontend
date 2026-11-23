@@ -85,4 +85,6 @@ test("World Builder attempts pending local recovery before loading the device do
   const localLoadIndex = worldBuilder.indexOf('localAgentFetch("/api/v1/workspace/projects/"');
   assert.ok(replayIndex >= 0 && localLoadIndex > replayIndex);
   assert.match(worldBuilder, /Your browser recovery copy has been preserved/);
+  assert.match(worldBuilder, /if \(!loaded && !recoveryCopy\)/);
+  assert.match(worldBuilder, /will not queue a default document that could overwrite existing work/);
 });
