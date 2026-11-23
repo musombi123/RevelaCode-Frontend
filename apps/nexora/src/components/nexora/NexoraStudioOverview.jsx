@@ -173,7 +173,7 @@ export default function NexoraStudioOverview({
         </div>
         <div className="nx-hero-art" style={{ backgroundImage: 'linear-gradient(90deg, rgba(5,17,33,.88) 0%, rgba(6,20,39,.45) 38%, rgba(6,18,34,.02) 75%), linear-gradient(0deg, rgba(5,15,29,.32), transparent 48%), url("' + HERO_ART + '")' }}>
           {activeProject ? <div className="nx-hero-content">
-            <div className="nx-project-state"><span className="nx-live-dot"/>{cloudProjectActive ? "CLOUD SYNCED" : "LOCAL PROJECT"}</div>
+            <div className="nx-project-state"><span className="nx-live-dot"/>{cloudProjectActive ? "DEVICE SAVED" : "LOCAL PROJECT"}</div>
             <h2>{activeProject.name}</h2>
             <div className="nx-hero-meta"><PlatformTags project={activeProject}/><span className="nx-production-state"><i/>{status}</span></div>
             <div className="nx-project-context"><span>{engineLabel}</span><span>{getDate(activeProject) ? "Updated " + shortTime(getDate(activeProject)) : "Last edit time not reported"}</span></div>
