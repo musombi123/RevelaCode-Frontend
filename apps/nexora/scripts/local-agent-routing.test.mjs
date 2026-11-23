@@ -163,4 +163,7 @@ test("project API documents omit local recovery bookkeeping", async () => {
   assert.match(workspace, /listProjectRecoveries\(localStorage, storageUserId\)/);
   assert.match(workspace, /expected_version: Number\(row.version \|\| 1\)/);
   assert.match(workspace, /activeProject\?\._recoveryConflict/);
+  assert.match(workspace, /project\._recoveryConflict && previous\?\.remote_version/);
+  assert.match(workspace, /APPLY BROWSER RECOVERY COPY/);
+  assert.ok(workspace.indexOf("resolveLocalEngineUrl(input, API_BASE, LOCAL_AGENT_BASE)") < workspace.indexOf('headers.set("Authorization", "Bearer " + token)'));
 });
