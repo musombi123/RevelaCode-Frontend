@@ -739,8 +739,8 @@ export default function NexoraFoundryWorkspace() {
   }, [storageUserId]);
 
   useEffect(() => {
-    // Retain only device-only drafts in browser storage. Cloud-owned project
-    // documents remain authoritative in PostgreSQL and aren't copied on logout.
+    // Browser-only drafts live in the project list cache. Paired-device projects
+    // keep lightweight recovery snapshots in their separate recovery records.
     const localProjects = projects.filter((item) => !item._remoteVersion);
     if (projectsScopeId !== storageUserId) return;
     try { localStorage.setItem(projectStorageKey(storageUserId), JSON.stringify(localProjects)); } catch { setNotice("Browser storage is full. Export this project to keep a portable copy."); }
@@ -948,22 +948,27 @@ export default function NexoraFoundryWorkspace() {
     if (!project || !window.confirm("Delete \"" + project.name + "\" and its project assets? This cannot be undone.")) return;
     try {
       if (project._remoteVersion) {
-        await apiRequest("/api/v1/workspace/projects/"+project.id,{method:"DELETE"});
+        if (!localAgentConnected || !cloudLoaded) {
+          setNotice("Reconnect the paired computer before deleting this project. Its browser recovery copy has been kept.");
+          return;
+        }
+        await apiRequest("/api/v1/workspace/projects/" + project.id, { method: "DELETE" });
         cloudBaseline.current.delete(project.id);
+        removeProjectRecovery(localStorage, storageUserId, project.id);
       } else {
         for (const asset of project.assets || []) {
-          if (!asset.remote) await removeStoredAsset(asset.id,nexoraUser?.id || "anonymous");
+          if (!asset.remote) await removeStoredAsset(asset.id, nexoraUser?.id || "anonymous");
         }
       }
-      setProjects(current=>current.filter(item=>item.id!==project.id));
-      setStudioTasks(current=>current.filter(task=>task.projectId!==project.id));
-      if (activeId===project.id) {
-        const next = projects.find(item=>item.id!==project.id&&!item.archived);
+      setProjects(current => current.filter(item => item.id !== project.id));
+      setStudioTasks(current => current.filter(task => task.projectId !== project.id));
+      if (activeId === project.id) {
+        const next = projects.find(item => item.id !== project.id && !item.archived);
         setActiveId(next?.id || "");
         setSelectedObjectId(next?.scene?.objects?.[0]?.id || "");
       }
       setNotice("Project deleted.");
-    } catch(error) {
+    } catch (error) {
       setNotice(error.message || "Could not delete project.");
     }
   };
@@ -1699,8 +1704,38 @@ export default function NexoraFoundryWorkspace() {
             const assetResponse = await apiRequest("/api/v1/workspace/projects/" + row.id + "/assets");
             assets = (assetResponse.assets || []).map(cloudAssetFromApi);
           } catch {}
-          const project = workspaceProjectFromCloud(row, assets);
-          cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(project)));
+          const serverProject = workspaceProjectFromCloud(row, assets);
+          const serverSerialized = JSON.stringify(workspaceProjectDocument(serverProject));
+          const recovery = readProjectRecovery(localStorage, storageUserId, row.id);
+          let project = serverProject;
+          if (recovery?.pending && recovery.project) {
+            const recoveredProject = {
+              ...serverProject,
+              ...recovery.project,
+              id: String(row.id),
+              assets,
+              _remoteVersion: Number(row.version || 1),
+              _pendingLocalRecovery: true,
+              updatedAt: recovery.saved_at || now(),
+            };
+            const versionChanged = Boolean(
+              recovery.remote_version && Number(recovery.remote_version) !== Number(row.version || 1)
+            );
+            if (JSON.stringify(workspaceProjectDocument(recoveredProject)) !== serverSerialized) {
+              project = { ...recoveredProject, _recoveryConflict: versionChanged };
+            } else {
+              writeProjectRecovery(localStorage, storageUserId, serverProject, {
+                pending: false,
+                remoteVersion: serverProject._remoteVersion,
+              });
+            }
+          } else {
+            writeProjectRecovery(localStorage, storageUserId, serverProject, {
+              pending: false,
+              remoteVersion: serverProject._remoteVersion,
+            });
+          }
+          cloudBaseline.current.set(project.id, serverSerialized);
           return project;
         }));
         const knownIds = new Set(hydrated.map(item => item.id));
@@ -1709,13 +1744,16 @@ export default function NexoraFoundryWorkspace() {
         setProjects(visible);
         setActiveId(current => visible.some(item => item.id === current) ? current : (hydrated[0]?.id || localOnly[0]?.id || ""));
         setCloudLoaded(true);
-        setApiStatus({ state: "online", label: "Local NEXORA workspace refreshed" });
+        setApiStatus(visible.some(item => item._recoveryConflict)
+          ? { state: "conflict", label: "Paired computer connected · offline edits need conflict review" }
+          : { state: "online", label: "Paired computer workspace refreshed" });
       } catch (error) {
         setNotice(error.message || "Could not refresh projects from the local agent.");
       }
     }
     if (cloudProjectActive) refreshJobs();
   };
+
   const quickAction = (action) => {
     if (!activeProject) {
       setNotice("Create or open a project before using scene and playtest actions.");
