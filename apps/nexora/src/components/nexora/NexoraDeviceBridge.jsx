@@ -53,6 +53,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       }, true, authToken);
       setCapabilities(system);
       setPreflight(check);
+      onConnectionChange(true, system);
     } finally {
       setHardwareBusy(false);
     }
@@ -140,6 +141,7 @@ export default function NexoraDeviceBridge({ packageId = "com.nexora.game", acco
       });
       setCapabilities(system);
       setPreflight(check);
+      onConnectionChange(true, system);
     } catch (error) {
       setStatus(error.message);
     } finally {
