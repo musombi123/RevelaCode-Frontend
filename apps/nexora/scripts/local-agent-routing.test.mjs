@@ -44,10 +44,11 @@ test("Creator Flow production stages use the Local Agent-backed workspace API cl
     readComponent("NexoraFoundryWorkspace.jsx"),
     readComponent("CreatorFlowPanel.jsx"),
   ]);
-  assert.match(workspace, /cloudControlRequest[\\s\\S]*?await localEngineFetch\\(path/);
-  assert.match(creatorFlow, /apiRequest\\(\\`\\/api\\/v1\\/workspace\\/projects\\/\\$\\{projectId\\}\\/creator-workflow\\/\\$\\{path\\}/);
-  assert.match(creatorFlow, /const buildStage = \\(stage, path\\) => run/);
-  assert.match(creatorFlow, /const createPipeline = \\(\\) => run/);
+  assert.ok(workspace.includes("cloudControlRequest"));
+  assert.ok(workspace.includes("await localEngineFetch(path, { ...options, headers })"));
+  assert.ok(creatorFlow.includes("apiRequest(\x60/api/v1/workspace/projects/\x24{projectId}/creator-workflow/\x24{path}"));
+  assert.ok(creatorFlow.includes("const buildStage = (stage, path) => run"));
+  assert.ok(creatorFlow.includes("const createPipeline = () => run"));
 });
 
 test("World Builder and Creator Flow paths resolve to the mounted local Foundry app", () => {
