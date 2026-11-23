@@ -20,6 +20,11 @@ function withinRange(item, range) {
   if (Number.isNaN(date.getTime())) return range === "all";
   return Date.now() - date.getTime() <= (range === "month" ? 30 : 7) * 86400000;
 }
+function progressValue(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
+}
 function makeTrend(items) {
   const values = Array(7).fill(0);
   const today = new Date();
@@ -144,8 +149,8 @@ export default function NexoraStudioOverview({
     { id: "in_review", label: "IN REVIEW", tone: "amber" },
     { id: "done", label: "DONE", tone: "green" }
   ];
-  const latestProgress = latestBuild?.progress != null && Number.isFinite(Number(latestBuild.progress))
-    ? Math.max(0, Math.min(100, Number(latestBuild.progress))) : null;
+  const latestProgress = progressValue(latestBuild?.progress);
+  const selectedProgress = progressValue(selectedJob?.progress);
   const status = latestJob?.state === "running" || latestJob?.state === "queued" || latestJob?.state === "in_progress" ? "IN PRODUCTION"
     : activeProject?.build?.lastBuildStatus ? String(activeProject.build.lastBuildStatus).replaceAll("_"," ").toUpperCase()
     : "STATUS NOT REPORTED";
@@ -210,7 +215,7 @@ export default function NexoraStudioOverview({
     <section className="nx-live-jobs-card">
       <SectionTitle icon={Activity} action={latestJob ? "Inspect latest" : undefined} onAction={() => latestJob && setSelectedJob(latestJob)}>Production Jobs <span className="nx-live-job-count">{activeJobList.length} active</span></SectionTitle>
       {activeJobList.length ? <div className="nx-live-job-list">{activeJobList.slice(0,4).map(job => {
-        const percent = job.progress != null && Number.isFinite(Number(job.progress)) ? Math.max(0,Math.min(100,Number(job.progress))) : null;
+        const percent = progressValue(job.progress);
         return <button key={job.id} type="button" className="nx-live-job-row" onClick={() => setSelectedJob(job)}>
           <span className="nx-live-job-indicator"><Activity size={15}/></span>
           <span className="nx-live-job-copy"><strong>{job.kind || "Production job"}</strong><small>{job.message || "Waiting for worker update"} · {shortTime(getDate(job))}</small></span>
@@ -307,8 +312,8 @@ export default function NexoraStudioOverview({
           <button type="button" aria-label="Close job inspector" onClick={() => setSelectedJob(null)}><X size={18}/></button>
         </header>
         <div className="nx-job-drawer-body">
-          <div className={"nx-job-detail-status nx-job-state-"+String(selectedJob.state||"unknown").toLowerCase()}>{String(selectedJob.state || "unknown").replaceAll("_"," ")}{selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) ? " · "+Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%" : ""}</div>
-          {selectedJob.progress != null && Number.isFinite(Number(selectedJob.progress)) && <div className="nx-job-detail-progress"><i style={{width:Math.max(0,Math.min(100,Number(selectedJob.progress)))+"%"}}/></div>}
+          <div className={"nx-job-detail-status nx-job-state-"+String(selectedJob.state||"unknown").toLowerCase()}>{String(selectedJob.state || "unknown").replaceAll("_"," ")}{selectedProgress != null ? " · "+selectedProgress+"%" : ""}</div>
+          {selectedProgress != null && <div className="nx-job-detail-progress"><i style={{width:selectedProgress+"%"}}/></div>}
           {(selectedJob.stage || selectedJob.current_stage) && <div className="nx-job-stage"><span>Current stage</span><strong>{selectedJob.stage || selectedJob.current_stage}</strong></div>}
           {Array.isArray(selectedJob.timeline || selectedJob.events || selectedJob.stages) && (selectedJob.timeline || selectedJob.events || selectedJob.stages).length > 0 && <section className="nx-job-timeline"><h3>Execution timeline</h3>{(selectedJob.timeline || selectedJob.events || selectedJob.stages).map((event,index)=><div key={event.id || event.name || event.stage || index}><i/><span><b>{event.name || event.stage || event.title || event.state || "Execution event"}</b><small>{event.message || event.detail || event.status || ""}{(event.timestamp || event.created_at) ? " · " + shortTime(event.timestamp || event.created_at) : ""}</small></span></div>)}</section>}
           <dl className="nx-job-metadata">
@@ -317,6 +322,7 @@ export default function NexoraStudioOverview({
             <div><dt>Updated</dt><dd>{selectedJob.updatedAt || selectedJob.updated_at ? new Date(selectedJob.updatedAt || selectedJob.updated_at).toLocaleString() : "Timestamp unavailable"}</dd></div>
             <div><dt>Worker message</dt><dd>{selectedJob.message || "No message returned"}</dd></div>
           </dl>
+          {selectedJob.resources && <section className="nx-job-log-section"><h3><Activity size={15}/>Execution resources</h3><pre className="nx-job-log-output">{typeof selectedJob.resources === "string" ? selectedJob.resources : JSON.stringify(selectedJob.resources,null,2)}</pre></section>}
           <section className="nx-job-log-section"><h3><Terminal size={15}/>Execution output</h3>
             {jobLogText != null ? <pre className="nx-job-log-output">{typeof jobLogText === "string" ? jobLogText : JSON.stringify(jobLogText,null,2)}</pre> : <div className="nx-job-log-unavailable">Logs were not included in this job response. This inspector displays only output returned by the API; it does not invent or fetch a separate log source.</div>}
           </section>
