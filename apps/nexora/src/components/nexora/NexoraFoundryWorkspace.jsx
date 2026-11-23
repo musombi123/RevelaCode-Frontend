@@ -1764,6 +1764,51 @@ export default function NexoraFoundryWorkspace() {
     if (cloudProjectActive) refreshJobs();
   };
 
+
+  const resolveProjectRecoveryConflict = async (choice) => {
+    const project = activeProject;
+    if (!project?._recoveryConflict || !localAgentConnected) {
+      setNotice("Connect the paired computer before resolving this project conflict.");
+      return;
+    }
+    if (choice === "reload") {
+      if (!window.confirm("Discard this browser recovery copy and reload the current project from the paired computer?")) return;
+      removeProjectRecovery(localStorage, storageUserId, project.id);
+      cloudBaseline.current.delete(project.id);
+      await refreshWorkspace();
+      setNotice("The latest project version was reloaded from the paired computer.");
+      return;
+    }
+    if (choice !== "apply") return;
+    if (!window.confirm("Apply the preserved browser recovery copy over the current paired-computer project version? This will replace that version using its current revision check.")) return;
+    try {
+      const document = workspaceProjectDocument(project);
+      const saved = await apiRequest(`/api/v1/workspace/projects/${project.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: project.name,
+          description: project.description,
+          document,
+          expected_version: project._remoteVersion,
+        }),
+      });
+      const resolved = workspaceProjectFromCloud(saved, project.assets || []);
+      cloudBaseline.current.set(project.id, JSON.stringify(workspaceProjectDocument(resolved)));
+      writeProjectRecovery(localStorage, storageUserId, resolved, {
+        pending: false,
+        remoteVersion: resolved._remoteVersion,
+      });
+      setProjects((current) => current.map((item) => item.id === project.id ? resolved : item));
+      setApiStatus({ state: "online", label: "Recovered edits applied to the paired-computer project" });
+      setNotice("The preserved browser edits were applied to the latest paired-computer project version.");
+    } catch (error) {
+      setApiStatus({ state: error.status === 409 ? "conflict" : "offline", label: "Project recovery still requires attention" });
+      setNotice(error.status === 409
+        ? "The project changed again while resolving the conflict. Your browser recovery copy is still preserved; reload and review the newest version."
+        : `Could not apply the recovery copy. Your browser data remains preserved: ${error.message}`);
+    }
+  };
+
   const quickAction = (action) => {
     if (!activeProject) {
       setNotice("Create or open a project before using scene and playtest actions.");
@@ -1814,6 +1859,14 @@ export default function NexoraFoundryWorkspace() {
       {!authenticatedCloudSession && <div className="mb-3 rounded-xl border border-amber-700/50 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-100">Sign in to your NEXORA account to retrieve saved projects. Browser-only drafts remain available in this browser.</div>}
       {authenticatedCloudSession&&!cloudLoaded&&<div className="mb-3 rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">Connecting NEXORA Studio to the paired computer workspace…</div>}
       {notice&&<div role="status" className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-3 py-2 text-xs text-cyan-100"><span>{notice}</span><button type="button" onClick={()=>setNotice("")} aria-label="Dismiss"><X size={14}/></button></div>}
+      {activeProject?._recoveryConflict && <section role="alert" className="mb-3 rounded-xl border border-amber-700/60 bg-amber-950/20 p-3 text-xs text-amber-100">
+        <div className="font-black">PROJECT VERSION CONFLICT · RECOVERY COPY PRESERVED</div>
+        <p className="mt-1 leading-5">The paired computer has a newer version than the browser edits. NEXORA will not overwrite either copy automatically.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" disabled={!localAgentConnected} onClick={()=>resolveProjectRecoveryConflict("reload")} className="rounded-lg border border-slate-600 px-3 py-2 font-bold text-slate-200 disabled:opacity-40">KEEP PAIRED-COMPUTER VERSION</button>
+          <button type="button" disabled={!localAgentConnected} onClick={()=>resolveProjectRecoveryConflict("apply")} className="rounded-lg border border-amber-500/60 bg-amber-400/10 px-3 py-2 font-bold text-amber-100 disabled:opacity-40">APPLY BROWSER RECOVERY COPY</button>
+        </div>
+      </section>}
       <input ref={fileInputRef} type="file" multiple accept=".glb,.gltf,.obj,.fbx,.ply,.bin,.png,.jpg,.jpeg,.webp,.wav,.ogg,.mp3,.mp4,.mov,.mkv,.webm,.avi" className="hidden" onChange={uploadAssets}/>
       <input ref={importInputRef} type="file" accept=".json,.nexora.json,application/json" className="hidden" onChange={importProject}/>
 
