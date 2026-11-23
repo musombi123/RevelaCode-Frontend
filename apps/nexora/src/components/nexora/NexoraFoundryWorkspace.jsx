@@ -1853,7 +1853,7 @@ export default function NexoraFoundryWorkspace() {
             deviceStatus="Game compilation runs on your paired computer. USB/wireless installation and logcat use the same local agent."
           />
           </section>
-        </div>
+        </div>}
 
         {studioView === "device-lab" && <div>
           <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
