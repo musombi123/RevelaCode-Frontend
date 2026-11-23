@@ -1655,15 +1655,6 @@ export default function NexoraFoundryWorkspace() {
         onRefresh={refreshWorkspace}
       />}
 
-      {["factory","toolchains","backups","release-center"].includes(studioView) && <NexoraDesktopFactoryPanel
-        view={studioView}
-        project={activeProject}
-        jobs={jobs}
-        apiRequest={apiRequest}
-        onNotice={setNotice}
-        onRefresh={refreshWorkspace}
-      />}
-
       {studioView === "projects" && <NexoraProjectsPage
         projects={projects}
         activeProject={activeProject}
@@ -1841,7 +1832,7 @@ export default function NexoraFoundryWorkspace() {
           </aside>
         </div>}
 
-        <div hidden={studioView !== "build"}>
+        {studioView === "build" && <div>
           <section className="mx-auto w-full max-w-5xl space-y-3">
             <header className="border border-cyan-900/60 bg-[#0b1118] p-3">
               <h2 className="text-lg font-black text-cyan-200">BUILD CENTRE</h2>
@@ -1864,7 +1855,7 @@ export default function NexoraFoundryWorkspace() {
           </section>
         </div>
 
-        <div hidden={studioView !== "device-lab"}>
+        {studioView === "device-lab" && <div>
           <section className="mx-auto mb-3 w-full max-w-5xl border border-cyan-900/60 bg-[#0b1118] p-4">
             <h2 className="text-lg font-black text-cyan-200">DEVICE LAB</h2>
             <p className="mt-1 text-xs text-slate-400">Install and pair the local compute agent. Check CPU, RAM, GPU and storage before generating games, then connect Android devices for direct installation.</p>
@@ -1877,7 +1868,7 @@ export default function NexoraFoundryWorkspace() {
               onConnectionChange={onLocalAgentConnectionChange}
             />
           </div>
-        </div>
+        </div>}
 
         {studioView === "assets" && (
         <section className="border border-cyan-900/60 bg-[#0b1118] p-2">
@@ -1937,7 +1928,7 @@ export default function NexoraFoundryWorkspace() {
         </section>
         )}
 
-        <div hidden={studioView !== "ai"}><div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div></div>
+        {studioView === "ai" && <div className="mx-auto w-full max-w-5xl"><CreatorFlowPanel activeProject={activeProject} apiRequest={apiRequest} cloudProjectActive={cloudProjectActive} setNotice={setNotice} nexoraAuthFetch={localEngineFetch} /></div>}
 
         {studioView === "world" && <NexoraWorldBuilderPanel
           project={activeProject}
